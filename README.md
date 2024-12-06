@@ -1,4 +1,5 @@
 # SOCKET Protocol
+> The protocol is on alpha-stage and in active development. 
 
 SOCKET Protocol is the first chain-abstraction protocol, enabling developers to build chain-abstracted applications to compose users, accounts and applications across 300+ rollups and chains. Chain-Abstraction is a new computing paradigm for developers, enabling developers to leverage chains as servers/databases, enabling them to reach all users and applications spread across networks while providing a consistent monolithic experience to end users and applications.
 
