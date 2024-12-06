@@ -63,7 +63,7 @@ abstract contract BatchAsync is QueueAsync {
     /// @param payloadDetails_ The payload details
     function callback(
         bytes memory asyncId_,
-        bytes memory
+        bytes memory payloadDetails_
     ) external virtual onlyPromises {}
 
     /// @notice Delivers a payload batch

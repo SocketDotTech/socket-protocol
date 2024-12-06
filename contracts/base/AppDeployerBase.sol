@@ -30,9 +30,9 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     }
 
     /// @notice Sets the forwarder contract
-    /// @param chainSlug_ The chain slug
-    /// @param forwarderContractAddr_ The forwarder contract address
-    /// @param contractId_ The contract ID
+    /// @param chainSlug The chain slug
+    /// @param forwarderContractAddr The forwarder contract address
+    /// @param contractId The contract ID
     /// @dev callback in payload delivery promise after contract deployment
     function setForwarderContract(
         uint32 chainSlug,
@@ -43,9 +43,9 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     }
 
     /// @notice Gets the on-chain address
-    /// @param contractId_ The contract ID
-    /// @param chainSlug_ The chain slug
-    /// @return onChainAddress_ The on-chain address
+    /// @param contractId The contract ID
+    /// @param chainSlug The chain slug
+    /// @return onChainAddress The on-chain address
     function getOnChainAddress(
         bytes32 contractId,
         uint32 chainSlug
@@ -59,7 +59,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     }
 
     /// @notice Callback in pd promise to be called after all contracts are deployed
-    /// @param chainSlug_ The chain slug
+    /// @param chainSlug The chain slug
     /// @dev only payload delivery can call this
     /// @dev callback in pd promise to be called after all contracts are deployed
     function allContractsDeployed(
@@ -69,8 +69,8 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     }
 
     /// @notice Gets the socket address
-    /// @param chainSlug_ The chain slug
-    /// @return socketAddress_ The socket address
+    /// @param chainSlug The chain slug
+    /// @return socketAddress The socket address
     function getSocketAddress(uint32 chainSlug) public view returns (address) {
         return
             watcherPrecompile().appGatewayPlugs(
@@ -80,6 +80,6 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     }
 
     /// @notice Initializes the contract
-    /// @param chainSlug_ The chain slug
+    /// @param chainSlug The chain slug
     function initialize(uint32 chainSlug) public virtual {}
 }

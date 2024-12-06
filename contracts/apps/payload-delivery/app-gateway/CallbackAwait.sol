@@ -56,10 +56,10 @@ abstract contract CallbackAwait is BatchAsync, Ownable(msg.sender) {
 
     /// @notice Callback function for handling promises
     /// @param asyncId_ The ID of the batch
-    /// @param _ The payload details
+    /// @param payloadDetails_ The payload details
     function callback(
         bytes memory asyncId_,
-        bytes memory
+        bytes memory payloadDetails_
     ) external override onlyPromises {
         bytes32 asyncId = abi.decode(asyncId_, (bytes32));
         PayloadBatch storage payloadBatch = payloadBatches[asyncId];

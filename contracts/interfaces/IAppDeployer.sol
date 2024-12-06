@@ -4,9 +4,9 @@ pragma solidity ^0.8.13;
 /// @notice Interface for the app deployer
 interface IAppDeployer {
     /// @notice Sets the forwarder contract
-    /// @param chainSlug_ The chain slug
-    /// @param forwarderContractAddr_ The forwarder contract address
-    /// @param contractId_ The contract ID
+    /// @param chainSlug The chain slug
+    /// @param forwarderContractAddr The forwarder contract address
+    /// @param contractId The contract ID
     function setForwarderContract(
         uint32 chainSlug,
         address forwarderContractAddr,
@@ -16,6 +16,6 @@ interface IAppDeployer {
     /// @notice initialize the contracts on chain
     function initialize(uint32 chainSlug) external;
 
-    /// @notive deploy contracts to chain
+    /// @notice deploy contracts to chain
     function deployContracts(uint32 chainSlug) external;
 }
