@@ -71,6 +71,7 @@ struct PayloadRootParams {
     bytes32 payloadId;
     address appGateway;
     address transmitter;
+    address target;
     uint256 executionGasLimit;
     bytes payload;
 }

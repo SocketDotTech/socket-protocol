@@ -154,6 +154,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
             payloadId,
             appGateway,
             params_.transmitter,
+            params_.payloadDetails.target,
             params_.payloadDetails.executionGasLimit,
             params_.payloadDetails.payload
         );
@@ -257,6 +258,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
                 params_.payloadId,
                 params_.appGateway,
                 params_.transmitter,
+                params_.target,
                 params_.executionGasLimit,
                 params_.payload
             )
@@ -289,13 +291,13 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         uint256 counter_
     ) internal pure returns (bytes32) {
         if (chainSlug_ == 0) revert InvalidChainSlug();
-
+        (, address switchboard) = getPlugConfigs(chainSlug_, plug_);
         // Encode payload ID by bit-shifting and combining:
-        // chainSlug (32 bits) | plug address (160 bits) | counter (64 bits)
+        // chainSlug (32 bits) | switchboard address (160 bits) | counter (64 bits)
         return
             bytes32(
                 (uint256(chainSlug_) << 224) |
-                    (uint256(uint160(plug_)) << 64) |
+                    (uint256(uint160(switchboard)) << 64) |
                     counter_
             );
     }
