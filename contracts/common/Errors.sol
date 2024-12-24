@@ -12,3 +12,4 @@ error ZeroAmount();
 error InsufficientFunds();
 error InvalidSigner();
 error InvalidFunction();
+error TimeoutDelayTooLarge();

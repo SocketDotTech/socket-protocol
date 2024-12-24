@@ -7,15 +7,17 @@ import "../interfaces/IWatcherPrecompile.sol";
 import "../interfaces/IPromise.sol";
 
 import {PayloadRootParams, AsyncRequest, FinalizeParams} from "../common/Structs.sol";
-
+import {TimeoutDelayTooLarge} from "../common/Errors.sol";
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
 contract WatcherPrecompile is WatcherPrecompileConfig {
+    uint256 public maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
     /// @notice Counter for tracking query requests
     uint256 public queryCounter;
     /// @notice Counter for tracking payload execution requests
     uint256 public payloadCounter;
-
+    /// @notice Counter for tracking timeout requests
+    uint256 public timeoutCounter;
     /// @notice Mapping to store async requests
     /// @dev payloadId => AsyncRequest struct
     mapping(bytes32 => AsyncRequest) public asyncRequests;
@@ -61,42 +63,64 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
     /// @param payloadId The unique identifier for the resolved promise
     event PromiseResolved(bytes32 indexed payloadId);
 
-    /// @notice Emitted when a timeout is requested
-    /// @param target The target address for the timeout
-    /// @param payload The payload data
-    /// @param timeoutMS The timeout duration in milliseconds
-    event TimeoutRequested(address target, bytes payload, uint256 timeoutMS);
+    event TimeoutRequested(
+        bytes32 timeoutId,
+        address target,
+        bytes payload,
+        uint256 executeAt // Epoch time when the task should execute
+    );
 
     /// @notice Emitted when a timeout is resolved
+    /// @param timeoutId The unique identifier for the timeout
     /// @param target The target address for the timeout
     /// @param payload The payload data
-    /// @param timeoutMS The timeout duration in milliseconds
-    event TimeoutResolved(address target, bytes payload, uint256 timeoutMS);
+    /// @param executedAt The epoch time when the task was executed
+    event TimeoutResolved(
+        bytes32 timeoutId,
+        address target,
+        bytes payload,
+        uint256 executedAt
+    );
 
     /// @notice Contract constructor
     /// @param _owner Address of the contract owner
     constructor(address _owner) Ownable(_owner) {}
 
+    // ================== Timeout functions ==================
+
     /// @notice Sets a timeout for a payload execution on app gateway
     /// @param payload_ The payload data
-    /// @param timeoutMS_ The timeout duration in milliseconds
-    function setTimeout(bytes calldata payload_, uint256 timeoutMS_) external {
-        emit TimeoutRequested(msg.sender, payload_, timeoutMS_);
+    /// @param delayInSeconds_ The delay in seconds
+    function setTimeout(
+        bytes calldata payload_,
+        uint256 delayInSeconds_
+    ) external {
+        if (delayInSeconds_ > maxTimeoutDelayInSeconds)
+            revert TimeoutDelayTooLarge();
+        uint256 executeAt = block.timestamp + delayInSeconds_ * 1000;
+        bytes32 timeoutId = _encodeTimeoutId(timeoutCounter++);
+        emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);
     }
 
     /// @notice Ends the timeout and calls the target address with the callback payload
+    /// @param timeoutId The unique identifier for the timeout
     /// @param target_ The target address for execution
     /// @param payload_ The payload to execute
-    /// @param timeoutMS The original timeout duration
     /// @dev Only callable by the contract owner
     function resolveTimeout(
+        bytes32 timeoutId,
         address target_,
-        bytes calldata payload_,
-        uint256 timeoutMS
+        bytes calldata payload_
     ) external onlyOwner {
         (bool success, ) = address(target_).call(payload_);
         require(success, "Call failed");
-        emit TimeoutResolved(target_, payload_, timeoutMS);
+        emit TimeoutResolved(timeoutId, target_, payload_, block.timestamp);
+    }
+
+    function setMaxTimeoutDelayInSeconds(
+        uint256 maxTimeoutDelayInSeconds_
+    ) external onlyOwner {
+        maxTimeoutDelayInSeconds = maxTimeoutDelayInSeconds_;
     }
 
     // ================== Finalize functions ==================
@@ -274,5 +298,13 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
                     (uint256(uint160(plug_)) << 64) |
                     counter_
             );
+    }
+
+    function _encodeTimeoutId(
+        uint256 timeoutCounter_
+    ) internal view returns (bytes32) {
+        // watcher address (160 bits) | counter (64 bits)
+        return
+            bytes32((uint256(uint160(address(this))) << 64) | timeoutCounter_);
     }
 }

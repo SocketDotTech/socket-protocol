@@ -44,18 +44,21 @@ abstract contract BatchAsync is QueueAsync {
 
     /// @notice Initiates a batch of payloads
     /// @param feesData_ The fees data
-    /// @param auctionEndDelayMS_ The auction end delay in milliseconds
+    /// @param auctionEndDelaySeconds_ The auction end delay in seconds
     /// @return asyncId The ID of the batch
     function batch(
         FeesData memory feesData_,
-        uint256 auctionEndDelayMS_
+        uint256 auctionEndDelaySeconds_
     ) external returns (bytes32) {
-        if (auctionEndDelayMS_ > 10 * 60 * 1000) revert DelayLimitReached();
         PayloadDetails[]
             memory payloadDetailsArray = createPayloadDetailsArray();
 
         return
-            deliverPayload(payloadDetailsArray, feesData_, auctionEndDelayMS_);
+            deliverPayload(
+                payloadDetailsArray,
+                feesData_,
+                auctionEndDelaySeconds_
+            );
     }
 
     /// @notice Callback function for handling promises
@@ -69,12 +72,12 @@ abstract contract BatchAsync is QueueAsync {
     /// @notice Delivers a payload batch
     /// @param payloadDetails_ The payload details
     /// @param feesData_ The fees data
-    /// @param auctionEndDelayMS_ The auction end delay in milliseconds
+    /// @param auctionEndDelaySeconds_ The auction end delay in milliseconds
     /// @return asyncId The ID of the batch
     function deliverPayload(
         PayloadDetails[] memory payloadDetails_,
         FeesData memory feesData_,
-        uint256 auctionEndDelayMS_
+        uint256 auctionEndDelaySeconds_
     ) internal returns (bytes32) {
         address forwarderAppGateway = msg.sender;
 
@@ -132,7 +135,7 @@ abstract contract BatchAsync is QueueAsync {
             appGateway: forwarderAppGateway,
             feesData: feesData_,
             currentPayloadIndex: 0,
-            auctionEndDelayMS: auctionEndDelayMS_,
+            auctionEndDelaySeconds: auctionEndDelaySeconds_,
             isBatchCancelled: false
         });
 
@@ -142,7 +145,7 @@ abstract contract BatchAsync is QueueAsync {
             forwarderAppGateway,
             payloadDetails_,
             feesData_,
-            auctionEndDelayMS_
+            auctionEndDelaySeconds_
         );
         return asyncId;
     }

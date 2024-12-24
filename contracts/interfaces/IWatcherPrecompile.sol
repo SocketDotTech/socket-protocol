@@ -84,17 +84,20 @@ interface IWatcherPrecompile {
 
     /// @notice Sets a timeout for payload execution
     /// @param payload_ The payload data
-    /// @param timeoutMS_ The timeout duration in milliseconds
-    function setTimeout(bytes calldata payload_, uint256 timeoutMS_) external;
+    /// @param delayInSeconds_ The timeout duration in seconds
+    function setTimeout(
+        bytes calldata payload_,
+        uint256 delayInSeconds_
+    ) external;
 
     /// @notice Resolves a timeout by executing the payload
+    /// @param timeoutId_ The unique identifier for the timeout
     /// @param target_ The target address for execution
     /// @param payload_ The payload to execute
-    /// @param timeoutMS The original timeout duration
     function resolveTimeout(
+        bytes32 timeoutId_,
         address target_,
-        bytes calldata payload_,
-        uint256 timeoutMS
+        bytes calldata payload_
     ) external;
     /// @notice Calculates the root hash for payload parameters
     /// @param params_ The payload parameters used to calculate the root

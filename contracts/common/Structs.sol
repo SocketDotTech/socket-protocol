@@ -40,13 +40,14 @@ struct CallParams {
 struct Bid {
     uint256 fee;
     address transmitter;
+    bytes extraData;
 }
 
 struct PayloadBatch {
     address appGateway;
     FeesData feesData;
     uint256 currentPayloadIndex;
-    uint256 auctionEndDelayMS;
+    uint256 auctionEndDelaySeconds;
     bool isBatchCancelled;
 }
 
