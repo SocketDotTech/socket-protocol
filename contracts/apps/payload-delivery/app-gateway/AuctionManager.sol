@@ -7,6 +7,7 @@ import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
 import {Bid, FeesData} from "../../../common/Structs.sol";
 import {IAuctionContract} from "../../../interfaces/IAuctionContract.sol";
 import {IAuctionHouse} from "../../../interfaces/IAuctionHouse.sol";
+
 /// @title AuctionHouse
 /// @notice Contract for managing auctions and placing bids
 contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {

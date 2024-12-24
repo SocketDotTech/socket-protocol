@@ -8,42 +8,7 @@ import {DISTRIBUTE_FEE, DEPLOY} from "../../../common/Constants.sol";
 import "./BatchAsync.sol";
 
 // msg.sender map and call next function flow
-abstract contract CallbackAwait is BatchAsync, Ownable(msg.sender) {
-    mapping(bytes32 => Bid) public winningBids;
-    // asyncId => auction status
-    mapping(bytes32 => bool) public auctionClosed;
-    uint256 public feesCounter;
-
-    // payloadId => asyncId
-    mapping(bytes32 => bytes32) public payloadIdToBatchHash;
-    mapping(uint32 => uint256) public feeCollectionGasLimit;
-
-    /// @notice Constructor for CallbackAwait
-    /// @param addressResolver_ The address of the address resolver
-    constructor(address addressResolver_) QueueAsync(addressResolver_) {
-        // todo: fix later
-        feeCollectionGasLimit[421614] = 2000000;
-        feeCollectionGasLimit[11155420] = 1000000;
-        feeCollectionGasLimit[11155111] = 1000000;
-        feeCollectionGasLimit[84532] = 1000000;
-    }
-
-    /// @notice Sets the fee collection gas limits
-    /// @param chainSlugs An array of chain slugs
-    /// @param gasLimits An array of gas limits
-    function setFeeCollectionGasLimits(
-        uint32[] memory chainSlugs,
-        uint256[] memory gasLimits
-    ) external {
-        require(
-            chainSlugs.length == gasLimits.length,
-            "Input arrays must have the same length"
-        );
-
-        for (uint256 i = 0; i < chainSlugs.length; i++) {
-            feeCollectionGasLimit[chainSlugs[i]] = gasLimits[i];
-        }
-    }
+contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
 
     /// @notice Starts the batch processing
     /// @param asyncId_ The ID of the batch
@@ -71,7 +36,8 @@ abstract contract CallbackAwait is BatchAsync, Ownable(msg.sender) {
             payloadBatch.currentPayloadIndex++;
             _finalizeNextPayload(asyncId);
         } else {
-            _createFeesSignature(
+            // todo: change it to call to fees manager
+            IFeesManager(feesManager).createFeesSignature(
                 asyncId,
                 payloadBatch.appGateway,
                 payloadBatch.feesData,
@@ -124,47 +90,4 @@ abstract contract CallbackAwait is BatchAsync, Ownable(msg.sender) {
         emit PayloadAsyncRequested(asyncId_, payloadId, root, payloadDetails);
     }
 
-    /// @notice Creates a fees signature
-    /// @param asyncId_ The ID of the batch
-    /// @param appGateway_ The address of the app gateway
-    /// @param feesData_ The fees data
-    /// @param winningBid_ The winning bid
-    function _createFeesSignature(
-        bytes32 asyncId_,
-        address appGateway_,
-        FeesData memory feesData_,
-        Bid memory winningBid_
-    ) internal {
-        // Create payload for pool contract
-        bytes memory payload = abi.encode(
-            DISTRIBUTE_FEE,
-            abi.encode(
-                appGateway_,
-                feesData_.feePoolToken,
-                winningBid_.fee,
-                winningBid_.transmitter,
-                feesCounter++
-            )
-        );
-
-        PayloadDetails memory payloadDetails = PayloadDetails({
-            chainSlug: feesData_.feePoolChain,
-            target: getPayloadDeliveryPlugAddress(feesData_.feePoolChain),
-            payload: payload,
-            callType: CallType.WRITE,
-            executionGasLimit: feeCollectionGasLimit[feesData_.feePoolChain],
-            next: new address[](0)
-        });
-
-        FinalizeParams memory finalizeParams = FinalizeParams({
-            payloadDetails: payloadDetails,
-            transmitter: winningBid_.transmitter
-        });
-
-        (bytes32 payloadId, bytes32 root) = watcherPrecompile().finalize(
-            finalizeParams
-        );
-        payloadIdToBatchHash[payloadId] = asyncId_;
-        emit PayloadAsyncRequested(asyncId_, payloadId, root, payloadDetails);
-    }
 }

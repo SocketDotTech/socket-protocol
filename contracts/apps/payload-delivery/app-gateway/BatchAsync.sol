@@ -6,21 +6,15 @@ import "./QueueAsync.sol";
 import {IAuctionHouse} from "../../../interfaces/IAuctionHouse.sol";
 import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
 import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
+import {IAuctionManager} from "../../../interfaces/IAuctionManager.sol";
+import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
+
 import {Bid, PayloadBatch, FeesData, PayloadDetails} from "../../../common/Structs.sol";
 import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Constants.sol";
 
 /// @title BatchAsync
 /// @notice Abstract contract for managing asynchronous payload batches
 abstract contract BatchAsync is QueueAsync {
-    uint256 public asyncCounter;
-
-    // asyncId => PayloadBatch
-    mapping(bytes32 => PayloadBatch) public payloadBatches;
-    // asyncId => totalPayloadsRemaining
-    mapping(bytes32 => uint256) public totalPayloadsRemaining;
-    // asyncId => PayloadDetails[]
-    mapping(bytes32 => PayloadDetails[]) public payloadDetailsArrays;
-
     error AllPayloadsExecuted();
     error NotFromForwarder();
     error CallFailed(bytes32 payloadId);
@@ -44,21 +38,25 @@ abstract contract BatchAsync is QueueAsync {
 
     /// @notice Initiates a batch of payloads
     /// @param feesData_ The fees data
-    /// @param auctionEndDelaySeconds_ The auction end delay in seconds
+    /// @param auctionEndDelayMS_ The auction end delay in milliseconds
     /// @return asyncId The ID of the batch
     function batch(
         FeesData memory feesData_,
-        uint256 auctionEndDelaySeconds_
+        uint256 auctionEndDelayMS_
     ) external returns (bytes32) {
+        if (auctionEndDelayMS_ > 10 * 60 * 1000) revert DelayLimitReached();
+
         PayloadDetails[]
             memory payloadDetailsArray = createPayloadDetailsArray();
 
+        // Check if batch contains only READ calls
+        if (_isReadOnlyBatch(payloadDetailsArray)) {
+            return _processReadOnlyBatch(payloadDetailsArray);
+        }
+
+        // Default flow for other cases (including mixed read/write)
         return
-            deliverPayload(
-                payloadDetailsArray,
-                feesData_,
-                auctionEndDelaySeconds_
-            );
+            deliverPayload(payloadDetailsArray, feesData_, auctionEndDelayMS_);
     }
 
     /// @notice Callback function for handling promises
@@ -72,22 +70,64 @@ abstract contract BatchAsync is QueueAsync {
     /// @notice Delivers a payload batch
     /// @param payloadDetails_ The payload details
     /// @param feesData_ The fees data
-    /// @param auctionEndDelaySeconds_ The auction end delay in milliseconds
+    /// @param auctionEndDelayMS_ The auction end delay in milliseconds
     /// @return asyncId The ID of the batch
     function deliverPayload(
         PayloadDetails[] memory payloadDetails_,
         FeesData memory feesData_,
-        uint256 auctionEndDelaySeconds_
+        uint256 auctionEndDelayMS_
     ) internal returns (bytes32) {
         address forwarderAppGateway = msg.sender;
-
         bytes32 asyncId = getCurrentAsyncId();
         asyncCounter++;
 
-        for (uint256 i = 0; i < payloadDetails_.length; i++) {
+        // Check for consecutive reads at the start
+        uint256 readEndIndex = 0;
+        while (
+            readEndIndex < payloadDetails_.length &&
+            payloadDetails_[readEndIndex].callType == CallType.READ
+        ) {
+            readEndIndex++;
+        }
+
+        // Process consecutive reads together if there are 2 or more
+        if (readEndIndex >= 2) {
+            // Create a batched read promise
+            address batchPromise = IAddressResolver(addressResolver)
+                .deployAsyncPromiseContract(address(this));
+            isValidPromise[batchPromise] = true;
+
+            // Process all reads in the batch
+            for (uint256 i = 0; i < readEndIndex; i++) {
+                bytes32 payloadId = watcherPrecompile().query(
+                    payloadDetails_[i].chainSlug,
+                    payloadDetails_[i].target,
+                    [batchPromise, address(0)], // Use same promise for all reads in batch
+                    payloadDetails_[i].payload
+                );
+                payloadIdToBatchHash[payloadId] = asyncId;
+
+                emit PayloadAsyncRequested(
+                    asyncId,
+                    payloadId,
+                    bytes32(0),
+                    payloadDetails_[i]
+                );
+            }
+
+            // Setup callback for the entire batch of reads
+            IPromise(batchPromise).then(
+                this.callback.selector,
+                abi.encode(asyncId)
+            );
+        }
+
+        // Process remaining payloads normally
+        for (uint256 i = readEndIndex; i < payloadDetails_.length; i++) {
             if (payloadDetails_[i].payload.length > 24.5 * 1024)
                 revert PayloadTooLarge();
-            // todo: convert it to proxy and promise call
+
+            // Rest of the existing deliverPayload logic for each payload
             if (payloadDetails_[i].callType == CallType.DEPLOY) {
                 payloadDetails_[i].payload = abi.encode(
                     DEPLOY,
@@ -116,7 +156,6 @@ abstract contract BatchAsync is QueueAsync {
             }
 
             if (payloadDetails_[i].callType != CallType.WITHDRAW) {
-                // for callback to execute next payload and set addresses
                 payloadDetails_[i].next[1] = IAddressResolver(addressResolver)
                     .deployAsyncPromiseContract(address(this));
 
@@ -130,22 +169,25 @@ abstract contract BatchAsync is QueueAsync {
             payloadDetailsArrays[asyncId].push(payloadDetails_[i]);
         }
 
-        totalPayloadsRemaining[asyncId] = payloadDetails_.length;
+        totalPayloadsRemaining[asyncId] =
+            (readEndIndex >= 2 ? 1 : readEndIndex) +
+            (payloadDetails_.length - readEndIndex);
         payloadBatches[asyncId] = PayloadBatch({
             appGateway: forwarderAppGateway,
             feesData: feesData_,
             currentPayloadIndex: 0,
-            auctionEndDelaySeconds: auctionEndDelaySeconds_,
+            auctionEndDelayMS: auctionEndDelayMS_,
             isBatchCancelled: false
         });
 
-        // deploy promise for callback from watcher precompile
+        IAuctionManager(auctionManager).startAuction(asyncId);
+
         emit PayloadSubmitted(
             asyncId,
             forwarderAppGateway,
             payloadDetails_,
             feesData_,
-            auctionEndDelaySeconds_
+            auctionEndDelayMS_
         );
         return asyncId;
     }
@@ -184,5 +226,43 @@ abstract contract BatchAsync is QueueAsync {
         uint256 index_
     ) external view returns (PayloadDetails memory) {
         return payloadDetailsArrays[asyncId_][index_];
+    }
+
+    function _isReadOnlyBatch(
+        PayloadDetails[] memory payloadDetails_
+    ) internal pure returns (bool) {
+        for (uint256 i = 0; i < payloadDetails_.length; i++) {
+            if (payloadDetails_[i].callType != CallType.READ) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function _processReadOnlyBatch(
+        PayloadDetails[] memory payloadDetails_
+    ) internal returns (bytes32) {
+        bytes32 asyncId = getCurrentAsyncId();
+        asyncCounter++;
+
+        // Process all reads in a loop without waiting for callbacks
+        for (uint256 i = 0; i < payloadDetails_.length; i++) {
+            bytes32 payloadId = watcherPrecompile().query(
+                payloadDetails_[i].chainSlug,
+                payloadDetails_[i].target,
+                payloadDetails_[i].next,
+                payloadDetails_[i].payload
+            );
+            payloadIdToBatchHash[payloadId] = asyncId;
+
+            emit PayloadAsyncRequested(
+                asyncId,
+                payloadId,
+                bytes32(0), // No root for read-only queries
+                payloadDetails_[i]
+            );
+        }
+
+        return asyncId;
     }
 }
