@@ -25,14 +25,14 @@ contract FeesPlug is PlugBase, Ownable {
         address feeToken,
         uint256 fee,
         address transmitter,
-        bytes32 feesCounter
+        bytes32 feesId
     ) external onlySocket returns (bytes memory) {
-        if (feesRedeemed[feesCounter]) revert FeesAlreadyPaid();
-        feesRedeemed[feesCounter] = true;
+        if (feesRedeemed[feesId]) revert FeesAlreadyPaid();
+        feesRedeemed[feesId] = true;
 
         require(
             balanceOf[appGateway][feeToken] >= fee,
-            "PayloadDeliveryPlug: insufficient balance"
+            "FeesPlug: Insufficient Balance for Fees"
         );
         balanceOf[appGateway][feeToken] -= fee;
         _transferTokens(feeToken, fee, transmitter);
@@ -46,7 +46,7 @@ contract FeesPlug is PlugBase, Ownable {
     ) external onlySocket returns (bytes memory) {
         require(
             balanceOf[appGateway][token] >= amount,
-            "PayloadDeliveryPlug: insufficient balance"
+            "FeesPlug: Insufficient Balance for Withdrawal"
         );
         balanceOf[appGateway][token] -= amount;
         _transferTokens(token, amount, receiver);
@@ -63,7 +63,7 @@ contract FeesPlug is PlugBase, Ownable {
         address appGateway_
     ) external payable {
         if (token == ETH_ADDRESS) {
-            require(msg.value == amount, "Fees Manager: invalid depositamount");
+            require(msg.value == amount, "FeesPlug: Invalid Deposit Amount");
         } else {
             SafeTransferLib.safeTransferFrom(
                 ERC20(token),

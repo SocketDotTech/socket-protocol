@@ -15,6 +15,7 @@ error InvalidFunction();
 error TimeoutDelayTooLarge();
 error TimeoutAlreadyResolved();
 error ResolvingTimeoutTooEarly();
-error AmountOutsideLimit();
+error LimitReached();
 error FeesAlreadyPaid();
 error NotAuctionManager();
+error CallFailed();

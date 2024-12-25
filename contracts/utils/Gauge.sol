@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 import {LimitParams} from "../common/Structs.sol";
-import {AmountOutsideLimit} from "../common/Errors.sol";
+import {LimitReached} from "../common/Errors.sol";
 
 abstract contract Gauge {
     function _getCurrentLimit(
@@ -43,7 +43,7 @@ abstract contract Gauge {
             _params.lastUpdateTimestamp = block.timestamp;
             _params.lastUpdateLimit = currentLimit - amount_;
         } else {
-            revert AmountOutsideLimit();
+            revert LimitReached();
         }
     }
 }
