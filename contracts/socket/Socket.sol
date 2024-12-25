@@ -69,6 +69,7 @@ contract Socket is SocketBase {
     function execute(
         bytes32 payloadId_,
         address appGateway_,
+        address target_,
         uint256 executionGasLimit_,
         bytes memory transmitterSignature_,
         bytes memory payload_
@@ -79,14 +80,10 @@ contract Socket is SocketBase {
         payloadExecuted[payloadId_] = true;
 
         // extract plug address from msgID
-        address localPlug = _decodePlug(payloadId_);
+        address switchboard = _decodeSwitchboard(payloadId_);
         uint32 localSlug = _decodeChainSlug(payloadId_);
 
         if (localSlug != chainSlug) revert InvalidSlug();
-
-        // fetch required vars from plug config
-        if (_plugConfigs[localPlug].appGateway != appGateway_)
-            revert InvalidAppGateway();
 
         address transmitter = signatureVerifier__.recoverSigner(
             keccak256(abi.encode(address(this), payloadId_)),
@@ -98,16 +95,17 @@ contract Socket is SocketBase {
             payloadId_,
             appGateway_,
             transmitter,
+            target_,
             executionGasLimit_,
             payload_
         );
 
         // verify payload was part of the packet and
         // authenticated by respective switchboard
-        _verify(root, payloadId_, _plugConfigs[localPlug].switchboard__);
+        _verify(root, payloadId_, switchboard__);
 
         // execute payload
-        return _execute(localPlug, payloadId_, executionGasLimit_, payload_);
+        return _execute(target_, payloadId_, executionGasLimit_, payload_);
     }
 
     ////////////////////////////////////////////////////////
@@ -150,8 +148,10 @@ contract Socket is SocketBase {
      * @param id_ The ID of the msg to decode the plug from.
      * @return plug_ The address of sibling plug decoded from the payload ID.
      */
-    function _decodePlug(bytes32 id_) internal pure returns (address plug_) {
-        plug_ = address(uint160(uint256(id_) >> 64));
+    function _decodeSwitchboard(
+        bytes32 id_
+    ) internal pure returns (address switchboard_) {
+        switchboard_ = address(uint160(uint256(id_) >> 64));
     }
 
     /**

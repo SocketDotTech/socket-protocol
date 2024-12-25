@@ -315,6 +315,7 @@ contract AuctionHouseTest is SetupTest {
             payloadId,
             address(auctionHouse),
             transmitter,
+            payloadDetails.target,
             payloadDetails.executionGasLimit,
             payloadDetails.payload
         );

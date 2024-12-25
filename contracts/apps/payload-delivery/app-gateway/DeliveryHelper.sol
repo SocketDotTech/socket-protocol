@@ -12,7 +12,7 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
 
     /// @notice Starts the batch processing
     /// @param asyncId_ The ID of the batch
-    function _startBatchProcessing(bytes32 asyncId_) internal {
+    function startBatchProcessing(bytes32 asyncId_) external onlyFeesManager {
         PayloadBatch storage payloadBatch = payloadBatches[asyncId_];
         if (payloadBatch.isBatchCancelled) return;
 
@@ -47,6 +47,7 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
             PayloadDetails storage payloadDetails = payloadDetailsArrays[
                 asyncId
             ][payloadBatch.currentPayloadIndex];
+            
             if (payloadDetails.callType == CallType.DEPLOY) {
                 IAppGateway(payloadBatch.appGateway).allContractsDeployed(
                     payloadDetails.chainSlug
@@ -69,6 +70,7 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
         bytes32 payloadId;
         bytes32 root;
 
+        // todo: if multiple query, process all at once
         if (payloadDetails.callType == CallType.READ) {
             payloadId = watcherPrecompile().query(
                 payloadDetails.chainSlug,
