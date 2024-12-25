@@ -2,6 +2,10 @@
 pragma solidity ^0.8.0;
 import {Bid, FeesData} from "../../../../common/Structs.sol";
 import {IAuctionContract} from "../../../../interfaces/IAuctionContract.sol";
+
+// todo: is manager auction system flexible?
+
+
 /// @title AuctionHouse
 /// @notice Contract for managing auctions and placing bids
 contract FirstBidAuction is IAuctionContract {

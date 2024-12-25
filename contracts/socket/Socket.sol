@@ -82,6 +82,7 @@ contract Socket is SocketBase {
         // extract plug address from msgID
         address switchboard = _decodeSwitchboard(payloadId_);
         uint32 localSlug = _decodeChainSlug(payloadId_);
+        // todo: check if switchboard is same as config in plug
 
         if (localSlug != chainSlug) revert InvalidSlug();
 

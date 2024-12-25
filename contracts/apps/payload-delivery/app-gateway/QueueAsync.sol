@@ -154,6 +154,7 @@ abstract contract QueueAsync is AddressResolverUtil {
         (uint32 chainSlug, bytes32 contractId, address appDeployer) = abi
             .decode(data_, (uint32, bytes32, address));
 
+        // todo: use getOrDeploy here
         address forwarderContractAddress = addressResolver
             .deployForwarderContract(
                 appDeployer,

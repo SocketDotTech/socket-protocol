@@ -12,7 +12,7 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
 
     /// @notice Starts the batch processing
     /// @param asyncId_ The ID of the batch
-    function startBatchProcessing(bytes32 asyncId_) external onlyFeesManager {
+    function startBatchProcessing(bytes32 asyncId_) external onlyAuctionManager {
         PayloadBatch storage payloadBatch = payloadBatches[asyncId_];
         if (payloadBatch.isBatchCancelled) return;
 
@@ -64,29 +64,46 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
         totalPayloadsRemaining[asyncId_]--;
 
         PayloadDetails[] storage payloads = payloadDetailsArrays[asyncId_];
-
         PayloadDetails storage payloadDetails = payloads[currentPayloadIndex];
 
         bytes32 payloadId;
         bytes32 root;
 
-        // todo: if multiple query, process all at once
         if (payloadDetails.callType == CallType.READ) {
-            payloadId = watcherPrecompile().query(
-                payloadDetails.chainSlug,
-                payloadDetails.target,
-                payloadDetails.next,
-                payloadDetails.payload
-            );
-            payloadIdToBatchHash[payloadId] = asyncId_;
+            // Find consecutive READ calls
+            uint256 readEndIndex = currentPayloadIndex;
+            while (readEndIndex + 1 < payloads.length && 
+                   payloads[readEndIndex + 1].callType == CallType.READ) {
+                readEndIndex++;
+            }
+
+            // Create a batched read promise
+            address batchPromise = IAddressResolver(addressResolver)
+                .deployAsyncPromiseContract(address(this));
+            isValidPromise[batchPromise] = true;
+
+            // Process all reads in the batch
+            for (uint256 i = currentPayloadIndex; i <= readEndIndex; i++) {
+                payloadId = watcherPrecompile().query(
+                    payloads[i].chainSlug,
+                    payloads[i].target,
+                    [batchPromise, address(0)], // Use same promise for all reads in batch
+                    payloads[i].payload
+                );
+                payloadIdToBatchHash[payloadId] = asyncId_;
+            }
+
+            // Skip the batched payloads
+            payloadBatch.currentPayloadIndex = readEndIndex;
         } else {
             FinalizeParams memory finalizeParams = FinalizeParams({
                 payloadDetails: payloadDetails,
-                transmitter: winningBids[asyncId_].transmitter
+                transmitter: IAuctionManager(auctionManager).winningBids(asyncId_).transmitter
             });
 
             (payloadId, root) = watcherPrecompile().finalize(finalizeParams);
             payloadIdToBatchHash[payloadId] = asyncId_;
+            payloadBatch.currentPayloadIndex = currentPayloadIndex;
         }
 
         emit PayloadAsyncRequested(asyncId_, payloadId, root, payloadDetails);

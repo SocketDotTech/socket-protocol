@@ -129,11 +129,15 @@ abstract contract BatchAsync is QueueAsync {
 
             // Rest of the existing deliverPayload logic for each payload
             if (payloadDetails_[i].callType == CallType.DEPLOY) {
+                // considering contract factory as plug of delivery helper
                 payloadDetails_[i].target = getPlugAddress(
                     address(this),
                     payloadDetails_[i].chainSlug
                 );
+
+                // todo: encode for deployContract
             } else if (payloadDetails_[i].callType == CallType.WRITE) {
+                // todo: if need to remove this
                 forwarderAppGateway = IAddressResolver(addressResolver)
                     .contractsToGateways(msg.sender);
 
@@ -149,14 +153,17 @@ abstract contract BatchAsync is QueueAsync {
                 this.callback.selector,
                 abi.encode(asyncId)
             );
+            
+            // todo: rename payloadDetailsArrays to payloadDetails_
             payloadDetailsArrays[asyncId].push(payloadDetails_[i]);
         }
 
+        // todo: merge all async id vars in one struct
         totalPayloadsRemaining[asyncId] = payloadDetails_.length - readEndIndex;
         payloadBatches[asyncId] = PayloadBatch({
             appGateway: forwarderAppGateway,
             feesData: feesData_,
-            currentPayloadIndex: 0,
+            currentPayloadIndex: readEndIndex,
             auctionEndDelayMS: auctionEndDelayMS_,
             isBatchCancelled: false
         });
@@ -247,7 +254,6 @@ abstract contract BatchAsync is QueueAsync {
 
         return asyncId;
     }
-
 
     /// @notice Withdraws funds to a specified receiver
     /// @param chainSlug_ The chain identifier

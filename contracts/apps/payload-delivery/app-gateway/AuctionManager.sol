@@ -37,8 +37,11 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
 
         auctionStarted[asyncId_] = true;
         emit AuctionStarted(asyncId_);
+
+        // todo: fix auction contract address
         uint256 auctionEndDelaySeconds = IAuctionContract(address(this))
             .auctionEndDelaySeconds();
+
         watcherPrecompile().setTimeout(
             abi.encodeWithSelector(this.endAuction.selector, asyncId_),
             auctionEndDelaySeconds
@@ -57,8 +60,9 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
     ) external {
         require(!auctionClosed[asyncId_], "Auction closed");
 
+        // todo: check chain slug for multiple offchain vm
         address transmitter = signatureVerifier__.recoverSigner(
-            keccak256(abi.encode(address(this), asyncId_, fee)),
+            keccak256(abi.encode(address(this), asyncId_, fee, extraData)),
             transmitterSignature
         );
 
@@ -67,9 +71,14 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
             transmitter: transmitter,
             extraData: extraData
         });
+
+        // todo: fix auction contract address
         (address auctionContract, FeesData memory feesData) = AuctionHouse()
             .getAuctionContractAndFeesData(asyncId_);
+
         require(fee <= feesData.maxFees, "Bid exceeds max fees");
+
+        // todo: revisit if should revert or not
         require(
             IAuctionContract(auctionContract).isNewBidBetter(
                 winningBids[asyncId_],
@@ -77,6 +86,7 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
             ),
             "Bid is not better"
         );
+
         winningBids[asyncId_] = newBid;
         emit BidPlaced(asyncId_, newBid);
     }
