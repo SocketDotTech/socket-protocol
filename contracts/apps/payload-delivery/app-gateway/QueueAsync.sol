@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
 import {CallParams, FeesData, PayloadDetails, CallType, Bid, PayloadBatch} from "../../../common/Structs.sol";
+import {NotAuctionManager} from "../../../common/Errors.sol";
 import {AsyncPromise} from "../../../AsyncPromise.sol";
 import {IPromise} from "../../../interfaces/IPromise.sol";
 import {IAppDeployer} from "../../../interfaces/IAppDeployer.sol";
@@ -35,6 +36,11 @@ abstract contract QueueAsync is AddressResolverUtil {
         if (!isValidPromise[msg.sender]) revert InvalidPromise();
         // remove promise once resolved
         isValidPromise[msg.sender] = false;
+        _;
+    }
+
+    modifier onlyAuctionManager() {
+        if (msg.sender != auctionManager) revert NotAuctionManager();
         _;
     }
 

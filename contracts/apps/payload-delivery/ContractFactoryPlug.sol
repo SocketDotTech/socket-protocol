@@ -4,7 +4,7 @@ import {PlugBase} from "../../base/PlugBase.sol";
 import {Ownable} from "../../utils/Ownable.sol";
 /// @title ContractFactory
 /// @notice Abstract contract for deploying contracts
-contract ContractFactory is PlugBase, Ownable {
+contract ContractFactoryPlug is PlugBase, Ownable {
     event Deployed(address addr, bytes32 salt);
 
     constructor(

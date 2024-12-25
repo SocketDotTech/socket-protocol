@@ -11,7 +11,9 @@ import "./BatchAsync.sol";
 contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
     /// @notice Starts the batch processing
     /// @param asyncId_ The ID of the batch
-    function startBatchProcessing(bytes32 asyncId_) external onlyFeesManager {
+    function startBatchProcessing(
+        bytes32 asyncId_
+    ) external onlyAuctionManager {
         PayloadBatch storage payloadBatch = payloadBatches[asyncId_];
         if (payloadBatch.isBatchCancelled) return;
 
@@ -36,11 +38,19 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
             _finalizeNextPayload(asyncId);
         } else {
             // todo: change it to call to fees manager
-            IFeesManager(feesManager).createFeesSignature(
+            (bytes32 payloadId, bytes32 root) = IFeesManager(feesManager)
+                .distributeFees(
+                    asyncId,
+                    payloadBatch.appGateway,
+                    payloadBatch.feesData,
+                    winningBids[asyncId]
+                );
+            payloadIdToBatchHash[payloadId] = asyncId;
+            emit PayloadAsyncRequested(
                 asyncId,
-                payloadBatch.appGateway,
-                payloadBatch.feesData,
-                winningBids[asyncId]
+                payloadId,
+                root,
+                payloadDetails_
             );
 
             PayloadDetails storage payloadDetails = payloadDetailsArrays[
