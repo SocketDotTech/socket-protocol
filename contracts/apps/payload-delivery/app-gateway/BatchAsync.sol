@@ -90,8 +90,8 @@ abstract contract BatchAsync is QueueAsync {
             readEndIndex++;
         }
 
-        // Process consecutive reads together if there are 2 or more
-        if (readEndIndex >= 2) {
+        // Process consecutive reads together if there are 1 or more
+        if (readEndIndex >= 1) {
             // Create a batched read promise
             address batchPromise = IAddressResolver(addressResolver)
                 .deployAsyncPromiseContract(address(this));
@@ -129,11 +129,8 @@ abstract contract BatchAsync is QueueAsync {
 
             // Rest of the existing deliverPayload logic for each payload
             if (payloadDetails_[i].callType == CallType.DEPLOY) {
-                payloadDetails_[i].payload = abi.encode(
-                    DEPLOY,
-                    payloadDetails_[i].payload
-                );
-                payloadDetails_[i].target = getPayloadDeliveryPlugAddress(
+                payloadDetails_[i].target = getPlugAddress(
+                    address(this),
                     payloadDetails_[i].chainSlug
                 );
             } else if (payloadDetails_[i].callType == CallType.WRITE) {
@@ -142,36 +139,20 @@ abstract contract BatchAsync is QueueAsync {
 
                 if (forwarderAppGateway == address(0))
                     forwarderAppGateway = msg.sender;
-
-                payloadDetails_[i].payload = abi.encode(
-                    FORWARD_CALL,
-                    abi.encode(
-                        payloadDetails_[i].target,
-                        payloadDetails_[i].payload
-                    )
-                );
-                payloadDetails_[i].target = getPayloadDeliveryPlugAddress(
-                    payloadDetails_[i].chainSlug
-                );
             }
 
-            if (payloadDetails_[i].callType != CallType.WITHDRAW) {
-                payloadDetails_[i].next[1] = IAddressResolver(addressResolver)
-                    .deployAsyncPromiseContract(address(this));
+            payloadDetails_[i].next[1] = IAddressResolver(addressResolver)
+                .deployAsyncPromiseContract(address(this));
 
-                isValidPromise[payloadDetails_[i].next[1]] = true;
-                IPromise(payloadDetails_[i].next[1]).then(
-                    this.callback.selector,
-                    abi.encode(asyncId)
-                );
-            }
-
+            isValidPromise[payloadDetails_[i].next[1]] = true;
+            IPromise(payloadDetails_[i].next[1]).then(
+                this.callback.selector,
+                abi.encode(asyncId)
+            );
             payloadDetailsArrays[asyncId].push(payloadDetails_[i]);
         }
 
-        totalPayloadsRemaining[asyncId] =
-            (readEndIndex >= 2 ? 1 : readEndIndex) +
-            (payloadDetails_.length - readEndIndex);
+        totalPayloadsRemaining[asyncId] = payloadDetails_.length - readEndIndex;
         payloadBatches[asyncId] = PayloadBatch({
             appGateway: forwarderAppGateway,
             feesData: feesData_,
@@ -205,10 +186,11 @@ abstract contract BatchAsync is QueueAsync {
     /// @notice Gets the payload delivery plug address
     /// @param chainSlug_ The chain identifier
     /// @return address The address of the payload delivery plug
-    function getPayloadDeliveryPlugAddress(
+    function getPlugAddress(
+        address appGateway_,
         uint32 chainSlug_
     ) public view returns (address) {
-        return watcherPrecompile().appGatewayPlugs(address(this), chainSlug_);
+        return watcherPrecompile().appGatewayPlugs(appGateway_, chainSlug_);
     }
 
     /// @notice Gets the current async ID
@@ -264,5 +246,38 @@ abstract contract BatchAsync is QueueAsync {
         }
 
         return asyncId;
+    }
+
+
+    /// @notice Withdraws funds to a specified receiver
+    /// @param chainSlug_ The chain identifier
+    /// @param token_ The address of the token
+    /// @param amount_ The amount of tokens to withdraw
+    /// @param receiver_ The address of the receiver
+    /// @param feesData_ The fees data
+    function withdrawTo(
+        uint32 chainSlug_,
+        address token_,
+        uint256 amount_,
+        address receiver_,
+        FeesData memory feesData_
+    ) external {
+        address appGateway_ = msg.sender;
+        // Create payload for pool contract
+        bytes memory payload = abi.encode(
+            WITHDRAW,
+            abi.encode(appGateway_, token_, amount_, receiver_)
+        );
+        PayloadDetails[] memory payloadDetailsArray = new PayloadDetails[](1);
+        payloadDetailsArray[0] = PayloadDetails({
+            chainSlug: chainSlug_,
+            target: getPayloadDeliveryPlugAddress(chainSlug_),
+            payload: payload,
+            callType: CallType.WITHDRAW,
+            executionGasLimit: feeCollectionGasLimit[chainSlug_],
+            next: new address[](0)
+        });
+
+        deliverPayload(payloadDetailsArray, feesData_, 0);
     }
 }
