@@ -9,7 +9,6 @@ import "./BatchAsync.sol";
 
 // msg.sender map and call next function flow
 contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
-
     /// @notice Starts the batch processing
     /// @param asyncId_ The ID of the batch
     function startBatchProcessing(bytes32 asyncId_) external onlyFeesManager {
@@ -47,7 +46,7 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
             PayloadDetails storage payloadDetails = payloadDetailsArrays[
                 asyncId
             ][payloadBatch.currentPayloadIndex];
-            
+
             if (payloadDetails.callType == CallType.DEPLOY) {
                 IAppGateway(payloadBatch.appGateway).allContractsDeployed(
                     payloadDetails.chainSlug
@@ -91,5 +90,4 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
 
         emit PayloadAsyncRequested(asyncId_, payloadId, root, payloadDetails);
     }
-
 }

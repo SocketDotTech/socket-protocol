@@ -13,3 +13,6 @@ error InsufficientFunds();
 error InvalidSigner();
 error InvalidFunction();
 error TimeoutDelayTooLarge();
+error TimeoutAlreadyResolved();
+error ResolvingTimeoutTooEarly();
+error AmountOutsideLimit();

@@ -111,3 +111,27 @@ struct ExecutePayloadParams {
     bytes transmitterSignature;
     bytes payload;
 }
+
+struct TimeoutRequest {
+    bytes32 timeoutId;
+    address target;
+    bytes payload;
+    uint256 delayInSeconds;
+    uint256 executeAt;
+    uint256 executedAt;
+    bool isResolved;
+}
+
+struct LimitParams {
+    uint256 lastUpdateTimestamp;
+    uint256 ratePerSecond;
+    uint256 maxLimit;
+    uint256 lastUpdateLimit;
+}
+
+struct UpdateLimitParams {
+    bytes32 limitType;
+    address appGateway;
+    uint256 maxLimit;
+    uint256 ratePerSecond;
+}

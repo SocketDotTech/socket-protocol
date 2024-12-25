@@ -248,7 +248,6 @@ abstract contract BatchAsync is QueueAsync {
         return asyncId;
     }
 
-
     /// @notice Withdraws funds to a specified receiver
     /// @param chainSlug_ The chain identifier
     /// @param token_ The address of the token
