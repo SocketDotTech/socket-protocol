@@ -2,20 +2,32 @@
 pragma solidity ^0.8.13;
 
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
-import {IAuctionHouse} from "../../../interfaces/IAuctionHouse.sol";
-import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
-import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
-import {CallParams, FeesData, PayloadDetails, CallType} from "../../../common/Structs.sol";
+import {CallParams, FeesData, PayloadDetails, CallType, Bid, PayloadBatch} from "../../../common/Structs.sol";
 import {AsyncPromise} from "../../../AsyncPromise.sol";
 import {IPromise} from "../../../interfaces/IPromise.sol";
 import {IAppDeployer} from "../../../interfaces/IAppDeployer.sol";
+import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
 
-/// @title QueueAsync
 /// @notice Abstract contract for managing asynchronous payloads
-abstract contract QueueAsync is IAuctionHouse, AddressResolverUtil {
-    CallParams[] public callParamsArray;
+abstract contract QueueAsync is AddressResolverUtil {
     uint256 public saltCounter;
+    uint256 public asyncCounter;
+
+    address public auctionManager;
+    address public feesManager;
+
+    CallParams[] public callParamsArray;
     mapping(address => bool) public isValidPromise;
+    mapping(bytes32 => Bid) public winningBids;
+
+    // payloadId => asyncId
+    mapping(bytes32 => bytes32) public payloadIdToBatchHash;
+    // asyncId => PayloadBatch
+    mapping(bytes32 => PayloadBatch) public payloadBatches;
+    // asyncId => totalPayloadsRemaining
+    mapping(bytes32 => uint256) public totalPayloadsRemaining;
+    // asyncId => PayloadDetails[]
+    mapping(bytes32 => PayloadDetails[]) public payloadDetailsArrays;
 
     error InvalidPromise();
 
@@ -27,8 +39,13 @@ abstract contract QueueAsync is IAuctionHouse, AddressResolverUtil {
     }
 
     constructor(
-        address _addressResolver
-    ) AddressResolverUtil(_addressResolver) {}
+        address _addressResolver,
+        address _auctionManager,
+        address _feesManager
+    ) AddressResolverUtil(_addressResolver) {
+        auctionManager = _auctionManager;
+        feesManager = _feesManager;
+    }
 
     /// @notice Clears the call parameters array
     function clearQueue() public {
@@ -42,12 +59,14 @@ abstract contract QueueAsync is IAuctionHouse, AddressResolverUtil {
     /// @param callType_ The call type
     /// @param payload_ The payload
     function queue(
+        bool isSequential_,
         uint32 chainSlug_,
         address target_,
         bytes32 asyncPromiseOrId_,
         CallType callType_,
         bytes memory payload_
     ) external {
+        // todo: sb related details
         callParamsArray.push(
             CallParams({
                 callType: callType_,
@@ -55,7 +74,8 @@ abstract contract QueueAsync is IAuctionHouse, AddressResolverUtil {
                 chainSlug: chainSlug_,
                 target: target_,
                 payload: payload_,
-                gasLimit: 10000000
+                gasLimit: 10000000,
+                isSequential: isSequential_
             })
         );
     }
@@ -118,10 +138,12 @@ abstract contract QueueAsync is IAuctionHouse, AddressResolverUtil {
                 executionGasLimit: params.gasLimit == 0
                     ? 1_000_000
                     : params.gasLimit,
-                next: next
+                next: next,
+                isSequential: params.isSequential
             });
     }
 
+    // todo: change it to call to gateway instead
     /// @notice Sets the address for a deployed contract
     /// @param data_ The data
     /// @param returnData_ The return data
