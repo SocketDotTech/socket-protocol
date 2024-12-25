@@ -16,3 +16,5 @@ error TimeoutDelayTooLarge();
 error TimeoutAlreadyResolved();
 error ResolvingTimeoutTooEarly();
 error AmountOutsideLimit();
+error FeesAlreadyPaid();
+error NotAuctionManager();
