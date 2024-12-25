@@ -9,7 +9,7 @@ import "../interfaces/IPromise.sol";
 
 import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest} from "../common/Structs.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../common/Constants.sol";
-import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly} from "../common/Errors.sol";
+import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly, CallFailed} from "../common/Errors.sol";
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
 contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
@@ -105,7 +105,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
         if (delayInSeconds_ > maxTimeoutDelayInSeconds)
             revert TimeoutDelayTooLarge();
 
-        _consumeLimit(msg.sender, SCHEDULE, 1);
+        _consumeLimit(msg.sender, SCHEDULE);
         uint256 executeAt = block.timestamp + delayInSeconds_;
         bytes32 timeoutId = _encodeTimeoutId(timeoutCounter++);
         timeoutRequests[timeoutId] = TimeoutRequest(
@@ -131,7 +131,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
         (bool success, ) = address(timeoutRequest.target).call(
             timeoutRequest.payload
         );
-        require(success, "Call failed");
+        if (!success) revert CallFailed();
         timeoutRequest.isResolved = true;
         timeoutRequest.executedAt = block.timestamp;
         emit TimeoutResolved(
@@ -159,7 +159,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
     ) external returns (bytes32 payloadId, bytes32 root) {
         // The app gateway is the caller of this function
         address appGateway = msg.sender;
-        _consumeLimit(appGateway, FINALIZE, 1);
+        _consumeLimit(appGateway, FINALIZE);
 
         // Verify that the app gateway is properly configured for this chain and target
         _verifyConnections(
@@ -221,7 +221,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
         address[] memory asyncPromises,
         bytes memory payload
     ) public returns (bytes32 payloadId) {
-        _consumeLimit(msg.sender, QUERY, 1);
+        _consumeLimit(msg.sender, QUERY);
         // Generate unique payload ID from query counter
         payloadId = bytes32(queryCounter++);
 
