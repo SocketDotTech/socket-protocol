@@ -7,7 +7,7 @@ import "../interfaces/IAppGateway.sol";
 import "../interfaces/IWatcherPrecompile.sol";
 import "../interfaces/IPromise.sol";
 
-import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest} from "../common/Structs.sol";
+import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../common/Structs.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../common/Constants.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../common/Errors.sol";
 /// @title WatcherPrecompile
@@ -308,24 +308,27 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
     // ================== On-Chain Inbox ==================
 
     function callAppGateway(
-        bytes32 callId,
-        uint32 chainSlug,
-        address plug,
-        address appGateway,
-        bytes32 params,
-        bytes calldata payload
+        CallFromInboxParams[] calldata params_
     ) external onlyOwner {
-        if (appGatewayCalled[callId]) revert AppGatewayAlreadyCalled();
-        appGatewayCalled[callId] = true;
-        IAppGateway(appGateway).callFromInbox(chainSlug, plug, payload, params);
-        emit CalledAppGateway(
-            callId,
-            chainSlug,
-            plug,
-            appGateway,
-            params,
-            payload
-        );
+        for (uint256 i = 0; i < params_.length; i++) {
+            if (appGatewayCalled[params_[i].callId])
+                revert AppGatewayAlreadyCalled();
+            appGatewayCalled[params_[i].callId] = true;
+            IAppGateway(params_[i].appGateway).callFromInbox(
+                params_[i].chainSlug,
+                params_[i].plug,
+                params_[i].payload,
+                params_[i].params
+            );
+            emit CalledAppGateway(
+                params_[i].callId,
+                params_[i].chainSlug,
+                params_[i].plug,
+                params_[i].appGateway,
+                params_[i].params,
+                params_[i].payload
+            );
+        }
     }
 
     // ================== Helper functions ==================
