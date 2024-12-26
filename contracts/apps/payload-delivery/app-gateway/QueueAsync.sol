@@ -19,16 +19,15 @@ abstract contract QueueAsync is AddressResolverUtil {
 
     CallParams[] public callParamsArray;
     mapping(address => bool) public isValidPromise;
-    mapping(bytes32 => Bid) public winningBids;
 
     // payloadId => asyncId
     mapping(bytes32 => bytes32) public payloadIdToBatchHash;
     // asyncId => PayloadBatch
     mapping(bytes32 => PayloadBatch) public payloadBatches;
-    // asyncId => totalPayloadsRemaining
-    mapping(bytes32 => uint256) public totalPayloadsRemaining;
+
+    // todo: merge all async id vars in one struct
     // asyncId => PayloadDetails[]
-    mapping(bytes32 => PayloadDetails[]) public payloadDetailsArrays;
+    mapping(bytes32 => PayloadDetails[]) public payloadBatchDetails;
 
     error InvalidPromise();
 
@@ -132,7 +131,11 @@ abstract contract QueueAsync is AddressResolverUtil {
             bytes32 salt = keccak256(
                 abi.encode(msg.sender, params.chainSlug, saltCounter++)
             );
-            payload = abi.encode(params.payload, salt);
+            payload = abi.encodeWithSelector(
+                IContractFactoryPlug.deployContract.selector,
+                params.payload,
+                salt
+            );
         }
 
         return

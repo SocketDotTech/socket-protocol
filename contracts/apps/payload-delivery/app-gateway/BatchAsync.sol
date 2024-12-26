@@ -49,11 +49,6 @@ abstract contract BatchAsync is QueueAsync {
         PayloadDetails[]
             memory payloadDetailsArray = createPayloadDetailsArray();
 
-        // Check if batch contains only READ calls
-        if (_isReadOnlyBatch(payloadDetailsArray)) {
-            return _processReadOnlyBatch(payloadDetailsArray);
-        }
-
         // Default flow for other cases (including mixed read/write)
         return
             deliverPayload(payloadDetailsArray, feesData_, auctionEndDelayMS_);
@@ -75,7 +70,7 @@ abstract contract BatchAsync is QueueAsync {
     function deliverPayload(
         PayloadDetails[] memory payloadDetails_,
         FeesData memory feesData_,
-        uint256 auctionEndDelayMS_
+        uint256 auctionEndDelay_
     ) internal returns (bytes32) {
         address forwarderAppGateway = msg.sender;
         bytes32 asyncId = getCurrentAsyncId();
@@ -122,6 +117,10 @@ abstract contract BatchAsync is QueueAsync {
             );
         }
 
+        if (readEndIndex == payloadDetails_.length) {
+            return asyncId;
+        }
+
         // Process remaining payloads normally
         for (uint256 i = readEndIndex; i < payloadDetails_.length; i++) {
             if (payloadDetails_[i].payload.length > 24.5 * 1024)
@@ -134,8 +133,6 @@ abstract contract BatchAsync is QueueAsync {
                     address(this),
                     payloadDetails_[i].chainSlug
                 );
-
-                // todo: encode for deployContract
             } else if (payloadDetails_[i].callType == CallType.WRITE) {
                 // todo: if need to remove this
                 forwarderAppGateway = IAddressResolver(addressResolver)
@@ -153,29 +150,31 @@ abstract contract BatchAsync is QueueAsync {
                 this.callback.selector,
                 abi.encode(asyncId)
             );
-            
-            // todo: rename payloadDetailsArrays to payloadDetails_
-            payloadDetailsArrays[asyncId].push(payloadDetails_[i]);
+
+            payloadBatchDetails[asyncId].push(payloadDetails_[i]);
         }
 
-        // todo: merge all async id vars in one struct
-        totalPayloadsRemaining[asyncId] = payloadDetails_.length - readEndIndex;
         payloadBatches[asyncId] = PayloadBatch({
             appGateway: forwarderAppGateway,
             feesData: feesData_,
             currentPayloadIndex: readEndIndex,
-            auctionEndDelayMS: auctionEndDelayMS_,
-            isBatchCancelled: false
+            auctionEndDelaySeconds: auctionEndDelay_,
+            winningBid: Bid({
+                fee: 0,
+                transmitter: address(0),
+                extraData: new bytes(0)
+            }),
+            isBatchCancelled: false,
+            totalPayloadsRemaining: payloadDetails_.length - readEndIndex
         });
 
         IAuctionManager(auctionManager).startAuction(asyncId);
-
         emit PayloadSubmitted(
             asyncId,
             forwarderAppGateway,
             payloadDetails_,
             feesData_,
-            auctionEndDelayMS_
+            auctionEndDelay_
         );
         return asyncId;
     }
@@ -214,45 +213,7 @@ abstract contract BatchAsync is QueueAsync {
         bytes32 asyncId_,
         uint256 index_
     ) external view returns (PayloadDetails memory) {
-        return payloadDetailsArrays[asyncId_][index_];
-    }
-
-    function _isReadOnlyBatch(
-        PayloadDetails[] memory payloadDetails_
-    ) internal pure returns (bool) {
-        for (uint256 i = 0; i < payloadDetails_.length; i++) {
-            if (payloadDetails_[i].callType != CallType.READ) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    function _processReadOnlyBatch(
-        PayloadDetails[] memory payloadDetails_
-    ) internal returns (bytes32) {
-        bytes32 asyncId = getCurrentAsyncId();
-        asyncCounter++;
-
-        // Process all reads in a loop without waiting for callbacks
-        for (uint256 i = 0; i < payloadDetails_.length; i++) {
-            bytes32 payloadId = watcherPrecompile().query(
-                payloadDetails_[i].chainSlug,
-                payloadDetails_[i].target,
-                payloadDetails_[i].next,
-                payloadDetails_[i].payload
-            );
-            payloadIdToBatchHash[payloadId] = asyncId;
-
-            emit PayloadAsyncRequested(
-                asyncId,
-                payloadId,
-                bytes32(0), // No root for read-only queries
-                payloadDetails_[i]
-            );
-        }
-
-        return asyncId;
+        return payloadBatchDetails[asyncId_][index_];
     }
 
     /// @notice Withdraws funds to a specified receiver

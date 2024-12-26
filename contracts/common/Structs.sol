@@ -48,6 +48,8 @@ struct PayloadBatch {
     FeesData feesData;
     uint256 currentPayloadIndex;
     uint256 auctionEndDelaySeconds;
+    uint256 totalPayloadsRemaining;
+    Bid winningBid;
     bool isBatchCancelled;
 }
 
