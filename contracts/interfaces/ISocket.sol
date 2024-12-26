@@ -27,16 +27,16 @@ interface ISocket {
     /**
      * @notice emits the message details when a new message arrives at outbound
      * @param callId call id
-     * @param srcChainSlug local chain slug
-     * @param srcPlug local plug address
+     * @param chainSlug local chain slug
+     * @param plug local plug address
      * @param appGateway appGateway address to trigger the call
      * @param params params, for specifying details like fee pool chain, fee pool token and max fees if required
      * @param payload the data which will be used by inbound at remote
      */
     event CalledAppGateway(
         bytes32 callId,
-        uint32 srcChainSlug,
-        address srcPlug,
+        uint32 chainSlug,
+        address plug,
         address appGateway,
         bytes32 params,
         bytes payload
