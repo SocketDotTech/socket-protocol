@@ -307,7 +307,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
 
     // ================== On-Chain Inbox ==================
 
-    function callAppGateway(
+    function callAppGateways(
         CallFromInboxParams[] calldata params_
     ) external onlyOwner {
         for (uint256 i = 0; i < params_.length; i++) {
