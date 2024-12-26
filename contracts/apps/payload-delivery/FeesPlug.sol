@@ -8,9 +8,9 @@ import {ETH_ADDRESS} from "../../common/Constants.sol";
 
 /// @title FeesManager
 /// @notice Abstract contract for managing fees
-contract FeesManager is PlugBase, Ownable {
+contract FeesPlug is PlugBase, Ownable {
     mapping(address => mapping(address => uint256)) public balanceOf;
-    mapping(uint256 => bool) public feesRedeemed;
+    mapping(bytes32 => bool) public feesRedeemed;
 
     error FeesAlreadyPaid();
 
@@ -25,14 +25,14 @@ contract FeesManager is PlugBase, Ownable {
         address feeToken,
         uint256 fee,
         address transmitter,
-        uint256 feesCounter
-    ) internal returns (bytes memory) {
-        if (feesRedeemed[feesCounter]) revert FeesAlreadyPaid();
-        feesRedeemed[feesCounter] = true;
+        bytes32 feesId
+    ) external onlySocket returns (bytes memory) {
+        if (feesRedeemed[feesId]) revert FeesAlreadyPaid();
+        feesRedeemed[feesId] = true;
 
         require(
             balanceOf[appGateway][feeToken] >= fee,
-            "PayloadDeliveryPlug: insufficient balance"
+            "FeesPlug: Insufficient Balance for Fees"
         );
         balanceOf[appGateway][feeToken] -= fee;
         _transferTokens(feeToken, fee, transmitter);
@@ -43,10 +43,10 @@ contract FeesManager is PlugBase, Ownable {
         address token,
         uint256 amount,
         address receiver
-    ) internal returns (bytes memory) {
+    ) external onlySocket returns (bytes memory) {
         require(
             balanceOf[appGateway][token] >= amount,
-            "PayloadDeliveryPlug: insufficient balance"
+            "FeesPlug: Insufficient Balance for Withdrawal"
         );
         balanceOf[appGateway][token] -= amount;
         _transferTokens(token, amount, receiver);
@@ -63,7 +63,7 @@ contract FeesManager is PlugBase, Ownable {
         address appGateway_
     ) external payable {
         if (token == ETH_ADDRESS) {
-            require(msg.value == amount, "Fees Manager: invalid depositamount");
+            require(msg.value == amount, "FeesPlug: Invalid Deposit Amount");
         } else {
             SafeTransferLib.safeTransferFrom(
                 ERC20(token),

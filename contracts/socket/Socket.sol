@@ -103,7 +103,7 @@ contract Socket is SocketBase {
 
         // verify payload was part of the packet and
         // authenticated by respective switchboard
-        _verify(root, payloadId_, switchboard__);
+        _verify(root, payloadId_, ISwitchboard(switchboard));
 
         // execute payload
         return _execute(target_, payloadId_, executionGasLimit_, payload_);

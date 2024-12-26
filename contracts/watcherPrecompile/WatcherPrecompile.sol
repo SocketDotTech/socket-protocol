@@ -2,15 +2,17 @@
 pragma solidity ^0.8.13;
 
 import "./WatcherPrecompileConfig.sol";
+import "./WatcherPrecompileLimits.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IWatcherPrecompile.sol";
 import "../interfaces/IPromise.sol";
 
-import {PayloadRootParams, AsyncRequest, FinalizeParams} from "../common/Structs.sol";
-import {TimeoutDelayTooLarge} from "../common/Errors.sol";
+import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest} from "../common/Structs.sol";
+import {QUERY, FINALIZE, SCHEDULE} from "../common/Constants.sol";
+import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly, CallFailed} from "../common/Errors.sol";
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
-contract WatcherPrecompile is WatcherPrecompileConfig {
+contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
     uint256 public maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
     /// @notice Counter for tracking query requests
     uint256 public queryCounter;
@@ -21,7 +23,9 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
     /// @notice Mapping to store async requests
     /// @dev payloadId => AsyncRequest struct
     mapping(bytes32 => AsyncRequest) public asyncRequests;
-
+    /// @notice Mapping to store timeout requests
+    /// @dev timeoutId => TimeoutRequest struct
+    mapping(bytes32 => TimeoutRequest) public timeoutRequests;
     /// @notice Mapping to store watcher signatures
     /// @dev payloadId => signature bytes
     mapping(bytes32 => bytes) public watcherSignatures;
@@ -84,7 +88,10 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
 
     /// @notice Contract constructor
     /// @param _owner Address of the contract owner
-    constructor(address _owner) Ownable(_owner) {}
+    constructor(
+        address _owner,
+        address addressResolver_
+    ) Ownable(_owner) WatcherPrecompileLimits(addressResolver_) {}
 
     // ================== Timeout functions ==================
 
@@ -97,24 +104,42 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
     ) external {
         if (delayInSeconds_ > maxTimeoutDelayInSeconds)
             revert TimeoutDelayTooLarge();
-        uint256 executeAt = block.timestamp + delayInSeconds_ * 1000;
+
+        _consumeLimit(msg.sender, SCHEDULE);
+        uint256 executeAt = block.timestamp + delayInSeconds_;
         bytes32 timeoutId = _encodeTimeoutId(timeoutCounter++);
+        timeoutRequests[timeoutId] = TimeoutRequest(
+            timeoutId,
+            msg.sender,
+            payload_,
+            delayInSeconds_,
+            executeAt,
+            0,
+            false
+        );
         emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);
     }
 
-    /// @notice Ends the timeout and calls the target address with the callback payload
+    /// @notice Ends the timeouts and calls the target address with the callback payload
     /// @param timeoutId The unique identifier for the timeout
-    /// @param target_ The target address for execution
-    /// @param payload_ The payload to execute
     /// @dev Only callable by the contract owner
-    function resolveTimeout(
-        bytes32 timeoutId,
-        address target_,
-        bytes calldata payload_
-    ) external onlyOwner {
-        (bool success, ) = address(target_).call(payload_);
-        require(success, "Call failed");
-        emit TimeoutResolved(timeoutId, target_, payload_, block.timestamp);
+    function resolveTimeout(bytes32 timeoutId) external onlyOwner {
+        TimeoutRequest storage timeoutRequest = timeoutRequests[timeoutId];
+        if (timeoutRequest.isResolved) revert TimeoutAlreadyResolved();
+        if (timeoutRequest.executeAt > block.timestamp)
+            revert ResolvingTimeoutTooEarly();
+        (bool success, ) = address(timeoutRequest.target).call(
+            timeoutRequest.payload
+        );
+        if (!success) revert CallFailed();
+        timeoutRequest.isResolved = true;
+        timeoutRequest.executedAt = block.timestamp;
+        emit TimeoutResolved(
+            timeoutId,
+            timeoutRequest.target,
+            timeoutRequest.payload,
+            block.timestamp
+        );
     }
 
     function setMaxTimeoutDelayInSeconds(
@@ -134,6 +159,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
     ) external returns (bytes32 payloadId, bytes32 root) {
         // The app gateway is the caller of this function
         address appGateway = msg.sender;
+        _consumeLimit(appGateway, FINALIZE);
 
         // Verify that the app gateway is properly configured for this chain and target
         _verifyConnections(
@@ -195,6 +221,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         address[] memory asyncPromises,
         bytes memory payload
     ) public returns (bytes32 payloadId) {
+        _consumeLimit(msg.sender, QUERY);
         // Generate unique payload ID from query counter
         payloadId = bytes32(queryCounter++);
 
@@ -289,7 +316,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         uint32 chainSlug_,
         address plug_,
         uint256 counter_
-    ) internal pure returns (bytes32) {
+    ) internal view returns (bytes32) {
         if (chainSlug_ == 0) revert InvalidChainSlug();
         (, address switchboard) = getPlugConfigs(chainSlug_, plug_);
         // Encode payload ID by bit-shifting and combining:
@@ -308,5 +335,11 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         // watcher address (160 bits) | counter (64 bits)
         return
             bytes32((uint256(uint160(address(this))) << 64) | timeoutCounter_);
+    }
+
+    function updateLimitParams(
+        UpdateLimitParams[] calldata updates
+    ) external onlyOwner {
+        _updateLimitParams(updates);
     }
 }

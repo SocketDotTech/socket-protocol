@@ -92,13 +92,7 @@ interface IWatcherPrecompile {
 
     /// @notice Resolves a timeout by executing the payload
     /// @param timeoutId_ The unique identifier for the timeout
-    /// @param target_ The target address for execution
-    /// @param payload_ The payload to execute
-    function resolveTimeout(
-        bytes32 timeoutId_,
-        address target_,
-        bytes calldata payload_
-    ) external;
+    function resolveTimeout(bytes32 timeoutId_) external;
     /// @notice Calculates the root hash for payload parameters
     /// @param params_ The payload parameters used to calculate the root
     /// @return root The calculated merkle root hash
@@ -114,4 +108,8 @@ interface IWatcherPrecompile {
         address appGateway_,
         uint32 chainSlug_
     ) external view returns (address);
+
+    function setMaxTimeoutDelayInSeconds(
+        uint256 maxTimeoutDelayInSeconds_
+    ) external;
 }

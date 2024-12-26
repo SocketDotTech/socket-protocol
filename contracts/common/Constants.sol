@@ -13,6 +13,9 @@ bytes32 constant DEPLOY = keccak256("DEPLOY");
 bytes32 constant WITHDRAW = keccak256("WITHDRAW");
 bytes32 constant CONFIGURE = keccak256("CONFIGURE");
 bytes32 constant CONNECT = keccak256("CONNECT");
+bytes32 constant QUERY = keccak256("QUERY");
+bytes32 constant FINALIZE = keccak256("FINALIZE");
+bytes32 constant SCHEDULE = keccak256("SCHEDULE");
 
 uint256 constant DEPLOY_GAS_LIMIT = 5_000_000;
 uint256 constant CONFIGURE_GAS_LIMIT = 1_000_000;

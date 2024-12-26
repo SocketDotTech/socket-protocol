@@ -268,22 +268,14 @@ abstract contract BatchAsync is QueueAsync {
         address receiver_,
         FeesData memory feesData_
     ) external {
-        address appGateway_ = msg.sender;
-        // Create payload for pool contract
-        bytes memory payload = abi.encode(
-            WITHDRAW,
-            abi.encode(appGateway_, token_, amount_, receiver_)
-        );
         PayloadDetails[] memory payloadDetailsArray = new PayloadDetails[](1);
-        payloadDetailsArray[0] = PayloadDetails({
-            chainSlug: chainSlug_,
-            target: getPayloadDeliveryPlugAddress(chainSlug_),
-            payload: payload,
-            callType: CallType.WITHDRAW,
-            executionGasLimit: feeCollectionGasLimit[chainSlug_],
-            next: new address[](0)
-        });
-
+        payloadDetailsArray[0] = IFeesManager(feesManager).getWithdrawToPayload(
+            msg.sender,
+            chainSlug_,
+            token_,
+            amount_,
+            receiver_
+        );
         deliverPayload(payloadDetailsArray, feesData_, 0);
     }
 }
