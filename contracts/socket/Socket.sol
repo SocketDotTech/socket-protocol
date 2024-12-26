@@ -66,28 +66,25 @@ contract Socket is SocketBase {
 
     /**
      * @notice To send message to a connected remote chain. Should only be called by a plug.
-     * @param appGateway the appGateway address
-     * @param params a 32 bytes param to add details for execution, for eg: fees to be paid for execution
      * @param payload bytes to be delivered to the Plug on the siblingChainSlug_
+     * @param params a 32 bytes param to add details for execution, for eg: fees to be paid for execution
      */
     function callAppGateway(
-        address appGateway,
-        bytes32 params,
-        bytes calldata payload
+        bytes calldata payload,
+        bytes32 params
     ) external returns (bytes32 callId) {
         PlugConfig memory plugConfig = _plugConfigs[msg.sender];
 
         // if no sibling plug is found for the given chain slug, revert
         if (plugConfig.appGateway == address(0)) revert PlugDisconnected();
-        if (plugConfig.appGateway != appGateway) revert InvalidAppGateway();
 
         // creates a unique ID for the message
-        callId = _encodeCallId(appGateway);
+        callId = _encodeCallId(plugConfig.appGateway);
         emit CalledAppGateway(
             callId,
             chainSlug,
             msg.sender,
-            appGateway,
+            plugConfig.appGateway,
             params,
             payload
         );

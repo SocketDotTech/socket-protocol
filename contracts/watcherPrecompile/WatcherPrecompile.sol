@@ -9,7 +9,7 @@ import "../interfaces/IPromise.sol";
 
 import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../common/Structs.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../common/Constants.sol";
-import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../common/Errors.sol";
+import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../common/Errors.sol";
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
 contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
@@ -313,6 +313,11 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
         for (uint256 i = 0; i < params_.length; i++) {
             if (appGatewayCalled[params_[i].callId])
                 revert AppGatewayAlreadyCalled();
+            if (
+                !isValidInboxCaller[params_[i].appGateway][
+                    params_[i].chainSlug
+                ][params_[i].plug]
+            ) revert InvalidInboxCaller();
             appGatewayCalled[params_[i].callId] = true;
             IAppGateway(params_[i].appGateway).callFromInbox(
                 params_[i].chainSlug,

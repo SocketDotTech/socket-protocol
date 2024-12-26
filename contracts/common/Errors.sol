@@ -22,3 +22,4 @@ error CallFailed();
 error PlugDisconnected();
 error InvalidAppGateway();
 error AppGatewayAlreadyCalled();
+error InvalidInboxCaller();
