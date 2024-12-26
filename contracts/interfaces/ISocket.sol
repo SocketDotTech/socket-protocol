@@ -25,11 +25,42 @@ interface ISocket {
     event PlugConnected(address plug, address appGateway, address switchboard);
 
     /**
+     * @notice emits the message details when a new message arrives at outbound
+     * @param callId call id
+     * @param srcChainSlug local chain slug
+     * @param srcPlug local plug address
+     * @param appGateway appGateway address to trigger the call
+     * @param params params, for specifying details like fee pool chain, fee pool token and max fees if required
+     * @param payload the data which will be used by inbound at remote
+     */
+    event CalledAppGateway(
+        bytes32 callId,
+        uint32 srcChainSlug,
+        address srcPlug,
+        address appGateway,
+        bytes32 params,
+        bytes payload
+    );
+
+    /**
+     * @notice To call the appGateway on offChainVM. Should only be called by a plug.
+     * @param appGateway the appGateway address
+     * @param params a 32 bytes param to add details for execution.
+     * @param callData bytes to be delivered to the Plug on offChainVM
+     */
+    function callAppGateway(
+        address appGateway,
+        bytes32 params,
+        bytes calldata callData
+    ) external returns (bytes32 callId);
+
+    /**
      * @notice executes a payload
      */
     function execute(
         bytes32 payloadId_,
         address appGateway_,
+        address target_,
         uint256 executionGasLimit_,
         bytes memory transmitterSignature_,
         bytes memory payload_

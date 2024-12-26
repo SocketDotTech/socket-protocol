@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "../interfaces/IPlug.sol";
 import "./SocketBase.sol";
+import {PlugDisconnected, InvalidAppGateway} from "../common/Errors.sol";
 
 /**
  * @title SocketDst
@@ -34,7 +35,6 @@ contract Socket is SocketBase {
     /**
      * @dev Error emitted when source slugs deduced from packet id and msg id don't match
      */
-    error InvalidAppGateway();
     /**
      * @dev Error emitted when less gas limit is provided for execution than expected
      */
@@ -44,6 +44,7 @@ contract Socket is SocketBase {
     ////////////////////////////////////////////////////////////
     ////////////////////// State Vars //////////////////////////
     ////////////////////////////////////////////////////////////
+    uint64 public callCounter;
 
     /**
      * @dev keeps track of whether a payload has been executed or not using payload id
@@ -62,6 +63,35 @@ contract Socket is SocketBase {
     ////////////////////////////////////////////////////////
     ////////////////////// OPERATIONS //////////////////////////
     ////////////////////////////////////////////////////////
+
+    /**
+     * @notice To send message to a connected remote chain. Should only be called by a plug.
+     * @param appGateway the appGateway address
+     * @param params a 32 bytes param to add details for execution, for eg: fees to be paid for execution
+     * @param payload bytes to be delivered to the Plug on the siblingChainSlug_
+     */
+    function callAppGateway(
+        address appGateway,
+        bytes32 params,
+        bytes calldata payload
+    ) external returns (bytes32 callId) {
+        PlugConfig memory plugConfig = _plugConfigs[msg.sender];
+
+        // if no sibling plug is found for the given chain slug, revert
+        if (plugConfig.appGateway == address(0)) revert PlugDisconnected();
+        if (plugConfig.appGateway != appGateway) revert InvalidAppGateway();
+
+        // creates a unique ID for the message
+        callId = _encodeCallId(appGateway);
+        emit CalledAppGateway(
+            callId,
+            chainSlug,
+            msg.sender,
+            appGateway,
+            params,
+            payload
+        );
+    }
 
     /**
      * @notice Executes a payload that has been delivered by transmitters and authenticated by switchboards
@@ -144,9 +174,9 @@ contract Socket is SocketBase {
     }
 
     /**
-     * @dev Decodes the plug address from a given payload id.
-     * @param id_ The ID of the msg to decode the plug from.
-     * @return plug_ The address of sibling plug decoded from the payload ID.
+     * @dev Decodes the switchboard address from a given payload id.
+     * @param id_ The ID of the msg to decode the switchboard from.
+     * @return switchboard_ The address of switchboard decoded from the payload ID.
      */
     function _decodeSwitchboard(
         bytes32 id_
@@ -163,5 +193,17 @@ contract Socket is SocketBase {
         bytes32 id_
     ) internal pure returns (uint32 chainSlug_) {
         chainSlug_ = uint32(uint256(id_) >> 224);
+    }
+
+    // Packs the local plug, local chain slug, remote chain slug and nonce
+    // callCount++ will take care of call id overflow as well
+    // callId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
+    function _encodeCallId(address appGateway_) internal returns (bytes32) {
+        return
+            bytes32(
+                (uint256(chainSlug) << 224) |
+                    (uint256(uint160(appGateway_)) << 64) |
+                    callCounter++
+            );
     }
 }

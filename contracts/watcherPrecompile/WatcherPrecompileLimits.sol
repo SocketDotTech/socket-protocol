@@ -3,7 +3,6 @@ pragma solidity 0.8.13;
 
 import {Gauge} from "../utils/Gauge.sol";
 import {LimitParams, UpdateLimitParams} from "../common/Structs.sol";
-import {AmountOutsideLimit} from "../common/Errors.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
     // appGateway => receivingLimitParams

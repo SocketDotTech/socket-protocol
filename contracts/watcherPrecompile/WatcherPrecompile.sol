@@ -9,7 +9,7 @@ import "../interfaces/IPromise.sol";
 
 import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest} from "../common/Structs.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../common/Constants.sol";
-import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly, CallFailed} from "../common/Errors.sol";
+import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../common/Errors.sol";
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
 contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
@@ -30,8 +30,21 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
     /// @dev payloadId => signature bytes
     mapping(bytes32 => bytes) public watcherSignatures;
 
+    /// @notice Mapping to store if appGateway has been called with trigger from on-chain Inbox
+    /// @dev callId => bool
+    mapping(bytes32 => bool) public appGatewayCalled;
+
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
+
+    event CalledAppGateway(
+        bytes32 callId,
+        uint32 chainSlug,
+        address plug,
+        address appGateway,
+        bytes32 params,
+        bytes payload
+    );
 
     /// @notice Emitted when a new query is requested
     /// @param chainSlug The identifier of the destination chain
@@ -291,6 +304,31 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
             )
         );
     }
+
+    // ================== On-Chain Inbox ==================
+
+    function callAppGateway(
+        bytes32 callId,
+        uint32 chainSlug,
+        address plug,
+        address appGateway,
+        bytes32 params,
+        bytes calldata payload
+    ) external onlyOwner {
+        if (appGatewayCalled[callId]) revert AppGatewayAlreadyCalled();
+        appGatewayCalled[callId] = true;
+        IAppGateway(appGateway).callFromInbox(chainSlug, plug, payload, params);
+        emit CalledAppGateway(
+            callId,
+            chainSlug,
+            plug,
+            appGateway,
+            params,
+            payload
+        );
+    }
+
+    // ================== Helper functions ==================
 
     /// @notice Verifies the connection between chain slug, target, and app gateway
     /// @param chainSlug_ The identifier of the chain
