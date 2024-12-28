@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.7.0 <0.9.0;
 
-import "socket-protocol/contracts/utils/Ownable.sol";
+import "../../utils/Ownable.sol";
 
 contract Counter is Ownable(msg.sender) {
     address public socket;

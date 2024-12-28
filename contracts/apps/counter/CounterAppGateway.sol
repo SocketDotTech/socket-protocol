@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.7.0 <0.9.0;
 
-import "socket-protocol/contracts/base/AppGatewayBase.sol";
+import "../../base/AppGatewayBase.sol";
 import "./Counter.sol";
 
 contract CounterAppGateway is AppGatewayBase {

@@ -2,7 +2,7 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 import "./Counter.sol";
-import "socket-protocol/contracts/base/AppDeployerBase.sol";
+import "../../base/AppDeployerBase.sol";
 
 contract CounterDeployer is AppDeployerBase {
     bytes32 public counter = _createContractId("counter");
