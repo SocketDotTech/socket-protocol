@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {CounterDeployer} from "../../contracts/apps//counter/CounterDeployer.sol";
+import {CounterDeployer} from "../../contracts/apps/counter/CounterDeployer.sol";
 import {Counter} from "../../contracts/apps//counter/Counter.sol";
 
 contract CheckCounters is Script {

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
-import {SuperTokenApp} from "../../contracts/apps/super-token/app-gateway/SuperTokenApp.sol";
+import {SuperTokenAppGateway} from "../../contracts/apps/super-token/SuperTokenAppGateway.sol";
 
 contract Bridge is Script {
     struct UserOrder {
@@ -24,9 +24,7 @@ contract Bridge is Script {
             deadline: block.timestamp + 1 days
         });
 
-        SuperTokenApp gateway = SuperTokenApp(
-            0xb1F4CbFCE786aA8B553796Fb06c04Dd461967A16
-        );
+        SuperTokenAppGateway gateway = SuperTokenAppGateway(0xb1F4CbFCE786aA8B553796Fb06c04Dd461967A16);
         gateway.bridge(abi.encode(order));
     }
 }

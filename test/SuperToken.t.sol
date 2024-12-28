@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {SuperTokenDeployer} from "../contracts/apps/super-token/app-gateway/SuperTokenDeployer.sol";
-import {SuperTokenApp} from "../contracts/apps/super-token/app-gateway/SuperTokenApp.sol";
+import {SuperTokenDeployer} from "../contracts/apps/super-token/SuperTokenDeployer.sol";
+import {SuperTokenAppGateway} from "../contracts/apps/super-token/SuperTokenAppGateway.sol";
 import "./AuctionHouse.sol";
 
 contract SuperTokenTest is AuctionHouseTest {
     struct AppContracts {
-        SuperTokenApp superTokenApp;
+        SuperTokenAppGateway superTokenApp;
         SuperTokenDeployer superTokenDeployer;
         bytes32 superToken;
         bytes32 limitHook;
@@ -15,7 +15,7 @@ contract SuperTokenTest is AuctionHouseTest {
 
     AppContracts appContracts;
     uint256 srcAmount = 0.01 ether;
-    SuperTokenApp.UserOrder userOrder;
+    SuperTokenAppGateway.UserOrder userOrder;
 
     event BatchCancelled(bytes32 indexed asyncId);
     event FinalizeRequested(bytes32 indexed payloadId, AsyncRequest asyncRequest);
@@ -42,8 +42,8 @@ contract SuperTokenTest is AuctionHouseTest {
             1000000000 ether,
             createFeesData(maxFees)
         );
-        SuperTokenApp superTokenApp =
-            new SuperTokenApp(address(addressResolver), address(superTokenDeployer), createFeesData(maxFees));
+        SuperTokenAppGateway superTokenApp =
+            new SuperTokenAppGateway(address(addressResolver), address(superTokenDeployer), createFeesData(maxFees));
 
         appContracts = AppContracts({
             superTokenApp: superTokenApp,
@@ -206,7 +206,7 @@ contract SuperTokenTest is AuctionHouseTest {
     function _bridge() internal returns (bytes32, bytes32[] memory, PayloadDetails[] memory) {
         beforeBridge();
 
-        userOrder = SuperTokenApp.UserOrder({
+        userOrder = SuperTokenAppGateway.UserOrder({
             srcToken: appContracts.superTokenDeployer.forwarderAddresses(appContracts.superToken, arbChainSlug),
             dstToken: appContracts.superTokenDeployer.forwarderAddresses(appContracts.superToken, optChainSlug),
             user: owner, // 2 account anvil
