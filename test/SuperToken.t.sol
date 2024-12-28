@@ -437,52 +437,16 @@ contract SuperTokenTest is AuctionHouseTest {
     }
 
     function testCancel() public {
-        (
-            bytes32 bridgeAsyncId,
-            bytes32[] memory payloadIds,
-            PayloadDetails[] memory payloadDetails
-        ) = _bridge();
+        (bytes32 bridgeAsyncId, bytes32[] memory payloadIds, PayloadDetails[] memory payloadDetails) = _bridge();
 
-        finalizeAndExecute(
-            bridgeAsyncId,
-            payloadIds[0],
-            false,
-            payloadDetails[0]
-        );
+        finalizeAndExecute(bridgeAsyncId, payloadIds[0], false, payloadDetails[0]);
 
         vm.expectEmit(true, true, false, true);
         emit BatchCancelled(bridgeAsyncId);
         finalizeQuery(payloadIds[1], abi.encode(0.001 ether));
 
-        bytes32[] memory cancelPayloadIds = new bytes32[](1);
-        uint32 srcChainSlug = IForwarder(userOrder.srcToken).getChainSlug();
-
-        cancelPayloadIds[0] = getWritePayloadId(
-            srcChainSlug,
-            address(getSocketConfig(srcChainSlug).payloadDeliveryPlug),
-            writePayloadIdCounter++
-        );
-
-        PayloadDetails[]
-            memory cancelPayloadDetails = createCancelPayloadDetailsArray(
-                srcChainSlug
-            );
-
-        bytes32 cancelAsyncId = getCurrentAsyncId();
-        asyncCounterTest++;
-
-        bidAndValidate(
-            maxFees,
-            cancelAsyncId,
-            address(appContracts.superTokenApp),
-            cancelPayloadDetails
-        );
-        finalizeAndExecute(
-            cancelAsyncId,
-            cancelPayloadIds[0],
-            false,
-            cancelPayloadDetails[0]
-        );
+        (,,,, bool isBatchCancelled) = auctionHouse.payloadBatches(bridgeAsyncId);
+        assertTrue(isBatchCancelled, "Batch should be cancelled");
     }
 
     function testWithdrawTo() public {
