@@ -16,10 +16,7 @@ contract LimitHook is Ownable {
         mintLimit = _mintLimit;
     }
 
-    function setLimits(
-        uint256 _burnLimit,
-        uint256 _mintLimit
-    ) external onlyOwner {
+    function setLimits(uint256 _burnLimit, uint256 _mintLimit) external onlyOwner {
         burnLimit = _burnLimit;
         mintLimit = _mintLimit;
     }
