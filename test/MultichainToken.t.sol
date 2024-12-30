@@ -43,11 +43,11 @@ contract MultichainTokenTest is AuctionHouseTest {
     ////////////////////////
 
     function testContractDeployment() public {
-        bytes32[] memory payloadIds = getWritePayloadIds(arbChainSlug, getPayloadDeliveryPlug(arbChainSlug), 2);
+        bytes32[] memory payloadIds = getWritePayloadIds(optChainSlug, getPayloadDeliveryPlug(optChainSlug), 2);
 
-        PayloadDetails[] memory payloadDetails = createDeployPayloadDetailsArray(arbChainSlug);
+        PayloadDetails[] memory payloadDetails = createDeployPayloadDetailsArray(optChainSlug);
 
-        _deploy(payloadIds, arbChainSlug, maxFees, appContracts.multichainTokenDeployer, payloadDetails);
+        _deploy(payloadIds, optChainSlug, maxFees, appContracts.multichainTokenDeployer, payloadDetails);
     }
 
     /////////////////////////
@@ -69,7 +69,7 @@ contract MultichainTokenTest is AuctionHouseTest {
 
         for (uint256 i = 0; i < payloadDetails.length; i++) {
             payloadDetails[i].next[1] = predictAsyncPromiseAddress(address(auctionHouse), address(auctionHouse));
-            console.log(payloadDetails[i].next[1]);
+            console.log(asyncPromiseCounterLocal, payloadDetails[i].next[1]);
         }
 
         return payloadDetails;
