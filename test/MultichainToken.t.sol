@@ -10,7 +10,8 @@ import {MockERC20} from "./mocks/MockERC20.sol";
 
 contract MultichainTokenTest is AuctionHouseTest {
     uint256 srcAmount = 0.01 ether;
-    uint32 public baseChainSlug = optChainSlug;
+    uint32 baseChainSlug = optChainSlug;
+    address baseTokenAddress;
 
     MockERC20 public token;
 
@@ -34,6 +35,7 @@ contract MultichainTokenTest is AuctionHouseTest {
         // Deploy mock ERC20
         token = new MockERC20("Mock Token", "MCK", 18);
         token.mint(address(this), 1000 * 10 ** 18);
+        baseTokenAddress = address(token);
 
         // Deploy Deployer and AppGateway
         deployMultichainTokenApp();
