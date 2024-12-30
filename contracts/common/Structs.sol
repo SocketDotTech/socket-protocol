@@ -30,7 +30,7 @@ struct DeployParams {
 
 struct CallParams {
     CallType callType;
-    bytes32 asyncPromiseOrId;
+    address asyncPromise;
     uint32 chainSlug;
     address target;
     uint256 gasLimit;

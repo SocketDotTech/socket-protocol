@@ -19,27 +19,44 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     /// @param contractId_ The contract ID
     /// @param chainSlug_ The chain slug
     function _deploy(bytes32 contractId_, uint32 chainSlug_) internal {
+        address asyncPromise = IAddressResolver(addressResolver)
+            .deployAsyncPromiseContract(address(this));
+
+        isValidPromise[asyncPromise] = true;
+        IPromise(asyncPromise).then(
+            this.setAddress.selector,
+            abi.encode(chainSlug_, contractId_)
+        );
+
         IAuctionHouse(auctionHouse()).queue(
             chainSlug_,
             address(0),
             // hacked for contract addr, need to revisit
-            contractId_,
+            asyncPromise,
             CallType.DEPLOY,
             creationCodeWithArgs[contractId_]
         );
     }
 
-    /// @notice Sets the forwarder contract
-    /// @param chainSlug The chain slug
-    /// @param forwarderContractAddr The forwarder contract address
-    /// @param contractId The contract ID
-    /// @dev callback in payload delivery promise after contract deployment
-    function setForwarderContract(
-        uint32 chainSlug,
-        address forwarderContractAddr,
-        bytes32 contractId
-    ) external onlyPayloadDelivery {
-        forwarderAddresses[contractId][chainSlug] = forwarderContractAddr;
+    /// @notice Sets the address for a deployed contract
+    /// @param data_ The data
+    /// @param returnData_ The return data
+    function setAddress(
+        bytes memory data_,
+        bytes memory returnData_
+    ) external onlyPromises {
+        (uint32 chainSlug, bytes32 contractId) = abi.decode(
+            data_,
+            (uint32, bytes32)
+        );
+
+        address forwarderContractAddress = addressResolver
+            .getOrDeployForwarderContract(
+                abi.decode(returnData_, (address)),
+                chainSlug
+            );
+
+        forwarderAddresses[contractId][chainSlug] = forwarderContractAddress;
     }
 
     /// @notice Gets the on-chain address

@@ -84,7 +84,7 @@ contract Forwarder is IForwarder {
         IAuctionHouse(auctionHouse).queue(
             chainSlug,
             onChainAddress,
-            bytes32(uint256(uint160(latestAsyncPromise))),
+            latestAsyncPromise,
             isReadCall ? CallType.READ : CallType.WRITE,
             msg.data
         );

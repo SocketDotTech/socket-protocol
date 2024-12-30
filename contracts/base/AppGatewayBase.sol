@@ -16,7 +16,7 @@ abstract contract AppGatewayBase is
     FeesPlugin
 {
     bool public override isReadCall;
-    uint256 auctionDelayInMs;
+    address public auctionManager;
     mapping(address => bool) public isValidPromise;
 
     error InvalidPromise();
@@ -28,7 +28,7 @@ abstract contract AppGatewayBase is
         auctionHouse().clearQueue();
         addressResolver.clearPromises();
         _;
-        auctionHouse().batch(feesData, auctionDelayInMs);
+        auctionHouse().batch(feesData, auctionManager);
         _markValidPromises();
     }
 
@@ -56,10 +56,10 @@ abstract contract AppGatewayBase is
         return keccak256(abi.encode(contractName_));
     }
 
-    /// @notice Sets the auction delay in milliseconds
-    /// @param auctionDelayInMs_ The auction delay in milliseconds
-    function _setAuctionDelayInMs(uint256 auctionDelayInMs_) internal {
-        auctionDelayInMs = auctionDelayInMs_;
+    /// @notice Sets the auction manager
+    /// @param auctionManager_ The auction manager
+    function _setAuctionManager(address auctionManager_) internal {
+        auctionManager = auctionManager_;
     }
 
     /// @notice Sets the read call flag

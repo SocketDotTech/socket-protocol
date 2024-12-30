@@ -25,7 +25,6 @@ abstract contract QueueAsync is AddressResolverUtil {
     // asyncId => PayloadBatch
     mapping(bytes32 => PayloadBatch) public payloadBatches;
 
-    // todo: merge all async id vars in one struct
     // asyncId => PayloadDetails[]
     mapping(bytes32 => PayloadDetails[]) public payloadBatchDetails;
 
@@ -60,14 +59,14 @@ abstract contract QueueAsync is AddressResolverUtil {
     /// @notice Queues a new payload
     /// @param chainSlug_ The chain identifier
     /// @param target_ The target address
-    /// @param asyncPromiseOrId_ The async promise or ID
+    /// @param asyncPromise_ The async promise or ID
     /// @param callType_ The call type
     /// @param payload_ The payload
     function queue(
         bool isSequential_,
         uint32 chainSlug_,
         address target_,
-        bytes32 asyncPromiseOrId_,
+        address asyncPromise_,
         CallType callType_,
         bytes memory payload_
     ) external {
@@ -75,7 +74,7 @@ abstract contract QueueAsync is AddressResolverUtil {
         callParamsArray.push(
             CallParams({
                 callType: callType_,
-                asyncPromiseOrId: asyncPromiseOrId_,
+                asyncPromise: asyncPromise_,
                 chainSlug: chainSlug_,
                 target: target_,
                 payload: payload_,
@@ -109,28 +108,14 @@ abstract contract QueueAsync is AddressResolverUtil {
         CallParams memory params
     ) internal returns (PayloadDetails memory) {
         address[] memory next = new address[](2);
-        next[0] = address(uint160(uint256(params.asyncPromiseOrId)));
+        next[0] = params.asyncPromise;
 
         bytes memory payload = params.payload;
         if (params.callType == CallType.DEPLOY) {
-            address asyncPromise = IAddressResolver(addressResolver)
-                .deployAsyncPromiseContract(address(this));
-
-            isValidPromise[asyncPromise] = true;
-            next[0] = asyncPromise;
-
-            IPromise(asyncPromise).then(
-                this.setAddress.selector,
-                abi.encode(
-                    params.chainSlug,
-                    params.asyncPromiseOrId,
-                    msg.sender
-                )
-            );
-
             bytes32 salt = keccak256(
                 abi.encode(msg.sender, params.chainSlug, saltCounter++)
             );
+
             payload = abi.encodeWithSelector(
                 IContractFactoryPlug.deployContract.selector,
                 params.payload,
@@ -150,31 +135,5 @@ abstract contract QueueAsync is AddressResolverUtil {
                 next: next,
                 isSequential: params.isSequential
             });
-    }
-
-    // todo: change it to call to gateway instead
-    /// @notice Sets the address for a deployed contract
-    /// @param data_ The data
-    /// @param returnData_ The return data
-    function setAddress(
-        bytes memory data_,
-        bytes memory returnData_
-    ) external onlyPromises {
-        (uint32 chainSlug, bytes32 contractId, address appDeployer) = abi
-            .decode(data_, (uint32, bytes32, address));
-
-        // todo: use getOrDeploy here
-        address forwarderContractAddress = addressResolver
-            .deployForwarderContract(
-                appDeployer,
-                abi.decode(returnData_, (address)),
-                chainSlug
-            );
-
-        IAppDeployer(appDeployer).setForwarderContract(
-            chainSlug,
-            forwarderContractAddress,
-            contractId
-        );
     }
 }

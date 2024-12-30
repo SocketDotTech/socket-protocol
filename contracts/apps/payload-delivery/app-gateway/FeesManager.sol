@@ -5,7 +5,6 @@ import {Ownable} from "../../../utils/Ownable.sol";
 import {SignatureVerifier} from "../../../socket/utils/SignatureVerifier.sol";
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
 import {Bid, FeesData, PayloadDetails, CallType, FinalizeParams} from "../../../common/Structs.sol";
-import {IAuctionContract} from "../../../interfaces/IAuctionContract.sol";
 import {IAuctionHouse} from "../../../interfaces/IAuctionHouse.sol";
 import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Constants.sol";
 import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
@@ -21,11 +20,12 @@ contract FeesManager is AddressResolverUtil, Ownable(msg.sender) {
     constructor(
         address addressResolver_
     ) AddressResolverUtil(addressResolver_) {}
+
     function distributeFees(
         address appGateway_,
         FeesData memory feesData_,
         Bid memory winningBid_
-    ) external returns (bytes32 payloadId, bytes32 root) {
+    ) external onlyPayloadDelivery returns (bytes32 payloadId, bytes32 root) {
         bytes32 feesId = _encodeFeesId(feesCounter++);
         // Create payload for pool contract
         bytes memory payload = abi.encodeCall(

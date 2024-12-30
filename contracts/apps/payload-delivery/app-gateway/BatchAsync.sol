@@ -18,7 +18,6 @@ abstract contract BatchAsync is QueueAsync {
     error AllPayloadsExecuted();
     error NotFromForwarder();
     error CallFailed(bytes32 payloadId);
-    error DelayLimitReached();
     error PayloadTooLarge();
     event PayloadSubmitted(
         bytes32 indexed asyncId,
@@ -42,16 +41,13 @@ abstract contract BatchAsync is QueueAsync {
     /// @return asyncId The ID of the batch
     function batch(
         FeesData memory feesData_,
-        uint256 auctionEndDelayMS_
+        address auctionManager_
     ) external returns (bytes32) {
-        if (auctionEndDelayMS_ > 10 * 60 * 1000) revert DelayLimitReached();
-
         PayloadDetails[]
             memory payloadDetailsArray = createPayloadDetailsArray();
 
         // Default flow for other cases (including mixed read/write)
-        return
-            deliverPayload(payloadDetailsArray, feesData_, auctionEndDelayMS_);
+        return deliverPayload(payloadDetailsArray, feesData_, auctionManager_);
     }
 
     /// @notice Callback function for handling promises
@@ -70,7 +66,7 @@ abstract contract BatchAsync is QueueAsync {
     function deliverPayload(
         PayloadDetails[] memory payloadDetails_,
         FeesData memory feesData_,
-        uint256 auctionEndDelay_
+        address auctionManager_
     ) internal returns (bytes32) {
         address forwarderAppGateway = msg.sender;
         bytes32 asyncId = getCurrentAsyncId();
@@ -158,7 +154,7 @@ abstract contract BatchAsync is QueueAsync {
             appGateway: forwarderAppGateway,
             feesData: feesData_,
             currentPayloadIndex: readEndIndex,
-            auctionEndDelaySeconds: auctionEndDelay_,
+            auctionManager: auctionManager_,
             winningBid: Bid({
                 fee: 0,
                 transmitter: address(0),
@@ -168,13 +164,13 @@ abstract contract BatchAsync is QueueAsync {
             totalPayloadsRemaining: payloadDetails_.length - readEndIndex
         });
 
-        IAuctionManager(auctionManager).startAuction(asyncId);
+        IAuctionManager(auctionManager_).startAuction(asyncId);
         emit PayloadSubmitted(
             asyncId,
             forwarderAppGateway,
             payloadDetails_,
             feesData_,
-            auctionEndDelay_
+            auctionManager_
         );
         return asyncId;
     }
