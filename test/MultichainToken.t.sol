@@ -38,13 +38,54 @@ contract MultichainTokenTest is AuctionHouseTest {
         deployMultichainTokenApp();
     }
 
+    ////////////////////////
+    //   TEST FUNCTIONS   //
+    ////////////////////////
+
+    function testContractDeployment() public {
+        bytes32[] memory payloadIds = getWritePayloadIds(arbChainSlug, getPayloadDeliveryPlug(arbChainSlug), 2);
+
+        PayloadDetails[] memory payloadDetails = createDeployPayloadDetailsArray(arbChainSlug);
+
+        _deploy(payloadIds, arbChainSlug, maxFees, appContracts.multichainTokenDeployer, payloadDetails);
+    }
+
+    /////////////////////////
+    //  PAYLOAD FUNCTIONS  //
+    /////////////////////////
+
+    function createDeployPayloadDetailsArray(uint32 chainSlug_) internal returns (PayloadDetails[] memory) {
+        PayloadDetails[] memory payloadDetails = new PayloadDetails[](2);
+        payloadDetails[0] = createDeployPayloadDetail(
+            chainSlug_,
+            address(appContracts.multichainTokenDeployer),
+            appContracts.multichainTokenDeployer.creationCodeWithArgs(appContracts.multichainToken)
+        );
+        payloadDetails[1] = createDeployPayloadDetail(
+            chainSlug_,
+            address(appContracts.multichainTokenDeployer),
+            appContracts.multichainTokenDeployer.creationCodeWithArgs(appContracts.vault)
+        );
+
+        for (uint256 i = 0; i < payloadDetails.length; i++) {
+            payloadDetails[i].next[1] = predictAsyncPromiseAddress(address(auctionHouse), address(auctionHouse));
+            console.log(payloadDetails[i].next[1]);
+        }
+
+        return payloadDetails;
+    }
+
+    ////////////////////////
+    //  HELPER FUNCTIONS  //
+    ////////////////////////
+
     function deployMultichainTokenApp() internal {
         MultichainTokenDeployer multichainTokenDeployer = new MultichainTokenDeployer(
             optChainSlug,
             address(token),
             owner,
-            "SUPER TOKEN",
-            "SUPER",
+            "Mock Token",
+            "MCK",
             18,
             address(addressResolver),
             createFeesData(maxFees)
@@ -61,10 +102,6 @@ contract MultichainTokenTest is AuctionHouseTest {
             vault: multichainTokenDeployer.vault()
         });
     }
-
-    ////////////////////////
-    //  HELPER FUNCTIONS  //
-    ////////////////////////
 
     // To mint tokens for testing to any user if needed
     function mintTokens(address to, uint256 amount) internal {
