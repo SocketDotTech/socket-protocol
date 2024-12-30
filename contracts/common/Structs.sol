@@ -137,3 +137,12 @@ struct UpdateLimitParams {
     uint256 maxLimit;
     uint256 ratePerSecond;
 }
+
+struct CallFromInboxParams {
+    bytes32 callId;
+    uint32 chainSlug;
+    address plug;
+    address appGateway;
+    bytes32 params;
+    bytes payload;
+}

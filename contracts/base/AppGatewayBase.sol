@@ -117,4 +117,11 @@ abstract contract AppGatewayBase is
     function allContractsDeployed(
         uint32 chainSlug_
     ) external virtual onlyPayloadDelivery {}
+
+    function callFromInbox(
+        uint32 chainSlug_,
+        address plug_,
+        bytes calldata payload_,
+        bytes32 params_
+    ) external virtual onlyWatcherPrecompile {}
 }
