@@ -16,6 +16,10 @@ abstract contract WatcherPrecompileConfig is Ownable, IWatcherPrecompile {
     /// @dev appGateway => chainSlug => plug
     mapping(address => mapping(uint32 => address)) public appGatewayPlugs;
 
+    // appGateway => chainSlug => plug => isValid
+    mapping(address => mapping(uint32 => mapping(address => bool)))
+        public isValidInboxCaller;
+
     /// @notice Emitted when a new plug is configured for an app gateway
     /// @param appGateway The address of the app gateway
     /// @param chainSlug The identifier of the destination network
@@ -47,6 +51,14 @@ abstract contract WatcherPrecompileConfig is Ownable, IWatcherPrecompile {
                 configs[i].plug
             );
         }
+    }
+
+    function setIsValidInboxCaller(
+        uint32 chainSlug_,
+        address plug_,
+        bool isValid_
+    ) external {
+        isValidInboxCaller[msg.sender][chainSlug_][plug_] = isValid_;
     }
 
     /// @notice Retrieves the configuration for a specific plug on a network
