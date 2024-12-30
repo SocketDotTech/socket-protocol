@@ -10,6 +10,7 @@ import {MockERC20} from "./mocks/MockERC20.sol";
 
 contract MultichainTokenTest is AuctionHouseTest {
     uint256 srcAmount = 0.01 ether;
+    uint32 public baseChainSlug = optChainSlug;
 
     MockERC20 public token;
 
@@ -42,35 +43,42 @@ contract MultichainTokenTest is AuctionHouseTest {
     //   TEST FUNCTIONS   //
     ////////////////////////
 
-    function testContractDeployment() public {
-        bytes32[] memory payloadIds = getWritePayloadIds(optChainSlug, getPayloadDeliveryPlug(optChainSlug), 2);
+    function testVaultDeployment() public {
+        bytes32[] memory payloadIds = getWritePayloadIds(baseChainSlug, getPayloadDeliveryPlug(baseChainSlug), 1);
 
-        PayloadDetails[] memory payloadDetails = createDeployPayloadDetailsArray(optChainSlug);
+        PayloadDetails[] memory payloadDetails = createDeployPayloadDetailsArray(baseChainSlug);
 
-        _deploy(payloadIds, optChainSlug, maxFees, appContracts.multichainTokenDeployer, payloadDetails);
+        _deploy(payloadIds, baseChainSlug, maxFees, appContracts.multichainTokenDeployer, payloadDetails);
     }
 
+    function testTokenDeployment() public {
+        bytes32[] memory payloadIds = getWritePayloadIds(arbChainSlug, getPayloadDeliveryPlug(arbChainSlug), 1);
+
+        PayloadDetails[] memory payloadDetails = createDeployPayloadDetailsArray(arbChainSlug);
+
+        _deploy(payloadIds, arbChainSlug, maxFees, appContracts.multichainTokenDeployer, payloadDetails);
+    }
     /////////////////////////
     //  PAYLOAD FUNCTIONS  //
     /////////////////////////
 
-    function createDeployPayloadDetailsArray(uint32 chainSlug_) internal returns (PayloadDetails[] memory) {
-        PayloadDetails[] memory payloadDetails = new PayloadDetails[](2);
-        payloadDetails[0] = createDeployPayloadDetail(
-            chainSlug_,
-            address(appContracts.multichainTokenDeployer),
-            appContracts.multichainTokenDeployer.creationCodeWithArgs(appContracts.multichainToken)
-        );
-        payloadDetails[1] = createDeployPayloadDetail(
-            chainSlug_,
-            address(appContracts.multichainTokenDeployer),
-            appContracts.multichainTokenDeployer.creationCodeWithArgs(appContracts.vault)
-        );
-
-        for (uint256 i = 0; i < payloadDetails.length; i++) {
-            payloadDetails[i].next[1] = predictAsyncPromiseAddress(address(auctionHouse), address(auctionHouse));
-            console.log(asyncPromiseCounterLocal, payloadDetails[i].next[1]);
+    function createDeployPayloadDetailsArray(uint32 chainSlug) internal returns (PayloadDetails[] memory) {
+        PayloadDetails[] memory payloadDetails = new PayloadDetails[](1);
+        if (chainSlug == baseChainSlug) {
+            payloadDetails[0] = createDeployPayloadDetail(
+                chainSlug,
+                address(appContracts.multichainTokenDeployer),
+                appContracts.multichainTokenDeployer.creationCodeWithArgs(appContracts.vault)
+            );
+        } else {
+            payloadDetails[0] = createDeployPayloadDetail(
+                chainSlug,
+                address(appContracts.multichainTokenDeployer),
+                appContracts.multichainTokenDeployer.creationCodeWithArgs(appContracts.multichainToken)
+            );
         }
+
+        payloadDetails[0].next[1] = predictAsyncPromiseAddress(address(auctionHouse), address(auctionHouse));
 
         return payloadDetails;
     }
@@ -81,7 +89,7 @@ contract MultichainTokenTest is AuctionHouseTest {
 
     function deployMultichainTokenApp() internal {
         MultichainTokenDeployer multichainTokenDeployer = new MultichainTokenDeployer(
-            optChainSlug,
+            baseChainSlug,
             address(token),
             owner,
             "Mock Token",
