@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.3;
 
-import {Bid} from "../common/Structs.sol";
-
+import {Bid, FeesData} from "../common/Structs.sol";
 interface IAuctionManager {
     function startAuction(bytes32 asyncId_) external;
     function bid(
         bytes32 asyncId_,
         uint256 fee,
+        FeesData memory feesData,
         bytes memory transmitterSignature,
         bytes memory extraData
     ) external;

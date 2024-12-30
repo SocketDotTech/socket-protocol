@@ -5,7 +5,6 @@ import {Ownable} from "../../../utils/Ownable.sol";
 import {SignatureVerifier} from "../../../socket/utils/SignatureVerifier.sol";
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
 import {Bid, FeesData} from "../../../common/Structs.sol";
-import {IAuctionContract} from "../../../interfaces/IAuctionContract.sol";
 import {IAuctionHouse} from "../../../interfaces/IAuctionHouse.sol";
 
 /// @title AuctionHouse
@@ -16,6 +15,8 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
     // asyncId => auction status
     mapping(bytes32 => bool) public auctionClosed;
     mapping(bytes32 => bool) public auctionStarted;
+
+    uint256 public constant auctionEndDelaySeconds = 0;
 
     /// @notice Constructor for AuctionHouse
     /// @param addressResolver_ The address of the address resolver
@@ -31,16 +32,12 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
     event AuctionEnded(bytes32 asyncId_, Bid winningBid);
     event BidPlaced(bytes32 asyncId_, Bid bid);
 
-    function startAuction(bytes32 asyncId_) external {
+    function startAuction(bytes32 asyncId_) external onlyPayloadDelivery {
         require(!auctionClosed[asyncId_], "Auction closed");
         require(!auctionStarted[asyncId_], "Auction already started");
 
         auctionStarted[asyncId_] = true;
         emit AuctionStarted(asyncId_);
-
-        // todo: fix auction contract address
-        uint256 auctionEndDelaySeconds = IAuctionContract(address(this))
-            .auctionEndDelaySeconds();
 
         watcherPrecompile().setTimeout(
             abi.encodeWithSelector(this.endAuction.selector, asyncId_),
@@ -55,6 +52,7 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
     function bid(
         bytes32 asyncId_,
         uint256 fee,
+        FeesData memory feesData,
         bytes memory transmitterSignature,
         bytes memory extraData
     ) external {
@@ -72,20 +70,8 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
             extraData: extraData
         });
 
-        // todo: fix auction contract address
-        (address auctionContract, FeesData memory feesData) = AuctionHouse()
-            .getAuctionContractAndFeesData(asyncId_);
-
         require(fee <= feesData.maxFees, "Bid exceeds max fees");
-
-        // todo: revisit if should revert or not
-        require(
-            IAuctionContract(auctionContract).isNewBidBetter(
-                winningBids[asyncId_],
-                newBid
-            ),
-            "Bid is not better"
-        );
+        if (fee < winningBids[asyncId_].fee) return;
 
         winningBids[asyncId_] = newBid;
         emit BidPlaced(asyncId_, newBid);
