@@ -56,7 +56,21 @@ abstract contract BatchAsync is QueueAsync {
     function callback(
         bytes memory asyncId_,
         bytes memory payloadDetails_
-    ) external virtual onlyPromises {}
+    ) external virtual onlyPromises {
+        bytes32 asyncId = abi.decode(asyncId_, (bytes32));
+        PayloadBatch storage payloadBatch = payloadBatches[asyncId];
+        if (payloadBatch.isBatchCancelled) return;
+
+        if (totalPayloadsRemaining[asyncId] > 0) {
+            _finalizeNextPayload(asyncId);
+        } else {
+            // Notify app gateway about batch completion
+            IAppGateway(payloadBatch.appGateway).onBatchComplete(
+                asyncId,
+                payloadBatchDetails[asyncId]
+            );
+        }
+    }
 
     /// @notice Delivers a payload batch
     /// @param payloadDetails_ The payload details
@@ -72,7 +86,7 @@ abstract contract BatchAsync is QueueAsync {
         bytes32 asyncId = getCurrentAsyncId();
         asyncCounter++;
 
-        // Check for consecutive reads at the start
+        // Handle initial read operations first
         uint256 readEndIndex = 0;
         while (
             readEndIndex < payloadDetails_.length &&
@@ -81,23 +95,20 @@ abstract contract BatchAsync is QueueAsync {
             readEndIndex++;
         }
 
-        // Process consecutive reads together if there are 1 or more
-        if (readEndIndex >= 1) {
-            // Create a batched read promise
+        // Process initial reads if any exist
+        if (readEndIndex > 0) {
             address batchPromise = IAddressResolver(addressResolver)
                 .deployAsyncPromiseContract(address(this));
             isValidPromise[batchPromise] = true;
 
-            // Process all reads in the batch
             for (uint256 i = 0; i < readEndIndex; i++) {
                 bytes32 payloadId = watcherPrecompile().query(
                     payloadDetails_[i].chainSlug,
                     payloadDetails_[i].target,
-                    [batchPromise, address(0)], // Use same promise for all reads in batch
+                    [batchPromise, address(0)],
                     payloadDetails_[i].payload
                 );
                 payloadIdToBatchHash[payloadId] = asyncId;
-
                 emit PayloadAsyncRequested(
                     asyncId,
                     payloadId,
@@ -106,50 +117,39 @@ abstract contract BatchAsync is QueueAsync {
                 );
             }
 
-            // Setup callback for the entire batch of reads
             IPromise(batchPromise).then(
                 this.callback.selector,
                 abi.encode(asyncId)
             );
         }
 
+        // If only reads, return early
         if (readEndIndex == payloadDetails_.length) {
             return asyncId;
         }
 
-        // Process remaining payloads normally
+        // Process and store remaining payloads
         for (uint256 i = readEndIndex; i < payloadDetails_.length; i++) {
             if (payloadDetails_[i].payload.length > 24.5 * 1024)
                 revert PayloadTooLarge();
 
-            // Rest of the existing deliverPayload logic for each payload
+            // Handle forwarder logic
             if (payloadDetails_[i].callType == CallType.DEPLOY) {
-                // considering contract factory as plug of delivery helper
                 payloadDetails_[i].target = getPlugAddress(
                     address(this),
                     payloadDetails_[i].chainSlug
                 );
             } else if (payloadDetails_[i].callType == CallType.WRITE) {
-                // todo: if need to remove this
                 forwarderAppGateway = IAddressResolver(addressResolver)
                     .contractsToGateways(msg.sender);
-
                 if (forwarderAppGateway == address(0))
                     forwarderAppGateway = msg.sender;
             }
 
-            payloadDetails_[i].next[1] = IAddressResolver(addressResolver)
-                .deployAsyncPromiseContract(address(this));
-
-            isValidPromise[payloadDetails_[i].next[1]] = true;
-            IPromise(payloadDetails_[i].next[1]).then(
-                this.callback.selector,
-                abi.encode(asyncId)
-            );
-
             payloadBatchDetails[asyncId].push(payloadDetails_[i]);
         }
 
+        // Initialize batch
         payloadBatches[asyncId] = PayloadBatch({
             appGateway: forwarderAppGateway,
             feesData: feesData_,
@@ -164,6 +164,7 @@ abstract contract BatchAsync is QueueAsync {
             totalPayloadsRemaining: payloadDetails_.length - readEndIndex
         });
 
+        // Start auction
         IAuctionManager(auctionManager_).startAuction(asyncId);
         emit PayloadSubmitted(
             asyncId,
