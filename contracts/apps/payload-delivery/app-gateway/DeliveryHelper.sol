@@ -8,6 +8,15 @@ import {DISTRIBUTE_FEE, DEPLOY} from "../../../common/Constants.sol";
 import "./BatchAsync.sol";
 
 contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
+    constructor(
+        address _addressResolver,
+        address _auctionManager,
+        address _feesManager
+    ) AddressResolverUtil(_addressResolver) {
+        auctionManager = _auctionManager;
+        feesManager = _feesManager;
+    }
+
     function startBatchProcessing(
         bytes32 asyncId_
     ) external onlyAuctionManager {
@@ -26,7 +35,7 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
         PayloadBatch storage payloadBatch = payloadBatches[asyncId];
         if (payloadBatch.isBatchCancelled) return;
 
-        if (totalPayloadsRemaining[asyncId] > 0) {
+        if (payloadBatch.totalPayloadsRemaining > 0) {
             _finalizeNextPayload(asyncId);
         } else {
             _finishBatch(asyncId, payloadBatch, payloadDetails_);
@@ -42,19 +51,20 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
             .distributeFees(
                 payloadBatch.appGateway,
                 payloadBatch.feesData,
-                winningBids[asyncId]
+                payloadBatch.winningBid
             );
 
         payloadIdToBatchHash[payloadId] = asyncId;
-        emit PayloadAsyncRequested(asyncId, payloadId, root, payloadDetails_);
-
-        PayloadDetails storage lastPayload = payloadBatchDetails[asyncId][
-            payloadBatch.currentPayloadIndex
-        ];
+        emit PayloadAsyncRequested(
+            asyncId,
+            payloadId,
+            root,
+            abi.decode(payloadDetails_, (PayloadDetails))
+        );
 
         IAppGateway(payloadBatch.appGateway).onBatchComplete(
             asyncId,
-            payloadBatchDetails[asyncId]
+            payloadBatch
         );
     }
 
@@ -106,21 +116,23 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
     function _executeWatcherCall(
         bytes32 asyncId_,
         PayloadDetails storage payload,
+        PayloadBatch storage payloadBatch,
         address batchPromise,
         bool isRead
     ) internal returns (bytes32 payloadId, bytes32 root) {
         if (isRead) {
+            payload.next[1] = batchPromise;
             payloadId = watcherPrecompile().query(
                 payload.chainSlug,
                 payload.target,
-                [batchPromise, address(0)],
+                payload.next,
                 payload.payload
             );
             root = bytes32(0);
         } else {
             FinalizeParams memory finalizeParams = FinalizeParams({
                 payloadDetails: payload,
-                transmitter: winningBids[asyncId_].transmitter
+                transmitter: payloadBatch.winningBid.transmitter
             });
             (payloadId, root) = watcherPrecompile().finalize(finalizeParams);
         }
@@ -146,7 +158,13 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
         }
 
         for (uint256 i = startIndex; i <= endIndex; i++) {
-            _executeWatcherCall(asyncId_, payloads[i], batchPromise, true);
+            _executeWatcherCall(
+                asyncId_,
+                payloads[i],
+                payloadBatch,
+                batchPromise,
+                true
+            );
         }
 
         _updateBatchState(
@@ -172,7 +190,13 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
         }
 
         for (uint256 i = startIndex; i <= endIndex; i++) {
-            _executeWatcherCall(asyncId_, payloads[i], batchPromise, false);
+            _executeWatcherCall(
+                asyncId_,
+                payloads[i],
+                payloadBatch,
+                batchPromise,
+                false
+            );
         }
 
         _updateBatchState(
@@ -192,6 +216,7 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
         _executeWatcherCall(
             asyncId_,
             payloads[currentIndex],
+            payloadBatch,
             batchPromise,
             false
         );
@@ -203,7 +228,7 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
         uint256 completedCount,
         uint256 nextIndex
     ) internal {
-        totalPayloadsRemaining[asyncId_] -= completedCount;
+        batch.totalPayloadsRemaining -= completedCount;
         batch.currentPayloadIndex = nextIndex;
     }
 }

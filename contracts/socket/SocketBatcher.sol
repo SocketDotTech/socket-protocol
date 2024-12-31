@@ -36,6 +36,7 @@ contract SocketBatcher is Ownable {
             socket__.execute(
                 params.payloadId,
                 params.appGateway,
+                params.target,
                 params.executionGasLimit,
                 params.transmitterSignature,
                 params.payload

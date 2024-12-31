@@ -31,7 +31,7 @@ interface IAuctionHouse {
 
     function batch(
         FeesData memory feesData_,
-        uint256 auctionEndDelaySeconds_
+        address auctionManager_
     ) external returns (bytes32);
 
     function withdrawTo(

@@ -113,9 +113,11 @@ abstract contract AppGatewayBase is
     }
 
     /// @notice Callback in pd promise to be called after all contracts are deployed
-    /// @param chainSlug_ The chain slug
-    function allContractsDeployed(
-        uint32 chainSlug_
+    /// @param asyncId_ The async ID
+    /// @param payloadBatch_ The payload batch
+    function onBatchComplete(
+        bytes32 asyncId_,
+        PayloadBatch memory payloadBatch_
     ) external virtual onlyPayloadDelivery {}
 
     function callFromInbox(

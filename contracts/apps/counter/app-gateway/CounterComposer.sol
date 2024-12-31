@@ -2,8 +2,8 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 import "../../../base/AppGatewayBase.sol";
-import "../Counter.sol";
 import "../../../utils/Ownable.sol";
+import "../Counter.sol";
 
 contract CounterComposer is AppGatewayBase, Ownable {
     constructor(
@@ -14,12 +14,6 @@ contract CounterComposer is AppGatewayBase, Ownable {
         addressResolver.setContractsToGateways(deployerContract_);
         _setFeesData(feesData_);
     }
-
-    // function incrementCounters(address[] calldata _instance, uint256 _counter) public queueAndExecute {
-    //     for (uint256 i = 0; i < _instance.length; i++) {
-    //         Counter(_instance[i]).setCounter(_counter);
-    //     }
-    // }
 
     function incrementCounter(
         address _instance,

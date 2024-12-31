@@ -8,6 +8,7 @@ import {AsyncPromise} from "../../../AsyncPromise.sol";
 import {IPromise} from "../../../interfaces/IPromise.sol";
 import {IAppDeployer} from "../../../interfaces/IAppDeployer.sol";
 import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
+import {IContractFactoryPlug} from "../../../interfaces/IContractFactoryPlug.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
 abstract contract QueueAsync is AddressResolverUtil {
@@ -24,7 +25,6 @@ abstract contract QueueAsync is AddressResolverUtil {
     mapping(bytes32 => bytes32) public payloadIdToBatchHash;
     // asyncId => PayloadBatch
     mapping(bytes32 => PayloadBatch) public payloadBatches;
-
     // asyncId => PayloadDetails[]
     mapping(bytes32 => PayloadDetails[]) public payloadBatchDetails;
 
@@ -40,15 +40,6 @@ abstract contract QueueAsync is AddressResolverUtil {
     modifier onlyAuctionManager() {
         if (msg.sender != auctionManager) revert NotAuctionManager();
         _;
-    }
-
-    constructor(
-        address _addressResolver,
-        address _auctionManager,
-        address _feesManager
-    ) AddressResolverUtil(_addressResolver) {
-        auctionManager = _auctionManager;
-        feesManager = _feesManager;
     }
 
     /// @notice Clears the call parameters array

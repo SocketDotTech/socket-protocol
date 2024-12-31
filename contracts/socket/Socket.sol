@@ -40,7 +40,6 @@ contract Socket is SocketBase {
      */
     error LowGasLimit();
     error InvalidSlug();
-    error InvalidSwitchboard();
 
     ////////////////////////////////////////////////////////////
     ////////////////////// State Vars //////////////////////////
@@ -111,8 +110,10 @@ contract Socket is SocketBase {
         address switchboard = _decodeSwitchboard(payloadId_);
         uint32 localSlug = _decodeChainSlug(payloadId_);
 
-        (, address configSwitchboard) = _plugConfigs[target_];
-        if (switchboard != configSwitchboard) revert InvalidSwitchboard();
+        PlugConfig memory plugConfig = _plugConfigs[target_];
+        if (switchboard != address(plugConfig.switchboard__))
+            revert InvalidSwitchboard();
+
         if (localSlug != chainSlug) revert InvalidSlug();
 
         address transmitter = signatureVerifier__.recoverSigner(

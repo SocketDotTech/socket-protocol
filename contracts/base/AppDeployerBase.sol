@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
-import {DeployParams, FeesData, CallType} from "../common/Structs.sol";
+import {DeployParams, FeesData, CallType, PayloadBatch} from "../common/Structs.sol";
 import {AppGatewayBase} from "./AppGatewayBase.sol";
 import {IForwarder} from "../interfaces/IForwarder.sol";
+import {IPromise} from "../interfaces/IPromise.sol";
 import {IAppDeployer} from "../interfaces/IAppDeployer.sol";
 import {IAuctionHouse} from "../interfaces/IAuctionHouse.sol";
 
@@ -19,8 +20,9 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     /// @param contractId_ The contract ID
     /// @param chainSlug_ The chain slug
     function _deploy(bytes32 contractId_, uint32 chainSlug_) internal {
-        address asyncPromise = IAddressResolver(addressResolver)
-            .deployAsyncPromiseContract(address(this));
+        address asyncPromise = addressResolver.deployAsyncPromiseContract(
+            address(this)
+        );
 
         isValidPromise[asyncPromise] = true;
         IPromise(asyncPromise).then(
@@ -76,13 +78,16 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     }
 
     /// @notice Callback in pd promise to be called after all contracts are deployed
-    /// @param chainSlug The chain slug
+    /// @param asyncId The async ID
+    /// @param payloadBatch The payload batch
     /// @dev only payload delivery can call this
     /// @dev callback in pd promise to be called after all contracts are deployed
-    function allContractsDeployed(
-        uint32 chainSlug
+    function onBatchComplete(
+        bytes32 asyncId,
+        PayloadBatch memory payloadBatch
     ) external override onlyPayloadDelivery {
-        initialize(chainSlug);
+        // todo
+        // initialize(payloadBatch.chainSlug);
     }
 
     /// @notice Gets the socket address

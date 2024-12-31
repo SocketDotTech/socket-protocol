@@ -45,7 +45,8 @@ contract FeesManager is AddressResolverUtil, Ownable(msg.sender) {
             payload: payload,
             callType: CallType.WRITE,
             executionGasLimit: feeCollectionGasLimit[feesData_.feePoolChain],
-            next: new address[](0)
+            next: new address[](0),
+            isSequential: true
         });
 
         FinalizeParams memory finalizeParams = FinalizeParams({
@@ -81,7 +82,8 @@ contract FeesManager is AddressResolverUtil, Ownable(msg.sender) {
                 payload: payload,
                 callType: CallType.WITHDRAW,
                 executionGasLimit: feeCollectionGasLimit[chainSlug_],
-                next: new address[](0)
+                next: new address[](0),
+                isSequential: true
             });
     }
 

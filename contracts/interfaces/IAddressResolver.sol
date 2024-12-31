@@ -66,13 +66,11 @@ interface IAddressResolver {
     /// @dev Only callable by contract owner
     function clearPromises() external;
 
-    /// @notice Deploys a new forwarder contract
-    /// @param appDeployer_ The app deployer contract address
+    /// @notice Deploys a new forwarder contract if not already deployed
     /// @param chainContractAddress_ The contract address on the destination chain
     /// @param chainSlug_ The identifier of the destination chain
     /// @return The address of the newly deployed forwarder contract
-    function deployForwarderContract(
-        address appDeployer_,
+    function getOrDeployForwarderContract(
         address chainContractAddress_,
         uint32 chainSlug_
     ) external returns (address);

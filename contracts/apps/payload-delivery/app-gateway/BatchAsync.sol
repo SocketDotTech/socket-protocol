@@ -24,7 +24,7 @@ abstract contract BatchAsync is QueueAsync {
         address indexed appGateway,
         PayloadDetails[] payloads,
         FeesData feesData,
-        uint256 auctionEndDelay
+        address auctionManager
     );
 
     event PayloadAsyncRequested(
@@ -37,7 +37,7 @@ abstract contract BatchAsync is QueueAsync {
 
     /// @notice Initiates a batch of payloads
     /// @param feesData_ The fees data
-    /// @param auctionEndDelayMS_ The auction end delay in milliseconds
+    /// @param auctionManager_ The auction manager address
     /// @return asyncId The ID of the batch
     function batch(
         FeesData memory feesData_,
@@ -56,26 +56,12 @@ abstract contract BatchAsync is QueueAsync {
     function callback(
         bytes memory asyncId_,
         bytes memory payloadDetails_
-    ) external virtual onlyPromises {
-        bytes32 asyncId = abi.decode(asyncId_, (bytes32));
-        PayloadBatch storage payloadBatch = payloadBatches[asyncId];
-        if (payloadBatch.isBatchCancelled) return;
-
-        if (totalPayloadsRemaining[asyncId] > 0) {
-            _finalizeNextPayload(asyncId);
-        } else {
-            // Notify app gateway about batch completion
-            IAppGateway(payloadBatch.appGateway).onBatchComplete(
-                asyncId,
-                payloadBatchDetails[asyncId]
-            );
-        }
-    }
+    ) external virtual {}
 
     /// @notice Delivers a payload batch
     /// @param payloadDetails_ The payload details
     /// @param feesData_ The fees data
-    /// @param auctionEndDelayMS_ The auction end delay in milliseconds
+    /// @param auctionManager_ The auction manager address
     /// @return asyncId The ID of the batch
     function deliverPayload(
         PayloadDetails[] memory payloadDetails_,
@@ -102,10 +88,11 @@ abstract contract BatchAsync is QueueAsync {
             isValidPromise[batchPromise] = true;
 
             for (uint256 i = 0; i < readEndIndex; i++) {
+                payloadDetails_[i].next[1] = batchPromise;
                 bytes32 payloadId = watcherPrecompile().query(
                     payloadDetails_[i].chainSlug,
                     payloadDetails_[i].target,
-                    [batchPromise, address(0)],
+                    payloadDetails_[i].next,
                     payloadDetails_[i].payload
                 );
                 payloadIdToBatchHash[payloadId] = asyncId;
@@ -234,6 +221,6 @@ abstract contract BatchAsync is QueueAsync {
             amount_,
             receiver_
         );
-        deliverPayload(payloadDetailsArray, feesData_, 0);
+        deliverPayload(payloadDetailsArray, feesData_, address(0));
     }
 }
