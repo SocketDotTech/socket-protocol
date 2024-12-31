@@ -11,8 +11,8 @@ enum AsyncPromiseState {
 }
 
 /// @title AsyncPromise
-/// @notice this contract stores the callback address and data to be executed once the previous call is executed
-/// This promise expires once the callback is executed
+/// @notice This contract stores the callback address and data to be executed once the previous call is executed.
+/// This promise expires once the callback is executed.
 contract AsyncPromise is AddressResolverUtil {
     /// @notice The callback data to be used when the promise is resolved.
     bytes public callbackData;
@@ -21,10 +21,10 @@ contract AsyncPromise is AddressResolverUtil {
     bytes4 public callbackSelector;
 
     /// @notice The local contract which initiated the async call.
-    /// @dev The callback will be executed on this address
+    /// @dev The callback will be executed on this address.
     address public immutable localInvoker;
 
-    /// @notice The forwarder address which can call the callback
+    /// @notice The forwarder address which can call the callback.
     address public immutable forwarder;
 
     /// @notice Indicates whether the promise has been resolved.
@@ -34,18 +34,15 @@ contract AsyncPromise is AddressResolverUtil {
     error PromiseAlreadyResolved();
 
     /// @notice The current state of the async promise.
-    AsyncPromiseState public state =
-        AsyncPromiseState.WAITING_FOR_SET_CALLBACK_SELECTOR;
+    AsyncPromiseState public state = AsyncPromiseState.WAITING_FOR_SET_CALLBACK_SELECTOR;
 
     /// @notice Constructor to initialize the AsyncPromise contract.
     /// @param _invoker The address of the local invoker.
     /// @param _forwarder The address of the forwarder.
     /// @param addressResolver_ The address resolver contract address.
-    constructor(
-        address _invoker,
-        address _forwarder,
-        address addressResolver_
-    ) AddressResolverUtil(addressResolver_) {
+    constructor(address _invoker, address _forwarder, address addressResolver_) 
+        AddressResolverUtil(addressResolver_) 
+    {
         localInvoker = _invoker;
         forwarder = _forwarder;
     }
@@ -53,10 +50,9 @@ contract AsyncPromise is AddressResolverUtil {
     /// @notice Marks the promise as resolved and executes the callback if set.
     /// @param returnData The data returned from the async payload execution.
     /// @dev Only callable by the watcher precompile.
-    function markResolved(
-        bytes memory returnData
-    ) external onlyWatcherPrecompile {
+    function markResolved(bytes memory returnData) external onlyWatcherPrecompile {
         if (resolved) revert PromiseAlreadyResolved();
+
         resolved = true;
         state = AsyncPromiseState.RESOLVED;
 
@@ -64,11 +60,12 @@ contract AsyncPromise is AddressResolverUtil {
         if (callbackSelector != bytes4(0)) {
             bytes memory combinedCalldata = abi.encodePacked(
                 callbackSelector,
-                abi.encode(callbackData, returnData)
+                callbackData,
+                returnData
             );
 
             (bool success, ) = localInvoker.call(combinedCalldata);
-            require(success, "Relaying async call failed");
+            require(success, "Async call relay failed");
         }
     }
 
@@ -76,24 +73,21 @@ contract AsyncPromise is AddressResolverUtil {
     /// @param selector The function selector for the callback.
     /// @param data The data to be passed to the callback.
     /// @return promise_ The address of the current promise.
-    function then(
-        bytes4 selector,
-        bytes memory data
-    ) external returns (address promise_) {
+    function then(bytes4 selector, bytes memory data) external returns (address promise_) {
         require(
             msg.sender == forwarder || msg.sender == localInvoker,
             "Only the forwarder or local invoker can set this promise's callback"
         );
 
-        if (state == AsyncPromiseState.WAITING_FOR_CALLBACK_EXECUTION) {
-            revert("Promise already setup");
+        if (state != AsyncPromiseState.WAITING_FOR_SET_CALLBACK_SELECTOR) {
+            revert("Promise already setup or resolved");
         }
 
-        if (state == AsyncPromiseState.WAITING_FOR_SET_CALLBACK_SELECTOR) {
-            callbackSelector = selector;
-            callbackData = data;
-            state = AsyncPromiseState.WAITING_FOR_CALLBACK_EXECUTION;
-        }
+        // Validate the selector and data (could implement further checks as needed)
+        require(selector != bytes4(0), "Invalid selector");
+        callbackSelector = selector;
+        callbackData = data;
+        state = AsyncPromiseState.WAITING_FOR_CALLBACK_EXECUTION;
 
         promise_ = address(this);
     }
