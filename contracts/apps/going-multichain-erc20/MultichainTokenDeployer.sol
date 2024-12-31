@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "solady/auth/Ownable.sol";
+import "../../interfaces/IAddressResolver.sol";
 import "../../base/AppDeployerBase.sol";
 import "./MultichainToken.sol";
 import "./Vault.sol";
@@ -54,6 +55,8 @@ contract MultichainTokenDeployer is AppDeployerBase, Ownable {
         creationCodeWithArgs[vault] = abi.encodePacked(type(Vault).creationCode, abi.encode(owner, baseTokenAddress_));
 
         _setFeesData(feesData);
+
+        IAddressResolver(addressResolver).deployForwarderContract(address(this), baseTokenAddress, baseChainSlug);
     }
 
     /**
@@ -64,7 +67,6 @@ contract MultichainTokenDeployer is AppDeployerBase, Ownable {
      */
     function deployContracts(uint32 chainSlug) external async {
         if (chainSlug == baseChainSlug) {
-            addressResolver.deployForwarderContract(address(this), baseTokenAddress, chainSlug);
             _deploy(vault, chainSlug);
         } else {
             _deploy(multichainToken, chainSlug);
