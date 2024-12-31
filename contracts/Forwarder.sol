@@ -11,61 +11,39 @@ import "./interfaces/IForwarder.sol";
 /// @title Forwarder Contract
 /// @notice This contract acts as a forwarder for async calls to the on-chain contracts.
 contract Forwarder is IForwarder {
-    /// @notice chain id
-    uint32 immutable chainSlug;
-
-    /// @notice on-chain address associated with this forwarder
-    address immutable onChainAddress;
-
-    /// @notice address resolver contract address for imp addresses
-    address immutable addressResolver;
-
-    /// @notice caches the latest async promise address for the last call
-    address latestAsyncPromise;
+    uint32 immutable chainSlug; // Chain ID
+    address immutable onChainAddress; // On-chain address associated with this forwarder
+    address immutable addressResolver; // Address resolver contract address for important addresses
+    address latestAsyncPromise; // Caches the latest async promise address for the last call
 
     /// @notice Constructor to initialize the forwarder contract.
-    /// @param chainSlug_ chain id
-    /// @param onChainAddress_ on-chain address
-    /// @param addressResolver_ address resolver contract address
-    constructor(
-        uint32 chainSlug_,
-        address onChainAddress_,
-        address addressResolver_
-    ) {
+    constructor(uint32 chainSlug_, address onChainAddress_, address addressResolver_) {
         chainSlug = chainSlug_;
         onChainAddress = onChainAddress_;
         addressResolver = addressResolver_;
     }
 
     /// @notice Returns the on-chain address associated with this forwarder.
-    /// @return The on-chain address.
     function getOnChainAddress() external view returns (address) {
         return onChainAddress;
     }
 
-    /// @notice Returns the chain id
-    /// @return chain id
+    /// @notice Returns the chain ID.
     function getChainSlug() external view returns (uint32) {
         return chainSlug;
     }
 
     /// @notice Stores the callback address and data to be executed once the promise is resolved.
-    /// @dev This function should not be called before the fallback function.
-    /// @param selector The function selector for callback
-    /// @param data The data to be passed to callback
-    /// @return promise_ The address of the new promise
-    function then(
-        bytes4 selector,
-        bytes memory data
-    ) external returns (address promise_) {
-        if (latestAsyncPromise == address(0))
+    function then(bytes4 selector, bytes memory data) external returns (address promise_) {
+        if (latestAsyncPromise == address(0)) {
             revert("Forwarder: no async promise found");
+        }
+        require(selector != bytes4(0), "Forwarder: invalid selector"); // Validate selector
         promise_ = IPromise(latestAsyncPromise).then(selector, data);
-        latestAsyncPromise = address(0);
+        latestAsyncPromise = address(0); // Resetting latest promise after use
     }
 
-    /// @notice Fallback function to process the contract calls to onChainAddress
-    /// @dev It queues the calls in the auction house and deploys the promise contract
+    /// @notice Fallback function to process the contract calls to onChainAddress.
     fallback() external payable {
         // Retrieve the auction house address from the address resolver.
         address auctionHouse = IAddressResolver(addressResolver).auctionHouse();
@@ -74,8 +52,7 @@ contract Forwarder is IForwarder {
         }
 
         // Deploy a new async promise contract.
-        latestAsyncPromise = IAddressResolver(addressResolver)
-            .deployAsyncPromiseContract(msg.sender);
+        latestAsyncPromise = IAddressResolver(addressResolver).deployAsyncPromiseContract(msg.sender);
 
         // Determine if the call is a read or write operation.
         bool isReadCall = IAppGateway(msg.sender).isReadCall();
