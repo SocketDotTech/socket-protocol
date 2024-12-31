@@ -60,6 +60,16 @@ contract MultichainTokenTest is AuctionHouseTest {
 
         _deploy(payloadIds, arbChainSlug, maxFees, appContracts.multichainTokenDeployer, payloadDetails);
     }
+
+    function testBridgeSameChain() public {
+        // Deploy contracts on both chains
+        testVaultDeployment();
+        testTokenDeployment();
+        // Mint tokens to user1
+        // Create bridge order
+        // Build bridge payload
+        // Bridge transaction
+    }
     /////////////////////////
     //  PAYLOAD FUNCTIONS  //
     /////////////////////////
@@ -92,7 +102,7 @@ contract MultichainTokenTest is AuctionHouseTest {
     function deployMultichainTokenApp() internal {
         MultichainTokenDeployer multichainTokenDeployer = new MultichainTokenDeployer(
             baseChainSlug,
-            address(token),
+            baseTokenAddress,
             owner,
             "Mock Token",
             "MCK",
