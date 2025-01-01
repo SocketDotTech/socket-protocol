@@ -10,16 +10,14 @@ import "./BatchAsync.sol";
 contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
     constructor(
         address _addressResolver,
-        address _auctionManager,
         address _feesManager
     ) AddressResolverUtil(_addressResolver) {
-        auctionManager = _auctionManager;
         feesManager = _feesManager;
     }
 
     function startBatchProcessing(
         bytes32 asyncId_
-    ) external onlyAuctionManager {
+    ) external onlyAuctionManager(asyncId_) {
         _process(asyncId_, "");
     }
 
@@ -28,14 +26,37 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
         bytes memory payloadDetails_
     ) external override onlyPromises {
         bytes32 asyncId = abi.decode(asyncId_, (bytes32));
+
         _process(asyncId, payloadDetails_);
     }
+
+    error PromisesNotResolved();
 
     function _process(bytes32 asyncId, bytes memory payloadDetails_) internal {
         PayloadBatch storage payloadBatch = payloadBatches[asyncId];
         if (payloadBatch.isBatchCancelled) return;
 
+        // Check if there are remaining payloads to process
         if (payloadBatch.totalPayloadsRemaining > 0) {
+            // Check if there are promises from last batch that need to be resolved
+            if (payloadBatch.lastBatchPromises.length > 0) {
+                // Check if all promises are resolved
+                for (
+                    uint256 i = 0;
+                    i < payloadBatch.lastBatchPromises.length;
+                    i++
+                ) {
+                    if (
+                        !IPromise(payloadBatch.lastBatchPromises[i]).resolved()
+                    ) {
+                        revert PromisesNotResolved();
+                    }
+                }
+                // Clear promises array after all are resolved
+                delete payloadBatch.lastBatchPromises;
+            }
+
+            // Proceed with next payload only if all promises are resolved
             _finalizeNextPayload(asyncId);
         } else {
             _finishBatch(asyncId, payloadBatch, payloadDetails_);
@@ -72,9 +93,6 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
         PayloadBatch storage payloadBatch = payloadBatches[asyncId_];
         uint256 currentIndex = payloadBatch.currentPayloadIndex;
         PayloadDetails[] storage payloads = payloadBatchDetails[asyncId_];
-
-        // Early return if batch is empty or completed
-        if (currentIndex >= payloads.length) return;
 
         // Deploy single promise for the next batch of operations
         address batchPromise = IAddressResolver(addressResolver)
@@ -157,7 +175,9 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
             endIndex++;
         }
 
+        address[] memory promises = new address[](endIndex - startIndex + 1);
         for (uint256 i = startIndex; i <= endIndex; i++) {
+            promises[i - startIndex] = payloads[i].next[0];
             _executeWatcherCall(
                 asyncId_,
                 payloads[i],
@@ -169,6 +189,7 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
 
         _updateBatchState(
             payloadBatch,
+            promises,
             endIndex - startIndex + 1,
             endIndex + 1
         );
@@ -189,7 +210,11 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
             endIndex++;
         }
 
+        // Store promises for last batch
+        address[] memory promises = new address[](endIndex - startIndex + 1);
         for (uint256 i = startIndex; i <= endIndex; i++) {
+            promises[i - startIndex] = payloads[i].next[0];
+
             _executeWatcherCall(
                 asyncId_,
                 payloads[i],
@@ -201,6 +226,7 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
 
         _updateBatchState(
             payloadBatch,
+            promises,
             endIndex - startIndex + 1,
             endIndex + 1
         );
@@ -213,6 +239,9 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
         uint256 currentIndex,
         address batchPromise
     ) internal {
+        address[] memory promises = new address[](1);
+        promises[0] = payloads[currentIndex].next[0];
+
         _executeWatcherCall(
             asyncId_,
             payloads[currentIndex],
@@ -220,15 +249,17 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
             batchPromise,
             false
         );
-        _updateBatchState(payloadBatch, 1, currentIndex + 1);
+        _updateBatchState(payloadBatch, promises, 1, currentIndex + 1);
     }
 
     function _updateBatchState(
         PayloadBatch storage batch,
+        address[] memory promises,
         uint256 completedCount,
         uint256 nextIndex
     ) internal {
         batch.totalPayloadsRemaining -= completedCount;
         batch.currentPayloadIndex = nextIndex;
+        batch.lastBatchPromises = promises;
     }
 }

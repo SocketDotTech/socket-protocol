@@ -53,6 +53,7 @@ struct PayloadBatch {
     Bid winningBid;
     bool isBatchCancelled;
     uint256 totalPayloadsRemaining;
+    address[] lastBatchPromises;
 }
 
 struct FinalizeParams {

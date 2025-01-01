@@ -81,14 +81,18 @@ abstract contract BatchAsync is QueueAsync {
             readEndIndex++;
         }
 
+        address[] memory lastBatchPromises;
         // Process initial reads if any exist
         if (readEndIndex > 0) {
+            lastBatchPromises = new address[](readEndIndex);
             address batchPromise = IAddressResolver(addressResolver)
                 .deployAsyncPromiseContract(address(this));
             isValidPromise[batchPromise] = true;
 
             for (uint256 i = 0; i < readEndIndex; i++) {
                 payloadDetails_[i].next[1] = batchPromise;
+                lastBatchPromises[i] = payloadDetails_[i].next[0];
+
                 bytes32 payloadId = watcherPrecompile().query(
                     payloadDetails_[i].chainSlug,
                     payloadDetails_[i].target,
@@ -148,7 +152,8 @@ abstract contract BatchAsync is QueueAsync {
                 extraData: new bytes(0)
             }),
             isBatchCancelled: false,
-            totalPayloadsRemaining: payloadDetails_.length - readEndIndex
+            totalPayloadsRemaining: payloadDetails_.length - readEndIndex,
+            lastBatchPromises: lastBatchPromises
         });
 
         // Start auction
@@ -211,6 +216,7 @@ abstract contract BatchAsync is QueueAsync {
         address token_,
         uint256 amount_,
         address receiver_,
+        address auctionManager_,
         FeesData memory feesData_
     ) external {
         PayloadDetails[] memory payloadDetailsArray = new PayloadDetails[](1);
@@ -221,6 +227,6 @@ abstract contract BatchAsync is QueueAsync {
             amount_,
             receiver_
         );
-        deliverPayload(payloadDetailsArray, feesData_, address(0));
+        deliverPayload(payloadDetailsArray, feesData_, auctionManager_);
     }
 }
