@@ -14,8 +14,6 @@ import {IContractFactoryPlug} from "../../../interfaces/IContractFactoryPlug.sol
 abstract contract QueueAsync is AddressResolverUtil {
     uint256 public saltCounter;
     uint256 public asyncCounter;
-
-    address public auctionManager;
     address public feesManager;
 
     CallParams[] public callParamsArray;
@@ -27,7 +25,6 @@ abstract contract QueueAsync is AddressResolverUtil {
     mapping(bytes32 => PayloadBatch) public payloadBatches;
     // asyncId => PayloadDetails[]
     mapping(bytes32 => PayloadDetails[]) public payloadBatchDetails;
-
     error InvalidPromise();
 
     modifier onlyPromises() {
@@ -37,8 +34,9 @@ abstract contract QueueAsync is AddressResolverUtil {
         _;
     }
 
-    modifier onlyAuctionManager() {
-        if (msg.sender != auctionManager) revert NotAuctionManager();
+    modifier onlyAuctionManager(bytes32 asyncId_) {
+        if (msg.sender != payloadBatches[asyncId_].auctionManager)
+            revert NotAuctionManager();
         _;
     }
 

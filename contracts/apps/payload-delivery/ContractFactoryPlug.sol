@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 import {PlugBase} from "../../base/PlugBase.sol";
 import {Ownable} from "../../utils/Ownable.sol";
+
 /// @title ContractFactory
 /// @notice Abstract contract for deploying contracts
 contract ContractFactoryPlug is PlugBase, Ownable {
@@ -17,6 +18,10 @@ contract ContractFactoryPlug is PlugBase, Ownable {
         bytes memory creationCode,
         bytes32 salt
     ) public returns (address) {
+        if (msg.sender != address(socket__)) {
+            revert("Only socket can deploy contracts");
+        }
+
         address addr;
         assembly {
             addr := create2(

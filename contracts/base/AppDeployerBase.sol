@@ -54,6 +54,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
 
         address forwarderContractAddress = addressResolver
             .getOrDeployForwarderContract(
+                address(this),
                 abi.decode(returnData_, (address)),
                 chainSlug
             );

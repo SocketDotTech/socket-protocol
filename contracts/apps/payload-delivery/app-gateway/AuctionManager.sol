@@ -11,6 +11,7 @@ import {IAuctionHouse} from "../../../interfaces/IAuctionHouse.sol";
 /// @notice Contract for managing auctions and placing bids
 contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
     SignatureVerifier public immutable signatureVerifier__;
+    uint32 public immutable vmChainSlug;
     mapping(bytes32 => Bid) public winningBids;
     // asyncId => auction status
     mapping(bytes32 => bool) public auctionClosed;
@@ -22,9 +23,11 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
     /// @param addressResolver_ The address of the address resolver
     /// @param signatureVerifier_ The address of the signature verifier
     constructor(
+        uint32 vmChainSlug_,
         address addressResolver_,
         SignatureVerifier signatureVerifier_
     ) AddressResolverUtil(addressResolver_) {
+        vmChainSlug = vmChainSlug_;
         signatureVerifier__ = signatureVerifier_;
     }
 
@@ -58,9 +61,10 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
     ) external {
         require(!auctionClosed[asyncId_], "Auction closed");
 
-        // todo: check chain slug for multiple offchain vm
         address transmitter = signatureVerifier__.recoverSigner(
-            keccak256(abi.encode(address(this), asyncId_, fee, extraData)),
+            keccak256(
+                abi.encode(address(this), vmChainSlug, asyncId_, fee, extraData)
+            ),
             transmitterSignature
         );
 

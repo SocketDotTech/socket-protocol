@@ -73,6 +73,7 @@ contract AddressResolver is Ownable, IAddressResolver {
     /// @param chainSlug_ The chain slug
     /// @return The address of the deployed Forwarder contract
     function getOrDeployForwarderContract(
+        address appDeployer_,
         address chainContractAddress_,
         uint32 chainSlug_
     ) public returns (address) {
@@ -112,8 +113,7 @@ contract AddressResolver is Ownable, IAddressResolver {
             }
         }
 
-        // todo: what to do?
-        // _setConfig(appDeployer_, newForwarder);
+        _setConfig(appDeployer_, newForwarder);
         emit ForwarderDeployed(newForwarder, salt);
         return newForwarder;
     }

@@ -71,6 +71,7 @@ interface IAddressResolver {
     /// @param chainSlug_ The identifier of the destination chain
     /// @return The address of the newly deployed forwarder contract
     function getOrDeployForwarderContract(
+        address appDeployer_,
         address chainContractAddress_,
         uint32 chainSlug_
     ) external returns (address);
