@@ -7,97 +7,259 @@ import {Bid, PayloadBatch, FeesData, PayloadDetails, FinalizeParams} from "../..
 import {DISTRIBUTE_FEE, DEPLOY} from "../../../common/Constants.sol";
 import "./BatchAsync.sol";
 
-// msg.sender map and call next function flow
 contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
-    /// @notice Starts the batch processing
-    /// @param asyncId_ The ID of the batch
-    function startBatchProcessing(
-        bytes32 asyncId_
-    ) external onlyAuctionManager {
-        PayloadBatch storage payloadBatch = payloadBatches[asyncId_];
-        if (payloadBatch.isBatchCancelled) return;
-
-        _finalizeNextPayload(asyncId_);
+    constructor(
+        address _addressResolver,
+        address _feesManager
+    ) AddressResolverUtil(_addressResolver) {
+        feesManager = _feesManager;
     }
 
-    /// @notice Callback function for handling promises
-    /// @param asyncId_ The ID of the batch
-    /// @param payloadDetails_ The payload details
+    function startBatchProcessing(
+        bytes32 asyncId_
+    ) external onlyAuctionManager(asyncId_) {
+        _process(asyncId_, "");
+    }
+
     function callback(
         bytes memory asyncId_,
         bytes memory payloadDetails_
     ) external override onlyPromises {
         bytes32 asyncId = abi.decode(asyncId_, (bytes32));
+
+        _process(asyncId, payloadDetails_);
+    }
+
+    error PromisesNotResolved();
+
+    function _process(bytes32 asyncId, bytes memory payloadDetails_) internal {
         PayloadBatch storage payloadBatch = payloadBatches[asyncId];
         if (payloadBatch.isBatchCancelled) return;
 
-        uint256 payloadsRemaining = totalPayloadsRemaining[asyncId];
+        // Check if there are remaining payloads to process
+        if (payloadBatch.totalPayloadsRemaining > 0) {
+            // Check if there are promises from last batch that need to be resolved
+            if (payloadBatch.lastBatchPromises.length > 0) {
+                // Check if all promises are resolved
+                for (
+                    uint256 i = 0;
+                    i < payloadBatch.lastBatchPromises.length;
+                    i++
+                ) {
+                    if (
+                        !IPromise(payloadBatch.lastBatchPromises[i]).resolved()
+                    ) {
+                        revert PromisesNotResolved();
+                    }
+                }
+                // Clear promises array after all are resolved
+                delete payloadBatch.lastBatchPromises;
+            }
 
-        if (payloadsRemaining > 0) {
-            payloadBatch.currentPayloadIndex++;
+            // Proceed with next payload only if all promises are resolved
             _finalizeNextPayload(asyncId);
         } else {
-            // todo: change it to call to fees manager
-            (bytes32 payloadId, bytes32 root) = IFeesManager(feesManager)
-                .distributeFees(
-                    asyncId,
-                    payloadBatch.appGateway,
-                    payloadBatch.feesData,
-                    winningBids[asyncId]
-                );
-            payloadIdToBatchHash[payloadId] = asyncId;
-            emit PayloadAsyncRequested(
-                asyncId,
-                payloadId,
-                root,
-                payloadDetails_
-            );
-
-            PayloadDetails storage payloadDetails = payloadDetailsArrays[
-                asyncId
-            ][payloadBatch.currentPayloadIndex];
-
-            if (payloadDetails.callType == CallType.DEPLOY) {
-                IAppGateway(payloadBatch.appGateway).allContractsDeployed(
-                    payloadDetails.chainSlug
-                );
-            }
+            _finishBatch(asyncId, payloadBatch, payloadDetails_);
         }
     }
 
-    /// @notice Finalizes the next payload in the batch
-    /// @param asyncId_ The ID of the batch
+    function _finishBatch(
+        bytes32 asyncId,
+        PayloadBatch storage payloadBatch,
+        bytes memory payloadDetails_
+    ) internal {
+        (bytes32 payloadId, bytes32 root) = IFeesManager(feesManager)
+            .distributeFees(
+                payloadBatch.appGateway,
+                payloadBatch.feesData,
+                payloadBatch.winningBid
+            );
+
+        payloadIdToBatchHash[payloadId] = asyncId;
+        emit PayloadAsyncRequested(
+            asyncId,
+            payloadId,
+            root,
+            abi.decode(payloadDetails_, (PayloadDetails))
+        );
+
+        IAppGateway(payloadBatch.appGateway).onBatchComplete(
+            asyncId,
+            payloadBatch
+        );
+    }
+
     function _finalizeNextPayload(bytes32 asyncId_) internal {
         PayloadBatch storage payloadBatch = payloadBatches[asyncId_];
-        uint256 currentPayloadIndex = payloadBatch.currentPayloadIndex;
-        totalPayloadsRemaining[asyncId_]--;
+        uint256 currentIndex = payloadBatch.currentPayloadIndex;
+        PayloadDetails[] storage payloads = payloadBatchDetails[asyncId_];
 
-        PayloadDetails[] storage payloads = payloadDetailsArrays[asyncId_];
+        // Deploy single promise for the next batch of operations
+        address batchPromise = IAddressResolver(addressResolver)
+            .deployAsyncPromiseContract(address(this));
+        isValidPromise[batchPromise] = true;
+        IPromise(batchPromise).then(
+            this.callback.selector,
+            abi.encode(asyncId_)
+        );
 
-        PayloadDetails storage payloadDetails = payloads[currentPayloadIndex];
-
-        bytes32 payloadId;
-        bytes32 root;
-
-        // todo: if multiple query, process all at once
-        if (payloadDetails.callType == CallType.READ) {
-            payloadId = watcherPrecompile().query(
-                payloadDetails.chainSlug,
-                payloadDetails.target,
-                payloadDetails.next,
-                payloadDetails.payload
+        // Handle batch processing based on type
+        if (payloads[currentIndex].callType == CallType.READ) {
+            _processBatchedReads(
+                asyncId_,
+                payloadBatch,
+                payloads,
+                currentIndex,
+                batchPromise
             );
-            payloadIdToBatchHash[payloadId] = asyncId_;
+        } else if (!payloads[currentIndex].isSequential) {
+            _processParallelCalls(
+                asyncId_,
+                payloadBatch,
+                payloads,
+                currentIndex,
+                batchPromise
+            );
+        } else {
+            _processSequentialCall(
+                asyncId_,
+                payloadBatch,
+                payloads,
+                currentIndex,
+                batchPromise
+            );
+        }
+    }
+
+    function _executeWatcherCall(
+        bytes32 asyncId_,
+        PayloadDetails storage payload,
+        PayloadBatch storage payloadBatch,
+        address batchPromise,
+        bool isRead
+    ) internal returns (bytes32 payloadId, bytes32 root) {
+        if (isRead) {
+            payload.next[1] = batchPromise;
+            payloadId = watcherPrecompile().query(
+                payload.chainSlug,
+                payload.target,
+                payload.next,
+                payload.payload
+            );
+            root = bytes32(0);
         } else {
             FinalizeParams memory finalizeParams = FinalizeParams({
-                payloadDetails: payloadDetails,
-                transmitter: winningBids[asyncId_].transmitter
+                payloadDetails: payload,
+                transmitter: payloadBatch.winningBid.transmitter
             });
-
             (payloadId, root) = watcherPrecompile().finalize(finalizeParams);
-            payloadIdToBatchHash[payloadId] = asyncId_;
         }
 
-        emit PayloadAsyncRequested(asyncId_, payloadId, root, payloadDetails);
+        payload.next[1] = batchPromise;
+        payloadIdToBatchHash[payloadId] = asyncId_;
+        emit PayloadAsyncRequested(asyncId_, payloadId, root, payload);
+    }
+
+    function _processBatchedReads(
+        bytes32 asyncId_,
+        PayloadBatch storage payloadBatch,
+        PayloadDetails[] storage payloads,
+        uint256 startIndex,
+        address batchPromise
+    ) internal {
+        uint256 endIndex = startIndex;
+        while (
+            endIndex + 1 < payloads.length &&
+            payloads[endIndex + 1].callType == CallType.READ
+        ) {
+            endIndex++;
+        }
+
+        address[] memory promises = new address[](endIndex - startIndex + 1);
+        for (uint256 i = startIndex; i <= endIndex; i++) {
+            promises[i - startIndex] = payloads[i].next[0];
+            _executeWatcherCall(
+                asyncId_,
+                payloads[i],
+                payloadBatch,
+                batchPromise,
+                true
+            );
+        }
+
+        _updateBatchState(
+            payloadBatch,
+            promises,
+            endIndex - startIndex + 1,
+            endIndex + 1
+        );
+    }
+
+    function _processParallelCalls(
+        bytes32 asyncId_,
+        PayloadBatch storage payloadBatch,
+        PayloadDetails[] storage payloads,
+        uint256 startIndex,
+        address batchPromise
+    ) internal {
+        uint256 endIndex = startIndex;
+        while (
+            endIndex + 1 < payloads.length &&
+            !payloads[endIndex + 1].isSequential
+        ) {
+            endIndex++;
+        }
+
+        // Store promises for last batch
+        address[] memory promises = new address[](endIndex - startIndex + 1);
+        for (uint256 i = startIndex; i <= endIndex; i++) {
+            promises[i - startIndex] = payloads[i].next[0];
+
+            _executeWatcherCall(
+                asyncId_,
+                payloads[i],
+                payloadBatch,
+                batchPromise,
+                false
+            );
+        }
+
+        _updateBatchState(
+            payloadBatch,
+            promises,
+            endIndex - startIndex + 1,
+            endIndex + 1
+        );
+    }
+
+    function _processSequentialCall(
+        bytes32 asyncId_,
+        PayloadBatch storage payloadBatch,
+        PayloadDetails[] storage payloads,
+        uint256 currentIndex,
+        address batchPromise
+    ) internal {
+        address[] memory promises = new address[](1);
+        promises[0] = payloads[currentIndex].next[0];
+
+        _executeWatcherCall(
+            asyncId_,
+            payloads[currentIndex],
+            payloadBatch,
+            batchPromise,
+            false
+        );
+        _updateBatchState(payloadBatch, promises, 1, currentIndex + 1);
+    }
+
+    function _updateBatchState(
+        PayloadBatch storage batch,
+        address[] memory promises,
+        uint256 completedCount,
+        uint256 nextIndex
+    ) internal {
+        batch.totalPayloadsRemaining -= completedCount;
+        batch.currentPayloadIndex = nextIndex;
+        batch.lastBatchPromises = promises;
     }
 }

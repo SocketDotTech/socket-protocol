@@ -49,7 +49,6 @@ contract Socket is SocketBase {
     /**
      * @dev keeps track of whether a payload has been executed or not using payload id
      */
-    // todo: add nottried, reverting and success
     mapping(bytes32 => bool) public payloadExecuted;
 
     constructor(
@@ -109,6 +108,10 @@ contract Socket is SocketBase {
         // extract plug address from msgID
         address switchboard = _decodeSwitchboard(payloadId_);
         uint32 localSlug = _decodeChainSlug(payloadId_);
+
+        PlugConfig memory plugConfig = _plugConfigs[target_];
+        if (switchboard != address(plugConfig.switchboard__))
+            revert InvalidSwitchboard();
 
         if (localSlug != chainSlug) revert InvalidSlug();
 

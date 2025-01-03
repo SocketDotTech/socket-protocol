@@ -8,4 +8,6 @@ interface IPromise {
     ) external returns (address promise_);
 
     function markResolved(bytes memory returnData) external;
+
+    function resolved() external view returns (bool);
 }

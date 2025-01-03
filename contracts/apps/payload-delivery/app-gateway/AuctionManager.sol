@@ -5,25 +5,29 @@ import {Ownable} from "../../../utils/Ownable.sol";
 import {SignatureVerifier} from "../../../socket/utils/SignatureVerifier.sol";
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
 import {Bid, FeesData} from "../../../common/Structs.sol";
-import {IAuctionContract} from "../../../interfaces/IAuctionContract.sol";
 import {IAuctionHouse} from "../../../interfaces/IAuctionHouse.sol";
 
 /// @title AuctionHouse
 /// @notice Contract for managing auctions and placing bids
 contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
     SignatureVerifier public immutable signatureVerifier__;
+    uint32 public immutable vmChainSlug;
     mapping(bytes32 => Bid) public winningBids;
     // asyncId => auction status
     mapping(bytes32 => bool) public auctionClosed;
     mapping(bytes32 => bool) public auctionStarted;
 
+    uint256 public constant auctionEndDelaySeconds = 0;
+
     /// @notice Constructor for AuctionHouse
     /// @param addressResolver_ The address of the address resolver
     /// @param signatureVerifier_ The address of the signature verifier
     constructor(
+        uint32 vmChainSlug_,
         address addressResolver_,
         SignatureVerifier signatureVerifier_
     ) AddressResolverUtil(addressResolver_) {
+        vmChainSlug = vmChainSlug_;
         signatureVerifier__ = signatureVerifier_;
     }
 
@@ -31,14 +35,13 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
     event AuctionEnded(bytes32 asyncId_, Bid winningBid);
     event BidPlaced(bytes32 asyncId_, Bid bid);
 
-    function startAuction(bytes32 asyncId_) external {
+    function startAuction(bytes32 asyncId_) external onlyPayloadDelivery {
         require(!auctionClosed[asyncId_], "Auction closed");
         require(!auctionStarted[asyncId_], "Auction already started");
 
         auctionStarted[asyncId_] = true;
         emit AuctionStarted(asyncId_);
-        uint256 auctionEndDelaySeconds = IAuctionContract(address(this))
-            .auctionEndDelaySeconds();
+
         watcherPrecompile().setTimeout(
             abi.encodeWithSelector(this.endAuction.selector, asyncId_),
             auctionEndDelaySeconds
@@ -52,13 +55,16 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
     function bid(
         bytes32 asyncId_,
         uint256 fee,
+        FeesData memory feesData,
         bytes memory transmitterSignature,
         bytes memory extraData
     ) external {
         require(!auctionClosed[asyncId_], "Auction closed");
 
         address transmitter = signatureVerifier__.recoverSigner(
-            keccak256(abi.encode(address(this), asyncId_, fee)),
+            keccak256(
+                abi.encode(address(this), vmChainSlug, asyncId_, fee, extraData)
+            ),
             transmitterSignature
         );
 
@@ -67,16 +73,10 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
             transmitter: transmitter,
             extraData: extraData
         });
-        (address auctionContract, FeesData memory feesData) = AuctionHouse()
-            .getAuctionContractAndFeesData(asyncId_);
+
         require(fee <= feesData.maxFees, "Bid exceeds max fees");
-        require(
-            IAuctionContract(auctionContract).isNewBidBetter(
-                winningBids[asyncId_],
-                newBid
-            ),
-            "Bid is not better"
-        );
+        if (fee < winningBids[asyncId_].fee) return;
+
         winningBids[asyncId_] = newBid;
         emit BidPlaced(asyncId_, newBid);
     }

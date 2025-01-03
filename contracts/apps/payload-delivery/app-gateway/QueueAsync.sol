@@ -8,28 +8,23 @@ import {AsyncPromise} from "../../../AsyncPromise.sol";
 import {IPromise} from "../../../interfaces/IPromise.sol";
 import {IAppDeployer} from "../../../interfaces/IAppDeployer.sol";
 import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
+import {IContractFactoryPlug} from "../../../interfaces/IContractFactoryPlug.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
 abstract contract QueueAsync is AddressResolverUtil {
     uint256 public saltCounter;
     uint256 public asyncCounter;
-
-    address public auctionManager;
     address public feesManager;
 
     CallParams[] public callParamsArray;
     mapping(address => bool) public isValidPromise;
-    mapping(bytes32 => Bid) public winningBids;
 
     // payloadId => asyncId
     mapping(bytes32 => bytes32) public payloadIdToBatchHash;
     // asyncId => PayloadBatch
     mapping(bytes32 => PayloadBatch) public payloadBatches;
-    // asyncId => totalPayloadsRemaining
-    mapping(bytes32 => uint256) public totalPayloadsRemaining;
     // asyncId => PayloadDetails[]
-    mapping(bytes32 => PayloadDetails[]) public payloadDetailsArrays;
-
+    mapping(bytes32 => PayloadDetails[]) public payloadBatchDetails;
     error InvalidPromise();
 
     modifier onlyPromises() {
@@ -39,18 +34,10 @@ abstract contract QueueAsync is AddressResolverUtil {
         _;
     }
 
-    modifier onlyAuctionManager() {
-        if (msg.sender != auctionManager) revert NotAuctionManager();
+    modifier onlyAuctionManager(bytes32 asyncId_) {
+        if (msg.sender != payloadBatches[asyncId_].auctionManager)
+            revert NotAuctionManager();
         _;
-    }
-
-    constructor(
-        address _addressResolver,
-        address _auctionManager,
-        address _feesManager
-    ) AddressResolverUtil(_addressResolver) {
-        auctionManager = _auctionManager;
-        feesManager = _feesManager;
     }
 
     /// @notice Clears the call parameters array
@@ -61,14 +48,14 @@ abstract contract QueueAsync is AddressResolverUtil {
     /// @notice Queues a new payload
     /// @param chainSlug_ The chain identifier
     /// @param target_ The target address
-    /// @param asyncPromiseOrId_ The async promise or ID
+    /// @param asyncPromise_ The async promise or ID
     /// @param callType_ The call type
     /// @param payload_ The payload
     function queue(
         bool isSequential_,
         uint32 chainSlug_,
         address target_,
-        bytes32 asyncPromiseOrId_,
+        address asyncPromise_,
         CallType callType_,
         bytes memory payload_
     ) external {
@@ -76,7 +63,7 @@ abstract contract QueueAsync is AddressResolverUtil {
         callParamsArray.push(
             CallParams({
                 callType: callType_,
-                asyncPromiseOrId: asyncPromiseOrId_,
+                asyncPromise: asyncPromise_,
                 chainSlug: chainSlug_,
                 target: target_,
                 payload: payload_,
@@ -110,29 +97,19 @@ abstract contract QueueAsync is AddressResolverUtil {
         CallParams memory params
     ) internal returns (PayloadDetails memory) {
         address[] memory next = new address[](2);
-        next[0] = address(uint160(uint256(params.asyncPromiseOrId)));
+        next[0] = params.asyncPromise;
 
         bytes memory payload = params.payload;
         if (params.callType == CallType.DEPLOY) {
-            address asyncPromise = IAddressResolver(addressResolver)
-                .deployAsyncPromiseContract(address(this));
-
-            isValidPromise[asyncPromise] = true;
-            next[0] = asyncPromise;
-
-            IPromise(asyncPromise).then(
-                this.setAddress.selector,
-                abi.encode(
-                    params.chainSlug,
-                    params.asyncPromiseOrId,
-                    msg.sender
-                )
-            );
-
             bytes32 salt = keccak256(
                 abi.encode(msg.sender, params.chainSlug, saltCounter++)
             );
-            payload = abi.encode(params.payload, salt);
+
+            payload = abi.encodeWithSelector(
+                IContractFactoryPlug.deployContract.selector,
+                params.payload,
+                salt
+            );
         }
 
         return
@@ -147,30 +124,5 @@ abstract contract QueueAsync is AddressResolverUtil {
                 next: next,
                 isSequential: params.isSequential
             });
-    }
-
-    // todo: change it to call to gateway instead
-    /// @notice Sets the address for a deployed contract
-    /// @param data_ The data
-    /// @param returnData_ The return data
-    function setAddress(
-        bytes memory data_,
-        bytes memory returnData_
-    ) external onlyPromises {
-        (uint32 chainSlug, bytes32 contractId, address appDeployer) = abi
-            .decode(data_, (uint32, bytes32, address));
-
-        address forwarderContractAddress = addressResolver
-            .deployForwarderContract(
-                appDeployer,
-                abi.decode(returnData_, (address)),
-                chainSlug
-            );
-
-        IAppDeployer(appDeployer).setForwarderContract(
-            chainSlug,
-            forwarderContractAddress,
-            contractId
-        );
     }
 }

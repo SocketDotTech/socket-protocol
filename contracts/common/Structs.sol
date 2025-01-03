@@ -21,6 +21,7 @@ struct PayloadDetails {
     CallType callType;
     uint256 executionGasLimit;
     address[] next;
+    bool isSequential;
 }
 
 struct DeployParams {
@@ -30,11 +31,12 @@ struct DeployParams {
 
 struct CallParams {
     CallType callType;
-    bytes32 asyncPromiseOrId;
+    address asyncPromise;
     uint32 chainSlug;
     address target;
     uint256 gasLimit;
     bytes payload;
+    bool isSequential;
 }
 
 struct Bid {
@@ -47,8 +49,11 @@ struct PayloadBatch {
     address appGateway;
     FeesData feesData;
     uint256 currentPayloadIndex;
-    uint256 auctionEndDelaySeconds;
+    address auctionManager;
+    Bid winningBid;
     bool isBatchCancelled;
+    uint256 totalPayloadsRemaining;
+    address[] lastBatchPromises;
 }
 
 struct FinalizeParams {
@@ -110,6 +115,7 @@ struct ExecutePayloadParams {
     uint256 executionGasLimit;
     bytes transmitterSignature;
     bytes payload;
+    address target;
 }
 
 struct TimeoutRequest {

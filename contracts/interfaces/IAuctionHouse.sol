@@ -24,14 +24,14 @@ interface IAuctionHouse {
     function queue(
         uint32 chainSlug_,
         address target_,
-        bytes32 asyncPromiseOrId_,
+        address asyncPromise_,
         CallType callType_,
         bytes memory payload_
     ) external;
 
     function batch(
         FeesData memory feesData_,
-        uint256 auctionEndDelaySeconds_
+        address auctionManager_
     ) external returns (bytes32);
 
     function withdrawTo(
@@ -44,9 +44,7 @@ interface IAuctionHouse {
 
     function cancelTransaction(bytes32 asyncId_) external;
 
-    function getAuctionContractAndFeesData(
-        bytes32 asyncId_
-    ) external view returns (address, FeesData memory);
     function startBatchProcessing(bytes32 asyncId_) external;
+
     function getCurrentAsyncId() external view returns (bytes32);
 }
