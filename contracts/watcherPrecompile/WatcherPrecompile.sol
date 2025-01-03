@@ -2,30 +2,49 @@
 pragma solidity ^0.8.13;
 
 import "./WatcherPrecompileConfig.sol";
+import "./WatcherPrecompileLimits.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IWatcherPrecompile.sol";
 import "../interfaces/IPromise.sol";
 
-import {PayloadRootParams, AsyncRequest, FinalizeParams} from "../common/Structs.sol";
-
+import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../common/Structs.sol";
+import {QUERY, FINALIZE, SCHEDULE} from "../common/Constants.sol";
+import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../common/Errors.sol";
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
-contract WatcherPrecompile is WatcherPrecompileConfig {
+contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
+    uint256 public maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
     /// @notice Counter for tracking query requests
     uint256 public queryCounter;
     /// @notice Counter for tracking payload execution requests
     uint256 public payloadCounter;
-
+    /// @notice Counter for tracking timeout requests
+    uint256 public timeoutCounter;
     /// @notice Mapping to store async requests
     /// @dev payloadId => AsyncRequest struct
     mapping(bytes32 => AsyncRequest) public asyncRequests;
-
+    /// @notice Mapping to store timeout requests
+    /// @dev timeoutId => TimeoutRequest struct
+    mapping(bytes32 => TimeoutRequest) public timeoutRequests;
     /// @notice Mapping to store watcher signatures
     /// @dev payloadId => signature bytes
     mapping(bytes32 => bytes) public watcherSignatures;
 
+    /// @notice Mapping to store if appGateway has been called with trigger from on-chain Inbox
+    /// @dev callId => bool
+    mapping(bytes32 => bool) public appGatewayCalled;
+
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
+
+    event CalledAppGateway(
+        bytes32 callId,
+        uint32 chainSlug,
+        address plug,
+        address appGateway,
+        bytes32 params,
+        bytes payload
+    );
 
     /// @notice Emitted when a new query is requested
     /// @param chainSlug The identifier of the destination chain
@@ -61,42 +80,85 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
     /// @param payloadId The unique identifier for the resolved promise
     event PromiseResolved(bytes32 indexed payloadId);
 
-    /// @notice Emitted when a timeout is requested
-    /// @param target The target address for the timeout
-    /// @param payload The payload data
-    /// @param timeoutMS The timeout duration in milliseconds
-    event TimeoutRequested(address target, bytes payload, uint256 timeoutMS);
+    event TimeoutRequested(
+        bytes32 timeoutId,
+        address target,
+        bytes payload,
+        uint256 executeAt // Epoch time when the task should execute
+    );
 
     /// @notice Emitted when a timeout is resolved
+    /// @param timeoutId The unique identifier for the timeout
     /// @param target The target address for the timeout
     /// @param payload The payload data
-    /// @param timeoutMS The timeout duration in milliseconds
-    event TimeoutResolved(address target, bytes payload, uint256 timeoutMS);
+    /// @param executedAt The epoch time when the task was executed
+    event TimeoutResolved(
+        bytes32 timeoutId,
+        address target,
+        bytes payload,
+        uint256 executedAt
+    );
 
     /// @notice Contract constructor
     /// @param _owner Address of the contract owner
-    constructor(address _owner) Ownable(_owner) {}
+    constructor(
+        address _owner,
+        address addressResolver_
+    ) Ownable(_owner) WatcherPrecompileLimits(addressResolver_) {}
+
+    // ================== Timeout functions ==================
 
     /// @notice Sets a timeout for a payload execution on app gateway
     /// @param payload_ The payload data
-    /// @param timeoutMS_ The timeout duration in milliseconds
-    function setTimeout(bytes calldata payload_, uint256 timeoutMS_) external {
-        emit TimeoutRequested(msg.sender, payload_, timeoutMS_);
+    /// @param delayInSeconds_ The delay in seconds
+    function setTimeout(
+        bytes calldata payload_,
+        uint256 delayInSeconds_
+    ) external {
+        if (delayInSeconds_ > maxTimeoutDelayInSeconds)
+            revert TimeoutDelayTooLarge();
+
+        _consumeLimit(msg.sender, SCHEDULE);
+        uint256 executeAt = block.timestamp + delayInSeconds_;
+        bytes32 timeoutId = _encodeTimeoutId(timeoutCounter++);
+        timeoutRequests[timeoutId] = TimeoutRequest(
+            timeoutId,
+            msg.sender,
+            payload_,
+            delayInSeconds_,
+            executeAt,
+            0,
+            false
+        );
+        emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);
     }
 
-    /// @notice Ends the timeout and calls the target address with the callback payload
-    /// @param target_ The target address for execution
-    /// @param payload_ The payload to execute
-    /// @param timeoutMS The original timeout duration
+    /// @notice Ends the timeouts and calls the target address with the callback payload
+    /// @param timeoutId The unique identifier for the timeout
     /// @dev Only callable by the contract owner
-    function resolveTimeout(
-        address target_,
-        bytes calldata payload_,
-        uint256 timeoutMS
+    function resolveTimeout(bytes32 timeoutId) external onlyOwner {
+        TimeoutRequest storage timeoutRequest = timeoutRequests[timeoutId];
+        if (timeoutRequest.isResolved) revert TimeoutAlreadyResolved();
+        if (timeoutRequest.executeAt > block.timestamp)
+            revert ResolvingTimeoutTooEarly();
+        (bool success, ) = address(timeoutRequest.target).call(
+            timeoutRequest.payload
+        );
+        if (!success) revert CallFailed();
+        timeoutRequest.isResolved = true;
+        timeoutRequest.executedAt = block.timestamp;
+        emit TimeoutResolved(
+            timeoutId,
+            timeoutRequest.target,
+            timeoutRequest.payload,
+            block.timestamp
+        );
+    }
+
+    function setMaxTimeoutDelayInSeconds(
+        uint256 maxTimeoutDelayInSeconds_
     ) external onlyOwner {
-        (bool success, ) = address(target_).call(payload_);
-        require(success, "Call failed");
-        emit TimeoutResolved(target_, payload_, timeoutMS);
+        maxTimeoutDelayInSeconds = maxTimeoutDelayInSeconds_;
     }
 
     // ================== Finalize functions ==================
@@ -110,6 +172,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
     ) external returns (bytes32 payloadId, bytes32 root) {
         // The app gateway is the caller of this function
         address appGateway = msg.sender;
+        _consumeLimit(appGateway, FINALIZE);
 
         // Verify that the app gateway is properly configured for this chain and target
         _verifyConnections(
@@ -130,6 +193,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
             payloadId,
             appGateway,
             params_.transmitter,
+            params_.payloadDetails.target,
             params_.payloadDetails.executionGasLimit,
             params_.payloadDetails.payload
         );
@@ -170,6 +234,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         address[] memory asyncPromises,
         bytes memory payload
     ) public returns (bytes32 payloadId) {
+        _consumeLimit(msg.sender, QUERY);
         // Generate unique payload ID from query counter
         payloadId = bytes32(queryCounter++);
 
@@ -233,11 +298,45 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
                 params_.payloadId,
                 params_.appGateway,
                 params_.transmitter,
+                params_.target,
                 params_.executionGasLimit,
                 params_.payload
             )
         );
     }
+
+    // ================== On-Chain Inbox ==================
+
+    function callAppGateways(
+        CallFromInboxParams[] calldata params_
+    ) external onlyOwner {
+        for (uint256 i = 0; i < params_.length; i++) {
+            if (appGatewayCalled[params_[i].callId])
+                revert AppGatewayAlreadyCalled();
+            if (
+                !isValidInboxCaller[params_[i].appGateway][
+                    params_[i].chainSlug
+                ][params_[i].plug]
+            ) revert InvalidInboxCaller();
+            appGatewayCalled[params_[i].callId] = true;
+            IAppGateway(params_[i].appGateway).callFromInbox(
+                params_[i].chainSlug,
+                params_[i].plug,
+                params_[i].payload,
+                params_[i].params
+            );
+            emit CalledAppGateway(
+                params_[i].callId,
+                params_[i].chainSlug,
+                params_[i].plug,
+                params_[i].appGateway,
+                params_[i].params,
+                params_[i].payload
+            );
+        }
+    }
+
+    // ================== Helper functions ==================
 
     /// @notice Verifies the connection between chain slug, target, and app gateway
     /// @param chainSlug_ The identifier of the chain
@@ -263,16 +362,30 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         uint32 chainSlug_,
         address plug_,
         uint256 counter_
-    ) internal pure returns (bytes32) {
+    ) internal view returns (bytes32) {
         if (chainSlug_ == 0) revert InvalidChainSlug();
-
+        (, address switchboard) = getPlugConfigs(chainSlug_, plug_);
         // Encode payload ID by bit-shifting and combining:
-        // chainSlug (32 bits) | plug address (160 bits) | counter (64 bits)
+        // chainSlug (32 bits) | switchboard address (160 bits) | counter (64 bits)
         return
             bytes32(
                 (uint256(chainSlug_) << 224) |
-                    (uint256(uint160(plug_)) << 64) |
+                    (uint256(uint160(switchboard)) << 64) |
                     counter_
             );
+    }
+
+    function _encodeTimeoutId(
+        uint256 timeoutCounter_
+    ) internal view returns (bytes32) {
+        // watcher address (160 bits) | counter (64 bits)
+        return
+            bytes32((uint256(uint160(address(this))) << 64) | timeoutCounter_);
+    }
+
+    function updateLimitParams(
+        UpdateLimitParams[] calldata updates
+    ) external onlyOwner {
+        _updateLimitParams(updates);
     }
 }

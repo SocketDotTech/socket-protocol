@@ -2,61 +2,51 @@
 pragma solidity ^0.8.13;
 
 import "solmate/utils/SafeTransferLib.sol";
-
+import {PlugBase} from "../../base/PlugBase.sol";
+import {Ownable} from "../../utils/Ownable.sol";
 import {ETH_ADDRESS} from "../../common/Constants.sol";
 
 /// @title FeesManager
 /// @notice Abstract contract for managing fees
-abstract contract FeesManager {
+contract FeesPlug is PlugBase, Ownable {
     mapping(address => mapping(address => uint256)) public balanceOf;
-    mapping(uint256 => bool) public feesRedeemed;
+    mapping(bytes32 => bool) public feesRedeemed;
 
     error FeesAlreadyPaid();
 
-    constructor() {}
+    constructor(
+        address socket_,
+        uint32 chainSlug_,
+        address owner_
+    ) PlugBase(socket_, chainSlug_) Ownable(owner_) {}
 
-    /// @notice Handles the distribution of fees
-    /// @param data The data
-    /// @return bytes memory The encoded return data
-    function _handleDistributeFee(
-        bytes memory data
-    ) internal returns (bytes memory) {
-        (
-            address appGateway,
-            address feeToken,
-            uint256 fee,
-            address transmitter,
-            uint256 feesCounter
-        ) = abi.decode(data, (address, address, uint256, address, uint256));
-
-        if (feesRedeemed[feesCounter]) revert FeesAlreadyPaid();
-        feesRedeemed[feesCounter] = true;
+    function distributeFee(
+        address appGateway,
+        address feeToken,
+        uint256 fee,
+        address transmitter,
+        bytes32 feesId
+    ) external onlySocket returns (bytes memory) {
+        if (feesRedeemed[feesId]) revert FeesAlreadyPaid();
+        feesRedeemed[feesId] = true;
 
         require(
             balanceOf[appGateway][feeToken] >= fee,
-            "PayloadDeliveryPlug: insufficient balance"
+            "FeesPlug: Insufficient Balance for Fees"
         );
         balanceOf[appGateway][feeToken] -= fee;
         _transferTokens(feeToken, fee, transmitter);
         return bytes("");
     }
-
-    /// @notice Handles the withdrawal of funds
-    /// @param data The data
-    /// @return bytes memory The encoded return data
-    function _handleWithdraw(
-        bytes memory data
-    ) internal returns (bytes memory) {
-        (
-            address appGateway,
-            address token,
-            uint256 amount,
-            address receiver
-        ) = abi.decode(data, (address, address, uint256, address));
-
+    function withdrawFees(
+        address appGateway,
+        address token,
+        uint256 amount,
+        address receiver
+    ) external onlySocket returns (bytes memory) {
         require(
             balanceOf[appGateway][token] >= amount,
-            "PayloadDeliveryPlug: insufficient balance"
+            "FeesPlug: Insufficient Balance for Withdrawal"
         );
         balanceOf[appGateway][token] -= amount;
         _transferTokens(token, amount, receiver);
@@ -73,7 +63,7 @@ abstract contract FeesManager {
         address appGateway_
     ) external payable {
         if (token == ETH_ADDRESS) {
-            require(msg.value == amount, "Fees Manager: invalid depositamount");
+            require(msg.value == amount, "FeesPlug: Invalid Deposit Amount");
         } else {
             SafeTransferLib.safeTransferFrom(
                 ERC20(token),
@@ -99,5 +89,12 @@ abstract contract FeesManager {
         } else {
             SafeTransferLib.safeTransfer(ERC20(token), receiver, amount);
         }
+    }
+
+    function connect(
+        address appGateway_,
+        address switchboard_
+    ) external onlyOwner {
+        _connectSocket(appGateway_, switchboard_);
     }
 }

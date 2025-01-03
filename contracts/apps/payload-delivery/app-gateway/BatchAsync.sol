@@ -6,21 +6,15 @@ import "./QueueAsync.sol";
 import {IAuctionHouse} from "../../../interfaces/IAuctionHouse.sol";
 import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
 import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
+import {IAuctionManager} from "../../../interfaces/IAuctionManager.sol";
+import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
+
 import {Bid, PayloadBatch, FeesData, PayloadDetails} from "../../../common/Structs.sol";
 import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Constants.sol";
 
 /// @title BatchAsync
 /// @notice Abstract contract for managing asynchronous payload batches
 abstract contract BatchAsync is QueueAsync {
-    uint256 public asyncCounter;
-
-    // asyncId => PayloadBatch
-    mapping(bytes32 => PayloadBatch) public payloadBatches;
-    // asyncId => totalPayloadsRemaining
-    mapping(bytes32 => uint256) public totalPayloadsRemaining;
-    // asyncId => PayloadDetails[]
-    mapping(bytes32 => PayloadDetails[]) public payloadDetailsArrays;
-
     error AllPayloadsExecuted();
     error NotFromForwarder();
     error CallFailed(bytes32 payloadId);
@@ -51,9 +45,16 @@ abstract contract BatchAsync is QueueAsync {
         uint256 auctionEndDelayMS_
     ) external returns (bytes32) {
         if (auctionEndDelayMS_ > 10 * 60 * 1000) revert DelayLimitReached();
+
         PayloadDetails[]
             memory payloadDetailsArray = createPayloadDetailsArray();
 
+        // Check if batch contains only READ calls
+        if (_isReadOnlyBatch(payloadDetailsArray)) {
+            return _processReadOnlyBatch(payloadDetailsArray);
+        }
+
+        // Default flow for other cases (including mixed read/write)
         return
             deliverPayload(payloadDetailsArray, feesData_, auctionEndDelayMS_);
     }
@@ -77,20 +78,59 @@ abstract contract BatchAsync is QueueAsync {
         uint256 auctionEndDelayMS_
     ) internal returns (bytes32) {
         address forwarderAppGateway = msg.sender;
-
         bytes32 asyncId = getCurrentAsyncId();
         asyncCounter++;
 
-        for (uint256 i = 0; i < payloadDetails_.length; i++) {
-            if (payloadDetails_[i].payload.length > 24.5 * 1024)
-                revert PayloadTooLarge();
-            // todo: convert it to proxy and promise call
-            if (payloadDetails_[i].callType == CallType.DEPLOY) {
-                payloadDetails_[i].payload = abi.encode(
-                    DEPLOY,
+        // Check for consecutive reads at the start
+        uint256 readEndIndex = 0;
+        while (
+            readEndIndex < payloadDetails_.length &&
+            payloadDetails_[readEndIndex].callType == CallType.READ
+        ) {
+            readEndIndex++;
+        }
+
+        // Process consecutive reads together if there are 1 or more
+        if (readEndIndex >= 1) {
+            // Create a batched read promise
+            address batchPromise = IAddressResolver(addressResolver)
+                .deployAsyncPromiseContract(address(this));
+            isValidPromise[batchPromise] = true;
+
+            // Process all reads in the batch
+            for (uint256 i = 0; i < readEndIndex; i++) {
+                bytes32 payloadId = watcherPrecompile().query(
+                    payloadDetails_[i].chainSlug,
+                    payloadDetails_[i].target,
+                    [batchPromise, address(0)], // Use same promise for all reads in batch
                     payloadDetails_[i].payload
                 );
-                payloadDetails_[i].target = getPayloadDeliveryPlugAddress(
+                payloadIdToBatchHash[payloadId] = asyncId;
+
+                emit PayloadAsyncRequested(
+                    asyncId,
+                    payloadId,
+                    bytes32(0),
+                    payloadDetails_[i]
+                );
+            }
+
+            // Setup callback for the entire batch of reads
+            IPromise(batchPromise).then(
+                this.callback.selector,
+                abi.encode(asyncId)
+            );
+        }
+
+        // Process remaining payloads normally
+        for (uint256 i = readEndIndex; i < payloadDetails_.length; i++) {
+            if (payloadDetails_[i].payload.length > 24.5 * 1024)
+                revert PayloadTooLarge();
+
+            // Rest of the existing deliverPayload logic for each payload
+            if (payloadDetails_[i].callType == CallType.DEPLOY) {
+                payloadDetails_[i].target = getPlugAddress(
+                    address(this),
                     payloadDetails_[i].chainSlug
                 );
             } else if (payloadDetails_[i].callType == CallType.WRITE) {
@@ -99,35 +139,20 @@ abstract contract BatchAsync is QueueAsync {
 
                 if (forwarderAppGateway == address(0))
                     forwarderAppGateway = msg.sender;
-
-                payloadDetails_[i].payload = abi.encode(
-                    FORWARD_CALL,
-                    abi.encode(
-                        payloadDetails_[i].target,
-                        payloadDetails_[i].payload
-                    )
-                );
-                payloadDetails_[i].target = getPayloadDeliveryPlugAddress(
-                    payloadDetails_[i].chainSlug
-                );
             }
 
-            if (payloadDetails_[i].callType != CallType.WITHDRAW) {
-                // for callback to execute next payload and set addresses
-                payloadDetails_[i].next[1] = IAddressResolver(addressResolver)
-                    .deployAsyncPromiseContract(address(this));
+            payloadDetails_[i].next[1] = IAddressResolver(addressResolver)
+                .deployAsyncPromiseContract(address(this));
 
-                isValidPromise[payloadDetails_[i].next[1]] = true;
-                IPromise(payloadDetails_[i].next[1]).then(
-                    this.callback.selector,
-                    abi.encode(asyncId)
-                );
-            }
-
+            isValidPromise[payloadDetails_[i].next[1]] = true;
+            IPromise(payloadDetails_[i].next[1]).then(
+                this.callback.selector,
+                abi.encode(asyncId)
+            );
             payloadDetailsArrays[asyncId].push(payloadDetails_[i]);
         }
 
-        totalPayloadsRemaining[asyncId] = payloadDetails_.length;
+        totalPayloadsRemaining[asyncId] = payloadDetails_.length - readEndIndex;
         payloadBatches[asyncId] = PayloadBatch({
             appGateway: forwarderAppGateway,
             feesData: feesData_,
@@ -136,7 +161,8 @@ abstract contract BatchAsync is QueueAsync {
             isBatchCancelled: false
         });
 
-        // deploy promise for callback from watcher precompile
+        IAuctionManager(auctionManager).startAuction(asyncId);
+
         emit PayloadSubmitted(
             asyncId,
             forwarderAppGateway,
@@ -160,10 +186,11 @@ abstract contract BatchAsync is QueueAsync {
     /// @notice Gets the payload delivery plug address
     /// @param chainSlug_ The chain identifier
     /// @return address The address of the payload delivery plug
-    function getPayloadDeliveryPlugAddress(
+    function getPlugAddress(
+        address appGateway_,
         uint32 chainSlug_
     ) public view returns (address) {
-        return watcherPrecompile().appGatewayPlugs(address(this), chainSlug_);
+        return watcherPrecompile().appGatewayPlugs(appGateway_, chainSlug_);
     }
 
     /// @notice Gets the current async ID
@@ -181,5 +208,67 @@ abstract contract BatchAsync is QueueAsync {
         uint256 index_
     ) external view returns (PayloadDetails memory) {
         return payloadDetailsArrays[asyncId_][index_];
+    }
+
+    function _isReadOnlyBatch(
+        PayloadDetails[] memory payloadDetails_
+    ) internal pure returns (bool) {
+        for (uint256 i = 0; i < payloadDetails_.length; i++) {
+            if (payloadDetails_[i].callType != CallType.READ) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function _processReadOnlyBatch(
+        PayloadDetails[] memory payloadDetails_
+    ) internal returns (bytes32) {
+        bytes32 asyncId = getCurrentAsyncId();
+        asyncCounter++;
+
+        // Process all reads in a loop without waiting for callbacks
+        for (uint256 i = 0; i < payloadDetails_.length; i++) {
+            bytes32 payloadId = watcherPrecompile().query(
+                payloadDetails_[i].chainSlug,
+                payloadDetails_[i].target,
+                payloadDetails_[i].next,
+                payloadDetails_[i].payload
+            );
+            payloadIdToBatchHash[payloadId] = asyncId;
+
+            emit PayloadAsyncRequested(
+                asyncId,
+                payloadId,
+                bytes32(0), // No root for read-only queries
+                payloadDetails_[i]
+            );
+        }
+
+        return asyncId;
+    }
+
+    /// @notice Withdraws funds to a specified receiver
+    /// @param chainSlug_ The chain identifier
+    /// @param token_ The address of the token
+    /// @param amount_ The amount of tokens to withdraw
+    /// @param receiver_ The address of the receiver
+    /// @param feesData_ The fees data
+    function withdrawTo(
+        uint32 chainSlug_,
+        address token_,
+        uint256 amount_,
+        address receiver_,
+        FeesData memory feesData_
+    ) external {
+        PayloadDetails[] memory payloadDetailsArray = new PayloadDetails[](1);
+        payloadDetailsArray[0] = IFeesManager(feesManager).getWithdrawToPayload(
+            msg.sender,
+            chainSlug_,
+            token_,
+            amount_,
+            receiver_
+        );
+        deliverPayload(payloadDetailsArray, feesData_, 0);
     }
 }

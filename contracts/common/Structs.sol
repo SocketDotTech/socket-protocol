@@ -40,13 +40,14 @@ struct CallParams {
 struct Bid {
     uint256 fee;
     address transmitter;
+    bytes extraData;
 }
 
 struct PayloadBatch {
     address appGateway;
     FeesData feesData;
     uint256 currentPayloadIndex;
-    uint256 auctionEndDelayMS;
+    uint256 auctionEndDelaySeconds;
     bool isBatchCancelled;
 }
 
@@ -70,6 +71,7 @@ struct PayloadRootParams {
     bytes32 payloadId;
     address appGateway;
     address transmitter;
+    address target;
     uint256 executionGasLimit;
     bytes payload;
 }
@@ -107,5 +109,38 @@ struct ExecutePayloadParams {
     address appGateway;
     uint256 executionGasLimit;
     bytes transmitterSignature;
+    bytes payload;
+}
+
+struct TimeoutRequest {
+    bytes32 timeoutId;
+    address target;
+    bytes payload;
+    uint256 delayInSeconds;
+    uint256 executeAt;
+    uint256 executedAt;
+    bool isResolved;
+}
+
+struct LimitParams {
+    uint256 lastUpdateTimestamp;
+    uint256 ratePerSecond;
+    uint256 maxLimit;
+    uint256 lastUpdateLimit;
+}
+
+struct UpdateLimitParams {
+    bytes32 limitType;
+    address appGateway;
+    uint256 maxLimit;
+    uint256 ratePerSecond;
+}
+
+struct CallFromInboxParams {
+    bytes32 callId;
+    uint32 chainSlug;
+    address plug;
+    address appGateway;
+    bytes32 params;
     bytes payload;
 }
