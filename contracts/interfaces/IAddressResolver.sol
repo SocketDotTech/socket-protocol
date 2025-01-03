@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
-
 import "./IWatcherPrecompile.sol";
 
 /// @title IAddressResolver
@@ -11,7 +10,11 @@ interface IAddressResolver {
     /// @param name The identifier of the contract
     /// @param oldAddress The previous address of the contract
     /// @param newAddress The new address of the contract
-    event AddressSet(bytes32 indexed name, address oldAddress, address newAddress);
+    event AddressSet(
+        bytes32 indexed name,
+        address oldAddress,
+        address newAddress
+    );
 
     /// @notice Gets the address of the auction house contract
     /// @return IAuctionHouse The auction house interface
@@ -26,19 +29,22 @@ interface IAddressResolver {
     /// @notice Maps contract addresses to their corresponding gateway addresses
     /// @param contractAddress The address of the contract to lookup
     /// @return The gateway address associated with the contract
-    function contractsToGateways(address contractAddress) external view returns (address);
+    function contractsToGateways(
+        address contractAddress
+    ) external view returns (address);
 
     /// @notice Maps gateway addresses to their corresponding contract addresses
     /// @param gatewayAddress The address of the gateway to lookup
     /// @return The contract address associated with the gateway
-    function gatewaysToContracts(address gatewayAddress) external view returns (address);
+    function gatewaysToContracts(
+        address gatewayAddress
+    ) external view returns (address);
 
     /// @notice Gets the list of all deployed async promise contracts
     /// @return Array of async promise contract addresses
     function getPromises() external view returns (address[] memory);
 
     // State-changing functions
-
     /// @notice Sets the auction house contract address
     /// @param _auctionHouse The new auction house contract address
     /// @dev Only callable by contract owner
@@ -63,20 +69,25 @@ interface IAddressResolver {
     /// @param chainContractAddress_ The contract address on the destination chain
     /// @param chainSlug_ The identifier of the destination chain
     /// @return The address of the newly deployed forwarder contract
-    function deployForwarderContract(address appDeployer_, address chainContractAddress_, uint32 chainSlug_)
-        external
-        returns (address);
+    function deployForwarderContract(
+        address appDeployer_,
+        address chainContractAddress_,
+        uint32 chainSlug_
+    ) external returns (address);
 
     /// @notice Gets or deploys a Forwarder contract
     /// @param chainContractAddress_ The address of the chain contract
     /// @param chainSlug_ The chain slug
     /// @return The address of the deployed Forwarder contract
-    function getOrDeployForwarderContract(address chainContractAddress_, uint32 chainSlug_)
-        external
-        returns (address);
+    function getOrDeployForwarderContract(
+        address chainContractAddress_,
+        uint32 chainSlug_
+    ) external returns (address);
 
     /// @notice Deploys a new async promise contract
     /// @param invoker_ The address that can invoke/execute the promise
     /// @return The address of the newly deployed async promise contract
-    function deployAsyncPromiseContract(address invoker_) external returns (address);
+    function deployAsyncPromiseContract(
+        address invoker_
+    ) external returns (address);
 }
