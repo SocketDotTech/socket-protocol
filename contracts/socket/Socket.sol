@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "../interfaces/IPlug.sol";
 import "./SocketBase.sol";
+import {PlugDisconnected, InvalidAppGateway} from "../common/Errors.sol";
 
 /**
  * @title SocketDst
@@ -34,7 +35,6 @@ contract Socket is SocketBase {
     /**
      * @dev Error emitted when source slugs deduced from packet id and msg id don't match
      */
-    error InvalidAppGateway();
     /**
      * @dev Error emitted when less gas limit is provided for execution than expected
      */
@@ -44,11 +44,11 @@ contract Socket is SocketBase {
     ////////////////////////////////////////////////////////////
     ////////////////////// State Vars //////////////////////////
     ////////////////////////////////////////////////////////////
+    uint64 public callCounter;
 
     /**
      * @dev keeps track of whether a payload has been executed or not using payload id
      */
-    // todo: add nottried, reverting and success
     mapping(bytes32 => bool) public payloadExecuted;
 
     constructor(
@@ -64,11 +64,38 @@ contract Socket is SocketBase {
     ////////////////////////////////////////////////////////
 
     /**
+     * @notice To send message to a connected remote chain. Should only be called by a plug.
+     * @param payload bytes to be delivered to the Plug on the siblingChainSlug_
+     * @param params a 32 bytes param to add details for execution, for eg: fees to be paid for execution
+     */
+    function callAppGateway(
+        bytes calldata payload,
+        bytes32 params
+    ) external returns (bytes32 callId) {
+        PlugConfig memory plugConfig = _plugConfigs[msg.sender];
+
+        // if no sibling plug is found for the given chain slug, revert
+        if (plugConfig.appGateway == address(0)) revert PlugDisconnected();
+
+        // creates a unique ID for the message
+        callId = _encodeCallId(plugConfig.appGateway);
+        emit CalledAppGateway(
+            callId,
+            chainSlug,
+            msg.sender,
+            plugConfig.appGateway,
+            params,
+            payload
+        );
+    }
+
+    /**
      * @notice Executes a payload that has been delivered by transmitters and authenticated by switchboards
      */
     function execute(
         bytes32 payloadId_,
         address appGateway_,
+        address target_,
         uint256 executionGasLimit_,
         bytes memory transmitterSignature_,
         bytes memory payload_
@@ -79,14 +106,14 @@ contract Socket is SocketBase {
         payloadExecuted[payloadId_] = true;
 
         // extract plug address from msgID
-        address localPlug = _decodePlug(payloadId_);
+        address switchboard = _decodeSwitchboard(payloadId_);
         uint32 localSlug = _decodeChainSlug(payloadId_);
 
-        if (localSlug != chainSlug) revert InvalidSlug();
+        PlugConfig memory plugConfig = _plugConfigs[target_];
+        if (switchboard != address(plugConfig.switchboard__))
+            revert InvalidSwitchboard();
 
-        // fetch required vars from plug config
-        if (_plugConfigs[localPlug].appGateway != appGateway_)
-            revert InvalidAppGateway();
+        if (localSlug != chainSlug) revert InvalidSlug();
 
         address transmitter = signatureVerifier__.recoverSigner(
             keccak256(abi.encode(address(this), payloadId_)),
@@ -98,16 +125,17 @@ contract Socket is SocketBase {
             payloadId_,
             appGateway_,
             transmitter,
+            target_,
             executionGasLimit_,
             payload_
         );
 
         // verify payload was part of the packet and
         // authenticated by respective switchboard
-        _verify(root, payloadId_, _plugConfigs[localPlug].switchboard__);
+        _verify(root, payloadId_, ISwitchboard(switchboard));
 
         // execute payload
-        return _execute(localPlug, payloadId_, executionGasLimit_, payload_);
+        return _execute(target_, payloadId_, executionGasLimit_, payload_);
     }
 
     ////////////////////////////////////////////////////////
@@ -146,12 +174,14 @@ contract Socket is SocketBase {
     }
 
     /**
-     * @dev Decodes the plug address from a given payload id.
-     * @param id_ The ID of the msg to decode the plug from.
-     * @return plug_ The address of sibling plug decoded from the payload ID.
+     * @dev Decodes the switchboard address from a given payload id.
+     * @param id_ The ID of the msg to decode the switchboard from.
+     * @return switchboard_ The address of switchboard decoded from the payload ID.
      */
-    function _decodePlug(bytes32 id_) internal pure returns (address plug_) {
-        plug_ = address(uint160(uint256(id_) >> 64));
+    function _decodeSwitchboard(
+        bytes32 id_
+    ) internal pure returns (address switchboard_) {
+        switchboard_ = address(uint160(uint256(id_) >> 64));
     }
 
     /**
@@ -163,5 +193,17 @@ contract Socket is SocketBase {
         bytes32 id_
     ) internal pure returns (uint32 chainSlug_) {
         chainSlug_ = uint32(uint256(id_) >> 224);
+    }
+
+    // Packs the local plug, local chain slug, remote chain slug and nonce
+    // callCount++ will take care of call id overflow as well
+    // callId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
+    function _encodeCallId(address appGateway_) internal returns (bytes32) {
+        return
+            bytes32(
+                (uint256(chainSlug) << 224) |
+                    (uint256(uint160(appGateway_)) << 64) |
+                    callCounter++
+            );
     }
 }

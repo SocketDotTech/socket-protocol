@@ -15,6 +15,7 @@ interface IHasher {
         bytes32 payloadId_,
         address appGateway_,
         address transmitter_,
+        address target_,
         uint256 executionGasLimit_,
         bytes memory payload_
     ) external returns (bytes32);

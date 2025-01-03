@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
-import {DeployParams, FeesData, CallType} from "../common/Structs.sol";
+import {DeployParams, FeesData, CallType, PayloadBatch} from "../common/Structs.sol";
 import {AppGatewayBase} from "./AppGatewayBase.sol";
 import {IForwarder} from "../interfaces/IForwarder.sol";
+import {IPromise} from "../interfaces/IPromise.sol";
 import {IAppDeployer} from "../interfaces/IAppDeployer.sol";
 import {IAuctionHouse} from "../interfaces/IAuctionHouse.sol";
 
@@ -19,27 +20,46 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     /// @param contractId_ The contract ID
     /// @param chainSlug_ The chain slug
     function _deploy(bytes32 contractId_, uint32 chainSlug_) internal {
+        address asyncPromise = addressResolver.deployAsyncPromiseContract(
+            address(this)
+        );
+
+        isValidPromise[asyncPromise] = true;
+        IPromise(asyncPromise).then(
+            this.setAddress.selector,
+            abi.encode(chainSlug_, contractId_)
+        );
+
         IAuctionHouse(auctionHouse()).queue(
             chainSlug_,
             address(0),
             // hacked for contract addr, need to revisit
-            contractId_,
+            asyncPromise,
             CallType.DEPLOY,
             creationCodeWithArgs[contractId_]
         );
     }
 
-    /// @notice Sets the forwarder contract
-    /// @param chainSlug The chain slug
-    /// @param forwarderContractAddr The forwarder contract address
-    /// @param contractId The contract ID
-    /// @dev callback in payload delivery promise after contract deployment
-    function setForwarderContract(
-        uint32 chainSlug,
-        address forwarderContractAddr,
-        bytes32 contractId
-    ) external onlyPayloadDelivery {
-        forwarderAddresses[contractId][chainSlug] = forwarderContractAddr;
+    /// @notice Sets the address for a deployed contract
+    /// @param data_ The data
+    /// @param returnData_ The return data
+    function setAddress(
+        bytes memory data_,
+        bytes memory returnData_
+    ) external onlyPromises {
+        (uint32 chainSlug, bytes32 contractId) = abi.decode(
+            data_,
+            (uint32, bytes32)
+        );
+
+        address forwarderContractAddress = addressResolver
+            .getOrDeployForwarderContract(
+                address(this),
+                abi.decode(returnData_, (address)),
+                chainSlug
+            );
+
+        forwarderAddresses[contractId][chainSlug] = forwarderContractAddress;
     }
 
     /// @notice Gets the on-chain address
@@ -59,13 +79,16 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     }
 
     /// @notice Callback in pd promise to be called after all contracts are deployed
-    /// @param chainSlug The chain slug
+    /// @param asyncId The async ID
+    /// @param payloadBatch The payload batch
     /// @dev only payload delivery can call this
     /// @dev callback in pd promise to be called after all contracts are deployed
-    function allContractsDeployed(
-        uint32 chainSlug
+    function onBatchComplete(
+        bytes32 asyncId,
+        PayloadBatch memory payloadBatch
     ) external override onlyPayloadDelivery {
-        initialize(chainSlug);
+        // todo
+        // initialize(payloadBatch.chainSlug);
     }
 
     /// @notice Gets the socket address

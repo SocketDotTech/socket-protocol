@@ -67,7 +67,8 @@ contract AuctionHouseTest is SetupTest {
     }
 
     function connectAuctionHouse() internal {
-        IWatcherPrecompile.AppGatewayConfig[] memory gateways = new IWatcherPrecompile.AppGatewayConfig[](2);
+        IWatcherPrecompile.AppGatewayConfig[]
+            memory gateways = new IWatcherPrecompile.AppGatewayConfig[](2);
         gateways[0] = IWatcherPrecompile.AppGatewayConfig({
             plug: address(arbConfig.payloadDeliveryPlug),
             chainSlug: arbChainSlug,
@@ -314,6 +315,7 @@ contract AuctionHouseTest is SetupTest {
             payloadId,
             address(auctionHouse),
             transmitter,
+            payloadDetails.target,
             payloadDetails.executionGasLimit,
             payloadDetails.payload
         );

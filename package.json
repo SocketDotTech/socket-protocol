@@ -8,6 +8,7 @@
     "tsc": "tsc --project lib.tsconfig.json",
     "abi": "hardhat export-abi",
     "lint": "prettier \"./**\" --write",
+    "lintContracts": "prettier \"./**\"  --write --plugin=prettier-plugin-solidity",
     "compile": "forge build",
     "deploy": "bash deployContracts.sh"
   },
@@ -33,7 +34,7 @@
     "hardhat-preprocessor": "0.1.4",
     "pre-commit": "^1.2.2",
     "prettier": "^2.3.1",
-    "prettier-plugin-solidity": "^1.0.0-beta.13",
+    "prettier-plugin-solidity": "^1.4.1",
     "ts-node": "^10.7.0",
     "typechain": "^8.0.0",
     "typescript": "^4.6.4"

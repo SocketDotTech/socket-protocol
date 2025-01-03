@@ -1,30 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
-import {DEPLOY, CONFIGURE, ETH_ADDRESS} from "../../common/Constants.sol";
+import {PlugBase} from "../../base/PlugBase.sol";
+import {Ownable} from "../../utils/Ownable.sol";
 
 /// @title ContractFactory
 /// @notice Abstract contract for deploying contracts
-abstract contract ContractFactory {
+contract ContractFactoryPlug is PlugBase, Ownable {
     event Deployed(address addr, bytes32 salt);
 
-    /// @notice Handles the deployment of a contract
-    /// @param data The data
-    /// @return bytes memory The encoded deployed address
-    function _handleDeploy(bytes memory data) internal returns (bytes memory) {
-        address deployedAddress = deployContract(data);
-        return abi.encode(deployedAddress);
-    }
+    constructor(
+        address socket_,
+        uint32 chainSlug_,
+        address owner_
+    ) PlugBase(socket_, chainSlug_) Ownable(owner_) {}
 
-    /// @notice Deploys a contract
-    /// @param data The data
-    /// @return address The deployed address
     function deployContract(
-        bytes memory data
-    ) public payable returns (address) {
-        (bytes memory creationCode, bytes32 salt) = abi.decode(
-            data,
-            (bytes, bytes32)
-        );
+        bytes memory creationCode,
+        bytes32 salt
+    ) public returns (address) {
+        if (msg.sender != address(socket__)) {
+            revert("Only socket can deploy contracts");
+        }
 
         address addr;
         assembly {
@@ -61,5 +57,12 @@ abstract contract ContractFactory {
         );
 
         return address(uint160(uint256(hash)));
+    }
+
+    function connect(
+        address appGateway_,
+        address switchboard_
+    ) external onlyOwner {
+        _connectSocket(appGateway_, switchboard_);
     }
 }
