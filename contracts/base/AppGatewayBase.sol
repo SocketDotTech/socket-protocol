@@ -2,7 +2,7 @@
 pragma solidity ^0.8.3;
 
 import "../utils/AddressResolverUtil.sol";
-import "../interfaces/IAuctionHouse.sol";
+import "../interfaces/IDeliveryHelper.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
 import {FeesData} from "../common/Structs.sol";
@@ -25,10 +25,10 @@ abstract contract AppGatewayBase is
     /// @notice Modifier to treat functions async
     modifier async() {
         if (feesData.feePoolChain == 0) revert FeesDataNotSet();
-        auctionHouse().clearQueue();
+        deliveryHelper().clearQueue();
         addressResolver.clearPromises();
         _;
-        auctionHouse().batch(feesData, auctionManager);
+        deliveryHelper().batch(feesData, auctionManager);
         _markValidPromises();
     }
 
@@ -83,13 +83,13 @@ abstract contract AppGatewayBase is
     /// @notice Gets the current async ID
     /// @return bytes32 The current async ID
     function _getCurrentAsyncId() internal view returns (bytes32) {
-        return auctionHouse().getCurrentAsyncId();
+        return deliveryHelper().getCurrentAsyncId();
     }
 
     /// @notice Reverts the transaction
     /// @param asyncId_ The async ID
     function _revertTx(bytes32 asyncId_) internal {
-        auctionHouse().cancelTransaction(asyncId_);
+        deliveryHelper().cancelTransaction(asyncId_);
     }
 
     /// @notice Withdraws fee tokens
@@ -103,7 +103,7 @@ abstract contract AppGatewayBase is
         uint256 amount_,
         address receiver_
     ) internal {
-        auctionHouse().withdrawTo(
+        deliveryHelper().withdrawTo(
             chainSlug_,
             token_,
             amount_,

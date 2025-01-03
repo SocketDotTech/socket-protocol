@@ -2,7 +2,7 @@
 pragma solidity ^0.8.3;
 import {PayloadDetails, Bid, FeesData, DeployParams, CallType} from "../common/Structs.sol";
 
-interface IAuctionHouse {
+interface IDeliveryHelper {
     event BidPlaced(
         bytes32 indexed asyncId,
         Bid bid // Replaced transmitter and bidAmount with Bid struct
@@ -45,6 +45,8 @@ interface IAuctionHouse {
     function cancelTransaction(bytes32 asyncId_) external;
 
     function startBatchProcessing(bytes32 asyncId_) external;
+
+    function getFeesData(bytes32 asyncId_) external view returns (FeesData memory);
 
     function getCurrentAsyncId() external view returns (bytes32);
 }

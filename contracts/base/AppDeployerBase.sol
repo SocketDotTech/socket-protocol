@@ -6,7 +6,7 @@ import {AppGatewayBase} from "./AppGatewayBase.sol";
 import {IForwarder} from "../interfaces/IForwarder.sol";
 import {IPromise} from "../interfaces/IPromise.sol";
 import {IAppDeployer} from "../interfaces/IAppDeployer.sol";
-import {IAuctionHouse} from "../interfaces/IAuctionHouse.sol";
+import {IDeliveryHelper} from "../interfaces/IDeliveryHelper.sol";
 
 /// @title AppDeployerBase
 /// @notice Abstract contract for deploying applications
@@ -30,7 +30,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
             abi.encode(chainSlug_, contractId_)
         );
 
-        IAuctionHouse(auctionHouse()).queue(
+        IDeliveryHelper(deliveryHelper()).queue(
             chainSlug_,
             address(0),
             // hacked for contract addr, need to revisit
@@ -97,7 +97,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     function getSocketAddress(uint32 chainSlug) public view returns (address) {
         return
             watcherPrecompile().appGatewayPlugs(
-                addressResolver.auctionHouse(),
+                addressResolver.deliveryHelper(),
                 chainSlug
             );
     }

@@ -125,4 +125,10 @@ abstract contract QueueAsync is AddressResolverUtil {
                 isSequential: params.isSequential
             });
     }
+
+    function getFeesData(
+        bytes32 asyncId_
+    ) external view returns (FeesData memory) {
+        return payloadBatches[asyncId_].feesData;
+    }
 }

@@ -5,17 +5,17 @@ import {Ownable} from "../../../utils/Ownable.sol";
 import {SignatureVerifier} from "../../../socket/utils/SignatureVerifier.sol";
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
 import {Bid, FeesData, PayloadDetails, CallType, FinalizeParams} from "../../../common/Structs.sol";
-import {IAuctionHouse} from "../../../interfaces/IAuctionHouse.sol";
+import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Constants.sol";
 import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
 
-/// @title AuctionHouse
+/// @title DeliveryHelper
 /// @notice Contract for managing auctions and placing bids
 contract FeesManager is AddressResolverUtil, Ownable(msg.sender) {
     uint256 public feesCounter;
     mapping(uint32 => uint256) public feeCollectionGasLimit;
 
-    /// @notice Constructor for AuctionHouse
+    /// @notice Constructor for DeliveryHelper
     /// @param addressResolver_ The address of the address resolver
     constructor(
         address addressResolver_

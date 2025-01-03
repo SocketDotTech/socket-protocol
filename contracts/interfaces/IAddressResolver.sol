@@ -17,10 +17,10 @@ interface IAddressResolver {
         address newAddress
     );
 
-    /// @notice Gets the address of the auction house contract
-    /// @return IAuctionHouse The auction house interface
+    /// @notice Gets the address of the delivery helper contract
+    /// @return IDeliveryHelper The delivery helper interface
     /// @dev Returns interface pointing to zero address if not configured
-    function auctionHouse() external view returns (address);
+    function deliveryHelper() external view returns (address);
 
     /// @notice Gets the watcher precompile contract interface
     /// @return IWatcherPrecompile The watcher precompile interface
@@ -48,9 +48,9 @@ interface IAddressResolver {
     // State-changing functions
 
     /// @notice Sets the auction house contract address
-    /// @param _auctionHouse The new auction house contract address
+    /// @param _deliveryHelper The new delivery helper contract address
     /// @dev Only callable by contract owner
-    function setAuctionHouse(address _auctionHouse) external;
+    function setDeliveryHelper(address _deliveryHelper) external;
 
     /// @notice Sets the watcher precompile contract address
     /// @param _watcherPrecompile The new watcher precompile contract address

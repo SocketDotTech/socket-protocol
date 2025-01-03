@@ -5,9 +5,9 @@ import {Ownable} from "../../../utils/Ownable.sol";
 import {SignatureVerifier} from "../../../socket/utils/SignatureVerifier.sol";
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
 import {Bid, FeesData} from "../../../common/Structs.sol";
-import {IAuctionHouse} from "../../../interfaces/IAuctionHouse.sol";
+import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 
-/// @title AuctionHouse
+/// @title DeliveryHelper
 /// @notice Contract for managing auctions and placing bids
 contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
     SignatureVerifier public immutable signatureVerifier__;
@@ -19,7 +19,7 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
 
     uint256 public constant auctionEndDelaySeconds = 0;
 
-    /// @notice Constructor for AuctionHouse
+    /// @notice Constructor for DeliveryHelper
     /// @param addressResolver_ The address of the address resolver
     /// @param signatureVerifier_ The address of the signature verifier
     constructor(
@@ -55,7 +55,6 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
     function bid(
         bytes32 asyncId_,
         uint256 fee,
-        FeesData memory feesData,
         bytes memory transmitterSignature,
         bytes memory extraData
     ) external {
@@ -74,6 +73,9 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
             extraData: extraData
         });
 
+        FeesData memory feesData = IDeliveryHelper(
+            addressResolver.deliveryHelper()
+        ).getFeesData(asyncId_);
         require(fee <= feesData.maxFees, "Bid exceeds max fees");
         if (fee < winningBids[asyncId_].fee) return;
 
@@ -88,14 +90,8 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
         Bid memory winningBid = winningBids[asyncId_];
         emit AuctionEnded(asyncId_, winningBid);
 
-        AuctionHouse().startBatchProcessing(asyncId_);
-    }
-
-    function AuctionHouse()
-        internal
-        view
-        returns (IAuctionHouse auctionHouse_)
-    {
-        return IAuctionHouse(addressResolver.auctionHouse());
+        IDeliveryHelper(addressResolver.deliveryHelper()).startBatchProcessing(
+            asyncId_
+        );
     }
 }

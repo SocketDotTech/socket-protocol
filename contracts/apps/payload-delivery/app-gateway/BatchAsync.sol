@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import "./QueueAsync.sol";
 
-import {IAuctionHouse} from "../../../interfaces/IAuctionHouse.sol";
+import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
 import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
 import {IAuctionManager} from "../../../interfaces/IAuctionManager.sol";
