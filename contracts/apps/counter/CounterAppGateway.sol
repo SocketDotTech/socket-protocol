@@ -5,9 +5,11 @@ import "../../base/AppGatewayBase.sol";
 import "./Counter.sol";
 
 contract CounterAppGateway is AppGatewayBase {
-    constructor(address _addressResolver, address deployerContract_, FeesData memory feesData_)
-        AppGatewayBase(_addressResolver)
-    {
+    constructor(
+        address _addressResolver,
+        address deployerContract_,
+        FeesData memory feesData_
+    ) AppGatewayBase(_addressResolver) {
         addressResolver.setContractsToGateways(deployerContract_);
         _setFeesData(feesData_);
     }

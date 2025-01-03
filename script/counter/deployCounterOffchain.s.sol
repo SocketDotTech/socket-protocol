@@ -19,11 +19,22 @@ contract CounterDeploy is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // Setting fee payment on Arbitrum Sepolia
-        FeesData memory feesData = FeesData({feePoolChain: 421614, feePoolToken: ETH_ADDRESS, maxFees: 0.01 ether});
+        FeesData memory feesData = FeesData({
+            feePoolChain: 421614,
+            feePoolToken: ETH_ADDRESS,
+            maxFees: 0.01 ether
+        });
 
-        CounterDeployer deployer = new CounterDeployer(addressResolver, feesData);
+        CounterDeployer deployer = new CounterDeployer(
+            addressResolver,
+            feesData
+        );
 
-        CounterAppGateway gateway = new CounterAppGateway(addressResolver, address(deployer), feesData);
+        CounterAppGateway gateway = new CounterAppGateway(
+            addressResolver,
+            address(deployer),
+            feesData
+        );
 
         console.log("Contracts deployed:");
         console.log("CounterDeployer:", address(deployer));

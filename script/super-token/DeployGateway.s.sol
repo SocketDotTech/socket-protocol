@@ -16,7 +16,11 @@ contract DeployGateway is Script {
         address addressResolver = 0x208dC31cd6042a09bbFDdB31614A337a51b870ba;
         address owner = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
 
-        FeesData memory feesData = FeesData({feePoolChain: 421614, feePoolToken: ETH_ADDRESS, maxFees: 0.001 ether});
+        FeesData memory feesData = FeesData({
+            feePoolChain: 421614,
+            feePoolToken: ETH_ADDRESS,
+            maxFees: 0.001 ether
+        });
 
         SuperTokenDeployer deployer = new SuperTokenDeployer(
             addressResolver,
@@ -31,7 +35,11 @@ contract DeployGateway is Script {
             feesData
         );
 
-        SuperTokenAppGateway gateway = new SuperTokenAppGateway(addressResolver, address(deployer), feesData);
+        SuperTokenAppGateway gateway = new SuperTokenAppGateway(
+            addressResolver,
+            address(deployer),
+            feesData
+        );
 
         bytes32 superToken = deployer.superToken();
         bytes32 limitHook = deployer.limitHook();

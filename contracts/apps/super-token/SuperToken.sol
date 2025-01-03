@@ -34,7 +34,10 @@ contract SuperToken is ERC20, Ownable(msg.sender) {
         controller = msg.sender;
     }
 
-    function lockTokens(address user_, uint256 amount_) external onlyController {
+    function lockTokens(
+        address user_,
+        uint256 amount_
+    ) external onlyController {
         if (balanceOf[user_] < amount_) revert InsufficientBalance();
         limitHook.beforeBurn(amount_);
 
@@ -51,7 +54,10 @@ contract SuperToken is ERC20, Ownable(msg.sender) {
         lockedTokens[user_] -= amount_;
     }
 
-    function unlockTokens(address user_, uint256 amount_) external onlyController {
+    function unlockTokens(
+        address user_,
+        uint256 amount_
+    ) external onlyController {
         if (lockedTokens[user_] < amount_) revert InsufficientLockedTokens();
         lockedTokens[user_] -= amount_;
         _mint(user_, amount_);

@@ -12,7 +12,9 @@ import {ETH_ADDRESS} from "../../contracts/common/Constants.sol";
 contract DeployContracts is Script {
     function run() external {
         vm.startBroadcast();
-        SuperTokenDeployer deployer = SuperTokenDeployer(0x02520426a04D2943d817A60ABa37ab25bA10e630);
+        SuperTokenDeployer deployer = SuperTokenDeployer(
+            0x02520426a04D2943d817A60ABa37ab25bA10e630
+        );
         deployer.deployContracts(84532);
         deployer.deployContracts(11155111);
     }

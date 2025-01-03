@@ -15,29 +15,62 @@ contract CounterTest is AuctionHouseTest {
         // core
         setUpAuctionHouse();
 
-        FeesData memory feesData =
-            FeesData({feePoolChain: arbChainSlug, feePoolToken: ETH_ADDRESS, maxFees: 100000000000000});
-        counterDeployer = new CounterDeployer(address(addressResolver), feesData);
-        counterAppGateway = new CounterAppGateway(address(addressResolver), address(counterDeployer), feesData);
+        FeesData memory feesData = FeesData({
+            feePoolChain: arbChainSlug,
+            feePoolToken: ETH_ADDRESS,
+            maxFees: 100000000000000
+        });
+        counterDeployer = new CounterDeployer(
+            address(addressResolver),
+            feesData
+        );
+        counterAppGateway = new CounterAppGateway(
+            address(addressResolver),
+            address(counterDeployer),
+            feesData
+        );
 
         counterId = counterDeployer.counter();
     }
 
     function testDeploy() public {
-        bytes32[] memory payloadIds = getWritePayloadIds(arbChainSlug, getPayloadDeliveryPlug(arbChainSlug), 1);
+        bytes32[] memory payloadIds = getWritePayloadIds(
+            arbChainSlug,
+            getPayloadDeliveryPlug(arbChainSlug),
+            1
+        );
 
         PayloadDetails[] memory payloadDetails = new PayloadDetails[](1);
         payloadDetails[0] = createDeployPayloadDetail(
-            arbChainSlug, address(counterDeployer), counterDeployer.creationCodeWithArgs(counterId)
+            arbChainSlug,
+            address(counterDeployer),
+            counterDeployer.creationCodeWithArgs(counterId)
         );
-        payloadDetails[0].next[1] = predictAsyncPromiseAddress(address(auctionHouse), address(auctionHouse));
+        payloadDetails[0].next[1] = predictAsyncPromiseAddress(
+            address(auctionHouse),
+            address(auctionHouse)
+        );
 
-        _deploy(payloadIds, arbChainSlug, maxFees, IAppDeployer(counterDeployer), payloadDetails);
+        _deploy(
+            payloadIds,
+            arbChainSlug,
+            maxFees,
+            IAppDeployer(counterDeployer),
+            payloadDetails
+        );
 
-        address counterForwarder = counterDeployer.forwarderAddresses(counterId, arbChainSlug);
-        address deployedCounter = IForwarder(counterForwarder).getOnChainAddress();
+        address counterForwarder = counterDeployer.forwarderAddresses(
+            counterId,
+            arbChainSlug
+        );
+        address deployedCounter = IForwarder(counterForwarder)
+            .getOnChainAddress();
 
-        payloadIds = getWritePayloadIds(arbChainSlug, getPayloadDeliveryPlug(arbChainSlug), 1);
+        payloadIds = getWritePayloadIds(
+            arbChainSlug,
+            getPayloadDeliveryPlug(arbChainSlug),
+            1
+        );
 
         payloadDetails = new PayloadDetails[](1);
         payloadDetails[0] = createExecutePayloadDetail(
@@ -45,11 +78,22 @@ contract CounterTest is AuctionHouseTest {
             deployedCounter,
             address(counterDeployer),
             counterForwarder,
-            abi.encodeWithSignature("setSocket(address)", counterDeployer.getSocketAddress(arbChainSlug))
+            abi.encodeWithSignature(
+                "setSocket(address)",
+                counterDeployer.getSocketAddress(arbChainSlug)
+            )
         );
 
-        payloadDetails[0].next[1] = predictAsyncPromiseAddress(address(auctionHouse), address(auctionHouse));
+        payloadDetails[0].next[1] = predictAsyncPromiseAddress(
+            address(auctionHouse),
+            address(auctionHouse)
+        );
 
-        _configure(payloadIds, address(counterAppGateway), maxFees, payloadDetails);
+        _configure(
+            payloadIds,
+            address(counterAppGateway),
+            maxFees,
+            payloadDetails
+        );
     }
 }
