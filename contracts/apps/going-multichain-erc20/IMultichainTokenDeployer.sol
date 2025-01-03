@@ -10,5 +10,8 @@ interface IMultichainTokenDeployer {
 
     function baseTokenAddress() external view returns (address);
 
-    function forwarderAddresses(bytes32, uint32) external view returns (address);
+    function forwarderAddresses(
+        bytes32,
+        uint32
+    ) external view returns (address);
 }

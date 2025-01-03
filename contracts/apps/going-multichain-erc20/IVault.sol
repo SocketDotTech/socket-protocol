@@ -13,7 +13,9 @@ interface IVault {
 
     // State Variables
     function balance() external view returns (uint256);
+
     function _SOCKET() external view returns (address);
+
     function token() external view returns (address);
 
     // Functions
@@ -38,5 +40,9 @@ interface IVault {
      * @param amount Amount of tokens to rescue
      * @param recipient Address to send rescued tokens to
      */
-    function rescueTokens(address token_, uint256 amount, address recipient) external;
+    function rescueTokens(
+        address token_,
+        uint256 amount,
+        address recipient
+    ) external;
 }

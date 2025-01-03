@@ -55,11 +55,14 @@ contract MultichainTokenAppGateway is AppGatewayBase, Ownable {
      * @param feesData_ Struct containing fee-related data for bridging
      * @dev Sets up the contract, initializes ownership, and configures gateways
      */
-    constructor(address _addressResolver, address deployerContract_, FeesData memory feesData_)
-        AppGatewayBase(_addressResolver)
-        Ownable()
-    {
-        IMultichainTokenDeployer deployer = IMultichainTokenDeployer(deployerContract_);
+    constructor(
+        address _addressResolver,
+        address deployerContract_,
+        FeesData memory feesData_
+    ) AppGatewayBase(_addressResolver) Ownable() {
+        IMultichainTokenDeployer deployer = IMultichainTokenDeployer(
+            deployerContract_
+        );
         baseChainSlug = deployer.baseChainSlug();
         vault = deployer.forwarderAddresses(deployer.vault(), baseChainSlug);
 
@@ -77,8 +80,14 @@ contract MultichainTokenAppGateway is AppGatewayBase, Ownable {
      * @dev Checks if user has sufficient balance to complete the bridge transaction
      * @custom:modifier onlyPromises Ensures the function can only be called by the promises system
      */
-    function checkBalance(bytes memory data, bytes memory returnData) external onlyPromises {
-        (UserOrder memory order, bytes32 asyncId) = abi.decode(data, (UserOrder, bytes32));
+    function checkBalance(
+        bytes memory data,
+        bytes memory returnData
+    ) external onlyPromises {
+        (UserOrder memory order, bytes32 asyncId) = abi.decode(
+            data,
+            (UserOrder, bytes32)
+        );
 
         uint256 balance = abi.decode(returnData, (uint256));
         if (balance < order.srcAmount) {
@@ -93,20 +102,29 @@ contract MultichainTokenAppGateway is AppGatewayBase, Ownable {
      * @return asyncId Unique identifier for the asynchronous cross-chain transaction
      * @dev Handles token bridging logic across different chains
      */
-    function bridge(bytes memory _order) external async returns (bytes32 asyncId) {
+    function bridge(
+        bytes memory _order
+    ) external async returns (bytes32 asyncId) {
         UserOrder memory order = abi.decode(_order, (UserOrder));
         asyncId = _getCurrentAsyncId();
         // Check user balance on src chain
         _readCallOn();
         // Request to forwarder and deploys immutable promise contract and stores it
         IMultichainToken(order.srcToken).balanceOf(order.srcUser);
-        IPromise(order.srcToken).then(this.checkBalance.selector, abi.encode(order, asyncId));
+        IPromise(order.srcToken).then(
+            this.checkBalance.selector,
+            abi.encode(order, asyncId)
+        );
 
         _readCallOff();
 
         // if same-chain transfer
         if (order.srcToken == order.dstToken) {
-            IMultichainToken(order.srcToken).transferFrom(order.srcUser, order.dstUser, order.srcAmount);
+            IMultichainToken(order.srcToken).transferFrom(
+                order.srcUser,
+                order.dstUser,
+                order.srcAmount
+            );
         } else {
             // | src \ dst  | baseChain     | other        |
             // |------------|---------------|--------------|
@@ -114,13 +132,27 @@ contract MultichainTokenAppGateway is AppGatewayBase, Ownable {
             // | other      | burn/withdraw | burn/mint    |
             if (IForwarder(order.srcToken).getChainSlug() == baseChainSlug) {
                 IVault(vault).deposit(order.srcAmount, order.srcUser);
-                IMultichainToken(order.dstToken).mint(order.dstUser, order.srcAmount);
-            } else if (IForwarder(order.dstToken).getChainSlug() == baseChainSlug) {
-                IMultichainToken(order.srcToken).burn(order.srcUser, order.srcAmount);
+                IMultichainToken(order.dstToken).mint(
+                    order.dstUser,
+                    order.srcAmount
+                );
+            } else if (
+                IForwarder(order.dstToken).getChainSlug() == baseChainSlug
+            ) {
+                IMultichainToken(order.srcToken).burn(
+                    order.srcUser,
+                    order.srcAmount
+                );
                 IVault(vault).withdraw(order.srcAmount, order.dstUser);
             } else {
-                IMultichainToken(order.srcToken).burn(order.srcUser, order.srcAmount);
-                IMultichainToken(order.dstToken).mint(order.dstUser, order.srcAmount);
+                IMultichainToken(order.srcToken).burn(
+                    order.srcUser,
+                    order.srcAmount
+                );
+                IMultichainToken(order.dstToken).mint(
+                    order.dstUser,
+                    order.srcAmount
+                );
             }
         }
 
@@ -137,10 +169,12 @@ contract MultichainTokenAppGateway is AppGatewayBase, Ownable {
      * @dev Restricted to contract owner
      * @custom:modifier onlyOwner Ensures only the contract owner can withdraw fees
      */
-    function withdrawFeeTokens(uint32 chainSlug_, address token_, uint256 amount_, address receiver_)
-        external
-        onlyOwner
-    {
+    function withdrawFeeTokens(
+        uint32 chainSlug_,
+        address token_,
+        uint256 amount_,
+        address receiver_
+    ) external onlyOwner {
         _withdrawFeeTokens(chainSlug_, token_, amount_, receiver_);
     }
 }

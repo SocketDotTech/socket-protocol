@@ -26,7 +26,10 @@ contract MultichainTokenTest is AuctionHouseTest {
     MultichainTokenAppGateway.UserOrder userOrder;
 
     event BatchCancelled(bytes32 indexed asyncId);
-    event FinalizeRequested(bytes32 indexed payloadId, AsyncRequest asyncRequest);
+    event FinalizeRequested(
+        bytes32 indexed payloadId,
+        AsyncRequest asyncRequest
+    );
 
     function setUp() public {
         // set up infrastructure
@@ -46,19 +49,45 @@ contract MultichainTokenTest is AuctionHouseTest {
     ////////////////////////
 
     function testVaultDeployment() public {
-        bytes32[] memory payloadIds = getWritePayloadIds(baseChainSlug, getPayloadDeliveryPlug(baseChainSlug), 1);
+        bytes32[] memory payloadIds = getWritePayloadIds(
+            baseChainSlug,
+            getPayloadDeliveryPlug(baseChainSlug),
+            1
+        );
 
-        PayloadDetails[] memory payloadDetails = createDeployPayloadDetailsArray(baseChainSlug);
+        PayloadDetails[]
+            memory payloadDetails = createDeployPayloadDetailsArray(
+                baseChainSlug
+            );
 
-        _deploy(payloadIds, baseChainSlug, maxFees, appContracts.multichainTokenDeployer, payloadDetails);
+        _deploy(
+            payloadIds,
+            baseChainSlug,
+            maxFees,
+            appContracts.multichainTokenDeployer,
+            payloadDetails
+        );
     }
 
     function testTokenDeployment() public {
-        bytes32[] memory payloadIds = getWritePayloadIds(arbChainSlug, getPayloadDeliveryPlug(arbChainSlug), 1);
+        bytes32[] memory payloadIds = getWritePayloadIds(
+            arbChainSlug,
+            getPayloadDeliveryPlug(arbChainSlug),
+            1
+        );
 
-        PayloadDetails[] memory payloadDetails = createDeployPayloadDetailsArray(arbChainSlug);
+        PayloadDetails[]
+            memory payloadDetails = createDeployPayloadDetailsArray(
+                arbChainSlug
+            );
 
-        _deploy(payloadIds, arbChainSlug, maxFees, appContracts.multichainTokenDeployer, payloadDetails);
+        _deploy(
+            payloadIds,
+            arbChainSlug,
+            maxFees,
+            appContracts.multichainTokenDeployer,
+            payloadDetails
+        );
     }
 
     function testBridgeSameChain() public {
@@ -70,27 +99,37 @@ contract MultichainTokenTest is AuctionHouseTest {
         // Build bridge payload
         // Bridge transaction
     }
+
     /////////////////////////
     //  PAYLOAD FUNCTIONS  //
     /////////////////////////
 
-    function createDeployPayloadDetailsArray(uint32 chainSlug) internal returns (PayloadDetails[] memory) {
+    function createDeployPayloadDetailsArray(
+        uint32 chainSlug
+    ) internal returns (PayloadDetails[] memory) {
         PayloadDetails[] memory payloadDetails = new PayloadDetails[](1);
         if (chainSlug == baseChainSlug) {
             payloadDetails[0] = createDeployPayloadDetail(
                 chainSlug,
                 address(appContracts.multichainTokenDeployer),
-                appContracts.multichainTokenDeployer.creationCodeWithArgs(appContracts.vault)
+                appContracts.multichainTokenDeployer.creationCodeWithArgs(
+                    appContracts.vault
+                )
             );
         } else {
             payloadDetails[0] = createDeployPayloadDetail(
                 chainSlug,
                 address(appContracts.multichainTokenDeployer),
-                appContracts.multichainTokenDeployer.creationCodeWithArgs(appContracts.multichainToken)
+                appContracts.multichainTokenDeployer.creationCodeWithArgs(
+                    appContracts.multichainToken
+                )
             );
         }
 
-        payloadDetails[0].next[1] = predictAsyncPromiseAddress(address(auctionHouse), address(auctionHouse));
+        payloadDetails[0].next[1] = predictAsyncPromiseAddress(
+            address(auctionHouse),
+            address(auctionHouse)
+        );
 
         return payloadDetails;
     }
@@ -101,19 +140,21 @@ contract MultichainTokenTest is AuctionHouseTest {
 
     function deployMultichainTokenApp() internal {
         MultichainTokenDeployer multichainTokenDeployer = new MultichainTokenDeployer(
-            baseChainSlug,
-            baseTokenAddress,
-            owner,
-            "Mock Token",
-            "MCK",
-            18,
-            address(addressResolver),
-            createFeesData(maxFees)
-        );
+                baseChainSlug,
+                baseTokenAddress,
+                owner,
+                "Mock Token",
+                "MCK",
+                18,
+                address(addressResolver),
+                createFeesData(maxFees)
+            );
 
         MultichainTokenAppGateway multichainTokenApp = new MultichainTokenAppGateway(
-            address(addressResolver), address(multichainTokenDeployer), createFeesData(maxFees)
-        );
+                address(addressResolver),
+                address(multichainTokenDeployer),
+                createFeesData(maxFees)
+            );
 
         appContracts = AppContracts({
             multichainTokenApp: multichainTokenApp,

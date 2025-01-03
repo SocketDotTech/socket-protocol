@@ -17,7 +17,8 @@ contract MultichainTokenDeployer is AppDeployerBase, Ownable {
      * @notice Unique identifier for the MultichainToken contract
      * @dev Used to track and manage the MultichainToken contract across different chains
      */
-    bytes32 public immutable multichainToken = _createContractId("multichainToken");
+    bytes32 public immutable multichainToken =
+        _createContractId("multichainToken");
     bytes32 public immutable vault = _createContractId("vault");
     uint32 public baseChainSlug;
     address public baseTokenAddress;
@@ -49,14 +50,23 @@ contract MultichainTokenDeployer is AppDeployerBase, Ownable {
 
         _initializeOwner(owner);
 
-        creationCodeWithArgs[multichainToken] =
-            abi.encodePacked(type(MultichainToken).creationCode, abi.encode(name, symbol, decimals));
+        creationCodeWithArgs[multichainToken] = abi.encodePacked(
+            type(MultichainToken).creationCode,
+            abi.encode(name, symbol, decimals)
+        );
 
-        creationCodeWithArgs[vault] = abi.encodePacked(type(Vault).creationCode, abi.encode(owner, baseTokenAddress_));
+        creationCodeWithArgs[vault] = abi.encodePacked(
+            type(Vault).creationCode,
+            abi.encode(owner, baseTokenAddress_)
+        );
 
         _setFeesData(feesData);
 
-        IAddressResolver(addressResolver).deployForwarderContract(address(this), baseTokenAddress, baseChainSlug);
+        IAddressResolver(addressResolver).deployForwarderContract(
+            address(this),
+            baseTokenAddress,
+            baseChainSlug
+        );
     }
 
     /**
