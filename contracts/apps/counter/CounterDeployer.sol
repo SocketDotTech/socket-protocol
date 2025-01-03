@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.7.0 <0.9.0;
 
-import "../Counter.sol";
-import "../../../base/AppDeployerBase.sol";
-import "../../../utils/Ownable.sol";
+import "./Counter.sol";
+import "../../base/AppDeployerBase.sol";
 
-contract CounterDeployer is AppDeployerBase, Ownable {
+contract CounterDeployer is AppDeployerBase {
     bytes32 public counter = _createContractId("counter");
 
     constructor(
         address addressResolver_,
         FeesData memory feesData_
-    ) AppDeployerBase(addressResolver_) Ownable(msg.sender) {
+    ) AppDeployerBase(addressResolver_) {
         creationCodeWithArgs[counter] = type(Counter).creationCode;
         _setFeesData(feesData_);
     }
@@ -24,5 +23,9 @@ contract CounterDeployer is AppDeployerBase, Ownable {
         address socket = getSocketAddress(chainSlug);
         address counterForwarder = forwarderAddresses[counter][chainSlug];
         Counter(counterForwarder).setSocket(socket);
+    }
+
+    function setFees(FeesData memory feesData_) public {
+        feesData = feesData_;
     }
 }

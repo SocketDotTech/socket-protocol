@@ -16,7 +16,7 @@ import { resolve } from "path";
 import fs from "fs";
 
 import "./tasks/accounts";
-import { getJsonRpcUrl } from "./scripts/constants/networks";
+import { getJsonRpcUrl } from "./hardhat-scripts/constants/networks";
 import {
   ChainId,
   ChainSlug,
@@ -27,7 +27,7 @@ import {
 import {
   BASE_SEPOLIA_CHAIN_ID,
   OFF_CHAIN_VM_CHAIN_ID,
-} from "./scripts/constants/constants";
+} from "./hardhat-scripts/constants/constants";
 
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || "./.env";
 dotenvConfig({ path: resolve(__dirname, dotenvConfigPath) });
