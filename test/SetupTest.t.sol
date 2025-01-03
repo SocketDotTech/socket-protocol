@@ -12,7 +12,9 @@ import {Hasher} from "../contracts/socket/utils/Hasher.sol";
 import "../contracts/socket/switchboard/FastSwitchboard.sol";
 import "../contracts/socket/SocketBatcher.sol";
 import "../contracts/AddressResolver.sol";
-import {PayloadDeliveryPlug} from "../contracts/apps/payload-delivery/PayloadDeliveryPlug.sol";
+import {ContractFactoryPlug} from "../contracts/apps/payload-delivery/ContractFactoryPlug.sol";
+import {FeesPlug} from "../contracts/apps/payload-delivery/FeesPlug.sol";
+
 import {ETH_ADDRESS} from "../contracts/common/Constants.sol";
 import {ResolvedPromises} from "../contracts/common/Structs.sol";
 
@@ -22,16 +24,18 @@ contract SetupTest is Test {
 
     uint256 watcherPrivateKey =
         0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
-    address watcherEOA = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     uint256 transmitterPrivateKey =
         0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d;
-    address transmitter = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
+
+    address watcherEOA = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    address transmitterEOA = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
 
     uint32 arbChainSlug = 421614;
     uint32 optChainSlug = 11155420;
 
     uint256 public writePayloadIdCounter = 0;
     uint256 public readPayloadIdCounter = 0;
+    uint256 public timeoutPayloadIdCounter = 0;
 
     uint256 constant DEPLOY_GAS_LIMIT = 5_000_000;
     uint256 constant CONFIGURE_GAS_LIMIT = 10000000;
@@ -43,7 +47,8 @@ contract SetupTest is Test {
         Socket socket;
         FastSwitchboard switchboard;
         SocketBatcher socketBatcher;
-        PayloadDeliveryPlug payloadDeliveryPlug;
+        ContractFactoryPlug contractFactoryPlug;
+        FeesPlug feesPlug;
     }
 
     AddressResolver public addressResolver;
@@ -71,6 +76,14 @@ contract SetupTest is Test {
             owner
         );
         SocketBatcher socketBatcher = new SocketBatcher(owner, socket);
+
+        ContractFactoryPlug contractFactoryPlug = new ContractFactoryPlug(
+            address(socket),
+            chainSlug_,
+            owner
+        );
+        FeesPlug feesPlug = new FeesPlug(address(socket), chainSlug_, owner);
+
         vm.startPrank(owner);
         // socket
         socket.grantRole(GOVERNANCE_ROLE, address(owner));
@@ -78,7 +91,6 @@ contract SetupTest is Test {
         // switchboard
         switchboard.registerSwitchboard();
         switchboard.grantWatcherRole(watcherEOA);
-
         vm.stopPrank();
         return
             SocketContracts({
@@ -86,17 +98,21 @@ contract SetupTest is Test {
                 socket: socket,
                 switchboard: switchboard,
                 socketBatcher: socketBatcher,
-                payloadDeliveryPlug: PayloadDeliveryPlug(address(0))
+                contractFactoryPlug: contractFactoryPlug,
+                feesPlug: feesPlug
             });
     }
 
     function deployOffChainVMCore() internal {
-        watcherPrecompile = new WatcherPrecompile(watcherEOA);
-        addressResolver = new AddressResolver(
-            watcherEOA,
-            address(watcherPrecompile)
-        );
         signatureVerifier = new SignatureVerifier(owner);
+        addressResolver = new AddressResolver(watcherEOA);
+        watcherPrecompile = new WatcherPrecompile(
+            watcherEOA,
+            address(addressResolver)
+        );
+
+        hoax(watcherEOA);
+        addressResolver.setWatcherPrecompile(address(watcherPrecompile));
     }
 
     function _createSignature(
@@ -138,7 +154,7 @@ contract SetupTest is Test {
         uint32 chainSlug_,
         bytes32 payloadId,
         bytes32 root,
-        address auctionHouse,
+        address deliveryHelper,
         PayloadDetails memory payloadDetails,
         bytes memory watcherSignature
     ) internal returns (bytes memory) {
@@ -151,17 +167,17 @@ contract SetupTest is Test {
             transmitterPrivateKey
         );
 
-        vm.startPrank(transmitter);
-
+        vm.startPrank(transmitterEOA);
         ExecutePayloadParams memory params = ExecutePayloadParams({
             switchboard: address(socketConfig.switchboard),
             root: root,
             watcherSignature: watcherSignature,
             payloadId: payloadId,
-            appGateway: auctionHouse,
+            appGateway: deliveryHelper,
             executionGasLimit: payloadDetails.executionGasLimit,
             transmitterSignature: transmitterSig,
-            payload: payloadDetails.payload
+            payload: payloadDetails.payload,
+            target: payloadDetails.target
         });
 
         bytes memory returnData = socketConfig.socketBatcher.attestAndExecute(
@@ -201,27 +217,27 @@ contract SetupTest is Test {
 
     function getWritePayloadId(
         uint32 chainSlug_,
-        address plug_,
+        address switchboard_,
         uint256 counter_
     ) internal pure returns (bytes32) {
         return
             bytes32(
                 (uint256(chainSlug_) << 224) |
-                    (uint256(uint160(plug_)) << 64) |
+                    (uint256(uint160(switchboard_)) << 64) |
                     counter_
             );
     }
 
     function getWritePayloadIds(
         uint32 chainSlug_,
-        address plug_,
+        address switchboard_,
         uint256 numPayloads
     ) internal returns (bytes32[] memory) {
         bytes32[] memory payloadIds = new bytes32[](numPayloads);
         for (uint256 i = 0; i < numPayloads; i++) {
             payloadIds[i] = getWritePayloadId(
                 chainSlug_,
-                plug_,
+                switchboard_,
                 i + writePayloadIdCounter
             );
         }

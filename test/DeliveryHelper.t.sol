@@ -1,21 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../contracts/apps/payload-delivery/app-gateway/AuctionHouse.sol";
+import "../contracts/apps/payload-delivery/app-gateway/DeliveryHelper.sol";
+import "../contracts/apps/payload-delivery/app-gateway/FeesManager.sol";
+import "../contracts/apps/payload-delivery/app-gateway/AuctionManager.sol";
+
 import "../contracts/Forwarder.sol";
 import "../contracts/interfaces/IAppDeployer.sol";
 
-import "./SetupTest.sol";
+import "./SetupTest.t.sol";
 
-contract AuctionHouseTest is SetupTest {
+contract DeliveryHelperTest is SetupTest {
     uint256 public maxFees = 0.0001 ether;
     uint256 public bidAmount = maxFees / 100;
     uint256 public deployCounter;
     uint256 public asyncPromiseCounterLocal = 0;
-
-    AuctionHouse auctionHouse;
     uint256 public asyncCounterTest;
 
+    DeliveryHelper deliveryHelper;
+    FeesManager feesManager;
+    AuctionManager auctionManager;
     event PayloadSubmitted(
         bytes32 indexed asyncId,
         address indexed appGateway,
@@ -26,59 +30,70 @@ contract AuctionHouseTest is SetupTest {
     event BidPlaced(bytes32 indexed asyncId, Bid bid);
     event AuctionEnded(bytes32 indexed asyncId, Bid winningBid);
 
-    function setUpAuctionHouse() internal {
+    function setUpDeliveryHelper() internal {
         // core
         deployOffChainVMCore();
-        auctionHouse = new AuctionHouse(
+        feesManager = new FeesManager(address(addressResolver));
+        deliveryHelper = new DeliveryHelper(
             address(addressResolver),
-            signatureVerifier
+            address(feesManager)
         );
 
         hoax(watcherEOA);
-        addressResolver.setAuctionHouse(address(auctionHouse));
+        addressResolver.setDeliveryHelper(address(deliveryHelper));
 
         // chain core contracts
         arbConfig = deploySocket(arbChainSlug);
-        arbConfig.payloadDeliveryPlug = new PayloadDeliveryPlug(
-            address(arbConfig.socket),
-            arbChainSlug,
-            owner
-        );
-
         optConfig = deploySocket(optChainSlug);
-        optConfig.payloadDeliveryPlug = new PayloadDeliveryPlug(
-            address(optConfig.socket),
-            optChainSlug,
-            owner
-        );
 
+        connectDeliveryHelper();
+    }
+
+    function connectDeliveryHelper() internal {
         vm.startPrank(owner);
-        arbConfig.payloadDeliveryPlug.connect(
-            address(auctionHouse),
+        arbConfig.contractFactoryPlug.connect(
+            address(deliveryHelper),
             address(arbConfig.switchboard)
         );
-        optConfig.payloadDeliveryPlug.connect(
-            address(auctionHouse),
+        optConfig.contractFactoryPlug.connect(
+            address(deliveryHelper),
+            address(optConfig.switchboard)
+        );
+
+        arbConfig.feesPlug.connect(
+            address(feesManager),
+            address(arbConfig.switchboard)
+        );
+        optConfig.feesPlug.connect(
+            address(feesManager),
             address(optConfig.switchboard)
         );
         vm.stopPrank();
 
-        connectAuctionHouse();
-    }
-
-    function connectAuctionHouse() internal {
         IWatcherPrecompile.AppGatewayConfig[]
-            memory gateways = new IWatcherPrecompile.AppGatewayConfig[](2);
+            memory gateways = new IWatcherPrecompile.AppGatewayConfig[](4);
         gateways[0] = IWatcherPrecompile.AppGatewayConfig({
-            plug: address(arbConfig.payloadDeliveryPlug),
+            plug: address(arbConfig.contractFactoryPlug),
             chainSlug: arbChainSlug,
-            appGateway: address(auctionHouse),
+            appGateway: address(deliveryHelper),
             switchboard: address(arbConfig.switchboard)
         });
         gateways[1] = IWatcherPrecompile.AppGatewayConfig({
-            plug: address(optConfig.payloadDeliveryPlug),
+            plug: address(optConfig.contractFactoryPlug),
             chainSlug: optChainSlug,
-            appGateway: address(auctionHouse),
+            appGateway: address(deliveryHelper),
+            switchboard: address(optConfig.switchboard)
+        });
+        gateways[2] = IWatcherPrecompile.AppGatewayConfig({
+            plug: address(arbConfig.feesPlug),
+            chainSlug: arbChainSlug,
+            appGateway: address(feesManager),
+            switchboard: address(arbConfig.switchboard)
+        });
+        gateways[3] = IWatcherPrecompile.AppGatewayConfig({
+            plug: address(optConfig.feesPlug),
+            chainSlug: optChainSlug,
+            appGateway: address(feesManager),
             switchboard: address(optConfig.switchboard)
         });
 
@@ -87,20 +102,21 @@ contract AuctionHouseTest is SetupTest {
     }
 
     //// BATCH DEPLOY AND EXECUTE HELPERS ////
-    function getPayloadDeliveryPlug(
+    function getContractFactoryPlug(
         uint32 chainSlug_
     ) internal view returns (address) {
-        return address(getSocketConfig(chainSlug_).payloadDeliveryPlug);
+        return address(getSocketConfig(chainSlug_).contractFactoryPlug);
     }
 
     function checkPayloadBatchAndDetails(
         PayloadDetails[] memory payloadDetails,
         bytes32 asyncId,
         address appGateway_,
-        uint256 maxFees_
+        uint256 maxFees_,
+        uint256 currentPayloadIndex_
     ) internal view {
         for (uint i = 0; i < payloadDetails.length; i++) {
-            PayloadDetails memory payloadDetail = auctionHouse
+            PayloadDetails memory payloadDetail = deliveryHelper
                 .getPayloadDetails(asyncId, i);
 
             assertEq(
@@ -141,18 +157,41 @@ contract AuctionHouseTest is SetupTest {
             address appGateway,
             FeesData memory feesData,
             uint256 currentPayloadIndex,
-            uint256 auctionEndDelayMS,
-            bool isBatchCancelled
-        ) = auctionHouse.payloadBatches(asyncId);
+            address _auctionManager,
+            Bid memory winningBid,
+            bool isBatchCancelled,
+            uint256 totalPayloadsRemaining // address[] memory lastBatchPromises
+        ) = deliveryHelper.payloadBatches(asyncId);
+
         assertEq(appGateway_, appGateway, "AppGateway mismatch");
-        assertEq(currentPayloadIndex, 0, "CurrentPayloadIndex mismatch");
+        assertEq(
+            currentPayloadIndex,
+            currentPayloadIndex_,
+            "CurrentPayloadIndex mismatch"
+        );
         assertEq(feesData.maxFees, maxFees_, "MaxFees mismatch");
-        assertEq(auctionEndDelayMS, 0, "AuctionEndDelayMS mismatch");
+        assertEq(
+            _auctionManager,
+            address(auctionManager),
+            "AuctionManager mismatch"
+        );
+        assertEq(winningBid.fee, bidAmount, "WinningBid mismatch");
+        assertEq(
+            winningBid.transmitter,
+            transmitterEOA,
+            "WinningBid transmitter mismatch"
+        );
         assertEq(isBatchCancelled, false, "IsBatchCancelled mismatch");
+        assertEq(
+            totalPayloadsRemaining,
+            payloadDetails.length,
+            "TotalPayloadsRemaining mismatch"
+        );
     }
 
     function bidAndValidate(
         uint256 maxFees_,
+        uint256 currentPayloadIndex_,
         bytes32 asyncId,
         address appDeployer_,
         PayloadDetails[] memory payloadDetails_
@@ -161,7 +200,8 @@ contract AuctionHouseTest is SetupTest {
             payloadDetails_,
             asyncId,
             appDeployer_,
-            maxFees_
+            maxFees_,
+            currentPayloadIndex_
         );
         placeBid(asyncId);
         endAuction(asyncId);
@@ -170,11 +210,18 @@ contract AuctionHouseTest is SetupTest {
     function bidAndExecute(
         bytes32[] memory payloadIds,
         uint256 maxFees_,
+        uint256 currentPayloadIndex_,
         bytes32 asyncId_,
         address appDeployer_,
         PayloadDetails[] memory payloadDetails_
     ) internal {
-        bidAndValidate(maxFees_, asyncId_, appDeployer_, payloadDetails_);
+        bidAndValidate(
+            maxFees_,
+            currentPayloadIndex_,
+            asyncId_,
+            appDeployer_,
+            payloadDetails_
+        );
         for (uint i = 0; i < payloadIds.length; i++) {
             finalizeAndExecute(
                 asyncId_,
@@ -189,6 +236,7 @@ contract AuctionHouseTest is SetupTest {
         bytes32[] memory payloadIds,
         uint32 chainSlug_,
         uint256 maxFees_,
+        uint256 currentPayloadIndex_,
         IAppDeployer appDeployer_,
         PayloadDetails[] memory payloadDetails_
     ) internal {
@@ -199,6 +247,7 @@ contract AuctionHouseTest is SetupTest {
         bidAndExecute(
             payloadIds,
             maxFees_,
+            currentPayloadIndex_,
             asyncId,
             address(appDeployer_),
             payloadDetails_
@@ -209,6 +258,7 @@ contract AuctionHouseTest is SetupTest {
         bytes32[] memory payloadIds,
         address appDeployer_,
         uint256 maxFees_,
+        uint256 currentPayloadIndex_,
         PayloadDetails[] memory payloadDetails_
     ) internal {
         bytes32 asyncId = getCurrentAsyncId();
@@ -217,6 +267,7 @@ contract AuctionHouseTest is SetupTest {
         bidAndExecute(
             payloadIds,
             maxFees_,
+            currentPayloadIndex_,
             asyncId,
             appDeployer_,
             payloadDetails_
@@ -234,8 +285,8 @@ contract AuctionHouseTest is SetupTest {
         bytes memory payload = abi.encode(bytecode_, salt);
 
         address asyncPromise = predictAsyncPromiseAddress(
-            address(auctionHouse),
-            address(auctionHouse)
+            address(deliveryHelper),
+            address(deliveryHelper)
         );
         address[] memory next = new address[](2);
         next[0] = asyncPromise;
@@ -250,7 +301,7 @@ contract AuctionHouseTest is SetupTest {
         );
 
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
-        payloadDetails.target = address(socketConfig.payloadDeliveryPlug);
+        payloadDetails.target = address(socketConfig.contractFactoryPlug);
         payloadDetails.payload = abi.encode(DEPLOY, payloadDetails.payload);
     }
 
@@ -269,7 +320,8 @@ contract AuctionHouseTest is SetupTest {
                 payload: payload_,
                 callType: callType_,
                 executionGasLimit: executionGasLimit_,
-                next: next_
+                next: next_,
+                isSequential: false
             });
     }
 
@@ -278,29 +330,25 @@ contract AuctionHouseTest is SetupTest {
         vm.expectEmit(true, true, false, false);
         emit BidPlaced(
             asyncId,
-            Bid({fee: bidAmount, transmitter: transmitter})
+            Bid({fee: bidAmount, transmitter: transmitterEOA, extraData: ""})
         );
-        vm.prank(transmitter);
+        vm.prank(transmitterEOA);
         bytes memory transmitterSignature = _createSignature(
-            keccak256(abi.encode(address(auctionHouse), asyncId, bidAmount)),
+            keccak256(abi.encode(address(deliveryHelper), asyncId, bidAmount)),
             transmitterPrivateKey
         );
-        auctionHouse.bid(asyncId, bidAmount, transmitterSignature);
+        auctionManager.bid(asyncId, bidAmount, transmitterSignature, "");
     }
 
     function endAuction(bytes32 asyncId) internal {
         vm.expectEmit(true, false, false, true);
         emit AuctionEnded(
             asyncId,
-            Bid({fee: bidAmount, transmitter: transmitter})
+            Bid({fee: bidAmount, transmitter: transmitterEOA, extraData: ""})
         );
 
         hoax(watcherEOA);
-        watcherPrecompile.resolveTimeout(
-            address(auctionHouse),
-            abi.encodeWithSelector(AuctionHouse.endAuction.selector, asyncId),
-            0
-        );
+        watcherPrecompile.resolveTimeout(asyncId);
     }
 
     function finalize(
@@ -313,8 +361,8 @@ contract AuctionHouseTest is SetupTest {
         );
         PayloadRootParams memory rootParams_ = PayloadRootParams(
             payloadId,
-            address(auctionHouse),
-            transmitter,
+            address(deliveryHelper),
+            transmitterEOA,
             payloadDetails.target,
             payloadDetails.executionGasLimit,
             payloadDetails.payload
@@ -394,7 +442,7 @@ contract AuctionHouseTest is SetupTest {
         );
 
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
-        payloadDetails.target = address(socketConfig.payloadDeliveryPlug);
+        payloadDetails.target = address(socketConfig.contractFactoryPlug);
     }
 
     function createReadPayloadDetail(
@@ -444,7 +492,7 @@ contract AuctionHouseTest is SetupTest {
             payloadDetails.chainSlug,
             payloadId,
             root,
-            address(auctionHouse),
+            address(deliveryHelper),
             payloadDetails,
             watcherSig
         );
@@ -487,8 +535,17 @@ contract AuctionHouseTest is SetupTest {
     function getCurrentAsyncId() public view returns (bytes32) {
         return
             bytes32(
-                (uint256(uint160(address(auctionHouse))) << 64) |
+                (uint256(uint160(address(deliveryHelper))) << 64) |
                     asyncCounterTest
+            );
+    }
+
+    function getTimeoutPayloadId(
+        uint256 counter_
+    ) internal view returns (bytes32) {
+        return
+            bytes32(
+                (uint256(uint160(address(deliveryHelper))) << 64) | counter_
             );
     }
 }
