@@ -28,6 +28,7 @@ contract Hasher is IHasher, AccessControl {
         bytes32 payloadId_,
         address appGateway_,
         address transmitter_,
+        address target_,
         uint256 executionGasLimit_,
         bytes memory payload_
     ) external pure override returns (bytes32) {
@@ -37,6 +38,7 @@ contract Hasher is IHasher, AccessControl {
                     payloadId_,
                     appGateway_,
                     transmitter_,
+                    target_,
                     executionGasLimit_,
                     payload_
                 )

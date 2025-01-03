@@ -73,6 +73,7 @@ contract AddressResolver is Ownable, IAddressResolver {
     /// @param chainSlug_ The chain slug
     /// @return The address of the deployed Forwarder contract
     function getOrDeployForwarderContract(
+        address appDeployer_,
         address chainContractAddress_,
         uint32 chainSlug_
     ) public returns (address) {
@@ -111,51 +112,16 @@ contract AddressResolver is Ownable, IAddressResolver {
                 revert(0, 0)
             }
         }
+
+        _setConfig(appDeployer_, newForwarder);
         emit ForwarderDeployed(newForwarder, salt);
         return newForwarder;
     }
 
-    /// @notice Deploys a Forwarder contract
-    /// @param appDeployer_ The address of the app deployer
-    /// @param chainContractAddress_ The address of the chain contract
-    /// @param chainSlug_ The chain slug
-    /// @return The address of the deployed Forwarder contract
-    function deployForwarderContract(
-        address appDeployer_,
-        address chainContractAddress_,
-        uint32 chainSlug_
-    ) public returns (address) {
-        bytes memory constructorArgs = abi.encode(
-            chainSlug_,
-            chainContractAddress_,
-            address(this)
-        );
-
-        bytes memory combinedBytecode = abi.encodePacked(
-            forwarderBytecode,
-            constructorArgs
-        );
-
-        bytes32 salt = keccak256(constructorArgs);
-        address newForwarder;
-
-        assembly {
-            newForwarder := create2(
-                callvalue(),
-                add(combinedBytecode, 0x20),
-                mload(combinedBytecode),
-                salt
-            )
-            if iszero(extcodesize(newForwarder)) {
-                revert(0, 0)
-            }
-        }
-        emit ForwarderDeployed(newForwarder, salt);
-
+    function _setConfig(address appDeployer_, address newForwarder_) internal {
         address gateway = contractsToGateways[appDeployer_];
-        gatewaysToContracts[gateway] = newForwarder;
-        contractsToGateways[newForwarder] = gateway;
-        return newForwarder;
+        gatewaysToContracts[gateway] = newForwarder_;
+        contractsToGateways[newForwarder_] = gateway;
     }
 
     /// @notice Deploys an AsyncPromise contract

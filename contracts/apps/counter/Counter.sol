@@ -16,7 +16,11 @@ contract Counter is Ownable(msg.sender) {
         socket = _socket;
     }
 
-    function setCounter(uint256 _counter) external onlySocket {
-        counter = _counter;
+    function getSocket() external view returns (address) {
+        return socket;
+    }
+
+    function increase() external onlySocket {
+        counter++;
     }
 }

@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {SuperTokenDeployer} from "../contracts/apps/super-token/app-gateway/SuperTokenDeployer.sol";
-import {SuperTokenApp} from "../contracts/apps/super-token/app-gateway/SuperTokenApp.sol";
+import {SuperTokenDeployer} from "../contracts/apps/super-token/SuperTokenDeployer.sol";
+import {SuperTokenAppGateway} from "../contracts/apps/super-token/SuperTokenAppGateway.sol";
 import "./AuctionHouse.sol";
 
 contract SuperTokenTest is AuctionHouseTest {
     struct AppContracts {
-        SuperTokenApp superTokenApp;
+        SuperTokenAppGateway superTokenApp;
         SuperTokenDeployer superTokenDeployer;
         bytes32 superToken;
         bytes32 limitHook;
     }
+
     AppContracts appContracts;
     uint256 srcAmount = 0.01 ether;
-    SuperTokenApp.UserOrder userOrder;
+    SuperTokenAppGateway.UserOrder userOrder;
 
     event BatchCancelled(bytes32 indexed asyncId);
     event FinalizeRequested(
@@ -49,7 +50,7 @@ contract SuperTokenTest is AuctionHouseTest {
             1000000000 ether,
             createFeesData(maxFees)
         );
-        SuperTokenApp superTokenApp = new SuperTokenApp(
+        SuperTokenAppGateway superTokenApp = new SuperTokenAppGateway(
             address(addressResolver),
             address(superTokenDeployer),
             createFeesData(maxFees)
@@ -82,7 +83,7 @@ contract SuperTokenTest is AuctionHouseTest {
             )
         );
 
-        for (uint i = 0; i < payloadDetails.length; i++) {
+        for (uint256 i = 0; i < payloadDetails.length; i++) {
             payloadDetails[i].next[1] = predictAsyncPromiseAddress(
                 address(auctionHouse),
                 address(auctionHouse)
@@ -117,7 +118,7 @@ contract SuperTokenTest is AuctionHouseTest {
             abi.encodeWithSignature("setLimitHook(address)", deployedLimitHook)
         );
 
-        for (uint i = 0; i < payloadDetails.length; i++) {
+        for (uint256 i = 0; i < payloadDetails.length; i++) {
             payloadDetails[i].next[1] = predictAsyncPromiseAddress(
                 address(auctionHouse),
                 address(auctionHouse)
@@ -182,7 +183,7 @@ contract SuperTokenTest is AuctionHouseTest {
             )
         );
 
-        for (uint i = 0; i < payloadDetails.length; i++) {
+        for (uint256 i = 0; i < payloadDetails.length; i++) {
             payloadDetails[i].next[1] = predictAsyncPromiseAddress(
                 address(auctionHouse),
                 address(auctionHouse)
@@ -340,7 +341,7 @@ contract SuperTokenTest is AuctionHouseTest {
     {
         beforeBridge();
 
-        userOrder = SuperTokenApp.UserOrder({
+        userOrder = SuperTokenAppGateway.UserOrder({
             srcToken: appContracts.superTokenDeployer.forwarderAddresses(
                 appContracts.superToken,
                 arbChainSlug
@@ -454,35 +455,10 @@ contract SuperTokenTest is AuctionHouseTest {
         emit BatchCancelled(bridgeAsyncId);
         finalizeQuery(payloadIds[1], abi.encode(0.001 ether));
 
-        bytes32[] memory cancelPayloadIds = new bytes32[](1);
-        uint32 srcChainSlug = IForwarder(userOrder.srcToken).getChainSlug();
-
-        cancelPayloadIds[0] = getWritePayloadId(
-            srcChainSlug,
-            address(getSocketConfig(srcChainSlug).payloadDeliveryPlug),
-            writePayloadIdCounter++
+        (, , , , bool isBatchCancelled) = auctionHouse.payloadBatches(
+            bridgeAsyncId
         );
-
-        PayloadDetails[]
-            memory cancelPayloadDetails = createCancelPayloadDetailsArray(
-                srcChainSlug
-            );
-
-        bytes32 cancelAsyncId = getCurrentAsyncId();
-        asyncCounterTest++;
-
-        bidAndValidate(
-            maxFees,
-            cancelAsyncId,
-            address(appContracts.superTokenApp),
-            cancelPayloadDetails
-        );
-        finalizeAndExecute(
-            cancelAsyncId,
-            cancelPayloadIds[0],
-            false,
-            cancelPayloadDetails[0]
-        );
+        assertTrue(isBatchCancelled, "Batch should be cancelled");
     }
 
     function testWithdrawTo() public {

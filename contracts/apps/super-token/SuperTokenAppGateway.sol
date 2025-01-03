@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
-import "../../../base/AppGatewayBase.sol";
-import {ISuperToken} from "../../../interfaces/ISuperToken.sol";
-import "../../../utils/Ownable.sol";
+import "../../base/AppGatewayBase.sol";
+import {ISuperToken} from "../../interfaces/ISuperToken.sol";
+import "../../utils/Ownable.sol";
 
-contract SuperTokenApp is AppGatewayBase, Ownable {
+contract SuperTokenAppGateway is AppGatewayBase, Ownable {
     uint256 public idCounter;
+
     event Bridged(bytes32 asyncId);
 
     struct UserOrder {

@@ -2,7 +2,7 @@
 pragma solidity 0.8.13;
 
 import {AddressResolverUtil} from "./utils/AddressResolverUtil.sol";
-
+import {IPromise} from "./interfaces/IPromise.sol";
 /// @notice The state of the async promise
 enum AsyncPromiseState {
     WAITING_FOR_SET_CALLBACK_SELECTOR,
@@ -13,7 +13,7 @@ enum AsyncPromiseState {
 /// @title AsyncPromise
 /// @notice this contract stores the callback address and data to be executed once the previous call is executed
 /// This promise expires once the callback is executed
-contract AsyncPromise is AddressResolverUtil {
+contract AsyncPromise is AddressResolverUtil, IPromise {
     /// @notice The callback data to be used when the promise is resolved.
     bytes public callbackData;
 
@@ -28,7 +28,7 @@ contract AsyncPromise is AddressResolverUtil {
     address public immutable forwarder;
 
     /// @notice Indicates whether the promise has been resolved.
-    bool public resolved = false;
+    bool public override resolved = false;
 
     /// @notice Error thrown when attempting to resolve an already resolved promise.
     error PromiseAlreadyResolved();
@@ -55,7 +55,7 @@ contract AsyncPromise is AddressResolverUtil {
     /// @dev Only callable by the watcher precompile.
     function markResolved(
         bytes memory returnData
-    ) external onlyWatcherPrecompile {
+    ) external override onlyWatcherPrecompile {
         if (resolved) revert PromiseAlreadyResolved();
         resolved = true;
         state = AsyncPromiseState.RESOLVED;
@@ -79,7 +79,7 @@ contract AsyncPromise is AddressResolverUtil {
     function then(
         bytes4 selector,
         bytes memory data
-    ) external returns (address promise_) {
+    ) external override returns (address promise_) {
         require(
             msg.sender == forwarder || msg.sender == localInvoker,
             "Only the forwarder or local invoker can set this promise's callback"

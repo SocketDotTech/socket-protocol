@@ -45,10 +45,6 @@ contract FastSwitchboard is SwitchboardBase {
         bytes32 root_,
         bytes calldata signature_
     ) external {
-        // removed root verification for now
-
-        // todo: can include orderHash, transmitter, bidAmount in digest and verify these
-        // here instead of including in root
         address watcher = signatureVerifier__.recoverSigner(
             keccak256(abi.encode(address(this), root_)),
             signature_
