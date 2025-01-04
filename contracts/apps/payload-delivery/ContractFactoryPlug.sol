@@ -35,7 +35,7 @@ contract ContractFactoryPlug is PlugBase, Ownable {
                 mload(creationCode),
                 salt
             )
-            if iszero(extcodesize(addr)) {
+            if iszero(addr) {
                 mstore(0, 0x30116425) // Error selector for DeploymentFailed
                 revert(0x1C, 0x04) // reverting with just 4 bytes
             }

@@ -111,7 +111,7 @@ contract AddressResolver is Ownable, IAddressResolver {
                 mload(combinedBytecode),
                 salt
             )
-            if iszero(extcodesize(newForwarder)) {
+            if iszero(newForwarder) {
                 mstore(0, 0x30116425) // Error selector for DeploymentFailed
                 revert(0x1C, 0x04) // reverting with just 4 bytes
             }
@@ -157,7 +157,7 @@ contract AddressResolver is Ownable, IAddressResolver {
                 mload(combinedBytecode),
                 salt
             )
-            if iszero(extcodesize(newAsyncPromise)) {
+            if iszero(newAsyncPromise) {
                 mstore(0, 0x30116425) // Error selector for DeploymentFailed
                 revert(0x1C, 0x04) // reverting with just 4 bytes
             }
