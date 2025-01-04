@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
+
 import {PlugBase} from "../../base/PlugBase.sol";
 import {Ownable} from "../../utils/Ownable.sol";
+import {NotSocket} from "../../common/Errors.sol";
 
 /// @title ContractFactory
 /// @notice Abstract contract for deploying contracts
@@ -19,7 +21,7 @@ contract ContractFactoryPlug is PlugBase, Ownable {
         bytes32 salt
     ) public returns (address) {
         if (msg.sender != address(socket__)) {
-            revert("Only socket can deploy contracts");
+            revert NotSocket();
         }
 
         address addr;

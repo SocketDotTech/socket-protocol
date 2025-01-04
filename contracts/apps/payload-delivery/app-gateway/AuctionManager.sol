@@ -19,6 +19,13 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
 
     uint256 public constant auctionEndDelaySeconds = 0;
 
+    /// @notice Error thrown when trying to start or bid a closed auction
+    error AuctionClosed();
+    /// @notice Error thrown when trying to start an ongoing auction
+    error AuctionAlreadyStarted();
+    /// @notice Error thrown if fees exceed the maximum set fees
+    error BidExceedsMaxFees();
+
     /// @notice Constructor for AuctionHouse
     /// @param addressResolver_ The address of the address resolver
     /// @param signatureVerifier_ The address of the signature verifier
@@ -36,8 +43,8 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
     event BidPlaced(bytes32 asyncId_, Bid bid);
 
     function startAuction(bytes32 asyncId_) external onlyPayloadDelivery {
-        require(!auctionClosed[asyncId_], "Auction closed");
-        require(!auctionStarted[asyncId_], "Auction already started");
+        if (auctionClosed[asyncId_]) revert AuctionClosed();
+        if (auctionStarted[asyncId_]) revert AuctionAlreadyStarted();
 
         auctionStarted[asyncId_] = true;
         emit AuctionStarted(asyncId_);
@@ -59,7 +66,7 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
         bytes memory transmitterSignature,
         bytes memory extraData
     ) external {
-        require(!auctionClosed[asyncId_], "Auction closed");
+        if (auctionClosed[asyncId_]) revert AuctionClosed();
 
         address transmitter = signatureVerifier__.recoverSigner(
             keccak256(
@@ -74,7 +81,7 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
             extraData: extraData
         });
 
-        require(fee <= feesData.maxFees, "Bid exceeds max fees");
+        if (fee > feesData.maxFees) revert BidExceedsMaxFees();
         if (fee < winningBids[asyncId_].fee) return;
 
         winningBids[asyncId_] = newBid;

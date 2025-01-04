@@ -32,6 +32,12 @@ contract AsyncPromise is AddressResolverUtil, IPromise {
 
     /// @notice Error thrown when attempting to resolve an already resolved promise.
     error PromiseAlreadyResolved();
+    /// @notice Error thrown when async call could not be resolved
+    error RealyingAsyncCallFailed();
+    /// @notice Only the forwarder or local invoker can set then's promise callback
+    error OnlyForwarderOrLocalInvoker();
+    /// @notice Error thrown when attempting to set an already existing promise
+    error PromiseAlreadySetUp();
 
     /// @notice The current state of the async promise.
     AsyncPromiseState public state =
@@ -68,7 +74,7 @@ contract AsyncPromise is AddressResolverUtil, IPromise {
             );
 
             (bool success, ) = localInvoker.call(combinedCalldata);
-            require(success, "Relaying async call failed");
+            if (!success) revert RealyingAsyncCallFailed();
         }
     }
 
@@ -80,13 +86,12 @@ contract AsyncPromise is AddressResolverUtil, IPromise {
         bytes4 selector,
         bytes memory data
     ) external override returns (address promise_) {
-        require(
-            msg.sender == forwarder || msg.sender == localInvoker,
-            "Only the forwarder or local invoker can set this promise's callback"
-        );
+        if (msg.sender != forwarder && msg.sender != localInvoker) {
+            revert OnlyForwarderOrLocalInvoker();
+        }
 
         if (state == AsyncPromiseState.WAITING_FOR_CALLBACK_EXECUTION) {
-            revert("Promise already setup");
+            revert PromiseAlreadySetUp();
         }
 
         if (state == AsyncPromiseState.WAITING_FOR_SET_CALLBACK_SELECTOR) {

@@ -10,6 +10,7 @@ import "../interfaces/IPromise.sol";
 import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../common/Structs.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../common/Constants.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../common/Errors.sol";
+
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
 contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
@@ -36,6 +37,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
 
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
+    /// @notice Error thrown when an invalid app gateway reaches a plug
+    error InvalidConnection();
 
     event CalledAppGateway(
         bytes32 callId,
@@ -349,7 +352,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
         address appGateway_
     ) internal view {
         (address appGateway, ) = getPlugConfigs(chainSlug_, target_);
-        require(appGateway == appGateway_, "Invalid connection");
+        if (appGateway != appGateway_) revert InvalidConnection();
     }
 
     /// @notice Encodes a unique payload ID from chain slug, plug address, and counter
