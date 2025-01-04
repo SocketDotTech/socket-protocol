@@ -27,9 +27,12 @@ contract AddressResolver is Ownable, IAddressResolver {
     event PlugAdded(address appGateway, uint32 chainSlug, address plug);
     event ForwarderDeployed(address newForwarder, bytes32 salt);
     event AsyncPromiseDeployed(address newAsyncPromise, bytes32 salt);
+    /// @notice Error thrown if AppGateway contract was already set by a different address
     error AppGatewayContractAlreadySetByDifferentSender(
         address contractAddress_
     );
+    /// @notice Error thrown if it failed to deploy the create2 contract
+    error DeploymentFailed();
 
     /// @notice Constructor to initialize the AddressResolver contract
     /// @param _owner The address of the contract owner
@@ -109,7 +112,8 @@ contract AddressResolver is Ownable, IAddressResolver {
                 salt
             )
             if iszero(extcodesize(newForwarder)) {
-                revert(0, 0)
+                mstore(0, 0x30116425) // Error selector for DeploymentFailed
+                revert(0x1C, 0x04) // reverting with just 4 bytes
             }
         }
 
@@ -154,7 +158,8 @@ contract AddressResolver is Ownable, IAddressResolver {
                 salt
             )
             if iszero(extcodesize(newAsyncPromise)) {
-                revert(0, 0)
+                mstore(0, 0x30116425) // Error selector for DeploymentFailed
+                revert(0x1C, 0x04) // reverting with just 4 bytes
             }
         }
 

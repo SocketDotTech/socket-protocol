@@ -10,6 +10,9 @@ import {NotSocket} from "../../common/Errors.sol";
 contract ContractFactoryPlug is PlugBase, Ownable {
     event Deployed(address addr, bytes32 salt);
 
+    /// @notice Error thrown if it failed to deploy the create2 contract
+    error DeploymentFailed();
+
     constructor(
         address socket_,
         uint32 chainSlug_,
@@ -33,7 +36,8 @@ contract ContractFactoryPlug is PlugBase, Ownable {
                 salt
             )
             if iszero(extcodesize(addr)) {
-                revert(0, 0)
+                mstore(0, 0x30116425) // Error selector for DeploymentFailed
+                revert(0x1C, 0x04) // reverting with just 4 bytes
             }
         }
 
