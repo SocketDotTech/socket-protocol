@@ -37,6 +37,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
 
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
+    error InvalidTransmitter();
 
     event CalledAppGateway(
         bytes32 callId,
@@ -171,8 +172,10 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
     function finalize(
         FinalizeParams memory params_
     ) external returns (bytes32 payloadId, bytes32 root) {
+        if (params_.transmitter == address(0)) revert InvalidTransmitter();
+
         // The app gateway is the caller of this function
-        address appGateway = msg.sender;
+        address appGateway = params_.payloadDetails.appGateway;
         // _consumeLimit(appGateway, FINALIZE);
 
         // Verify that the app gateway is properly configured for this chain and target

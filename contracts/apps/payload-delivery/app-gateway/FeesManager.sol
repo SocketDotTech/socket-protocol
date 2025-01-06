@@ -49,6 +49,7 @@ contract FeesManager is AddressResolverUtil, Ownable {
         );
 
         payloadDetails = PayloadDetails({
+            appGateway: address(this),
             chainSlug: feesData_.feePoolChain,
             target: _getFeesPlugAddress(feesData_.feePoolChain),
             payload: payload,
@@ -87,6 +88,7 @@ contract FeesManager is AddressResolverUtil, Ownable {
 
         return
             PayloadDetails({
+                appGateway: address(this),
                 chainSlug: chainSlug_,
                 target: _getFeesPlugAddress(chainSlug_),
                 payload: payload,

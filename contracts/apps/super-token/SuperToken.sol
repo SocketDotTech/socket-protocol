@@ -79,6 +79,8 @@ contract SuperToken is ERC20, Ownable(msg.sender), PlugBase {
     ) external onlyOwner {
         socket__ = ISocket(socket_);
         controller = socket_;
+        _claimOwner(socket_);
+
         _connectSocket(appGateway, switchboard_);
     }
 }

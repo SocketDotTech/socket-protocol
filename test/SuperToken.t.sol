@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {SuperTokenDeployer} from "../contracts/apps/super-token/SuperTokenDeployer.sol";
-import {SuperTokenAppGateway} from "../contracts/apps/super-token/SuperTokenAppGateway.sol";
-import "./DeliveryHelper.sol";
+import {SuperTokenDeployer} from "../contracts/apps/super-token/app-gateway/SuperTokenDeployer.sol";
+import {SuperTokenApp} from "../contracts/apps/super-token/app-gateway/SuperTokenApp.sol";
+import "./DeliveryHelper.t.sol";
+import {QUERY, FINALIZE, SCHEDULE} from "../contracts/common/Constants.sol";
 
 contract SuperTokenTest is DeliveryHelperTest {
     struct AppContracts {
@@ -15,6 +16,8 @@ contract SuperTokenTest is DeliveryHelperTest {
     AppContracts appContracts;
     uint256 srcAmount = 0.01 ether;
     SuperTokenApp.UserOrder userOrder;
+
+    bytes32[] contractIds = new bytes32[](2);
 
     event BatchCancelled(bytes32 indexed asyncId);
     event FinalizeRequested(
@@ -34,6 +37,9 @@ contract SuperTokenTest is DeliveryHelperTest {
 
         // app specific
         deploySuperTokenApp();
+
+        contractIds[0] = appContracts.superToken;
+        contractIds[1] = appContracts.limitHook;
     }
 
     function deploySuperTokenApp() internal {
@@ -47,12 +53,14 @@ contract SuperTokenTest is DeliveryHelperTest {
             18,
             owner,
             1000000000 ether,
+            address(auctionManager),
             createFeesData(maxFees)
         );
         SuperTokenApp superTokenApp = new SuperTokenApp(
             address(addressResolver),
             address(superTokenDeployer),
-            createFeesData(maxFees)
+            createFeesData(maxFees),
+            address(auctionManager)
         );
 
         appContracts = AppContracts({
@@ -61,6 +69,47 @@ contract SuperTokenTest is DeliveryHelperTest {
             superToken: superTokenDeployer.superToken(),
             limitHook: superTokenDeployer.limitHook()
         });
+
+        UpdateLimitParams[] memory params = new UpdateLimitParams[](6);
+        params[0] = UpdateLimitParams({
+            limitType: SCHEDULE,
+            appGateway: address(appContracts.superTokenDeployer),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+        params[1] = UpdateLimitParams({
+            limitType: FINALIZE,
+            appGateway: address(appContracts.superTokenDeployer),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+        params[2] = UpdateLimitParams({
+            limitType: QUERY,
+            appGateway: address(appContracts.superTokenDeployer),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+        params[3] = UpdateLimitParams({
+            limitType: SCHEDULE,
+            appGateway: address(appContracts.superTokenApp),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+        params[4] = UpdateLimitParams({
+            limitType: FINALIZE,
+            appGateway: address(appContracts.superTokenApp),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+        params[5] = UpdateLimitParams({
+            limitType: QUERY,
+            appGateway: address(appContracts.superTokenApp),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+
+        hoax(watcherEOA);
+        watcherPrecompile.updateLimitParams(params);
     }
 
     function createDeployPayloadDetailsArray(
@@ -81,13 +130,6 @@ contract SuperTokenTest is DeliveryHelperTest {
                 appContracts.limitHook
             )
         );
-
-        for (uint i = 0; i < payloadDetails.length; i++) {
-            payloadDetails[i].next[1] = predictAsyncPromiseAddress(
-                address(deliveryHelper),
-                address(deliveryHelper)
-            );
-        }
 
         return payloadDetails;
     }
@@ -117,126 +159,32 @@ contract SuperTokenTest is DeliveryHelperTest {
             abi.encodeWithSignature("setLimitHook(address)", deployedLimitHook)
         );
 
-        for (uint i = 0; i < payloadDetails.length; i++) {
-            payloadDetails[i].next[1] = predictAsyncPromiseAddress(
-                address(deliveryHelper),
-                address(deliveryHelper)
-            );
-        }
-
-        return payloadDetails;
-    }
-
-    function createBridgePayloadDetailsArray(
-        uint32 srcChainSlug_,
-        uint32 dstChainSlug_
-    ) internal returns (PayloadDetails[] memory) {
-        PayloadDetails[] memory payloadDetails = new PayloadDetails[](4);
-
-        address deployedSrcToken = IForwarder(userOrder.srcToken)
-            .getOnChainAddress();
-        address deployedDstToken = IForwarder(userOrder.dstToken)
-            .getOnChainAddress();
-
-        payloadDetails[0] = createExecutePayloadDetail(
-            srcChainSlug_,
-            deployedSrcToken,
-            address(appContracts.superTokenApp),
-            userOrder.srcToken,
-            abi.encodeWithSignature(
-                "lockTokens(address,uint256)",
-                userOrder.user,
-                userOrder.srcAmount
-            )
-        );
-
-        payloadDetails[1] = createReadPayloadDetail(
-            srcChainSlug_,
-            deployedSrcToken,
-            address(appContracts.superTokenApp),
-            userOrder.srcToken,
-            abi.encodeWithSignature("balanceOf(address)", userOrder.user)
-        );
-
-        payloadDetails[2] = createExecutePayloadDetail(
-            dstChainSlug_,
-            deployedDstToken,
-            address(appContracts.superTokenApp),
-            userOrder.dstToken,
-            abi.encodeWithSignature(
-                "mint(address,uint256)",
-                userOrder.user,
-                userOrder.srcAmount
-            )
-        );
-
-        payloadDetails[3] = createExecutePayloadDetail(
-            srcChainSlug_,
-            deployedSrcToken,
-            address(appContracts.superTokenApp),
-            userOrder.srcToken,
-            abi.encodeWithSignature(
-                "burn(address,uint256)",
-                userOrder.user,
-                userOrder.srcAmount
-            )
-        );
-
-        for (uint i = 0; i < payloadDetails.length; i++) {
-            payloadDetails[i].next[1] = predictAsyncPromiseAddress(
-                address(deliveryHelper),
-                address(deliveryHelper)
-            );
-        }
-
-        return payloadDetails;
-    }
-
-    function createCancelPayloadDetailsArray(
-        uint32 srcChainSlug_
-    ) internal returns (PayloadDetails[] memory) {
-        PayloadDetails[] memory payloadDetails = new PayloadDetails[](1);
-
-        address deployedSrcToken = IForwarder(userOrder.srcToken)
-            .getOnChainAddress();
-
-        payloadDetails[0] = createExecutePayloadDetail(
-            srcChainSlug_,
-            deployedSrcToken,
-            address(appContracts.superTokenApp),
-            userOrder.srcToken,
-            abi.encodeWithSignature(
-                "unlockTokens(address,uint256)",
-                userOrder.user,
-                userOrder.srcAmount
-            )
-        );
-
-        payloadDetails[0].next[1] = predictAsyncPromiseAddress(
-            address(deliveryHelper),
-            address(deliveryHelper)
-        );
         return payloadDetails;
     }
 
     function testContractDeployment() public {
         bytes32[] memory payloadIds = getWritePayloadIds(
             arbChainSlug,
-            getPayloadDeliveryPlug(arbChainSlug),
+            address(arbConfig.switchboard),
             2
         );
-
         PayloadDetails[]
             memory payloadDetails = createDeployPayloadDetailsArray(
                 arbChainSlug
             );
 
-        _deploy(
+        bytes32 asyncId = _deploy(
+            contractIds,
             payloadIds,
             arbChainSlug,
-            maxFees,
             appContracts.superTokenDeployer,
-            payloadDetails
+            address(appContracts.superTokenApp)
+        );
+
+        checkPayloadBatchAndDetails(
+            payloadDetails,
+            asyncId,
+            address(appContracts.superTokenDeployer)
         );
     }
 
@@ -244,100 +192,83 @@ contract SuperTokenTest is DeliveryHelperTest {
         writePayloadIdCounter = 0;
         bytes32[] memory payloadIds = getWritePayloadIds(
             arbChainSlug,
-            getPayloadDeliveryPlug(arbChainSlug),
+            address(arbConfig.switchboard),
             2
         );
-        PayloadDetails[]
-            memory payloadDetails = createDeployPayloadDetailsArray(
-                arbChainSlug
-            );
         _deploy(
+            contractIds,
             payloadIds,
             arbChainSlug,
-            maxFees,
             appContracts.superTokenDeployer,
-            payloadDetails
+            address(appContracts.superTokenApp)
         );
 
         payloadIds = getWritePayloadIds(
             arbChainSlug,
-            getPayloadDeliveryPlug(arbChainSlug),
+            address(arbConfig.switchboard),
             1
         );
-        payloadDetails = createConfigurePayloadDetailsArray(arbChainSlug);
-        _configure(
+
+        PayloadDetails[]
+            memory payloadDetails = createConfigurePayloadDetailsArray(
+                arbChainSlug
+            );
+        bytes32 asyncId = _configure(
             payloadIds,
-            address(appContracts.superTokenApp),
-            maxFees,
-            payloadDetails
+            address(appContracts.superTokenApp)
+        );
+
+        checkPayloadBatchAndDetails(
+            payloadDetails,
+            asyncId,
+            address(appContracts.superTokenApp)
         );
     }
 
     function beforeBridge() internal {
         writePayloadIdCounter = 0;
         bytes32[] memory payloadIds = getWritePayloadIds(
-            optChainSlug,
-            getPayloadDeliveryPlug(optChainSlug),
+            arbChainSlug,
+            address(arbConfig.switchboard),
             2
         );
-        PayloadDetails[]
-            memory payloadDetails = createDeployPayloadDetailsArray(
-                optChainSlug
-            );
         _deploy(
+            contractIds,
             payloadIds,
-            optChainSlug,
-            maxFees,
+            arbChainSlug,
             appContracts.superTokenDeployer,
-            payloadDetails
-        );
-
-        payloadIds = getWritePayloadIds(
-            optChainSlug,
-            getPayloadDeliveryPlug(optChainSlug),
-            1
-        );
-        payloadDetails = createConfigurePayloadDetailsArray(optChainSlug);
-        _configure(
-            payloadIds,
-            address(appContracts.superTokenApp),
-            maxFees,
-            payloadDetails
+            address(appContracts.superTokenApp)
         );
 
         payloadIds = getWritePayloadIds(
             arbChainSlug,
-            getPayloadDeliveryPlug(arbChainSlug),
+            address(arbConfig.switchboard),
+            1
+        );
+        _configure(payloadIds, address(appContracts.superTokenApp));
+
+        payloadIds = getWritePayloadIds(
+            optChainSlug,
+            address(optConfig.switchboard),
             2
         );
-
-        payloadDetails = createDeployPayloadDetailsArray(arbChainSlug);
         _deploy(
+            contractIds,
             payloadIds,
-            arbChainSlug,
-            maxFees,
+            optChainSlug,
             appContracts.superTokenDeployer,
-            payloadDetails
+            address(appContracts.superTokenApp)
         );
 
         payloadIds = getWritePayloadIds(
-            arbChainSlug,
-            getPayloadDeliveryPlug(arbChainSlug),
+            optChainSlug,
+            address(optConfig.switchboard),
             1
         );
-        payloadDetails = createConfigurePayloadDetailsArray(arbChainSlug);
-        _configure(
-            payloadIds,
-            address(appContracts.superTokenApp),
-            maxFees,
-            payloadDetails
-        );
+        _configure(payloadIds, address(appContracts.superTokenApp));
     }
 
-    function _bridge()
-        internal
-        returns (bytes32, bytes32[] memory, PayloadDetails[] memory)
-    {
+    function _bridge() internal returns (bytes32, bytes32[] memory) {
         beforeBridge();
 
         userOrder = SuperTokenApp.UserOrder({
@@ -359,96 +290,65 @@ contract SuperTokenTest is DeliveryHelperTest {
         bytes32[] memory payloadIds = new bytes32[](4);
         payloadIds[0] = getWritePayloadId(
             srcChainSlug,
-            address(getSocketConfig(srcChainSlug).payloadDeliveryPlug),
+            address(getSocketConfig(srcChainSlug).switchboard),
             writePayloadIdCounter++
         );
         payloadIds[1] = bytes32(readPayloadIdCounter++);
         payloadIds[2] = getWritePayloadId(
             dstChainSlug,
-            address(getSocketConfig(dstChainSlug).payloadDeliveryPlug),
+            address(getSocketConfig(dstChainSlug).switchboard),
             writePayloadIdCounter++
         );
         payloadIds[3] = getWritePayloadId(
             srcChainSlug,
-            address(getSocketConfig(srcChainSlug).payloadDeliveryPlug),
+            address(getSocketConfig(srcChainSlug).switchboard),
             writePayloadIdCounter++
         );
         writePayloadIdCounter++;
 
-        PayloadDetails[]
-            memory payloadDetails = createBridgePayloadDetailsArray(
-                srcChainSlug,
-                dstChainSlug
-            );
         bytes32 bridgeAsyncId = getCurrentAsyncId();
         asyncCounterTest++;
 
         bytes memory encodedOrder = abi.encode(userOrder);
         appContracts.superTokenApp.bridge(encodedOrder);
-        bidAndValidate(
-            maxFees,
-            bridgeAsyncId,
-            address(appContracts.superTokenApp),
-            payloadDetails
-        );
-        return (bridgeAsyncId, payloadIds, payloadDetails);
+        bidAndEndAuction(bridgeAsyncId);
+        return (bridgeAsyncId, payloadIds);
     }
 
     function testBridge() public {
-        (
-            bytes32 bridgeAsyncId,
-            bytes32[] memory payloadIds,
-            PayloadDetails[] memory payloadDetails
-        ) = _bridge();
-
-        finalizeAndExecute(
+        (bytes32 bridgeAsyncId, bytes32[] memory payloadIds) = _bridge();
+        PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(
             bridgeAsyncId,
-            payloadIds[0],
-            false,
-            payloadDetails[0]
+            0
         );
 
+        finalizeAndExecute(bridgeAsyncId, payloadIds[0], false);
+
+        payloadDetails = deliveryHelper.getPayloadDetails(bridgeAsyncId, 2);
         vm.expectEmit(true, false, false, false);
         emit FinalizeRequested(
             payloadIds[2],
             AsyncRequest(
-                payloadDetails[2].next,
+                payloadDetails.next,
                 address(0),
-                transmitter,
-                payloadDetails[2].executionGasLimit,
-                payloadDetails[2].payload,
+                transmitterEOA,
+                payloadDetails.executionGasLimit,
+                payloadDetails.payload,
                 address(0),
                 bytes32(0)
             )
         );
         finalizeQuery(payloadIds[1], abi.encode(srcAmount));
-        finalizeAndExecute(
-            bridgeAsyncId,
-            payloadIds[2],
-            false,
-            payloadDetails[2]
-        );
-        finalizeAndExecute(
-            bridgeAsyncId,
-            payloadIds[3],
-            false,
-            payloadDetails[3]
-        );
+        finalizeAndExecute(bridgeAsyncId, payloadIds[2], false);
+
+        payloadDetails = deliveryHelper.getPayloadDetails(bridgeAsyncId, 3);
+        finalizeAndExecute(bridgeAsyncId, payloadIds[3], false);
     }
 
     function testCancel() public {
-        (
-            bytes32 bridgeAsyncId,
-            bytes32[] memory payloadIds,
-            PayloadDetails[] memory payloadDetails
-        ) = _bridge();
+        (bytes32 bridgeAsyncId, bytes32[] memory payloadIds) = _bridge();
 
-        finalizeAndExecute(
-            bridgeAsyncId,
-            payloadIds[0],
-            false,
-            payloadDetails[0]
-        );
+        finalizeAndExecute(bridgeAsyncId, payloadIds[0], false);
 
         vm.expectEmit(true, true, false, true);
         emit BatchCancelled(bridgeAsyncId);
@@ -459,99 +359,18 @@ contract SuperTokenTest is DeliveryHelperTest {
 
         cancelPayloadIds[0] = getWritePayloadId(
             srcChainSlug,
-            address(getSocketConfig(srcChainSlug).payloadDeliveryPlug),
+            address(getSocketConfig(srcChainSlug).switchboard),
             writePayloadIdCounter++
         );
-
-        PayloadDetails[]
-            memory cancelPayloadDetails = createCancelPayloadDetailsArray(
-                srcChainSlug
-            );
 
         bytes32 cancelAsyncId = getCurrentAsyncId();
         asyncCounterTest++;
 
-        bidAndValidate(
-            maxFees,
-            cancelAsyncId,
-            address(appContracts.superTokenApp),
-            cancelPayloadDetails
-        );
-        finalizeAndExecute(
-            cancelAsyncId,
-            cancelPayloadIds[0],
-            false,
-            cancelPayloadDetails[0]
-        );
-    }
-
-    function testWithdrawTo() public {
-        uint32 chainSlug = arbChainSlug;
-        address token = ETH_ADDRESS;
-        uint256 depositAmount = 1 ether;
-        uint256 withdrawAmount = 0.1 ether;
-        address appGateway = address(appContracts.superTokenApp);
-        address receiver = address(uint160(c++));
-
-        SocketContracts memory socketConfig = getSocketConfig(chainSlug);
-        socketConfig.payloadDeliveryPlug.deposit{value: depositAmount}(
-            token,
-            depositAmount,
-            appGateway
-        );
-        assertEq(
-            depositAmount,
-            socketConfig.payloadDeliveryPlug.balanceOf(appGateway, token),
-            "Balance should be correct"
-        );
-
-        appContracts.superTokenApp.withdrawFeeTokens(
-            chainSlug,
-            token,
-            withdrawAmount,
-            receiver
-        );
-
-        bytes32[] memory withdrawPayloadIds = new bytes32[](1);
-        withdrawPayloadIds[0] = getWritePayloadId(
-            chainSlug,
-            address(getSocketConfig(chainSlug).payloadDeliveryPlug),
-            writePayloadIdCounter++
-        );
-        bytes32 withdrawAsyncId = getCurrentAsyncId();
-        asyncCounterTest++;
-
-        bytes memory withdrawPayload = abi.encode(
-            WITHDRAW,
-            abi.encode(appGateway, token, withdrawAmount, receiver)
-        );
-
-        PayloadDetails[] memory payloadDetails = new PayloadDetails[](1);
-        payloadDetails[0] = PayloadDetails({
-            chainSlug: chainSlug,
-            target: address(getSocketConfig(chainSlug).payloadDeliveryPlug),
-            payload: withdrawPayload,
-            callType: CallType.WITHDRAW,
-            executionGasLimit: deliveryHelper.feeCollectionGasLimit(chainSlug),
-            next: new address[](2)
-        });
-
-        payloadDetails[0].next[1] = predictAsyncPromiseAddress(
-            address(deliveryHelper),
-            address(deliveryHelper)
-        );
-
-        bidAndValidate(
-            maxFees,
-            withdrawAsyncId,
-            address(appContracts.superTokenApp),
-            payloadDetails
-        );
-        finalizeAndExecute(
-            withdrawAsyncId,
-            withdrawPayloadIds[0],
-            true,
-            payloadDetails[0]
-        );
+        bidAndEndAuction(cancelAsyncId);
+        // finalizeAndExecute(
+        //     cancelAsyncId,
+        //     cancelPayloadIds[0],
+        //     false
+        // );
     }
 }

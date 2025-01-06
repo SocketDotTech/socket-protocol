@@ -103,6 +103,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
         next[0] = params.asyncPromise;
 
         bytes memory payload = params.payload;
+        address appGateway = msg.sender;
         if (params.callType == CallType.DEPLOY) {
             bytes32 salt = keccak256(
                 abi.encode(msg.sender, params.chainSlug, saltCounter++)
@@ -113,10 +114,12 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
                 params.payload,
                 salt
             );
+            appGateway = address(this);
         }
 
         return
             PayloadDetails({
+                appGateway: appGateway,
                 chainSlug: params.chainSlug,
                 target: params.target,
                 payload: payload,

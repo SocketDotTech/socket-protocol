@@ -16,6 +16,7 @@ struct FeesData {
 
 struct PayloadDetails {
     uint32 chainSlug;
+    address appGateway;
     address target;
     bytes payload;
     CallType callType;

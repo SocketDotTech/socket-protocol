@@ -10,11 +10,7 @@ import "../../../interfaces/IAuctionManager.sol";
 
 /// @title DeliveryHelper
 /// @notice Contract for managing auctions and placing bids
-contract AuctionManager is
-    AddressResolverUtil,
-    Ownable,
-    IAuctionManager
-{
+contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
     SignatureVerifier public immutable signatureVerifier__;
     uint32 public immutable vmChainSlug;
     mapping(bytes32 => Bid) public winningBids;
@@ -97,7 +93,8 @@ contract AuctionManager is
         emit AuctionEnded(asyncId_, winningBid);
 
         IDeliveryHelper(addressResolver.deliveryHelper()).startBatchProcessing(
-            asyncId_
+            asyncId_,
+            winningBid
         );
     }
 }

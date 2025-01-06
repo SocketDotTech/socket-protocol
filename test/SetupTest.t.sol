@@ -32,6 +32,7 @@ contract SetupTest is Test {
 
     uint32 arbChainSlug = 421614;
     uint32 optChainSlug = 11155420;
+    uint32 vmChainSlug = 1;
 
     uint256 public writePayloadIdCounter = 0;
     uint256 public readPayloadIdCounter = 0;
@@ -79,10 +80,10 @@ contract SetupTest is Test {
 
         ContractFactoryPlug contractFactoryPlug = new ContractFactoryPlug(
             address(socket),
-            chainSlug_,
-            owner
+            owner,
+            address(switchboard)
         );
-        FeesPlug feesPlug = new FeesPlug(address(socket), chainSlug_, owner);
+        FeesPlug feesPlug = new FeesPlug(address(socket), owner);
 
         vm.startPrank(owner);
         // socket
@@ -154,7 +155,6 @@ contract SetupTest is Test {
         uint32 chainSlug_,
         bytes32 payloadId,
         bytes32 root,
-        address deliveryHelper,
         PayloadDetails memory payloadDetails,
         bytes memory watcherSignature
     ) internal returns (bytes memory) {
@@ -173,7 +173,7 @@ contract SetupTest is Test {
             root: root,
             watcherSignature: watcherSignature,
             payloadId: payloadId,
-            appGateway: deliveryHelper,
+            appGateway: payloadDetails.appGateway,
             executionGasLimit: payloadDetails.executionGasLimit,
             transmitterSignature: transmitterSig,
             payload: payloadDetails.payload,
@@ -207,6 +207,7 @@ contract SetupTest is Test {
 
         bytes[] memory returnDatas = new bytes[](2);
         returnDatas[0] = returnData;
+
         resolvedPromises[0] = IWatcherPrecompile.ResolvedPromises({
             payloadId: payloadId,
             returnData: returnDatas
@@ -244,5 +245,16 @@ contract SetupTest is Test {
 
         writePayloadIdCounter += numPayloads + 1;
         return payloadIds;
+    }
+
+    function encodeTimeoutId(
+        uint256 timeoutCounter_
+    ) internal view returns (bytes32) {
+        // watcher address (160 bits) | counter (64 bits)
+        return
+            bytes32(
+                (uint256(uint160(address(watcherPrecompile))) << 64) |
+                    timeoutCounter_
+            );
     }
 }

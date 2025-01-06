@@ -15,7 +15,7 @@ import "../contracts/common/Constants.sol";
 //     uint32 arbChainSlug = 421614;
 //     uint32 optChainSlug = 11155420;
 //     address socket;
-    
+
 //     ContractFactoryPlug contractFactoryPlug;
 //     FeesPlug feesPlug;
 

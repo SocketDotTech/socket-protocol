@@ -17,8 +17,10 @@ contract DeliveryHelper is BatchAsync, Ownable {
     }
 
     function startBatchProcessing(
-        bytes32 asyncId_
+        bytes32 asyncId_,
+        Bid memory winningBid
     ) external onlyAuctionManager(asyncId_) {
+        payloadBatches[asyncId_].winningBid = winningBid;
         _process(asyncId_);
     }
 

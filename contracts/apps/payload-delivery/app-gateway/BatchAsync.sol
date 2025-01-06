@@ -48,12 +48,13 @@ abstract contract BatchAsync is QueueAsync {
             memory payloadDetailsArray = createPayloadDetailsArray();
 
         // Default flow for other cases (including mixed read/write)
-        return deliverPayload(
-            payloadDetailsArray,
-            feesData_,
-            auctionManager_,
-            onCompleteData_
-        );
+        return
+            deliverPayload(
+                payloadDetailsArray,
+                feesData_,
+                auctionManager_,
+                onCompleteData_
+            );
     }
 
     /// @notice Callback function for handling promises
@@ -86,7 +87,11 @@ abstract contract BatchAsync is QueueAsync {
             return asyncId;
         }
 
-        address forwarderAppGateway = processRemainingPayloads(payloadDetails_, readEndIndex, asyncId);
+        address forwarderAppGateway = processRemainingPayloads(
+            payloadDetails_,
+            readEndIndex,
+            asyncId
+        );
 
         initializeBatch(
             asyncId,
@@ -168,6 +173,8 @@ abstract contract BatchAsync is QueueAsync {
                     .contractsToGateways(msg.sender);
                 if (forwarderAppGateway == address(0))
                     forwarderAppGateway = msg.sender;
+
+                payloadDetails_[i].appGateway = forwarderAppGateway;
             }
 
             payloadBatchDetails[asyncId].push(payloadDetails_[i]);

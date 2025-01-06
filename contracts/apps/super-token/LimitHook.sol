@@ -43,6 +43,7 @@ contract LimitHook is Ownable, PlugBase {
         address socket_
     ) external onlyOwner {
         socket__ = ISocket(socket_);
+        _claimOwner(socket_);
         _connectSocket(appGateway, switchboard_);
     }
 }
