@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {SuperTokenDeployer} from "../contracts/apps/super-token/app-gateway/SuperTokenDeployer.sol";
-import {SuperTokenApp} from "../contracts/apps/super-token/app-gateway/SuperTokenApp.sol";
-import "./AuctionHouse.sol";
+import {SuperTokenDeployer} from "../contracts/apps/super-token/SuperTokenDeployer.sol";
+import {SuperTokenAppGateway} from "../contracts/apps/super-token/SuperTokenAppGateway.sol";
+import "./DeliveryHelper.sol";
 
-contract SuperTokenTest is AuctionHouseTest {
+contract SuperTokenTest is DeliveryHelperTest {
     struct AppContracts {
         SuperTokenApp superTokenApp;
         SuperTokenDeployer superTokenDeployer;
@@ -30,7 +30,7 @@ contract SuperTokenTest is AuctionHouseTest {
 
     function setUp() public {
         // core
-        setUpAuctionHouse();
+        setUpDeliveryHelper();
 
         // app specific
         deploySuperTokenApp();
@@ -84,8 +84,8 @@ contract SuperTokenTest is AuctionHouseTest {
 
         for (uint i = 0; i < payloadDetails.length; i++) {
             payloadDetails[i].next[1] = predictAsyncPromiseAddress(
-                address(auctionHouse),
-                address(auctionHouse)
+                address(deliveryHelper),
+                address(deliveryHelper)
             );
         }
 
@@ -119,8 +119,8 @@ contract SuperTokenTest is AuctionHouseTest {
 
         for (uint i = 0; i < payloadDetails.length; i++) {
             payloadDetails[i].next[1] = predictAsyncPromiseAddress(
-                address(auctionHouse),
-                address(auctionHouse)
+                address(deliveryHelper),
+                address(deliveryHelper)
             );
         }
 
@@ -184,8 +184,8 @@ contract SuperTokenTest is AuctionHouseTest {
 
         for (uint i = 0; i < payloadDetails.length; i++) {
             payloadDetails[i].next[1] = predictAsyncPromiseAddress(
-                address(auctionHouse),
-                address(auctionHouse)
+                address(deliveryHelper),
+                address(deliveryHelper)
             );
         }
 
@@ -213,8 +213,8 @@ contract SuperTokenTest is AuctionHouseTest {
         );
 
         payloadDetails[0].next[1] = predictAsyncPromiseAddress(
-            address(auctionHouse),
-            address(auctionHouse)
+            address(deliveryHelper),
+            address(deliveryHelper)
         );
         return payloadDetails;
     }
@@ -532,13 +532,13 @@ contract SuperTokenTest is AuctionHouseTest {
             target: address(getSocketConfig(chainSlug).payloadDeliveryPlug),
             payload: withdrawPayload,
             callType: CallType.WITHDRAW,
-            executionGasLimit: auctionHouse.feeCollectionGasLimit(chainSlug),
+            executionGasLimit: deliveryHelper.feeCollectionGasLimit(chainSlug),
             next: new address[](2)
         });
 
         payloadDetails[0].next[1] = predictAsyncPromiseAddress(
-            address(auctionHouse),
-            address(auctionHouse)
+            address(deliveryHelper),
+            address(deliveryHelper)
         );
 
         bidAndValidate(

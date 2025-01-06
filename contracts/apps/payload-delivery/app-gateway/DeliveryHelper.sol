@@ -7,11 +7,12 @@ import {Bid, PayloadBatch, FeesData, PayloadDetails, FinalizeParams} from "../..
 import {DISTRIBUTE_FEE, DEPLOY} from "../../../common/Constants.sol";
 import "./BatchAsync.sol";
 
-contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
+contract DeliveryHelper is BatchAsync, Ownable {
     constructor(
         address _addressResolver,
-        address _feesManager
-    ) AddressResolverUtil(_addressResolver) {
+        address _feesManager,
+        address owner_
+    ) AddressResolverUtil(_addressResolver) Ownable(owner_) {
         feesManager = _feesManager;
     }
 

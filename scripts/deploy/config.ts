@@ -28,9 +28,9 @@ console.log(
 
 export const chains: Array<ChainSlug> = [
   ChainSlug.ARBITRUM_SEPOLIA,
-  ChainSlug.OPTIMISM_SEPOLIA,
-  ChainSlug.SEPOLIA,
-  BASE_SEPOLIA_CHAIN_ID as ChainSlug,
+  // ChainSlug.OPTIMISM_SEPOLIA,
+  // ChainSlug.SEPOLIA,
+  // BASE_SEPOLIA_CHAIN_ID as ChainSlug,
 ];
 
 export const capacitorType = 1;
@@ -54,10 +54,22 @@ export const overrides = async (
 
 export const watcher = "0xb62505feacC486e809392c65614Ce4d7b051923b";
 
-export enum WatcherVMCoreContracts {
+export enum CORE_CONTRACTS {
+  Hasher = "Hasher",
+  SignatureVerifier = "SignatureVerifier",
+  Socket = "Socket",
+  SocketBatcher = "SocketBatcher",
+  FastSwitchboard = "FastSwitchboard",
+  FeesPlug = "FeesPlug",
+  ContractFactoryPlug = "ContractFactoryPlug",
+}
+
+export enum OffChainVMCoreContracts {
   SignatureVerifier = "SignatureVerifier",
   WatcherPrecompile = "WatcherPrecompile",
-  AuctionHouse = "AuctionHouse",
+  AuctionManager = "AuctionManager",
+  FeesManager = "FeesManager",
+  DeliveryHelper = "DeliveryHelper",
   AddressAbstractor = "AddressAbstractor",
   AddressResolver = "AddressResolver",
 }

@@ -12,7 +12,7 @@ import "../../../interfaces/IAuctionManager.sol";
 /// @notice Contract for managing auctions and placing bids
 contract AuctionManager is
     AddressResolverUtil,
-    Ownable(msg.sender),
+    Ownable,
     IAuctionManager
 {
     SignatureVerifier public immutable signatureVerifier__;
@@ -30,8 +30,9 @@ contract AuctionManager is
     constructor(
         uint32 vmChainSlug_,
         address addressResolver_,
-        SignatureVerifier signatureVerifier_
-    ) AddressResolverUtil(addressResolver_) {
+        SignatureVerifier signatureVerifier_,
+        address owner_
+    ) AddressResolverUtil(addressResolver_) Ownable(owner_) {
         vmChainSlug = vmChainSlug_;
         signatureVerifier__ = signatureVerifier_;
     }

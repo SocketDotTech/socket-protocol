@@ -10,7 +10,7 @@
     "lint": "prettier \"./**\" --write",
     "lintContracts": "prettier \"./**\"  --write --plugin=prettier-plugin-solidity",
     "compile": "forge build",
-    "deploy": "bash deployContracts.sh"
+    "deploy": "bash setupInfraContracts.sh"
   },
   "types": "./dist/src/index.d.ts",
   "files": [

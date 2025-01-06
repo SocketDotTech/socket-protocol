@@ -14,7 +14,6 @@ contract AddressResolver is Ownable, IAddressResolver {
     IWatcherPrecompile public override watcherPrecompile;
     address public override deliveryHelper;
     uint256 public asyncPromiseCounter;
-
     address[] internal promises;
 
     bytes public forwarderBytecode = type(Forwarder).creationCode;

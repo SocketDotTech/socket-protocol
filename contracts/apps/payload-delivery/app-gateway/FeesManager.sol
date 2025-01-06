@@ -11,15 +11,16 @@ import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
 
 /// @title DeliveryHelper
 /// @notice Contract for managing auctions and placing bids
-contract FeesManager is AddressResolverUtil, Ownable(msg.sender) {
+contract FeesManager is AddressResolverUtil, Ownable {
     uint256 public feesCounter;
     mapping(uint32 => uint256) public feeCollectionGasLimit;
 
     /// @notice Constructor for DeliveryHelper
     /// @param addressResolver_ The address of the address resolver
     constructor(
-        address addressResolver_
-    ) AddressResolverUtil(addressResolver_) {}
+        address addressResolver_,
+        address owner_
+    ) AddressResolverUtil(addressResolver_) Ownable(owner_) {}
 
     function distributeFees(
         address appGateway_,

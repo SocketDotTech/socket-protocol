@@ -1,5 +1,6 @@
 import { ChainSlug } from "@socket.tech/dl-core";
 import { BigNumber, providers } from "ethers";
+import { OFF_CHAIN_VM_CHAIN_ID } from "./constants";
 
 const defaultType = 0;
 
@@ -23,6 +24,11 @@ export const chainOverrides: {
   [ChainSlug.OPTIMISM_SEPOLIA]: {
     // type: 1,
     // gasLimit: 1_000_000,
+    // gasPrice: 212_000_000_000,
+  },
+  [OFF_CHAIN_VM_CHAIN_ID as ChainSlug]: {
+    // type: 1,
+    gasLimit: 1_000_000_000,
     // gasPrice: 212_000_000_000,
   },
 };
