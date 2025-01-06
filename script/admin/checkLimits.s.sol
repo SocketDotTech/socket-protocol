@@ -1,6 +1,3 @@
-
-
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
@@ -16,8 +13,13 @@ contract CheckLimitsScript is Script {
 
         console.log("WatcherPrecompile address:", watcherPrecompile);
         console.log("CronAppGateway address:", cronAppGateway);
-        WatcherPrecompile watcherContract = WatcherPrecompile(watcherPrecompile);
-        LimitParams memory limitParams = watcherContract.getLimitParams(cronAppGateway, SCHEDULE);
+        WatcherPrecompile watcherContract = WatcherPrecompile(
+            watcherPrecompile
+        );
+        LimitParams memory limitParams = watcherContract.getLimitParams(
+            cronAppGateway,
+            SCHEDULE
+        );
         console.log("Max limit:", limitParams.maxLimit);
         console.log("Rate per second:", limitParams.ratePerSecond);
     }

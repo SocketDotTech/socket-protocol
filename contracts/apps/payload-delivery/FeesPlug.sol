@@ -14,8 +14,10 @@ contract FeesPlug is PlugBase, Ownable {
 
     error FeesAlreadyPaid();
 
-    constructor(address socket_, address owner_) Ownable(owner_) PlugBase(socket_) {
-    }
+    constructor(
+        address socket_,
+        address owner_
+    ) Ownable(owner_) PlugBase(socket_) {}
 
     function distributeFee(
         address appGateway,

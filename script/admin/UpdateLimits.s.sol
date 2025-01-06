@@ -1,6 +1,3 @@
-
-
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
@@ -13,7 +10,7 @@ contract UpdateLimitsScript is Script {
     function run() external {
         // Load private key from env
         uint256 deployerPrivateKey = vm.envUint("WATCHER_PRIVATE_KEY");
-        
+
         // Start broadcast with private key
         vm.startBroadcast(deployerPrivateKey);
 
@@ -25,21 +22,26 @@ contract UpdateLimitsScript is Script {
 
         console.log("WatcherPrecompile address:", watcherPrecompile);
         console.log("CronAppGateway address:", cronAppGateway);
-        WatcherPrecompile watcherContract = WatcherPrecompile(watcherPrecompile);
+        WatcherPrecompile watcherContract = WatcherPrecompile(
+            watcherPrecompile
+        );
 
         // Create update params array
         UpdateLimitParams[] memory updates = new UpdateLimitParams[](1);
-        
+
         // Example update - modify these values as needed
         updates[0] = UpdateLimitParams({
             limitType: SCHEDULE, // Example limit type
             appGateway: cronAppGateway, // Replace with actual app gateway address
-            maxLimit: 1000, // Maximum limit 
+            maxLimit: 1000, // Maximum limit
             ratePerSecond: 1 // Rate per second
         });
 
         // // Update the limits
-        bytes memory payload = abi.encodeCall(watcherContract.updateLimitParams, updates);
+        bytes memory payload = abi.encodeCall(
+            watcherContract.updateLimitParams,
+            updates
+        );
         console.logBytes(payload);
         watcherContract.updateLimitParams(updates);
 
