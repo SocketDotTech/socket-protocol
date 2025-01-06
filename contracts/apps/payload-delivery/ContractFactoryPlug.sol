@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
-import {PlugBase} from "../../base/PlugBase.sol";
+import "../../base/PlugBase.sol";
 import {Ownable} from "../../utils/Ownable.sol";
 
 /// @title ContractFactory
@@ -8,11 +8,9 @@ import {Ownable} from "../../utils/Ownable.sol";
 contract ContractFactoryPlug is PlugBase, Ownable {
     event Deployed(address addr, bytes32 salt);
 
-    constructor(
-        address socket_,
-        uint32 chainSlug_,
-        address owner_
-    ) PlugBase(socket_, chainSlug_) Ownable(owner_) {}
+    constructor(address socket_, address owner_) Ownable(owner_) {
+        socket__ = ISocket(socket_);
+    }
 
     function deployContract(
         bytes memory creationCode,

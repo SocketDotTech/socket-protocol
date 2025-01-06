@@ -10,8 +10,9 @@ contract CounterDeployer is AppDeployerBase, Ownable {
 
     constructor(
         address addressResolver_,
+        address auctionManager_,
         FeesData memory feesData_
-    ) AppDeployerBase(addressResolver_) Ownable(msg.sender) {
+    ) AppDeployerBase(addressResolver_, auctionManager_) Ownable(msg.sender) {
         creationCodeWithArgs[counter] = type(Counter).creationCode;
         _setFeesData(feesData_);
     }

@@ -10,17 +10,8 @@ import {NotSocket} from "../common/Errors.sol";
 /// @notice Abstract contract for plugs
 abstract contract PlugBase is IPlug {
     ISocket public socket__;
-    uint32 public chainSlug;
 
     event ConnectorPlugDisconnected();
-
-    /// @notice Constructor for PlugBase
-    /// @param socket_ The socket address
-    /// @param chainSlug_ The chain slug
-    constructor(address socket_, uint32 chainSlug_) {
-        socket__ = ISocket(socket_);
-        chainSlug = chainSlug_;
-    }
 
     /// @notice Modifier to ensure only the socket can call the function
     /// @dev only the socket can call the function

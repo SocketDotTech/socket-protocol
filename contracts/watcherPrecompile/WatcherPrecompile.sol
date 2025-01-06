@@ -10,6 +10,7 @@ import "../interfaces/IPromise.sol";
 import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../common/Structs.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../common/Constants.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../common/Errors.sol";
+
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
 contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
@@ -118,7 +119,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
         if (delayInSeconds_ > maxTimeoutDelayInSeconds)
             revert TimeoutDelayTooLarge();
 
-        _consumeLimit(msg.sender, SCHEDULE);
+        // _consumeLimit(msg.sender, SCHEDULE);
         uint256 executeAt = block.timestamp + delayInSeconds_;
         bytes32 timeoutId = _encodeTimeoutId(timeoutCounter++);
         timeoutRequests[timeoutId] = TimeoutRequest(
@@ -172,7 +173,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
     ) external returns (bytes32 payloadId, bytes32 root) {
         // The app gateway is the caller of this function
         address appGateway = msg.sender;
-        _consumeLimit(appGateway, FINALIZE);
+        // _consumeLimit(appGateway, FINALIZE);
 
         // Verify that the app gateway is properly configured for this chain and target
         _verifyConnections(
@@ -234,7 +235,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
         address[] memory asyncPromises,
         bytes memory payload
     ) public returns (bytes32 payloadId) {
-        _consumeLimit(msg.sender, QUERY);
+        // _consumeLimit(msg.sender, QUERY);
         // Generate unique payload ID from query counter
         payloadId = bytes32(queryCounter++);
 
@@ -367,6 +368,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
         (, address switchboard) = getPlugConfigs(chainSlug_, plug_);
         // Encode payload ID by bit-shifting and combining:
         // chainSlug (32 bits) | switchboard address (160 bits) | counter (64 bits)
+
         return
             bytes32(
                 (uint256(chainSlug_) << 224) |

@@ -9,9 +9,10 @@ import {IPromise} from "../../../interfaces/IPromise.sol";
 import {IAppDeployer} from "../../../interfaces/IAppDeployer.sol";
 import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
 import {IContractFactoryPlug} from "../../../interfaces/IContractFactoryPlug.sol";
+import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
-abstract contract QueueAsync is AddressResolverUtil {
+abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
     uint256 public saltCounter;
     uint256 public asyncCounter;
     address public feesManager;
@@ -21,6 +22,8 @@ abstract contract QueueAsync is AddressResolverUtil {
 
     // payloadId => asyncId
     mapping(bytes32 => bytes32) public payloadIdToBatchHash;
+    mapping(bytes32 => PayloadDetails) public payloadIdToPayloadDetails;
+
     // asyncId => PayloadBatch
     mapping(bytes32 => PayloadBatch) public payloadBatches;
     // asyncId => PayloadDetails[]
@@ -130,5 +133,11 @@ abstract contract QueueAsync is AddressResolverUtil {
         bytes32 asyncId_
     ) external view returns (FeesData memory) {
         return payloadBatches[asyncId_].feesData;
+    }
+
+    function getPayloadDetails(
+        bytes32 payloadId_
+    ) external view returns (PayloadDetails memory) {
+        return payloadIdToPayloadDetails[payloadId_];
     }
 }

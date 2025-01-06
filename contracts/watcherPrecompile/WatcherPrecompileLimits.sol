@@ -4,6 +4,7 @@ pragma solidity 0.8.13;
 import {Gauge} from "../utils/Gauge.sol";
 import {LimitParams, UpdateLimitParams} from "../common/Structs.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
+
 abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
     // appGateway => receivingLimitParams
     mapping(address => mapping(bytes32 => LimitParams)) _limitParams;
@@ -19,6 +20,7 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
     constructor(
         address addressResolver_
     ) AddressResolverUtil(addressResolver_) {}
+
     /**
      * @notice This function is used to set bridge limits.
      * @dev It can only be updated by the owner.
@@ -53,8 +55,7 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
         return _limitParams[appGateway_][limitType_];
     }
 
-    function _consumeLimit(address sender_, bytes32 limitType_) internal {
-        address appGateway_ = addressResolver.contractsToGateways(sender_);
+    function _consumeLimit(address appGateway_, bytes32 limitType_) internal {
         if (_limitParams[appGateway_][limitType_].maxLimit == 0)
             revert ActionNotSupported(appGateway_, limitType_);
 

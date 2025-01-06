@@ -25,7 +25,15 @@ contract FeesManager is AddressResolverUtil, Ownable(msg.sender) {
         address appGateway_,
         FeesData memory feesData_,
         Bid memory winningBid_
-    ) external onlyPayloadDelivery returns (bytes32 payloadId, bytes32 root) {
+    )
+        external
+        onlyPayloadDelivery
+        returns (
+            bytes32 payloadId,
+            bytes32 root,
+            PayloadDetails memory payloadDetails
+        )
+    {
         bytes32 feesId = _encodeFeesId(feesCounter++);
         // Create payload for pool contract
         bytes memory payload = abi.encodeCall(
@@ -39,7 +47,7 @@ contract FeesManager is AddressResolverUtil, Ownable(msg.sender) {
             )
         );
 
-        PayloadDetails memory payloadDetails = PayloadDetails({
+        payloadDetails = PayloadDetails({
             chainSlug: feesData_.feePoolChain,
             target: _getFeesPlugAddress(feesData_.feePoolChain),
             payload: payload,
@@ -54,7 +62,8 @@ contract FeesManager is AddressResolverUtil, Ownable(msg.sender) {
             transmitter: winningBid_.transmitter
         });
 
-        return watcherPrecompile().finalize(finalizeParams);
+        (payloadId, root) = watcherPrecompile().finalize(finalizeParams);
+        return (payloadId, root, payloadDetails);
     }
 
     /// @notice Withdraws funds to a specified receiver

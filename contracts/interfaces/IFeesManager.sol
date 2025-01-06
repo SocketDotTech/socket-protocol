@@ -8,7 +8,7 @@ interface IFeesManager {
         address appGateway_,
         FeesData memory feesData_,
         Bid memory winningBid_
-    ) external returns (bytes32 payloadId, bytes32 root);
+    ) external returns (bytes32 payloadId, bytes32 root, PayloadDetails memory);
 
     function getWithdrawToPayload(
         address appGateway_,

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "solmate/utils/SafeTransferLib.sol";
-import {PlugBase} from "../../base/PlugBase.sol";
+import "../../base/PlugBase.sol";
 import {Ownable} from "../../utils/Ownable.sol";
 import {ETH_ADDRESS} from "../../common/Constants.sol";
 
@@ -14,11 +14,9 @@ contract FeesPlug is PlugBase, Ownable {
 
     error FeesAlreadyPaid();
 
-    constructor(
-        address socket_,
-        uint32 chainSlug_,
-        address owner_
-    ) PlugBase(socket_, chainSlug_) Ownable(owner_) {}
+    constructor(address socket_, address owner_) Ownable(owner_) {
+        socket__ = ISocket(socket_);
+    }
 
     function distributeFee(
         address appGateway,

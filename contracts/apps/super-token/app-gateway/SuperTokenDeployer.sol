@@ -20,8 +20,9 @@ contract SuperTokenDeployer is AppDeployerBase, Ownable {
         uint8 decimals_,
         address initialSupplyHolder_,
         uint256 initialSupply_,
+        address auctionManager_,
         FeesData memory feesData_
-    ) AppDeployerBase(addressResolver_) Ownable(owner_) {
+    ) AppDeployerBase(addressResolver_, auctionManager_) Ownable(owner_) {
         creationCodeWithArgs[superToken] = abi.encodePacked(
             type(SuperToken).creationCode,
             abi.encode(

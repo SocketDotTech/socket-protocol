@@ -4,18 +4,23 @@ pragma solidity ^0.8.0;
 import {Ownable} from "../../../utils/Ownable.sol";
 import {SignatureVerifier} from "../../../socket/utils/SignatureVerifier.sol";
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
-import {Bid, FeesData} from "../../../common/Structs.sol";
+import {FeesData} from "../../../common/Structs.sol";
 import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
+import "../../../interfaces/IAuctionManager.sol";
 
 /// @title DeliveryHelper
 /// @notice Contract for managing auctions and placing bids
-contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
+contract AuctionManager is
+    AddressResolverUtil,
+    Ownable(msg.sender),
+    IAuctionManager
+{
     SignatureVerifier public immutable signatureVerifier__;
     uint32 public immutable vmChainSlug;
     mapping(bytes32 => Bid) public winningBids;
     // asyncId => auction status
-    mapping(bytes32 => bool) public auctionClosed;
-    mapping(bytes32 => bool) public auctionStarted;
+    mapping(bytes32 => bool) public override auctionClosed;
+    mapping(bytes32 => bool) public override auctionStarted;
 
     uint256 public constant auctionEndDelaySeconds = 0;
 
@@ -33,7 +38,7 @@ contract AuctionManager is AddressResolverUtil, Ownable(msg.sender) {
 
     event AuctionStarted(bytes32 asyncId_);
     event AuctionEnded(bytes32 asyncId_, Bid winningBid);
-    event BidPlaced(bytes32 asyncId_, Bid bid);
+    event BidPlaced(bytes32 asyncId, Bid bid);
 
     function startAuction(bytes32 asyncId_) external onlyPayloadDelivery {
         require(!auctionClosed[asyncId_], "Auction closed");

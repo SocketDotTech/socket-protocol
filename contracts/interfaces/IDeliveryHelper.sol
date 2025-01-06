@@ -15,13 +15,8 @@ interface IDeliveryHelper {
 
     function clearQueue() external;
 
-    function bid(
-        bytes32 asyncId_,
-        uint256 fee,
-        bytes memory transmitterSignature
-    ) external;
-
     function queue(
+        bool isSequential_,
         uint32 chainSlug_,
         address target_,
         address asyncPromise_,
@@ -31,7 +26,8 @@ interface IDeliveryHelper {
 
     function batch(
         FeesData memory feesData_,
-        address auctionManager_
+        address auctionManager_,
+        bytes memory onCompleteData_
     ) external returns (bytes32);
 
     function withdrawTo(
@@ -39,6 +35,7 @@ interface IDeliveryHelper {
         address token_,
         uint256 amount_,
         address receiver_,
+        address auctionManager_,
         FeesData memory feesData_
     ) external;
 
@@ -46,7 +43,9 @@ interface IDeliveryHelper {
 
     function startBatchProcessing(bytes32 asyncId_) external;
 
-    function getFeesData(bytes32 asyncId_) external view returns (FeesData memory);
+    function getFeesData(
+        bytes32 asyncId_
+    ) external view returns (FeesData memory);
 
     function getCurrentAsyncId() external view returns (bytes32);
 }

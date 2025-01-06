@@ -29,10 +29,8 @@ contract SuperToken is ERC20, Ownable(msg.sender), PlugBase {
         string memory symbol_,
         uint8 decimals_,
         address initialSupplyHolder_,
-        uint256 initialSupply_,
-        address socket_,
-        uint32 chainSlug_
-    ) ERC20(name_, symbol_, decimals_) PlugBase(socket_, chainSlug_) {
+        uint256 initialSupply_
+    ) ERC20(name_, symbol_, decimals_) {
         _mint(initialSupplyHolder_, initialSupply_);
         controller = msg.sender;
     }

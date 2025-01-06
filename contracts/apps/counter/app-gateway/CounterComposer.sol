@@ -9,8 +9,9 @@ contract CounterComposer is AppGatewayBase, Ownable {
     constructor(
         address _addressResolver,
         address deployerContract_,
-        FeesData memory feesData_
-    ) AppGatewayBase(_addressResolver) Ownable(msg.sender) {
+        FeesData memory feesData_,
+        address _auctionManager
+    ) AppGatewayBase(_addressResolver, _auctionManager) Ownable(msg.sender) {
         addressResolver.setContractsToGateways(deployerContract_);
         _setFeesData(feesData_);
     }

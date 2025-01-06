@@ -17,6 +17,8 @@ abstract contract AppGatewayBase is
 {
     bool public override isReadCall;
     address public auctionManager;
+    bytes public onCompleteData;
+
     mapping(address => bool) public isValidPromise;
 
     error InvalidPromise();
@@ -28,7 +30,7 @@ abstract contract AppGatewayBase is
         deliveryHelper().clearQueue();
         addressResolver.clearPromises();
         _;
-        deliveryHelper().batch(feesData, auctionManager);
+        deliveryHelper().batch(feesData, auctionManager, onCompleteData);
         _markValidPromises();
     }
 
@@ -44,8 +46,11 @@ abstract contract AppGatewayBase is
     /// @notice Constructor for AppGatewayBase
     /// @param _addressResolver The address resolver address
     constructor(
-        address _addressResolver
-    ) AddressResolverUtil(_addressResolver) {}
+        address _addressResolver,
+        address _auctionManager
+    ) AddressResolverUtil(_addressResolver) {
+        auctionManager = _auctionManager;
+    }
 
     /// @notice Creates a contract ID
     /// @param contractName_ The contract name
@@ -108,6 +113,7 @@ abstract contract AppGatewayBase is
             token_,
             amount_,
             receiver_,
+            auctionManager,
             feesData
         );
     }

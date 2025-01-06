@@ -18,21 +18,20 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
     function startBatchProcessing(
         bytes32 asyncId_
     ) external onlyAuctionManager(asyncId_) {
-        _process(asyncId_, "");
+        _process(asyncId_);
     }
 
     function callback(
         bytes memory asyncId_,
-        bytes memory payloadDetails_
+        bytes memory
     ) external override onlyPromises {
         bytes32 asyncId = abi.decode(asyncId_, (bytes32));
-
-        _process(asyncId, payloadDetails_);
+        _process(asyncId);
     }
 
     error PromisesNotResolved();
 
-    function _process(bytes32 asyncId, bytes memory payloadDetails_) internal {
+    function _process(bytes32 asyncId) internal {
         PayloadBatch storage payloadBatch = payloadBatches[asyncId];
         if (payloadBatch.isBatchCancelled) return;
 
@@ -59,29 +58,27 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
             // Proceed with next payload only if all promises are resolved
             _finalizeNextPayload(asyncId);
         } else {
-            _finishBatch(asyncId, payloadBatch, payloadDetails_);
+            _finishBatch(asyncId, payloadBatch);
         }
     }
 
     function _finishBatch(
         bytes32 asyncId,
-        PayloadBatch storage payloadBatch,
-        bytes memory payloadDetails_
+        PayloadBatch storage payloadBatch
     ) internal {
-        (bytes32 payloadId, bytes32 root) = IFeesManager(feesManager)
-            .distributeFees(
+        (
+            bytes32 payloadId,
+            bytes32 root,
+            PayloadDetails memory payloadDetails
+        ) = IFeesManager(feesManager).distributeFees(
                 payloadBatch.appGateway,
                 payloadBatch.feesData,
                 payloadBatch.winningBid
             );
 
+        payloadIdToPayloadDetails[payloadId] = payloadDetails;
         payloadIdToBatchHash[payloadId] = asyncId;
-        emit PayloadAsyncRequested(
-            asyncId,
-            payloadId,
-            root,
-            abi.decode(payloadDetails_, (PayloadDetails))
-        );
+        emit PayloadAsyncRequested(asyncId, payloadId, root, payloadDetails);
 
         IAppGateway(payloadBatch.appGateway).onBatchComplete(
             asyncId,
@@ -133,31 +130,32 @@ contract DeliveryHelper is BatchAsync, Ownable(msg.sender) {
 
     function _executeWatcherCall(
         bytes32 asyncId_,
-        PayloadDetails storage payload,
+        PayloadDetails storage payloadDetails,
         PayloadBatch storage payloadBatch,
         address batchPromise,
         bool isRead
     ) internal returns (bytes32 payloadId, bytes32 root) {
+        payloadDetails.next[1] = batchPromise;
         if (isRead) {
-            payload.next[1] = batchPromise;
             payloadId = watcherPrecompile().query(
-                payload.chainSlug,
-                payload.target,
-                payload.next,
-                payload.payload
+                payloadDetails.chainSlug,
+                payloadDetails.target,
+                payloadDetails.next,
+                payloadDetails.payload
             );
             root = bytes32(0);
         } else {
             FinalizeParams memory finalizeParams = FinalizeParams({
-                payloadDetails: payload,
+                payloadDetails: payloadDetails,
                 transmitter: payloadBatch.winningBid.transmitter
             });
             (payloadId, root) = watcherPrecompile().finalize(finalizeParams);
         }
 
-        payload.next[1] = batchPromise;
         payloadIdToBatchHash[payloadId] = asyncId_;
-        emit PayloadAsyncRequested(asyncId_, payloadId, root, payload);
+        payloadIdToPayloadDetails[payloadId] = payloadDetails;
+
+        emit PayloadAsyncRequested(asyncId_, payloadId, root, payloadDetails);
     }
 
     function _processBatchedReads(

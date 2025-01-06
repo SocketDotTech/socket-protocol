@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Ownable} from "../../utils/Ownable.sol";
-import {PlugBase} from "../../base/PlugBase.sol";
+import "../../base/PlugBase.sol";
 
 contract LimitHook is Ownable, PlugBase {
     // Define any state variables or functions for the LimitHook contract here
@@ -12,12 +12,7 @@ contract LimitHook is Ownable, PlugBase {
     error BurnLimitExceeded();
     error MintLimitExceeded();
 
-    constructor(
-        uint256 _burnLimit,
-        uint256 _mintLimit,
-        address socket_,
-        uint32 chainSlug_
-    ) Ownable(msg.sender) PlugBase(socket_, chainSlug_) {
+    constructor(uint256 _burnLimit, uint256 _mintLimit) Ownable(msg.sender) {
         burnLimit = _burnLimit;
         mintLimit = _mintLimit;
     }

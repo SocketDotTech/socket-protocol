@@ -14,7 +14,10 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     mapping(bytes32 => mapping(uint32 => address)) public forwarderAddresses;
     mapping(bytes32 => bytes) public creationCodeWithArgs;
 
-    constructor(address _addressResolver) AppGatewayBase(_addressResolver) {}
+    constructor(
+        address _addressResolver,
+        address _auctionManager
+    ) AppGatewayBase(_addressResolver, _auctionManager) {}
 
     /// @notice Deploys a contract
     /// @param contractId_ The contract ID
@@ -23,17 +26,17 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
         address asyncPromise = addressResolver.deployAsyncPromiseContract(
             address(this)
         );
-
         isValidPromise[asyncPromise] = true;
         IPromise(asyncPromise).then(
             this.setAddress.selector,
             abi.encode(chainSlug_, contractId_)
         );
 
+        onCompleteData = abi.encode(chainSlug_);
         IDeliveryHelper(deliveryHelper()).queue(
+            true,
             chainSlug_,
             address(0),
-            // hacked for contract addr, need to revisit
             asyncPromise,
             CallType.DEPLOY,
             creationCodeWithArgs[contractId_]
@@ -87,8 +90,8 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
         bytes32 asyncId,
         PayloadBatch memory payloadBatch
     ) external override onlyPayloadDelivery {
-        // todo
-        // initialize(payloadBatch.chainSlug);
+        uint32 chainSlug = abi.decode(payloadBatch.onCompleteData, (uint32));
+        initialize(chainSlug);
     }
 
     /// @notice Gets the socket address

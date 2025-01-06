@@ -54,6 +54,7 @@ struct PayloadBatch {
     bool isBatchCancelled;
     uint256 totalPayloadsRemaining;
     address[] lastBatchPromises;
+    bytes onCompleteData;
 }
 
 struct FinalizeParams {
