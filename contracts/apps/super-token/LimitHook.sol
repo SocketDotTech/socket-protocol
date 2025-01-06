@@ -12,9 +12,14 @@ contract LimitHook is Ownable, PlugBase {
     error BurnLimitExceeded();
     error MintLimitExceeded();
 
-    constructor(uint256 _burnLimit, uint256 _mintLimit) Ownable(msg.sender) {
+    constructor(
+        uint256 _burnLimit,
+        uint256 _mintLimit,
+        address _appGateway
+    ) Ownable(msg.sender) PlugBase(msg.sender) {
         burnLimit = _burnLimit;
         mintLimit = _mintLimit;
+        appGateway = _appGateway;
     }
 
     function setLimits(
@@ -34,9 +39,10 @@ contract LimitHook is Ownable, PlugBase {
     }
 
     function connectSocket(
-        address appGateway_,
-        address switchboard_
+        address switchboard_,
+        address socket_
     ) external onlyOwner {
-        _connectSocket(appGateway_, switchboard_);
+        socket__ = ISocket(socket_);
+        _connectSocket(appGateway, switchboard_);
     }
 }

@@ -14,8 +14,7 @@ contract FeesPlug is PlugBase, Ownable {
 
     error FeesAlreadyPaid();
 
-    constructor(address socket_, address owner_) Ownable(owner_) {
-        socket__ = ISocket(socket_);
+    constructor(address socket_, address owner_) Ownable(owner_) PlugBase(socket_) {
     }
 
     function distributeFee(
@@ -95,4 +94,6 @@ contract FeesPlug is PlugBase, Ownable {
     ) external onlyOwner {
         _connectSocket(appGateway_, switchboard_);
     }
+
+    function connectSocket(address switchboard_, address socket_) external {}
 }

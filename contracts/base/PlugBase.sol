@@ -10,7 +10,7 @@ import {NotSocket} from "../common/Errors.sol";
 /// @notice Abstract contract for plugs
 abstract contract PlugBase is IPlug {
     ISocket public socket__;
-
+    address public appGateway;
     event ConnectorPlugDisconnected();
 
     /// @notice Modifier to ensure only the socket can call the function
@@ -18,6 +18,10 @@ abstract contract PlugBase is IPlug {
     modifier onlySocket() {
         if (msg.sender != address(socket__)) revert NotSocket();
         _;
+    }
+
+    constructor(address _socket) {
+        socket__ = ISocket(_socket);
     }
 
     /// @notice Inbound function for handling incoming messages

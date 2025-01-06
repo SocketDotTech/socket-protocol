@@ -30,13 +30,14 @@ contract SuperTokenDeployer is AppDeployerBase, Ownable {
                 symbol_,
                 decimals_,
                 initialSupplyHolder_,
-                initialSupply_
+                initialSupply_,
+                address(this)
             )
         );
 
         creationCodeWithArgs[limitHook] = abi.encodePacked(
             type(LimitHook).creationCode,
-            abi.encode(_burnLimit, _mintLimit)
+            abi.encode(_burnLimit, _mintLimit, address(this))
         );
 
         _setFeesData(feesData_);

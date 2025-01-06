@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import "./ERC20.sol";
 import {Ownable} from "../../utils/Ownable.sol";
 import {LimitHook} from "./LimitHook.sol";
-import {PlugBase} from "../../base/PlugBase.sol";
+import "../../base/PlugBase.sol";
 
 /**
  * @title SuperToken
@@ -29,10 +29,11 @@ contract SuperToken is ERC20, Ownable(msg.sender), PlugBase {
         string memory symbol_,
         uint8 decimals_,
         address initialSupplyHolder_,
-        uint256 initialSupply_
-    ) ERC20(name_, symbol_, decimals_) {
+        uint256 initialSupply_,
+        address _appGateway,
+        address _switchboard
+    ) ERC20(name_, symbol_, decimals_) PlugBase(msg.sender) {
         _mint(initialSupplyHolder_, initialSupply_);
-        controller = msg.sender;
     }
 
     function lockTokens(
@@ -73,9 +74,11 @@ contract SuperToken is ERC20, Ownable(msg.sender), PlugBase {
     }
 
     function connectSocket(
-        address appGateway_,
-        address switchboard_
+        address switchboard_,
+        address socket_
     ) external onlyOwner {
-        _connectSocket(appGateway_, switchboard_);
+        socket__ = ISocket(socket_);
+        controller = socket_;
+        _connectSocket(appGateway, switchboard_);
     }
 }

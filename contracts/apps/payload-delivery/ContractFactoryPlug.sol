@@ -6,10 +6,15 @@ import {Ownable} from "../../utils/Ownable.sol";
 /// @title ContractFactory
 /// @notice Abstract contract for deploying contracts
 contract ContractFactoryPlug is PlugBase, Ownable {
+    address public fastSwitchboard;
     event Deployed(address addr, bytes32 salt);
 
-    constructor(address socket_, address owner_) Ownable(owner_) {
-        socket__ = ISocket(socket_);
+    constructor(
+        address socket_,
+        address owner_,
+        address fastSwitchboard_
+    ) Ownable(owner_) PlugBase(socket_) {
+        fastSwitchboard = fastSwitchboard_;
     }
 
     function deployContract(
@@ -33,6 +38,7 @@ contract ContractFactoryPlug is PlugBase, Ownable {
             }
         }
 
+        IPlug(addr).connectSocket(fastSwitchboard, msg.sender);
         emit Deployed(addr, salt);
         return addr;
     }
@@ -63,4 +69,6 @@ contract ContractFactoryPlug is PlugBase, Ownable {
     ) external onlyOwner {
         _connectSocket(appGateway_, switchboard_);
     }
+
+    function connectSocket(address switchboard_, address socket_) external {}
 }
