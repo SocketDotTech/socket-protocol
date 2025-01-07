@@ -74,15 +74,6 @@ interface IAddressResolver {
         uint32 chainSlug_
     ) external returns (address);
 
-    /// @notice Gets or deploys a Forwarder contract
-    /// @param chainContractAddress_ The address of the chain contract
-    /// @param chainSlug_ The chain slug
-    /// @return The address of the deployed Forwarder contract
-    function getOrDeployForwarderContract(
-        address chainContractAddress_,
-        uint32 chainSlug_
-    ) external returns (address);
-
     /// @notice Deploys a new async promise contract
     /// @param invoker_ The address that can invoke/execute the promise
     /// @return The address of the newly deployed async promise contract

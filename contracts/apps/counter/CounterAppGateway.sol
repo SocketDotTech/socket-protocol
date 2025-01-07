@@ -8,8 +8,9 @@ contract CounterAppGateway is AppGatewayBase {
     constructor(
         address _addressResolver,
         address deployerContract_,
+        address auctionManager_,
         FeesData memory feesData_
-    ) AppGatewayBase(_addressResolver) {
+    ) AppGatewayBase(_addressResolver, auctionManager_) {
         addressResolver.setContractsToGateways(deployerContract_);
         _setFeesData(feesData_);
     }
