@@ -19,52 +19,48 @@ type LimitParam = {
   maxLimit: string;
   ratePerSecond: string;
 };
+const addresses = dev_addresses as unknown as DeploymentAddresses;
+const deliveryHelperLimitParams: LimitParam[] = [
+  {
+    limitType: ethers.utils.keccak256(ethers.utils.toUtf8Bytes("FINALIZE")),
+    appGateway:
+      addresses[OFF_CHAIN_VM_CHAIN_ID]?.[
+        OffChainVMCoreContracts.DeliveryHelper
+      ],
+    maxLimit: MAX_LIMIT,
+    ratePerSecond: MAX_LIMIT,
+  },
+  {
+    limitType: ethers.utils.keccak256(ethers.utils.toUtf8Bytes("QUERY")),
+    appGateway:
+      addresses[OFF_CHAIN_VM_CHAIN_ID]?.[
+        OffChainVMCoreContracts.DeliveryHelper
+      ],
+    maxLimit: MAX_LIMIT,
+    ratePerSecond: MAX_LIMIT,
+  },
+  {
+    limitType: ethers.utils.keccak256(ethers.utils.toUtf8Bytes("SCHEDULE")),
+    appGateway:
+      addresses[OFF_CHAIN_VM_CHAIN_ID]?.[
+        OffChainVMCoreContracts.AuctionManager
+      ],
+    maxLimit: MAX_LIMIT,
+    ratePerSecond: MAX_LIMIT,
+  },
+  {
+    limitType: ethers.utils.keccak256(ethers.utils.toUtf8Bytes("FINALIZE")),
+    appGateway:
+      addresses[OFF_CHAIN_VM_CHAIN_ID]?.[OffChainVMCoreContracts.FeesManager],
+    maxLimit: MAX_LIMIT,
+    ratePerSecond: MAX_LIMIT,
+  },
+];
 
 // Set limits on the Watcher VM
-export const updateContractLimits = async () => {
+export const updateContractLimits = async (limitParamsToSet: LimitParam[]) => {
   try {
     console.log("Setting limits on OffChainVM");
-
-    const addresses = dev_addresses as unknown as DeploymentAddresses;
-    const limitParamsToSet: LimitParam[] = [
-      {
-        limitType: ethers.utils.keccak256(ethers.utils.toUtf8Bytes("FINALIZE")),
-        appGateway:
-          addresses[OFF_CHAIN_VM_CHAIN_ID]?.[
-            OffChainVMCoreContracts.DeliveryHelper
-          ],
-        maxLimit: MAX_LIMIT,
-        ratePerSecond: MAX_LIMIT,
-      },
-      {
-        limitType: ethers.utils.keccak256(ethers.utils.toUtf8Bytes("QUERY")),
-        appGateway:
-          addresses[OFF_CHAIN_VM_CHAIN_ID]?.[
-            OffChainVMCoreContracts.DeliveryHelper
-          ],
-        maxLimit: MAX_LIMIT,
-        ratePerSecond: MAX_LIMIT,
-      },
-      {
-        limitType: ethers.utils.keccak256(ethers.utils.toUtf8Bytes("SCHEDULE")),
-        appGateway:
-          addresses[OFF_CHAIN_VM_CHAIN_ID]?.[
-            OffChainVMCoreContracts.AuctionManager
-          ],
-        maxLimit: MAX_LIMIT,
-        ratePerSecond: MAX_LIMIT,
-      },
-      {
-        limitType: ethers.utils.keccak256(ethers.utils.toUtf8Bytes("FINALIZE")),
-        appGateway:
-          addresses[OFF_CHAIN_VM_CHAIN_ID]?.[
-            OffChainVMCoreContracts.FeesManager
-          ],
-        maxLimit: MAX_LIMIT,
-        ratePerSecond: MAX_LIMIT,
-      },
-    ];
-
     const limitParams: LimitParam[] = [];
 
     // Set up Watcher contract
@@ -116,7 +112,7 @@ async function isLimitSet(
 // Main function to set limits
 export const main = async () => {
   try {
-    await updateContractLimits();
+    await updateContractLimits(deliveryHelperLimitParams);
   } catch (error) {
     console.log("Error while sending transaction to set limits", error);
   }
