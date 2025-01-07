@@ -34,11 +34,11 @@ const apiUrl = 'https://apiv2.dev.socket.tech/getDetailsByTxHash?txHash=';
 let intervalId;
 
 // Track statuses for each hash
-let statusTracker = transactions.map((hash) => ({
+let statusTracker = transactions.map(hash => ({
   hash,
   status: 'PENDING',
   printed: false,
-  printedPayloads: new Set(),
+  printedPayloads: new Set()
 }));
 let allDonePrinted = false; // Prevent multiple prints of the final message
 
@@ -57,18 +57,14 @@ const fetchTransactionStatus = async (hash) => {
 
 const processMultiplePayloads = (payloads, tx) => {
   if (payloads.length > 1) {
-    payloads.forEach((payload) => {
+    payloads.forEach(payload => {
       // Create a unique key for the payload to track printed status
       const payloadKey = `${payload.executeDetails.executeTxHash}-${payload.callBackDetails.callbackStatus}`;
 
-      if (
-        payload.callBackDetails.callbackStatus === 'PROMISE_RESOLVED' &&
+      if (payload.callBackDetails.callbackStatus === 'PROMISE_RESOLVED' &&
         payload.executeDetails.executeTxHash &&
-        !tx.printedPayloads.has(payloadKey)
-      ) {
-        console.log(
-          `Hash: ${payload.executeDetails.executeTxHash}, Status: ${payload.callBackDetails.callbackStatus}, ChainId: ${payload.chainSlug}`,
-        );
+        !tx.printedPayloads.has(payloadKey)) {
+        console.log(`Hash: ${payload.executeDetails.executeTxHash}, Status: ${payload.callBackDetails.callbackStatus}, ChainId: ${payload.chainSlug}`);
 
         tx.printedPayloads.add(payloadKey);
       }
@@ -90,9 +86,7 @@ const checkTransactionStatus = async () => {
     if (data && data.status === 'SUCCESS') {
       if (data.response.length === 0) {
         if (tx.printed === false) {
-          console.log(
-            `Hash: ${tx.hash}, There are no logs for this transaction hash.`,
-          );
+          console.log(`Hash: ${tx.hash}, There are no logs for this transaction hash.`);
           tx.status = 'NO_LOGS';
           tx.printed = true;
           continue;
@@ -113,9 +107,7 @@ const checkTransactionStatus = async () => {
         const deployerDetails = payloads[0].deployerDetails || {};
 
         if (Object.keys(deployerDetails).length !== 0) {
-          console.log(
-            `Hash: ${tx.hash}, Status: ${status}, ChainId: ${payloads[0].chainSlug}`,
-          );
+          console.log(`Hash: ${tx.hash}, Status: ${status}, ChainId: ${payloads[0].chainSlug}`);
           console.log(`OnChainAddress: ${deployerDetails.onChainAddress}`);
           console.log(`ForwarderAddress: ${deployerDetails.forwarderAddress}`);
         } else {
@@ -123,7 +115,8 @@ const checkTransactionStatus = async () => {
         }
 
         tx.printed = true;
-      } else if (status === 'IN_PROGRESS') {
+      }
+      else if (status === 'IN_PROGRESS') {
         processMultiplePayloads(payloads, tx);
       }
     } else {
@@ -131,8 +124,7 @@ const checkTransactionStatus = async () => {
     }
 
     // Check if any are still pending
-    if (tx.status !== 'COMPLETED' && tx.status !== 'NO_LOGS')
-      allCompleted = false;
+    if (tx.status !== 'COMPLETED' && tx.status !== 'NO_LOGS') allCompleted = false;
   }
 
   // Stop script and print final message if all transactions are COMPLETED

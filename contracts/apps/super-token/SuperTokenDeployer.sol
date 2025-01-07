@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
-import "../SuperToken.sol";
-import "../LimitHook.sol";
-import "../../../base/AppDeployerBase.sol";
-import "../../../utils/Ownable.sol";
+import "./SuperToken.sol";
+import "./LimitHook.sol";
+import "../../base/AppDeployerBase.sol";
+import "../../utils/Ownable.sol";
 
 contract SuperTokenDeployer is AppDeployerBase, Ownable {
     bytes32 public superToken = _createContractId("superToken");

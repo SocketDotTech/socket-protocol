@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
-
 import "./IWatcherPrecompile.sol";
 
 /// @title IAddressResolver
@@ -46,7 +45,6 @@ interface IAddressResolver {
     function getPromises() external view returns (address[] memory);
 
     // State-changing functions
-
     /// @notice Sets the auction house contract address
     /// @param _deliveryHelper The new delivery helper contract address
     /// @dev Only callable by contract owner
@@ -72,6 +70,15 @@ interface IAddressResolver {
     /// @return The address of the newly deployed forwarder contract
     function getOrDeployForwarderContract(
         address appDeployer_,
+        address chainContractAddress_,
+        uint32 chainSlug_
+    ) external returns (address);
+
+    /// @notice Gets or deploys a Forwarder contract
+    /// @param chainContractAddress_ The address of the chain contract
+    /// @param chainSlug_ The chain slug
+    /// @return The address of the deployed Forwarder contract
+    function getOrDeployForwarderContract(
         address chainContractAddress_,
         uint32 chainSlug_
     ) external returns (address);

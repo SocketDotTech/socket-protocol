@@ -8,14 +8,15 @@ import {QUERY, FINALIZE, SCHEDULE} from "../contracts/common/Constants.sol";
 
 contract SuperTokenTest is DeliveryHelperTest {
     struct AppContracts {
-        SuperTokenApp superTokenApp;
+        SuperTokenAppGateway superTokenApp;
         SuperTokenDeployer superTokenDeployer;
         bytes32 superToken;
         bytes32 limitHook;
     }
+
     AppContracts appContracts;
     uint256 srcAmount = 0.01 ether;
-    SuperTokenApp.UserOrder userOrder;
+    SuperTokenAppGateway.UserOrder userOrder;
 
     bytes32[] contractIds = new bytes32[](2);
 
@@ -56,7 +57,7 @@ contract SuperTokenTest is DeliveryHelperTest {
             address(auctionManager),
             createFeesData(maxFees)
         );
-        SuperTokenApp superTokenApp = new SuperTokenApp(
+        SuperTokenAppGateway superTokenApp = new SuperTokenAppGateway(
             address(addressResolver),
             address(superTokenDeployer),
             createFeesData(maxFees),
@@ -249,7 +250,7 @@ contract SuperTokenTest is DeliveryHelperTest {
     function _bridge() internal returns (bytes32, bytes32[] memory) {
         beforeBridge();
 
-        userOrder = SuperTokenApp.UserOrder({
+        userOrder = SuperTokenAppGateway.UserOrder({
             srcToken: appContracts.superTokenDeployer.forwarderAddresses(
                 appContracts.superToken,
                 arbChainSlug
