@@ -11,7 +11,7 @@ import {ETH_ADDRESS} from "../../contracts/common/Constants.sol";
 contract CounterDeploy is Script {
     function run() external {
         address addressResolver = vm.envAddress("ADDRESS_RESOLVER");
-
+        address auctionManager = vm.envAddress("AUCTION_MANAGER");
         string memory rpc = vm.envString("OFF_CHAIN_VM_RPC");
         vm.createSelectFork(rpc);
 
@@ -27,12 +27,14 @@ contract CounterDeploy is Script {
 
         CounterDeployer deployer = new CounterDeployer(
             addressResolver,
+            auctionManager,
             feesData
         );
 
         CounterAppGateway gateway = new CounterAppGateway(
             addressResolver,
             address(deployer),
+            auctionManager,
             feesData
         );
 
