@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {CounterComposer} from "../contracts/apps/counter/app-gateway/CounterComposer.sol";
-import {CounterDeployer} from "../contracts/apps/counter/app-gateway/CounterDeployer.sol";
+import {CounterAppGateway} from "../contracts/apps/counter/CounterAppGateway.sol";
+import {CounterDeployer} from "../contracts/apps/counter/CounterDeployer.sol";
 import {Counter} from "../contracts/apps/counter/Counter.sol";
 import "./DeliveryHelper.t.sol";
 
@@ -16,7 +16,7 @@ contract CounterTest is DeliveryHelperTest {
             createFeesData(0.01 ether)
         );
 
-        CounterComposer composer = new CounterComposer(
+        CounterAppGateway gateway = new CounterAppGateway(
             address(addressResolver),
             address(deployer),
             createFeesData(0.01 ether),

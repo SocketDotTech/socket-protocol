@@ -32,13 +32,15 @@ contract DeployGateway is Script {
             18,
             owner,
             1000000000 ether,
+            address(auctionManager),
             feesData
         );
 
         SuperTokenAppGateway gateway = new SuperTokenAppGateway(
             addressResolver,
             address(deployer),
-            feesData
+            feesData,
+            address(auctionManager)
         );
 
         bytes32 superToken = deployer.superToken();
