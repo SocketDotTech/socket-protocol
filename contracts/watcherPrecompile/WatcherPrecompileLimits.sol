@@ -59,6 +59,6 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
         if (_limitParams[appGateway_][limitType_].maxLimit == 0)
             revert ActionNotSupported(appGateway_, limitType_);
 
-        _consumeFullLimit(uint256(1), _limitParams[appGateway_][limitType_]); // Reverts on limit hit
+        _consumeFullLimit(1, _limitParams[appGateway_][limitType_]); // Reverts on limit hit
     }
 }

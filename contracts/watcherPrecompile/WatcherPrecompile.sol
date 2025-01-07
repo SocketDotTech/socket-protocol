@@ -120,7 +120,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
         if (delayInSeconds_ > maxTimeoutDelayInSeconds)
             revert TimeoutDelayTooLarge();
 
-        // _consumeLimit(msg.sender, SCHEDULE);
+        // from auction manager
+        _consumeLimit(msg.sender, SCHEDULE);
         uint256 executeAt = block.timestamp + delayInSeconds_;
         bytes32 timeoutId = _encodeTimeoutId(timeoutCounter++);
         timeoutRequests[timeoutId] = TimeoutRequest(
@@ -176,7 +177,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
 
         // The app gateway is the caller of this function
         address appGateway = params_.payloadDetails.appGateway;
-        // _consumeLimit(appGateway, FINALIZE);
+        _consumeLimit(appGateway, FINALIZE);
 
         // Verify that the app gateway is properly configured for this chain and target
         _verifyConnections(
@@ -238,7 +239,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
         address[] memory asyncPromises,
         bytes memory payload
     ) public returns (bytes32 payloadId) {
-        // _consumeLimit(msg.sender, QUERY);
+        // from payload delivery
+        _consumeLimit(msg.sender, QUERY);
         // Generate unique payload ID from query counter
         payloadId = bytes32(queryCounter++);
 
