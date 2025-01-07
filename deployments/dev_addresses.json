@@ -1,23 +1,31 @@
 {
-  "84532": {},
   "421614": {
-    "SignatureVerifier": "0x8d1aAf3c24D221aE30E069136C8B1e305d7668Dc",
-    "Hasher": "0xD9803F3A7F2b7Ce185daAaC94EFE00B30F0f9fab",
-    "Socket": "0x375b8c18b57DbAA5146cdCb4a8154Ff2eCc238D6",
-    "SocketBatcher": "0xd8afBbB32706E7544f075151D4666D5B0B1F22CA",
-    "FastSwitchboard": "0xb5763dC91FD626786E17b43E8808062a87b037aF",
-    "FeesPlug": "0x72e8aba972EEe812d6a5C6Ab13197e884C7D8FA9",
-    "ContractFactoryPlug": "0x0D85b9835bD1E82baeFcdb12C4D171294c64Afd2",
-    "startBlock": 113189348
+    "SignatureVerifier": "0x84aaC8A9298415642ef190409ee59DBb600DB2fa",
+    "Hasher": "0x320F525DB2412008CB1B6D2C35C974696569d84E",
+    "Socket": "0xF8B4785897Ae6912bAC916a4Db4E3543C7C698d4",
+    "SocketBatcher": "0x05B1C8eFc4039c644Fb1edADa42d8aBAD24D2e92",
+    "FastSwitchboard": "0x643B14fF022Dee030125743D5579cdeFB05b867f",
+    "FeesPlug": "0x0b598cA2e7a5c9F6C5011001aaaaF2e2e2C42a61",
+    "ContractFactoryPlug": "0xD2aF5bABC2165022a846bDF90D9e09f90F101772",
+    "startBlock": 113481780
   },
   "7625382": {
-    "AddressResolver": "0x8480Cc9d5B0657F343a87F4D2c6B3A4Ea12b4F18",
-    "SignatureVerifier": "0x89Aea8cB783bdabE1459Aad0305B677952cab80C",
-    "AuctionManager": "0xfC3E610f631c02f7654DaC849B50994944d1FB8B",
-    "FeesManager": "0x8E04d66D1EFAcf5F02B2588aBF81941034EC64AC",
-    "DeliveryHelper": "0xdA69Eb30057b3994F47f74423bc590F232bE8D53",
-    "startBlock": 3684,
-    "WatcherPrecompile": "0x28B0316672beD1D487ed2Df613F65744b65fF0c9"
+    "AddressResolver": "0x8e89587020D99D92f4AE987A5D168d6DFDb54011",
+    "WatcherPrecompile": "0xae69069B4eb0ff55f68d3b9700337eC3d1353785",
+    "SignatureVerifier": "0x8b79a1cEc8c234055E89A0313F8fCFcD04422e52",
+    "AuctionManager": "0x9f903B042C745482593CCfcCe66D45520cd6fe07",
+    "FeesManager": "0xDA36728642A0cbe4A020342F208CA6A6aCc87b49",
+    "DeliveryHelper": "0x87a27a367cA286C4307b08FDFd596065E7690E82",
+    "startBlock": 3767
   },
-  "11155420": {}
+  "11155420": {
+    "SignatureVerifier": "0xE72B44b328a8382D2bD6b6FDE933c6a4eA3a2555",
+    "Hasher": "0xC61f91757D17b476bB48487182D0CF320dEA8E3F",
+    "Socket": "0x12C1d4B9C4e1e751614DA67978291Da4Bb9D5aab",
+    "SocketBatcher": "0x630a386d805733A4984288bd196DaAB51F50Ee24",
+    "FastSwitchboard": "0x8d1718eCF49838b86673F2868a3AFed38919af44",
+    "FeesPlug": "0x1CB27D65622984Fcb8d0CB1af63f768B5c68DeFE",
+    "ContractFactoryPlug": "0x9e647E46DcF0cF38ebAbbCD18eE8484BC0eB9AB3",
+    "startBlock": 22238479
+  }
 }

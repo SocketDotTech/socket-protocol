@@ -106,7 +106,7 @@ async function isLimitSet(
   try {
     const currentLimit = await watcher.getCurrentLimit(limitType, appGateway);
     // If maxLimit is 0, limit is not set yet
-    return currentLimit.maxLimit.eq(MAX_LIMIT);
+    return currentLimit.toString() === MAX_LIMIT;
   } catch (error) {
     console.log(`Error checking limit for ${appGateway}:`, error);
     return false;

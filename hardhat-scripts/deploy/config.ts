@@ -27,7 +27,7 @@ console.log(
 
 export const chains: Array<ChainSlug> = [
   ChainSlug.ARBITRUM_SEPOLIA,
-  // ChainSlug.OPTIMISM_SEPOLIA,
+  ChainSlug.OPTIMISM_SEPOLIA,
   // ChainSlug.SEPOLIA,
   // BASE_SEPOLIA_CHAIN_ID as ChainSlug,
 ];
