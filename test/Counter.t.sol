@@ -19,64 +19,41 @@ contract CounterTest is DeliveryHelperTest {
         CounterAppGateway gateway = new CounterAppGateway(
             address(addressResolver),
             address(deployer),
-            createFeesData(0.01 ether),
-            address(auctionManager)
+            address(auctionManager),
+            createFeesData(0.01 ether)
         );
+        UpdateLimitParams[] memory params = new UpdateLimitParams[](2);
+        params[0] = UpdateLimitParams({
+            limitType: FINALIZE,
+            appGateway: address(deployer),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+        params[1] = UpdateLimitParams({
+            limitType: FINALIZE,
+            appGateway: address(gateway),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
 
-        PayloadDetails[] memory payloadDetails = new PayloadDetails[](1);
-        payloadDetails[0] = createDeployPayloadDetail(
+        hoax(watcherEOA);
+        watcherPrecompile.updateLimitParams(params);
+        skip(1000);
+
+        bytes32[] memory payloadIds = getWritePayloadIds(
             arbChainSlug,
-            address(counterDeployer),
-            counterDeployer.creationCodeWithArgs(counterId)
-        );
-        payloadDetails[0].next[1] = predictAsyncPromiseAddress(
-            address(auctionHouse),
-            address(auctionHouse)
-        );
-
-        _deploy(
-            payloadIds,
-            arbChainSlug,
-            maxFees,
-            IAppDeployer(counterDeployer),
-            payloadDetails
-        );
-
-        address counterForwarder = counterDeployer.forwarderAddresses(
-            counterId,
-            arbChainSlug
-        );
-        address deployedCounter = IForwarder(counterForwarder)
-            .getOnChainAddress();
-
-        payloadIds = getWritePayloadIds(
-            arbChainSlug,
-            getPayloadDeliveryPlug(arbChainSlug),
+            address(arbConfig.switchboard),
             1
         );
+        bytes32[] memory contractIds = new bytes32[](2);
+        contractIds[1] = deployer.counter();
 
-        payloadDetails = new PayloadDetails[](1);
-        payloadDetails[0] = createExecutePayloadDetail(
-            arbChainSlug,
-            deployedCounter,
-            address(counterDeployer),
-            counterForwarder,
-            abi.encodeWithSignature(
-                "setSocket(address)",
-                counterDeployer.getSocketAddress(arbChainSlug)
-            )
-        );
-
-        payloadDetails[0].next[1] = predictAsyncPromiseAddress(
-            address(auctionHouse),
-            address(auctionHouse)
-        );
-
-        _configure(
+        _deploy(
+            contractIds,
             payloadIds,
-            address(counterAppGateway),
-            maxFees,
-            payloadDetails
+            arbChainSlug,
+            IAppDeployer(deployer),
+            address(gateway)
         );
     }
 }
