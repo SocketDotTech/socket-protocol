@@ -12,14 +12,8 @@ import {
 import { getProviderFromChainSlug } from "../constants";
 import { ethers } from "hardhat";
 import dev_addresses from "../../deployments/dev_addresses.json";
-import {
-  AppContracts,
-  CORE_CONTRACTS,
-  OffChainVMCoreContracts,
-  chains,
-  watcher,
-} from "./config";
-import { feesData, OFF_CHAIN_VM_CHAIN_ID } from "../constants/constants";
+import { CORE_CONTRACTS, OffChainVMCoreContracts, chains } from "./config";
+import { OFF_CHAIN_VM_CHAIN_ID } from "../constants/constants";
 
 const main = async () => {
   try {
@@ -114,7 +108,7 @@ const main = async () => {
           const feesPlug: Contract = await getOrDeploy(
             contractName,
             `contracts/apps/payload-delivery/${contractName}.sol`,
-            [socket.address, chain, socketOwner],
+            [socket.address, socketOwner],
             deployUtils
           );
           deployUtils.addresses[contractName] = feesPlug.address;
@@ -123,7 +117,7 @@ const main = async () => {
           const contractFactoryPlug: Contract = await getOrDeploy(
             contractName,
             `contracts/apps/payload-delivery/${contractName}.sol`,
-            [socket.address, chain, socketOwner],
+            [socket.address, socketOwner, sb.address],
             deployUtils
           );
           deployUtils.addresses[contractName] = contractFactoryPlug.address;

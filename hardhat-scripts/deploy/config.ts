@@ -5,7 +5,6 @@ import { ChainSlug, DeploymentMode, version } from "@socket.tech/dl-core";
 import { BigNumberish, utils } from "ethers";
 import { getOverrides } from "../constants/overrides";
 import { getProviderFromChainSlug } from "../constants";
-import { BASE_SEPOLIA_CHAIN_ID } from "../constants/constants";
 
 export const mode = process.env.DEPLOYMENT_MODE as
   | DeploymentMode
