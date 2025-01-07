@@ -14,6 +14,7 @@ contract DeployGateway is Script {
         vm.startBroadcast();
 
         address addressResolver = 0x208dC31cd6042a09bbFDdB31614A337a51b870ba;
+        address auctionManager = 0x0000000000000000000000000000000000000000;
         address owner = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
 
         FeesData memory feesData = FeesData({

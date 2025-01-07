@@ -19,30 +19,28 @@ contract CounterTest is DeliveryHelperTest {
         CounterAppGateway gateway = new CounterAppGateway(
             address(addressResolver),
             address(deployer),
-            createFeesData(0.01 ether),
-            address(auctionManager)
+            address(auctionManager),
+            createFeesData(0.01 ether)
         );
 
-        PayloadDetails[] memory payloadDetails = new PayloadDetails[](1);
-        payloadDetails[0] = createDeployPayloadDetail(
+        bytes32 counterId = deployer.counter();
+
+        bytes32[] memory payloadIds = getWritePayloadIds(
             arbChainSlug,
-            address(counterDeployer),
-            counterDeployer.creationCodeWithArgs(counterId)
+            address(arbConfig.switchboard),
+            1
         );
-        payloadDetails[0].next[1] = predictAsyncPromiseAddress(
-            address(auctionHouse),
-            address(auctionHouse)
-        );
-
+        bytes32[] memory contractIds = new bytes32[](1);
+        contractIds[0] = counterId;
         _deploy(
+            contractIds,
             payloadIds,
             arbChainSlug,
-            maxFees,
-            IAppDeployer(counterDeployer),
-            payloadDetails
+            IAppDeployer(deployer),
+            address(gateway)
         );
 
-        address counterForwarder = counterDeployer.forwarderAddresses(
+        address counterForwarder = deployer.forwarderAddresses(
             counterId,
             arbChainSlug
         );
@@ -51,32 +49,10 @@ contract CounterTest is DeliveryHelperTest {
 
         payloadIds = getWritePayloadIds(
             arbChainSlug,
-            getPayloadDeliveryPlug(arbChainSlug),
+            address(arbConfig.switchboard),
             1
         );
 
-        payloadDetails = new PayloadDetails[](1);
-        payloadDetails[0] = createExecutePayloadDetail(
-            arbChainSlug,
-            deployedCounter,
-            address(counterDeployer),
-            counterForwarder,
-            abi.encodeWithSignature(
-                "setSocket(address)",
-                counterDeployer.getSocketAddress(arbChainSlug)
-            )
-        );
-
-        payloadDetails[0].next[1] = predictAsyncPromiseAddress(
-            address(auctionHouse),
-            address(auctionHouse)
-        );
-
-        _configure(
-            payloadIds,
-            address(counterAppGateway),
-            maxFees,
-            payloadDetails
-        );
+        _configure(payloadIds, address(gateway));
     }
 }
