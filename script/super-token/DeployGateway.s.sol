@@ -7,7 +7,7 @@ import {SuperTokenAppGateway} from "../../contracts/apps/super-token/SuperTokenA
 import {SuperTokenDeployer} from "../../contracts/apps/super-token/SuperTokenDeployer.sol";
 import {SuperToken} from "../../contracts/apps/super-token/SuperToken.sol";
 import {FeesData} from "../../contracts/common/Structs.sol";
-import {ETH_ADDRESS} from "../../contracts/common/Constants.sol";
+import {ETH_ADDRESS, FAST} from "../../contracts/common/Constants.sol";
 
 contract DeployGateway is Script {
     function run() external {
@@ -26,14 +26,17 @@ contract DeployGateway is Script {
         SuperTokenDeployer deployer = new SuperTokenDeployer(
             addressResolver,
             owner,
-            10000000000000000000000,
-            10000000000000000000000,
-            "SUPER TOKEN",
-            "SUPER",
-            18,
-            owner,
-            1000000000 ether,
             address(auctionManager),
+            FAST,
+            SuperTokenDeployer.ConstructorParams({
+                _burnLimit: 10000000000000000000000,
+                _mintLimit: 10000000000000000000000,
+                name_: "SUPER TOKEN",
+                symbol_: "SUPER",
+                decimals_: 18,
+                initialSupplyHolder_: owner,
+                initialSupply_: 1000000000 ether
+            }),
             feesData
         );
 
