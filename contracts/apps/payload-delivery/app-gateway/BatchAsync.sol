@@ -47,6 +47,10 @@ abstract contract BatchAsync is QueueAsync {
         PayloadDetails[]
             memory payloadDetailsArray = createPayloadDetailsArray();
 
+        if (payloadDetailsArray.length == 0) {
+            return bytes32(0);
+        }
+
         // Default flow for other cases (including mixed read/write)
         return
             deliverPayload(

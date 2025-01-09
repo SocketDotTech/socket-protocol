@@ -24,6 +24,23 @@ contract CounterTest is DeliveryHelperTest {
         );
 
         bytes32 counterId = deployer.counter();
+        UpdateLimitParams[] memory params = new UpdateLimitParams[](2);
+        params[0] = UpdateLimitParams({
+            limitType: FINALIZE,
+            appGateway: address(deployer),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+        params[1] = UpdateLimitParams({
+            limitType: FINALIZE,
+            appGateway: address(gateway),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+
+        hoax(watcherEOA);
+        watcherPrecompile.updateLimitParams(params);
+        skip(1000);
 
         bytes32[] memory payloadIds = getWritePayloadIds(
             arbChainSlug,
@@ -32,6 +49,7 @@ contract CounterTest is DeliveryHelperTest {
         );
         bytes32[] memory contractIds = new bytes32[](1);
         contractIds[0] = counterId;
+
         _deploy(
             contractIds,
             payloadIds,
