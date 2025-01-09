@@ -143,6 +143,7 @@ contract DeliveryHelper is BatchAsync, Ownable {
             payloadId = watcherPrecompile().query(
                 payloadDetails.chainSlug,
                 payloadDetails.target,
+                payloadDetails.appGateway,
                 payloadDetails.next,
                 payloadDetails.payload
             );

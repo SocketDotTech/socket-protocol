@@ -87,21 +87,25 @@ contract DeliveryHelperTest is SetupTest {
 
     function connectDeliveryHelper() internal {
         vm.startPrank(owner);
-        arbConfig.contractFactoryPlug.connect(
+        arbConfig.contractFactoryPlug.initialize(
             address(deliveryHelper),
+            address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
-        optConfig.contractFactoryPlug.connect(
+        optConfig.contractFactoryPlug.initialize(
             address(deliveryHelper),
+            address(optConfig.socket),
             address(optConfig.switchboard)
         );
 
-        arbConfig.feesPlug.connect(
+        arbConfig.feesPlug.initialize(
             address(feesManager),
+            address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
-        optConfig.feesPlug.connect(
+        optConfig.feesPlug.initialize(
             address(feesManager),
+            address(optConfig.socket),
             address(optConfig.switchboard)
         );
         vm.stopPrank();
@@ -183,13 +187,12 @@ contract DeliveryHelperTest is SetupTest {
 
         (
             address appGateway,
-            FeesData memory feesData,
-            uint256 currentPayloadIndex,
+            ,
+            ,
             address _auctionManager,
             Bid memory winningBid,
             bool isBatchCancelled,
-            uint256 totalPayloadsRemaining,
-            bytes memory onCompleteData
+            ,
         ) = deliveryHelper.payloadBatches(asyncId);
 
         assertEq(appGateway_, appGateway, "AppGateway mismatch");
@@ -504,7 +507,7 @@ contract DeliveryHelperTest is SetupTest {
     }
 
     function finalizeAndExecute(
-        bytes32 asyncId,
+        bytes32 ,
         bytes32 payloadId,
         bool isWithdraw
     ) internal {

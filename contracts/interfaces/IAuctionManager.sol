@@ -4,7 +4,7 @@ pragma solidity ^0.8.3;
 import {Bid, FeesData} from "../common/Structs.sol";
 
 interface IAuctionManager {
-    function startAuction(bytes32 asyncId_) external;
+    function startAuction(bytes32 asyncId_) external returns (uint256);
 
     function bid(
         bytes32 asyncId_,

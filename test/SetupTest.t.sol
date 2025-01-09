@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 import "../contracts/common/Structs.sol";
+import "../contracts/common/Constants.sol";
 import "../contracts/watcherPrecompile/WatcherPrecompile.sol";
 import "../contracts/interfaces/IForwarder.sol";
 import "../contracts/socket/utils/AccessRoles.sol";
@@ -37,9 +38,6 @@ contract SetupTest is Test {
     uint256 public writePayloadIdCounter = 0;
     uint256 public readPayloadIdCounter = 0;
     uint256 public timeoutPayloadIdCounter = 0;
-
-    uint256 constant DEPLOY_GAS_LIMIT = 5_000_000;
-    uint256 constant CONFIGURE_GAS_LIMIT = 10000000;
 
     bytes public asyncPromiseBytecode = type(AsyncPromise).creationCode;
 
@@ -80,8 +78,7 @@ contract SetupTest is Test {
 
         ContractFactoryPlug contractFactoryPlug = new ContractFactoryPlug(
             address(socket),
-            owner,
-            address(switchboard)
+            owner
         );
         FeesPlug feesPlug = new FeesPlug(address(socket), owner);
 

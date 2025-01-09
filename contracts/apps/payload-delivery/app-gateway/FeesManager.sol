@@ -28,7 +28,7 @@ contract FeesManager is AddressResolverUtil, Ownable {
         Bid memory winningBid_
     )
         external
-        onlyPayloadDelivery
+        onlyDeliveryHelper
         returns (
             bytes32 payloadId,
             bytes32 root,

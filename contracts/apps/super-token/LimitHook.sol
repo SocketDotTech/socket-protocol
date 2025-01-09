@@ -41,7 +41,7 @@ contract LimitHook is Ownable, PlugBase {
     function initialize(
         address switchboard_,
         address socket_,
-        address appGateway_ 
+        address appGateway_
     ) external onlyOwner {
         socket__ = ISocket(socket_);
         appGateway = appGateway_;
