@@ -7,12 +7,7 @@ import { Contract, ethers, providers, Wallet } from "ethers";
 import { getInstance } from "./utils";
 import WatcherABI from "../../out/WatcherPrecompile.sol/WatcherPrecompile.json";
 import SocketABI from "../../out/Socket.sol/Socket.json";
-import {
-  chains,
-  overrides,
-  OffChainVMCoreContracts,
-  CORE_CONTRACTS,
-} from "./config";
+import { chains, OffChainVMCoreContracts, CORE_CONTRACTS } from "./config";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { OFF_CHAIN_VM_CHAIN_ID } from "../constants/constants";
 

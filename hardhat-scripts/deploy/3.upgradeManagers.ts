@@ -12,7 +12,7 @@ import { ethers } from "hardhat";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { chains } from "./config";
 import { getProviderFromChainSlug } from "../constants";
-import { constants, Contract, Wallet } from "ethers";
+import { Wallet } from "ethers";
 import { getInstance, storeAddresses } from "./utils";
 
 export const main = async () => {

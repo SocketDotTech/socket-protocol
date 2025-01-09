@@ -22,6 +22,8 @@ contract CounterTest is DeliveryHelperTest {
             address(auctionManager),
             createFeesData(0.01 ether)
         );
+
+        bytes32 counterId = deployer.counter();
         UpdateLimitParams[] memory params = new UpdateLimitParams[](2);
         params[0] = UpdateLimitParams({
             limitType: FINALIZE,
@@ -45,8 +47,8 @@ contract CounterTest is DeliveryHelperTest {
             address(arbConfig.switchboard),
             1
         );
-        bytes32[] memory contractIds = new bytes32[](2);
-        contractIds[1] = deployer.counter();
+        bytes32[] memory contractIds = new bytes32[](1);
+        contractIds[0] = counterId;
 
         _deploy(
             contractIds,
@@ -55,5 +57,20 @@ contract CounterTest is DeliveryHelperTest {
             IAppDeployer(deployer),
             address(gateway)
         );
+
+        address counterForwarder = deployer.forwarderAddresses(
+            counterId,
+            arbChainSlug
+        );
+        address deployedCounter = IForwarder(counterForwarder)
+            .getOnChainAddress();
+
+        payloadIds = getWritePayloadIds(
+            arbChainSlug,
+            address(arbConfig.switchboard),
+            1
+        );
+
+        _configure(payloadIds, address(gateway));
     }
 }

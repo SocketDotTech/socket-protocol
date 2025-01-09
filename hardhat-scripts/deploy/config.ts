@@ -5,7 +5,6 @@ import { ChainSlug, DeploymentMode, version } from "@socket.tech/dl-core";
 import { BigNumberish, utils } from "ethers";
 import { getOverrides } from "../constants/overrides";
 import { getProviderFromChainSlug } from "../constants";
-import { BASE_SEPOLIA_CHAIN_ID } from "../constants/constants";
 
 export const mode = process.env.DEPLOYMENT_MODE as
   | DeploymentMode
@@ -28,7 +27,7 @@ console.log(
 
 export const chains: Array<ChainSlug> = [
   ChainSlug.ARBITRUM_SEPOLIA,
-  // ChainSlug.OPTIMISM_SEPOLIA,
+  ChainSlug.OPTIMISM_SEPOLIA,
   // ChainSlug.SEPOLIA,
   // BASE_SEPOLIA_CHAIN_ID as ChainSlug,
 ];

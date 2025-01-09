@@ -12,9 +12,9 @@ export const chainOverrides: {
   };
 } = {
   [ChainSlug.ARBITRUM_SEPOLIA]: {
-    type: 1,
-    gasLimit: 50_000_000,
-    gasPrice: 200_000_000,
+    // type: 2,
+    // gasLimit: 50_000_000,
+    gasPrice: 800_000_000,
   },
   [ChainSlug.SEPOLIA]: {
     type: 1,

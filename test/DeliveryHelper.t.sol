@@ -81,7 +81,6 @@ contract DeliveryHelperTest is SetupTest {
             ratePerSecond: 10000000000000000000000
         });
 
-
         hoax(watcherEOA);
         watcherPrecompile.updateLimitParams(params);
     }
