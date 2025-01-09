@@ -37,6 +37,7 @@ contract FeesPlug is PlugBase, Ownable {
         _transferTokens(feeToken, fee, transmitter);
         return bytes("");
     }
+
     function withdrawFees(
         address appGateway,
         address token,
@@ -90,12 +91,11 @@ contract FeesPlug is PlugBase, Ownable {
         }
     }
 
-    function connect(
+    function initialize(
         address appGateway_,
+        address,
         address switchboard_
     ) external onlyOwner {
         _connectSocket(appGateway_, switchboard_);
     }
-
-    function connectSocket(address switchboard_, address socket_) external {}
 }

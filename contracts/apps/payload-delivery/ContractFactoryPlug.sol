@@ -19,7 +19,8 @@ contract ContractFactoryPlug is PlugBase, Ownable {
 
     function deployContract(
         bytes memory creationCode,
-        bytes32 salt
+        bytes32 salt,
+        address appGateway_
     ) public returns (address) {
         if (msg.sender != address(socket__)) {
             revert("Only socket can deploy contracts");
@@ -38,7 +39,7 @@ contract ContractFactoryPlug is PlugBase, Ownable {
             }
         }
 
-        IPlug(addr).connectSocket(fastSwitchboard, msg.sender);
+        IPlug(addr).initialize(fastSwitchboard, msg.sender, appGateway_);
         emit Deployed(addr, salt);
         return addr;
     }
@@ -63,12 +64,11 @@ contract ContractFactoryPlug is PlugBase, Ownable {
         return address(uint160(uint256(hash)));
     }
 
-    function connect(
-        address appGateway_,
-        address switchboard_
+    function initialize(
+        address switchboard_,
+        address,
+        address appGateway_
     ) external onlyOwner {
         _connectSocket(appGateway_, switchboard_);
     }
-
-    function connectSocket(address switchboard_, address socket_) external {}
 }

@@ -7,20 +7,18 @@ import "../../base/PlugBase.sol";
 contract Counter is Ownable(msg.sender), PlugBase(msg.sender) {
     uint256 public counter;
 
-    constructor(address _appGateway) {
-        appGateway = _appGateway;
-    }
-
     function increase() external onlySocket {
         counter++;
     }
 
-    function connectSocket(
+    function initialize(
         address switchboard_,
-        address socket_
+        address socket_,
+        address appGateway_
     ) external onlyOwner {
         socket__ = ISocket(socket_);
+        appGateway = appGateway_;
         _claimOwner(socket_);
-        _connectSocket(appGateway, switchboard_);
+        _connectSocket(appGateway_, switchboard_);
     }
 }

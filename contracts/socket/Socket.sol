@@ -80,7 +80,7 @@ contract Socket is SocketBase {
 
         // creates a unique ID for the message
         callId = _encodeCallId(plugConfig.appGateway);
-        emit CalledAppGateway(
+        emit AppGatewayCallRequested(
             callId,
             chainSlug,
             msg.sender,

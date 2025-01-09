@@ -33,7 +33,7 @@ interface ISocket {
      * @param params params, for specifying details like fee pool chain, fee pool token and max fees if required
      * @param payload the data which will be used by inbound at remote
      */
-    event CalledAppGateway(
+    event AppGatewayCallRequested(
         bytes32 callId,
         uint32 chainSlug,
         address plug,
