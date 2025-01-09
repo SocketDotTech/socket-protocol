@@ -39,7 +39,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
     error InvalidChainSlug();
     error InvalidTransmitter();
 
-    event AppGatewayCallRequested(
+    event CalledAppGateway(
         bytes32 callId,
         uint32 chainSlug,
         address plug,
@@ -331,7 +331,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
                 params_[i].payload,
                 params_[i].params
             );
-            emit AppGatewayCallRequested(
+            emit CalledAppGateway(
                 params_[i].callId,
                 params_[i].chainSlug,
                 params_[i].plug,
