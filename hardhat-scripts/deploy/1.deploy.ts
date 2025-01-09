@@ -12,8 +12,9 @@ import {
 import { getProviderFromChainSlug } from "../constants";
 import { ethers } from "hardhat";
 import dev_addresses from "../../deployments/dev_addresses.json";
-import { CORE_CONTRACTS, OffChainVMCoreContracts, chains } from "./config";
+import { chains } from "./config";
 import { OFF_CHAIN_VM_CHAIN_ID } from "../constants/constants";
+import { CORE_CONTRACTS, OffChainVMCoreContracts } from "../../src";
 
 const main = async () => {
   try {

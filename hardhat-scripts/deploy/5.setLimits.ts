@@ -1,7 +1,7 @@
 import { DeploymentAddresses } from "@socket.tech/dl-core";
 import { Contract, ethers, providers } from "ethers";
 import WatcherABI from "../../out/WatcherPrecompile.sol/WatcherPrecompile.json";
-import { OffChainVMCoreContracts } from "./config";
+import { OffChainVMCoreContracts } from "../../src";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { OFF_CHAIN_VM_CHAIN_ID } from "../constants/constants";
 
@@ -25,7 +25,7 @@ const deliveryHelperLimitParams: LimitParam[] = [
     limitType: ethers.utils.keccak256(ethers.utils.toUtf8Bytes("FINALIZE")),
     appGateway:
       addresses[OFF_CHAIN_VM_CHAIN_ID]?.[
-        OffChainVMCoreContracts.DeliveryHelper
+      OffChainVMCoreContracts.DeliveryHelper
       ],
     maxLimit: MAX_LIMIT,
     ratePerSecond: MAX_LIMIT,
@@ -34,7 +34,7 @@ const deliveryHelperLimitParams: LimitParam[] = [
     limitType: ethers.utils.keccak256(ethers.utils.toUtf8Bytes("QUERY")),
     appGateway:
       addresses[OFF_CHAIN_VM_CHAIN_ID]?.[
-        OffChainVMCoreContracts.DeliveryHelper
+      OffChainVMCoreContracts.DeliveryHelper
       ],
     maxLimit: MAX_LIMIT,
     ratePerSecond: MAX_LIMIT,
@@ -43,7 +43,7 @@ const deliveryHelperLimitParams: LimitParam[] = [
     limitType: ethers.utils.keccak256(ethers.utils.toUtf8Bytes("SCHEDULE")),
     appGateway:
       addresses[OFF_CHAIN_VM_CHAIN_ID]?.[
-        OffChainVMCoreContracts.AuctionManager
+      OffChainVMCoreContracts.AuctionManager
       ],
     maxLimit: MAX_LIMIT,
     ratePerSecond: MAX_LIMIT,

@@ -52,28 +52,3 @@ export const overrides = async (
 };
 
 export const watcher = "0xb62505feacC486e809392c65614Ce4d7b051923b";
-
-export enum CORE_CONTRACTS {
-  Hasher = "Hasher",
-  SignatureVerifier = "SignatureVerifier",
-  Socket = "Socket",
-  SocketBatcher = "SocketBatcher",
-  FastSwitchboard = "FastSwitchboard",
-  FeesPlug = "FeesPlug",
-  ContractFactoryPlug = "ContractFactoryPlug",
-}
-
-export enum OffChainVMCoreContracts {
-  SignatureVerifier = "SignatureVerifier",
-  WatcherPrecompile = "WatcherPrecompile",
-  AuctionManager = "AuctionManager",
-  FeesManager = "FeesManager",
-  DeliveryHelper = "DeliveryHelper",
-  AddressAbstractor = "AddressAbstractor",
-  AddressResolver = "AddressResolver",
-}
-
-export enum AppContracts {
-  SuperTokenApp = "SuperTokenApp",
-  SuperTokenDeployer = "SuperTokenDeployer",
-}

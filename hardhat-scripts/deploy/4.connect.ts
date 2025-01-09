@@ -7,9 +7,10 @@ import { Contract, ethers, providers, Wallet } from "ethers";
 import { getInstance } from "./utils";
 import WatcherABI from "../../out/WatcherPrecompile.sol/WatcherPrecompile.json";
 import SocketABI from "../../out/Socket.sol/Socket.json";
-import { chains, OffChainVMCoreContracts, CORE_CONTRACTS } from "./config";
+import { chains } from "./config";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { OFF_CHAIN_VM_CHAIN_ID } from "../constants/constants";
+import { CORE_CONTRACTS, OffChainVMCoreContracts } from "../../src";
 
 const plugs = [CORE_CONTRACTS.ContractFactoryPlug, CORE_CONTRACTS.FeesPlug];
 
@@ -50,9 +51,9 @@ export const isConfigSetOnSocket = async (
   const plugConfigRegistered = await socket.getPlugConfig(plug.address);
   return (
     plugConfigRegistered.appGateway.toLowerCase() ===
-      appGateway?.toLowerCase() &&
+    appGateway?.toLowerCase() &&
     plugConfigRegistered.switchboard__.toLowerCase() ===
-      switchboard.toLowerCase()
+    switchboard.toLowerCase()
   );
 };
 

@@ -1,8 +1,16 @@
 {
-  "name": "socket-poc",
+  "name": "@socket.tech/socket-protocol",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "files": [
+    "dist",
+    "artifacts/abi"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "socket protocol",
   "scripts": {
     "build": "hardhat export-abi && tsc --project lib.tsconfig.json",
     "tsc": "tsc --project lib.tsconfig.json",
@@ -12,11 +20,6 @@
     "compile": "forge build",
     "deploy": "bash setupInfraContracts.sh"
   },
-  "types": "./dist/src/index.d.ts",
-  "files": [
-    "dist",
-    "artifacts/abi"
-  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
