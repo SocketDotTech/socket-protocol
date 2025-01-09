@@ -16,8 +16,11 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
 
     constructor(
         address _addressResolver,
-        address _auctionManager
-    ) AppGatewayBase(_addressResolver, _auctionManager) {}
+        address _auctionManager,
+        bytes32 sbType_
+    ) AppGatewayBase(_addressResolver, _auctionManager) {
+        sbType = sbType_;
+    }
 
     /// @notice Deploys a contract
     /// @param contractId_ The contract ID
@@ -82,14 +85,13 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     }
 
     /// @notice Callback in pd promise to be called after all contracts are deployed
-    /// @param asyncId The async ID
     /// @param payloadBatch The payload batch
     /// @dev only payload delivery can call this
     /// @dev callback in pd promise to be called after all contracts are deployed
     function onBatchComplete(
-        bytes32 asyncId,
+        bytes32,
         PayloadBatch memory payloadBatch
-    ) external override onlyPayloadDelivery {
+    ) external override onlyDeliveryHelper {
         uint32 chainSlug = abi.decode(payloadBatch.onCompleteData, (uint32));
         initialize(chainSlug);
     }

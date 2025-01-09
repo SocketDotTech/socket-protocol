@@ -18,6 +18,7 @@ abstract contract AppGatewayBase is
     bool public override isReadCall;
     address public auctionManager;
     bytes public onCompleteData;
+    bytes32 public sbType;
 
     mapping(address => bool) public isValidPromise;
 
@@ -30,7 +31,7 @@ abstract contract AppGatewayBase is
         deliveryHelper().clearQueue();
         addressResolver.clearPromises();
         _;
-        deliveryHelper().batch(feesData, auctionManager, onCompleteData);
+        deliveryHelper().batch(feesData, auctionManager, onCompleteData, sbType);
         _markValidPromises();
     }
 
@@ -124,7 +125,7 @@ abstract contract AppGatewayBase is
     function onBatchComplete(
         bytes32 asyncId_,
         PayloadBatch memory payloadBatch_
-    ) external virtual onlyPayloadDelivery {}
+    ) external virtual onlyDeliveryHelper {}
 
     function callFromInbox(
         uint32 chainSlug_,

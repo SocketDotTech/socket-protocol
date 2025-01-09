@@ -78,15 +78,21 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
 
     /// @notice Creates an array of payload details
     /// @return payloadDetailsArray An array of payload details
-    function createPayloadDetailsArray()
-        internal
-        returns (PayloadDetails[] memory payloadDetailsArray)
-    {
+    function createPayloadDetailsArray(
+        bytes32 sbType_
+    ) internal returns (PayloadDetails[] memory payloadDetailsArray) {
         payloadDetailsArray = new PayloadDetails[](callParamsArray.length);
-
         for (uint256 i = 0; i < callParamsArray.length; i++) {
             CallParams memory params = callParamsArray[i];
-            PayloadDetails memory payloadDetails = getPayloadDetails(params);
+            address switchboard = watcherPrecompile().switchboards(
+                params.chainSlug,
+                sbType_
+            );
+
+            PayloadDetails memory payloadDetails = getPayloadDetails(
+                params,
+                switchboard
+            );
             payloadDetailsArray[i] = payloadDetails;
         }
 
@@ -95,9 +101,11 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
 
     /// @notice Gets the payload details for a given call parameters
     /// @param params The call parameters
+    /// @param switchboard_ The switchboard address
     /// @return payloadDetails The payload details
     function getPayloadDetails(
-        CallParams memory params
+        CallParams memory params,
+        address switchboard_
     ) internal returns (PayloadDetails memory) {
         address[] memory next = new address[](2);
         next[0] = params.asyncPromise;
@@ -112,7 +120,9 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
             payload = abi.encodeWithSelector(
                 IContractFactoryPlug.deployContract.selector,
                 params.payload,
-                salt
+                salt,
+                appGateway,
+                switchboard_
             );
             appGateway = address(this);
         }
