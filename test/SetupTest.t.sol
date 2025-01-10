@@ -90,6 +90,14 @@ contract SetupTest is Test {
         switchboard.registerSwitchboard();
         switchboard.grantWatcherRole(watcherEOA);
         vm.stopPrank();
+
+        hoax(watcherEOA);
+        watcherPrecompile.setSwitchboard(
+            chainSlug_,
+            FAST,
+            address(switchboard)
+        );
+
         return
             SocketContracts({
                 chainSlug: chainSlug_,

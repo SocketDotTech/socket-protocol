@@ -74,7 +74,31 @@ contract SuperTokenTest is DeliveryHelperTest {
             limitHook: superTokenDeployer.limitHook()
         });
 
-        UpdateLimitParams[] memory params = new UpdateLimitParams[](2);
+        UpdateLimitParams[] memory params = new UpdateLimitParams[](6);
+        params[0] = UpdateLimitParams({
+            limitType: QUERY,
+            appGateway: address(appContracts.superTokenDeployer),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+        params[1] = UpdateLimitParams({
+            limitType: QUERY,
+            appGateway: address(appContracts.superTokenApp),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+        params[0] = UpdateLimitParams({
+            limitType: SCHEDULE,
+            appGateway: address(appContracts.superTokenDeployer),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+        params[1] = UpdateLimitParams({
+            limitType: SCHEDULE,
+            appGateway: address(appContracts.superTokenApp),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
         params[0] = UpdateLimitParams({
             limitType: FINALIZE,
             appGateway: address(appContracts.superTokenDeployer),

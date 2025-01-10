@@ -54,35 +54,6 @@ contract DeliveryHelperTest is SetupTest {
         optConfig = deploySocket(optChainSlug);
 
         connectDeliveryHelper();
-
-        UpdateLimitParams[] memory params = new UpdateLimitParams[](4);
-        params[0] = UpdateLimitParams({
-            limitType: SCHEDULE,
-            appGateway: address(auctionManager),
-            maxLimit: 10000000000000000000000,
-            ratePerSecond: 10000000000000000000000
-        });
-        params[1] = UpdateLimitParams({
-            limitType: QUERY,
-            appGateway: address(deliveryHelper),
-            maxLimit: 10000000000000000000000,
-            ratePerSecond: 10000000000000000000000
-        });
-        params[2] = UpdateLimitParams({
-            limitType: FINALIZE,
-            appGateway: address(deliveryHelper),
-            maxLimit: 10000000000000000000000,
-            ratePerSecond: 10000000000000000000000
-        });
-        params[3] = UpdateLimitParams({
-            limitType: FINALIZE,
-            appGateway: address(feesManager),
-            maxLimit: 10000000000000000000000,
-            ratePerSecond: 10000000000000000000000
-        });
-
-        hoax(watcherEOA);
-        watcherPrecompile.updateLimitParams(params);
     }
 
     function connectDeliveryHelper() internal {
@@ -193,6 +164,7 @@ contract DeliveryHelperTest is SetupTest {
             Bid memory winningBid,
             bool isBatchCancelled,
             ,
+
         ) = deliveryHelper.payloadBatches(asyncId);
 
         assertEq(appGateway_, appGateway, "AppGateway mismatch");
@@ -507,7 +479,7 @@ contract DeliveryHelperTest is SetupTest {
     }
 
     function finalizeAndExecute(
-        bytes32 ,
+        bytes32,
         bytes32 payloadId,
         bool isWithdraw
     ) internal {
