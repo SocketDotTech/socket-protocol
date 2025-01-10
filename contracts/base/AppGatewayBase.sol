@@ -31,7 +31,12 @@ abstract contract AppGatewayBase is
         deliveryHelper().clearQueue();
         addressResolver.clearPromises();
         _;
-        deliveryHelper().batch(feesData, auctionManager, onCompleteData, sbType);
+        deliveryHelper().batch(
+            feesData,
+            auctionManager,
+            onCompleteData,
+            sbType
+        );
         _markValidPromises();
     }
 

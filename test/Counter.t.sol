@@ -10,7 +10,7 @@ contract CounterTest is DeliveryHelperTest {
     function testCounter() external {
         console.log("Deploying contracts on Arbitrum...");
         setUpDeliveryHelper();
-        
+
         CounterDeployer deployer = new CounterDeployer(
             address(addressResolver),
             address(auctionManager),
