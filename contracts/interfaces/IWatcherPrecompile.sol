@@ -55,7 +55,8 @@ interface IWatcherPrecompile {
     /// @return payloadId The unique identifier for the request
     /// @return root The merkle root of the payload parameters
     function finalize(
-        FinalizeParams memory params_
+        FinalizeParams memory params_,
+        address originAppGateway_
     ) external returns (bytes32 payloadId, bytes32 root);
 
     /// @notice Creates a new query request

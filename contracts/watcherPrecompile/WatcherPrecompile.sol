@@ -172,21 +172,19 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
     /// @return payloadId The unique identifier for the finalized request
     /// @return root The merkle root of the payload parameters
     function finalize(
-        FinalizeParams memory params_
+        FinalizeParams memory params_,
+        address originAppGateway_
     ) external returns (bytes32 payloadId, bytes32 root) {
         if (params_.transmitter == address(0)) revert InvalidTransmitter();
 
         // The app gateway is the caller of this function
-        address appGateway = _consumeLimit(
-            params_.payloadDetails.appGateway,
-            FINALIZE
-        );
+        _consumeLimit(originAppGateway_, FINALIZE);
 
         // Verify that the app gateway is properly configured for this chain and target
         _verifyConnections(
             params_.payloadDetails.chainSlug,
             params_.payloadDetails.target,
-            appGateway
+            params_.payloadDetails.appGateway
         );
 
         // Generate a unique payload ID by combining chain, target, and counter
@@ -199,7 +197,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
         // Construct parameters for root calculation
         PayloadRootParams memory rootParams_ = PayloadRootParams(
             payloadId,
-            appGateway,
+            params_.payloadDetails.appGateway,
             params_.transmitter,
             params_.payloadDetails.target,
             params_.payloadDetails.executionGasLimit,
@@ -218,7 +216,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
         // Create and store the async request with all necessary details
         AsyncRequest memory asyncRequest = AsyncRequest(
             params_.payloadDetails.next,
-            appGateway,
+            params_.payloadDetails.appGateway,
             params_.transmitter,
             params_.payloadDetails.executionGasLimit,
             params_.payloadDetails.payload,

@@ -114,7 +114,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
         address appGateway = msg.sender;
         if (params.callType == CallType.DEPLOY) {
             bytes32 salt = keccak256(
-                abi.encode(msg.sender, params.chainSlug, saltCounter++)
+                abi.encode(appGateway, params.chainSlug, saltCounter++)
             );
 
             payload = abi.encodeWithSelector(

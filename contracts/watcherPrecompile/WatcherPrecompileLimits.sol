@@ -64,16 +64,22 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
         address appGateway_,
         bytes32 limitType_
     ) internal returns (address appGateway) {
-        if (msg.sender == addressResolver.deliveryHelper()) {
-            appGateway = appGateway_;
-        } else {
-            appGateway = addressResolver.contractsToGateways(msg.sender);
-            if (appGateway == address(0)) appGateway = msg.sender;
-        }
-
+        appGateway = _getAppGateway(appGateway_);
         if (_limitParams[appGateway][limitType_].maxLimit == 0)
             revert ActionNotSupported(appGateway, limitType_);
 
-        _consumeFullLimit(1, _limitParams[appGateway][limitType_]); // Reverts on limit hit
+        // Reverts on limit hit
+        _consumeFullLimit(1, _limitParams[appGateway][limitType_]);
+    }
+
+    function _getAppGateway(
+        address appGateway_
+    ) internal view returns (address appGateway) {
+        address resolverAddress = msg.sender == addressResolver.deliveryHelper()
+            ? appGateway_
+            : msg.sender;
+
+        appGateway = addressResolver.contractsToGateways(resolverAddress);
+        if (appGateway == address(0)) appGateway = resolverAddress;
     }
 }

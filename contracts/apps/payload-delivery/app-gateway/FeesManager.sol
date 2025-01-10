@@ -64,7 +64,10 @@ contract FeesManager is AddressResolverUtil, Ownable {
             transmitter: winningBid_.transmitter
         });
 
-        (payloadId, root) = watcherPrecompile().finalize(finalizeParams);
+        (payloadId, root) = watcherPrecompile().finalize(
+            finalizeParams,
+            appGateway_
+        );
         return (payloadId, root, payloadDetails);
     }
 
