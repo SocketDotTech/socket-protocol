@@ -51,9 +51,9 @@ export const isConfigSetOnSocket = async (
   const plugConfigRegistered = await socket.getPlugConfig(plug.address);
   return (
     plugConfigRegistered.appGateway.toLowerCase() ===
-    appGateway?.toLowerCase() &&
+      appGateway?.toLowerCase() &&
     plugConfigRegistered.switchboard__.toLowerCase() ===
-    switchboard.toLowerCase()
+      switchboard.toLowerCase()
   );
 };
 
