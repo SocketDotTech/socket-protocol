@@ -48,7 +48,7 @@ contract DeliveryHelperTest is SetupTest {
 
         hoax(watcherEOA);
         addressResolver.setDeliveryHelper(address(deliveryHelper));
-        
+
         hoax(watcherEOA);
         addressResolver.setFeesManager(address(feesManager));
 

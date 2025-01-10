@@ -67,9 +67,6 @@ contract SuperTokenTest is DeliveryHelperTest {
             address(auctionManager)
         );
 
-        console.log("superTokenDeployer", address(superTokenDeployer));
-        console.log("superTokenApp", address(superTokenApp));
-
         appContracts = AppContracts({
             superTokenApp: superTokenApp,
             superTokenDeployer: superTokenDeployer,
