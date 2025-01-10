@@ -5,7 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {CronAppGateway} from "../../contracts/apps/cron/CronAppGateway.sol";
 
-contract SetTimeout is Script {
+contract SetTimeoutScript is Script {
     function run() external {
         string memory socketRPC = vm.envString("OFF_CHAIN_VM_RPC");
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");

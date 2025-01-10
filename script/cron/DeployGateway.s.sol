@@ -26,7 +26,9 @@ contract DeployGateway is Script {
         });
         CronAppGateway gateway = new CronAppGateway(
             addressResolver,
-            address(uint160(uint256(keccak256(abi.encodePacked(block.timestamp))))),
+            address(
+                uint160(uint256(keccak256(abi.encodePacked(block.timestamp))))
+            ),
             auctionManager,
             feesData
         );
