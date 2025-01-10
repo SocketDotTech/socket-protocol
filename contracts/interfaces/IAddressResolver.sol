@@ -21,6 +21,11 @@ interface IAddressResolver {
     /// @dev Returns interface pointing to zero address if not configured
     function deliveryHelper() external view returns (address);
 
+    /// @notice Gets the address of the fees manager contract
+    /// @return IFeesManager The fees manager interface
+    /// @dev Returns interface pointing to zero address if not configured
+    function feesManager() external view returns (address);
+
     /// @notice Gets the watcher precompile contract interface
     /// @return IWatcherPrecompile The watcher precompile interface
     /// @dev Returns interface pointing to zero address if not configured

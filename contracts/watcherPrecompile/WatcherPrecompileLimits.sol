@@ -75,7 +75,9 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
     function _getAppGateway(
         address appGateway_
     ) internal view returns (address appGateway) {
-        address resolverAddress = msg.sender == addressResolver.deliveryHelper()
+        address resolverAddress = msg.sender ==
+            addressResolver.deliveryHelper() ||
+            msg.sender == addressResolver.feesManager()
             ? appGateway_
             : msg.sender;
 

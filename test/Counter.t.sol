@@ -26,15 +26,21 @@ contract CounterTest is DeliveryHelperTest {
         );
 
         bytes32 counterId = deployer.counter();
-        UpdateLimitParams[] memory params = new UpdateLimitParams[](2);
+        UpdateLimitParams[] memory params = new UpdateLimitParams[](3);
         params[0] = UpdateLimitParams({
             limitType: FINALIZE,
-            appGateway: address(deployer),
+            appGateway: address(gateway),
             maxLimit: 10000000000000000000000,
             ratePerSecond: 10000000000000000000000
         });
         params[1] = UpdateLimitParams({
-            limitType: FINALIZE,
+            limitType: QUERY,
+            appGateway: address(gateway),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+        params[2] = UpdateLimitParams({
+            limitType: SCHEDULE,
             appGateway: address(gateway),
             maxLimit: 10000000000000000000000,
             ratePerSecond: 10000000000000000000000

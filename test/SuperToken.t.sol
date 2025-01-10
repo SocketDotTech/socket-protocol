@@ -67,6 +67,9 @@ contract SuperTokenTest is DeliveryHelperTest {
             address(auctionManager)
         );
 
+        console.log("superTokenDeployer", address(superTokenDeployer));
+        console.log("superTokenApp", address(superTokenApp));
+
         appContracts = AppContracts({
             superTokenApp: superTokenApp,
             superTokenDeployer: superTokenDeployer,
@@ -74,22 +77,10 @@ contract SuperTokenTest is DeliveryHelperTest {
             limitHook: superTokenDeployer.limitHook()
         });
 
-        UpdateLimitParams[] memory params = new UpdateLimitParams[](6);
+        UpdateLimitParams[] memory params = new UpdateLimitParams[](3);
         params[0] = UpdateLimitParams({
-            limitType: QUERY,
-            appGateway: address(appContracts.superTokenDeployer),
-            maxLimit: 10000000000000000000000,
-            ratePerSecond: 10000000000000000000000
-        });
-        params[1] = UpdateLimitParams({
             limitType: QUERY,
             appGateway: address(appContracts.superTokenApp),
-            maxLimit: 10000000000000000000000,
-            ratePerSecond: 10000000000000000000000
-        });
-        params[0] = UpdateLimitParams({
-            limitType: SCHEDULE,
-            appGateway: address(appContracts.superTokenDeployer),
             maxLimit: 10000000000000000000000,
             ratePerSecond: 10000000000000000000000
         });
@@ -99,13 +90,7 @@ contract SuperTokenTest is DeliveryHelperTest {
             maxLimit: 10000000000000000000000,
             ratePerSecond: 10000000000000000000000
         });
-        params[0] = UpdateLimitParams({
-            limitType: FINALIZE,
-            appGateway: address(appContracts.superTokenDeployer),
-            maxLimit: 10000000000000000000000,
-            ratePerSecond: 10000000000000000000000
-        });
-        params[1] = UpdateLimitParams({
+        params[2] = UpdateLimitParams({
             limitType: FINALIZE,
             appGateway: address(appContracts.superTokenApp),
             maxLimit: 10000000000000000000000,

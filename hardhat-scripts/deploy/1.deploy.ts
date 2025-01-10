@@ -269,6 +269,14 @@ const deployWatcherVMContracts = async () => {
 
       await updateContractSettings(
         addressResolver,
+        "feesManager",
+        "setFeesManager",
+        feesManager.address,
+        deployUtils.signer
+      );
+
+      await updateContractSettings(
+        addressResolver,
         "watcherPrecompile",
         "setWatcherPrecompile",
         watcherPrecompile.address,

@@ -119,7 +119,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
 
             payload = abi.encodeWithSelector(
                 IContractFactoryPlug.deployContract.selector,
-                params.payload,
+                payload,
                 salt,
                 appGateway,
                 switchboard_

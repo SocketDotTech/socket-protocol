@@ -36,7 +36,7 @@ contract ContractFactoryPlug is PlugBase, Ownable {
             }
         }
 
-        IPlug(addr).initialize(switchboard_, msg.sender, appGateway_);
+        IPlug(addr).initialize(appGateway_, msg.sender, switchboard_);
         emit Deployed(addr, salt);
         return addr;
     }
