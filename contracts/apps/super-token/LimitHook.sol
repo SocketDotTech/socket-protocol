@@ -14,12 +14,10 @@ contract LimitHook is Ownable, PlugBase {
 
     constructor(
         uint256 _burnLimit,
-        uint256 _mintLimit,
-        address _appGateway
+        uint256 _mintLimit
     ) Ownable(msg.sender) PlugBase(msg.sender) {
         burnLimit = _burnLimit;
         mintLimit = _mintLimit;
-        appGateway = _appGateway;
     }
 
     function setLimits(
@@ -39,9 +37,9 @@ contract LimitHook is Ownable, PlugBase {
     }
 
     function initialize(
-        address switchboard_,
+        address appGateway_,
         address socket_,
-        address appGateway_
+        address switchboard_
     ) external onlyOwner {
         socket__ = ISocket(socket_);
         appGateway = appGateway_;

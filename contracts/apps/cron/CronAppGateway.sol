@@ -23,7 +23,7 @@ contract CronAppGateway is AppGatewayBase {
             this.resolveTimeout.selector,
             block.timestamp
         );
-        watcherPrecompile().setTimeout(payload, delayInSeconds);
+        watcherPrecompile().setTimeout(address(this), payload, delayInSeconds);
     }
 
     function resolveTimeout(

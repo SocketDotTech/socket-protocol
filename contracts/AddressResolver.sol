@@ -13,6 +13,8 @@ import {Ownable} from "./utils/Ownable.sol";
 contract AddressResolver is Ownable, IAddressResolver {
     IWatcherPrecompile public override watcherPrecompile;
     address public override deliveryHelper;
+    address public override feesManager;
+
     uint256 public asyncPromiseCounter;
     address[] internal promises;
 
@@ -54,6 +56,12 @@ contract AddressResolver is Ownable, IAddressResolver {
     /// @param _deliveryHelper The address of the delivery helper
     function setDeliveryHelper(address _deliveryHelper) external onlyOwner {
         deliveryHelper = _deliveryHelper;
+    }
+
+    /// @notice Updates the address of the delivery helper
+    /// @param _feesManager The address of the fees manager
+    function setFeesManager(address _feesManager) external onlyOwner {
+        feesManager = _feesManager;
     }
 
     /// @notice Updates the address of the watcher precompile contract

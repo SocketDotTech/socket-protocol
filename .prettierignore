@@ -30,3 +30,4 @@ deployContracts.sh
 .cursorignore
 .env*
 images/
+setupInfraContracts.sh

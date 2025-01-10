@@ -89,7 +89,11 @@ async function connectPlug(
   }
 
   // Connect the plug
-  const tx = await plug.functions["connect"](appGateway, switchboard);
+  const tx = await plug.functions["initialize"](
+    appGateway,
+    socket.address,
+    switchboard
+  );
   console.log(`Connecting applicationGateway tx hash: ${tx.hash}`);
   await tx.wait();
 }

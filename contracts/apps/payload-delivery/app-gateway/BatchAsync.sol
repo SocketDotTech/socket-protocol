@@ -42,10 +42,12 @@ abstract contract BatchAsync is QueueAsync {
     function batch(
         FeesData memory feesData_,
         address auctionManager_,
-        bytes memory onCompleteData_
+        bytes memory onCompleteData_,
+        bytes32 sbType_
     ) external returns (bytes32) {
-        PayloadDetails[]
-            memory payloadDetailsArray = createPayloadDetailsArray();
+        PayloadDetails[] memory payloadDetailsArray = createPayloadDetailsArray(
+            sbType_
+        );
 
         if (payloadDetailsArray.length == 0) {
             return bytes32(0);
@@ -135,6 +137,7 @@ abstract contract BatchAsync is QueueAsync {
                 bytes32 payloadId = watcherPrecompile().query(
                     payloadDetails_[i].chainSlug,
                     payloadDetails_[i].target,
+                    payloadDetails_[i].appGateway,
                     payloadDetails_[i].next,
                     payloadDetails_[i].payload
                 );
@@ -212,13 +215,27 @@ abstract contract BatchAsync is QueueAsync {
             onCompleteData: onCompleteData_
         });
 
-        IAuctionManager(auctionManager_).startAuction(asyncId);
+        uint256 delayInSeconds = IAuctionManager(auctionManager_).startAuction(
+            asyncId
+        );
+        watcherPrecompile().setTimeout(
+            forwarderAppGateway,
+            abi.encodeWithSelector(this.endTimeout.selector, asyncId),
+            delayInSeconds
+        );
+
         emit PayloadSubmitted(
             asyncId,
             forwarderAppGateway,
             payloadDetails_,
             feesData_,
             auctionManager_
+        );
+    }
+
+    function endTimeout(bytes32 asyncId_) external onlyWatcherPrecompile {
+        IAuctionManager(payloadBatches[asyncId_].auctionManager).endAuction(
+            asyncId_
         );
     }
 

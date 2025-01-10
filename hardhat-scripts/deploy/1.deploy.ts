@@ -118,7 +118,7 @@ const main = async () => {
           const contractFactoryPlug: Contract = await getOrDeploy(
             contractName,
             `contracts/apps/payload-delivery/${contractName}.sol`,
-            [socket.address, socketOwner, sb.address],
+            [socket.address, socketOwner],
             deployUtils
           );
           deployUtils.addresses[contractName] = contractFactoryPlug.address;
@@ -264,6 +264,14 @@ const deployWatcherVMContracts = async () => {
         "deliveryHelper",
         "setDeliveryHelper",
         deliveryHelper.address,
+        deployUtils.signer
+      );
+
+      await updateContractSettings(
+        addressResolver,
+        "feesManager",
+        "setFeesManager",
+        feesManager.address,
         deployUtils.signer
       );
 

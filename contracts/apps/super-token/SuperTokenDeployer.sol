@@ -10,34 +10,41 @@ contract SuperTokenDeployer is AppDeployerBase, Ownable {
     bytes32 public superToken = _createContractId("superToken");
     bytes32 public limitHook = _createContractId("limitHook");
 
+    struct ConstructorParams {
+        uint256 _burnLimit;
+        uint256 _mintLimit;
+        string name_;
+        string symbol_;
+        uint8 decimals_;
+        address initialSupplyHolder_;
+        uint256 initialSupply_;
+    }
+
     constructor(
         address addressResolver_,
         address owner_,
-        uint256 _burnLimit,
-        uint256 _mintLimit,
-        string memory name_,
-        string memory symbol_,
-        uint8 decimals_,
-        address initialSupplyHolder_,
-        uint256 initialSupply_,
         address auctionManager_,
+        bytes32 sbType_,
+        ConstructorParams memory params,
         FeesData memory feesData_
-    ) AppDeployerBase(addressResolver_, auctionManager_) Ownable(owner_) {
+    )
+        AppDeployerBase(addressResolver_, auctionManager_, sbType_)
+        Ownable(owner_)
+    {
         creationCodeWithArgs[superToken] = abi.encodePacked(
             type(SuperToken).creationCode,
             abi.encode(
-                name_,
-                symbol_,
-                decimals_,
-                initialSupplyHolder_,
-                initialSupply_,
-                address(this)
+                params.name_,
+                params.symbol_,
+                params.decimals_,
+                params.initialSupplyHolder_,
+                params.initialSupply_
             )
         );
 
         creationCodeWithArgs[limitHook] = abi.encodePacked(
             type(LimitHook).creationCode,
-            abi.encode(_burnLimit, _mintLimit, address(this))
+            abi.encode(params._burnLimit, params._mintLimit)
         );
 
         _setFeesData(feesData_);

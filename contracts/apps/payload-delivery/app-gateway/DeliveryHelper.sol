@@ -143,6 +143,7 @@ contract DeliveryHelper is BatchAsync, Ownable {
             payloadId = watcherPrecompile().query(
                 payloadDetails.chainSlug,
                 payloadDetails.target,
+                payloadDetails.appGateway,
                 payloadDetails.next,
                 payloadDetails.payload
             );
@@ -152,7 +153,10 @@ contract DeliveryHelper is BatchAsync, Ownable {
                 payloadDetails: payloadDetails,
                 transmitter: payloadBatch.winningBid.transmitter
             });
-            (payloadId, root) = watcherPrecompile().finalize(finalizeParams);
+            (payloadId, root) = watcherPrecompile().finalize(
+                finalizeParams,
+                payloadBatch.appGateway
+            );
         }
 
         payloadIdToBatchHash[payloadId] = asyncId_;

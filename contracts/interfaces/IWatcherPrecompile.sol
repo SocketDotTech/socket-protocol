@@ -27,7 +27,8 @@ interface IWatcherPrecompile {
     /// @return payloadId The unique identifier for the request
     /// @return root The merkle root of the payload parameters
     function finalize(
-        FinalizeParams memory params_
+        FinalizeParams memory params_,
+        address originAppGateway_
     ) external returns (bytes32 payloadId, bytes32 root);
 
     /// @notice Creates a new query request
@@ -39,6 +40,7 @@ interface IWatcherPrecompile {
     function query(
         uint32 chainSlug,
         address targetAddress,
+        address appGateway,
         address[] memory asyncPromises,
         bytes memory payload
     ) external returns (bytes32 payloadId);
@@ -58,6 +60,7 @@ interface IWatcherPrecompile {
     /// @param payload_ The payload data
     /// @param delayInSeconds_ The timeout duration in seconds
     function setTimeout(
+        address appGateway,
         bytes calldata payload_,
         uint256 delayInSeconds_
     ) external;
@@ -84,4 +87,9 @@ interface IWatcherPrecompile {
     function setMaxTimeoutDelayInSeconds(
         uint256 maxTimeoutDelayInSeconds_
     ) external;
+
+    function switchboards(
+        uint32 chainSlug_,
+        bytes32 sbType_
+    ) external view returns (address);
 }

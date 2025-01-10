@@ -27,7 +27,8 @@ interface IDeliveryHelper {
     function batch(
         FeesData memory feesData_,
         address auctionManager_,
-        bytes memory onCompleteData_
+        bytes memory onCompleteData_,
+        bytes32 sbType_
     ) external returns (bytes32);
 
     function withdrawTo(

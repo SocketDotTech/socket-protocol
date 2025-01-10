@@ -37,17 +37,16 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
     event AuctionEnded(bytes32 asyncId_, Bid winningBid);
     event BidPlaced(bytes32 asyncId, Bid bid);
 
-    function startAuction(bytes32 asyncId_) external onlyPayloadDelivery {
+    function startAuction(
+        bytes32 asyncId_
+    ) external onlyDeliveryHelper returns (uint256) {
         require(!auctionClosed[asyncId_], "Auction closed");
         require(!auctionStarted[asyncId_], "Auction already started");
 
         auctionStarted[asyncId_] = true;
         emit AuctionStarted(asyncId_);
 
-        watcherPrecompile().setTimeout(
-            abi.encodeWithSelector(this.endAuction.selector, asyncId_),
-            auctionEndDelaySeconds
-        );
+        return auctionEndDelaySeconds;
     }
 
     /// @notice Places a bid for an auction
@@ -87,7 +86,7 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
 
     /// @notice Ends an auction
     /// @param asyncId_ The ID of the auction
-    function endAuction(bytes32 asyncId_) external onlyWatcherPrecompile {
+    function endAuction(bytes32 asyncId_) external onlyDeliveryHelper {
         auctionClosed[asyncId_] = true;
         Bid memory winningBid = winningBids[asyncId_];
         emit AuctionEnded(asyncId_, winningBid);

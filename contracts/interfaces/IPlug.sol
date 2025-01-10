@@ -17,8 +17,8 @@ interface IPlug {
     ) external payable returns (bytes memory);
 
     function initialize(
-        address switchboard_,
+        address appGateway_,
         address socket_,
-        address appGateway_
+        address switchboard_
     ) external;
 }
