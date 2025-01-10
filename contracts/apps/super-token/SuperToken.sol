@@ -74,9 +74,9 @@ contract SuperToken is ERC20, Ownable(msg.sender), PlugBase {
     }
 
     function initialize(
-        address switchboard_,
+        address appGateway_,
         address socket_,
-        address appGateway_
+        address switchboard_
     ) external onlyOwner {
         socket__ = ISocket(socket_);
         appGateway = appGateway_;

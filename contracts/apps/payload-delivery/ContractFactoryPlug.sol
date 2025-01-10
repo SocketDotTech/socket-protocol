@@ -62,9 +62,9 @@ contract ContractFactoryPlug is PlugBase, Ownable {
     }
 
     function initialize(
-        address switchboard_,
+        address appGateway_,
         address,
-        address appGateway_
+        address switchboard_
     ) external onlyOwner {
         _connectSocket(appGateway_, switchboard_);
     }
