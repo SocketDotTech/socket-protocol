@@ -26,14 +26,9 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     /// @param contractId_ The contract ID
     /// @param chainSlug_ The chain slug
     function _deploy(bytes32 contractId_, uint32 chainSlug_) internal {
-        address asyncPromise = addressResolver.deployAsyncPromiseContract(
-            address(this)
-        );
+        address asyncPromise = addressResolver.deployAsyncPromiseContract(address(this));
         isValidPromise[asyncPromise] = true;
-        IPromise(asyncPromise).then(
-            this.setAddress.selector,
-            abi.encode(chainSlug_, contractId_)
-        );
+        IPromise(asyncPromise).then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
 
         onCompleteData = abi.encode(chainSlug_);
         IDeliveryHelper(deliveryHelper()).queue(
@@ -49,21 +44,14 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     /// @notice Sets the address for a deployed contract
     /// @param data_ The data
     /// @param returnData_ The return data
-    function setAddress(
-        bytes memory data_,
-        bytes memory returnData_
-    ) external onlyPromises {
-        (uint32 chainSlug, bytes32 contractId) = abi.decode(
-            data_,
-            (uint32, bytes32)
-        );
+    function setAddress(bytes memory data_, bytes memory returnData_) external onlyPromises {
+        (uint32 chainSlug, bytes32 contractId) = abi.decode(data_, (uint32, bytes32));
 
-        address forwarderContractAddress = addressResolver
-            .getOrDeployForwarderContract(
-                address(this),
-                abi.decode(returnData_, (address)),
-                chainSlug
-            );
+        address forwarderContractAddress = addressResolver.getOrDeployForwarderContract(
+            address(this),
+            abi.decode(returnData_, (address)),
+            chainSlug
+        );
 
         forwarderAddresses[contractId][chainSlug] = forwarderContractAddress;
     }
@@ -80,8 +68,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId][chainSlug])
-            .getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId][chainSlug]).getOnChainAddress();
     }
 
     /// @notice Callback in pd promise to be called after all contracts are deployed
@@ -100,11 +87,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     /// @param chainSlug The chain slug
     /// @return socketAddress The socket address
     function getSocketAddress(uint32 chainSlug) public view returns (address) {
-        return
-            watcherPrecompile().appGatewayPlugs(
-                addressResolver.deliveryHelper(),
-                chainSlug
-            );
+        return watcherPrecompile().appGatewayPlugs(addressResolver.deliveryHelper(), chainSlug);
     }
 
     /// @notice Initializes the contract

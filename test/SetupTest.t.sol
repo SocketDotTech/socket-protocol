@@ -23,8 +23,7 @@ contract SetupTest is Test {
     uint public c = 1;
     address owner = address(uint160(c++));
 
-    uint256 watcherPrivateKey =
-        0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
+    uint256 watcherPrivateKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
     uint256 transmitterPrivateKey =
         0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d;
 
@@ -56,30 +55,14 @@ contract SetupTest is Test {
     SocketContracts public arbConfig;
     SocketContracts public optConfig;
 
-    function deploySocket(
-        uint32 chainSlug_
-    ) internal returns (SocketContracts memory) {
+    function deploySocket(uint32 chainSlug_) internal returns (SocketContracts memory) {
         Hasher hasher = new Hasher(owner);
         SignatureVerifier verifier = new SignatureVerifier(owner);
-        Socket socket = new Socket(
-            chainSlug_,
-            address(hasher),
-            address(verifier),
-            owner,
-            "test"
-        );
-        FastSwitchboard switchboard = new FastSwitchboard(
-            chainSlug_,
-            socket,
-            verifier,
-            owner
-        );
+        Socket socket = new Socket(chainSlug_, address(hasher), address(verifier), owner, "test");
+        FastSwitchboard switchboard = new FastSwitchboard(chainSlug_, socket, verifier, owner);
         SocketBatcher socketBatcher = new SocketBatcher(owner, socket);
 
-        ContractFactoryPlug contractFactoryPlug = new ContractFactoryPlug(
-            address(socket),
-            owner
-        );
+        ContractFactoryPlug contractFactoryPlug = new ContractFactoryPlug(address(socket), owner);
         FeesPlug feesPlug = new FeesPlug(address(socket), owner);
 
         vm.startPrank(owner);
@@ -92,11 +75,7 @@ contract SetupTest is Test {
         vm.stopPrank();
 
         hoax(watcherEOA);
-        watcherPrecompile.setSwitchboard(
-            chainSlug_,
-            FAST,
-            address(switchboard)
-        );
+        watcherPrecompile.setSwitchboard(chainSlug_, FAST, address(switchboard));
 
         return
             SocketContracts({
@@ -112,10 +91,7 @@ contract SetupTest is Test {
     function deployOffChainVMCore() internal {
         signatureVerifier = new SignatureVerifier(owner);
         addressResolver = new AddressResolver(watcherEOA);
-        watcherPrecompile = new WatcherPrecompile(
-            watcherEOA,
-            address(addressResolver)
-        );
+        watcherPrecompile = new WatcherPrecompile(watcherEOA, address(addressResolver));
 
         hoax(watcherEOA);
         addressResolver.setWatcherPrecompile(address(watcherPrecompile));
@@ -125,9 +101,7 @@ contract SetupTest is Test {
         bytes32 digest_,
         uint256 privateKey_
     ) internal pure returns (bytes memory sig) {
-        bytes32 digest = keccak256(
-            abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_)
-        );
+        bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
         (uint8 sigV, bytes32 sigR, bytes32 sigS) = vm.sign(privateKey_, digest);
         sig = new bytes(65);
         bytes1 v32 = bytes1(sigV);
@@ -139,21 +113,12 @@ contract SetupTest is Test {
         }
     }
 
-    function getSocketConfig(
-        uint32 chainSlug_
-    ) internal view returns (SocketContracts memory) {
+    function getSocketConfig(uint32 chainSlug_) internal view returns (SocketContracts memory) {
         return chainSlug_ == arbChainSlug ? arbConfig : optConfig;
     }
 
-    function createFeesData(
-        uint256 maxFees_
-    ) internal view returns (FeesData memory) {
-        return
-            FeesData({
-                feePoolChain: arbChainSlug,
-                feePoolToken: ETH_ADDRESS,
-                maxFees: maxFees_
-            });
+    function createFeesData(uint256 maxFees_) internal view returns (FeesData memory) {
+        return FeesData({feePoolChain: arbChainSlug, feePoolToken: ETH_ADDRESS, maxFees: maxFees_});
     }
 
     function relayTx(
@@ -164,13 +129,8 @@ contract SetupTest is Test {
         bytes memory watcherSignature
     ) internal returns (bytes memory) {
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
-        bytes32 transmitterDigest = keccak256(
-            abi.encode(address(socketConfig.socket), payloadId)
-        );
-        bytes memory transmitterSig = _createSignature(
-            transmitterDigest,
-            transmitterPrivateKey
-        );
+        bytes32 transmitterDigest = keccak256(abi.encode(address(socketConfig.socket), payloadId));
+        bytes memory transmitterSig = _createSignature(transmitterDigest, transmitterPrivateKey);
 
         vm.startPrank(transmitterEOA);
         ExecutePayloadParams memory params = ExecutePayloadParams({
@@ -185,30 +145,20 @@ contract SetupTest is Test {
             target: payloadDetails.target
         });
 
-        bytes memory returnData = socketConfig.socketBatcher.attestAndExecute(
-            params
-        );
+        bytes memory returnData = socketConfig.socketBatcher.attestAndExecute(params);
         vm.stopPrank();
         return returnData;
     }
 
-    function resolvePromises(
-        bytes32[] memory payloadIds,
-        bytes[] memory returnDatas_
-    ) internal {
+    function resolvePromises(bytes32[] memory payloadIds, bytes[] memory returnDatas_) internal {
         for (uint i = 0; i < payloadIds.length; i++) {
             resolvePromise(payloadIds[i], returnDatas_[i]);
         }
     }
 
-    function resolvePromise(
-        bytes32 payloadId,
-        bytes memory returnData
-    ) internal {
+    function resolvePromise(bytes32 payloadId, bytes memory returnData) internal {
         IWatcherPrecompile.ResolvedPromises[]
-            memory resolvedPromises = new IWatcherPrecompile.ResolvedPromises[](
-                1
-            );
+            memory resolvedPromises = new IWatcherPrecompile.ResolvedPromises[](1);
 
         bytes[] memory returnDatas = new bytes[](2);
         returnDatas[0] = returnData;
@@ -228,9 +178,7 @@ contract SetupTest is Test {
     ) internal pure returns (bytes32) {
         return
             bytes32(
-                (uint256(chainSlug_) << 224) |
-                    (uint256(uint160(switchboard_)) << 64) |
-                    counter_
+                (uint256(chainSlug_) << 224) | (uint256(uint160(switchboard_)) << 64) | counter_
             );
     }
 
@@ -241,25 +189,15 @@ contract SetupTest is Test {
     ) internal returns (bytes32[] memory) {
         bytes32[] memory payloadIds = new bytes32[](numPayloads);
         for (uint256 i = 0; i < numPayloads; i++) {
-            payloadIds[i] = getWritePayloadId(
-                chainSlug_,
-                switchboard_,
-                i + writePayloadIdCounter
-            );
+            payloadIds[i] = getWritePayloadId(chainSlug_, switchboard_, i + writePayloadIdCounter);
         }
 
         writePayloadIdCounter += numPayloads + 1;
         return payloadIds;
     }
 
-    function encodeTimeoutId(
-        uint256 timeoutCounter_
-    ) internal view returns (bytes32) {
+    function encodeTimeoutId(uint256 timeoutCounter_) internal view returns (bytes32) {
         // watcher address (160 bits) | counter (64 bits)
-        return
-            bytes32(
-                (uint256(uint160(address(watcherPrecompile))) << 64) |
-                    timeoutCounter_
-            );
+        return bytes32((uint256(uint160(address(watcherPrecompile))) << 64) | timeoutCounter_);
     }
 }

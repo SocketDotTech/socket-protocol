@@ -22,9 +22,7 @@ contract UpdateLimitsScript is Script {
 
         console.log("WatcherPrecompile address:", watcherPrecompile);
         console.log("CronAppGateway address:", cronAppGateway);
-        WatcherPrecompile watcherContract = WatcherPrecompile(
-            watcherPrecompile
-        );
+        WatcherPrecompile watcherContract = WatcherPrecompile(watcherPrecompile);
 
         // Create update params array
         UpdateLimitParams[] memory updates = new UpdateLimitParams[](1);
@@ -38,10 +36,7 @@ contract UpdateLimitsScript is Script {
         });
 
         // // Update the limits
-        bytes memory payload = abi.encodeCall(
-            watcherContract.updateLimitParams,
-            updates
-        );
+        bytes memory payload = abi.encodeCall(watcherContract.updateLimitParams, updates);
         console.logBytes(payload);
         watcherContract.updateLimitParams(updates);
 

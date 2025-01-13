@@ -43,14 +43,7 @@ contract InboxTest is Script {
         vm.startBroadcast(arbDeployerPrivateKey);
         address socket = vm.envAddress("SOCKET");
         MockSocket socketInstance = MockSocket(socket);
-        socketInstance.execute(
-            payloadId,
-            address(0),
-            address(0),
-            10000000,
-            bytes(""),
-            bytes("")
-        );
+        socketInstance.execute(payloadId, address(0), address(0), 10000000, bytes(""), bytes(""));
         vm.stopBroadcast();
     }
 }

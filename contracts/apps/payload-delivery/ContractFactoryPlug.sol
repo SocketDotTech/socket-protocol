@@ -8,10 +8,7 @@ import {Ownable} from "../../utils/Ownable.sol";
 contract ContractFactoryPlug is PlugBase, Ownable {
     event Deployed(address addr, bytes32 salt);
 
-    constructor(
-        address socket_,
-        address owner_
-    ) Ownable(owner_) PlugBase(socket_) {}
+    constructor(address socket_, address owner_) Ownable(owner_) PlugBase(socket_) {}
 
     function deployContract(
         bytes memory creationCode,
@@ -25,12 +22,7 @@ contract ContractFactoryPlug is PlugBase, Ownable {
 
         address addr;
         assembly {
-            addr := create2(
-                callvalue(),
-                add(creationCode, 0x20),
-                mload(creationCode),
-                salt
-            )
+            addr := create2(callvalue(), add(creationCode, 0x20), mload(creationCode), salt)
             if iszero(extcodesize(addr)) {
                 revert(0, 0)
             }
@@ -45,17 +37,9 @@ contract ContractFactoryPlug is PlugBase, Ownable {
     /// @param creationCode The creation code
     /// @param salt The salt
     /// @return address The deployed address
-    function getAddress(
-        bytes memory creationCode,
-        uint256 salt
-    ) public view returns (address) {
+    function getAddress(bytes memory creationCode, uint256 salt) public view returns (address) {
         bytes32 hash = keccak256(
-            abi.encodePacked(
-                bytes1(0xff),
-                address(this),
-                salt,
-                keccak256(creationCode)
-            )
+            abi.encodePacked(bytes1(0xff), address(this), salt, keccak256(creationCode))
         );
 
         return address(uint160(uint256(hash)));

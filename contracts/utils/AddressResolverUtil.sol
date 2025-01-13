@@ -23,10 +23,7 @@ abstract contract AddressResolverUtil {
     /// @notice Restricts function access to the auction house contract
     /// @dev Validates that msg.sender matches the registered auction house address
     modifier onlyDeliveryHelper() {
-        require(
-            msg.sender == addressResolver.deliveryHelper(),
-            "Only delivery helper"
-        );
+        require(msg.sender == addressResolver.deliveryHelper(), "Only delivery helper");
         _;
     }
 

@@ -38,8 +38,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
     }
 
     modifier onlyAuctionManager(bytes32 asyncId_) {
-        if (msg.sender != payloadBatches[asyncId_].auctionManager)
-            revert NotAuctionManager();
+        if (msg.sender != payloadBatches[asyncId_].auctionManager) revert NotAuctionManager();
         _;
     }
 
@@ -84,15 +83,9 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
         payloadDetailsArray = new PayloadDetails[](callParamsArray.length);
         for (uint256 i = 0; i < callParamsArray.length; i++) {
             CallParams memory params = callParamsArray[i];
-            address switchboard = watcherPrecompile().switchboards(
-                params.chainSlug,
-                sbType_
-            );
+            address switchboard = watcherPrecompile().switchboards(params.chainSlug, sbType_);
 
-            PayloadDetails memory payloadDetails = getPayloadDetails(
-                params,
-                switchboard
-            );
+            PayloadDetails memory payloadDetails = getPayloadDetails(params, switchboard);
             payloadDetailsArray[i] = payloadDetails;
         }
 
@@ -113,9 +106,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
         bytes memory payload = params.payload;
         address appGateway = msg.sender;
         if (params.callType == CallType.DEPLOY) {
-            bytes32 salt = keccak256(
-                abi.encode(appGateway, params.chainSlug, saltCounter++)
-            );
+            bytes32 salt = keccak256(abi.encode(appGateway, params.chainSlug, saltCounter++));
 
             payload = abi.encodeWithSelector(
                 IContractFactoryPlug.deployContract.selector,
@@ -134,23 +125,17 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
                 target: params.target,
                 payload: payload,
                 callType: params.callType,
-                executionGasLimit: params.gasLimit == 0
-                    ? 1_000_000
-                    : params.gasLimit,
+                executionGasLimit: params.gasLimit == 0 ? 1_000_000 : params.gasLimit,
                 next: next,
                 isSequential: params.isSequential
             });
     }
 
-    function getFeesData(
-        bytes32 asyncId_
-    ) external view returns (FeesData memory) {
+    function getFeesData(bytes32 asyncId_) external view returns (FeesData memory) {
         return payloadBatches[asyncId_].feesData;
     }
 
-    function getPayloadDetails(
-        bytes32 payloadId_
-    ) external view returns (PayloadDetails memory) {
+    function getPayloadDetails(bytes32 payloadId_) external view returns (PayloadDetails memory) {
         return payloadIdToPayloadDetails[payloadId_];
     }
 }

@@ -10,12 +10,7 @@ if (!scriptName) {
 }
 
 // Construct the JSON file path dynamically
-const jsonFilePath = path.join(
-  'broadcast',
-  `${scriptName}.s.sol`,
-  '7625382',
-  'run-latest.json',
-);
+const jsonFilePath = path.join('broadcast', `${scriptName}.s.sol`, '7625382', 'run-latest.json');
 
 // Validate that the file exists
 if (!fs.existsSync(jsonFilePath)) {
@@ -90,9 +85,7 @@ const checkTransactionStatus = async () => {
     if (data && data.status === 'SUCCESS') {
       if (data.response.length === 0) {
         if (tx.printed === false) {
-          console.log(
-            `Hash: ${tx.hash}, There are no logs for this transaction hash.`,
-          );
+          console.log(`Hash: ${tx.hash}, There are no logs for this transaction hash.`);
           tx.status = 'NO_LOGS';
           tx.printed = true;
           continue;
@@ -113,9 +106,7 @@ const checkTransactionStatus = async () => {
         const deployerDetails = payloads[0].deployerDetails || {};
 
         if (Object.keys(deployerDetails).length !== 0) {
-          console.log(
-            `Hash: ${tx.hash}, Status: ${status}, ChainId: ${payloads[0].chainSlug}`,
-          );
+          console.log(`Hash: ${tx.hash}, Status: ${status}, ChainId: ${payloads[0].chainSlug}`);
           console.log(`OnChainAddress: ${deployerDetails.onChainAddress}`);
           console.log(`ForwarderAddress: ${deployerDetails.forwarderAddress}`);
         } else {
@@ -131,8 +122,7 @@ const checkTransactionStatus = async () => {
     }
 
     // Check if any are still pending
-    if (tx.status !== 'COMPLETED' && tx.status !== 'NO_LOGS')
-      allCompleted = false;
+    if (tx.status !== 'COMPLETED' && tx.status !== 'NO_LOGS') allCompleted = false;
   }
 
   // Stop script and print final message if all transactions are COMPLETED

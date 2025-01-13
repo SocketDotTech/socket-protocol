@@ -10,11 +10,7 @@ import {FeesPlugin} from "../utils/FeesPlugin.sol";
 
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway
-abstract contract AppGatewayBase is
-    AddressResolverUtil,
-    IAppGateway,
-    FeesPlugin
-{
+abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin {
     bool public override isReadCall;
     address public auctionManager;
     bytes public onCompleteData;
@@ -31,12 +27,7 @@ abstract contract AppGatewayBase is
         deliveryHelper().clearQueue();
         addressResolver.clearPromises();
         _;
-        deliveryHelper().batch(
-            feesData,
-            auctionManager,
-            onCompleteData,
-            sbType
-        );
+        deliveryHelper().batch(feesData, auctionManager, onCompleteData, sbType);
         _markValidPromises();
     }
 
@@ -61,9 +52,7 @@ abstract contract AppGatewayBase is
     /// @notice Creates a contract ID
     /// @param contractName_ The contract name
     /// @return bytes32 The contract ID
-    function _createContractId(
-        string memory contractName_
-    ) internal pure returns (bytes32) {
+    function _createContractId(string memory contractName_) internal pure returns (bytes32) {
         return keccak256(abi.encode(contractName_));
     }
 

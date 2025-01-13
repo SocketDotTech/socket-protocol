@@ -30,23 +30,13 @@ contract FeesManager is AddressResolverUtil, Ownable {
     )
         external
         onlyDeliveryHelper
-        returns (
-            bytes32 payloadId,
-            bytes32 root,
-            PayloadDetails memory payloadDetails
-        )
+        returns (bytes32 payloadId, bytes32 root, PayloadDetails memory payloadDetails)
     {
         bytes32 feesId = _encodeFeesId(feesCounter++);
         // Create payload for pool contract
         bytes memory payload = abi.encodeCall(
             IFeesPlug.distributeFee,
-            (
-                appGateway_,
-                feesData_.feePoolToken,
-                winningBid_.fee,
-                winningBid_.transmitter,
-                feesId
-            )
+            (appGateway_, feesData_.feePoolToken, winningBid_.fee, winningBid_.transmitter, feesId)
         );
 
         payloadDetails = PayloadDetails({
@@ -65,10 +55,7 @@ contract FeesManager is AddressResolverUtil, Ownable {
             transmitter: winningBid_.transmitter
         });
 
-        (payloadId, root) = watcherPrecompile().finalize(
-            finalizeParams,
-            appGateway_
-        );
+        (payloadId, root) = watcherPrecompile().finalize(finalizeParams, appGateway_);
         return (payloadId, root, payloadDetails);
     }
 
@@ -105,16 +92,12 @@ contract FeesManager is AddressResolverUtil, Ownable {
             });
     }
 
-    function _encodeFeesId(
-        uint256 feesCounter_
-    ) internal view returns (bytes32) {
+    function _encodeFeesId(uint256 feesCounter_) internal view returns (bytes32) {
         // watcher address (160 bits) | counter (64 bits)
         return bytes32((uint256(uint160(address(this))) << 64) | feesCounter_);
     }
 
-    function _getFeesPlugAddress(
-        uint32 chainSlug_
-    ) internal view returns (address) {
+    function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (address) {
         return watcherPrecompile().appGatewayPlugs(address(this), chainSlug_);
     }
 }

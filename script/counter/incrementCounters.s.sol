@@ -13,12 +13,8 @@ contract IncrementCounters is Script {
 
         vm.createSelectFork(socketRPC);
 
-        CounterDeployer deployer = CounterDeployer(
-            vm.envAddress("COUNTER_DEPLOYER")
-        );
-        CounterAppGateway gateway = CounterAppGateway(
-            vm.envAddress("COUNTER_APP_GATEWAY")
-        );
+        CounterDeployer deployer = CounterDeployer(vm.envAddress("COUNTER_DEPLOYER"));
+        CounterAppGateway gateway = CounterAppGateway(vm.envAddress("COUNTER_APP_GATEWAY"));
 
         address counterForwarderArbitrumSepolia = deployer.forwarderAddresses(
             deployer.counter(),

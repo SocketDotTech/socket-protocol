@@ -37,9 +37,7 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
     event AuctionEnded(bytes32 asyncId_, Bid winningBid);
     event BidPlaced(bytes32 asyncId, Bid bid);
 
-    function startAuction(
-        bytes32 asyncId_
-    ) external onlyDeliveryHelper returns (uint256) {
+    function startAuction(bytes32 asyncId_) external onlyDeliveryHelper returns (uint256) {
         require(!auctionClosed[asyncId_], "Auction closed");
         require(!auctionStarted[asyncId_], "Auction already started");
 
@@ -62,21 +60,15 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
         require(!auctionClosed[asyncId_], "Auction closed");
 
         address transmitter = signatureVerifier__.recoverSigner(
-            keccak256(
-                abi.encode(address(this), vmChainSlug, asyncId_, fee, extraData)
-            ),
+            keccak256(abi.encode(address(this), vmChainSlug, asyncId_, fee, extraData)),
             transmitterSignature
         );
 
-        Bid memory newBid = Bid({
-            fee: fee,
-            transmitter: transmitter,
-            extraData: extraData
-        });
+        Bid memory newBid = Bid({fee: fee, transmitter: transmitter, extraData: extraData});
 
-        FeesData memory feesData = IDeliveryHelper(
-            addressResolver.deliveryHelper()
-        ).getFeesData(asyncId_);
+        FeesData memory feesData = IDeliveryHelper(addressResolver.deliveryHelper()).getFeesData(
+            asyncId_
+        );
         require(fee <= feesData.maxFees, "Bid exceeds max fees");
         if (fee < winningBids[asyncId_].fee) return;
 

@@ -49,30 +49,18 @@ contract MockWatcherPrecompile {
     /// @param targetAddress The address of the target contract
     /// @param payloadId The unique identifier for the query
     /// @param payload The query data
-    event QueryRequested(
-        uint32 chainSlug,
-        address targetAddress,
-        bytes32 payloadId,
-        bytes payload
-    );
+    event QueryRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
 
     /// @notice Emitted when a finalize request is made
     /// @param payloadId The unique identifier for the request
     /// @param asyncRequest The async request details
-    event FinalizeRequested(
-        bytes32 indexed payloadId,
-        AsyncRequest asyncRequest
-    );
+    event FinalizeRequested(bytes32 indexed payloadId, AsyncRequest asyncRequest);
 
     /// @notice Emitted when a request is finalized
     /// @param payloadId The unique identifier for the request
     /// @param asyncRequest The async request details
     /// @param watcherSignature The signature from the watcher
-    event Finalized(
-        bytes32 indexed payloadId,
-        AsyncRequest asyncRequest,
-        bytes watcherSignature
-    );
+    event Finalized(bytes32 indexed payloadId, AsyncRequest asyncRequest, bytes watcherSignature);
 
     /// @notice Emitted when a promise is resolved
     /// @param payloadId The unique identifier for the resolved promise
@@ -90,12 +78,7 @@ contract MockWatcherPrecompile {
     /// @param target The target address for the timeout
     /// @param payload The payload data
     /// @param executedAt The epoch time when the task was executed
-    event TimeoutResolved(
-        bytes32 timeoutId,
-        address target,
-        bytes payload,
-        uint256 executedAt
-    );
+    event TimeoutResolved(bytes32 timeoutId, address target, bytes payload, uint256 executedAt);
 
     /// @notice Contract constructor
     /// @param _owner Address of the contract owner
@@ -106,10 +89,7 @@ contract MockWatcherPrecompile {
     /// @notice Sets a timeout for a payload execution on app gateway
     /// @param payload_ The payload data
     /// @param delayInSeconds_ The delay in seconds
-    function setTimeout(
-        bytes calldata payload_,
-        uint256 delayInSeconds_
-    ) external {
+    function setTimeout(bytes calldata payload_, uint256 delayInSeconds_) external {
         uint256 executeAt = block.timestamp + delayInSeconds_;
         bytes32 timeoutId = _encodeTimeoutId(timeoutCounter++);
         timeoutRequests[timeoutId] = TimeoutRequest(
@@ -130,9 +110,7 @@ contract MockWatcherPrecompile {
     function resolveTimeout(bytes32 timeoutId) external {
         TimeoutRequest storage timeoutRequest = timeoutRequests[timeoutId];
 
-        (bool success, ) = address(timeoutRequest.target).call(
-            timeoutRequest.payload
-        );
+        (bool success, ) = address(timeoutRequest.target).call(timeoutRequest.payload);
         emit TimeoutResolved(
             timeoutId,
             timeoutRequest.target,
@@ -200,9 +178,7 @@ contract MockWatcherPrecompile {
     /// @notice Resolves multiple promises with their return data
     /// @param resolvedPromises_ Array of resolved promises and their return data
     /// @dev Only callable by the contract owner
-    function resolvePromises(
-        ResolvedPromises[] calldata resolvedPromises_
-    ) external {
+    function resolvePromises(ResolvedPromises[] calldata resolvedPromises_) external {
         for (uint256 i = 0; i < resolvedPromises_.length; i++) {
             emit PromiseResolved(resolvedPromises_[i].payloadId);
         }
@@ -241,18 +217,13 @@ contract MockWatcherPrecompile {
 
         return
             bytes32(
-                (uint256(chainSlug_) << 224) |
-                    (uint256(uint160(switchboard)) << 64) |
-                    counter_
+                (uint256(chainSlug_) << 224) | (uint256(uint160(switchboard)) << 64) | counter_
             );
     }
 
-    function _encodeTimeoutId(
-        uint256 timeoutCounter_
-    ) internal view returns (bytes32) {
+    function _encodeTimeoutId(uint256 timeoutCounter_) internal view returns (bytes32) {
         // watcher address (160 bits) | counter (64 bits)
-        return
-            bytes32((uint256(uint160(address(this))) << 64) | timeoutCounter_);
+        return bytes32((uint256(uint160(address(this))) << 64) | timeoutCounter_);
     }
 
     function setAppGateways(AppGatewayConfig[] calldata configs) external {
@@ -264,9 +235,7 @@ contract MockWatcherPrecompile {
             });
 
             // Create reverse mapping from app gateway to plug for easy lookup
-            appGatewayPlugs[configs[i].appGateway][
-                configs[i].chainSlug
-            ] = configs[i].plug;
+            appGatewayPlugs[configs[i].appGateway][configs[i].chainSlug] = configs[i].plug;
         }
     }
 

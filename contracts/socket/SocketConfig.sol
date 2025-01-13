@@ -47,10 +47,7 @@ abstract contract SocketConfig is ISocket, AccessControl {
     /**
      * @notice connects Plug to Socket and sets the config for given `siblingChainSlug_`
      */
-    function connect(
-        address appGateway_,
-        address switchboard_
-    ) external override {
+    function connect(address appGateway_, address switchboard_) external override {
         if (!isValidSwitchboard[switchboard_]) revert InvalidSwitchboard();
         PlugConfig storage _plugConfig = _plugConfigs[msg.sender];
 
