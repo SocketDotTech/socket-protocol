@@ -1,40 +1,12 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
-import {PayloadDetails, AsyncRequest, FinalizeParams, PayloadRootParams} from "../common/Structs.sol";
+import {PayloadDetails, AsyncRequest, FinalizeParams, PayloadRootParams, AppGatewayConfig, PlugConfig, ResolvedPromises} from "../common/Structs.sol";
 
 /// @title IWatcherPrecompile
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
 /// @dev Defines core functionality for payload processing and promise resolution
 interface IWatcherPrecompile {
-    /// @notice Configuration struct for app gateway setup
-    /// @param chainSlug The identifier of the destination network
-    /// @param appGateway The address of the app gateway
-    /// @param plug The address of the plug
-    /// @param switchboard The address of the switchboard
-    struct AppGatewayConfig {
-        uint32 chainSlug;
-        address appGateway;
-        address plug;
-        address switchboard;
-    }
-
-    /// @notice Configuration struct for plug settings
-    /// @param appGateway The address of the app gateway
-    /// @param switchboard The address of the switchboard
-    struct PlugConfig {
-        address appGateway;
-        address switchboard;
-    }
-
-    /// @notice Struct for resolved promise data
-    /// @param payloadId The unique identifier for the payload
-    /// @param returnData Array of return data from resolved promises
-    struct ResolvedPromises {
-        bytes32 payloadId;
-        bytes[] returnData;
-    }
-
     /// @notice Sets up app gateway configurations
     /// @param configs Array of app gateway configurations
     /// @dev Only callable by authorized addresses

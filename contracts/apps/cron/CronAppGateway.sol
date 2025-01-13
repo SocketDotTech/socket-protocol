@@ -8,7 +8,6 @@ contract CronAppGateway is AppGatewayBase {
         uint256 creationTimestamp,
         uint256 executionTimestamp
     );
-
     constructor(
         address _addressResolver,
         address deployerContract_,
