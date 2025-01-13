@@ -18,7 +18,7 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
     mapping(bytes32 => bool) public override auctionClosed;
     mapping(bytes32 => bool) public override auctionStarted;
 
-    uint256 public constant auctionEndDelaySeconds = 0;
+    uint256 public constant auctionEndDelaySeconds = 15;
 
     /// @notice Constructor for AuctionManager
     /// @param addressResolver_ The address of the address resolver

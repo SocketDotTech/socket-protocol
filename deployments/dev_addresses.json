@@ -13,10 +13,10 @@
     "AddressResolver": "0x7EdDD3A856a94Cf8D0614000B3F22304b2e83198",
     "WatcherPrecompile": "0x4E781208AD9AebD5340a24b4AEbe2A5324Cd7b1a",
     "SignatureVerifier": "0xd49bBbba3d670AC67C9216768CD52B16c9521C34",
-    "AuctionManager": "0x779954f870aaD4A81cbe916e526F55dc49154069",
     "FeesManager": "0x68559Bf8C4E3Fca87dcE67AFbc5A625bB4a64c5e",
     "DeliveryHelper": "0x6DAAc1140Eb29778dBB12C90426bDcC05e1a1c50",
-    "startBlock": 3879
+    "startBlock": 3879,
+    "AuctionManager": "0x945b0010C2Fc56Cb641416fF15fde2b777A38B01"
   },
   "11155420": {
     "SignatureVerifier": "0x804Af74b5b3865872bEf354e286124253782FA95",
