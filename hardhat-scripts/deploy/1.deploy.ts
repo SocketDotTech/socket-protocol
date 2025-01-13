@@ -231,6 +231,7 @@ const deployWatcherVMContracts = async () => {
         `contracts/apps/payload-delivery/app-gateway/${contractName}.sol`,
         [
           OFF_CHAIN_VM_CHAIN_ID,
+          auctionEndDelaySeconds,
           addressResolver.address,
           signatureVerifier.address,
           offChainVMOwner,

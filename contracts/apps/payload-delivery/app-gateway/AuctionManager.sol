@@ -27,13 +27,14 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
     /// @param signatureVerifier_ The address of the signature verifier
     constructor(
         uint32 vmChainSlug_,
+        uint256 auctionEndDelaySeconds_,
         address addressResolver_,
         SignatureVerifier signatureVerifier_,
         address owner_
     ) AddressResolverUtil(addressResolver_) Ownable(owner_) {
         vmChainSlug = vmChainSlug_;
         signatureVerifier__ = signatureVerifier_;
-        auctionEndDelaySeconds = 3;
+        auctionEndDelaySeconds = auctionEndDelaySeconds_;
     }
 
     event AuctionStarted(bytes32 asyncId_);
