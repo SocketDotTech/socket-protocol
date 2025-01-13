@@ -125,7 +125,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
     function resolveTimeout(bytes32 timeoutId) external onlyOwner {
         TimeoutRequest storage timeoutRequest = timeoutRequests[timeoutId];
         if (timeoutRequest.isResolved) revert TimeoutAlreadyResolved();
-        if (timeoutRequest.executeAt > block.timestamp) revert ResolvingTimeoutTooEarly();
+        if (block.timestamp < timeoutRequest.executeAt) revert ResolvingTimeoutTooEarly();
         (bool success, ) = address(timeoutRequest.target).call(timeoutRequest.payload);
         if (!success) revert CallFailed();
         timeoutRequest.isResolved = true;
