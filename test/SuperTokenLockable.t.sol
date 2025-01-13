@@ -50,8 +50,8 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         SuperTokenLockableAppGateway superTokenLockableApp = new SuperTokenLockableAppGateway(
             address(addressResolver),
             address(superTokenLockableDeployer),
-            createFeesData(maxFees),
-            address(auctionManager)
+            address(auctionManager),
+            createFeesData(maxFees)
         );
 
         setLimit(address(superTokenLockableApp));
@@ -112,9 +112,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         return payloadDetails;
     }
 
-    function testContractDeployment1() public {
-        PayloadDetails[] memory payloadDetails = createDeployPayloadDetailsArray(arbChainSlug);
-
+    function testContractDeployment() public {
         bytes32 asyncId = _deploy(
             contractIds,
             arbChainSlug,
@@ -123,6 +121,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             address(appContracts.superTokenLockableApp)
         );
 
+        PayloadDetails[] memory payloadDetails = createDeployPayloadDetailsArray(arbChainSlug);
         checkPayloadBatchAndDetails(
             payloadDetails,
             asyncId,
