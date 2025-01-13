@@ -36,14 +36,12 @@ contract LimitHook is Ownable, PlugBase {
         if (amount_ > mintLimit) revert MintLimitExceeded();
     }
 
-    function initialize(
+    function connectSocket(
         address appGateway_,
         address socket_,
         address switchboard_
     ) external onlyOwner {
-        socket__ = ISocket(socket_);
-        appGateway = appGateway_;
         _claimOwner(socket_);
-        _connectSocket(appGateway_, switchboard_);
+        _connectSocket(appGateway_, socket_, switchboard_);
     }
 }

@@ -36,8 +36,12 @@ abstract contract PlugBase is IPlug {
     /// @param switchboard_ The switchboard address
     function _connectSocket(
         address appGateway_,
+        address socket_,
         address switchboard_
     ) internal {
+        _setSocket(socket_);
+        appGateway = appGateway_;
+
         socket__.connect(appGateway_, switchboard_);
     }
 
@@ -50,7 +54,7 @@ abstract contract PlugBase is IPlug {
 
     /// @notice Sets the socket
     /// @param socket_ The socket address
-    function setSocket(address socket_) internal {
+    function _setSocket(address socket_) internal {
         socket__ = ISocket(socket_);
     }
 }
