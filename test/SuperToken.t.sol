@@ -45,27 +45,27 @@ contract SuperTokenTest is DeliveryHelperTest {
 
     function deploySuperTokenApp() internal {
         SuperTokenLockableDeployer superTokenLockableDeployer = new SuperTokenLockableDeployer(
-            address(addressResolver),
-            owner,
-            address(auctionManager),
-            FAST,
-            SuperTokenLockableDeployer.ConstructorParams({
-                _burnLimit: 10000000000000000000000,
-                _mintLimit: 10000000000000000000000,
-                name_: "SUPER TOKEN",
-                symbol_: "SUPER",
-                decimals_: 18,
-                initialSupplyHolder_: owner,
-                initialSupply_: 1000000000 ether
-            }),
-            createFeesData(maxFees)
-        );
+                address(addressResolver),
+                owner,
+                address(auctionManager),
+                FAST,
+                SuperTokenLockableDeployer.ConstructorParams({
+                    _burnLimit: 10000000000000000000000,
+                    _mintLimit: 10000000000000000000000,
+                    name_: "SUPER TOKEN",
+                    symbol_: "SUPER",
+                    decimals_: 18,
+                    initialSupplyHolder_: owner,
+                    initialSupply_: 1000000000 ether
+                }),
+                createFeesData(maxFees)
+            );
         SuperTokenLockableAppGateway superTokenLockableApp = new SuperTokenLockableAppGateway(
-            address(addressResolver),
-            address(superTokenLockableDeployer),
-            createFeesData(maxFees),
-            address(auctionManager)
-        );
+                address(addressResolver),
+                address(superTokenLockableDeployer),
+                createFeesData(maxFees),
+                address(auctionManager)
+            );
 
         appContracts = AppContracts({
             superTokenLockableApp: superTokenLockableApp,
@@ -257,14 +257,18 @@ contract SuperTokenTest is DeliveryHelperTest {
         beforeBridge();
 
         userOrder = SuperTokenLockableAppGateway.UserOrder({
-            srcToken: appContracts.superTokenLockableDeployer.forwarderAddresses(
-                appContracts.superTokenLockable,
-                arbChainSlug
-            ),
-            dstToken: appContracts.superTokenLockableDeployer.forwarderAddresses(
-                appContracts.superTokenLockable,
-                optChainSlug
-            ),
+            srcToken: appContracts
+                .superTokenLockableDeployer
+                .forwarderAddresses(
+                    appContracts.superTokenLockable,
+                    arbChainSlug
+                ),
+            dstToken: appContracts
+                .superTokenLockableDeployer
+                .forwarderAddresses(
+                    appContracts.superTokenLockable,
+                    optChainSlug
+                ),
             user: owner, // 2 account anvil
             srcAmount: srcAmount, // .01 ETH in wei
             deadline: 1672531199 // Unix timestamp for a future date
