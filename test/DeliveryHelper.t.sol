@@ -61,23 +61,23 @@ contract DeliveryHelperTest is SetupTest {
 
     function connectDeliveryHelper() internal {
         vm.startPrank(owner);
-        arbConfig.contractFactoryPlug.initialize(
+        arbConfig.contractFactoryPlug.connectSocket(
             address(deliveryHelper),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
-        optConfig.contractFactoryPlug.initialize(
+        optConfig.contractFactoryPlug.connectSocket(
             address(deliveryHelper),
             address(optConfig.socket),
             address(optConfig.switchboard)
         );
 
-        arbConfig.feesPlug.initialize(
+        arbConfig.feesPlug.connectSocket(
             address(feesManager),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
-        optConfig.feesPlug.initialize(
+        optConfig.feesPlug.connectSocket(
             address(feesManager),
             address(optConfig.socket),
             address(optConfig.switchboard)
@@ -253,8 +253,7 @@ contract DeliveryHelperTest is SetupTest {
     }
 
     function _configure(
-        bytes32[] memory payloadIds,
-        address appDeployer_
+        bytes32[] memory payloadIds
     ) internal returns (bytes32 asyncId) {
         asyncId = getCurrentAsyncId();
         asyncCounterTest++;
@@ -424,7 +423,7 @@ contract DeliveryHelperTest is SetupTest {
         address target_,
         address appGateway_,
         address forwarder_,
-        bytes32 callType_,
+        bytes32,
         bytes memory payload_
     ) internal returns (PayloadDetails memory payloadDetails) {
         address asyncPromise = predictAsyncPromiseAddress(

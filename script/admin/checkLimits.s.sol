@@ -7,7 +7,7 @@ import {LimitParams} from "../../contracts/common/Structs.sol";
 import {SCHEDULE, QUERY, FINALIZE} from "../../contracts/common/Constants.sol";
 
 contract CheckLimitsScript is Script {
-    function run() external {
+    function run() external view {
         address watcherPrecompile = vm.envAddress("WATCHER_PRECOMPILE");
         address cronAppGateway = vm.envAddress("CRON_APP_GATEWAY");
 

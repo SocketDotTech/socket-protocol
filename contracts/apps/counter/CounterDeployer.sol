@@ -27,7 +27,7 @@ contract CounterDeployer is AppDeployerBase, Ownable {
         _deploy(counter, chainSlug);
     }
 
-    function initialize(uint32) public override {
+    function initialize(uint32) public pure override {
         return;
     }
 
