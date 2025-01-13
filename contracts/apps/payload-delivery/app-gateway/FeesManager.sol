@@ -9,14 +9,15 @@ import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Constants.sol";
 import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
 
-/// @title DeliveryHelper
-/// @notice Contract for managing auctions and placing bids
+/// @title FeesManager
+/// @notice Contract for managing fees
 contract FeesManager is AddressResolverUtil, Ownable {
     uint256 public feesCounter;
     mapping(uint32 => uint256) public feeCollectionGasLimit;
 
-    /// @notice Constructor for DeliveryHelper
+    /// @notice Constructor for FeesManager
     /// @param addressResolver_ The address of the address resolver
+    /// @param owner_ The address of the owner
     constructor(
         address addressResolver_,
         address owner_
@@ -72,6 +73,8 @@ contract FeesManager is AddressResolverUtil, Ownable {
     }
 
     /// @notice Withdraws funds to a specified receiver
+    /// @dev This function is used to withdraw fees from the fees plug
+    /// @param appGateway_ The address of the app gateway
     /// @param chainSlug_ The chain identifier
     /// @param token_ The address of the token
     /// @param amount_ The amount of tokens to withdraw
