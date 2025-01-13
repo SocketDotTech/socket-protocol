@@ -59,8 +59,7 @@ contract SuperTokenLockableDeployer is AppDeployerBase, Ownable {
     // check AppDeployerBase.allPayloadsExecuted and AppGateway.queueAndDeploy
     function initialize(uint32 chainSlug) public override async {
         address limitHookContract = getOnChainAddress(limitHook, chainSlug);
-        SuperTokenLockable(forwarderAddresses[superTokenLockable][chainSlug]).setLimitHook(
-            limitHookContract
-        );
+        SuperTokenLockable(forwarderAddresses[superTokenLockable][chainSlug])
+            .setLimitHook(limitHookContract);
     }
 }
