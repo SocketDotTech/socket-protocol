@@ -27,18 +27,12 @@ abstract contract PlugBase is IPlug {
     /// @notice Inbound function for handling incoming messages
     /// @param payload_ The payload
     /// @return bytes memory The encoded return data
-    function inbound(
-        bytes calldata payload_
-    ) external payable virtual returns (bytes memory) {}
+    function inbound(bytes calldata payload_) external payable virtual returns (bytes memory) {}
 
     /// @notice Connects the plug to the app gateway and switchboard
     /// @param appGateway_ The app gateway address
     /// @param switchboard_ The switchboard address
-    function _connectSocket(
-        address appGateway_,
-        address socket_,
-        address switchboard_
-    ) internal {
+    function _connectSocket(address appGateway_, address socket_, address switchboard_) internal {
         _setSocket(socket_);
         appGateway = appGateway_;
 

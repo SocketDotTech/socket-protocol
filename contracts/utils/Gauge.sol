@@ -4,9 +4,7 @@ import {LimitParams} from "../common/Structs.sol";
 import {LimitReached} from "../common/Errors.sol";
 
 abstract contract Gauge {
-    function _getCurrentLimit(
-        LimitParams storage _params
-    ) internal view returns (uint256 _limit) {
+    function _getCurrentLimit(LimitParams storage _params) internal view returns (uint256 _limit) {
         uint256 timeElapsed = block.timestamp - _params.lastUpdateTimestamp;
         uint256 limitIncrease = timeElapsed * _params.ratePerSecond;
 
@@ -34,10 +32,7 @@ abstract contract Gauge {
         }
     }
 
-    function _consumeFullLimit(
-        uint256 amount_,
-        LimitParams storage _params
-    ) internal {
+    function _consumeFullLimit(uint256 amount_, LimitParams storage _params) internal {
         uint256 currentLimit = _getCurrentLimit(_params);
         if (currentLimit >= amount_) {
             _params.lastUpdateTimestamp = block.timestamp;

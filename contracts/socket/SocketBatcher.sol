@@ -43,11 +43,7 @@ contract SocketBatcher is Ownable {
             );
     }
 
-    function rescueFunds(
-        address token_,
-        address to_,
-        uint256 amount_
-    ) external onlyOwner {
+    function rescueFunds(address token_, address to_, uint256 amount_) external onlyOwner {
         RescueFundsLib.rescueFunds(token_, to_, amount_);
     }
 }

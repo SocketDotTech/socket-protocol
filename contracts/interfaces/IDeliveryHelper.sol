@@ -42,14 +42,9 @@ interface IDeliveryHelper {
 
     function cancelTransaction(bytes32 asyncId_) external;
 
-    function startBatchProcessing(
-        bytes32 asyncId_,
-        Bid memory winningBid
-    ) external;
+    function startBatchProcessing(bytes32 asyncId_, Bid memory winningBid) external;
 
-    function getFeesData(
-        bytes32 asyncId_
-    ) external view returns (FeesData memory);
+    function getFeesData(bytes32 asyncId_) external view returns (FeesData memory);
 
     function getCurrentAsyncId() external view returns (bytes32);
 }

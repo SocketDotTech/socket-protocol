@@ -45,31 +45,20 @@ abstract contract BatchAsync is QueueAsync {
         bytes memory onCompleteData_,
         bytes32 sbType_
     ) external returns (bytes32) {
-        PayloadDetails[] memory payloadDetailsArray = createPayloadDetailsArray(
-            sbType_
-        );
+        PayloadDetails[] memory payloadDetailsArray = createPayloadDetailsArray(sbType_);
 
         if (payloadDetailsArray.length == 0) {
             return bytes32(0);
         }
 
         // Default flow for other cases (including mixed read/write)
-        return
-            deliverPayload(
-                payloadDetailsArray,
-                feesData_,
-                auctionManager_,
-                onCompleteData_
-            );
+        return deliverPayload(payloadDetailsArray, feesData_, auctionManager_, onCompleteData_);
     }
 
     /// @notice Callback function for handling promises
     /// @param asyncId_ The ID of the batch
     /// @param payloadDetails_ The payload details
-    function callback(
-        bytes memory asyncId_,
-        bytes memory payloadDetails_
-    ) external virtual {}
+    function callback(bytes memory asyncId_, bytes memory payloadDetails_) external virtual {}
 
     /// @notice Delivers a payload batch
     /// @param payloadDetails_ The payload details
@@ -126,8 +115,9 @@ abstract contract BatchAsync is QueueAsync {
 
         if (readEndIndex > 0) {
             address[] memory lastBatchPromises = new address[](readEndIndex);
-            address batchPromise = IAddressResolver(addressResolver)
-                .deployAsyncPromiseContract(address(this));
+            address batchPromise = IAddressResolver(addressResolver).deployAsyncPromiseContract(
+                address(this)
+            );
             isValidPromise[batchPromise] = true;
 
             for (uint256 i = 0; i < readEndIndex; i++) {
@@ -142,18 +132,10 @@ abstract contract BatchAsync is QueueAsync {
                     payloadDetails_[i].payload
                 );
                 payloadIdToBatchHash[payloadId] = asyncId;
-                emit PayloadAsyncRequested(
-                    asyncId,
-                    payloadId,
-                    bytes32(0),
-                    payloadDetails_[i]
-                );
+                emit PayloadAsyncRequested(asyncId, payloadId, bytes32(0), payloadDetails_[i]);
             }
 
-            IPromise(batchPromise).then(
-                this.callback.selector,
-                abi.encode(asyncId)
-            );
+            IPromise(batchPromise).then(this.callback.selector, abi.encode(asyncId));
         }
 
         return readEndIndex;
@@ -167,8 +149,7 @@ abstract contract BatchAsync is QueueAsync {
         address forwarderAppGateway = msg.sender;
 
         for (uint256 i = readEndIndex; i < payloadDetails_.length; i++) {
-            if (payloadDetails_[i].payload.length > 24.5 * 1024)
-                revert PayloadTooLarge();
+            if (payloadDetails_[i].payload.length > 24.5 * 1024) revert PayloadTooLarge();
 
             if (payloadDetails_[i].callType == CallType.DEPLOY) {
                 payloadDetails_[i].target = getPlugAddress(
@@ -176,10 +157,10 @@ abstract contract BatchAsync is QueueAsync {
                     payloadDetails_[i].chainSlug
                 );
             } else if (payloadDetails_[i].callType == CallType.WRITE) {
-                forwarderAppGateway = IAddressResolver(addressResolver)
-                    .contractsToGateways(msg.sender);
-                if (forwarderAppGateway == address(0))
-                    forwarderAppGateway = msg.sender;
+                forwarderAppGateway = IAddressResolver(addressResolver).contractsToGateways(
+                    msg.sender
+                );
+                if (forwarderAppGateway == address(0)) forwarderAppGateway = msg.sender;
 
                 payloadDetails_[i].appGateway = forwarderAppGateway;
             }
@@ -204,20 +185,14 @@ abstract contract BatchAsync is QueueAsync {
             feesData: feesData_,
             currentPayloadIndex: readEndIndex,
             auctionManager: auctionManager_,
-            winningBid: Bid({
-                fee: 0,
-                transmitter: address(0),
-                extraData: new bytes(0)
-            }),
+            winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
             isBatchCancelled: false,
             totalPayloadsRemaining: payloadDetails_.length - readEndIndex,
             lastBatchPromises: new address[](readEndIndex),
             onCompleteData: onCompleteData_
         });
 
-        uint256 delayInSeconds = IAuctionManager(auctionManager_).startAuction(
-            asyncId
-        );
+        uint256 delayInSeconds = IAuctionManager(auctionManager_).startAuction(asyncId);
         watcherPrecompile().setTimeout(
             forwarderAppGateway,
             abi.encodeWithSelector(this.endTimeout.selector, asyncId),
@@ -234,9 +209,7 @@ abstract contract BatchAsync is QueueAsync {
     }
 
     function endTimeout(bytes32 asyncId_) external onlyWatcherPrecompile {
-        IAuctionManager(payloadBatches[asyncId_].auctionManager).endAuction(
-            asyncId_
-        );
+        IAuctionManager(payloadBatches[asyncId_].auctionManager).endAuction(asyncId_);
     }
 
     /// @notice Cancels a transaction
@@ -252,10 +225,7 @@ abstract contract BatchAsync is QueueAsync {
     /// @notice Gets the payload delivery plug address
     /// @param chainSlug_ The chain identifier
     /// @return address The address of the payload delivery plug
-    function getPlugAddress(
-        address appGateway_,
-        uint32 chainSlug_
-    ) public view returns (address) {
+    function getPlugAddress(address appGateway_, uint32 chainSlug_) public view returns (address) {
         return watcherPrecompile().appGatewayPlugs(appGateway_, chainSlug_);
     }
 
@@ -298,11 +268,6 @@ abstract contract BatchAsync is QueueAsync {
             amount_,
             receiver_
         );
-        deliverPayload(
-            payloadDetailsArray,
-            feesData_,
-            auctionManager_,
-            new bytes(0)
-        );
+        deliverPayload(payloadDetailsArray, feesData_, auctionManager_, new bytes(0));
     }
 }

@@ -17,9 +17,7 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
     // Emitted when limit parameters are updated
     event LimitParamsUpdated(UpdateLimitParams[] updates);
 
-    constructor(
-        address addressResolver_
-    ) AddressResolverUtil(addressResolver_) {}
+    constructor(address addressResolver_) AddressResolverUtil(addressResolver_) {}
 
     /**
      * @notice This function is used to set bridge limits.
@@ -28,14 +26,11 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
      */
     function _updateLimitParams(UpdateLimitParams[] calldata updates) internal {
         for (uint256 i = 0; i < updates.length; i++) {
-            _consumePartLimit(
-                0,
-                _limitParams[updates[i].appGateway][updates[i].limitType]
-            ); // To keep the current limit in sync
-            _limitParams[updates[i].appGateway][updates[i].limitType]
-                .maxLimit = updates[i].maxLimit;
-            _limitParams[updates[i].appGateway][updates[i].limitType]
-                .ratePerSecond = updates[i].ratePerSecond;
+            _consumePartLimit(0, _limitParams[updates[i].appGateway][updates[i].limitType]); // To keep the current limit in sync
+            _limitParams[updates[i].appGateway][updates[i].limitType].maxLimit = updates[i]
+                .maxLimit;
+            _limitParams[updates[i].appGateway][updates[i].limitType].ratePerSecond = updates[i]
+                .ratePerSecond;
         }
 
         emit LimitParamsUpdated(updates);
@@ -72,11 +67,8 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
         _consumeFullLimit(1, _limitParams[appGateway][limitType_]);
     }
 
-    function _getAppGateway(
-        address appGateway_
-    ) internal view returns (address appGateway) {
-        address resolverAddress = msg.sender ==
-            addressResolver.deliveryHelper() ||
+    function _getAppGateway(address appGateway_) internal view returns (address appGateway) {
+        address resolverAddress = msg.sender == addressResolver.deliveryHelper() ||
             msg.sender == addressResolver.feesManager()
             ? appGateway_
             : msg.sender;

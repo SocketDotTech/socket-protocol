@@ -34,11 +34,7 @@ contract DeliveryHelperTest is SetupTest {
         // core
         deployOffChainVMCore();
         feesManager = new FeesManager(address(addressResolver), owner);
-        deliveryHelper = new DeliveryHelper(
-            address(addressResolver),
-            address(feesManager),
-            owner
-        );
+        deliveryHelper = new DeliveryHelper(address(addressResolver), address(feesManager), owner);
         auctionManager = new AuctionManager(
             vmChainSlug,
             address(addressResolver),
@@ -116,9 +112,7 @@ contract DeliveryHelperTest is SetupTest {
     }
 
     //// BATCH DEPLOY AND EXECUTE HELPERS ////
-    function getContractFactoryPlug(
-        uint32 chainSlug_
-    ) internal view returns (address) {
+    function getContractFactoryPlug(uint32 chainSlug_) internal view returns (address) {
         return address(getSocketConfig(chainSlug_).contractFactoryPlug);
     }
 
@@ -128,14 +122,9 @@ contract DeliveryHelperTest is SetupTest {
         address appGateway_
     ) internal view {
         for (uint i = 0; i < payloadDetails.length; i++) {
-            PayloadDetails memory payloadDetail = deliveryHelper
-                .getPayloadDetails(asyncId, i);
+            PayloadDetails memory payloadDetail = deliveryHelper.getPayloadDetails(asyncId, i);
 
-            assertEq(
-                payloadDetail.chainSlug,
-                payloadDetails[i].chainSlug,
-                "ChainSlug mismatch"
-            );
+            assertEq(payloadDetail.chainSlug, payloadDetails[i].chainSlug, "ChainSlug mismatch");
             // todo
             // assertEq(
             //     payloadDetail.target,
@@ -171,17 +160,9 @@ contract DeliveryHelperTest is SetupTest {
         ) = deliveryHelper.payloadBatches(asyncId);
 
         assertEq(appGateway_, appGateway, "AppGateway mismatch");
-        assertEq(
-            _auctionManager,
-            address(auctionManager),
-            "AuctionManager mismatch"
-        );
+        assertEq(_auctionManager, address(auctionManager), "AuctionManager mismatch");
         assertEq(winningBid.fee, bidAmount, "WinningBid mismatch");
-        assertEq(
-            winningBid.transmitter,
-            transmitterEOA,
-            "WinningBid transmitter mismatch"
-        );
+        assertEq(winningBid.transmitter, transmitterEOA, "WinningBid transmitter mismatch");
         assertEq(isBatchCancelled, false, "IsBatchCancelled mismatch");
     }
 
@@ -192,10 +173,7 @@ contract DeliveryHelperTest is SetupTest {
         endAuction(timeoutId);
     }
 
-    function bidAndExecute(
-        bytes32[] memory payloadIds,
-        bytes32 asyncId_
-    ) internal {
+    function bidAndExecute(bytes32[] memory payloadIds, bytes32 asyncId_) internal {
         bidAndEndAuction(asyncId_);
         for (uint i = 0; i < payloadIds.length; i++) {
             finalizeAndExecute(asyncId_, payloadIds[i], false);
@@ -214,12 +192,7 @@ contract DeliveryHelperTest is SetupTest {
 
         appDeployer_.deployContracts(chainSlug_);
         bidAndExecute(payloadIds, asyncId);
-        setupGatewayAndPlugs(
-            chainSlug_,
-            appDeployer_,
-            appGateway_,
-            contractIds
-        );
+        setupGatewayAndPlugs(chainSlug_, appDeployer_, appGateway_, contractIds);
     }
 
     function setupGatewayAndPlugs(
@@ -229,16 +202,11 @@ contract DeliveryHelperTest is SetupTest {
         bytes32[] memory contractIds
     ) internal {
         IWatcherPrecompile.AppGatewayConfig[]
-            memory gateways = new IWatcherPrecompile.AppGatewayConfig[](
-                contractIds.length
-            );
+            memory gateways = new IWatcherPrecompile.AppGatewayConfig[](contractIds.length);
 
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
         for (uint i = 0; i < contractIds.length; i++) {
-            address plug = appDeployer_.getOnChainAddress(
-                contractIds[i],
-                chainSlug_
-            );
+            address plug = appDeployer_.getOnChainAddress(contractIds[i], chainSlug_);
 
             gateways[i] = IWatcherPrecompile.AppGatewayConfig({
                 plug: plug,
@@ -252,9 +220,7 @@ contract DeliveryHelperTest is SetupTest {
         watcherPrecompile.setAppGateways(gateways);
     }
 
-    function _configure(
-        bytes32[] memory payloadIds
-    ) internal returns (bytes32 asyncId) {
+    function _configure(bytes32[] memory payloadIds) internal returns (bytes32 asyncId) {
         asyncId = getCurrentAsyncId();
         asyncCounterTest++;
         bidAndExecute(payloadIds, asyncId);
@@ -265,9 +231,7 @@ contract DeliveryHelperTest is SetupTest {
         address appDeployer_,
         bytes memory bytecode_
     ) internal returns (PayloadDetails memory payloadDetails) {
-        bytes32 salt = keccak256(
-            abi.encode(appDeployer_, chainSlug_, deployCounter++)
-        );
+        bytes32 salt = keccak256(abi.encode(appDeployer_, chainSlug_, deployCounter++));
         bytes memory payload = abi.encodeWithSelector(
             IContractFactoryPlug.deployContract.selector,
             bytecode_,
@@ -329,15 +293,7 @@ contract DeliveryHelperTest is SetupTest {
 
         vm.prank(transmitterEOA);
         bytes memory transmitterSignature = _createSignature(
-            keccak256(
-                abi.encode(
-                    address(auctionManager),
-                    vmChainSlug,
-                    asyncId,
-                    bidAmount,
-                    ""
-                )
-            ),
+            keccak256(abi.encode(address(auctionManager), vmChainSlug, asyncId, bidAmount, "")),
             transmitterPrivateKey
         );
         auctionManager.bid(asyncId, bidAmount, transmitterSignature, "");
@@ -355,15 +311,9 @@ contract DeliveryHelperTest is SetupTest {
         watcherPrecompile.resolveTimeout(timeoutId);
     }
 
-    function finalize(
-        bytes32 payloadId
-    ) internal view returns (bytes memory, bytes32) {
-        PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(
-            payloadId
-        );
-        SocketContracts memory socketConfig = getSocketConfig(
-            payloadDetails.chainSlug
-        );
+    function finalize(bytes32 payloadId) internal view returns (bytes memory, bytes32) {
+        PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(payloadId);
+        SocketContracts memory socketConfig = getSocketConfig(payloadDetails.chainSlug);
 
         PayloadRootParams memory rootParams_ = PayloadRootParams(
             payloadId,
@@ -375,9 +325,7 @@ contract DeliveryHelperTest is SetupTest {
         );
         bytes32 root = watcherPrecompile.getRoot(rootParams_);
 
-        bytes32 digest = keccak256(
-            abi.encode(address(socketConfig.switchboard), root)
-        );
+        bytes32 digest = keccak256(abi.encode(address(socketConfig.switchboard), root));
         bytes memory watcherSig = _createSignature(digest, watcherPrivateKey);
         return (watcherSig, root);
     }
@@ -426,10 +374,7 @@ contract DeliveryHelperTest is SetupTest {
         bytes32,
         bytes memory payload_
     ) internal returns (PayloadDetails memory payloadDetails) {
-        address asyncPromise = predictAsyncPromiseAddress(
-            appGateway_,
-            forwarder_
-        );
+        address asyncPromise = predictAsyncPromiseAddress(appGateway_, forwarder_);
         address[] memory next = new address[](2);
         next[0] = asyncPromise;
 
@@ -454,10 +399,7 @@ contract DeliveryHelperTest is SetupTest {
         address forwarder_,
         bytes memory payload_
     ) internal returns (PayloadDetails memory) {
-        address asyncPromise = predictAsyncPromiseAddress(
-            appGateway_,
-            forwarder_
-        );
+        address asyncPromise = predictAsyncPromiseAddress(appGateway_, forwarder_);
         address[] memory next = new address[](2);
         next[0] = asyncPromise;
 
@@ -473,23 +415,14 @@ contract DeliveryHelperTest is SetupTest {
             );
     }
 
-    function finalizeQuery(
-        bytes32 payloadId,
-        bytes memory returnData_
-    ) internal {
+    function finalizeQuery(bytes32 payloadId, bytes memory returnData_) internal {
         resolvePromise(payloadId, returnData_);
     }
 
-    function finalizeAndExecute(
-        bytes32,
-        bytes32 payloadId,
-        bool isWithdraw
-    ) internal {
+    function finalizeAndExecute(bytes32, bytes32 payloadId, bool isWithdraw) internal {
         (bytes memory watcherSig, bytes32 root) = finalize(payloadId);
 
-        PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(
-            payloadId
-        );
+        PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(payloadId);
         bytes memory returnData = relayTx(
             payloadDetails.chainSlug,
             payloadId,
@@ -507,19 +440,10 @@ contract DeliveryHelperTest is SetupTest {
         address invoker_,
         address forwarder_
     ) internal returns (address) {
-        bytes memory constructorArgs = abi.encode(
-            invoker_,
-            forwarder_,
-            address(addressResolver)
-        );
-        bytes memory combinedBytecode = abi.encodePacked(
-            asyncPromiseBytecode,
-            constructorArgs
-        );
+        bytes memory constructorArgs = abi.encode(invoker_, forwarder_, address(addressResolver));
+        bytes memory combinedBytecode = abi.encodePacked(asyncPromiseBytecode, constructorArgs);
 
-        bytes32 salt = keccak256(
-            abi.encodePacked(constructorArgs, asyncPromiseCounterLocal++)
-        );
+        bytes32 salt = keccak256(abi.encodePacked(constructorArgs, asyncPromiseCounterLocal++));
 
         bytes32 hash = keccak256(
             abi.encodePacked(
@@ -534,19 +458,10 @@ contract DeliveryHelperTest is SetupTest {
     }
 
     function getCurrentAsyncId() public view returns (bytes32) {
-        return
-            bytes32(
-                (uint256(uint160(address(deliveryHelper))) << 64) |
-                    asyncCounterTest
-            );
+        return bytes32((uint256(uint160(address(deliveryHelper))) << 64) | asyncCounterTest);
     }
 
-    function getTimeoutPayloadId(
-        uint256 counter_
-    ) internal view returns (bytes32) {
-        return
-            bytes32(
-                (uint256(uint160(address(deliveryHelper))) << 64) | counter_
-            );
+    function getTimeoutPayloadId(uint256 counter_) internal view returns (bytes32) {
+        return bytes32((uint256(uint160(address(deliveryHelper))) << 64) | counter_);
     }
 }

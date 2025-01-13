@@ -27,10 +27,7 @@ contract SuperTokenDeployer is AppDeployerBase, Ownable {
         bytes32 sbType_,
         ConstructorParams memory params,
         FeesData memory feesData_
-    )
-        AppDeployerBase(addressResolver_, auctionManager_, sbType_)
-        Ownable(owner_)
-    {
+    ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) Ownable(owner_) {
         creationCodeWithArgs[superToken] = abi.encodePacked(
             type(SuperToken).creationCode,
             abi.encode(
@@ -59,8 +56,6 @@ contract SuperTokenDeployer is AppDeployerBase, Ownable {
     // check AppDeployerBase.allPayloadsExecuted and AppGateway.queueAndDeploy
     function initialize(uint32 chainSlug) public override async {
         address limitHookContract = getOnChainAddress(limitHook, chainSlug);
-        SuperToken(forwarderAddresses[superToken][chainSlug]).setLimitHook(
-            limitHookContract
-        );
+        SuperToken(forwarderAddresses[superToken][chainSlug]).setLimitHook(limitHookContract);
     }
 }

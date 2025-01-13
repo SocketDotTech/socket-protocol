@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-address constant ETH_ADDRESS = address(
-    0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
-);
+address constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
 address constant ZERO_ADDRESS = address(0);
 

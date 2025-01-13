@@ -60,10 +60,7 @@ abstract contract AccessControl is Ownable {
      * Emits a RoleGranted event.
      * Can only be called by the owner of the contract.
      */
-    function grantRole(
-        bytes32 role_,
-        address grantee_
-    ) external virtual onlyOwner {
+    function grantRole(bytes32 role_, address grantee_) external virtual onlyOwner {
         _grantRole(role_, grantee_);
     }
 
@@ -74,10 +71,7 @@ abstract contract AccessControl is Ownable {
      * Emits a RoleRevoked event.
      * Can only be called by the owner of the contract.
      */
-    function revokeRole(
-        bytes32 role_,
-        address revokee_
-    ) external virtual onlyOwner {
+    function revokeRole(bytes32 role_, address revokee_) external virtual onlyOwner {
         _revokeRole(role_, revokee_);
     }
 
@@ -109,17 +103,11 @@ abstract contract AccessControl is Ownable {
      * @param address_ The address to check.
      * @return A boolean value indicating whether or not the address has the role.
      */
-    function hasRole(
-        bytes32 role_,
-        address address_
-    ) external view returns (bool) {
+    function hasRole(bytes32 role_, address address_) external view returns (bool) {
         return _hasRole(role_, address_);
     }
 
-    function _hasRole(
-        bytes32 role_,
-        address address_
-    ) internal view returns (bool) {
+    function _hasRole(bytes32 role_, address address_) internal view returns (bool) {
         return _permits[role_][address_];
     }
 }

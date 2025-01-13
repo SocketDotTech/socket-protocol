@@ -13,13 +13,8 @@ contract CounterDeployer is AppDeployerBase, Ownable {
         address auctionManager_,
         bytes32 sbType_,
         FeesData memory feesData_
-    )
-        AppDeployerBase(addressResolver_, auctionManager_, sbType_)
-        Ownable(msg.sender)
-    {
-        creationCodeWithArgs[counter] = abi.encodePacked(
-            type(Counter).creationCode
-        );
+    ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) Ownable(msg.sender) {
+        creationCodeWithArgs[counter] = abi.encodePacked(type(Counter).creationCode);
         _setFeesData(feesData_);
     }
 

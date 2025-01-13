@@ -40,11 +40,7 @@ contract FastSwitchboard is SwitchboardBase {
      * there can be multiple proposals for same root. To avoid need to re-attest for different proposals
      *  with same root, we are storing attestations against root instead of packetId and proposalCount.
      */
-    function attest(
-        bytes32 payloadId_,
-        bytes32 root_,
-        bytes calldata signature_
-    ) external {
+    function attest(bytes32 payloadId_, bytes32 root_, bytes calldata signature_) external {
         address watcher = signatureVerifier__.recoverSigner(
             keccak256(abi.encode(address(this), root_)),
             signature_

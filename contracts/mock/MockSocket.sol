@@ -32,10 +32,7 @@ contract MockSocket is ISocket {
         return (_plugConfig.appGateway, address(_plugConfig.switchboard__));
     }
 
-    function connect(
-        address appGateway_,
-        address switchboard_
-    ) external override {}
+    function connect(address appGateway_, address switchboard_) external override {}
 
     function registerSwitchboard() external override {}
     ////////////////////////////////////////////////////////
@@ -131,14 +128,9 @@ contract MockSocket is ISocket {
     ////////////////// INTERNAL FUNCS //////////////////////
     ////////////////////////////////////////////////////////
 
-    function _verify(
-        bytes32 root_,
-        bytes32 payloadId_,
-        ISwitchboard switchboard__
-    ) internal view {
+    function _verify(bytes32 root_, bytes32 payloadId_, ISwitchboard switchboard__) internal view {
         // NOTE: is the the first un-trusted call in the system, another one is Plug.inbound
-        if (!switchboard__.allowPacket(root_, payloadId_))
-            revert VerificationFailed();
+        if (!switchboard__.allowPacket(root_, payloadId_)) revert VerificationFailed();
     }
 
     /**
@@ -162,9 +154,7 @@ contract MockSocket is ISocket {
      * @param id_ The ID of the msg to decode the switchboard from.
      * @return switchboard_ The address of switchboard decoded from the payload ID.
      */
-    function _decodeSwitchboard(
-        bytes32 id_
-    ) internal pure returns (address switchboard_) {
+    function _decodeSwitchboard(bytes32 id_) internal pure returns (address switchboard_) {
         switchboard_ = address(uint160(uint256(id_) >> 64));
     }
 
@@ -173,9 +163,7 @@ contract MockSocket is ISocket {
      * @param id_ The ID of the packet/msg to decode the chain slug from.
      * @return chainSlug_ The chain slug decoded from the packet/payload ID.
      */
-    function _decodeChainSlug(
-        bytes32 id_
-    ) internal pure returns (uint32 chainSlug_) {
+    function _decodeChainSlug(bytes32 id_) internal pure returns (uint32 chainSlug_) {
         chainSlug_ = uint32(uint256(id_) >> 224);
     }
 
@@ -185,9 +173,7 @@ contract MockSocket is ISocket {
     function _encodeCallId(address appGateway_) internal returns (bytes32) {
         return
             bytes32(
-                (uint256(chainSlug) << 224) |
-                    (uint256(uint160(appGateway_)) << 64) |
-                    callCounter++
+                (uint256(chainSlug) << 224) | (uint256(uint160(appGateway_)) << 64) | callCounter++
             );
     }
 }

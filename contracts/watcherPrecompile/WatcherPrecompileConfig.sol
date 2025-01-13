@@ -21,8 +21,7 @@ abstract contract WatcherPrecompileConfig is Ownable, IWatcherPrecompile {
     mapping(uint32 => mapping(bytes32 => address)) public switchboards;
 
     // appGateway => chainSlug => plug => isValid
-    mapping(address => mapping(uint32 => mapping(address => bool)))
-        public isValidInboxCaller;
+    mapping(address => mapping(uint32 => mapping(address => bool))) public isValidInboxCaller;
 
     /// @notice Emitted when a new plug is configured for an app gateway
     /// @param appGateway The address of the app gateway
@@ -40,9 +39,7 @@ abstract contract WatcherPrecompileConfig is Ownable, IWatcherPrecompile {
     /// @param configs Array of configurations containing app gateway, network, plug, and switchboard details
     /// @dev Only callable by the contract owner
     /// @dev This helps in verifying that plugs are called by respective app gateways
-    function setAppGateways(
-        AppGatewayConfig[] calldata configs
-    ) external onlyOwner {
+    function setAppGateways(AppGatewayConfig[] calldata configs) external onlyOwner {
         for (uint256 i = 0; i < configs.length; i++) {
             // Store the plug configuration for this network and plug
             _plugConfigs[configs[i].chainSlug][configs[i].plug] = PlugConfig({
@@ -51,15 +48,9 @@ abstract contract WatcherPrecompileConfig is Ownable, IWatcherPrecompile {
             });
 
             // Create reverse mapping from app gateway to plug for easy lookup
-            appGatewayPlugs[configs[i].appGateway][
-                configs[i].chainSlug
-            ] = configs[i].plug;
+            appGatewayPlugs[configs[i].appGateway][configs[i].chainSlug] = configs[i].plug;
 
-            emit PlugAdded(
-                configs[i].appGateway,
-                configs[i].chainSlug,
-                configs[i].plug
-            );
+            emit PlugAdded(configs[i].appGateway, configs[i].chainSlug, configs[i].plug);
         }
     }
 
@@ -75,11 +66,7 @@ abstract contract WatcherPrecompileConfig is Ownable, IWatcherPrecompile {
         emit SwitchboardSet(chainSlug_, sbType_, switchboard_);
     }
 
-    function setIsValidInboxCaller(
-        uint32 chainSlug_,
-        address plug_,
-        bool isValid_
-    ) external {
+    function setIsValidInboxCaller(uint32 chainSlug_, address plug_, bool isValid_) external {
         isValidInboxCaller[msg.sender][chainSlug_][plug_] = isValid_;
     }
 

@@ -28,14 +28,8 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
         _setFeesData(feesData_);
     }
 
-    function checkBalance(
-        bytes memory data,
-        bytes memory returnData
-    ) external onlyPromises {
-        (UserOrder memory order, bytes32 asyncId) = abi.decode(
-            data,
-            (UserOrder, bytes32)
-        );
+    function checkBalance(bytes memory data, bytes memory returnData) external onlyPromises {
+        (UserOrder memory order, bytes32 asyncId) = abi.decode(data, (UserOrder, bytes32));
 
         uint256 balance = abi.decode(returnData, (uint256));
         if (balance < order.srcAmount) {
@@ -45,17 +39,11 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
         _unlockTokens(order.srcToken, order.user, order.srcAmount);
     }
 
-    function _unlockTokens(
-        address srcToken,
-        address user,
-        uint256 amount
-    ) internal async {
+    function _unlockTokens(address srcToken, address user, uint256 amount) internal async {
         ISuperToken(srcToken).unlockTokens(user, amount);
     }
 
-    function bridge(
-        bytes memory _order
-    ) external async returns (bytes32 asyncId) {
+    function bridge(bytes memory _order) external async returns (bytes32 asyncId) {
         UserOrder memory order = abi.decode(_order, (UserOrder));
         asyncId = _getCurrentAsyncId();
         ISuperToken(order.srcToken).lockTokens(order.user, order.srcAmount);
@@ -63,10 +51,7 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
         _readCallOn();
         // goes to forwarder and deploys promise and stores it
         ISuperToken(order.srcToken).balanceOf(order.user);
-        IPromise(order.srcToken).then(
-            this.checkBalance.selector,
-            abi.encode(order, asyncId)
-        );
+        IPromise(order.srcToken).then(this.checkBalance.selector, abi.encode(order, asyncId));
 
         _readCallOff();
         ISuperToken(order.dstToken).mint(order.user, order.srcAmount);

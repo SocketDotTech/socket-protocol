@@ -14,10 +14,7 @@ contract FeesPlug is PlugBase, Ownable {
 
     error FeesAlreadyPaid();
 
-    constructor(
-        address socket_,
-        address owner_
-    ) Ownable(owner_) PlugBase(socket_) {}
+    constructor(address socket_, address owner_) Ownable(owner_) PlugBase(socket_) {}
 
     function distributeFee(
         address appGateway,
@@ -29,10 +26,7 @@ contract FeesPlug is PlugBase, Ownable {
         if (feesRedeemed[feesId]) revert FeesAlreadyPaid();
         feesRedeemed[feesId] = true;
 
-        require(
-            balanceOf[appGateway][feeToken] >= fee,
-            "FeesPlug: Insufficient Balance for Fees"
-        );
+        require(balanceOf[appGateway][feeToken] >= fee, "FeesPlug: Insufficient Balance for Fees");
         balanceOf[appGateway][feeToken] -= fee;
         _transferTokens(feeToken, fee, transmitter);
         return bytes("");
@@ -57,20 +51,11 @@ contract FeesPlug is PlugBase, Ownable {
     /// @param token The token address
     /// @param amount The amount
     /// @param appGateway_ The app gateway address
-    function deposit(
-        address token,
-        uint256 amount,
-        address appGateway_
-    ) external payable {
+    function deposit(address token, uint256 amount, address appGateway_) external payable {
         if (token == ETH_ADDRESS) {
             require(msg.value == amount, "FeesPlug: Invalid Deposit Amount");
         } else {
-            SafeTransferLib.safeTransferFrom(
-                ERC20(token),
-                msg.sender,
-                address(this),
-                amount
-            );
+            SafeTransferLib.safeTransferFrom(ERC20(token), msg.sender, address(this), amount);
         }
         balanceOf[appGateway_][token] += amount;
     }
@@ -79,11 +64,7 @@ contract FeesPlug is PlugBase, Ownable {
     /// @param token The token address
     /// @param amount The amount
     /// @param receiver The receiver address
-    function _transferTokens(
-        address token,
-        uint256 amount,
-        address receiver
-    ) internal {
+    function _transferTokens(address token, uint256 amount, address receiver) internal {
         if (token == ETH_ADDRESS) {
             SafeTransferLib.safeTransferETH(receiver, amount);
         } else {

@@ -52,9 +52,7 @@ interface IWatcherPrecompile {
 
     /// @notice Resolves multiple promises with their return data
     /// @param resolvedPromises_ Array of resolved promises and their return data
-    function resolvePromises(
-        ResolvedPromises[] calldata resolvedPromises_
-    ) external;
+    function resolvePromises(ResolvedPromises[] calldata resolvedPromises_) external;
 
     /// @notice Sets a timeout for payload execution
     /// @param payload_ The payload data
@@ -71,9 +69,7 @@ interface IWatcherPrecompile {
     /// @notice Calculates the root hash for payload parameters
     /// @param params_ The payload parameters used to calculate the root
     /// @return root The calculated merkle root hash
-    function getRoot(
-        PayloadRootParams memory params_
-    ) external pure returns (bytes32 root);
+    function getRoot(PayloadRootParams memory params_) external pure returns (bytes32 root);
 
     /// @notice Gets the plug address for a given app gateway and chain
     /// @param appGateway_ The address of the app gateway contract
@@ -84,12 +80,7 @@ interface IWatcherPrecompile {
         uint32 chainSlug_
     ) external view returns (address);
 
-    function setMaxTimeoutDelayInSeconds(
-        uint256 maxTimeoutDelayInSeconds_
-    ) external;
+    function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external;
 
-    function switchboards(
-        uint32 chainSlug_,
-        bytes32 sbType_
-    ) external view returns (address);
+    function switchboards(uint32 chainSlug_, bytes32 sbType_) external view returns (address);
 }

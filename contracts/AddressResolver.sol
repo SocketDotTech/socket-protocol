@@ -28,9 +28,7 @@ contract AddressResolver is Ownable, IAddressResolver {
     event PlugAdded(address appGateway, uint32 chainSlug, address plug);
     event ForwarderDeployed(address newForwarder, bytes32 salt);
     event AsyncPromiseDeployed(address newAsyncPromise, bytes32 salt);
-    error AppGatewayContractAlreadySetByDifferentSender(
-        address contractAddress_
-    );
+    error AppGatewayContractAlreadySetByDifferentSender(address contractAddress_);
 
     /// @notice Constructor to initialize the AddressResolver contract
     /// @param _owner The address of the contract owner
@@ -38,17 +36,13 @@ contract AddressResolver is Ownable, IAddressResolver {
 
     /// @notice Sets the bytecode for the Forwarder contract
     /// @param _forwarderBytecode The bytecode of the Forwarder contract
-    function setForwarderBytecode(
-        bytes memory _forwarderBytecode
-    ) external onlyOwner {
+    function setForwarderBytecode(bytes memory _forwarderBytecode) external onlyOwner {
         forwarderBytecode = _forwarderBytecode;
     }
 
     /// @notice Sets the bytecode for the AsyncPromise contract
     /// @param _asyncPromiseBytecode The bytecode of the AsyncPromise contract
-    function setAsyncPromiseBytecode(
-        bytes memory _asyncPromiseBytecode
-    ) external onlyOwner {
+    function setAsyncPromiseBytecode(bytes memory _asyncPromiseBytecode) external onlyOwner {
         asyncPromiseBytecode = _asyncPromiseBytecode;
     }
 
@@ -66,9 +60,7 @@ contract AddressResolver is Ownable, IAddressResolver {
 
     /// @notice Updates the address of the watcher precompile contract
     /// @param _watcherPrecompile The address of the watcher precompile contract
-    function setWatcherPrecompile(
-        address _watcherPrecompile
-    ) external onlyOwner {
+    function setWatcherPrecompile(address _watcherPrecompile) external onlyOwner {
         watcherPrecompile = IWatcherPrecompile(_watcherPrecompile);
     }
 
@@ -81,22 +73,12 @@ contract AddressResolver is Ownable, IAddressResolver {
         address chainContractAddress_,
         uint32 chainSlug_
     ) public returns (address) {
-        bytes memory constructorArgs = abi.encode(
-            chainSlug_,
-            chainContractAddress_,
-            address(this)
-        );
+        bytes memory constructorArgs = abi.encode(chainSlug_, chainContractAddress_, address(this));
 
-        bytes memory combinedBytecode = abi.encodePacked(
-            forwarderBytecode,
-            constructorArgs
-        );
+        bytes memory combinedBytecode = abi.encodePacked(forwarderBytecode, constructorArgs);
 
         // predict address
-        address forwarderAddress = getForwarderAddress(
-            chainContractAddress_,
-            chainSlug_
-        );
+        address forwarderAddress = getForwarderAddress(chainContractAddress_, chainSlug_);
         // check if addr has code, if yes, return
         if (forwarderAddress.code.length > 0) {
             return forwarderAddress;
@@ -131,23 +113,12 @@ contract AddressResolver is Ownable, IAddressResolver {
     /// @notice Deploys an AsyncPromise contract
     /// @param invoker_ The address of the invoker
     /// @return The address of the deployed AsyncPromise contract
-    function deployAsyncPromiseContract(
-        address invoker_
-    ) external returns (address) {
-        bytes memory constructorArgs = abi.encode(
-            invoker_,
-            msg.sender,
-            address(this)
-        );
+    function deployAsyncPromiseContract(address invoker_) external returns (address) {
+        bytes memory constructorArgs = abi.encode(invoker_, msg.sender, address(this));
 
-        bytes memory combinedBytecode = abi.encodePacked(
-            asyncPromiseBytecode,
-            constructorArgs
-        );
+        bytes memory combinedBytecode = abi.encodePacked(asyncPromiseBytecode, constructorArgs);
 
-        bytes32 salt = keccak256(
-            abi.encodePacked(constructorArgs, asyncPromiseCounter++)
-        );
+        bytes32 salt = keccak256(abi.encodePacked(constructorArgs, asyncPromiseCounter++));
 
         address newAsyncPromise;
         assembly {
@@ -186,9 +157,7 @@ contract AddressResolver is Ownable, IAddressResolver {
             contractsToGateways[contractAddress_] != address(0) &&
             contractsToGateways[contractAddress_] != msg.sender
         ) {
-            revert AppGatewayContractAlreadySetByDifferentSender(
-                contractAddress_
-            );
+            revert AppGatewayContractAlreadySetByDifferentSender(contractAddress_);
         }
         contractsToGateways[contractAddress_] = msg.sender;
     }
@@ -201,17 +170,8 @@ contract AddressResolver is Ownable, IAddressResolver {
         address chainContractAddress_,
         uint32 chainSlug_
     ) public view returns (address) {
-        bytes memory constructorArgs = abi.encode(
-            chainSlug_,
-            chainContractAddress_,
-            address(this)
-        );
-        return
-            _predictAddress(
-                forwarderBytecode,
-                constructorArgs,
-                keccak256(constructorArgs)
-            );
+        bytes memory constructorArgs = abi.encode(chainSlug_, chainContractAddress_, address(this));
+        return _predictAddress(forwarderBytecode, constructorArgs, keccak256(constructorArgs));
     }
 
     /// @notice Gets the predicted address of an AsyncPromise contract
@@ -222,18 +182,12 @@ contract AddressResolver is Ownable, IAddressResolver {
         address invoker_,
         address forwarder_
     ) public view returns (address) {
-        bytes memory constructorArgs = abi.encode(
-            invoker_,
-            forwarder_,
-            address(this)
-        );
+        bytes memory constructorArgs = abi.encode(invoker_, forwarder_, address(this));
         return
             _predictAddress(
                 asyncPromiseBytecode,
                 constructorArgs,
-                keccak256(
-                    abi.encodePacked(constructorArgs, asyncPromiseCounter)
-                )
+                keccak256(abi.encodePacked(constructorArgs, asyncPromiseCounter))
             );
     }
 
@@ -247,18 +201,10 @@ contract AddressResolver is Ownable, IAddressResolver {
         bytes memory constructorArgs_,
         bytes32 salt_
     ) internal view returns (address) {
-        bytes memory combinedBytecode = abi.encodePacked(
-            bytecode_,
-            constructorArgs_
-        );
+        bytes memory combinedBytecode = abi.encodePacked(bytecode_, constructorArgs_);
 
         bytes32 hash = keccak256(
-            abi.encodePacked(
-                bytes1(0xff),
-                address(this),
-                salt_,
-                keccak256(combinedBytecode)
-            )
+            abi.encodePacked(bytes1(0xff), address(this), salt_, keccak256(combinedBytecode))
         );
 
         return address(uint160(uint256(hash)));

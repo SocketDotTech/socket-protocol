@@ -15,9 +15,7 @@ contract CounterDeployOnchain is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        CounterDeployer deployer = CounterDeployer(
-            vm.envAddress("COUNTER_DEPLOYER")
-        );
+        CounterDeployer deployer = CounterDeployer(vm.envAddress("COUNTER_DEPLOYER"));
 
         console.log("Counter Deployer:", address(deployer));
 

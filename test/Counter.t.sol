@@ -58,13 +58,7 @@ contract CounterTest is DeliveryHelperTest {
         bytes32[] memory contractIds = new bytes32[](1);
         contractIds[0] = counterId;
 
-        _deploy(
-            contractIds,
-            payloadIds,
-            arbChainSlug,
-            IAppDeployer(deployer),
-            address(gateway)
-        );
+        _deploy(contractIds, payloadIds, arbChainSlug, IAppDeployer(deployer), address(gateway));
 
         // address counterForwarder = deployer.forwarderAddresses(
         //     counterId,
@@ -73,11 +67,7 @@ contract CounterTest is DeliveryHelperTest {
         // address deployedCounter = IForwarder(counterForwarder)
         //     .getOnChainAddress();
 
-        payloadIds = getWritePayloadIds(
-            arbChainSlug,
-            address(arbConfig.switchboard),
-            1
-        );
+        payloadIds = getWritePayloadIds(arbChainSlug, address(arbConfig.switchboard), 1);
 
         _configure(payloadIds);
     }

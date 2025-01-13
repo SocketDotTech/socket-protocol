@@ -31,3 +31,4 @@ deployContracts.sh
 .env*
 images/
 setupInfraContracts.sh
+testScript.sh

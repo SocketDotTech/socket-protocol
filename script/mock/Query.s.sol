@@ -16,10 +16,7 @@ contract QueryTest is Script {
 
         address[] memory asyncPromises = new address[](1);
         asyncPromises[0] = address(0);
-        bytes memory payload = abi.encodeWithSignature(
-            "balanceOf(address)",
-            address(0)
-        );
+        bytes memory payload = abi.encodeWithSignature("balanceOf(address)", address(0));
         watcherInstance.query(
             421614,
             0x6402c4c08C1F752Ac8c91beEAF226018ec1a27f2, // usdc contract

@@ -19,8 +19,5 @@ interface IContractFactoryPlug {
     /// @param creationCode The contract creation code
     /// @param salt The salt value
     /// @return address The predicted contract address
-    function getAddress(
-        bytes memory creationCode,
-        uint256 salt
-    ) external view returns (address);
+    function getAddress(bytes memory creationCode, uint256 salt) external view returns (address);
 }

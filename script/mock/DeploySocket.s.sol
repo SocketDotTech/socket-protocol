@@ -11,13 +11,7 @@ contract DeploySocket is Script {
         vm.createSelectFork(rpc);
         uint256 deployerPrivateKey = vm.envUint("SOCKET_SIGNER_KEY");
         vm.startBroadcast(deployerPrivateKey);
-        MockSocket socket = new MockSocket(
-            421614,
-            address(0),
-            address(0),
-            address(0),
-            "1.0.0"
-        );
+        MockSocket socket = new MockSocket(421614, address(0), address(0), address(0), "1.0.0");
         console.log("MockSocket:", address(socket));
     }
 }
