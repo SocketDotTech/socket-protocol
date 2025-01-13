@@ -14,4 +14,10 @@ interface IAppDeployer {
         bytes32 contractId,
         uint32 chainSlug
     ) external view returns (address onChainAddress);
+
+    /// @notice get the forwarder address of a contract
+    function forwarderAddresses(
+        bytes32 contractId,
+        uint32 chainSlug
+    ) external view returns (address forwarderAddress);
 }

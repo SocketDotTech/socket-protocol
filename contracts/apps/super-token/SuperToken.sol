@@ -30,6 +30,7 @@ contract SuperToken is ERC20, Ownable(msg.sender), PlugBase {
     }
 
     function burn(address user_, uint256 amount_) external onlySocket {
+        limitHook.beforeBurn(amount_);
         _burn(user_, amount_);
     }
 

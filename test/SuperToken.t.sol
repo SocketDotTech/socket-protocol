@@ -64,7 +64,7 @@ contract SuperTokenTest is DeliveryHelperTest {
     }
 
     function testContractDeployment() public {
-        bytes32 asyncId = _deploy(
+         _deploy(
             contractIds,
             arbChainSlug,
             2,
@@ -149,7 +149,7 @@ contract SuperTokenTest is DeliveryHelperTest {
         return (bridgeAsyncId, payloadIds);
     }
 
-    function testBridge() public {
+    function testBridge1() public {
         (bytes32 bridgeAsyncId, bytes32[] memory payloadIds) = _bridge();
         finalizeAndExecute(bridgeAsyncId, payloadIds[0], false);
         finalizeAndExecute(bridgeAsyncId, payloadIds[1], false);

@@ -248,6 +248,13 @@ contract DeliveryHelperTest is SetupTest {
                 appGateway: appGateway_,
                 switchboard: address(socketConfig.switchboard)
             });
+
+            if (chainSlug_ == arbChainSlug) {
+                console.log("offChain");
+                console.logBytes32(contractIds[i]);
+                console.log("appGateway", appGateway_);
+                console.log("switchboard", address(socketConfig.switchboard));
+            }
         }
 
         hoax(watcherEOA);
@@ -519,5 +526,15 @@ contract DeliveryHelperTest is SetupTest {
 
     function getTimeoutPayloadId(uint256 counter_) internal view returns (bytes32) {
         return bytes32((uint256(uint160(address(deliveryHelper))) << 64) | counter_);
+    }
+
+    function getOnChainAndForwarderAddresses(
+        uint32 chainSlug_,
+        bytes32 contractId_,
+        IAppDeployer deployer_
+    ) internal view returns (address, address) {
+        address app = deployer_.getOnChainAddress(contractId_, chainSlug_);
+        address forwarder = deployer_.forwarderAddresses(contractId_, chainSlug_);
+        return (app, forwarder);
     }
 }

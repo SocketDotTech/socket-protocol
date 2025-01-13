@@ -20,6 +20,8 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
 
     uint256 public constant auctionEndDelaySeconds = 0;
 
+    error InvalidTransmitter();
+
     /// @notice Constructor for AuctionManager
     /// @param addressResolver_ The address of the address resolver
     /// @param signatureVerifier_ The address of the signature verifier
@@ -81,8 +83,9 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
     function endAuction(bytes32 asyncId_) external onlyDeliveryHelper {
         auctionClosed[asyncId_] = true;
         Bid memory winningBid = winningBids[asyncId_];
-        emit AuctionEnded(asyncId_, winningBid);
+        if (winningBid.transmitter == address(0)) revert InvalidTransmitter();
 
+        emit AuctionEnded(asyncId_, winningBid);
         IDeliveryHelper(addressResolver.deliveryHelper()).startBatchProcessing(
             asyncId_,
             winningBid

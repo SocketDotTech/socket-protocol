@@ -11,7 +11,7 @@ import {IDeliveryHelper} from "../interfaces/IDeliveryHelper.sol";
 /// @title AppDeployerBase
 /// @notice Abstract contract for deploying applications
 abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
-    mapping(bytes32 => mapping(uint32 => address)) public forwarderAddresses;
+    mapping(bytes32 => mapping(uint32 => address)) public override forwarderAddresses;
     mapping(bytes32 => bytes) public creationCodeWithArgs;
 
     constructor(

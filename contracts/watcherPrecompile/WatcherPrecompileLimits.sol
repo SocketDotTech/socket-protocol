@@ -73,7 +73,6 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
             ? appGateway_
             : msg.sender;
 
-        appGateway = addressResolver.contractsToGateways(resolverAddress);
-        if (appGateway == address(0)) appGateway = resolverAddress;
+        appGateway = _getCoreAppGateway(resolverAddress);
     }
 }
