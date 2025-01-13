@@ -99,9 +99,9 @@ contract SuperTokenTest is DeliveryHelperTest {
                 appContracts.superToken,
                 optChainSlug
             ),
-            user: owner, // 2 account anvil
-            srcAmount: srcAmount, // .01 ETH in wei
-            deadline: 1672531199 // Unix timestamp for a future date
+            user: owner,
+            srcAmount: srcAmount,
+            deadline: block.timestamp + 1000000
         });
         bytes memory encodedOrder = abi.encode(transferOrder);
         appContracts.superTokenApp.transfer(encodedOrder);
