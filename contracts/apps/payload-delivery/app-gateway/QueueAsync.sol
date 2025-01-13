@@ -83,6 +83,8 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
         payloadDetailsArray = new PayloadDetails[](callParamsArray.length);
         for (uint256 i = 0; i < callParamsArray.length; i++) {
             CallParams memory params = callParamsArray[i];
+
+            // getting switchboard address for sbType given. It is updated by watcherPrecompile by watcher
             address switchboard = watcherPrecompile().switchboards(params.chainSlug, sbType_);
 
             PayloadDetails memory payloadDetails = getPayloadDetails(params, switchboard);
@@ -106,15 +108,20 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
         bytes memory payload = params.payload;
         address appGateway = msg.sender;
         if (params.callType == CallType.DEPLOY) {
-            bytes32 salt = keccak256(abi.encode(appGateway, params.chainSlug, saltCounter++));
+            // getting app gateway for deployer as the plug is connected to the app gateway
+            address appGatewayForPlug = _getCoreAppGateway(appGateway);
+            bytes32 salt = keccak256(abi.encode(appGatewayForPlug, params.chainSlug, saltCounter++));
 
+            // app gateway is set in the plug deployed on chain
             payload = abi.encodeWithSelector(
                 IContractFactoryPlug.deployContract.selector,
                 payload,
                 salt,
-                appGateway,
+                appGatewayForPlug,
                 switchboard_
             );
+
+            // for deploy, we set delivery helper as app gateway of contract factory plug
             appGateway = address(this);
         }
 
