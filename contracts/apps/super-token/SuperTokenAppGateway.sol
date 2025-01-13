@@ -2,12 +2,10 @@
 pragma solidity ^0.8.13;
 
 import "../../base/AppGatewayBase.sol";
-import {ISuperToken} from "../../interfaces/ISuperToken.sol";
+import "../../interfaces/ISuperToken.sol";
 import "../../utils/Ownable.sol";
 
 contract SuperTokenAppGateway is AppGatewayBase, Ownable {
-    uint256 public idCounter;
-
     event Transferred(bytes32 asyncId);
 
     struct TransferOrder {
@@ -24,7 +22,11 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         FeesData memory feesData_,
         address _auctionManager
     ) AppGatewayBase(_addressResolver, _auctionManager) Ownable(msg.sender) {
+        // called to connect the deployer contract with this app
         addressResolver.setContractsToGateways(deployerContract_);
+
+        // sets the fees data like max fees, chain and token for all transfers
+        // they can be updated for each transfer as well
         _setFeesData(feesData_);
     }
 
@@ -34,14 +36,5 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         ISuperToken(order.dstToken).mint(order.user, order.srcAmount);
 
         emit Transferred(_getCurrentAsyncId());
-    }
-
-    function withdrawFeeTokens(
-        uint32 chainSlug_,
-        address token_,
-        uint256 amount_,
-        address receiver_
-    ) external onlyOwner {
-        _withdrawFeeTokens(chainSlug_, token_, amount_, receiver_);
     }
 }

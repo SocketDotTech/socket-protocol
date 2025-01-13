@@ -40,8 +40,8 @@ contract SuperTokenDeployer is AppDeployerBase, Ownable {
         _deploy(superToken, chainSlug);
     }
 
-    // don't need to call this directly, will be called automatically after all contracts are deployed.
-    // check AppDeployerBase.allPayloadsExecuted and AppGateway.queueAndDeploy
+    // no need to call this directly, will be called automatically after all contracts are deployed.
+    // check AppDeployerBase._deploy and AppDeployerBase.onBatchComplete
     function initialize(uint32) public pure override {
         return;
     }
