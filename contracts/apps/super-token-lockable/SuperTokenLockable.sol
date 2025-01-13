@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import {ERC20} from "../super-token/ERC20.sol";
 import {Ownable} from "../../utils/Ownable.sol";
-import {LimitHook} from "../super-token/LimitHook.sol";
+import {LimitHook} from "./LimitHook.sol";
 import "../../base/PlugBase.sol";
 
 /**

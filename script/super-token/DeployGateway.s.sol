@@ -29,8 +29,6 @@ contract DeployGateway is Script {
             address(auctionManager),
             FAST,
             SuperTokenDeployer.ConstructorParams({
-                _burnLimit: 10000000000000000000000,
-                _mintLimit: 10000000000000000000000,
                 name_: "SUPER TOKEN",
                 symbol_: "SUPER",
                 decimals_: 18,
@@ -48,14 +46,11 @@ contract DeployGateway is Script {
         );
 
         bytes32 superToken = deployer.superToken();
-        bytes32 limitHook = deployer.limitHook();
 
         console.log("Contracts deployed:");
         console.log("SuperTokenApp:", address(gateway));
         console.log("SuperTokenDeployer:", address(deployer));
         console.log("SuperTokenId:");
         console.logBytes32(superToken);
-        console.log("LimitHookId:");
-        console.logBytes32(limitHook);
     }
 }

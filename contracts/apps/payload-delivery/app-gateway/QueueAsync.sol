@@ -110,7 +110,9 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
         if (params.callType == CallType.DEPLOY) {
             // getting app gateway for deployer as the plug is connected to the app gateway
             address appGatewayForPlug = _getCoreAppGateway(appGateway);
-            bytes32 salt = keccak256(abi.encode(appGatewayForPlug, params.chainSlug, saltCounter++));
+            bytes32 salt = keccak256(
+                abi.encode(appGatewayForPlug, params.chainSlug, saltCounter++)
+            );
 
             // app gateway is set in the plug deployed on chain
             payload = abi.encodeWithSelector(

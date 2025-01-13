@@ -191,13 +191,7 @@ abstract contract BatchAsync is QueueAsync {
             delayInSeconds
         );
 
-        emit PayloadSubmitted(
-            asyncId,
-            appGateway,
-            payloadDetails_,
-            feesData_,
-            auctionManager_
-        );
+        emit PayloadSubmitted(asyncId, appGateway, payloadDetails_, feesData_, auctionManager_);
     }
 
     function endTimeout(bytes32 asyncId_) external onlyWatcherPrecompile {

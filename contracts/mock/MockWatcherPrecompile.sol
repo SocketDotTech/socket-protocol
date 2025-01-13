@@ -111,6 +111,7 @@ contract MockWatcherPrecompile {
         TimeoutRequest storage timeoutRequest = timeoutRequests[timeoutId];
 
         (bool success, ) = address(timeoutRequest.target).call(timeoutRequest.payload);
+        if (!success) revert CallFailed();
         emit TimeoutResolved(
             timeoutId,
             timeoutRequest.target,
@@ -118,6 +119,7 @@ contract MockWatcherPrecompile {
             block.timestamp
         );
     }
+
     // ================== Finalize functions ==================
 
     /// @notice Finalizes a payload request, requests the watcher to release the signatures to execute on chain
@@ -154,13 +156,12 @@ contract MockWatcherPrecompile {
     /// @notice Creates a new query request
     /// @param chainSlug The identifier of the destination chain
     /// @param targetAddress The address of the target contract
-    /// @param asyncPromises Array of promise addresses to be resolved
     /// @param payload The query payload data
     /// @return payloadId The unique identifier for the query
     function query(
         uint32 chainSlug,
         address targetAddress,
-        address[] memory asyncPromises,
+        address[] memory,
         bytes memory payload
     ) public returns (bytes32 payloadId) {
         payloadId = bytes32(queryCounter++);

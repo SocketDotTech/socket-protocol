@@ -8,9 +8,9 @@ import "../../utils/Ownable.sol";
 contract SuperTokenAppGateway is AppGatewayBase, Ownable {
     uint256 public idCounter;
 
-    event Bridged(bytes32 asyncId);
+    event Transferred(bytes32 asyncId);
 
-    struct UserOrder {
+    struct TransferOrder {
         address srcToken;
         address dstToken;
         address user;
@@ -28,13 +28,12 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         _setFeesData(feesData_);
     }
 
-    function bridge(bytes memory _order) external async returns (bytes32 asyncId) {
-        UserOrder memory order = abi.decode(_order, (UserOrder));
-        asyncId = _getCurrentAsyncId();
-        ISuperToken(order.dstToken).mint(order.user, order.srcAmount);
+    function transfer(bytes memory _order) external async {
+        TransferOrder memory order = abi.decode(_order, (TransferOrder));
         ISuperToken(order.srcToken).burn(order.user, order.srcAmount);
+        ISuperToken(order.dstToken).mint(order.user, order.srcAmount);
 
-        emit Bridged(asyncId);
+        emit Transferred(_getCurrentAsyncId());
     }
 
     function withdrawFeeTokens(

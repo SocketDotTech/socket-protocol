@@ -35,6 +35,7 @@ contract MockSocket is ISocket {
     function connect(address appGateway_, address switchboard_) external override {}
 
     function registerSwitchboard() external override {}
+
     ////////////////////////////////////////////////////////
     ////////////////////// ERRORS //////////////////////////
     ////////////////////////////////////////////////////////
@@ -73,13 +74,7 @@ contract MockSocket is ISocket {
      */
     mapping(bytes32 => bool) public payloadExecuted;
 
-    constructor(
-        uint32 chainSlug_,
-        address hasher_,
-        address signatureVerifier_,
-        address owner_,
-        string memory version_
-    ) {
+    constructor(uint32 chainSlug_, address, address, address, string memory) {
         chainSlug = chainSlug_;
     }
 
@@ -114,10 +109,10 @@ contract MockSocket is ISocket {
      */
     function execute(
         bytes32 payloadId_,
-        address appGateway_,
+        address,
         address target_,
         uint256 executionGasLimit_,
-        bytes memory transmitterSignature_,
+        bytes memory,
         bytes memory payload_
     ) external payable returns (bytes memory) {
         // execute payload
@@ -139,10 +134,10 @@ contract MockSocket is ISocket {
      * code exists in the given address.
      */
     function _execute(
-        address localPlug_,
+        address,
         bytes32 payloadId_,
-        uint256 executionGasLimit_,
-        bytes memory payload_
+        uint256,
+        bytes memory
     ) internal returns (bytes memory) {
         bytes memory returnData = hex"00010203";
         emit ExecutionSuccess(payloadId_, returnData);

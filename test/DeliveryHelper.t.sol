@@ -16,6 +16,7 @@ contract DeliveryHelperTest is SetupTest {
     uint256 public deployCounter;
     uint256 public asyncPromiseCounterLocal = 0;
     uint256 public asyncCounterTest;
+    uint256 public auctionEndDelaySeconds = 0;
 
     DeliveryHelper deliveryHelper;
     FeesManager feesManager;
@@ -40,6 +41,7 @@ contract DeliveryHelperTest is SetupTest {
         deliveryHelper = new DeliveryHelper(address(addressResolver), address(feesManager), owner);
         auctionManager = new AuctionManager(
             vmChainSlug,
+            auctionEndDelaySeconds,
             address(addressResolver),
             signatureVerifier,
             owner
@@ -248,31 +250,10 @@ contract DeliveryHelperTest is SetupTest {
                 appGateway: appGateway_,
                 switchboard: address(socketConfig.switchboard)
             });
-
-            if (chainSlug_ == arbChainSlug) {
-                console.log("offChain");
-                console.logBytes32(contractIds[i]);
-                console.log("appGateway", appGateway_);
-                console.log("switchboard", address(socketConfig.switchboard));
-            }
         }
 
         hoax(watcherEOA);
         watcherPrecompile.setAppGateways(gateways);
-    }
-
-    function _configure(
-        uint32 chainSlug_,
-        uint256 totalPayloads
-    ) internal returns (bytes32 asyncId) {
-        asyncId = getCurrentAsyncId();
-        asyncCounterTest++;
-        bytes32[] memory payloadIds = getWritePayloadIds(
-            chainSlug_,
-            address(getSocketConfig(chainSlug_).switchboard),
-            totalPayloads
-        );
-        bidAndExecute(payloadIds, asyncId);
     }
 
     function _executeBatchSingleChain(
@@ -287,6 +268,26 @@ contract DeliveryHelperTest is SetupTest {
             totalPayloads
         );
         bidAndExecute(payloadIds, asyncId);
+    }
+
+    function _executeBatchMultiChain(
+        uint32[] memory chainSlugs_
+    ) internal returns (bytes32 asyncId) {
+        asyncId = getCurrentAsyncId();
+        asyncCounterTest++;
+
+        bidAndEndAuction(asyncId);
+        for (uint i = 0; i < chainSlugs_.length; i++) {
+            bytes32 payloadId = getWritePayloadId(
+                chainSlugs_[i],
+                address(getSocketConfig(chainSlugs_[i]).switchboard),
+                i + writePayloadIdCounter
+            );
+            finalizeAndExecute(asyncId, payloadId, false);
+        }
+
+        // for fees
+        writePayloadIdCounter += chainSlugs_.length + 1;
     }
 
     function createDeployPayloadDetail(

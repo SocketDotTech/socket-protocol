@@ -91,8 +91,8 @@ contract CounterTest is DeliveryHelperTest {
         uint32[] memory chains = new uint32[](2);
         chains[0] = arbChainSlug;
         chains[1] = optChainSlug;
-        // _executeBatchMultipleChains(chains, 2);
-        // assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
-        // assertEq(Counter(optCounter).counter(), optCounterBefore + 1);
+        _executeBatchMultiChain(chains);
+        assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
+        assertEq(Counter(optCounter).counter(), optCounterBefore + 1);
     }
 }

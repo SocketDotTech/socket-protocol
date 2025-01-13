@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "./SuperTokenLockable.sol";
-import "../super-token/LimitHook.sol";
+import "./LimitHook.sol";
 import "../../base/AppDeployerBase.sol";
 import "../../utils/Ownable.sol";
 

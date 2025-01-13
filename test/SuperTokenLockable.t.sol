@@ -140,7 +140,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             address(appContracts.superTokenLockableApp)
         );
 
-        bytes32 asyncId = _configure(arbChainSlug, 1);
+        bytes32 asyncId = _executeBatchSingleChain(arbChainSlug, 1);
         PayloadDetails[] memory payloadDetails = createConfigurePayloadDetailsArray(arbChainSlug);
         checkPayloadBatchAndDetails(
             payloadDetails,
@@ -159,7 +159,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             address(appContracts.superTokenLockableApp)
         );
 
-        _configure(arbChainSlug, 1);
+        _executeBatchSingleChain(arbChainSlug, 1);
 
         _deploy(
             contractIds,
@@ -169,7 +169,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             address(appContracts.superTokenLockableApp)
         );
 
-        _configure(optChainSlug, 1);
+        _executeBatchSingleChain(optChainSlug, 1);
     }
 
     function _bridge() internal returns (bytes32, bytes32[] memory) {
@@ -394,7 +394,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //         1
     //     );
     //     payloadDetails = createConfigurePayloadDetailsArray(optChainSlug);
-    //     _configure(
+    //     _executeBatchSingleChain(
     //         payloadIds
     //     );
 
@@ -420,7 +420,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //         1
     //     );
     //     payloadDetails = createConfigurePayloadDetailsArray(arbChainSlug);
-    //     _configure(
+    //     _executeBatchSingleChain(
     //         payloadIds
     //     );
     // }

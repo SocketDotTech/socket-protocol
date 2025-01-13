@@ -3,7 +3,6 @@ pragma solidity ^0.8.13;
 
 import "./ERC20.sol";
 import {Ownable} from "../../utils/Ownable.sol";
-import {LimitHook} from "./LimitHook.sol";
 import "../../base/PlugBase.sol";
 
 /**
@@ -11,7 +10,6 @@ import "../../base/PlugBase.sol";
  * @notice An ERC20 contract which enables bridging a token to its sibling chains.
  */
 contract SuperToken is ERC20, Ownable(msg.sender), PlugBase {
-    LimitHook public limitHook;
     mapping(address => uint256) public lockedTokens;
 
     constructor(
@@ -25,21 +23,15 @@ contract SuperToken is ERC20, Ownable(msg.sender), PlugBase {
     }
 
     function mint(address receiver_, uint256 amount_) external onlySocket {
-        limitHook.beforeMint(amount_);
         _mint(receiver_, amount_);
     }
 
     function burn(address user_, uint256 amount_) external onlySocket {
-        limitHook.beforeBurn(amount_);
         _burn(user_, amount_);
     }
 
     function setSocket(address newSocket_) external onlyOwner {
         _setSocket(newSocket_);
-    }
-
-    function setLimitHook(address limitHook_) external onlyOwner {
-        limitHook = LimitHook(limitHook_);
     }
 
     function connectSocket(

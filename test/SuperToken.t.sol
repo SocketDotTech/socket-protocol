@@ -11,13 +11,12 @@ contract SuperTokenTest is DeliveryHelperTest {
         SuperTokenAppGateway superTokenApp;
         SuperTokenDeployer superTokenDeployer;
         bytes32 superToken;
-        bytes32 limitHook;
     }
     AppContracts appContracts;
-    bytes32[] contractIds = new bytes32[](2);
+    bytes32[] contractIds = new bytes32[](1);
 
     uint256 srcAmount = 0.01 ether;
-    SuperTokenAppGateway.UserOrder userOrder;
+    SuperTokenAppGateway.TransferOrder transferOrder;
 
     function setUp() public {
         // core
@@ -27,7 +26,6 @@ contract SuperTokenTest is DeliveryHelperTest {
         deploySuperTokenApp();
 
         contractIds[0] = appContracts.superToken;
-        contractIds[1] = appContracts.limitHook;
     }
 
     function deploySuperTokenApp() internal {
@@ -37,8 +35,6 @@ contract SuperTokenTest is DeliveryHelperTest {
             address(auctionManager),
             FAST,
             SuperTokenDeployer.ConstructorParams({
-                _burnLimit: 10000000000000000000000,
-                _mintLimit: 10000000000000000000000,
                 name_: "SUPER TOKEN",
                 symbol_: "SUPER",
                 decimals_: 18,
@@ -58,61 +54,43 @@ contract SuperTokenTest is DeliveryHelperTest {
         appContracts = AppContracts({
             superTokenApp: superTokenApp,
             superTokenDeployer: superTokenDeployer,
-            superToken: superTokenDeployer.superToken(),
-            limitHook: superTokenDeployer.limitHook()
+            superToken: superTokenDeployer.superToken()
         });
     }
 
     function testContractDeployment() public {
-         _deploy(
+        _deploy(
             contractIds,
             arbChainSlug,
-            2,
+            1,
             appContracts.superTokenDeployer,
             address(appContracts.superTokenApp)
         );
     }
 
-    function testConfigure() public {
+    function beforeTransfer() internal {
         writePayloadIdCounter = 0;
         _deploy(
             contractIds,
             arbChainSlug,
-            2,
+            1,
             appContracts.superTokenDeployer,
             address(appContracts.superTokenApp)
         );
-
-        _configure(arbChainSlug, 1);
-    }
-
-    function beforeBridge() internal {
-        writePayloadIdCounter = 0;
-        _deploy(
-            contractIds,
-            arbChainSlug,
-            2,
-            appContracts.superTokenDeployer,
-            address(appContracts.superTokenApp)
-        );
-
-        _configure(arbChainSlug, 1);
 
         _deploy(
             contractIds,
             optChainSlug,
-            2,
+            1,
             appContracts.superTokenDeployer,
             address(appContracts.superTokenApp)
         );
-
-        _configure(optChainSlug, 1);
     }
 
-    function _bridge() internal returns (bytes32, bytes32[] memory) {
-        beforeBridge();
+    function testTransfer() public {
+        beforeTransfer();
 
-        userOrder = SuperTokenAppGateway.UserOrder({
+        transferOrder = SuperTokenAppGateway.TransferOrder({
             srcToken: appContracts.superTokenDeployer.forwarderAddresses(
                 appContracts.superToken,
                 arbChainSlug
@@ -125,33 +103,12 @@ contract SuperTokenTest is DeliveryHelperTest {
             srcAmount: srcAmount, // .01 ETH in wei
             deadline: 1672531199 // Unix timestamp for a future date
         });
-        uint32 srcChainSlug = IForwarder(userOrder.srcToken).getChainSlug();
-        uint32 dstChainSlug = IForwarder(userOrder.dstToken).getChainSlug();
+        bytes memory encodedOrder = abi.encode(transferOrder);
+        appContracts.superTokenApp.transfer(encodedOrder);
 
-        bytes32[] memory payloadIds = new bytes32[](4);
-        payloadIds[0] = getWritePayloadId(
-            srcChainSlug,
-            address(getSocketConfig(srcChainSlug).switchboard),
-            writePayloadIdCounter++
-        );
-        payloadIds[2] = getWritePayloadId(
-            dstChainSlug,
-            address(getSocketConfig(dstChainSlug).switchboard),
-            writePayloadIdCounter++
-        );
-        writePayloadIdCounter++;
-        bytes32 bridgeAsyncId = getCurrentAsyncId();
-        asyncCounterTest++;
-
-        bytes memory encodedOrder = abi.encode(userOrder);
-        appContracts.superTokenApp.bridge(encodedOrder);
-        bidAndEndAuction(bridgeAsyncId);
-        return (bridgeAsyncId, payloadIds);
-    }
-
-    function testBridge1() public {
-        (bytes32 bridgeAsyncId, bytes32[] memory payloadIds) = _bridge();
-        finalizeAndExecute(bridgeAsyncId, payloadIds[0], false);
-        finalizeAndExecute(bridgeAsyncId, payloadIds[1], false);
+        uint32[] memory chainSlugs = new uint32[](2);
+        chainSlugs[0] = IForwarder(transferOrder.srcToken).getChainSlug();
+        chainSlugs[1] = IForwarder(transferOrder.dstToken).getChainSlug();
+        _executeBatchMultiChain(chainSlugs);
     }
 }

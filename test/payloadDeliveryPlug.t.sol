@@ -3,7 +3,6 @@ pragma solidity ^0.8.3;
 
 import "forge-std/Test.sol";
 import {SuperToken} from "../contracts/apps/super-token/SuperToken.sol";
-import {LimitHook} from "../contracts/apps/super-token/LimitHook.sol";
 import {ContractFactoryPlug} from "../contracts/apps/payload-delivery/ContractFactoryPlug.sol";
 import {FeesPlug} from "../contracts/apps/payload-delivery/FeesPlug.sol";
 import "../contracts/common/Structs.sol";
