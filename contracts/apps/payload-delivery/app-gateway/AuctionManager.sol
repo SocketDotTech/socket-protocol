@@ -8,7 +8,7 @@ import {FeesData} from "../../../common/Structs.sol";
 import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 import "../../../interfaces/IAuctionManager.sol";
 
-/// @title DeliveryHelper
+/// @title AuctionManager
 /// @notice Contract for managing auctions and placing bids
 contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
     SignatureVerifier public immutable signatureVerifier__;
@@ -20,7 +20,7 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
 
     uint256 public constant auctionEndDelaySeconds = 0;
 
-    /// @notice Constructor for DeliveryHelper
+    /// @notice Constructor for AuctionManager
     /// @param addressResolver_ The address of the address resolver
     /// @param signatureVerifier_ The address of the signature verifier
     constructor(

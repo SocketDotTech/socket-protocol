@@ -12,7 +12,7 @@ src/types
 #Hardhat plugin files
 typechain-types/
 
-.env*
+.env
 .DS_Store
 
 .gas-snapshot/
