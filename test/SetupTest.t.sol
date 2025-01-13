@@ -157,16 +157,12 @@ contract SetupTest is Test {
     }
 
     function resolvePromise(bytes32 payloadId, bytes memory returnData) internal {
-        IWatcherPrecompile.ResolvedPromises[]
-            memory resolvedPromises = new IWatcherPrecompile.ResolvedPromises[](1);
+        ResolvedPromises[] memory resolvedPromises = new ResolvedPromises[](1);
 
         bytes[] memory returnDatas = new bytes[](2);
         returnDatas[0] = returnData;
 
-        resolvedPromises[0] = IWatcherPrecompile.ResolvedPromises({
-            payloadId: payloadId,
-            returnData: returnDatas
-        });
+        resolvedPromises[0] = ResolvedPromises({payloadId: payloadId, returnData: returnDatas});
         vm.prank(watcherEOA);
         watcherPrecompile.resolvePromises(resolvedPromises);
     }

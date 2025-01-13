@@ -80,27 +80,26 @@ contract DeliveryHelperTest is SetupTest {
         );
         vm.stopPrank();
 
-        IWatcherPrecompile.AppGatewayConfig[]
-            memory gateways = new IWatcherPrecompile.AppGatewayConfig[](4);
-        gateways[0] = IWatcherPrecompile.AppGatewayConfig({
+        AppGatewayConfig[] memory gateways = new AppGatewayConfig[](4);
+        gateways[0] = AppGatewayConfig({
             plug: address(arbConfig.contractFactoryPlug),
             chainSlug: arbChainSlug,
             appGateway: address(deliveryHelper),
             switchboard: address(arbConfig.switchboard)
         });
-        gateways[1] = IWatcherPrecompile.AppGatewayConfig({
+        gateways[1] = AppGatewayConfig({
             plug: address(optConfig.contractFactoryPlug),
             chainSlug: optChainSlug,
             appGateway: address(deliveryHelper),
             switchboard: address(optConfig.switchboard)
         });
-        gateways[2] = IWatcherPrecompile.AppGatewayConfig({
+        gateways[2] = AppGatewayConfig({
             plug: address(arbConfig.feesPlug),
             chainSlug: arbChainSlug,
             appGateway: address(feesManager),
             switchboard: address(arbConfig.switchboard)
         });
-        gateways[3] = IWatcherPrecompile.AppGatewayConfig({
+        gateways[3] = AppGatewayConfig({
             plug: address(optConfig.feesPlug),
             chainSlug: optChainSlug,
             appGateway: address(feesManager),
@@ -201,14 +200,13 @@ contract DeliveryHelperTest is SetupTest {
         address appGateway_,
         bytes32[] memory contractIds
     ) internal {
-        IWatcherPrecompile.AppGatewayConfig[]
-            memory gateways = new IWatcherPrecompile.AppGatewayConfig[](contractIds.length);
+        AppGatewayConfig[] memory gateways = new AppGatewayConfig[](contractIds.length);
 
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
         for (uint i = 0; i < contractIds.length; i++) {
             address plug = appDeployer_.getOnChainAddress(contractIds[i], chainSlug_);
 
-            gateways[i] = IWatcherPrecompile.AppGatewayConfig({
+            gateways[i] = AppGatewayConfig({
                 plug: plug,
                 chainSlug: chainSlug_,
                 appGateway: appGateway_,
