@@ -1,31 +1,31 @@
 {
   "421614": {
-    "SignatureVerifier": "0xf39De96BF626e3b97f9Ad9340A6cEc20D1A2946F",
-    "Hasher": "0x29984140BFbAb8c7072eA8961B937a477Cdda0d2",
-    "Socket": "0xd5B12Dc75C784FE35b7879964745B33f5eB8beCe",
-    "SocketBatcher": "0xD5FB76d35bebAC118eD78971F8B8cd2776ec2e74",
-    "FastSwitchboard": "0x98f94402594ED37bC6fc32B8602341A2E5DFf85C",
-    "FeesPlug": "0x46a7391eA0F5FE56b367CF87C38619C03242649d",
-    "ContractFactoryPlug": "0xdb2Ee2BCC81e96F6A5a4A6444b9fcA238A864947",
-    "startBlock": 114559594
+    "SignatureVerifier": "0xe1b30D44b542f82BB2EC57f429db4C441dEb9b52",
+    "Hasher": "0xcd1057399edbbDAD8973Bab4d70D8644Ac4cCf7D",
+    "Socket": "0x00eE3c449110D290fDbdA41036915f1696280BFb",
+    "SocketBatcher": "0x32B4baf842fdA8B7b818b0BF12Ed1C1A170267F5",
+    "FastSwitchboard": "0xd37D0a4E132a0Fe4b1035e441142d3Bea1c37A74",
+    "FeesPlug": "0x6c40Fb39B03e32EC4D23e31DdE6D10283F2C7b4F",
+    "ContractFactoryPlug": "0xA944BBe5D4F67a242C9e92d539fF2d55616283a7",
+    "startBlock": 114566030
   },
   "7625382": {
-    "AddressResolver": "0x4363efee604CCd02fbAD3D261CC95DD4368bD22c",
-    "WatcherPrecompile": "0x83225AB65E5095A39ddB7B75a15befBCFc28ecaA",
-    "SignatureVerifier": "0xbc325c4C4c74E3586f080AFc6f4C177eBe2900bf",
-    "AuctionManager": "0xa3dd024BAE09aa606257976215bE1AcC9B2ffdd8",
-    "FeesManager": "0xB5dbaC5d028FA9680171AB70E82aBF2Ab9902618",
-    "DeliveryHelper": "0x349Dd53d3fe777405Ae4fC83F7F842C2A564a0da",
-    "startBlock": 3863
+    "AddressResolver": "0x7EdDD3A856a94Cf8D0614000B3F22304b2e83198",
+    "WatcherPrecompile": "0x4E781208AD9AebD5340a24b4AEbe2A5324Cd7b1a",
+    "SignatureVerifier": "0xd49bBbba3d670AC67C9216768CD52B16c9521C34",
+    "AuctionManager": "0x779954f870aaD4A81cbe916e526F55dc49154069",
+    "FeesManager": "0x68559Bf8C4E3Fca87dcE67AFbc5A625bB4a64c5e",
+    "DeliveryHelper": "0x6DAAc1140Eb29778dBB12C90426bDcC05e1a1c50",
+    "startBlock": 3879
   },
   "11155420": {
-    "SignatureVerifier": "0x07A0FD250647b2BeeAf7DCd19c86618c56774Aec",
-    "Hasher": "0xc2c38933CC6931F8FA8e5F278451A12E7EFF4dBd",
-    "Socket": "0x4459BCcFdfba84eEC806B5059247568b691F533B",
-    "SocketBatcher": "0x316Ec4b26FbFaC7c2e0F29bAbbAAa396AEA657d6",
-    "FastSwitchboard": "0x2d1D26c0E8b884Bd9D1024497Be776846ffD6df8",
-    "FeesPlug": "0xc130463f022E8664522B610615960688D1F3e26D",
-    "ContractFactoryPlug": "0x1aBF1eA6187915f7333Ada11Dd3BAb955C4804Af",
-    "startBlock": 22473901
+    "SignatureVerifier": "0x804Af74b5b3865872bEf354e286124253782FA95",
+    "Hasher": "0x60C4ecd1B5E613Bd888b64933bEd6F407B3946A3",
+    "Socket": "0x2E98559BE79A146304AC30Cf4367fcebCcaC766B",
+    "SocketBatcher": "0x166AFFBf0179A6Ced6f8d1F1b737908B2491E94C",
+    "FastSwitchboard": "0xfA768B7E490524475B5B96521d4C61D5b976c3C9",
+    "FeesPlug": "0xecC397A9AF71B4687D63b10DB8EF2931C90C7a08",
+    "ContractFactoryPlug": "0xcb59f687F4b662e2D4D1B548d159295fC5319164",
+    "startBlock": 22475797
   }
 }

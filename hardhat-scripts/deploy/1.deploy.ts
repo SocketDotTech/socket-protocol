@@ -47,8 +47,6 @@ const main = async () => {
             signer: signer,
             currentChainSlug: chain as ChainSlug,
           };
-          console.log("Deploying Socket contracts");
-          console.log(CORE_CONTRACTS);
           let contractName: string = CORE_CONTRACTS.SignatureVerifier;
           const signatureVerifier: Contract = await getOrDeploy(
             contractName,
