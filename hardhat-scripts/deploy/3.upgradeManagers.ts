@@ -63,7 +63,7 @@ async function setSwitchboard(sbAddress, chain, addresses) {
     OFF_CHAIN_VM_CHAIN_ID as ChainSlug
   );
   const signer: Wallet = new ethers.Wallet(
-    process.env.SOCKET_SIGNER_KEY as string,
+    process.env.WATCHER_PRIVATE_KEY as string,
     providerInstance
   );
   const watcherVMaddr = addresses[OFF_CHAIN_VM_CHAIN_ID]!;

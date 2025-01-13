@@ -18,7 +18,7 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
     mapping(bytes32 => bool) public override auctionClosed;
     mapping(bytes32 => bool) public override auctionStarted;
 
-    uint256 public constant auctionEndDelaySeconds = 0;
+    uint256 public auctionEndDelaySeconds;
 
     error InvalidTransmitter();
 
@@ -33,11 +33,16 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
     ) AddressResolverUtil(addressResolver_) Ownable(owner_) {
         vmChainSlug = vmChainSlug_;
         signatureVerifier__ = signatureVerifier_;
+        auctionEndDelaySeconds = 3;
     }
 
     event AuctionStarted(bytes32 asyncId_);
     event AuctionEnded(bytes32 asyncId_, Bid winningBid);
     event BidPlaced(bytes32 asyncId, Bid bid);
+
+    function setAuctionEndDelaySeconds(uint256 auctionEndDelaySeconds_) external onlyOwner {
+        auctionEndDelaySeconds = auctionEndDelaySeconds_;
+    }
 
     function startAuction(bytes32 asyncId_) external onlyDeliveryHelper returns (uint256) {
         require(!auctionClosed[asyncId_], "Auction closed");
