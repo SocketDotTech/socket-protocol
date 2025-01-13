@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {SuperTokenDeployer} from "../contracts/apps/super-token/SuperTokenDeployer.sol";
 import {SuperTokenAppGateway} from "../contracts/apps/super-token/SuperTokenAppGateway.sol";
+import {SuperToken} from "../contracts/apps/super-token/SuperToken.sol";
 import "./DeliveryHelper.t.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../contracts/common/Constants.sol";
 
@@ -66,6 +67,28 @@ contract SuperTokenTest is DeliveryHelperTest {
             appContracts.superTokenDeployer,
             address(appContracts.superTokenApp)
         );
+
+        (address onChain, address forwarder) = getOnChainAndForwarderAddresses(
+            arbChainSlug,
+            appContracts.superToken,
+            appContracts.superTokenDeployer
+        );
+
+        assertEq(
+            SuperToken(onChain).name(),
+            "SUPER TOKEN",
+            "OnChain SuperToken name should be SUPER TOKEN"
+        );
+        assertEq(
+            IForwarder(forwarder).getChainSlug(),
+            arbChainSlug,
+            "Forwarder SuperToken chainSlug should be arbChainSlug"
+        );
+        assertEq(
+            IForwarder(forwarder).getOnChainAddress(),
+            onChain,
+            "Forwarder SuperToken onChainAddress should be correct"
+        );
     }
 
     function beforeTransfer() internal {
@@ -90,15 +113,24 @@ contract SuperTokenTest is DeliveryHelperTest {
     function testTransfer() public {
         beforeTransfer();
 
+        (address onChainArb, address forwarderArb) = getOnChainAndForwarderAddresses(
+            arbChainSlug,
+            appContracts.superToken,
+            appContracts.superTokenDeployer
+        );
+
+        (address onChainOpt, address forwarderOpt) = getOnChainAndForwarderAddresses(
+            optChainSlug,
+            appContracts.superToken,
+            appContracts.superTokenDeployer
+        );
+
+        uint256 arbBalanceBefore = SuperToken(onChainArb).balanceOf(owner);
+        uint256 optBalanceBefore = SuperToken(onChainOpt).balanceOf(owner);
+
         transferOrder = SuperTokenAppGateway.TransferOrder({
-            srcToken: appContracts.superTokenDeployer.forwarderAddresses(
-                appContracts.superToken,
-                arbChainSlug
-            ),
-            dstToken: appContracts.superTokenDeployer.forwarderAddresses(
-                appContracts.superToken,
-                optChainSlug
-            ),
+            srcToken: forwarderArb,
+            dstToken: forwarderOpt,
             user: owner,
             srcAmount: srcAmount,
             deadline: block.timestamp + 1000000
@@ -107,8 +139,19 @@ contract SuperTokenTest is DeliveryHelperTest {
         appContracts.superTokenApp.transfer(encodedOrder);
 
         uint32[] memory chainSlugs = new uint32[](2);
-        chainSlugs[0] = IForwarder(transferOrder.srcToken).getChainSlug();
-        chainSlugs[1] = IForwarder(transferOrder.dstToken).getChainSlug();
+        chainSlugs[0] = IForwarder(forwarderArb).getChainSlug();
+        chainSlugs[1] = IForwarder(forwarderOpt).getChainSlug();
         _executeBatchMultiChain(chainSlugs);
+
+        assertEq(
+            SuperToken(onChainArb).balanceOf(owner),
+            arbBalanceBefore - srcAmount,
+            "Arb balance should be decreased by srcAmount"
+        );
+        assertEq(
+            SuperToken(onChainOpt).balanceOf(owner),
+            optBalanceBefore + srcAmount,
+            "Opt balance should be increased by srcAmount"
+        );
     }
 }

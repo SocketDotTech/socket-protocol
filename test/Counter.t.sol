@@ -50,6 +50,23 @@ contract CounterTest is DeliveryHelperTest {
     function testCounterDeployment() external {
         deploySetup();
         deployCounterApp(arbChainSlug);
+
+        (address onChain, address forwarder) = getOnChainAndForwarderAddresses(
+            arbChainSlug,
+            counterId,
+            counterDeployer
+        );
+
+        assertEq(
+            IForwarder(forwarder).getChainSlug(),
+            arbChainSlug,
+            "Forwarder chainSlug should be correct"
+        );
+        assertEq(
+            IForwarder(forwarder).getOnChainAddress(),
+            onChain,
+            "Forwarder onChainAddress should be correct"
+        );
     }
 
     function testCounterIncrement() external {
