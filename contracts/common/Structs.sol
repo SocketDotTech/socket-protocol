@@ -68,6 +68,7 @@ struct AsyncRequest {
     address[] next;
     address appGateway;
     address transmitter;
+    address target;
     uint256 executionGasLimit;
     bytes payload;
     address switchboard;

@@ -16,7 +16,7 @@ interface IPlug {
         bytes calldata payload_
     ) external payable returns (bytes memory);
 
-    function initialize(
+    function connectSocket(
         address appGateway_,
         address socket_,
         address switchboard_

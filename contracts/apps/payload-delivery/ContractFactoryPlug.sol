@@ -36,7 +36,7 @@ contract ContractFactoryPlug is PlugBase, Ownable {
             }
         }
 
-        IPlug(addr).initialize(appGateway_, msg.sender, switchboard_);
+        IPlug(addr).connectSocket(appGateway_, msg.sender, switchboard_);
         emit Deployed(addr, salt);
         return addr;
     }
@@ -61,11 +61,11 @@ contract ContractFactoryPlug is PlugBase, Ownable {
         return address(uint160(uint256(hash)));
     }
 
-    function initialize(
+    function connectSocket(
         address appGateway_,
-        address,
+        address socket_,
         address switchboard_
     ) external onlyOwner {
-        _connectSocket(appGateway_, switchboard_);
+        _connectSocket(appGateway_, socket_, switchboard_);
     }
 }

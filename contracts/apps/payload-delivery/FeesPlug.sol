@@ -91,11 +91,11 @@ contract FeesPlug is PlugBase, Ownable {
         }
     }
 
-    function initialize(
+    function connectSocket(
         address appGateway_,
-        address,
+        address socket_,
         address switchboard_
     ) external onlyOwner {
-        _connectSocket(appGateway_, switchboard_);
+        _connectSocket(appGateway_, socket_, switchboard_);
     }
 }

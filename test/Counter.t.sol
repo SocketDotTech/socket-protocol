@@ -66,12 +66,12 @@ contract CounterTest is DeliveryHelperTest {
             address(gateway)
         );
 
-        address counterForwarder = deployer.forwarderAddresses(
-            counterId,
-            arbChainSlug
-        );
-        address deployedCounter = IForwarder(counterForwarder)
-            .getOnChainAddress();
+        // address counterForwarder = deployer.forwarderAddresses(
+        //     counterId,
+        //     arbChainSlug
+        // );
+        // address deployedCounter = IForwarder(counterForwarder)
+        //     .getOnChainAddress();
 
         payloadIds = getWritePayloadIds(
             arbChainSlug,
@@ -79,6 +79,6 @@ contract CounterTest is DeliveryHelperTest {
             1
         );
 
-        _configure(payloadIds, address(gateway));
+        _configure(payloadIds);
     }
 }

@@ -1,4 +1,5 @@
 import {
+  ChainSlug,
   ChainSocketAddresses,
   CORE_CONTRACTS,
   DeploymentAddresses,
@@ -47,7 +48,6 @@ export const main = async () => {
       await setSwitchboard(
         chainAddresses[CORE_CONTRACTS.FastSwitchboard],
         chain,
-        signer,
         addresses
       );
 
@@ -58,23 +58,30 @@ export const main = async () => {
   }
 };
 
-
-async function setSwitchboard(sbAddress, chain, signer, addresses) {
+async function setSwitchboard(sbAddress, chain, addresses) {
+  const providerInstance = getProviderFromChainSlug(
+    OFF_CHAIN_VM_CHAIN_ID as ChainSlug
+  );
+  const signer: Wallet = new ethers.Wallet(
+    process.env.SOCKET_SIGNER_KEY as string,
+    providerInstance
+  );
   const watcherVMaddr = addresses[OFF_CHAIN_VM_CHAIN_ID]!;
   const watcherPrecompile = (
-    await getInstance("WatcherPrecompile", watcherVMaddr[OffChainVMCoreContracts.WatcherPrecompile])
+    await getInstance(
+      "WatcherPrecompile",
+      watcherVMaddr[OffChainVMCoreContracts.WatcherPrecompile]
+    )
   ).connect(signer);
 
-
-  const currentValue = await watcherPrecompile.connect(signer).switchboards(chain,
-    ethers.utils.keccak256(ethers.utils.toUtf8Bytes("FAST"))
-  );
+  const fastSBtype = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("FAST"));
+  const currentValue = await watcherPrecompile.switchboards(chain, fastSBtype);
   console.log({ current: currentValue, required: sbAddress });
 
   if (currentValue.toLowerCase() !== sbAddress.toLowerCase()) {
-    const tx = await watcherPrecompile.connect(signer).setSwitchboard(chain,
-      ethers.utils.keccak256(ethers.utils.toUtf8Bytes("FAST"))
-      , sbAddress);
+    const tx = await watcherPrecompile
+      .connect(signer)
+      .setSwitchboard(chain, fastSBtype, sbAddress);
 
     console.log(`Setting sb for ${chain} to`, tx.hash);
     await tx.wait();
