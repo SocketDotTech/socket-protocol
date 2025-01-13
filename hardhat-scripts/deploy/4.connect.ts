@@ -89,7 +89,7 @@ async function connectPlug(
   }
 
   // Connect the plug
-  const tx = await plug.functions["initialize"](
+  const tx = await plug.functions["connectSocket"](
     appGateway,
     socket.address,
     switchboard
