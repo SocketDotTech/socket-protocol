@@ -2,28 +2,6 @@
   "421614": [],
   "7625382": [
     [
-      "0x945b0010C2Fc56Cb641416fF15fde2b777A38B01",
-      "AuctionManager",
-      "contracts/apps/payload-delivery/app-gateway/AuctionManager.sol",
-      [
-        7625382,
-        "0x7EdDD3A856a94Cf8D0614000B3F22304b2e83198",
-        "0xd49bBbba3d670AC67C9216768CD52B16c9521C34",
-        "0xb62505feacC486e809392c65614Ce4d7b051923b"
-      ]
-    ],
-    [
-      "0x4b731545444500093957B3521E1A29b1e9BB989d",
-      "AuctionManager",
-      "contracts/apps/payload-delivery/app-gateway/AuctionManager.sol",
-      [
-        7625382,
-        "0x7EdDD3A856a94Cf8D0614000B3F22304b2e83198",
-        "0xd49bBbba3d670AC67C9216768CD52B16c9521C34",
-        "0xb62505feacC486e809392c65614Ce4d7b051923b"
-      ]
-    ],
-    [
       "0xF4D3BDe438416938217d4624c82AEbEb46CeD371",
       "FeesManager",
       "contracts/apps/payload-delivery/app-gateway/FeesManager.sol",
