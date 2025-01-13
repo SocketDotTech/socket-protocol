@@ -7,68 +7,57 @@ import {Counter} from "../contracts/apps/counter/Counter.sol";
 import "./DeliveryHelper.t.sol";
 
 contract CounterTest is DeliveryHelperTest {
-    function testCounter() external {
-        console.log("Deploying contracts on Arbitrum...");
+    bytes32 counterId;
+    bytes32[] contractIds = new bytes32[](2);
+
+    CounterAppGateway gateway;
+    CounterDeployer deployer;
+
+    function deploySetup() internal {
         setUpDeliveryHelper();
 
-        CounterDeployer deployer = new CounterDeployer(
+        deployer = new CounterDeployer(
             address(addressResolver),
             address(auctionManager),
             FAST,
             createFeesData(0.01 ether)
         );
 
-        CounterAppGateway gateway = new CounterAppGateway(
+        gateway = new CounterAppGateway(
             address(addressResolver),
             address(deployer),
             address(auctionManager),
             createFeesData(0.01 ether)
         );
+        setLimit(address(gateway));
 
-        bytes32 counterId = deployer.counter();
-        UpdateLimitParams[] memory params = new UpdateLimitParams[](3);
-        params[0] = UpdateLimitParams({
-            limitType: FINALIZE,
-            appGateway: address(gateway),
-            maxLimit: 10000000000000000000000,
-            ratePerSecond: 10000000000000000000000
-        });
-        params[1] = UpdateLimitParams({
-            limitType: QUERY,
-            appGateway: address(gateway),
-            maxLimit: 10000000000000000000000,
-            ratePerSecond: 10000000000000000000000
-        });
-        params[2] = UpdateLimitParams({
-            limitType: SCHEDULE,
-            appGateway: address(gateway),
-            maxLimit: 10000000000000000000000,
-            ratePerSecond: 10000000000000000000000
-        });
-
-        hoax(watcherEOA);
-        watcherPrecompile.updateLimitParams(params);
-        skip(1000);
-
-        bytes32[] memory payloadIds = getWritePayloadIds(
-            arbChainSlug,
-            address(arbConfig.switchboard),
-            1
-        );
-        bytes32[] memory contractIds = new bytes32[](1);
+        counterId = deployer.counter();
         contractIds[0] = counterId;
+    }
 
-        _deploy(contractIds, payloadIds, arbChainSlug, IAppDeployer(deployer), address(gateway));
+    function deployCounterApp(uint32 chainSlug) internal {
+        _deploy(contractIds, chainSlug, 1, IAppDeployer(deployer), address(gateway));
+    }
 
-        // address counterForwarder = deployer.forwarderAddresses(
-        //     counterId,
-        //     arbChainSlug
-        // );
-        // address deployedCounter = IForwarder(counterForwarder)
-        //     .getOnChainAddress();
+    function testCounterDeployment() external {
+        deploySetup();
+        deployCounterApp(arbChainSlug);
+    }
 
-        payloadIds = getWritePayloadIds(arbChainSlug, address(arbConfig.switchboard), 1);
+    function testCounterIncrement() external {
+        deploySetup();
+        deployCounterApp(arbChainSlug);
 
-        _configure(payloadIds);
+        address arbCounter = deployer.getOnChainAddress(counterId, arbChainSlug);
+        address arbCounterForwarder = deployer.forwarderAddresses(counterId, arbChainSlug);
+
+        console.log("Counter on Arbitrum before:", Counter(arbCounter).counter());
+
+        address[] memory instances = new address[](1);
+        instances[0] = arbCounterForwarder;
+        gateway.incrementCounters(instances);
+
+        _executeBatchSingleChain(arbChainSlug, 1);
+        console.log("Counter on Arbitrum after:", Counter(arbCounter).counter());
     }
 }

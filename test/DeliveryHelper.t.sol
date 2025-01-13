@@ -29,6 +29,9 @@ contract DeliveryHelperTest is SetupTest {
     );
     event BidPlaced(bytes32 indexed asyncId, Bid bid);
     event AuctionEnded(bytes32 indexed asyncId, Bid winningBid);
+    event BatchCancelled(bytes32 indexed asyncId);
+    event FinalizeRequested(bytes32 indexed payloadId, AsyncRequest asyncRequest);
+    event QueryRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
 
     function setUpDeliveryHelper() internal {
         // core
@@ -110,6 +113,33 @@ contract DeliveryHelperTest is SetupTest {
         watcherPrecompile.setAppGateways(gateways);
     }
 
+    function setLimit(address appGateway_) internal {
+        UpdateLimitParams[] memory params = new UpdateLimitParams[](3);
+        params[0] = UpdateLimitParams({
+            limitType: QUERY,
+            appGateway: appGateway_,
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+        params[1] = UpdateLimitParams({
+            limitType: SCHEDULE,
+            appGateway: appGateway_,
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+        params[2] = UpdateLimitParams({
+            limitType: FINALIZE,
+            appGateway: appGateway_,
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+
+        hoax(watcherEOA);
+        watcherPrecompile.updateLimitParams(params);
+
+        skip(100);
+    }
+
     //// BATCH DEPLOY AND EXECUTE HELPERS ////
     function getContractFactoryPlug(uint32 chainSlug_) internal view returns (address) {
         return address(getSocketConfig(chainSlug_).contractFactoryPlug);
@@ -181,11 +211,17 @@ contract DeliveryHelperTest is SetupTest {
 
     function _deploy(
         bytes32[] memory contractIds,
-        bytes32[] memory payloadIds,
         uint32 chainSlug_,
+        uint256 totalPayloads,
         IAppDeployer appDeployer_,
         address appGateway_
     ) internal returns (bytes32 asyncId) {
+        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
+        bytes32[] memory payloadIds = getWritePayloadIds(
+            chainSlug_,
+            address(socketConfig.switchboard),
+            totalPayloads
+        );
         asyncId = getCurrentAsyncId();
         asyncCounterTest++;
 
@@ -218,9 +254,31 @@ contract DeliveryHelperTest is SetupTest {
         watcherPrecompile.setAppGateways(gateways);
     }
 
-    function _configure(bytes32[] memory payloadIds) internal returns (bytes32 asyncId) {
+    function _configure(
+        uint32 chainSlug_,
+        uint256 totalPayloads
+    ) internal returns (bytes32 asyncId) {
         asyncId = getCurrentAsyncId();
         asyncCounterTest++;
+        bytes32[] memory payloadIds = getWritePayloadIds(
+            chainSlug_,
+            address(getSocketConfig(chainSlug_).switchboard),
+            totalPayloads
+        );
+        bidAndExecute(payloadIds, asyncId);
+    }
+
+    function _executeBatchSingleChain(
+        uint32 chainSlug_,
+        uint256 totalPayloads
+    ) internal returns (bytes32 asyncId) {
+        asyncId = getCurrentAsyncId();
+        asyncCounterTest++;
+        bytes32[] memory payloadIds = getWritePayloadIds(
+            chainSlug_,
+            address(getSocketConfig(chainSlug_).switchboard),
+            totalPayloads
+        );
         bidAndExecute(payloadIds, asyncId);
     }
 
