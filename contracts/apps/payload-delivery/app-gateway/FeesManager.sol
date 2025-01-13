@@ -75,10 +75,11 @@ contract FeesManager is AddressResolverUtil, Ownable {
         uint256 amount_,
         address receiver_
     ) public view returns (PayloadDetails memory) {
+        address appGateway = _getCoreAppGateway(appGateway_);
         // Create payload for pool contract
         bytes memory payload = abi.encodeCall(
             IFeesPlug.withdrawFees,
-            (appGateway_, token_, amount_, receiver_)
+            (appGateway, token_, amount_, receiver_)
         );
 
         return
@@ -88,8 +89,8 @@ contract FeesManager is AddressResolverUtil, Ownable {
                 target: _getFeesPlugAddress(chainSlug_),
                 payload: payload,
                 callType: CallType.WITHDRAW,
-                executionGasLimit: feeCollectionGasLimit[chainSlug_],
-                next: new address[](0),
+                executionGasLimit: 1000000,
+                next: new address[](2),
                 isSequential: true
             });
     }

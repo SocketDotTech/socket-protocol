@@ -91,29 +91,38 @@ contract FeesTest is DeliveryHelperTest {
     }
 
     function testWithdrawFeeTokens() public {
-        address token = ETH_ADDRESS;
-        uint256 depositAmount = 1 ether;
-        uint256 withdrawAmount = 0.1 ether;
-        address appGateway_ = address(uint160(c++));
-        address receiver = address(uint160(c++));
-        payloadDeliveryPlug.deposit{value: depositAmount}(token, depositAmount, appGateway_);
+        feesConfig.feesPlug.deposit{value: depositAmount}(
+            ETH_ADDRESS,
+            depositAmount,
+            address(counterGateway)
+        );
         assertEq(
             depositAmount,
-            feesPlug.balanceOf(appGateway_, token),
+            feesConfig.feesPlug.balanceOf(address(counterGateway), ETH_ADDRESS),
             "Balance should be correct"
         );
-        bytes memory payload = abi.encode(
-            WITHDRAW,
-            abi.encode(appGateway_, token, withdrawAmount, receiver)
-        );
-        vm.prank(socket);
-        payloadDeliveryPlug.inbound(payload);
-        assertEq(
-            depositAmount - withdrawAmount,
-            payloadDeliveryPlug.balanceOf(appGateway_, token),
-            "Fees Balance should be correct"
-        );
 
-        assertEq(withdrawAmount, receiver.balance, "Receiver Balance should be correct");
+        address receiver = address(uint160(c++));
+
+        uint256 receiverBalanceBefore = receiver.balance;
+        counterGateway.withdrawFeeTokens(feesChainSlug, ETH_ADDRESS, depositAmount, receiver);
+
+        asyncId = getCurrentAsyncId();
+        asyncCounterTest++;
+        bytes32[] memory payloadIds = getWritePayloadIds(
+            feesChainSlug,
+            address(getSocketConfig(feesChainSlug).switchboard),
+            1
+        );
+        bidAndEndAuction(asyncId);
+        finalizeAndExecute(payloadIds[0], true);
+
+        assertEq(0, address(feesConfig.feesPlug).balance, "Fees Balance should be correct");
+
+        assertEq(
+            receiverBalanceBefore + depositAmount,
+            receiver.balance,
+            "Receiver Balance should be correct"
+        );
     }
 }
