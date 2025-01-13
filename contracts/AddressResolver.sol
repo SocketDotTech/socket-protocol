@@ -12,9 +12,10 @@ import {Ownable} from "./utils/Ownable.sol";
 /// @dev Inherits the Ownable contract and implements the IAddressResolver interface.
 contract AddressResolver is Ownable, IAddressResolver {
     IWatcherPrecompile public override watcherPrecompile;
-    address public override auctionHouse;
-    uint256 public asyncPromiseCounter;
+    address public override deliveryHelper;
+    address public override feesManager;
 
+    uint256 public asyncPromiseCounter;
     address[] internal promises;
 
     bytes public forwarderBytecode = type(Forwarder).creationCode;
@@ -33,10 +34,7 @@ contract AddressResolver is Ownable, IAddressResolver {
 
     /// @notice Constructor to initialize the AddressResolver contract
     /// @param _owner The address of the contract owner
-    /// @param _watcherPrecompile The address of the watcher precompile contract
-    constructor(address _owner, address _watcherPrecompile) Ownable(_owner) {
-        watcherPrecompile = IWatcherPrecompile(_watcherPrecompile);
-    }
+    constructor(address _owner) Ownable(_owner) {}
 
     /// @notice Sets the bytecode for the Forwarder contract
     /// @param _forwarderBytecode The bytecode of the Forwarder contract
@@ -54,10 +52,16 @@ contract AddressResolver is Ownable, IAddressResolver {
         asyncPromiseBytecode = _asyncPromiseBytecode;
     }
 
-    /// @notice Updates the address of the auction house
-    /// @param _auctionHouse The address of the auction house
-    function setAuctionHouse(address _auctionHouse) external onlyOwner {
-        auctionHouse = _auctionHouse;
+    /// @notice Updates the address of the delivery helper
+    /// @param _deliveryHelper The address of the delivery helper
+    function setDeliveryHelper(address _deliveryHelper) external onlyOwner {
+        deliveryHelper = _deliveryHelper;
+    }
+
+    /// @notice Updates the address of the delivery helper
+    /// @param _feesManager The address of the fees manager
+    function setFeesManager(address _feesManager) external onlyOwner {
+        feesManager = _feesManager;
     }
 
     /// @notice Updates the address of the watcher precompile contract

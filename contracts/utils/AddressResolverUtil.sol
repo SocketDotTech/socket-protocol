@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "../interfaces/IAddressResolver.sol";
-import "../interfaces/IAuctionHouse.sol";
+import "../interfaces/IDeliveryHelper.sol";
 import "../interfaces/IWatcherPrecompile.sol";
 
 /// @title AddressResolverUtil
@@ -22,10 +22,10 @@ abstract contract AddressResolverUtil {
 
     /// @notice Restricts function access to the auction house contract
     /// @dev Validates that msg.sender matches the registered auction house address
-    modifier onlyPayloadDelivery() {
+    modifier onlyDeliveryHelper() {
         require(
-            msg.sender == addressResolver.auctionHouse(),
-            "Only payload delivery"
+            msg.sender == addressResolver.deliveryHelper(),
+            "Only delivery helper"
         );
         _;
     }
@@ -41,10 +41,10 @@ abstract contract AddressResolverUtil {
     }
 
     /// @notice Gets the auction house contract interface
-    /// @return IAuctionHouse interface of the registered auction house
+    /// @return IDeliveryHelper interface of the registered auction house
     /// @dev Resolves and returns the auction house contract for interaction
-    function auctionHouse() public view returns (IAuctionHouse) {
-        return IAuctionHouse(addressResolver.auctionHouse());
+    function deliveryHelper() public view returns (IDeliveryHelper) {
+        return IDeliveryHelper(addressResolver.deliveryHelper());
     }
 
     /// @notice Gets the watcher precompile contract interface

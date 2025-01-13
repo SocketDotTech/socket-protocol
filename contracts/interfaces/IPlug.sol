@@ -15,4 +15,10 @@ interface IPlug {
     function inbound(
         bytes calldata payload_
     ) external payable returns (bytes memory);
+
+    function connectSocket(
+        address appGateway_,
+        address socket_,
+        address switchboard_
+    ) external;
 }

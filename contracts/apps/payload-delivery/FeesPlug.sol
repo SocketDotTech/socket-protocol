@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "solmate/utils/SafeTransferLib.sol";
-import {PlugBase} from "../../base/PlugBase.sol";
+import "../../base/PlugBase.sol";
 import {Ownable} from "../../utils/Ownable.sol";
 import {ETH_ADDRESS} from "../../common/Constants.sol";
 
@@ -16,9 +16,8 @@ contract FeesPlug is PlugBase, Ownable {
 
     constructor(
         address socket_,
-        uint32 chainSlug_,
         address owner_
-    ) PlugBase(socket_, chainSlug_) Ownable(owner_) {}
+    ) Ownable(owner_) PlugBase(socket_) {}
 
     function distributeFee(
         address appGateway,
@@ -38,6 +37,7 @@ contract FeesPlug is PlugBase, Ownable {
         _transferTokens(feeToken, fee, transmitter);
         return bytes("");
     }
+
     function withdrawFees(
         address appGateway,
         address token,
@@ -91,10 +91,11 @@ contract FeesPlug is PlugBase, Ownable {
         }
     }
 
-    function connect(
+    function connectSocket(
         address appGateway_,
+        address socket_,
         address switchboard_
     ) external onlyOwner {
-        _connectSocket(appGateway_, switchboard_);
+        _connectSocket(appGateway_, socket_, switchboard_);
     }
 }

@@ -10,23 +10,18 @@ import {NotSocket} from "../common/Errors.sol";
 /// @notice Abstract contract for plugs
 abstract contract PlugBase is IPlug {
     ISocket public socket__;
-    uint32 public chainSlug;
-
+    address public appGateway;
     event ConnectorPlugDisconnected();
-
-    /// @notice Constructor for PlugBase
-    /// @param socket_ The socket address
-    /// @param chainSlug_ The chain slug
-    constructor(address socket_, uint32 chainSlug_) {
-        socket__ = ISocket(socket_);
-        chainSlug = chainSlug_;
-    }
 
     /// @notice Modifier to ensure only the socket can call the function
     /// @dev only the socket can call the function
     modifier onlySocket() {
         if (msg.sender != address(socket__)) revert NotSocket();
         _;
+    }
+
+    constructor(address _socket) {
+        socket__ = ISocket(_socket);
     }
 
     /// @notice Inbound function for handling incoming messages
@@ -41,8 +36,12 @@ abstract contract PlugBase is IPlug {
     /// @param switchboard_ The switchboard address
     function _connectSocket(
         address appGateway_,
+        address socket_,
         address switchboard_
     ) internal {
+        _setSocket(socket_);
+        appGateway = appGateway_;
+
         socket__.connect(appGateway_, switchboard_);
     }
 
@@ -55,7 +54,7 @@ abstract contract PlugBase is IPlug {
 
     /// @notice Sets the socket
     /// @param socket_ The socket address
-    function setSocket(address socket_) internal {
+    function _setSocket(address socket_) internal {
         socket__ = ISocket(socket_);
     }
 }

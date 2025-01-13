@@ -2,7 +2,7 @@
 pragma solidity 0.8.13;
 
 import "./interfaces/IAddressResolver.sol";
-import "./interfaces/IAuctionHouse.sol";
+import "./interfaces/IDeliveryHelper.sol";
 import "./interfaces/IAppGateway.sol";
 import "./interfaces/IPromise.sol";
 import "./AsyncPromise.sol";
@@ -68,9 +68,10 @@ contract Forwarder is IForwarder {
     /// @dev It queues the calls in the auction house and deploys the promise contract
     fallback() external payable {
         // Retrieve the auction house address from the address resolver.
-        address auctionHouse = IAddressResolver(addressResolver).auctionHouse();
-        if (auctionHouse == address(0)) {
-            revert("Forwarder: auctionHouse not found");
+        address deliveryHelper = IAddressResolver(addressResolver)
+            .deliveryHelper();
+        if (deliveryHelper == address(0)) {
+            revert("Forwarder: deliveryHelper not found");
         }
 
         // Deploy a new async promise contract.
@@ -81,7 +82,9 @@ contract Forwarder is IForwarder {
         bool isReadCall = IAppGateway(msg.sender).isReadCall();
 
         // Queue the call in the auction house.
-        IAuctionHouse(auctionHouse).queue(
+        IDeliveryHelper(deliveryHelper).queue(
+            // todo
+            true,
             chainSlug,
             onChainAddress,
             latestAsyncPromise,

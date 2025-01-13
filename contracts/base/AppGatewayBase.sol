@@ -2,7 +2,7 @@
 pragma solidity ^0.8.3;
 
 import "../utils/AddressResolverUtil.sol";
-import "../interfaces/IAuctionHouse.sol";
+import "../interfaces/IDeliveryHelper.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
 import {FeesData} from "../common/Structs.sol";
@@ -17,6 +17,9 @@ abstract contract AppGatewayBase is
 {
     bool public override isReadCall;
     address public auctionManager;
+    bytes public onCompleteData;
+    bytes32 public sbType;
+
     mapping(address => bool) public isValidPromise;
 
     error InvalidPromise();
@@ -25,10 +28,15 @@ abstract contract AppGatewayBase is
     /// @notice Modifier to treat functions async
     modifier async() {
         if (feesData.feePoolChain == 0) revert FeesDataNotSet();
-        auctionHouse().clearQueue();
+        deliveryHelper().clearQueue();
         addressResolver.clearPromises();
         _;
-        auctionHouse().batch(feesData, auctionManager);
+        deliveryHelper().batch(
+            feesData,
+            auctionManager,
+            onCompleteData,
+            sbType
+        );
         _markValidPromises();
     }
 
@@ -44,8 +52,11 @@ abstract contract AppGatewayBase is
     /// @notice Constructor for AppGatewayBase
     /// @param _addressResolver The address resolver address
     constructor(
-        address _addressResolver
-    ) AddressResolverUtil(_addressResolver) {}
+        address _addressResolver,
+        address _auctionManager
+    ) AddressResolverUtil(_addressResolver) {
+        auctionManager = _auctionManager;
+    }
 
     /// @notice Creates a contract ID
     /// @param contractName_ The contract name
@@ -83,13 +94,13 @@ abstract contract AppGatewayBase is
     /// @notice Gets the current async ID
     /// @return bytes32 The current async ID
     function _getCurrentAsyncId() internal view returns (bytes32) {
-        return auctionHouse().getCurrentAsyncId();
+        return deliveryHelper().getCurrentAsyncId();
     }
 
     /// @notice Reverts the transaction
     /// @param asyncId_ The async ID
     function _revertTx(bytes32 asyncId_) internal {
-        auctionHouse().cancelTransaction(asyncId_);
+        deliveryHelper().cancelTransaction(asyncId_);
     }
 
     /// @notice Withdraws fee tokens
@@ -103,11 +114,12 @@ abstract contract AppGatewayBase is
         uint256 amount_,
         address receiver_
     ) internal {
-        auctionHouse().withdrawTo(
+        deliveryHelper().withdrawTo(
             chainSlug_,
             token_,
             amount_,
             receiver_,
+            auctionManager,
             feesData
         );
     }
@@ -118,7 +130,7 @@ abstract contract AppGatewayBase is
     function onBatchComplete(
         bytes32 asyncId_,
         PayloadBatch memory payloadBatch_
-    ) external virtual onlyPayloadDelivery {}
+    ) external virtual onlyDeliveryHelper {}
 
     function callFromInbox(
         uint32 chainSlug_,

@@ -16,6 +16,10 @@ abstract contract WatcherPrecompileConfig is Ownable, IWatcherPrecompile {
     /// @dev appGateway => chainSlug => plug
     mapping(address => mapping(uint32 => address)) public appGatewayPlugs;
 
+    /// @notice Maps chain slug to their associated switchboard
+    /// @dev chainSlug => sb type => switchboard address
+    mapping(uint32 => mapping(bytes32 => address)) public switchboards;
+
     // appGateway => chainSlug => plug => isValid
     mapping(address => mapping(uint32 => mapping(address => bool)))
         public isValidInboxCaller;
@@ -25,6 +29,12 @@ abstract contract WatcherPrecompileConfig is Ownable, IWatcherPrecompile {
     /// @param chainSlug The identifier of the destination network
     /// @param plug The address of the plug
     event PlugAdded(address appGateway, uint32 chainSlug, address plug);
+
+    /// @notice Emitted when a switchboard is set for a network
+    /// @param chainSlug The identifier of the network
+    /// @param sbType The type of switchboard
+    /// @param switchboard The address of the switchboard
+    event SwitchboardSet(uint32 chainSlug, bytes32 sbType, address switchboard);
 
     /// @notice Configures app gateways with their respective plugs and switchboards
     /// @param configs Array of configurations containing app gateway, network, plug, and switchboard details
@@ -51,6 +61,18 @@ abstract contract WatcherPrecompileConfig is Ownable, IWatcherPrecompile {
                 configs[i].plug
             );
         }
+    }
+
+    /// @notice Sets the switchboard for a network
+    /// @param chainSlug_ The identifier of the network
+    /// @param switchboard_ The address of the switchboard
+    function setSwitchboard(
+        uint32 chainSlug_,
+        bytes32 sbType_,
+        address switchboard_
+    ) external onlyOwner {
+        switchboards[chainSlug_][sbType_] = switchboard_;
+        emit SwitchboardSet(chainSlug_, sbType_, switchboard_);
     }
 
     function setIsValidInboxCaller(

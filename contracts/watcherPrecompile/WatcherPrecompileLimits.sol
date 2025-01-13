@@ -4,6 +4,7 @@ pragma solidity 0.8.13;
 import {Gauge} from "../utils/Gauge.sol";
 import {LimitParams, UpdateLimitParams} from "../common/Structs.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
+
 abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
     // appGateway => receivingLimitParams
     mapping(address => mapping(bytes32 => LimitParams)) _limitParams;
@@ -19,6 +20,7 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
     constructor(
         address addressResolver_
     ) AddressResolverUtil(addressResolver_) {}
+
     /**
      * @notice This function is used to set bridge limits.
      * @dev It can only be updated by the owner.
@@ -53,11 +55,33 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
         return _limitParams[appGateway_][limitType_];
     }
 
-    function _consumeLimit(address sender_, bytes32 limitType_) internal {
-        address appGateway_ = addressResolver.contractsToGateways(sender_);
-        if (_limitParams[appGateway_][limitType_].maxLimit == 0)
-            revert ActionNotSupported(appGateway_, limitType_);
+    /**
+     * @notice Internal function to consume limit based on caller
+     * @param appGateway_ The app gateway address to check limits for
+     * @param limitType_ The type of limit to consume
+     */
+    function _consumeLimit(
+        address appGateway_,
+        bytes32 limitType_
+    ) internal returns (address appGateway) {
+        appGateway = _getAppGateway(appGateway_);
+        if (_limitParams[appGateway][limitType_].maxLimit == 0)
+            revert ActionNotSupported(appGateway, limitType_);
 
-        _consumeFullLimit(uint256(1), _limitParams[appGateway_][limitType_]); // Reverts on limit hit
+        // Reverts on limit hit
+        _consumeFullLimit(1, _limitParams[appGateway][limitType_]);
+    }
+
+    function _getAppGateway(
+        address appGateway_
+    ) internal view returns (address appGateway) {
+        address resolverAddress = msg.sender ==
+            addressResolver.deliveryHelper() ||
+            msg.sender == addressResolver.feesManager()
+            ? appGateway_
+            : msg.sender;
+
+        appGateway = addressResolver.contractsToGateways(resolverAddress);
+        if (appGateway == address(0)) appGateway = resolverAddress;
     }
 }

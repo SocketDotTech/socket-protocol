@@ -1,8 +1,16 @@
 {
-  "name": "socket-poc",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "@socket.tech/socket-protocol",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "files": [
+    "dist",
+    "artifacts/abi"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "version": "1.0.2",
+  "description": "socket protocol",
   "scripts": {
     "build": "hardhat export-abi && tsc --project lib.tsconfig.json",
     "tsc": "tsc --project lib.tsconfig.json",
@@ -10,13 +18,8 @@
     "lint": "prettier \"./**\" --write",
     "lintContracts": "prettier \"./**\"  --write --plugin=prettier-plugin-solidity",
     "compile": "forge build",
-    "deploy": "bash deployContracts.sh"
+    "deploy": "bash setupInfraContracts.sh"
   },
-  "types": "./dist/src/index.d.ts",
-  "files": [
-    "dist",
-    "artifacts/abi"
-  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {

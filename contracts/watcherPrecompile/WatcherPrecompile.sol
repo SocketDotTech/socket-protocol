@@ -10,6 +10,7 @@ import "../interfaces/IPromise.sol";
 import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../common/Structs.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../common/Constants.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../common/Errors.sol";
+
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
 contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
@@ -36,6 +37,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
 
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
+    error InvalidTransmitter();
 
     event CalledAppGateway(
         bytes32 callId,
@@ -112,13 +114,15 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
     /// @param payload_ The payload data
     /// @param delayInSeconds_ The delay in seconds
     function setTimeout(
+        address appGateway_,
         bytes calldata payload_,
         uint256 delayInSeconds_
     ) external {
         if (delayInSeconds_ > maxTimeoutDelayInSeconds)
             revert TimeoutDelayTooLarge();
 
-        _consumeLimit(msg.sender, SCHEDULE);
+        // from auction manager
+        _consumeLimit(appGateway_, SCHEDULE);
         uint256 executeAt = block.timestamp + delayInSeconds_;
         bytes32 timeoutId = _encodeTimeoutId(timeoutCounter++);
         timeoutRequests[timeoutId] = TimeoutRequest(
@@ -168,17 +172,19 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
     /// @return payloadId The unique identifier for the finalized request
     /// @return root The merkle root of the payload parameters
     function finalize(
-        FinalizeParams memory params_
+        FinalizeParams memory params_,
+        address originAppGateway_
     ) external returns (bytes32 payloadId, bytes32 root) {
+        if (params_.transmitter == address(0)) revert InvalidTransmitter();
+
         // The app gateway is the caller of this function
-        address appGateway = msg.sender;
-        _consumeLimit(appGateway, FINALIZE);
+        _consumeLimit(originAppGateway_, FINALIZE);
 
         // Verify that the app gateway is properly configured for this chain and target
         _verifyConnections(
             params_.payloadDetails.chainSlug,
             params_.payloadDetails.target,
-            appGateway
+            params_.payloadDetails.appGateway
         );
 
         // Generate a unique payload ID by combining chain, target, and counter
@@ -191,7 +197,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
         // Construct parameters for root calculation
         PayloadRootParams memory rootParams_ = PayloadRootParams(
             payloadId,
-            appGateway,
+            params_.payloadDetails.appGateway,
             params_.transmitter,
             params_.payloadDetails.target,
             params_.payloadDetails.executionGasLimit,
@@ -210,8 +216,9 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
         // Create and store the async request with all necessary details
         AsyncRequest memory asyncRequest = AsyncRequest(
             params_.payloadDetails.next,
-            appGateway,
+            params_.payloadDetails.appGateway,
             params_.transmitter,
+            params_.payloadDetails.target,
             params_.payloadDetails.executionGasLimit,
             params_.payloadDetails.payload,
             switchboard,
@@ -231,10 +238,12 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
     function query(
         uint32 chainSlug,
         address targetAddress,
+        address appGateway_,
         address[] memory asyncPromises,
         bytes memory payload
     ) public returns (bytes32 payloadId) {
-        _consumeLimit(msg.sender, QUERY);
+        // from payload delivery
+        _consumeLimit(appGateway_, QUERY);
         // Generate unique payload ID from query counter
         payloadId = bytes32(queryCounter++);
 
@@ -244,6 +253,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
             asyncPromises,
             address(0),
             address(0),
+            targetAddress,
             0,
             payload,
             address(0),
@@ -367,6 +377,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
         (, address switchboard) = getPlugConfigs(chainSlug_, plug_);
         // Encode payload ID by bit-shifting and combining:
         // chainSlug (32 bits) | switchboard address (160 bits) | counter (64 bits)
+
         return
             bytes32(
                 (uint256(chainSlug_) << 224) |

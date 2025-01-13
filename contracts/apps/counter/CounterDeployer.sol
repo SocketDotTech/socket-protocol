@@ -3,15 +3,23 @@ pragma solidity >=0.7.0 <0.9.0;
 
 import "./Counter.sol";
 import "../../base/AppDeployerBase.sol";
+import "../../utils/Ownable.sol";
 
-contract CounterDeployer is AppDeployerBase {
+contract CounterDeployer is AppDeployerBase, Ownable {
     bytes32 public counter = _createContractId("counter");
 
     constructor(
         address addressResolver_,
+        address auctionManager_,
+        bytes32 sbType_,
         FeesData memory feesData_
-    ) AppDeployerBase(addressResolver_) {
-        creationCodeWithArgs[counter] = type(Counter).creationCode;
+    )
+        AppDeployerBase(addressResolver_, auctionManager_, sbType_)
+        Ownable(msg.sender)
+    {
+        creationCodeWithArgs[counter] = abi.encodePacked(
+            type(Counter).creationCode
+        );
         _setFeesData(feesData_);
     }
 
@@ -19,10 +27,8 @@ contract CounterDeployer is AppDeployerBase {
         _deploy(counter, chainSlug);
     }
 
-    function initialize(uint32 chainSlug) public override async {
-        address socket = getSocketAddress(chainSlug);
-        address counterForwarder = forwarderAddresses[counter][chainSlug];
-        Counter(counterForwarder).setSocket(socket);
+    function initialize(uint32) public pure override {
+        return;
     }
 
     function setFees(FeesData memory feesData_) public {

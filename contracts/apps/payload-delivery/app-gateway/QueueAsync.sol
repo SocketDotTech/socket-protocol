@@ -9,9 +9,10 @@ import {IPromise} from "../../../interfaces/IPromise.sol";
 import {IAppDeployer} from "../../../interfaces/IAppDeployer.sol";
 import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
 import {IContractFactoryPlug} from "../../../interfaces/IContractFactoryPlug.sol";
+import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
-abstract contract QueueAsync is AddressResolverUtil {
+abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
     uint256 public saltCounter;
     uint256 public asyncCounter;
     address public feesManager;
@@ -21,6 +22,8 @@ abstract contract QueueAsync is AddressResolverUtil {
 
     // payloadId => asyncId
     mapping(bytes32 => bytes32) public payloadIdToBatchHash;
+    mapping(bytes32 => PayloadDetails) public payloadIdToPayloadDetails;
+
     // asyncId => PayloadBatch
     mapping(bytes32 => PayloadBatch) public payloadBatches;
     // asyncId => PayloadDetails[]
@@ -75,15 +78,21 @@ abstract contract QueueAsync is AddressResolverUtil {
 
     /// @notice Creates an array of payload details
     /// @return payloadDetailsArray An array of payload details
-    function createPayloadDetailsArray()
-        internal
-        returns (PayloadDetails[] memory payloadDetailsArray)
-    {
+    function createPayloadDetailsArray(
+        bytes32 sbType_
+    ) internal returns (PayloadDetails[] memory payloadDetailsArray) {
         payloadDetailsArray = new PayloadDetails[](callParamsArray.length);
-
         for (uint256 i = 0; i < callParamsArray.length; i++) {
             CallParams memory params = callParamsArray[i];
-            PayloadDetails memory payloadDetails = getPayloadDetails(params);
+            address switchboard = watcherPrecompile().switchboards(
+                params.chainSlug,
+                sbType_
+            );
+
+            PayloadDetails memory payloadDetails = getPayloadDetails(
+                params,
+                switchboard
+            );
             payloadDetailsArray[i] = payloadDetails;
         }
 
@@ -92,28 +101,35 @@ abstract contract QueueAsync is AddressResolverUtil {
 
     /// @notice Gets the payload details for a given call parameters
     /// @param params The call parameters
+    /// @param switchboard_ The switchboard address
     /// @return payloadDetails The payload details
     function getPayloadDetails(
-        CallParams memory params
+        CallParams memory params,
+        address switchboard_
     ) internal returns (PayloadDetails memory) {
         address[] memory next = new address[](2);
         next[0] = params.asyncPromise;
 
         bytes memory payload = params.payload;
+        address appGateway = msg.sender;
         if (params.callType == CallType.DEPLOY) {
             bytes32 salt = keccak256(
-                abi.encode(msg.sender, params.chainSlug, saltCounter++)
+                abi.encode(appGateway, params.chainSlug, saltCounter++)
             );
 
             payload = abi.encodeWithSelector(
                 IContractFactoryPlug.deployContract.selector,
-                params.payload,
-                salt
+                payload,
+                salt,
+                appGateway,
+                switchboard_
             );
+            appGateway = address(this);
         }
 
         return
             PayloadDetails({
+                appGateway: appGateway,
                 chainSlug: params.chainSlug,
                 target: params.target,
                 payload: payload,
@@ -124,5 +140,17 @@ abstract contract QueueAsync is AddressResolverUtil {
                 next: next,
                 isSequential: params.isSequential
             });
+    }
+
+    function getFeesData(
+        bytes32 asyncId_
+    ) external view returns (FeesData memory) {
+        return payloadBatches[asyncId_].feesData;
+    }
+
+    function getPayloadDetails(
+        bytes32 payloadId_
+    ) external view returns (PayloadDetails memory) {
+        return payloadIdToPayloadDetails[payloadId_];
     }
 }

@@ -5,27 +5,36 @@ import {Ownable} from "../../../utils/Ownable.sol";
 import {SignatureVerifier} from "../../../socket/utils/SignatureVerifier.sol";
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
 import {Bid, FeesData, PayloadDetails, CallType, FinalizeParams} from "../../../common/Structs.sol";
-import {IAuctionHouse} from "../../../interfaces/IAuctionHouse.sol";
+import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Constants.sol";
 import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
 
-/// @title AuctionHouse
+/// @title DeliveryHelper
 /// @notice Contract for managing auctions and placing bids
-contract FeesManager is AddressResolverUtil, Ownable(msg.sender) {
+contract FeesManager is AddressResolverUtil, Ownable {
     uint256 public feesCounter;
     mapping(uint32 => uint256) public feeCollectionGasLimit;
 
-    /// @notice Constructor for AuctionHouse
+    /// @notice Constructor for DeliveryHelper
     /// @param addressResolver_ The address of the address resolver
     constructor(
-        address addressResolver_
-    ) AddressResolverUtil(addressResolver_) {}
+        address addressResolver_,
+        address owner_
+    ) AddressResolverUtil(addressResolver_) Ownable(owner_) {}
 
     function distributeFees(
         address appGateway_,
         FeesData memory feesData_,
         Bid memory winningBid_
-    ) external onlyPayloadDelivery returns (bytes32 payloadId, bytes32 root) {
+    )
+        external
+        onlyDeliveryHelper
+        returns (
+            bytes32 payloadId,
+            bytes32 root,
+            PayloadDetails memory payloadDetails
+        )
+    {
         bytes32 feesId = _encodeFeesId(feesCounter++);
         // Create payload for pool contract
         bytes memory payload = abi.encodeCall(
@@ -39,7 +48,8 @@ contract FeesManager is AddressResolverUtil, Ownable(msg.sender) {
             )
         );
 
-        PayloadDetails memory payloadDetails = PayloadDetails({
+        payloadDetails = PayloadDetails({
+            appGateway: address(this),
             chainSlug: feesData_.feePoolChain,
             target: _getFeesPlugAddress(feesData_.feePoolChain),
             payload: payload,
@@ -54,7 +64,11 @@ contract FeesManager is AddressResolverUtil, Ownable(msg.sender) {
             transmitter: winningBid_.transmitter
         });
 
-        return watcherPrecompile().finalize(finalizeParams);
+        (payloadId, root) = watcherPrecompile().finalize(
+            finalizeParams,
+            appGateway_
+        );
+        return (payloadId, root, payloadDetails);
     }
 
     /// @notice Withdraws funds to a specified receiver
@@ -77,6 +91,7 @@ contract FeesManager is AddressResolverUtil, Ownable(msg.sender) {
 
         return
             PayloadDetails({
+                appGateway: address(this),
                 chainSlug: chainSlug_,
                 target: _getFeesPlugAddress(chainSlug_),
                 payload: payload,

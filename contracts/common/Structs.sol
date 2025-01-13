@@ -16,6 +16,7 @@ struct FeesData {
 
 struct PayloadDetails {
     uint32 chainSlug;
+    address appGateway;
     address target;
     bytes payload;
     CallType callType;
@@ -54,6 +55,7 @@ struct PayloadBatch {
     bool isBatchCancelled;
     uint256 totalPayloadsRemaining;
     address[] lastBatchPromises;
+    bytes onCompleteData;
 }
 
 struct FinalizeParams {
@@ -66,6 +68,7 @@ struct AsyncRequest {
     address[] next;
     address appGateway;
     address transmitter;
+    address target;
     uint256 executionGasLimit;
     bytes payload;
     address switchboard;

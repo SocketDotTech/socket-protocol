@@ -1,99 +1,84 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "./AuctionHouse.sol";
-import {Counter} from "../contracts/apps/counter/Counter.sol";
 import {CounterAppGateway} from "../contracts/apps/counter/CounterAppGateway.sol";
 import {CounterDeployer} from "../contracts/apps/counter/CounterDeployer.sol";
+import {Counter} from "../contracts/apps/counter/Counter.sol";
+import "./DeliveryHelper.t.sol";
 
-contract CounterTest is AuctionHouseTest {
-    CounterDeployer public counterDeployer;
-    CounterAppGateway public counterAppGateway;
-    bytes32 counterId;
+contract CounterTest is DeliveryHelperTest {
+    function testCounter() external {
+        console.log("Deploying contracts on Arbitrum...");
+        setUpDeliveryHelper();
 
-    function setUp() public {
-        // core
-        setUpAuctionHouse();
+        CounterDeployer deployer = new CounterDeployer(
+            address(addressResolver),
+            address(auctionManager),
+            FAST,
+            createFeesData(0.01 ether)
+        );
 
-        FeesData memory feesData = FeesData({
-            feePoolChain: arbChainSlug,
-            feePoolToken: ETH_ADDRESS,
-            maxFees: 100000000000000
+        CounterAppGateway gateway = new CounterAppGateway(
+            address(addressResolver),
+            address(deployer),
+            address(auctionManager),
+            createFeesData(0.01 ether)
+        );
+
+        bytes32 counterId = deployer.counter();
+        UpdateLimitParams[] memory params = new UpdateLimitParams[](3);
+        params[0] = UpdateLimitParams({
+            limitType: FINALIZE,
+            appGateway: address(gateway),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
         });
-        counterDeployer = new CounterDeployer(
-            address(addressResolver),
-            feesData
-        );
-        counterAppGateway = new CounterAppGateway(
-            address(addressResolver),
-            address(counterDeployer),
-            feesData
-        );
+        params[1] = UpdateLimitParams({
+            limitType: QUERY,
+            appGateway: address(gateway),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+        params[2] = UpdateLimitParams({
+            limitType: SCHEDULE,
+            appGateway: address(gateway),
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
 
-        counterId = counterDeployer.counter();
-    }
+        hoax(watcherEOA);
+        watcherPrecompile.updateLimitParams(params);
+        skip(1000);
 
-    function testDeploy() public {
         bytes32[] memory payloadIds = getWritePayloadIds(
             arbChainSlug,
-            getPayloadDeliveryPlug(arbChainSlug),
+            address(arbConfig.switchboard),
             1
         );
-
-        PayloadDetails[] memory payloadDetails = new PayloadDetails[](1);
-        payloadDetails[0] = createDeployPayloadDetail(
-            arbChainSlug,
-            address(counterDeployer),
-            counterDeployer.creationCodeWithArgs(counterId)
-        );
-        payloadDetails[0].next[1] = predictAsyncPromiseAddress(
-            address(auctionHouse),
-            address(auctionHouse)
-        );
+        bytes32[] memory contractIds = new bytes32[](1);
+        contractIds[0] = counterId;
 
         _deploy(
+            contractIds,
             payloadIds,
             arbChainSlug,
-            maxFees,
-            IAppDeployer(counterDeployer),
-            payloadDetails
+            IAppDeployer(deployer),
+            address(gateway)
         );
 
-        address counterForwarder = counterDeployer.forwarderAddresses(
-            counterId,
-            arbChainSlug
-        );
-        address deployedCounter = IForwarder(counterForwarder)
-            .getOnChainAddress();
+        // address counterForwarder = deployer.forwarderAddresses(
+        //     counterId,
+        //     arbChainSlug
+        // );
+        // address deployedCounter = IForwarder(counterForwarder)
+        //     .getOnChainAddress();
 
         payloadIds = getWritePayloadIds(
             arbChainSlug,
-            getPayloadDeliveryPlug(arbChainSlug),
+            address(arbConfig.switchboard),
             1
         );
 
-        payloadDetails = new PayloadDetails[](1);
-        payloadDetails[0] = createExecutePayloadDetail(
-            arbChainSlug,
-            deployedCounter,
-            address(counterDeployer),
-            counterForwarder,
-            abi.encodeWithSignature(
-                "setSocket(address)",
-                counterDeployer.getSocketAddress(arbChainSlug)
-            )
-        );
-
-        payloadDetails[0].next[1] = predictAsyncPromiseAddress(
-            address(auctionHouse),
-            address(auctionHouse)
-        );
-
-        _configure(
-            payloadIds,
-            address(counterAppGateway),
-            maxFees,
-            payloadDetails
-        );
+        _configure(payloadIds);
     }
 }

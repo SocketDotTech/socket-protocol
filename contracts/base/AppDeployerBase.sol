@@ -6,7 +6,7 @@ import {AppGatewayBase} from "./AppGatewayBase.sol";
 import {IForwarder} from "../interfaces/IForwarder.sol";
 import {IPromise} from "../interfaces/IPromise.sol";
 import {IAppDeployer} from "../interfaces/IAppDeployer.sol";
-import {IAuctionHouse} from "../interfaces/IAuctionHouse.sol";
+import {IDeliveryHelper} from "../interfaces/IDeliveryHelper.sol";
 
 /// @title AppDeployerBase
 /// @notice Abstract contract for deploying applications
@@ -14,7 +14,13 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     mapping(bytes32 => mapping(uint32 => address)) public forwarderAddresses;
     mapping(bytes32 => bytes) public creationCodeWithArgs;
 
-    constructor(address _addressResolver) AppGatewayBase(_addressResolver) {}
+    constructor(
+        address _addressResolver,
+        address _auctionManager,
+        bytes32 sbType_
+    ) AppGatewayBase(_addressResolver, _auctionManager) {
+        sbType = sbType_;
+    }
 
     /// @notice Deploys a contract
     /// @param contractId_ The contract ID
@@ -23,17 +29,17 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
         address asyncPromise = addressResolver.deployAsyncPromiseContract(
             address(this)
         );
-
         isValidPromise[asyncPromise] = true;
         IPromise(asyncPromise).then(
             this.setAddress.selector,
             abi.encode(chainSlug_, contractId_)
         );
 
-        IAuctionHouse(auctionHouse()).queue(
+        onCompleteData = abi.encode(chainSlug_);
+        IDeliveryHelper(deliveryHelper()).queue(
+            true,
             chainSlug_,
             address(0),
-            // hacked for contract addr, need to revisit
             asyncPromise,
             CallType.DEPLOY,
             creationCodeWithArgs[contractId_]
@@ -79,16 +85,15 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     }
 
     /// @notice Callback in pd promise to be called after all contracts are deployed
-    /// @param asyncId The async ID
     /// @param payloadBatch The payload batch
     /// @dev only payload delivery can call this
     /// @dev callback in pd promise to be called after all contracts are deployed
     function onBatchComplete(
-        bytes32 asyncId,
+        bytes32,
         PayloadBatch memory payloadBatch
-    ) external override onlyPayloadDelivery {
-        // todo
-        // initialize(payloadBatch.chainSlug);
+    ) external override onlyDeliveryHelper {
+        uint32 chainSlug = abi.decode(payloadBatch.onCompleteData, (uint32));
+        initialize(chainSlug);
     }
 
     /// @notice Gets the socket address
@@ -97,7 +102,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     function getSocketAddress(uint32 chainSlug) public view returns (address) {
         return
             watcherPrecompile().appGatewayPlugs(
-                addressResolver.auctionHouse(),
+                addressResolver.deliveryHelper(),
                 chainSlug
             );
     }

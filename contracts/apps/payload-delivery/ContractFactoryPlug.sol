@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
-import {PlugBase} from "../../base/PlugBase.sol";
+import "../../base/PlugBase.sol";
 import {Ownable} from "../../utils/Ownable.sol";
 
 /// @title ContractFactory
@@ -10,13 +10,14 @@ contract ContractFactoryPlug is PlugBase, Ownable {
 
     constructor(
         address socket_,
-        uint32 chainSlug_,
         address owner_
-    ) PlugBase(socket_, chainSlug_) Ownable(owner_) {}
+    ) Ownable(owner_) PlugBase(socket_) {}
 
     function deployContract(
         bytes memory creationCode,
-        bytes32 salt
+        bytes32 salt,
+        address appGateway_,
+        address switchboard_
     ) public returns (address) {
         if (msg.sender != address(socket__)) {
             revert("Only socket can deploy contracts");
@@ -35,6 +36,7 @@ contract ContractFactoryPlug is PlugBase, Ownable {
             }
         }
 
+        IPlug(addr).connectSocket(appGateway_, msg.sender, switchboard_);
         emit Deployed(addr, salt);
         return addr;
     }
@@ -59,10 +61,11 @@ contract ContractFactoryPlug is PlugBase, Ownable {
         return address(uint160(uint256(hash)));
     }
 
-    function connect(
+    function connectSocket(
         address appGateway_,
+        address socket_,
         address switchboard_
     ) external onlyOwner {
-        _connectSocket(appGateway_, switchboard_);
+        _connectSocket(appGateway_, socket_, switchboard_);
     }
 }

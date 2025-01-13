@@ -40,6 +40,7 @@ contract Socket is SocketBase {
      */
     error LowGasLimit();
     error InvalidSlug();
+    error ExecutionFailed();
 
     ////////////////////////////////////////////////////////////
     ////////////////////// State Vars //////////////////////////
@@ -79,7 +80,7 @@ contract Socket is SocketBase {
 
         // creates a unique ID for the message
         callId = _encodeCallId(plugConfig.appGateway);
-        emit CalledAppGateway(
+        emit AppGatewayCallRequested(
             callId,
             chainSlug,
             msg.sender,
@@ -165,10 +166,12 @@ contract Socket is SocketBase {
     ) internal returns (bytes memory) {
         if (gasleft() < executionGasLimit_) revert LowGasLimit();
         // NOTE: external un-trusted call
-        bytes memory returnData = IPlug(localPlug_).inbound{
+        (bool success, bytes memory returnData) = localPlug_.call{
             gas: executionGasLimit_,
             value: msg.value
         }(payload_);
+
+        if (!success) revert ExecutionFailed();
         emit ExecutionSuccess(payloadId_, returnData);
         return returnData;
     }
