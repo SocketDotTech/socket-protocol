@@ -67,7 +67,15 @@ contract IncrementCounters is Script {
         //    console.log("Ethereum Sepolia forwarder not yet deployed");
         //}
 
-        vm.startBroadcast(deployerPrivateKey);
-        gateway.incrementCounters(instances);
+        // vm.startBroadcast(deployerPrivateKey);
+        bytes memory data = abi.encodeWithSelector(
+            CounterAppGateway.incrementCounters.selector,
+            instances
+        );
+        console.log("to");
+        console.log(address(gateway));
+        console.log("data");
+        console.logBytes(data);
+        // gateway.incrementCounters(instances);
     }
 }

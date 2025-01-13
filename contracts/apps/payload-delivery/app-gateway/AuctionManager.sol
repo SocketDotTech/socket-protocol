@@ -37,8 +37,8 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
     }
 
-    event AuctionStarted(bytes32 asyncId_);
-    event AuctionEnded(bytes32 asyncId_, Bid winningBid);
+    event AuctionStarted(bytes32 asyncId);
+    event AuctionEnded(bytes32 asyncId, Bid winningBid);
     event BidPlaced(bytes32 asyncId, Bid bid);
 
     function setAuctionEndDelaySeconds(uint256 auctionEndDelaySeconds_) external onlyOwner {

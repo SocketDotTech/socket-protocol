@@ -12,7 +12,7 @@ import {
 import { getProviderFromChainSlug } from "../constants";
 import { ethers } from "hardhat";
 import dev_addresses from "../../deployments/dev_addresses.json";
-import { chains } from "./config";
+import { auctionEndDelaySeconds, chains } from "./config";
 import { OFF_CHAIN_VM_CHAIN_ID } from "../constants/constants";
 import { CORE_CONTRACTS, OffChainVMCoreContracts } from "../../src";
 
@@ -157,9 +157,13 @@ async function updateContractSettings(
   signer: Signer
 ) {
   const currentValue = await contract.connect(signer)[getterMethod]();
-  console.log({ current: currentValue, required: requiredAddress });
 
   if (currentValue.toLowerCase() !== requiredAddress.toLowerCase()) {
+    console.log({
+      setterMethod,
+      current: currentValue,
+      required: requiredAddress,
+    });
     const tx = await contract.connect(signer)[setterMethod](requiredAddress);
     console.log(`Setting ${getterMethod} for ${contract.address} to`, tx.hash);
     await tx.wait();
