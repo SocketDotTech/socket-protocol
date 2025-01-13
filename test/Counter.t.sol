@@ -7,36 +7,44 @@ import {Counter} from "../contracts/apps/counter/Counter.sol";
 import "./DeliveryHelper.t.sol";
 
 contract CounterTest is DeliveryHelperTest {
-    bytes32 counterId;
-    bytes32[] contractIds = new bytes32[](2);
+    uint256 feesAmount = 0.01 ether;
 
-    CounterAppGateway gateway;
-    CounterDeployer deployer;
+    bytes32 counterId;
+    bytes32[] contractIds = new bytes32[](1);
+
+    CounterAppGateway counterGateway;
+    CounterDeployer counterDeployer;
 
     function deploySetup() internal {
         setUpDeliveryHelper();
 
-        deployer = new CounterDeployer(
+        counterDeployer = new CounterDeployer(
             address(addressResolver),
             address(auctionManager),
             FAST,
-            createFeesData(0.01 ether)
+            createFeesData(feesAmount)
         );
 
-        gateway = new CounterAppGateway(
+        counterGateway = new CounterAppGateway(
             address(addressResolver),
-            address(deployer),
+            address(counterDeployer),
             address(auctionManager),
-            createFeesData(0.01 ether)
+            createFeesData(feesAmount)
         );
-        setLimit(address(gateway));
+        setLimit(address(counterGateway));
 
-        counterId = deployer.counter();
+        counterId = counterDeployer.counter();
         contractIds[0] = counterId;
     }
 
-    function deployCounterApp(uint32 chainSlug) internal {
-        _deploy(contractIds, chainSlug, 1, IAppDeployer(deployer), address(gateway));
+    function deployCounterApp(uint32 chainSlug) internal returns (bytes32 asyncId) {
+        asyncId = _deploy(
+            contractIds,
+            chainSlug,
+            1,
+            IAppDeployer(counterDeployer),
+            address(counterGateway)
+        );
     }
 
     function testCounterDeployment() external {
@@ -51,14 +59,14 @@ contract CounterTest is DeliveryHelperTest {
         (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId,
-            deployer
+            counterDeployer
         );
 
         uint256 arbCounterBefore = Counter(arbCounter).counter();
 
         address[] memory instances = new address[](1);
         instances[0] = arbCounterForwarder;
-        gateway.incrementCounters(instances);
+        counterGateway.incrementCounters(instances);
 
         _executeBatchSingleChain(arbChainSlug, 1);
         assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
@@ -72,12 +80,12 @@ contract CounterTest is DeliveryHelperTest {
         (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId,
-            deployer
+            counterDeployer
         );
         (address optCounter, address optCounterForwarder) = getOnChainAndForwarderAddresses(
             optChainSlug,
             counterId,
-            deployer
+            counterDeployer
         );
 
         uint256 arbCounterBefore = Counter(arbCounter).counter();
@@ -86,7 +94,7 @@ contract CounterTest is DeliveryHelperTest {
         address[] memory instances = new address[](2);
         instances[0] = arbCounterForwarder;
         instances[1] = optCounterForwarder;
-        gateway.incrementCounters(instances);
+        counterGateway.incrementCounters(instances);
 
         uint32[] memory chains = new uint32[](2);
         chains[0] = arbChainSlug;

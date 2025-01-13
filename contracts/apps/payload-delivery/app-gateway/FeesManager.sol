@@ -33,10 +33,12 @@ contract FeesManager is AddressResolverUtil, Ownable {
         returns (bytes32 payloadId, bytes32 root, PayloadDetails memory payloadDetails)
     {
         bytes32 feesId = _encodeFeesId(feesCounter++);
+
+        address appGateway = _getCoreAppGateway(appGateway_);
         // Create payload for pool contract
         bytes memory payload = abi.encodeCall(
             IFeesPlug.distributeFee,
-            (appGateway_, feesData_.feePoolToken, winningBid_.fee, winningBid_.transmitter, feesId)
+            (appGateway, feesData_.feePoolToken, winningBid_.fee, winningBid_.transmitter, feesId)
         );
 
         payloadDetails = PayloadDetails({
@@ -45,7 +47,7 @@ contract FeesManager is AddressResolverUtil, Ownable {
             target: _getFeesPlugAddress(feesData_.feePoolChain),
             payload: payload,
             callType: CallType.WRITE,
-            executionGasLimit: feeCollectionGasLimit[feesData_.feePoolChain],
+            executionGasLimit: 1000000,
             next: new address[](0),
             isSequential: true
         });
@@ -55,7 +57,7 @@ contract FeesManager is AddressResolverUtil, Ownable {
             transmitter: winningBid_.transmitter
         });
 
-        (payloadId, root) = watcherPrecompile().finalize(finalizeParams, appGateway_);
+        (payloadId, root) = watcherPrecompile().finalize(finalizeParams, appGateway);
         return (payloadId, root, payloadDetails);
     }
 

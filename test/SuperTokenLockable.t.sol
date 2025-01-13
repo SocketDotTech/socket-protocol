@@ -222,7 +222,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         (bytes32 bridgeAsyncId, bytes32[] memory payloadIds) = _bridge();
         PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(bridgeAsyncId, 0);
 
-        finalizeAndExecute(bridgeAsyncId, payloadIds[0], false);
+        finalizeAndExecute(payloadIds[0], false);
 
         payloadDetails = deliveryHelper.getPayloadDetails(bridgeAsyncId, 2);
         vm.expectEmit(true, false, false, false);
@@ -240,16 +240,16 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             )
         );
         finalizeQuery(payloadIds[1], abi.encode(srcAmount));
-        finalizeAndExecute(bridgeAsyncId, payloadIds[2], false);
+        finalizeAndExecute(payloadIds[2], false);
 
         payloadDetails = deliveryHelper.getPayloadDetails(bridgeAsyncId, 3);
-        finalizeAndExecute(bridgeAsyncId, payloadIds[3], false);
+        finalizeAndExecute(payloadIds[3], false);
     }
 
     function testCancel() public {
         (bytes32 bridgeAsyncId, bytes32[] memory payloadIds) = _bridge();
 
-        finalizeAndExecute(bridgeAsyncId, payloadIds[0], false);
+        finalizeAndExecute(payloadIds[0], false);
 
         vm.expectEmit(true, true, false, true);
         emit BatchCancelled(bridgeAsyncId);
@@ -269,7 +269,6 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
 
         bidAndEndAuction(cancelAsyncId);
         // finalizeAndExecute(
-        //     cancelAsyncId,
         //     cancelPayloadIds[0],
         //     false
         // );
@@ -493,7 +492,6 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //     ) = _bridge();
 
     //     finalizeAndExecute(
-    //         bridgeAsyncId,
     //         payloadIds[0],
     //         false,
     //         payloadDetails[0]
@@ -514,13 +512,11 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //     );
     //     finalizeQuery(payloadIds[1], abi.encode(srcAmount));
     //     finalizeAndExecute(
-    //         bridgeAsyncId,
     //         payloadIds[2],
     //         false,
     //         payloadDetails[2]
     //     );
     //     finalizeAndExecute(
-    //         bridgeAsyncId,
     //         payloadIds[3],
     //         false,
     //         payloadDetails[3]
@@ -535,7 +531,6 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //     ) = _bridge();
 
     //     finalizeAndExecute(
-    //         bridgeAsyncId,
     //         payloadIds[0],
     //         false,
     //         payloadDetails[0]
@@ -570,7 +565,6 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //         cancelPayloadDetails
     //     );
     //     finalizeAndExecute(
-    //         cancelAsyncId,
     //         cancelPayloadIds[0],
     //         false,
     //         cancelPayloadDetails[0]

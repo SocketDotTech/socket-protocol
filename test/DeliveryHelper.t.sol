@@ -207,7 +207,7 @@ contract DeliveryHelperTest is SetupTest {
     function bidAndExecute(bytes32[] memory payloadIds, bytes32 asyncId_) internal {
         bidAndEndAuction(asyncId_);
         for (uint i = 0; i < payloadIds.length; i++) {
-            finalizeAndExecute(asyncId_, payloadIds[i], false);
+            finalizeAndExecute(payloadIds[i], false);
         }
     }
 
@@ -283,7 +283,7 @@ contract DeliveryHelperTest is SetupTest {
                 address(getSocketConfig(chainSlugs_[i]).switchboard),
                 i + writePayloadIdCounter
             );
-            finalizeAndExecute(asyncId, payloadId, false);
+            finalizeAndExecute(payloadId, false);
         }
 
         // for fees
@@ -483,7 +483,7 @@ contract DeliveryHelperTest is SetupTest {
         resolvePromise(payloadId, returnData_);
     }
 
-    function finalizeAndExecute(bytes32, bytes32 payloadId, bool isWithdraw) internal {
+    function finalizeAndExecute(bytes32 payloadId, bool isWithdraw) internal {
         (bytes memory watcherSig, bytes32 root) = finalize(payloadId);
 
         PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(payloadId);
