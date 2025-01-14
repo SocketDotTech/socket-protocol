@@ -32,7 +32,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
 
         onCompleteData = abi.encode(chainSlug_);
         IDeliveryHelper(deliveryHelper()).queue(
-            true,
+            isCallSequential,
             chainSlug_,
             address(0),
             asyncPromise,

@@ -24,3 +24,10 @@ forge script script/mock/FinalizeAndExecution.s.sol --broadcast --skip-simulatio
 
 
 source .env && cast send $COUNTER_APP_GATEWAY "incrementCounters(address[])" '[0x4507f726d8ca980e3a1800a8d972792d7ff46f65]' --rpc-url $ETH_RPC_URL --private-key $PRIVATE_KEY
+
+
+forge script script/super-token-lockable/DeployGateway.s.sol --broadcast --skip-simulation
+source .env && cast send $SUPERTOKEN_DEPLOYER "deployContracts(uint32)" 421614 --private-key $PRIVATE_KEY
+source .env && cast send $SUPERTOKEN_DEPLOYER "deployContracts(uint32)" 11155420 --private-key $PRIVATE_KEY
+forge script script/super-token-lockable/Bridge.s.sol --broadcast --skip-simulation
+source .env && cast send $SUPERTOKEN_APP_GATEWAY  $data  --private-key $PRIVATE_KEY
