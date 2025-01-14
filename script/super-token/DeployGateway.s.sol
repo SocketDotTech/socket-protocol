@@ -13,9 +13,9 @@ contract DeployGateway is Script {
     function run() external {
         vm.startBroadcast();
 
-        address addressResolver = 0x208dC31cd6042a09bbFDdB31614A337a51b870ba;
-        address auctionManager = 0x0000000000000000000000000000000000000000;
-        address owner = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+        address addressResolver = vm.envAddress("ADDRESS_RESOLVER");
+        address auctionManager = vm.envAddress("AUCTION_MANAGER");
+        address owner = vm.envAddress("OWNER");
 
         FeesData memory feesData = FeesData({
             feePoolChain: 421614,
