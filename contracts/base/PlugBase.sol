@@ -51,4 +51,8 @@ abstract contract PlugBase is IPlug {
     function _setSocket(address socket_) internal {
         socket__ = ISocket(socket_);
     }
+
+    function _callAppGateway(bytes memory payload_, bytes32 params_) internal returns (bytes32) {
+        return socket__.callAppGateway(payload_, params_);
+    }
 }
