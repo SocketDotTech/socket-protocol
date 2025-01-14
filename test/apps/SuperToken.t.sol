@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {SuperTokenDeployer} from "../contracts/apps/super-token/SuperTokenDeployer.sol";
-import {SuperTokenAppGateway} from "../contracts/apps/super-token/SuperTokenAppGateway.sol";
-import {SuperToken} from "../contracts/apps/super-token/SuperToken.sol";
-import "./DeliveryHelper.t.sol";
-import {QUERY, FINALIZE, SCHEDULE} from "../contracts/common/Constants.sol";
+import {SuperTokenDeployer} from "../../contracts/apps/super-token/SuperTokenDeployer.sol";
+import {SuperTokenAppGateway} from "../../contracts/apps/super-token/SuperTokenAppGateway.sol";
+import {SuperToken} from "../../contracts/apps/super-token/SuperToken.sol";
+import "../DeliveryHelper.t.sol";
+import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/common/Constants.sol";
 
 contract SuperTokenTest is DeliveryHelperTest {
     struct AppContracts {

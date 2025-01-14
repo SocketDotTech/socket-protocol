@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {CounterAppGateway} from "../contracts/apps/counter/CounterAppGateway.sol";
-import {CounterDeployer} from "../contracts/apps/counter/CounterDeployer.sol";
-import {Counter} from "../contracts/apps/counter/Counter.sol";
-import "./DeliveryHelper.t.sol";
+import {CounterAppGateway} from "../../contracts/apps/counter/CounterAppGateway.sol";
+import {CounterDeployer} from "../../contracts/apps/counter/CounterDeployer.sol";
+import {Counter} from "../../contracts/apps/counter/Counter.sol";
+import "../DeliveryHelper.t.sol";
 
 contract CounterTest is DeliveryHelperTest {
     uint256 feesAmount = 0.01 ether;

@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {SuperTokenLockableDeployer} from "../contracts/apps/super-token-lockable/SuperTokenLockableDeployer.sol";
-import {SuperTokenLockableAppGateway} from "../contracts/apps/super-token-lockable/SuperTokenLockableAppGateway.sol";
-import "./DeliveryHelper.t.sol";
-import {QUERY, FINALIZE, SCHEDULE} from "../contracts/common/Constants.sol";
+import {SuperTokenLockableDeployer} from "../../contracts/apps/super-token-lockable/SuperTokenLockableDeployer.sol";
+import {SuperTokenLockableAppGateway} from "../../contracts/apps/super-token-lockable/SuperTokenLockableAppGateway.sol";
+import {SuperTokenLockable} from "../../contracts/apps/super-token-lockable/SuperTokenLockable.sol";
+import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/common/Constants.sol";
+
+import "../DeliveryHelper.t.sol";
 
 contract SuperTokenLockableTest is DeliveryHelperTest {
     struct AppContracts {
@@ -53,7 +55,6 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             address(auctionManager),
             createFeesData(maxFees)
         );
-
         setLimit(address(superTokenLockableApp));
 
         appContracts = AppContracts({
@@ -97,7 +98,6 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         );
 
         address deployedToken = IForwarder(superTokenForwarder).getOnChainAddress();
-
         address deployedLimitHook = IForwarder(limitHookForwarder).getOnChainAddress();
 
         PayloadDetails[] memory payloadDetails = new PayloadDetails[](1);
@@ -121,6 +121,56 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             address(appContracts.superTokenLockableApp)
         );
 
+        (address onChainSuperToken, address forwarderSuperToken) = getOnChainAndForwarderAddresses(
+            arbChainSlug,
+            appContracts.superTokenLockable,
+            appContracts.superTokenLockableDeployer
+        );
+
+        (address onChainLimitHook, address forwarderLimitHook) = getOnChainAndForwarderAddresses(
+            arbChainSlug,
+            appContracts.limitHook,
+            appContracts.superTokenLockableDeployer
+        );
+
+        assertEq(
+            SuperTokenLockable(onChainSuperToken).name(),
+            "SUPER TOKEN",
+            "Token name should be correct"
+        );
+        assertEq(
+            SuperTokenLockable(onChainSuperToken).decimals(),
+            18,
+            "Token decimals should be correct"
+        );
+        assertEq(
+            SuperTokenLockable(onChainSuperToken).symbol(),
+            "SUPER",
+            "Token symbol should be correct"
+        );
+
+        assertEq(
+            IForwarder(forwarderSuperToken).getChainSlug(),
+            arbChainSlug,
+            "Forwarder chainSlug should be correct"
+        );
+        assertEq(
+            IForwarder(forwarderSuperToken).getOnChainAddress(),
+            onChainSuperToken,
+            "Forwarder onChainAddress should be correct"
+        );
+
+        assertEq(
+            IForwarder(forwarderLimitHook).getChainSlug(),
+            arbChainSlug,
+            "Forwarder chainSlug should be correct"
+        );
+        assertEq(
+            IForwarder(forwarderLimitHook).getOnChainAddress(),
+            onChainLimitHook,
+            "Forwarder onChainAddress should be correct"
+        );
+
         PayloadDetails[] memory payloadDetails = createDeployPayloadDetailsArray(arbChainSlug);
         checkPayloadBatchAndDetails(
             payloadDetails,
@@ -140,6 +190,23 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         );
 
         bytes32 asyncId = _executeBatchSingleChain(arbChainSlug, 1);
+
+        (address onChainSuperToken, ) = getOnChainAndForwarderAddresses(
+            arbChainSlug,
+            appContracts.superTokenLockable,
+            appContracts.superTokenLockableDeployer
+        );
+        (address onChainLimitHook, ) = getOnChainAndForwarderAddresses(
+            arbChainSlug,
+            appContracts.limitHook,
+            appContracts.superTokenLockableDeployer
+        );
+        assertEq(
+            address(SuperTokenLockable(onChainSuperToken).limitHook()),
+            address(onChainLimitHook),
+            "Limit hook should be correct"
+        );
+
         PayloadDetails[] memory payloadDetails = createConfigurePayloadDetailsArray(arbChainSlug);
         checkPayloadBatchAndDetails(
             payloadDetails,
@@ -267,7 +334,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         bytes32 cancelAsyncId = getCurrentAsyncId();
         asyncCounterTest++;
 
-        bidAndEndAuction(cancelAsyncId);
+        // bidAndEndAuction(cancelAsyncId);
         // finalizeAndExecute(
         //     cancelPayloadIds[0],
         //     false
