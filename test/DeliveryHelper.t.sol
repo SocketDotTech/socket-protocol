@@ -285,7 +285,22 @@ contract DeliveryHelperTest is SetupTest {
         watcherPrecompile.setAppGateways(gateways);
     }
 
-    function _executeBatchSingleChain(
+    function _executeReadBatchSingleChain(
+        uint32 chainSlug_,
+        uint256 totalPayloads
+    ) internal returns (bytes32 asyncId) {
+        asyncId = getCurrentAsyncId();
+        asyncCounterTest++;
+    }
+
+    function _executeReadBatchMultiChain(
+        uint32[] memory chainSlugs_
+    ) internal returns (bytes32 asyncId) {
+        asyncId = getCurrentAsyncId();
+        asyncCounterTest++;
+    }
+
+    function _executeWriteBatchSingleChain(
         uint32 chainSlug_,
         uint256 totalPayloads
     ) internal returns (bytes32 asyncId) {
@@ -299,7 +314,7 @@ contract DeliveryHelperTest is SetupTest {
         bidAndExecute(payloadIds, asyncId);
     }
 
-    function _executeBatchMultiChain(
+    function _executeWriteBatchMultiChain(
         uint32[] memory chainSlugs_
     ) internal returns (bytes32 asyncId) {
         asyncId = getCurrentAsyncId();

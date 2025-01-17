@@ -180,7 +180,6 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     }
 
     function testConfigure() public {
-        writePayloadIdCounter = 0;
         _deploy(
             contractIds,
             arbChainSlug,
@@ -189,7 +188,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             address(appContracts.superTokenLockableApp)
         );
 
-        bytes32 asyncId = _executeBatchSingleChain(arbChainSlug, 1);
+        bytes32 asyncId = _executeWriteBatchSingleChain(arbChainSlug, 1);
 
         (address onChainSuperToken, ) = getOnChainAndForwarderAddresses(
             arbChainSlug,
@@ -215,8 +214,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         );
     }
 
-    function beforeBridge() internal {
-        writePayloadIdCounter = 0;
+    function _deployBridge() internal {
         _deploy(
             contractIds,
             arbChainSlug,
@@ -225,7 +223,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             address(appContracts.superTokenLockableApp)
         );
 
-        _executeBatchSingleChain(arbChainSlug, 1);
+        _executeWriteBatchSingleChain(arbChainSlug, 1);
 
         _deploy(
             contractIds,
@@ -235,11 +233,11 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             address(appContracts.superTokenLockableApp)
         );
 
-        _executeBatchSingleChain(optChainSlug, 1);
+        _executeWriteBatchSingleChain(optChainSlug, 1);
     }
 
     function _bridge() internal returns (bytes32, bytes32[] memory) {
-        beforeBridge();
+        _deployBridge();
 
         userOrder = SuperTokenLockableAppGateway.UserOrder({
             srcToken: appContracts.superTokenLockableDeployer.forwarderAddresses(
@@ -433,8 +431,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //     return payloadDetails;
     // }
 
-    // function beforeBridge() internal {
-    //     writePayloadIdCounter = 0;
+    // function _deployBridge() internal {
     //     bytes32[] memory payloadIds = getWritePayloadIds(
     //         optChainSlug,
     //         getContractFactoryPlug(optChainSlug),
@@ -494,7 +491,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //     internal
     //     returns (bytes32, bytes32[] memory, PayloadDetails[] memory)
     // {
-    //     beforeBridge();
+    //     _deployBridge();
 
     //     userOrder = SuperTokenApp.UserOrder({
     //         srcToken: appContracts.superTokenDeployer.forwarderAddresses(

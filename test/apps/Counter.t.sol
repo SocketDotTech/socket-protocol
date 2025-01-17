@@ -85,7 +85,7 @@ contract CounterTest is DeliveryHelperTest {
         instances[0] = arbCounterForwarder;
         counterGateway.incrementCounters(instances);
 
-        _executeBatchSingleChain(arbChainSlug, 1);
+        _executeWriteBatchSingleChain(arbChainSlug, 1);
         assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
     }
 
@@ -116,7 +116,7 @@ contract CounterTest is DeliveryHelperTest {
         uint32[] memory chains = new uint32[](2);
         chains[0] = arbChainSlug;
         chains[1] = optChainSlug;
-        _executeBatchMultiChain(chains);
+        _executeWriteBatchMultiChain(chains);
         assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
         assertEq(Counter(optCounter).counter(), optCounterBefore + 1);
     }
