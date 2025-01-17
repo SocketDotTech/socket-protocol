@@ -27,7 +27,7 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
     /// @notice Error thrown if fees exceed the maximum set fees
     error BidExceedsMaxFees();
     /// @notice Error thrown if winning bid is assigned to an invalid transmitter
-    error Transmitter();
+    error InvalidTransmitter();
 
     /// @notice Constructor for AuctionManager
     /// @param addressResolver_ The address of the address resolver

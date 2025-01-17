@@ -27,7 +27,7 @@ abstract contract AddressResolverUtil {
     /// @notice Restricts function access to the auction house contract
     /// @dev Validates that msg.sender matches the registered auction house address
     modifier onlyDeliveryHelper() {
-        if (msg.sender != addressResolver.auctionHouse()) {
+        if (msg.sender != addressResolver.deliveryHelper()) {
             revert OnlyPayloadDelivery();
         }
 
