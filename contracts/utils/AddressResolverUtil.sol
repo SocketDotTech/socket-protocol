@@ -9,6 +9,10 @@ import "../interfaces/IWatcherPrecompile.sol";
 /// @notice Utility contract for resolving system contract addresses
 /// @dev Provides access control and address resolution functionality for the system
 abstract contract AddressResolverUtil {
+    /// @notice Error thrown when an invalid address attempts to call the Payload Delivery only function
+    error OnlyPayloadDelivery();
+    /// @notice Error thrown when an invalid address attempts to call the Watcher only function
+    error OnlyWatcherPrecompile();
     /// @notice The address resolver contract reference
     /// @dev Used to look up system contract addresses
     IAddressResolver public addressResolver;
@@ -23,17 +27,20 @@ abstract contract AddressResolverUtil {
     /// @notice Restricts function access to the auction house contract
     /// @dev Validates that msg.sender matches the registered auction house address
     modifier onlyDeliveryHelper() {
-        require(msg.sender == addressResolver.deliveryHelper(), "Only delivery helper");
+        if (msg.sender != addressResolver.deliveryHelper()) {
+            revert OnlyPayloadDelivery();
+        }
+
         _;
     }
 
     /// @notice Restricts function access to the watcher precompile contract
     /// @dev Validates that msg.sender matches the registered watcher precompile address
     modifier onlyWatcherPrecompile() {
-        require(
-            msg.sender == address(addressResolver.watcherPrecompile()),
-            "Only watcher precompile"
-        );
+        if (msg.sender != address(addressResolver.watcherPrecompile())) {
+            revert OnlyWatcherPrecompile();
+        }
+
         _;
     }
 

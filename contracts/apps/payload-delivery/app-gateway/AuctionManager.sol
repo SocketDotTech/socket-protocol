@@ -20,6 +20,13 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
 
     uint256 public auctionEndDelaySeconds;
 
+    /// @notice Error thrown when trying to start or bid a closed auction
+    error AuctionClosed();
+    /// @notice Error thrown when trying to start an ongoing auction
+    error AuctionAlreadyStarted();
+    /// @notice Error thrown if fees exceed the maximum set fees
+    error BidExceedsMaxFees();
+    /// @notice Error thrown if winning bid is assigned to an invalid transmitter
     error InvalidTransmitter();
 
     /// @notice Constructor for AuctionManager
@@ -46,8 +53,8 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
     }
 
     function startAuction(bytes32 asyncId_) external onlyDeliveryHelper returns (uint256) {
-        require(!auctionClosed[asyncId_], "Auction closed");
-        require(!auctionStarted[asyncId_], "Auction already started");
+        if (auctionClosed[asyncId_]) revert AuctionClosed();
+        if (auctionStarted[asyncId_]) revert AuctionAlreadyStarted();
 
         auctionStarted[asyncId_] = true;
         emit AuctionStarted(asyncId_);
@@ -65,7 +72,7 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
         bytes memory transmitterSignature,
         bytes memory extraData
     ) external {
-        require(!auctionClosed[asyncId_], "Auction closed");
+        if (auctionClosed[asyncId_]) revert AuctionClosed();
 
         address transmitter = signatureVerifier__.recoverSigner(
             keccak256(abi.encode(address(this), vmChainSlug, asyncId_, fee, extraData)),
@@ -77,7 +84,7 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
         FeesData memory feesData = IDeliveryHelper(addressResolver.deliveryHelper()).getFeesData(
             asyncId_
         );
-        require(fee <= feesData.maxFees, "Bid exceeds max fees");
+        if (fee > feesData.maxFees) revert BidExceedsMaxFees();
         if (fee < winningBids[asyncId_].fee) return;
 
         winningBids[asyncId_] = newBid;

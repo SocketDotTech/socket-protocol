@@ -37,6 +37,9 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
 
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
+    /// @notice Error thrown when an invalid app gateway reaches a plug
+    error InvalidConnection();
+    /// @notice Error thrown if winning bid is assigned to an invalid transmitter
     error InvalidTransmitter();
 
     event CalledAppGateway(
@@ -319,7 +322,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
         address appGateway_
     ) internal view {
         (address appGateway, ) = getPlugConfigs(chainSlug_, target_);
-        require(appGateway == appGateway_, "Invalid connection");
+        if (appGateway != appGateway_) revert InvalidConnection();
     }
 
     /// @notice Encodes a unique payload ID from chain slug, plug address, and counter

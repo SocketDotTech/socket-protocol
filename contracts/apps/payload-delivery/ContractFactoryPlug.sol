@@ -1,12 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
+
 import "../../base/PlugBase.sol";
 import {Ownable} from "../../utils/Ownable.sol";
+import {NotSocket} from "../../common/Errors.sol";
 
 /// @title ContractFactory
 /// @notice Abstract contract for deploying contracts
 contract ContractFactoryPlug is PlugBase, Ownable {
     event Deployed(address addr, bytes32 salt);
+
+    /// @notice Error thrown if it failed to deploy the create2 contract
+    error DeploymentFailed();
 
     constructor(address socket_, address owner_) Ownable(owner_) PlugBase(socket_) {}
 
@@ -17,14 +22,15 @@ contract ContractFactoryPlug is PlugBase, Ownable {
         address switchboard_
     ) public returns (address) {
         if (msg.sender != address(socket__)) {
-            revert("Only socket can deploy contracts");
+            revert NotSocket();
         }
 
         address addr;
         assembly {
             addr := create2(callvalue(), add(creationCode, 0x20), mload(creationCode), salt)
-            if iszero(extcodesize(addr)) {
-                revert(0, 0)
+            if iszero(addr) {
+                mstore(0, 0x30116425) // Error selector for DeploymentFailed
+                revert(0x1C, 0x04) // reverting with just 4 bytes
             }
         }
 

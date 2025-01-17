@@ -32,6 +32,10 @@ contract AsyncPromise is AddressResolverUtil, IPromise {
 
     /// @notice Error thrown when attempting to resolve an already resolved promise.
     error PromiseAlreadyResolved();
+    /// @notice Only the forwarder or local invoker can set then's promise callback
+    error OnlyForwarderOrLocalInvoker();
+    /// @notice Error thrown when attempting to set an already existing promise
+    error PromiseAlreadySetUp();
 
     /// @notice The current state of the async promise.
     AsyncPromiseState public state = AsyncPromiseState.WAITING_FOR_SET_CALLBACK_SELECTOR;
@@ -77,13 +81,12 @@ contract AsyncPromise is AddressResolverUtil, IPromise {
     /// @param data The data to be passed to the callback.
     /// @return promise_ The address of the current promise.
     function then(bytes4 selector, bytes memory data) external override returns (address promise_) {
-        require(
-            msg.sender == forwarder || msg.sender == localInvoker,
-            "Only the forwarder or local invoker can set this promise's callback"
-        );
+        if (msg.sender != forwarder && msg.sender != localInvoker) {
+            revert OnlyForwarderOrLocalInvoker();
+        }
 
         if (state == AsyncPromiseState.WAITING_FOR_CALLBACK_EXECUTION) {
-            revert("Promise already setup");
+            revert PromiseAlreadySetUp();
         }
 
         if (state == AsyncPromiseState.WAITING_FOR_SET_CALLBACK_SELECTOR) {

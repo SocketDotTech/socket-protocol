@@ -15,10 +15,17 @@ import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Co
 /// @title BatchAsync
 /// @notice Abstract contract for managing asynchronous payload batches
 abstract contract BatchAsync is QueueAsync {
+    /// @notice Error thrown when attempting to executed payloads after all have been executed
     error AllPayloadsExecuted();
+    /// @notice Error thrown request did not come from Forwarder address
     error NotFromForwarder();
+    /// @notice Error thrown when a payload call fails
     error CallFailed(bytes32 payloadId);
+    /// @notice Error thrown if payload is too large
     error PayloadTooLarge();
+    /// @notice Error thrown if trying to cancel a batch without being the application gateway
+    error OnlyAppGateway();
+
     event PayloadSubmitted(
         bytes32 indexed asyncId,
         address indexed appGateway,
@@ -201,8 +208,9 @@ abstract contract BatchAsync is QueueAsync {
     /// @notice Cancels a transaction
     /// @param asyncId_ The ID of the batch
     function cancelTransaction(bytes32 asyncId_) external {
-        if (msg.sender != payloadBatches[asyncId_].appGateway)
-            revert("Only app gateway can cancel batch");
+        if (msg.sender != payloadBatches[asyncId_].appGateway) {
+            revert OnlyAppGateway();
+        }
 
         payloadBatches[asyncId_].isBatchCancelled = true;
         emit BatchCancelled(asyncId_);
