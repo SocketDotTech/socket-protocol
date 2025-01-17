@@ -10,12 +10,7 @@ if (!scriptName) {
 }
 
 // Construct the JSON file path dynamically
-const jsonFilePath = path.join(
-  'broadcast',
-  `${scriptName}.s.sol`,
-  '7625382',
-  'run-latest.json'
-);
+const jsonFilePath = path.join('broadcast', `${scriptName}.s.sol`, '7625382', 'run-latest.json');
 
 // Validate that the file exists
 if (!fs.existsSync(jsonFilePath)) {
@@ -27,18 +22,18 @@ if (!fs.existsSync(jsonFilePath)) {
 const jsonData = JSON.parse(fs.readFileSync(jsonFilePath, 'utf-8'));
 
 // Extract transaction hashes
-const transactions = jsonData.transactions.map(tx => tx.hash);
+const transactions = jsonData.transactions.map((tx) => tx.hash);
 console.log(`Found ${transactions.length} transactions to process.`);
 
 const apiUrl = 'https://apiv2.dev.socket.tech/getDetailsByTxHash?txHash=';
 let intervalId;
 
 // Track statuses for each hash
-let statusTracker = transactions.map(hash => ({
+let statusTracker = transactions.map((hash) => ({
   hash,
   status: 'PENDING',
   printed: false,
-  printedPayloads: new Set()
+  printedPayloads: new Set(),
 }));
 let allDonePrinted = false; // Prevent multiple prints of the final message
 
@@ -57,14 +52,18 @@ const fetchTransactionStatus = async (hash) => {
 
 const processMultiplePayloads = (payloads, tx) => {
   if (payloads.length > 1) {
-    payloads.forEach(payload => {
+    payloads.forEach((payload) => {
       // Create a unique key for the payload to track printed status
       const payloadKey = `${payload.executeDetails.executeTxHash}-${payload.callBackDetails.callbackStatus}`;
 
-      if (payload.callBackDetails.callbackStatus === 'PROMISE_RESOLVED' &&
+      if (
+        payload.callBackDetails.callbackStatus === 'PROMISE_RESOLVED' &&
         payload.executeDetails.executeTxHash &&
-        !tx.printedPayloads.has(payloadKey)) {
-        console.log(`Hash: ${payload.executeDetails.executeTxHash}, Status: ${payload.callBackDetails.callbackStatus}, ChainId: ${payload.chainSlug}`);
+        !tx.printedPayloads.has(payloadKey)
+      ) {
+        console.log(
+          `Hash: ${payload.executeDetails.executeTxHash}, Status: ${payload.callBackDetails.callbackStatus}, ChainId: ${payload.chainSlug}`,
+        );
 
         tx.printedPayloads.add(payloadKey);
       }
@@ -115,8 +114,7 @@ const checkTransactionStatus = async () => {
         }
 
         tx.printed = true;
-      }
-      else if (status === 'IN_PROGRESS') {
+      } else if (status === 'IN_PROGRESS') {
         processMultiplePayloads(payloads, tx);
       }
     } else {

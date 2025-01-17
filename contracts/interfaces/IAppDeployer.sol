@@ -8,4 +8,16 @@ interface IAppDeployer {
 
     /// @notice deploy contracts to chain
     function deployContracts(uint32 chainSlug) external;
+
+    /// @notice get the on-chain address of a contract
+    function getOnChainAddress(
+        bytes32 contractId,
+        uint32 chainSlug
+    ) external view returns (address onChainAddress);
+
+    /// @notice get the forwarder address of a contract
+    function forwarderAddresses(
+        bytes32 contractId,
+        uint32 chainSlug
+    ) external view returns (address forwarderAddress);
 }

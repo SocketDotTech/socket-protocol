@@ -40,6 +40,7 @@ contract Socket is SocketBase {
      */
     error LowGasLimit();
     error InvalidSlug();
+    error ExecutionFailed();
 
     ////////////////////////////////////////////////////////////
     ////////////////////// State Vars //////////////////////////
@@ -79,7 +80,7 @@ contract Socket is SocketBase {
 
         // creates a unique ID for the message
         callId = _encodeCallId(plugConfig.appGateway);
-        emit CalledAppGateway(
+        emit AppGatewayCallRequested(
             callId,
             chainSlug,
             msg.sender,
@@ -110,8 +111,7 @@ contract Socket is SocketBase {
         uint32 localSlug = _decodeChainSlug(payloadId_);
 
         PlugConfig memory plugConfig = _plugConfigs[target_];
-        if (switchboard != address(plugConfig.switchboard__))
-            revert InvalidSwitchboard();
+        if (switchboard != address(plugConfig.switchboard__)) revert InvalidSwitchboard();
 
         if (localSlug != chainSlug) revert InvalidSlug();
 
@@ -142,14 +142,9 @@ contract Socket is SocketBase {
     ////////////////// INTERNAL FUNCS //////////////////////
     ////////////////////////////////////////////////////////
 
-    function _verify(
-        bytes32 root_,
-        bytes32 payloadId_,
-        ISwitchboard switchboard__
-    ) internal view {
+    function _verify(bytes32 root_, bytes32 payloadId_, ISwitchboard switchboard__) internal view {
         // NOTE: is the the first un-trusted call in the system, another one is Plug.inbound
-        if (!switchboard__.allowPacket(root_, payloadId_))
-            revert VerificationFailed();
+        if (!switchboard__.allowPacket(root_, payloadId_)) revert VerificationFailed();
     }
 
     /**
@@ -165,10 +160,12 @@ contract Socket is SocketBase {
     ) internal returns (bytes memory) {
         if (gasleft() < executionGasLimit_) revert LowGasLimit();
         // NOTE: external un-trusted call
-        bytes memory returnData = IPlug(localPlug_).inbound{
+        (bool success, bytes memory returnData) = localPlug_.call{
             gas: executionGasLimit_,
             value: msg.value
         }(payload_);
+
+        if (!success) revert ExecutionFailed();
         emit ExecutionSuccess(payloadId_, returnData);
         return returnData;
     }
@@ -178,9 +175,7 @@ contract Socket is SocketBase {
      * @param id_ The ID of the msg to decode the switchboard from.
      * @return switchboard_ The address of switchboard decoded from the payload ID.
      */
-    function _decodeSwitchboard(
-        bytes32 id_
-    ) internal pure returns (address switchboard_) {
+    function _decodeSwitchboard(bytes32 id_) internal pure returns (address switchboard_) {
         switchboard_ = address(uint160(uint256(id_) >> 64));
     }
 
@@ -189,9 +184,7 @@ contract Socket is SocketBase {
      * @param id_ The ID of the packet/msg to decode the chain slug from.
      * @return chainSlug_ The chain slug decoded from the packet/payload ID.
      */
-    function _decodeChainSlug(
-        bytes32 id_
-    ) internal pure returns (uint32 chainSlug_) {
+    function _decodeChainSlug(bytes32 id_) internal pure returns (uint32 chainSlug_) {
         chainSlug_ = uint32(uint256(id_) >> 224);
     }
 
@@ -201,9 +194,7 @@ contract Socket is SocketBase {
     function _encodeCallId(address appGateway_) internal returns (bytes32) {
         return
             bytes32(
-                (uint256(chainSlug) << 224) |
-                    (uint256(uint160(appGateway_)) << 64) |
-                    callCounter++
+                (uint256(chainSlug) << 224) | (uint256(uint160(appGateway_)) << 64) | callCounter++
             );
     }
 }

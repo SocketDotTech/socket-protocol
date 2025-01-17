@@ -16,6 +16,8 @@ struct FeesData {
 
 struct PayloadDetails {
     uint32 chainSlug;
+    // can be delivery helper, fees manager or core gateway
+    address appGateway;
     address target;
     bytes payload;
     CallType callType;
@@ -46,6 +48,7 @@ struct Bid {
 }
 
 struct PayloadBatch {
+    // will be core app gateway always, limit check happens on this address
     address appGateway;
     FeesData feesData;
     uint256 currentPayloadIndex;
@@ -54,6 +57,7 @@ struct PayloadBatch {
     bool isBatchCancelled;
     uint256 totalPayloadsRemaining;
     address[] lastBatchPromises;
+    bytes onCompleteData;
 }
 
 struct FinalizeParams {
@@ -66,6 +70,7 @@ struct AsyncRequest {
     address[] next;
     address appGateway;
     address transmitter;
+    address target;
     uint256 executionGasLimit;
     bytes payload;
     address switchboard;

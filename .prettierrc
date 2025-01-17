@@ -4,7 +4,7 @@
       "files": "*.sol",
       "options": {
         "tabWidth": 4,
-        "printWidth": 80,
+        "printWidth": 100,
         "useTabs": false,
         "singleQuote": false,
         "bracketSpacing": false
@@ -14,7 +14,7 @@
       "files": ["*.js", "*.md"],
       "options": {
         "tabWidth": 2,
-        "printWidth": 80,
+        "printWidth": 100,
         "useTabs": false,
         "semi": true,
         "singleQuote": true,

@@ -10,17 +10,8 @@ import {NotSocket} from "../common/Errors.sol";
 /// @notice Abstract contract for plugs
 abstract contract PlugBase is IPlug {
     ISocket public socket__;
-    uint32 public chainSlug;
-
+    address public appGateway;
     event ConnectorPlugDisconnected();
-
-    /// @notice Constructor for PlugBase
-    /// @param socket_ The socket address
-    /// @param chainSlug_ The chain slug
-    constructor(address socket_, uint32 chainSlug_) {
-        socket__ = ISocket(socket_);
-        chainSlug = chainSlug_;
-    }
 
     /// @notice Modifier to ensure only the socket can call the function
     /// @dev only the socket can call the function
@@ -29,20 +20,22 @@ abstract contract PlugBase is IPlug {
         _;
     }
 
+    constructor(address _socket) {
+        socket__ = ISocket(_socket);
+    }
+
     /// @notice Inbound function for handling incoming messages
     /// @param payload_ The payload
     /// @return bytes memory The encoded return data
-    function inbound(
-        bytes calldata payload_
-    ) external payable virtual returns (bytes memory) {}
+    function inbound(bytes calldata payload_) external payable virtual returns (bytes memory) {}
 
     /// @notice Connects the plug to the app gateway and switchboard
     /// @param appGateway_ The app gateway address
     /// @param switchboard_ The switchboard address
-    function _connectSocket(
-        address appGateway_,
-        address switchboard_
-    ) internal {
+    function _connectSocket(address appGateway_, address socket_, address switchboard_) internal {
+        _setSocket(socket_);
+        appGateway = appGateway_;
+
         socket__.connect(appGateway_, switchboard_);
     }
 
@@ -55,7 +48,11 @@ abstract contract PlugBase is IPlug {
 
     /// @notice Sets the socket
     /// @param socket_ The socket address
-    function setSocket(address socket_) internal {
+    function _setSocket(address socket_) internal {
         socket__ = ISocket(socket_);
+    }
+
+    function _callAppGateway(bytes memory payload_, bytes32 params_) internal returns (bytes32) {
+        return socket__.callAppGateway(payload_, params_);
     }
 }

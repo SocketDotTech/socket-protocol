@@ -12,7 +12,7 @@ interface IPlug {
      * @notice It is expected to have original sender checks in the destination plugs using payload
      * @param payload_ the data which is needed by plug at inbound call on remote
      */
-    function inbound(
-        bytes calldata payload_
-    ) external payable returns (bytes memory);
+    function inbound(bytes calldata payload_) external payable returns (bytes memory);
+
+    function connectSocket(address appGateway_, address socket_, address switchboard_) external;
 }

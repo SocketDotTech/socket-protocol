@@ -5,10 +5,9 @@ import {PayloadBatch} from "../common/Structs.sol";
 interface IAppGateway {
     function isReadCall() external view returns (bool);
 
-    function onBatchComplete(
-        bytes32 asyncId,
-        PayloadBatch memory payloadBatch
-    ) external;
+    function isCallSequential() external view returns (bool);
+
+    function onBatchComplete(bytes32 asyncId, PayloadBatch memory payloadBatch) external;
 
     function callFromInbox(
         uint32 chainSlug,

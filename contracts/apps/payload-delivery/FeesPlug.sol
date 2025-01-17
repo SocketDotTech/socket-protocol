@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "solmate/utils/SafeTransferLib.sol";
-import {PlugBase} from "../../base/PlugBase.sol";
+import "../../base/PlugBase.sol";
 import {Ownable} from "../../utils/Ownable.sol";
 import {ETH_ADDRESS} from "../../common/Constants.sol";
 
@@ -21,11 +21,7 @@ contract FeesPlug is PlugBase, Ownable {
     /// @notice Error thrown when deposit amount does not match msg.value
     error InvalidDepositAmount();
 
-    constructor(
-        address socket_,
-        uint32 chainSlug_,
-        address owner_
-    ) PlugBase(socket_, chainSlug_) Ownable(owner_) {}
+    constructor(address socket_, address owner_) Ownable(owner_) PlugBase(socket_) {}
 
     function distributeFee(
         address appGateway,
@@ -42,6 +38,7 @@ contract FeesPlug is PlugBase, Ownable {
         }
 
         balanceOf[appGateway][feeToken] -= fee;
+
         _transferTokens(feeToken, fee, transmitter);
         return bytes("");
     }
@@ -65,20 +62,11 @@ contract FeesPlug is PlugBase, Ownable {
     /// @param token The token address
     /// @param amount The amount
     /// @param appGateway_ The app gateway address
-    function deposit(
-        address token,
-        uint256 amount,
-        address appGateway_
-    ) external payable {
+    function deposit(address token, uint256 amount, address appGateway_) external payable {
         if (token == ETH_ADDRESS) {
             if (msg.value != amount) revert InvalidDepositAmount();
         } else {
-            SafeTransferLib.safeTransferFrom(
-                ERC20(token),
-                msg.sender,
-                address(this),
-                amount
-            );
+            SafeTransferLib.safeTransferFrom(ERC20(token), msg.sender, address(this), amount);
         }
         balanceOf[appGateway_][token] += amount;
     }
@@ -87,11 +75,7 @@ contract FeesPlug is PlugBase, Ownable {
     /// @param token The token address
     /// @param amount The amount
     /// @param receiver The receiver address
-    function _transferTokens(
-        address token,
-        uint256 amount,
-        address receiver
-    ) internal {
+    function _transferTokens(address token, uint256 amount, address receiver) internal {
         if (token == ETH_ADDRESS) {
             SafeTransferLib.safeTransferETH(receiver, amount);
         } else {
@@ -99,10 +83,15 @@ contract FeesPlug is PlugBase, Ownable {
         }
     }
 
-    function connect(
+    function connectSocket(
         address appGateway_,
+        address socket_,
         address switchboard_
     ) external onlyOwner {
-        _connectSocket(appGateway_, switchboard_);
+        _connectSocket(appGateway_, socket_, switchboard_);
     }
+
+    fallback() external payable {}
+
+    receive() external payable {}
 }

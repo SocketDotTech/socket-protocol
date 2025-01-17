@@ -5,7 +5,6 @@ import { ChainSlug, DeploymentMode, version } from "@socket.tech/dl-core";
 import { BigNumberish, utils } from "ethers";
 import { getOverrides } from "../constants/overrides";
 import { getProviderFromChainSlug } from "../constants";
-import { BASE_SEPOLIA_CHAIN_ID } from "../constants/constants";
 
 export const mode = process.env.DEPLOYMENT_MODE as
   | DeploymentMode
@@ -29,13 +28,14 @@ console.log(
 export const chains: Array<ChainSlug> = [
   ChainSlug.ARBITRUM_SEPOLIA,
   ChainSlug.OPTIMISM_SEPOLIA,
-  ChainSlug.SEPOLIA,
-  BASE_SEPOLIA_CHAIN_ID as ChainSlug,
+  // ChainSlug.SEPOLIA,
+  // BASE_SEPOLIA_CHAIN_ID as ChainSlug,
 ];
 
 export const capacitorType = 1;
 export const maxPacketLength = 1;
 export const initialPacketCount = 0;
+export const auctionEndDelaySeconds = 5;
 
 const MSG_VALUE_MAX_THRESHOLD = utils.parseEther("0.001");
 export const msgValueMaxThreshold = (chain: ChainSlug): BigNumberish => {
@@ -53,16 +53,3 @@ export const overrides = async (
 };
 
 export const watcher = "0xb62505feacC486e809392c65614Ce4d7b051923b";
-
-export enum WatcherVMCoreContracts {
-  SignatureVerifier = "SignatureVerifier",
-  WatcherPrecompile = "WatcherPrecompile",
-  AuctionHouse = "AuctionHouse",
-  AddressAbstractor = "AddressAbstractor",
-  AddressResolver = "AddressResolver",
-}
-
-export enum AppContracts {
-  SuperTokenApp = "SuperTokenApp",
-  SuperTokenDeployer = "SuperTokenDeployer",
-}

@@ -7,14 +7,15 @@ import {SuperTokenAppGateway} from "../../contracts/apps/super-token/SuperTokenA
 import {SuperTokenDeployer} from "../../contracts/apps/super-token/SuperTokenDeployer.sol";
 import {SuperToken} from "../../contracts/apps/super-token/SuperToken.sol";
 import {FeesData} from "../../contracts/common/Structs.sol";
-import {ETH_ADDRESS} from "../../contracts/common/Constants.sol";
+import {ETH_ADDRESS, FAST} from "../../contracts/common/Constants.sol";
 
 contract DeployGateway is Script {
     function run() external {
         vm.startBroadcast();
 
-        address addressResolver = 0x208dC31cd6042a09bbFDdB31614A337a51b870ba;
-        address owner = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+        address addressResolver = vm.envAddress("ADDRESS_RESOLVER");
+        address auctionManager = vm.envAddress("AUCTION_MANAGER");
+        address owner = vm.envAddress("OWNER");
 
         FeesData memory feesData = FeesData({
             feePoolChain: 421614,
@@ -25,31 +26,31 @@ contract DeployGateway is Script {
         SuperTokenDeployer deployer = new SuperTokenDeployer(
             addressResolver,
             owner,
-            10000000000000000000000,
-            10000000000000000000000,
-            "SUPER TOKEN",
-            "SUPER",
-            18,
-            owner,
-            1000000000 ether,
+            address(auctionManager),
+            FAST,
+            SuperTokenDeployer.ConstructorParams({
+                name_: "SUPER TOKEN",
+                symbol_: "SUPER",
+                decimals_: 18,
+                initialSupplyHolder_: owner,
+                initialSupply_: 1000000000 ether
+            }),
             feesData
         );
 
         SuperTokenAppGateway gateway = new SuperTokenAppGateway(
             addressResolver,
             address(deployer),
-            feesData
+            feesData,
+            address(auctionManager)
         );
 
         bytes32 superToken = deployer.superToken();
-        bytes32 limitHook = deployer.limitHook();
 
         console.log("Contracts deployed:");
         console.log("SuperTokenApp:", address(gateway));
         console.log("SuperTokenDeployer:", address(deployer));
         console.log("SuperTokenId:");
         console.logBytes32(superToken);
-        console.log("LimitHookId:");
-        console.logBytes32(limitHook);
     }
 }

@@ -13,14 +13,7 @@ interface ISwitchboard {
      * @param packetId The unique identifier for the packet.
      * @return A boolean indicating whether the packet is allowed to go through the switchboard or not.
      */
-    function allowPacket(
-        bytes32 root,
-        bytes32 packetId
-    ) external view returns (bool);
+    function allowPacket(bytes32 root, bytes32 packetId) external view returns (bool);
 
-    function attest(
-        bytes32 payloadId_,
-        bytes32 root_,
-        bytes calldata signature_
-    ) external;
+    function attest(bytes32 payloadId_, bytes32 root_, bytes calldata signature_) external;
 }

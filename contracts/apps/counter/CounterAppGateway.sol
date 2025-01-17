@@ -8,8 +8,9 @@ contract CounterAppGateway is AppGatewayBase {
     constructor(
         address _addressResolver,
         address deployerContract_,
+        address auctionManager_,
         FeesData memory feesData_
-    ) AppGatewayBase(_addressResolver) {
+    ) AppGatewayBase(_addressResolver, auctionManager_) {
         addressResolver.setContractsToGateways(deployerContract_);
         _setFeesData(feesData_);
     }
@@ -24,5 +25,14 @@ contract CounterAppGateway is AppGatewayBase {
 
     function setFees(FeesData memory feesData_) public {
         feesData = feesData_;
+    }
+
+    function withdrawFeeTokens(
+        uint32 chainSlug_,
+        address token_,
+        uint256 amount_,
+        address receiver_
+    ) external {
+        _withdrawFeeTokens(chainSlug_, token_, amount_, receiver_);
     }
 }

@@ -27,6 +27,6 @@ contract Bridge is Script {
         SuperTokenAppGateway gateway = SuperTokenAppGateway(
             0xb1F4CbFCE786aA8B553796Fb06c04Dd461967A16
         );
-        gateway.bridge(abi.encode(order));
+        gateway.transfer(abi.encode(order));
     }
 }

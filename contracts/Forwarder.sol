@@ -2,7 +2,7 @@
 pragma solidity 0.8.13;
 
 import "./interfaces/IAddressResolver.sol";
-import "./interfaces/IAuctionHouse.sol";
+import "./interfaces/IDeliveryHelper.sol";
 import "./interfaces/IAppGateway.sol";
 import "./interfaces/IPromise.sol";
 import "./AsyncPromise.sol";
@@ -27,11 +27,7 @@ contract Forwarder is IForwarder {
     /// @param chainSlug_ chain id
     /// @param onChainAddress_ on-chain address
     /// @param addressResolver_ address resolver contract address
-    constructor(
-        uint32 chainSlug_,
-        address onChainAddress_,
-        address addressResolver_
-    ) {
+    constructor(uint32 chainSlug_, address onChainAddress_, address addressResolver_) {
         chainSlug = chainSlug_;
         onChainAddress = onChainAddress_;
         addressResolver = addressResolver_;
@@ -54,12 +50,8 @@ contract Forwarder is IForwarder {
     /// @param selector The function selector for callback
     /// @param data The data to be passed to callback
     /// @return promise_ The address of the new promise
-    function then(
-        bytes4 selector,
-        bytes memory data
-    ) external returns (address promise_) {
-        if (latestAsyncPromise == address(0))
-            revert("Forwarder: no async promise found");
+    function then(bytes4 selector, bytes memory data) external returns (address promise_) {
+        if (latestAsyncPromise == address(0)) revert("Forwarder: no async promise found");
         promise_ = IPromise(latestAsyncPromise).then(selector, data);
         latestAsyncPromise = address(0);
     }
@@ -68,20 +60,23 @@ contract Forwarder is IForwarder {
     /// @dev It queues the calls in the auction house and deploys the promise contract
     fallback() external payable {
         // Retrieve the auction house address from the address resolver.
-        address auctionHouse = IAddressResolver(addressResolver).auctionHouse();
-        if (auctionHouse == address(0)) {
-            revert("Forwarder: auctionHouse not found");
+        address deliveryHelper = IAddressResolver(addressResolver).deliveryHelper();
+        if (deliveryHelper == address(0)) {
+            revert("Forwarder: deliveryHelper not found");
         }
 
         // Deploy a new async promise contract.
-        latestAsyncPromise = IAddressResolver(addressResolver)
-            .deployAsyncPromiseContract(msg.sender);
+        latestAsyncPromise = IAddressResolver(addressResolver).deployAsyncPromiseContract(
+            msg.sender
+        );
 
         // Determine if the call is a read or write operation.
         bool isReadCall = IAppGateway(msg.sender).isReadCall();
+        bool isCallSequential = IAppGateway(msg.sender).isCallSequential();
 
         // Queue the call in the auction house.
-        IAuctionHouse(auctionHouse).queue(
+        IDeliveryHelper(deliveryHelper).queue(
+            isCallSequential,
             chainSlug,
             onChainAddress,
             latestAsyncPromise,

@@ -10,15 +10,14 @@ interface IContractFactoryPlug {
     /// @return address The deployed contract address
     function deployContract(
         bytes memory creationCode,
-        bytes32 salt
+        bytes32 salt,
+        address appGateway_,
+        address switchboard_
     ) external returns (address);
 
     /// @notice Gets the deterministic address for a contract deployment
     /// @param creationCode The contract creation code
     /// @param salt The salt value
     /// @return address The predicted contract address
-    function getAddress(
-        bytes memory creationCode,
-        uint256 salt
-    ) external view returns (address);
+    function getAddress(bytes memory creationCode, uint256 salt) external view returns (address);
 }

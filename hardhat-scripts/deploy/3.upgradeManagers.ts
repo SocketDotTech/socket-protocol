@@ -1,4 +1,5 @@
 import {
+  ChainSlug,
   ChainSocketAddresses,
   CORE_CONTRACTS,
   DeploymentAddresses,
@@ -12,8 +13,10 @@ import { ethers } from "hardhat";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { chains } from "./config";
 import { getProviderFromChainSlug } from "../constants";
-import { constants, Contract, Wallet } from "ethers";
+import { Wallet } from "ethers";
 import { getInstance, storeAddresses } from "./utils";
+import { OffChainVMCoreContracts } from "../../src";
+import { OFF_CHAIN_VM_CHAIN_ID } from "../constants/constants";
 
 export const main = async () => {
   let addresses: DeploymentAddresses;
@@ -42,12 +45,48 @@ export const main = async () => {
         socketContract
       );
 
+      await setSwitchboard(
+        chainAddresses[CORE_CONTRACTS.FastSwitchboard],
+        chain,
+        addresses
+      );
+
       await storeAddresses(chainAddresses, chain, DeploymentMode.DEV);
     }
   } catch (error) {
     console.log("Error:", error);
   }
 };
+
+async function setSwitchboard(sbAddress, chain, addresses) {
+  const providerInstance = getProviderFromChainSlug(
+    OFF_CHAIN_VM_CHAIN_ID as ChainSlug
+  );
+  const signer: Wallet = new ethers.Wallet(
+    process.env.WATCHER_PRIVATE_KEY as string,
+    providerInstance
+  );
+  const watcherVMaddr = addresses[OFF_CHAIN_VM_CHAIN_ID]!;
+  const watcherPrecompile = (
+    await getInstance(
+      "WatcherPrecompile",
+      watcherVMaddr[OffChainVMCoreContracts.WatcherPrecompile]
+    )
+  ).connect(signer);
+
+  const fastSBtype = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("FAST"));
+  const currentValue = await watcherPrecompile.switchboards(chain, fastSBtype);
+  console.log({ current: currentValue, required: sbAddress });
+
+  if (currentValue.toLowerCase() !== sbAddress.toLowerCase()) {
+    const tx = await watcherPrecompile
+      .connect(signer)
+      .setSwitchboard(chain, fastSBtype, sbAddress);
+
+    console.log(`Setting sb for ${chain} to`, tx.hash);
+    await tx.wait();
+  }
+}
 
 const registerSb = async (sbAddress, signer, socket) => {
   try {

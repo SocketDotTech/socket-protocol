@@ -15,18 +15,16 @@ contract CounterDeployOnchain is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        CounterDeployer deployer = CounterDeployer(
-            vm.envAddress("COUNTER_DEPLOYER")
-        );
+        CounterDeployer deployer = CounterDeployer(vm.envAddress("COUNTER_DEPLOYER"));
 
         console.log("Counter Deployer:", address(deployer));
 
         console.log("Deploying contracts on Arbitrum Sepolia...");
         deployer.deployContracts(421614);
-        console.log("Deploying contracts on Optimism Sepolia...");
-        deployer.deployContracts(11155420);
-        console.log("Deploying contracts on Base Sepolia...");
-        deployer.deployContracts(84532);
+        // console.log("Deploying contracts on Optimism Sepolia...");
+        // deployer.deployContracts(11155420);
+        // console.log("Deploying contracts on Base Sepolia...");
+        // deployer.deployContracts(84532);
         //console.log("Deploying contracts on Ethereum Sepolia...");
         //deployer.deployContracts(11155111);
     }

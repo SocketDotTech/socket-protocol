@@ -2,27 +2,21 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 import "../../utils/Ownable.sol";
-import "../../common/Errors.sol";
+import "../../base/PlugBase.sol";
 
-contract Counter is Ownable(msg.sender) {
-    address public socket;
+contract Counter is Ownable(msg.sender), PlugBase(msg.sender) {
     uint256 public counter;
-
-    modifier onlySocket() {
-        if (msg.sender != socket) revert NotSocket();
-
-        _;
-    }
-
-    function setSocket(address _socket) external onlyOwner {
-        socket = _socket;
-    }
-
-    function getSocket() external view returns (address) {
-        return socket;
-    }
 
     function increase() external onlySocket {
         counter++;
+    }
+
+    function connectSocket(
+        address appGateway_,
+        address socket_,
+        address switchboard_
+    ) external onlyOwner {
+        _claimOwner(socket_);
+        _connectSocket(appGateway_, socket_, switchboard_);
     }
 }

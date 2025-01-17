@@ -3,7 +3,7 @@
     "SignatureVerifier": "0xE33cEEd8488c99f79023C67f511B2b25953A8f45",
     "WatcherPrecompile": "0xe1b0BB029E16aaC17dEFC8599C3b3CA547D29f32",
     "AddressResolver": "0xc1d4f0ed9760FF06C17af897a2703AE060509631",
-    "AuctionHouse": "0xa58db42A279BB4D9DBEEB0732E16c8e958E0857d",
+    "DeliveryHelper": "0xa58db42A279BB4D9DBEEB0732E16c8e958E0857d",
     "startBlock": 4811708
   },
   "84532": {

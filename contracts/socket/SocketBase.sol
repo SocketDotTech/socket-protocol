@@ -90,9 +90,7 @@ abstract contract SocketBase is SocketConfig {
      * @dev Only governance can call this function
      * @param signatureVerifier_ address of signatureVerifier
      */
-    function setSignatureVerifier(
-        address signatureVerifier_
-    ) external onlyRole(GOVERNANCE_ROLE) {
+    function setSignatureVerifier(address signatureVerifier_) external onlyRole(GOVERNANCE_ROLE) {
         signatureVerifier__ = ISignatureVerifier(signatureVerifier_);
         emit SignatureVerifierSet(signatureVerifier_);
     }

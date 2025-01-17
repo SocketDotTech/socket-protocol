@@ -23,11 +23,7 @@ library RescueFundsLib {
      * @param rescueTo_ The address of the user.
      * @param amount_ The amount of tokens to be rescued.
      */
-    function rescueFunds(
-        address token_,
-        address rescueTo_,
-        uint256 amount_
-    ) internal {
+    function rescueFunds(address token_, address rescueTo_, uint256 amount_) internal {
         if (rescueTo_ == address(0)) revert ZeroAddress();
 
         if (token_ == ETH_ADDRESS) {

@@ -36,9 +36,7 @@ contract SignatureVerifier is ISignatureVerifier, AccessControl {
         bytes32 digest_,
         bytes memory signature_
     ) public pure override returns (address signer) {
-        bytes32 digest = keccak256(
-            abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_)
-        );
+        bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
         // recovered signer is checked for the valid roles later
         signer = ECDSA.recover(digest, signature_);
     }

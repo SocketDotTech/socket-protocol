@@ -2,7 +2,7 @@
 pragma solidity ^0.8.3;
 import {PayloadDetails, Bid, FeesData, DeployParams, CallType} from "../common/Structs.sol";
 
-interface IAuctionHouse {
+interface IDeliveryHelper {
     event BidPlaced(
         bytes32 indexed asyncId,
         Bid bid // Replaced transmitter and bidAmount with Bid struct
@@ -15,13 +15,8 @@ interface IAuctionHouse {
 
     function clearQueue() external;
 
-    function bid(
-        bytes32 asyncId_,
-        uint256 fee,
-        bytes memory transmitterSignature
-    ) external;
-
     function queue(
+        bool isSequential_,
         uint32 chainSlug_,
         address target_,
         address asyncPromise_,
@@ -31,7 +26,9 @@ interface IAuctionHouse {
 
     function batch(
         FeesData memory feesData_,
-        address auctionManager_
+        address auctionManager_,
+        bytes memory onCompleteData_,
+        bytes32 sbType_
     ) external returns (bytes32);
 
     function withdrawTo(
@@ -39,12 +36,15 @@ interface IAuctionHouse {
         address token_,
         uint256 amount_,
         address receiver_,
+        address auctionManager_,
         FeesData memory feesData_
     ) external;
 
     function cancelTransaction(bytes32 asyncId_) external;
 
-    function startBatchProcessing(bytes32 asyncId_) external;
+    function startBatchProcessing(bytes32 asyncId_, Bid memory winningBid) external;
+
+    function getFeesData(bytes32 asyncId_) external view returns (FeesData memory);
 
     function getCurrentAsyncId() external view returns (bytes32);
 }
