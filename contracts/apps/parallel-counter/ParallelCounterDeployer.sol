@@ -6,7 +6,8 @@ import "../../base/AppDeployerBase.sol";
 import "../../utils/Ownable.sol";
 
 contract ParallelCounterDeployer is AppDeployerBase, Ownable {
-    bytes32 public counter = _createContractId("counter");
+    bytes32 public counter1 = _createContractId("counter1");
+    bytes32 public counter2 = _createContractId("counter2");
 
     constructor(
         address addressResolver_,
@@ -14,13 +15,22 @@ contract ParallelCounterDeployer is AppDeployerBase, Ownable {
         bytes32 sbType_,
         FeesData memory feesData_
     ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) Ownable(msg.sender) {
-        creationCodeWithArgs[counter] = abi.encodePacked(type(Counter).creationCode);
+        creationCodeWithArgs[counter1] = abi.encodePacked(type(Counter).creationCode);
+        creationCodeWithArgs[counter2] = abi.encodePacked(type(Counter).creationCode);
         _setFeesData(feesData_);
         _setIsCallSequential(false);
     }
 
     function deployContracts(uint32 chainSlug) external async {
-        _deploy(counter, chainSlug);
+        _deploy(counter1, chainSlug);
+        _deploy(counter2, chainSlug);
+    }
+
+    function deployMultiChainContracts(uint32[] memory chainSlugs) external async {
+        for (uint32 i = 0; i < chainSlugs.length; i++) {
+            _deploy(counter1, chainSlugs[i]);
+            _deploy(counter2, chainSlugs[i]);
+        }
     }
 
     function initialize(uint32) public pure override {

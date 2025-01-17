@@ -27,6 +27,8 @@ envVariables["ADDRESS_RESOLVER"] = latestAddresses["AddressResolver"];
 envVariables["WATCHER_PRECOMPILE"] = latestAddresses["WatcherPrecompile"];
 envVariables["AUCTION_MANAGER"] = latestAddresses["AuctionManager"];
 envVariables["SOCKET"] = dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["Socket"];
+envVariables["SWITCHBOARD"] =
+  dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["FastSwitchboard"];
 // Convert the envVariables object back to a string
 const newEnvContent = Object.entries(envVariables)
   .map(([key, value]) => `${key}=${value}`)

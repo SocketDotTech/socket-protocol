@@ -188,7 +188,7 @@ contract SetupTest is Test {
             payloadIds[i] = getWritePayloadId(chainSlug_, switchboard_, i + writePayloadIdCounter);
         }
 
-        // for fees
+        // +1 for fees
         writePayloadIdCounter += numPayloads + 1;
         return payloadIds;
     }

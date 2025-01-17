@@ -8,36 +8,44 @@ import {SCHEDULE, QUERY, FINALIZE} from "../../contracts/common/Constants.sol";
 
 contract UpdateLimitsScript is Script {
     function run() external {
+        string memory rpc = vm.envString("OFF_CHAIN_VM_RPC");
+        vm.createSelectFork(rpc);
+
         // Load private key from env
-        uint256 deployerPrivateKey = vm.envUint("WATCHER_PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         // Start broadcast with private key
         vm.startBroadcast(deployerPrivateKey);
-
-        // Get WatcherPrecompile contract address from deployment json
-        // string memory json = vm.readFile("deployments/dev_addresses.json");
-        // address watcherAddress = abi.decode(vm.parseJson(json, "7625382.WatcherPrecompile"), (address));
         address watcherPrecompile = vm.envAddress("WATCHER_PRECOMPILE");
-        address cronAppGateway = vm.envAddress("CRON_APP_GATEWAY");
+        address appGateway = vm.envAddress("APP_GATEWAY");
 
         console.log("WatcherPrecompile address:", watcherPrecompile);
-        console.log("CronAppGateway address:", cronAppGateway);
+        console.log("AppGateway address:", appGateway);
         WatcherPrecompile watcherContract = WatcherPrecompile(watcherPrecompile);
 
         // Create update params array
-        UpdateLimitParams[] memory updates = new UpdateLimitParams[](1);
+        UpdateLimitParams[] memory updates = new UpdateLimitParams[](3);
 
         // Example update - modify these values as needed
         updates[0] = UpdateLimitParams({
             limitType: SCHEDULE, // Example limit type
-            appGateway: cronAppGateway, // Replace with actual app gateway address
-            maxLimit: 1000, // Maximum limit
-            ratePerSecond: 1 // Rate per second
+            appGateway: appGateway, // Replace with actual app gateway address
+            maxLimit: 10000000000, // Maximum limit
+            ratePerSecond: 10000000000 // Rate per second
         });
-
+        updates[1] = UpdateLimitParams({
+            limitType: QUERY, // Example limit type
+            appGateway: appGateway, // Replace with actual app gateway address
+            maxLimit: 10000000000, // Maximum limit
+            ratePerSecond: 10000000000 // Rate per second
+        });
+        updates[2] = UpdateLimitParams({
+            limitType: FINALIZE, // Example limit type
+            appGateway: appGateway, // Replace with actual app gateway address
+            maxLimit: 10000000000, // Maximum limit
+            ratePerSecond: 10000000000 // Rate per second
+        });
         // // Update the limits
-        bytes memory payload = abi.encodeCall(watcherContract.updateLimitParams, updates);
-        console.logBytes(payload);
         watcherContract.updateLimitParams(updates);
 
         vm.stopBroadcast();

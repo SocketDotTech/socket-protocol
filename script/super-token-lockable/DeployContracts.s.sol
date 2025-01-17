@@ -11,7 +11,9 @@ import {ETH_ADDRESS} from "../../contracts/common/Constants.sol";
 
 contract DeployContracts is Script {
     function run() external {
-        SuperTokenLockableDeployer deployer = SuperTokenLockableDeployer(vm.envAddress("SUPERTOKEN_DEPLOYER"));
+        SuperTokenLockableDeployer deployer = SuperTokenLockableDeployer(
+            vm.envAddress("SUPERTOKEN_DEPLOYER")
+        );
         string memory rpc = vm.envString("OFF_CHAIN_VM_RPC");
         vm.createSelectFork(rpc);
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
