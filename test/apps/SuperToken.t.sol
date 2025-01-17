@@ -84,7 +84,8 @@ contract SuperTokenTest is DeliveryHelperTest {
             createFeesData(maxFees),
             address(auctionManager)
         );
-        // TODO: Explain what setLimit does
+        // Enable app gateways to do all operations in the Watcher: Read, Write and Schedule on VM
+        // Watcher sets the limits for apps in this SOCKET protocol version
         setLimit(address(superTokenApp));
 
         appContracts = AppContracts({
@@ -194,6 +195,8 @@ contract SuperTokenTest is DeliveryHelperTest {
         uint32[] memory chainSlugs = new uint32[](2);
         chainSlugs[0] = IForwarder(forwarderArb).getChainSlug();
         chainSlugs[1] = IForwarder(forwarderOpt).getChainSlug();
+        // You can run the function below whenever you want to simulate the onchain execution for
+        // the txs in batch of the current asyncId. It bids, finalises, relays and resolves promises
         _executeWriteBatchMultiChain(chainSlugs);
 
         assertEq(
