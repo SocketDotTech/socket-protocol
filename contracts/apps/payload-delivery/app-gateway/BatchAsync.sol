@@ -82,15 +82,11 @@ abstract contract BatchAsync is QueueAsync {
             return asyncId;
         }
 
-        address forwarderAppGateway = processRemainingPayloads(
-            payloadDetails_,
-            readEndIndex,
-            asyncId
-        );
+        address appGateway = processRemainingPayloads(payloadDetails_, readEndIndex, asyncId);
 
         initializeBatch(
             asyncId,
-            forwarderAppGateway,
+            appGateway,
             feesData_,
             auctionManager_,
             onCompleteData_,
@@ -146,34 +142,30 @@ abstract contract BatchAsync is QueueAsync {
         uint256 readEndIndex,
         bytes32 asyncId
     ) internal returns (address) {
-        address forwarderAppGateway = msg.sender;
+        address appGateway = msg.sender;
 
         for (uint256 i = readEndIndex; i < payloadDetails_.length; i++) {
             if (payloadDetails_[i].payload.length > 24.5 * 1024) revert PayloadTooLarge();
 
             if (payloadDetails_[i].callType == CallType.DEPLOY) {
+                // contract factory plug deploys new contracts
                 payloadDetails_[i].target = getPlugAddress(
                     address(this),
                     payloadDetails_[i].chainSlug
                 );
             } else if (payloadDetails_[i].callType == CallType.WRITE) {
-                forwarderAppGateway = IAddressResolver(addressResolver).contractsToGateways(
-                    msg.sender
-                );
-                if (forwarderAppGateway == address(0)) forwarderAppGateway = msg.sender;
-
-                payloadDetails_[i].appGateway = forwarderAppGateway;
+                appGateway = _getCoreAppGateway(appGateway);
+                payloadDetails_[i].appGateway = appGateway;
             }
-
             payloadBatchDetails[asyncId].push(payloadDetails_[i]);
         }
 
-        return forwarderAppGateway;
+        return appGateway;
     }
 
     function initializeBatch(
         bytes32 asyncId,
-        address forwarderAppGateway,
+        address appGateway,
         FeesData memory feesData_,
         address auctionManager_,
         bytes memory onCompleteData_,
@@ -181,7 +173,7 @@ abstract contract BatchAsync is QueueAsync {
         PayloadDetails[] memory payloadDetails_
     ) internal {
         payloadBatches[asyncId] = PayloadBatch({
-            appGateway: forwarderAppGateway,
+            appGateway: appGateway,
             feesData: feesData_,
             currentPayloadIndex: readEndIndex,
             auctionManager: auctionManager_,
@@ -194,18 +186,12 @@ abstract contract BatchAsync is QueueAsync {
 
         uint256 delayInSeconds = IAuctionManager(auctionManager_).startAuction(asyncId);
         watcherPrecompile().setTimeout(
-            forwarderAppGateway,
+            appGateway,
             abi.encodeWithSelector(this.endTimeout.selector, asyncId),
             delayInSeconds
         );
 
-        emit PayloadSubmitted(
-            asyncId,
-            forwarderAppGateway,
-            payloadDetails_,
-            feesData_,
-            auctionManager_
-        );
+        emit PayloadSubmitted(asyncId, appGateway, payloadDetails_, feesData_, auctionManager_);
     }
 
     function endTimeout(bytes32 asyncId_) external onlyWatcherPrecompile {

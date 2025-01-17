@@ -83,4 +83,6 @@ interface IWatcherPrecompile {
     function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external;
 
     function switchboards(uint32 chainSlug_, bytes32 sbType_) external view returns (address);
+
+    function setIsValidInboxCaller(uint32 chainSlug_, address plug_, bool isValid_) external;
 }

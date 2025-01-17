@@ -84,7 +84,7 @@ async function connectPlug(
   checkIfAddressExists(appGateway, "AppGateway");
   // Check if config is already set
   if (await isConfigSetOnSocket(plug, socket, appGateway, switchboard)) {
-    console.log("Config already set!");
+    console.log(`${plugContract} Socket Config  on ${chain} already set!`);
     return;
   }
 
@@ -94,7 +94,9 @@ async function connectPlug(
     socket.address,
     switchboard
   );
-  console.log(`Connecting applicationGateway tx hash: ${tx.hash}`);
+  console.log(
+    `Connecting ${plugContract} on ${chain} to ${appGateway} tx hash: ${tx.hash}`
+  );
   await tx.wait();
 }
 

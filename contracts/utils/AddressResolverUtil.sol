@@ -59,4 +59,9 @@ abstract contract AddressResolverUtil {
         // Update the address resolver reference
         addressResolver = IAddressResolver(_addressResolver);
     }
+
+    function _getCoreAppGateway(address appGateway_) internal view returns (address appGateway) {
+        appGateway = addressResolver.contractsToGateways(appGateway_);
+        if (appGateway == address(0)) appGateway = appGateway_;
+    }
 }

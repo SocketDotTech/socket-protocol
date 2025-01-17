@@ -28,6 +28,7 @@ contract FeesPlug is PlugBase, Ownable {
 
         require(balanceOf[appGateway][feeToken] >= fee, "FeesPlug: Insufficient Balance for Fees");
         balanceOf[appGateway][feeToken] -= fee;
+
         _transferTokens(feeToken, fee, transmitter);
         return bytes("");
     }
@@ -79,4 +80,8 @@ contract FeesPlug is PlugBase, Ownable {
     ) external onlyOwner {
         _connectSocket(appGateway_, socket_, switchboard_);
     }
+
+    fallback() external payable {}
+
+    receive() external payable {}
 }

@@ -18,24 +18,32 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
     mapping(bytes32 => bool) public override auctionClosed;
     mapping(bytes32 => bool) public override auctionStarted;
 
-    uint256 public constant auctionEndDelaySeconds = 0;
+    uint256 public auctionEndDelaySeconds;
+
+    error InvalidTransmitter();
 
     /// @notice Constructor for AuctionManager
     /// @param addressResolver_ The address of the address resolver
     /// @param signatureVerifier_ The address of the signature verifier
     constructor(
         uint32 vmChainSlug_,
+        uint256 auctionEndDelaySeconds_,
         address addressResolver_,
         SignatureVerifier signatureVerifier_,
         address owner_
     ) AddressResolverUtil(addressResolver_) Ownable(owner_) {
         vmChainSlug = vmChainSlug_;
         signatureVerifier__ = signatureVerifier_;
+        auctionEndDelaySeconds = auctionEndDelaySeconds_;
     }
 
-    event AuctionStarted(bytes32 asyncId_);
-    event AuctionEnded(bytes32 asyncId_, Bid winningBid);
+    event AuctionStarted(bytes32 asyncId);
+    event AuctionEnded(bytes32 asyncId, Bid winningBid);
     event BidPlaced(bytes32 asyncId, Bid bid);
+
+    function setAuctionEndDelaySeconds(uint256 auctionEndDelaySeconds_) external onlyOwner {
+        auctionEndDelaySeconds = auctionEndDelaySeconds_;
+    }
 
     function startAuction(bytes32 asyncId_) external onlyDeliveryHelper returns (uint256) {
         require(!auctionClosed[asyncId_], "Auction closed");
@@ -81,8 +89,9 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
     function endAuction(bytes32 asyncId_) external onlyDeliveryHelper {
         auctionClosed[asyncId_] = true;
         Bid memory winningBid = winningBids[asyncId_];
-        emit AuctionEnded(asyncId_, winningBid);
+        if (winningBid.transmitter == address(0)) revert InvalidTransmitter();
 
+        emit AuctionEnded(asyncId_, winningBid);
         IDeliveryHelper(addressResolver.deliveryHelper()).startBatchProcessing(
             asyncId_,
             winningBid

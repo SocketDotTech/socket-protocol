@@ -16,6 +16,7 @@ struct FeesData {
 
 struct PayloadDetails {
     uint32 chainSlug;
+    // can be delivery helper, fees manager or core gateway
     address appGateway;
     address target;
     bytes payload;
@@ -47,6 +48,7 @@ struct Bid {
 }
 
 struct PayloadBatch {
+    // will be core app gateway always, limit check happens on this address
     address appGateway;
     FeesData feesData;
     uint256 currentPayloadIndex;

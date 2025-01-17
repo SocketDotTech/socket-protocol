@@ -7,6 +7,7 @@ import "../contracts/apps/payload-delivery/app-gateway/AuctionManager.sol";
 
 import "../contracts/Forwarder.sol";
 import "../contracts/interfaces/IAppDeployer.sol";
+import "../contracts/interfaces/IMultiChainAppDeployer.sol";
 
 import "./SetupTest.t.sol";
 
@@ -16,6 +17,7 @@ contract DeliveryHelperTest is SetupTest {
     uint256 public deployCounter;
     uint256 public asyncPromiseCounterLocal = 0;
     uint256 public asyncCounterTest;
+    uint256 public auctionEndDelaySeconds = 0;
 
     DeliveryHelper deliveryHelper;
     FeesManager feesManager;
@@ -29,6 +31,9 @@ contract DeliveryHelperTest is SetupTest {
     );
     event BidPlaced(bytes32 indexed asyncId, Bid bid);
     event AuctionEnded(bytes32 indexed asyncId, Bid winningBid);
+    event BatchCancelled(bytes32 indexed asyncId);
+    event FinalizeRequested(bytes32 indexed payloadId, AsyncRequest asyncRequest);
+    event QueryRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
 
     function setUpDeliveryHelper() internal {
         // core
@@ -37,6 +42,7 @@ contract DeliveryHelperTest is SetupTest {
         deliveryHelper = new DeliveryHelper(address(addressResolver), address(feesManager), owner);
         auctionManager = new AuctionManager(
             vmChainSlug,
+            auctionEndDelaySeconds,
             address(addressResolver),
             signatureVerifier,
             owner
@@ -110,6 +116,33 @@ contract DeliveryHelperTest is SetupTest {
         watcherPrecompile.setAppGateways(gateways);
     }
 
+    function setLimit(address appGateway_) internal {
+        UpdateLimitParams[] memory params = new UpdateLimitParams[](3);
+        params[0] = UpdateLimitParams({
+            limitType: QUERY,
+            appGateway: appGateway_,
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+        params[1] = UpdateLimitParams({
+            limitType: SCHEDULE,
+            appGateway: appGateway_,
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+        params[2] = UpdateLimitParams({
+            limitType: FINALIZE,
+            appGateway: appGateway_,
+            maxLimit: 10000000000000000000000,
+            ratePerSecond: 10000000000000000000000
+        });
+
+        hoax(watcherEOA);
+        watcherPrecompile.updateLimitParams(params);
+
+        skip(100);
+    }
+
     //// BATCH DEPLOY AND EXECUTE HELPERS ////
     function getContractFactoryPlug(uint32 chainSlug_) internal view returns (address) {
         return address(getSocketConfig(chainSlug_).contractFactoryPlug);
@@ -175,23 +208,57 @@ contract DeliveryHelperTest is SetupTest {
     function bidAndExecute(bytes32[] memory payloadIds, bytes32 asyncId_) internal {
         bidAndEndAuction(asyncId_);
         for (uint i = 0; i < payloadIds.length; i++) {
-            finalizeAndExecute(asyncId_, payloadIds[i], false);
+            finalizeAndExecute(payloadIds[i], false);
         }
     }
 
     function _deploy(
         bytes32[] memory contractIds,
-        bytes32[] memory payloadIds,
         uint32 chainSlug_,
+        uint256 totalPayloads,
         IAppDeployer appDeployer_,
         address appGateway_
     ) internal returns (bytes32 asyncId) {
+        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
+        bytes32[] memory payloadIds = getWritePayloadIds(
+            chainSlug_,
+            address(socketConfig.switchboard),
+            totalPayloads
+        );
         asyncId = getCurrentAsyncId();
         asyncCounterTest++;
 
         appDeployer_.deployContracts(chainSlug_);
         bidAndExecute(payloadIds, asyncId);
         setupGatewayAndPlugs(chainSlug_, appDeployer_, appGateway_, contractIds);
+    }
+
+    function _deployParallel(
+        bytes32[] memory contractIds,
+        uint32[] memory chainSlugs_,
+        IMultiChainAppDeployer appDeployer_,
+        address appGateway_
+    ) internal returns (bytes32 asyncId) {
+        asyncId = getCurrentAsyncId();
+        asyncCounterTest++;
+        bytes32[] memory payloadIds = new bytes32[](contractIds.length * chainSlugs_.length);
+        for (uint32 i = 0; i < chainSlugs_.length; i++) {
+            for (uint j = 0; j < contractIds.length; j++) {
+                payloadIds[i * contractIds.length + j] = getWritePayloadId(
+                    chainSlugs_[i],
+                    address(getSocketConfig(chainSlugs_[i]).switchboard),
+                    i * contractIds.length + j + writePayloadIdCounter
+                );
+            }
+        }
+        // for fees
+        writePayloadIdCounter += chainSlugs_.length * contractIds.length + 1;
+
+        appDeployer_.deployMultiChainContracts(chainSlugs_);
+        bidAndExecute(payloadIds, asyncId);
+        for (uint i = 0; i < chainSlugs_.length; i++) {
+            setupGatewayAndPlugs(chainSlugs_[i], appDeployer_, appGateway_, contractIds);
+        }
     }
 
     function setupGatewayAndPlugs(
@@ -218,10 +285,53 @@ contract DeliveryHelperTest is SetupTest {
         watcherPrecompile.setAppGateways(gateways);
     }
 
-    function _configure(bytes32[] memory payloadIds) internal returns (bytes32 asyncId) {
+    function _executeReadBatchSingleChain(
+        uint32 chainSlug_,
+        uint256 totalPayloads
+    ) internal returns (bytes32 asyncId) {
         asyncId = getCurrentAsyncId();
         asyncCounterTest++;
+    }
+
+    function _executeReadBatchMultiChain(
+        uint32[] memory chainSlugs_
+    ) internal returns (bytes32 asyncId) {
+        asyncId = getCurrentAsyncId();
+        asyncCounterTest++;
+    }
+
+    function _executeWriteBatchSingleChain(
+        uint32 chainSlug_,
+        uint256 totalPayloads
+    ) internal returns (bytes32 asyncId) {
+        asyncId = getCurrentAsyncId();
+        asyncCounterTest++;
+        bytes32[] memory payloadIds = getWritePayloadIds(
+            chainSlug_,
+            address(getSocketConfig(chainSlug_).switchboard),
+            totalPayloads
+        );
         bidAndExecute(payloadIds, asyncId);
+    }
+
+    function _executeWriteBatchMultiChain(
+        uint32[] memory chainSlugs_
+    ) internal returns (bytes32 asyncId) {
+        asyncId = getCurrentAsyncId();
+        asyncCounterTest++;
+
+        bidAndEndAuction(asyncId);
+        for (uint i = 0; i < chainSlugs_.length; i++) {
+            bytes32 payloadId = getWritePayloadId(
+                chainSlugs_[i],
+                address(getSocketConfig(chainSlugs_[i]).switchboard),
+                i + writePayloadIdCounter
+            );
+            finalizeAndExecute(payloadId, false);
+        }
+
+        // for fees
+        writePayloadIdCounter += chainSlugs_.length + 1;
     }
 
     function createDeployPayloadDetail(
@@ -417,7 +527,7 @@ contract DeliveryHelperTest is SetupTest {
         resolvePromise(payloadId, returnData_);
     }
 
-    function finalizeAndExecute(bytes32, bytes32 payloadId, bool isWithdraw) internal {
+    function finalizeAndExecute(bytes32 payloadId, bool isWithdraw) internal {
         (bytes memory watcherSig, bytes32 root) = finalize(payloadId);
 
         PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(payloadId);
@@ -461,5 +571,15 @@ contract DeliveryHelperTest is SetupTest {
 
     function getTimeoutPayloadId(uint256 counter_) internal view returns (bytes32) {
         return bytes32((uint256(uint160(address(deliveryHelper))) << 64) | counter_);
+    }
+
+    function getOnChainAndForwarderAddresses(
+        uint32 chainSlug_,
+        bytes32 contractId_,
+        IAppDeployer deployer_
+    ) internal view returns (address, address) {
+        address app = deployer_.getOnChainAddress(contractId_, chainSlug_);
+        address forwarder = deployer_.forwarderAddresses(contractId_, chainSlug_);
+        return (app, forwarder);
     }
 }

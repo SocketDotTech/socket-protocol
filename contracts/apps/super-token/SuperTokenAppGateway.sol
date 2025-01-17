@@ -2,15 +2,13 @@
 pragma solidity ^0.8.13;
 
 import "../../base/AppGatewayBase.sol";
-import {ISuperToken} from "../../interfaces/ISuperToken.sol";
+import "../../interfaces/ISuperToken.sol";
 import "../../utils/Ownable.sol";
 
 contract SuperTokenAppGateway is AppGatewayBase, Ownable {
-    uint256 public idCounter;
+    event Transferred(bytes32 asyncId);
 
-    event Bridged(bytes32 asyncId);
-
-    struct UserOrder {
+    struct TransferOrder {
         address srcToken;
         address dstToken;
         address user;
@@ -24,25 +22,19 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         FeesData memory feesData_,
         address _auctionManager
     ) AppGatewayBase(_addressResolver, _auctionManager) Ownable(msg.sender) {
+        // called to connect the deployer contract with this app
         addressResolver.setContractsToGateways(deployerContract_);
+
+        // sets the fees data like max fees, chain and token for all transfers
+        // they can be updated for each transfer as well
         _setFeesData(feesData_);
     }
 
-    function bridge(bytes memory _order) external async returns (bytes32 asyncId) {
-        UserOrder memory order = abi.decode(_order, (UserOrder));
-        asyncId = _getCurrentAsyncId();
-        ISuperToken(order.dstToken).mint(order.user, order.srcAmount);
+    function transfer(bytes memory _order) external async {
+        TransferOrder memory order = abi.decode(_order, (TransferOrder));
         ISuperToken(order.srcToken).burn(order.user, order.srcAmount);
+        ISuperToken(order.dstToken).mint(order.user, order.srcAmount);
 
-        emit Bridged(asyncId);
-    }
-
-    function withdrawFeeTokens(
-        uint32 chainSlug_,
-        address token_,
-        uint256 amount_,
-        address receiver_
-    ) external onlyOwner {
-        _withdrawFeeTokens(chainSlug_, token_, amount_, receiver_);
+        emit Transferred(_getCurrentAsyncId());
     }
 }

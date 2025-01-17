@@ -1,36 +1,30 @@
 {
-  "421614": [],
-  "7625382": [
+  "421614": [
     [
-      "0x176457ba0c1716bd0B7A30C0a388bd529da7a5D3",
-      "WatcherPrecompile",
-      "contracts/watcherPrecompile/WatcherPrecompile.sol",
+      "0x5AF9cA0Ce2Bc991FcE955f8c993fb0A5464B289F",
+      "FastSwitchboard",
+      "contracts/socket/switchboard/FastSwitchboard.sol",
       [
-        "0xb62505feacC486e809392c65614Ce4d7b051923b",
-        "0x8e89587020D99D92f4AE987A5D168d6DFDb54011"
-      ]
-    ],
-    [
-      "0xF4D3BDe438416938217d4624c82AEbEb46CeD371",
-      "FeesManager",
-      "contracts/apps/payload-delivery/app-gateway/FeesManager.sol",
-      [
-        "0x208dC31cd6042a09bbFDdB31614A337a51b870ba",
-        "0xb62505feacC486e809392c65614Ce4d7b051923b"
-      ]
-    ],
-    [
-      "0x4CCF8F511A364827E5e6749b196BB26Ea00bF512",
-      "AuctionManager",
-      "contracts/apps/payload-delivery/app-gateway/AuctionManager.sol",
-      [
-        7625382,
-        "0x208dC31cd6042a09bbFDdB31614A337a51b870ba",
-        "0xbBfb525ADc6eC38Ef0D4b807d327c2Dd1C286de1",
-        "0xb62505feacC486e809392c65614Ce4d7b051923b"
+        421614,
+        "0x00eE3c449110D290fDbdA41036915f1696280BFb",
+        "0xe1b30D44b542f82BB2EC57f429db4C441dEb9b52",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
       ]
     ]
   ],
+  "7625382": [],
   "11155111": [],
-  "11155420": []
+  "11155420": [
+    [
+      "0x11a69F5e870e43832c01c9Ac02b8b6dC9c98A029",
+      "FastSwitchboard",
+      "contracts/socket/switchboard/FastSwitchboard.sol",
+      [
+        11155420,
+        "0x2E98559BE79A146304AC30Cf4367fcebCcaC766B",
+        "0x804Af74b5b3865872bEf354e286124253782FA95",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
+      ]
+    ]
+  ]
 }

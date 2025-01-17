@@ -13,9 +13,9 @@ contract DeployGateway is Script {
     function run() external {
         vm.startBroadcast();
 
-        address addressResolver = 0x208dC31cd6042a09bbFDdB31614A337a51b870ba;
-        address auctionManager = 0x0000000000000000000000000000000000000000;
-        address owner = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+        address addressResolver = vm.envAddress("ADDRESS_RESOLVER");
+        address auctionManager = vm.envAddress("AUCTION_MANAGER");
+        address owner = vm.envAddress("OWNER");
 
         FeesData memory feesData = FeesData({
             feePoolChain: 421614,
@@ -29,8 +29,6 @@ contract DeployGateway is Script {
             address(auctionManager),
             FAST,
             SuperTokenDeployer.ConstructorParams({
-                _burnLimit: 10000000000000000000000,
-                _mintLimit: 10000000000000000000000,
                 name_: "SUPER TOKEN",
                 symbol_: "SUPER",
                 decimals_: 18,
@@ -48,14 +46,11 @@ contract DeployGateway is Script {
         );
 
         bytes32 superToken = deployer.superToken();
-        bytes32 limitHook = deployer.limitHook();
 
         console.log("Contracts deployed:");
         console.log("SuperTokenApp:", address(gateway));
         console.log("SuperTokenDeployer:", address(deployer));
         console.log("SuperTokenId:");
         console.logBytes32(superToken);
-        console.log("LimitHookId:");
-        console.logBytes32(limitHook);
     }
 }

@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 interface IPromise {
     function then(bytes4 selector, bytes memory data) external returns (address promise_);
 
-    function markResolved(bytes memory returnData) external;
+    function markResolved(bytes memory returnData) external returns (bool success);
 
     function resolved() external view returns (bool);
 }

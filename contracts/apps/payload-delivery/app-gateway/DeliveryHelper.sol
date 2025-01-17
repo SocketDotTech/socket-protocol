@@ -36,19 +36,19 @@ contract DeliveryHelper is BatchAsync, Ownable {
         if (payloadBatch.isBatchCancelled) return;
 
         // Check if there are remaining payloads to process
-        if (payloadBatch.totalPayloadsRemaining > 0) {
-            // Check if there are promises from last batch that need to be resolved
-            if (payloadBatch.lastBatchPromises.length > 0) {
-                // Check if all promises are resolved
-                for (uint256 i = 0; i < payloadBatch.lastBatchPromises.length; i++) {
-                    if (!IPromise(payloadBatch.lastBatchPromises[i]).resolved()) {
-                        revert PromisesNotResolved();
-                    }
+        // Check if there are promises from last batch that need to be resolved
+        if (payloadBatch.lastBatchPromises.length > 0) {
+            // Check if all promises are resolved
+            for (uint256 i = 0; i < payloadBatch.lastBatchPromises.length; i++) {
+                if (!IPromise(payloadBatch.lastBatchPromises[i]).resolved()) {
+                    revert PromisesNotResolved();
                 }
-                // Clear promises array after all are resolved
-                delete payloadBatch.lastBatchPromises;
             }
+            // Clear promises array after all are resolved
+            delete payloadBatch.lastBatchPromises;
+        }
 
+        if (payloadBatch.totalPayloadsRemaining > 0) {
             // Proceed with next payload only if all promises are resolved
             _finalizeNextPayload(asyncId);
         } else {
