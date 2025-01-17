@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {CounterAppGateway} from "../../contracts/apps//counter/CounterAppGateway.sol";
-import {CounterDeployer} from "../../contracts/apps//counter/CounterDeployer.sol";
+import {ParallelCounterAppGateway} from "../../contracts/apps/parallel-counter/ParallelCounterAppGateway.sol";
+import {ParallelCounterDeployer} from "../../contracts/apps/parallel-counter/ParallelCounterDeployer.sol";
 import {FeesData} from "../../contracts/common/Structs.sol";
 import {ETH_ADDRESS, FAST} from "../../contracts/common/Constants.sol";
 
@@ -25,14 +25,14 @@ contract CounterDeploy is Script {
             maxFees: 0.01 ether
         });
 
-        CounterDeployer deployer = new CounterDeployer(
+        ParallelCounterDeployer deployer = new ParallelCounterDeployer(
             addressResolver,
             auctionManager,
             FAST,
             feesData
         );
 
-        CounterAppGateway gateway = new CounterAppGateway(
+        ParallelCounterAppGateway gateway = new ParallelCounterAppGateway(
             addressResolver,
             address(deployer),
             auctionManager,
@@ -40,7 +40,7 @@ contract CounterDeploy is Script {
         );
 
         console.log("Contracts deployed:");
-        console.log("CounterDeployer:", address(deployer));
-        console.log("CounterAppGateway:", address(gateway));
+        console.log("ParallelCounterDeployer:", address(deployer));
+        console.log("ParallelCounterAppGateway:", address(gateway));
     }
 }

@@ -3,63 +3,93 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {CounterDeployer} from "../../contracts/apps/counter/CounterDeployer.sol";
-import {Counter} from "../../contracts/apps//counter/Counter.sol";
+import {ParallelCounterDeployer} from "../../contracts/apps/parallel-counter/ParallelCounterDeployer.sol";
+import {Counter} from "../../contracts/apps/counter/Counter.sol";
 
 contract CheckCounters is Script {
     function run() external {
-        CounterDeployer deployer = CounterDeployer(vm.envAddress("COUNTER_DEPLOYER"));
+        ParallelCounterDeployer deployer = ParallelCounterDeployer(vm.envAddress("DEPLOYER"));
 
         vm.createSelectFork(vm.envString("OFF_CHAIN_VM_RPC"));
-        address counterInstanceArbitrumSepolia = deployer.getOnChainAddress(
-            deployer.counter(),
+        address counter1InstanceArbitrumSepolia = deployer.getOnChainAddress(
+            deployer.counter1(),
             421614
         );
-        address counterInstanceOptimismSepolia = deployer.getOnChainAddress(
-            deployer.counter(),
+        address counter2InstanceArbitrumSepolia = deployer.getOnChainAddress(
+            deployer.counter2(),
+            421614
+        );
+        address counter1InstanceOptimismSepolia = deployer.getOnChainAddress(
+            deployer.counter1(),
             11155420
         );
-        address counterInstanceBaseSepolia = deployer.getOnChainAddress(deployer.counter(), 84532);
-        //address counterInstanceSepolia = deployer.getOnChainAddress(
-        //    deployer.counter(),
-        //    11155111
-        //);
+        address counter2InstanceOptimismSepolia = deployer.getOnChainAddress(
+            deployer.counter2(),
+            11155420
+        );
 
-        if (counterInstanceArbitrumSepolia != address(0)) {
+        if (counter1InstanceArbitrumSepolia != address(0)) {
             vm.createSelectFork(vm.envString("ARBITRUM_SEPOLIA_RPC"));
-            uint256 counterValueArbitrumSepolia = Counter(counterInstanceArbitrumSepolia).counter();
-            console.log("Counter value on Arbitrum Sepolia: ", counterValueArbitrumSepolia);
+            console.log("Counter 1 instance on Arbitrum Sepolia:", counter1InstanceArbitrumSepolia);
+            uint256 counterValueArbitrumSepolia = Counter(counter1InstanceArbitrumSepolia)
+                .counter();
+            console.log("Counter1 value on Arbitrum Sepolia: ", counterValueArbitrumSepolia);
         } else {
-            console.log("Counter not yet deployed on Arbitrum Sepolia");
+            console.log("Counter1 not yet deployed on Arbitrum Sepolia");
         }
 
-        if (counterInstanceOptimismSepolia != address(0)) {
+        if (counter2InstanceArbitrumSepolia != address(0)) {
+            vm.createSelectFork(vm.envString("ARBITRUM_SEPOLIA_RPC"));
+            console.log("Counter 2 instance on Arbitrum Sepolia:", counter2InstanceArbitrumSepolia);
+            uint256 counterValueArbitrumSepolia = Counter(counter2InstanceArbitrumSepolia)
+                .counter();
+            console.log("Counter2 value on Arbitrum Sepolia: ", counterValueArbitrumSepolia);
+        } else {
+            console.log("Counter2 not yet deployed on Arbitrum Sepolia");
+        }
+
+        if (counter1InstanceOptimismSepolia != address(0)) {
             vm.createSelectFork(vm.envString("OPTIMISM_SEPOLIA_RPC"));
-            uint256 counterValueOptimismSepolia = Counter(counterInstanceOptimismSepolia).counter();
-            console.log("Counter value on Optimism Sepolia: ", counterValueOptimismSepolia);
+            console.log("Counter 1 instance on Optimism Sepolia:", counter1InstanceOptimismSepolia);
+            uint256 counterValueOptimismSepolia = Counter(counter1InstanceOptimismSepolia)
+                .counter();
+            console.log("Counter1 value on Optimism Sepolia: ", counterValueOptimismSepolia);
         } else {
-            console.log("Counter not yet deployed on Optimism Sepolia");
+            console.log("Counter1 not yet deployed on Optimism Sepolia");
         }
 
-        if (counterInstanceBaseSepolia != address(0)) {
-            vm.createSelectFork(vm.envString("BASE_SEPOLIA_RPC"));
-            uint256 counterValueBaseSepolia = Counter(counterInstanceBaseSepolia).counter();
-            console.log("Counter value on Base Sepolia: ", counterValueBaseSepolia);
+        if (counter2InstanceOptimismSepolia != address(0)) {
+            vm.createSelectFork(vm.envString("OPTIMISM_SEPOLIA_RPC"));
+            console.log("Counter 2 instance on Optimism Sepolia:", counter2InstanceOptimismSepolia);
+            uint256 counterValueOptimismSepolia = Counter(counter2InstanceOptimismSepolia)
+                .counter();
+            console.log("Counter2 value on Optimism Sepolia: ", counterValueOptimismSepolia);
         } else {
-            console.log("Counter not yet deployed on Base Sepolia");
+            console.log("Counter2 not yet deployed on Optimism Sepolia");
         }
 
-        //if (counterInstanceSepolia != address(0)) {
-        //    vm.createSelectFork(vm.envString("SEPOLIA_RPC"));
-        //    uint256 counterValueOptimismSepolia = Counter(
-        //        counterInstanceOptimismSepolia
-        //    ).counter();
-        //    console.log(
-        //        "Counter value on Ethereum Sepolia: ",
-        //        counterValueOptimismSepolia
-        //    );
-        //} else {
-        //    console.log("Counter not yet deployed on Ethereum Sepolia");
-        //}
+        vm.createSelectFork(vm.envString("OFF_CHAIN_VM_RPC"));
+        address forwarderArb1 = deployer.forwarderAddresses(
+            deployer.counter1(),
+            421614
+        );
+        address forwarderArb2 = deployer.forwarderAddresses(
+            deployer.counter2(),
+            421614
+        );
+        address forwarderOpt1 = deployer.forwarderAddresses(
+            deployer.counter1(),
+            11155420
+        );
+        address forwarderOpt2 = deployer.forwarderAddresses(
+            deployer.counter2(),
+            11155420
+        );
+
+        console.log("Forwarder 1 on Arbitrum Sepolia:", forwarderArb1);
+        console.log("Forwarder 2 on Arbitrum Sepolia:", forwarderArb2);
+        console.log("Forwarder 1 on Optimism Sepolia:", forwarderOpt1);
+        console.log("Forwarder 2 on Optimism Sepolia:", forwarderOpt2);
+
     }
 }

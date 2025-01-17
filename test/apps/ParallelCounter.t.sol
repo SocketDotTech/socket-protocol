@@ -66,7 +66,7 @@ contract ParallelCounterTest is DeliveryHelperTest {
             counterId2,
             parallelCounterDeployer
         );
-
+¬
         (address onChainOpt1, address forwarderOpt1) = getOnChainAndForwarderAddresses(
             optChainSlug,
             counterId1,
