@@ -72,11 +72,11 @@ contract Forwarder is IForwarder {
 
         // Determine if the call is a read or write operation.
         bool isReadCall = IAppGateway(msg.sender).isReadCall();
+        bool isCallSequential = IAppGateway(msg.sender).isCallSequential();
 
         // Queue the call in the auction house.
         IDeliveryHelper(deliveryHelper).queue(
-            // todo
-            true,
+            isCallSequential,
             chainSlug,
             onChainAddress,
             latestAsyncPromise,

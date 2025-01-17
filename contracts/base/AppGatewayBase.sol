@@ -12,7 +12,7 @@ import {FeesPlugin} from "../utils/FeesPlugin.sol";
 /// @notice Abstract contract for the app gateway
 abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin {
     bool public override isReadCall;
-    bool public isCallSequential;
+    bool public override isCallSequential;
     address public auctionManager;
     bytes public onCompleteData;
     bytes32 public sbType;
