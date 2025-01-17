@@ -138,8 +138,6 @@ contract SuperTokenTest is DeliveryHelperTest {
      * @dev Deploys necessary contracts on both Arbitrum and Optimism chains
      */
     function beforeTransfer() internal {
-        // TODO: Explain why writePayloadIdCounter = 0
-        writePayloadIdCounter = 0;
         _deploy(
             contractIds,
             arbChainSlug,
@@ -196,8 +194,7 @@ contract SuperTokenTest is DeliveryHelperTest {
         uint32[] memory chainSlugs = new uint32[](2);
         chainSlugs[0] = IForwarder(forwarderArb).getChainSlug();
         chainSlugs[1] = IForwarder(forwarderOpt).getChainSlug();
-        // TODO: Explain what _executeBatchMultiChain does
-        _executeBatchMultiChain(chainSlugs);
+        _executeWriteBatchMultiChain(chainSlugs);
 
         assertEq(
             SuperToken(onChainArb).balanceOf(owner),

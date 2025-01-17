@@ -94,7 +94,7 @@ export let config: S3Config = {
   //@ts-ignore
   supportedChainSlugs: [
     ChainSlug.ARBITRUM_SEPOLIA,
-    // ChainSlug.OPTIMISM_SEPOLIA,
+    ChainSlug.OPTIMISM_SEPOLIA,
     // ChainSlug.SEPOLIA,
     OFF_CHAIN_VM_CHAIN_ID,
     // BASE_SEPOLIA_CHAIN_ID,

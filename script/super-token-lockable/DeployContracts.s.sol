@@ -11,10 +11,13 @@ import {ETH_ADDRESS} from "../../contracts/common/Constants.sol";
 
 contract DeployContracts is Script {
     function run() external {
-        vm.startBroadcast();
         SuperTokenLockableDeployer deployer = SuperTokenLockableDeployer(
-            0x02520426a04D2943d817A60ABa37ab25bA10e630
+            vm.envAddress("SUPERTOKEN_DEPLOYER")
         );
+        string memory rpc = vm.envString("OFF_CHAIN_VM_RPC");
+        vm.createSelectFork(rpc);
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast(deployerPrivateKey);
         deployer.deployContracts(84532);
         deployer.deployContracts(11155111);
     }

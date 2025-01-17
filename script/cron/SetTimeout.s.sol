@@ -10,7 +10,7 @@ contract SetTimeoutScript is Script {
         string memory socketRPC = vm.envString("OFF_CHAIN_VM_RPC");
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.createSelectFork(socketRPC);
-        address gatewayAddress = vm.envAddress("CRON_APP_GATEWAY");
+        address gatewayAddress = vm.envAddress("APP_GATEWAY");
         console.log("Gateway address:", gatewayAddress);
         CronAppGateway gateway = CronAppGateway(gatewayAddress);
         vm.startBroadcast(deployerPrivateKey);

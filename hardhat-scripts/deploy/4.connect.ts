@@ -94,7 +94,9 @@ async function connectPlug(
     socket.address,
     switchboard
   );
-  console.log(`Connecting applicationGateway tx hash: ${tx.hash}`);
+  console.log(
+    `Connecting ${plugContract} on ${chain} to ${appGateway} tx hash: ${tx.hash}`
+  );
   await tx.wait();
 }
 

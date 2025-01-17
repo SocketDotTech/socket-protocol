@@ -11,11 +11,13 @@ import {ETH_ADDRESS, FAST} from "../../contracts/common/Constants.sol";
 
 contract DeployGateway is Script {
     function run() external {
-        vm.startBroadcast();
-
         address addressResolver = vm.envAddress("ADDRESS_RESOLVER");
         address auctionManager = vm.envAddress("AUCTION_MANAGER");
-        address owner = vm.envAddress("OWNER");
+        address owner = vm.envAddress("SUPERTOKEN_OWNER");
+        string memory rpc = vm.envString("OFF_CHAIN_VM_RPC");
+        vm.createSelectFork(rpc);
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast(deployerPrivateKey);
 
         FeesData memory feesData = FeesData({
             feePoolChain: 421614,

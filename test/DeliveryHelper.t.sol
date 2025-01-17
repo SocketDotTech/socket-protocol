@@ -7,6 +7,7 @@ import "../contracts/apps/payload-delivery/app-gateway/AuctionManager.sol";
 
 import "../contracts/Forwarder.sol";
 import "../contracts/interfaces/IAppDeployer.sol";
+import "../contracts/interfaces/IMultiChainAppDeployer.sol";
 
 import "./SetupTest.t.sol";
 
@@ -232,6 +233,34 @@ contract DeliveryHelperTest is SetupTest {
         setupGatewayAndPlugs(chainSlug_, appDeployer_, appGateway_, contractIds);
     }
 
+    function _deployParallel(
+        bytes32[] memory contractIds,
+        uint32[] memory chainSlugs_,
+        IMultiChainAppDeployer appDeployer_,
+        address appGateway_
+    ) internal returns (bytes32 asyncId) {
+        asyncId = getCurrentAsyncId();
+        asyncCounterTest++;
+        bytes32[] memory payloadIds = new bytes32[](contractIds.length * chainSlugs_.length);
+        for (uint32 i = 0; i < chainSlugs_.length; i++) {
+            for (uint j = 0; j < contractIds.length; j++) {
+                payloadIds[i * contractIds.length + j] = getWritePayloadId(
+                    chainSlugs_[i],
+                    address(getSocketConfig(chainSlugs_[i]).switchboard),
+                    i * contractIds.length + j + writePayloadIdCounter
+                );
+            }
+        }
+        // for fees
+        writePayloadIdCounter += chainSlugs_.length * contractIds.length + 1;
+
+        appDeployer_.deployMultiChainContracts(chainSlugs_);
+        bidAndExecute(payloadIds, asyncId);
+        for (uint i = 0; i < chainSlugs_.length; i++) {
+            setupGatewayAndPlugs(chainSlugs_[i], appDeployer_, appGateway_, contractIds);
+        }
+    }
+
     function setupGatewayAndPlugs(
         uint32 chainSlug_,
         IAppDeployer appDeployer_,
@@ -256,7 +285,22 @@ contract DeliveryHelperTest is SetupTest {
         watcherPrecompile.setAppGateways(gateways);
     }
 
-    function _executeBatchSingleChain(
+    function _executeReadBatchSingleChain(
+        uint32 chainSlug_,
+        uint256 totalPayloads
+    ) internal returns (bytes32 asyncId) {
+        asyncId = getCurrentAsyncId();
+        asyncCounterTest++;
+    }
+
+    function _executeReadBatchMultiChain(
+        uint32[] memory chainSlugs_
+    ) internal returns (bytes32 asyncId) {
+        asyncId = getCurrentAsyncId();
+        asyncCounterTest++;
+    }
+
+    function _executeWriteBatchSingleChain(
         uint32 chainSlug_,
         uint256 totalPayloads
     ) internal returns (bytes32 asyncId) {
@@ -270,7 +314,7 @@ contract DeliveryHelperTest is SetupTest {
         bidAndExecute(payloadIds, asyncId);
     }
 
-    function _executeBatchMultiChain(
+    function _executeWriteBatchMultiChain(
         uint32[] memory chainSlugs_
     ) internal returns (bytes32 asyncId) {
         asyncId = getCurrentAsyncId();
