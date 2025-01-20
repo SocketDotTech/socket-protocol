@@ -108,7 +108,6 @@ contract FeesTest is DeliveryHelperTest {
         counterGateway.withdrawFeeTokens(feesChainSlug, ETH_ADDRESS, depositAmount, receiver);
 
         asyncId = getCurrentAsyncId();
-        asyncCounterTest++;
         bytes32[] memory payloadIds = getWritePayloadIds(
             feesChainSlug,
             address(getSocketConfig(feesChainSlug).switchboard),
