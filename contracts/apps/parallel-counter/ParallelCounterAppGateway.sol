@@ -6,21 +6,21 @@ import "../counter/Counter.sol";
 
 contract ParallelCounterAppGateway is AppGatewayBase {
     constructor(
-        address _addressResolver,
+        address addressResolver_,
         address deployerContract_,
         address auctionManager_,
         FeesData memory feesData_
-    ) AppGatewayBase(_addressResolver, auctionManager_) {
-        addressResolver.setContractsToGateways(deployerContract_);
+    ) AppGatewayBase(addressResolver_, auctionManager_) {
+        addressResolver__.setContractsToGateways(deployerContract_);
         _setFeesData(feesData_);
         _setIsCallSequential(false);
     }
 
-    function incrementCounters(address[] memory instances) public async {
+    function incrementCounters(address[] memory instances_) public async {
         // the increase function is called on given list of instances
         // this
-        for (uint256 i = 0; i < instances.length; i++) {
-            Counter(instances[i]).increase();
+        for (uint256 i = 0; i < instances_.length; i++) {
+            Counter(instances_[i]).increase();
         }
     }
 

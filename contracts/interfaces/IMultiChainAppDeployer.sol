@@ -6,5 +6,5 @@ import "./IAppDeployer.sol";
 /// @notice Interface for the multi-chain app deployer
 interface IMultiChainAppDeployer is IAppDeployer {
     /// @notice deploy contracts to multiple chains
-    function deployMultiChainContracts(uint32[] memory chainSlugs) external;
+    function deployMultiChainContracts(uint32[] memory chainSlugs_) external;
 }

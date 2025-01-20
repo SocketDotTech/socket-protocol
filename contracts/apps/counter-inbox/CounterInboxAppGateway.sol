@@ -7,13 +7,13 @@ contract CounterInboxAppGateway is AppGatewayBase {
     uint256 public counter;
 
     constructor(
-        address _addressResolver,
+        address addressResolver_,
         address auctionManager_,
         address counterInbox_,
         uint32 chainSlug_,
         FeesData memory feesData_
-    ) AppGatewayBase(_addressResolver, auctionManager_) {
-        watcherPrecompile().setIsValidInboxCaller(chainSlug_, address(counterInbox_), true);
+    ) AppGatewayBase(addressResolver_, auctionManager_) {
+        watcherPrecompile__().setIsValidInboxCaller(chainSlug_, address(counterInbox_), true);
         _setFeesData(feesData_);
     }
 

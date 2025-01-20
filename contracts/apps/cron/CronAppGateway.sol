@@ -6,24 +6,24 @@ import "../../base/AppGatewayBase.sol";
 contract CronAppGateway is AppGatewayBase {
     event TimeoutResolved(uint256 creationTimestamp, uint256 executionTimestamp);
     constructor(
-        address _addressResolver,
+        address addressResolver_,
         address deployerContract_,
         address auctionManager_,
         FeesData memory feesData_
-    ) AppGatewayBase(_addressResolver, auctionManager_) {
-        addressResolver.setContractsToGateways(deployerContract_);
+    ) AppGatewayBase(addressResolver_, auctionManager_) {
+        addressResolver__.setContractsToGateways(deployerContract_);
         _setFeesData(feesData_);
     }
 
-    function setTimeout(uint256 delayInSeconds) public {
+    function setTimeout(uint256 delayInSeconds_) public {
         bytes memory payload = abi.encodeWithSelector(
             this.resolveTimeout.selector,
             block.timestamp
         );
-        watcherPrecompile().setTimeout(address(this), payload, delayInSeconds);
+        watcherPrecompile__().setTimeout(address(this), payload, delayInSeconds_);
     }
 
-    function resolveTimeout(uint256 creationTimestamp) external onlyWatcherPrecompile {
-        emit TimeoutResolved(creationTimestamp, block.timestamp);
+    function resolveTimeout(uint256 creationTimestamp_) external onlyWatcherPrecompile {
+        emit TimeoutResolved(creationTimestamp_, block.timestamp);
     }
 }

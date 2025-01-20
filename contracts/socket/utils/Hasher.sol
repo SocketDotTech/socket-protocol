@@ -57,6 +57,6 @@ contract Hasher is IHasher, AccessControl {
         address rescueTo_,
         uint256 amount_
     ) external onlyRole(RESCUE_ROLE) {
-        RescueFundsLib.rescueFunds(token_, rescueTo_, amount_);
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

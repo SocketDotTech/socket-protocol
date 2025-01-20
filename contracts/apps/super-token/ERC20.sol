@@ -42,57 +42,61 @@ abstract contract ERC20 is IERC20 {
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(string memory _name, string memory _symbol, uint8 _decimals) {
-        name = _name;
-        symbol = _symbol;
-        decimals = _decimals;
+    constructor(string memory name_, string memory symbol_, uint8 decimals_) {
+        name = name_;
+        symbol = symbol_;
+        decimals = decimals_;
 
         INITIAL_CHAIN_ID = block.chainid;
-        INITIAL_DOMAIN_SEPARATOR = computeDomainSeparator();
+        INITIAL_DOMAIN_SEPARATOR = _computeDomainSeparator();
     }
 
     /*//////////////////////////////////////////////////////////////
                                ERC20 LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function approve(address spender, uint256 amount) public virtual returns (bool) {
-        allowance[msg.sender][spender] = amount;
+    function approve(address spender_, uint256 amount_) public virtual returns (bool) {
+        allowance[msg.sender][spender_] = amount_;
 
-        emit Approval(msg.sender, spender, amount);
+        emit Approval(msg.sender, spender_, amount_);
 
         return true;
     }
 
-    function transfer(address to, uint256 amount) public virtual returns (bool) {
-        balanceOf[msg.sender] -= amount;
+    function transfer(address to_, uint256 amount_) public virtual returns (bool) {
+        balanceOf[msg.sender] -= amount_;
 
         // Cannot overflow because the sum of all user
         // balances can't exceed the max uint256 value.
         unchecked {
-            balanceOf[to] += amount;
+            balanceOf[to_] += amount_;
         }
 
-        emit Transfer(msg.sender, to, amount);
+        emit Transfer(msg.sender, to_, amount_);
 
         return true;
     }
 
-    function transferFrom(address from, address to, uint256 amount) public virtual returns (bool) {
-        uint256 allowed = allowance[from][msg.sender]; // Saves gas for limited approvals.
+    function transferFrom(
+        address from_,
+        address to_,
+        uint256 amount_
+    ) public virtual returns (bool) {
+        uint256 allowed = allowance[from_][msg.sender]; // Saves gas for limited approvals.
 
         if (allowed != type(uint256).max) {
-            allowance[from][msg.sender] = allowed - amount;
+            allowance[from_][msg.sender] = allowed - amount_;
         }
 
-        balanceOf[from] -= amount;
+        balanceOf[from_] -= amount_;
 
         // Cannot overflow because the sum of all user
         // balances can't exceed the max uint256 value.
         unchecked {
-            balanceOf[to] += amount;
+            balanceOf[to_] += amount_;
         }
 
-        emit Transfer(from, to, amount);
+        emit Transfer(from_, to_, amount_);
 
         return true;
     }
@@ -102,15 +106,15 @@ abstract contract ERC20 is IERC20 {
     //////////////////////////////////////////////////////////////*/
 
     function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        address owner_,
+        address spender_,
+        uint256 value_,
+        uint256 deadline_,
+        uint8 v_,
+        bytes32 r_,
+        bytes32 s_
     ) public virtual {
-        require(deadline >= block.timestamp, "PERMIT_DEADLINE_EXPIRED");
+        require(deadline_ >= block.timestamp, "PERMIT_DEADLINE_EXPIRED");
 
         // Unchecked because the only math done is incrementing
         // the owner's nonce which cannot realistically overflow.
@@ -125,34 +129,36 @@ abstract contract ERC20 is IERC20 {
                                 keccak256(
                                     "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
                                 ),
-                                owner,
-                                spender,
-                                value,
-                                nonces[owner]++,
-                                deadline
+                                owner_,
+                                spender_,
+                                value_,
+                                nonces[owner_]++,
+                                deadline_
                             )
                         )
                     )
                 ),
-                v,
-                r,
-                s
+                v_,
+                r_,
+                s_
             );
 
-            require(recoveredAddress != address(0) && recoveredAddress == owner, "INVALID_SIGNER");
+            require(recoveredAddress != address(0) && recoveredAddress == owner_, "INVALID_SIGNER");
 
-            allowance[recoveredAddress][spender] = value;
+            allowance[recoveredAddress][spender_] = value_;
         }
 
-        emit Approval(owner, spender, value);
+        emit Approval(owner_, spender_, value_);
     }
 
     function DOMAIN_SEPARATOR() public view virtual returns (bytes32) {
         return
-            block.chainid == INITIAL_CHAIN_ID ? INITIAL_DOMAIN_SEPARATOR : computeDomainSeparator();
+            block.chainid == INITIAL_CHAIN_ID
+                ? INITIAL_DOMAIN_SEPARATOR
+                : _computeDomainSeparator();
     }
 
-    function computeDomainSeparator() internal view virtual returns (bytes32) {
+    function _computeDomainSeparator() internal view virtual returns (bytes32) {
         return
             keccak256(
                 abi.encode(
@@ -171,27 +177,27 @@ abstract contract ERC20 is IERC20 {
                         INTERNAL MINT/BURN LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function _mint(address to, uint256 amount) internal virtual {
-        totalSupply += amount;
+    function _mint(address to_, uint256 amount_) internal virtual {
+        totalSupply += amount_;
 
         // Cannot overflow because the sum of all user
         // balances can't exceed the max uint256 value.
         unchecked {
-            balanceOf[to] += amount;
+            balanceOf[to_] += amount_;
         }
 
-        emit Transfer(address(0), to, amount);
+        emit Transfer(address(0), to_, amount_);
     }
 
-    function _burn(address from, uint256 amount) internal virtual {
-        balanceOf[from] -= amount;
+    function _burn(address from_, uint256 amount_) internal virtual {
+        balanceOf[from_] -= amount_;
 
         // Cannot underflow because a user's balance
         // will never be larger than the total supply.
         unchecked {
-            totalSupply -= amount;
+            totalSupply -= amount_;
         }
 
-        emit Transfer(from, address(0), amount);
+        emit Transfer(from_, address(0), amount_);
     }
 }

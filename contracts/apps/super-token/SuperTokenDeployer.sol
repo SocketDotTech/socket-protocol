@@ -20,25 +20,25 @@ contract SuperTokenDeployer is AppDeployerBase, Ownable {
         address owner_,
         address auctionManager_,
         bytes32 sbType_,
-        ConstructorParams memory params,
+        ConstructorParams memory params_,
         FeesData memory feesData_
     ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) {
         _claimOwner(owner_);
         creationCodeWithArgs[superToken] = abi.encodePacked(
             type(SuperToken).creationCode,
             abi.encode(
-                params.name_,
-                params.symbol_,
-                params.decimals_,
-                params.initialSupplyHolder_,
-                params.initialSupply_
+                params_.name_,
+                params_.symbol_,
+                params_.decimals_,
+                params_.initialSupplyHolder_,
+                params_.initialSupply_
             )
         );
         _setFeesData(feesData_);
     }
 
-    function deployContracts(uint32 chainSlug) external async {
-        _deploy(superToken, chainSlug);
+    function deployContracts(uint32 chainSlug_) external async {
+        _deploy(superToken, chainSlug_);
     }
 
     // no need to call this directly, will be called automatically after all contracts are deployed.

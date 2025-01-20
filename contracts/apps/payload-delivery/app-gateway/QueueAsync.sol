@@ -77,7 +77,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
 
     /// @notice Creates an array of payload details
     /// @return payloadDetailsArray An array of payload details
-    function createPayloadDetailsArray(
+    function _createPayloadDetailsArray(
         bytes32 sbType_
     ) internal returns (PayloadDetails[] memory payloadDetailsArray) {
         payloadDetailsArray = new PayloadDetails[](callParamsArray.length);
@@ -85,9 +85,9 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
             CallParams memory params = callParamsArray[i];
 
             // getting switchboard address for sbType given. It is updated by watcherPrecompile by watcher
-            address switchboard = watcherPrecompile().switchboards(params.chainSlug, sbType_);
+            address switchboard = watcherPrecompile__().switchboards(params.chainSlug, sbType_);
 
-            PayloadDetails memory payloadDetails = getPayloadDetails(params, switchboard);
+            PayloadDetails memory payloadDetails = _getPayloadDetails(params, switchboard);
             payloadDetailsArray[i] = payloadDetails;
         }
 
@@ -95,48 +95,48 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
     }
 
     /// @notice Gets the payload details for a given call parameters
-    /// @param params The call parameters
+    /// @param params_ The call parameters
     /// @param switchboard_ The switchboard address
     /// @return payloadDetails The payload details
-    function getPayloadDetails(
-        CallParams memory params,
+    function _getPayloadDetails(
+        CallParams memory params_,
         address switchboard_
     ) internal returns (PayloadDetails memory) {
         address[] memory next = new address[](2);
-        next[0] = params.asyncPromise;
+        next[0] = params_.asyncPromise;
 
-        bytes memory payload = params.payload;
-        address appGateway = msg.sender;
-        if (params.callType == CallType.DEPLOY) {
+        bytes memory payload_ = params_.payload;
+        address appGateway_ = msg.sender;
+        if (params_.callType == CallType.DEPLOY) {
             // getting app gateway for deployer as the plug is connected to the app gateway
-            address appGatewayForPlug = _getCoreAppGateway(appGateway);
-            bytes32 salt = keccak256(
-                abi.encode(appGatewayForPlug, params.chainSlug, saltCounter++)
+            address appGatewayForPlug_ = _getCoreAppGateway(appGateway_);
+            bytes32 salt_ = keccak256(
+                abi.encode(appGatewayForPlug_, params_.chainSlug, saltCounter++)
             );
 
             // app gateway is set in the plug deployed on chain
-            payload = abi.encodeWithSelector(
+            payload_ = abi.encodeWithSelector(
                 IContractFactoryPlug.deployContract.selector,
-                payload,
-                salt,
-                appGatewayForPlug,
+                payload_,
+                salt_,
+                appGatewayForPlug_,
                 switchboard_
             );
 
             // for deploy, we set delivery helper as app gateway of contract factory plug
-            appGateway = address(this);
+            appGateway_ = address(this);
         }
 
         return
             PayloadDetails({
-                appGateway: appGateway,
-                chainSlug: params.chainSlug,
-                target: params.target,
-                payload: payload,
-                callType: params.callType,
-                executionGasLimit: params.gasLimit == 0 ? 1_000_000 : params.gasLimit,
+                appGateway: appGateway_,
+                chainSlug: params_.chainSlug,
+                target: params_.target,
+                payload: payload_,
+                callType: params_.callType,
+                executionGasLimit: params_.gasLimit == 0 ? 1_000_000 : params_.gasLimit,
                 next: next,
-                isSequential: params.isSequential
+                isSequential: params_.isSequential
             });
     }
 

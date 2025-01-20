@@ -44,12 +44,12 @@ interface ISocket {
 
     /**
      * @notice To call the appGateway on offChainVM. Should only be called by a plug.
-     * @param payload bytes to be delivered to the Plug on offChainVM
-     * @param params a 32 bytes param to add details for execution.
+     * @param payload_ bytes to be delivered to the Plug on offChainVM
+     * @param params_ a 32 bytes param to add details for execution.
      */
     function callAppGateway(
-        bytes calldata payload,
-        bytes32 params
+        bytes calldata payload_,
+        bytes32 params_
     ) external returns (bytes32 callId);
 
     /**
@@ -79,5 +79,5 @@ interface ISocket {
      */
     function getPlugConfig(
         address plugAddress_
-    ) external view returns (address appGateway, address switchboard__);
+    ) external view returns (address appGateway, address switchboard);
 }

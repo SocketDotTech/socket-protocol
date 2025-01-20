@@ -2,25 +2,25 @@
 pragma solidity ^0.8.13;
 
 interface IFeesPlug {
-    function balanceOf(address appGateway, address token) external view returns (uint256);
-    function feesRedeemed(uint256 feesCounter) external view returns (bool);
+    function balanceOf(address appGateway_, address token_) external view returns (uint256);
+    function feesRedeemed(uint256 feesCounter_) external view returns (bool);
 
-    function deposit(address token, uint256 amount, address appGateway_) external payable;
+    function deposit(address token_, uint256 amount_, address appGateway_) external payable;
 
     function connect(address appGateway_, address switchboard_) external;
 
     function distributeFee(
-        address appGateway,
-        address feeToken,
-        uint256 fee,
-        address transmitter,
-        bytes32 feesCounter
+        address appGateway_,
+        address feeToken_,
+        uint256 fee_,
+        address transmitter_,
+        bytes32 feesCounter_
     ) external returns (bytes memory);
 
     function withdrawFees(
-        address appGateway,
-        address token,
-        uint256 amount,
-        address receiver
+        address appGateway_,
+        address token_,
+        uint256 amount_,
+        address receiver_
     ) external returns (bytes memory);
 }

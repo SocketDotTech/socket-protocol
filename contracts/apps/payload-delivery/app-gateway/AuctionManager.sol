@@ -91,7 +91,7 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
 
         Bid memory newBid = Bid({fee: fee, transmitter: transmitter, extraData: extraData});
 
-        FeesData memory feesData = IDeliveryHelper(addressResolver.deliveryHelper()).getFeesData(
+        FeesData memory feesData = IDeliveryHelper(addressResolver__.deliveryHelper()).getFeesData(
             asyncId_
         );
         if (fee > feesData.maxFees) revert BidExceedsMaxFees();
@@ -109,7 +109,7 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
         if (winningBid.transmitter == address(0)) revert InvalidTransmitter();
 
         emit AuctionEnded(asyncId_, winningBid);
-        IDeliveryHelper(addressResolver.deliveryHelper()).startBatchProcessing(
+        IDeliveryHelper(addressResolver__.deliveryHelper()).startBatchProcessing(
             asyncId_,
             winningBid
         );
