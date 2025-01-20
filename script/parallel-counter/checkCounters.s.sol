@@ -69,27 +69,14 @@ contract CheckCounters is Script {
         }
 
         vm.createSelectFork(vm.envString("OFF_CHAIN_VM_RPC"));
-        address forwarderArb1 = deployer.forwarderAddresses(
-            deployer.counter1(),
-            421614
-        );
-        address forwarderArb2 = deployer.forwarderAddresses(
-            deployer.counter2(),
-            421614
-        );
-        address forwarderOpt1 = deployer.forwarderAddresses(
-            deployer.counter1(),
-            11155420
-        );
-        address forwarderOpt2 = deployer.forwarderAddresses(
-            deployer.counter2(),
-            11155420
-        );
+        address forwarderArb1 = deployer.forwarderAddresses(deployer.counter1(), 421614);
+        address forwarderArb2 = deployer.forwarderAddresses(deployer.counter2(), 421614);
+        address forwarderOpt1 = deployer.forwarderAddresses(deployer.counter1(), 11155420);
+        address forwarderOpt2 = deployer.forwarderAddresses(deployer.counter2(), 11155420);
 
         console.log("Forwarder 1 on Arbitrum Sepolia:", forwarderArb1);
         console.log("Forwarder 2 on Arbitrum Sepolia:", forwarderArb2);
         console.log("Forwarder 1 on Optimism Sepolia:", forwarderOpt1);
         console.log("Forwarder 2 on Optimism Sepolia:", forwarderOpt2);
-
     }
 }

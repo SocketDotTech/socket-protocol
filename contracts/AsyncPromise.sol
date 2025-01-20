@@ -56,7 +56,9 @@ contract AsyncPromise is AddressResolverUtil, IPromise {
     /// @notice Marks the promise as resolved and executes the callback if set.
     /// @param returnData The data returned from the async payload execution.
     /// @dev Only callable by the watcher precompile.
-    function markResolved(bytes memory returnData) external override onlyWatcherPrecompile returns (bool success) {
+    function markResolved(
+        bytes memory returnData
+    ) external override onlyWatcherPrecompile returns (bool success) {
         if (resolved) revert PromiseAlreadyResolved();
         resolved = true;
         state = AsyncPromiseState.RESOLVED;

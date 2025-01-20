@@ -62,7 +62,7 @@ abstract contract AddressResolverUtil {
     /// @param _addressResolver New address resolver contract address
     /// @dev Internal function to be called by inheriting contracts
     /// @dev Should be protected with appropriate access control in implementing contracts
-    function setAddressResolver(address _addressResolver) internal {
+    function _setAddressResolver(address _addressResolver) internal {
         // Update the address resolver reference
         addressResolver = IAddressResolver(_addressResolver);
     }

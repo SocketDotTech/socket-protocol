@@ -30,9 +30,7 @@ contract AddressResolver is Ownable, IAddressResolver {
     event AsyncPromiseDeployed(address newAsyncPromise, bytes32 salt);
 
     /// @notice Error thrown if AppGateway contract was already set by a different address
-    error AppGatewayContractAlreadySetByDifferentSender(
-        address contractAddress_
-    );
+    error AppGatewayContractAlreadySetByDifferentSender(address contractAddress_);
     /// @notice Error thrown if it failed to deploy the create2 contract
     error DeploymentFailed();
 
@@ -80,7 +78,6 @@ contract AddressResolver is Ownable, IAddressResolver {
         uint32 chainSlug_
     ) public returns (address) {
         bytes memory constructorArgs = abi.encode(chainSlug_, chainContractAddress_, address(this));
-
         bytes memory combinedBytecode = abi.encodePacked(forwarderBytecode, constructorArgs);
 
         // predict address
