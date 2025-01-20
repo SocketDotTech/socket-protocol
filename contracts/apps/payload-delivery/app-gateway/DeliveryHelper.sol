@@ -6,14 +6,21 @@ import {Ownable} from "../../../utils/Ownable.sol";
 import {Bid, PayloadBatch, FeesData, PayloadDetails, FinalizeParams} from "../../../common/Structs.sol";
 import {DISTRIBUTE_FEE, DEPLOY} from "../../../common/Constants.sol";
 import "./BatchAsync.sol";
+import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
-contract DeliveryHelper is BatchAsync, Ownable {
-    constructor(
+contract DeliveryHelper is BatchAsync, Ownable, Initializable {
+    /// @notice Initializer function to replace constructor
+    /// @param _addressResolver The address resolver contract
+    /// @param _feesManager The fees manager contract
+    /// @param owner_ The owner address
+    function initialize(
         address _addressResolver,
         address _feesManager,
         address owner_
-    ) AddressResolverUtil(_addressResolver) Ownable(owner_) {
+    ) public initializer {
+        _setAddressResolver(_addressResolver);
         feesManager = _feesManager;
+        _claimOwner(owner_);
     }
 
     function startBatchProcessing(

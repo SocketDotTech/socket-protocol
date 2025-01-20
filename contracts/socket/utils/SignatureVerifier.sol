@@ -6,13 +6,14 @@ import "../../interfaces/ISignatureVerifier.sol";
 import "../../libraries/RescueFundsLib.sol";
 import "../utils/AccessControl.sol";
 import {RESCUE_ROLE} from "../utils/AccessRoles.sol";
+import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 /**
  * @title Signature Verifier
  * @notice Verifies the signatures and returns the address of signer recovered from the input signature or digest.
  * @dev This contract is modular component in socket to support different signing algorithms.
  */
-contract SignatureVerifier is ISignatureVerifier, AccessControl {
+contract SignatureVerifier is ISignatureVerifier, AccessControl, Initializable {
     /*
      * @dev Error thrown when signature length is invalid
      */
@@ -22,7 +23,8 @@ contract SignatureVerifier is ISignatureVerifier, AccessControl {
      * @notice initializes and grants RESCUE_ROLE to owner.
      * @param owner_ The address of the owner of the contract.
      */
-    constructor(address owner_) AccessControl(owner_) {
+    function initialize(address owner_) public initializer {
+        _claimOwner(owner_);
         _grantRole(RESCUE_ROLE, owner_);
     }
 

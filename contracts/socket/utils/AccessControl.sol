@@ -31,11 +31,6 @@ abstract contract AccessControl is Ownable {
     error NoPermit(bytes32 role);
 
     /**
-     * @dev Constructor that sets the owner of the contract.
-     */
-    constructor(address owner_) Ownable(owner_) {}
-
-    /**
      * @dev Modifier that restricts access to addresses having roles
      * Throws an error if the caller do not have permit
      */

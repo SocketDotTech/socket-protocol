@@ -20,8 +20,9 @@ contract SocketBatcher is Ownable {
      * @param socket_ The address of socket contract
      * @param owner_ The owner of the contract with GOVERNANCE_ROLE
      */
-    constructor(address owner_, ISocket socket_) Ownable(owner_) {
+    constructor(address owner_, ISocket socket_) {
         socket__ = socket_;
+        _claimOwner(owner_);
     }
 
     function attestAndExecute(

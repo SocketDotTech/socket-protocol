@@ -23,9 +23,10 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
         address deployerContract_,
         address _auctionManager,
         FeesData memory feesData_
-    ) AppGatewayBase(_addressResolver, _auctionManager) Ownable(msg.sender) {
+    ) AppGatewayBase(_addressResolver, _auctionManager) {
         addressResolver.setContractsToGateways(deployerContract_);
         _setFeesData(feesData_);
+        _claimOwner(msg.sender);
     }
 
     function checkBalance(bytes memory data, bytes memory returnData) external onlyPromises {

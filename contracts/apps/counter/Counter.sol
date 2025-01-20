@@ -4,8 +4,12 @@ pragma solidity >=0.7.0 <0.9.0;
 import "../../utils/Ownable.sol";
 import "../../base/PlugBase.sol";
 
-contract Counter is Ownable(msg.sender), PlugBase(msg.sender) {
+contract Counter is Ownable, PlugBase {
     uint256 public counter;
+
+    constructor() PlugBase(msg.sender) {
+        _claimOwner(msg.sender);
+    }
 
     function increase() external onlySocket {
         counter++;

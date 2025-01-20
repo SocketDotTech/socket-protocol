@@ -6,6 +6,7 @@ import "./WatcherPrecompileLimits.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IWatcherPrecompile.sol";
 import "../interfaces/IPromise.sol";
+import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../common/Structs.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../common/Constants.sol";
@@ -13,8 +14,8 @@ import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, Resolv
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
-contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
-    uint256 public maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
+contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits, Initializable {
+    uint256 public maxTimeoutDelayInSeconds;
     /// @notice Counter for tracking query requests
     uint256 public queryCounter;
     /// @notice Counter for tracking payload execution requests
@@ -87,12 +88,14 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
     /// @param executedAt The epoch time when the task was executed
     event TimeoutResolved(bytes32 timeoutId, address target, bytes payload, uint256 executedAt);
 
-    /// @notice Contract constructor
+    /// @notice Initializer function to replace constructor
     /// @param _owner Address of the contract owner
-    constructor(
-        address _owner,
-        address addressResolver_
-    ) Ownable(_owner) WatcherPrecompileLimits(addressResolver_) {}
+    /// @param addressResolver_ The address resolver contract address
+    function initialize(address _owner, address addressResolver_) public initializer {
+        _setAddressResolver(addressResolver_);
+        _claimOwner(_owner);
+        maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
+    }
 
     // ================== Timeout functions ==================
 
@@ -168,7 +171,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
         );
 
         // Generate a unique payload ID by combining chain, target, and counter
-        payloadId = encodePayloadId(
+        payloadId = _encodePayloadId(
             params_.payloadDetails.chainSlug,
             params_.payloadDetails.target,
             payloadCounter++
@@ -331,7 +334,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits {
     /// @param counter_ The current counter value
     /// @return The encoded payload ID as bytes32
     /// @dev Reverts if chainSlug is 0
-    function encodePayloadId(
+    function _encodePayloadId(
         uint32 chainSlug_,
         address plug_,
         uint256 counter_

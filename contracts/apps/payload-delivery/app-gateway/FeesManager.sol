@@ -8,20 +8,21 @@ import {Bid, FeesData, PayloadDetails, CallType, FinalizeParams} from "../../../
 import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Constants.sol";
 import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
+import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 /// @title FeesManager
 /// @notice Contract for managing fees
-contract FeesManager is AddressResolverUtil, Ownable {
+contract FeesManager is AddressResolverUtil, Ownable, Initializable {
     uint256 public feesCounter;
     mapping(uint32 => uint256) public feeCollectionGasLimit;
 
-    /// @notice Constructor for FeesManager
+    /// @notice Initializer function to replace constructor
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the owner
-    constructor(
-        address addressResolver_,
-        address owner_
-    ) AddressResolverUtil(addressResolver_) Ownable(owner_) {}
+    function initialize(address addressResolver_, address owner_) public initializer {
+        _setAddressResolver(addressResolver_);
+        _claimOwner(owner_);
+    }
 
     function distributeFees(
         address appGateway_,

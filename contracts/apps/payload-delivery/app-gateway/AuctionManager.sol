@@ -7,12 +7,13 @@ import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
 import {FeesData} from "../../../common/Structs.sol";
 import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 import "../../../interfaces/IAuctionManager.sol";
+import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 /// @title AuctionManager
 /// @notice Contract for managing auctions and placing bids
-contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
-    SignatureVerifier public immutable signatureVerifier__;
-    uint32 public immutable vmChainSlug;
+contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initializable {
+    SignatureVerifier public signatureVerifier;
+    uint32 public vmChainSlug;
     mapping(bytes32 => Bid) public winningBids;
     // asyncId => auction status
     mapping(bytes32 => bool) public override auctionClosed;
@@ -29,18 +30,23 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
     /// @notice Error thrown if winning bid is assigned to an invalid transmitter
     error InvalidTransmitter();
 
-    /// @notice Constructor for AuctionManager
+    /// @notice Initializer function to replace constructor
+    /// @param vmChainSlug_ The chain slug for the VM
+    /// @param auctionEndDelaySeconds_ The delay in seconds before an auction can end
     /// @param addressResolver_ The address of the address resolver
     /// @param signatureVerifier_ The address of the signature verifier
-    constructor(
+    /// @param owner_ The address of the contract owner
+    function initialize(
         uint32 vmChainSlug_,
         uint256 auctionEndDelaySeconds_,
         address addressResolver_,
         SignatureVerifier signatureVerifier_,
         address owner_
-    ) AddressResolverUtil(addressResolver_) Ownable(owner_) {
+    ) public initializer {
+        _setAddressResolver(addressResolver_);
+        _claimOwner(owner_);
         vmChainSlug = vmChainSlug_;
-        signatureVerifier__ = signatureVerifier_;
+        signatureVerifier = signatureVerifier_;
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
     }
 
@@ -74,7 +80,7 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager {
     ) external {
         if (auctionClosed[asyncId_]) revert AuctionClosed();
 
-        address transmitter = signatureVerifier__.recoverSigner(
+        address transmitter = signatureVerifier.recoverSigner(
             keccak256(abi.encode(address(this), vmChainSlug, asyncId_, fee, extraData)),
             transmitterSignature
         );

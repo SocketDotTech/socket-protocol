@@ -13,9 +13,10 @@ contract CounterDeployer is AppDeployerBase, Ownable {
         address auctionManager_,
         bytes32 sbType_,
         FeesData memory feesData_
-    ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) Ownable(msg.sender) {
+    ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) {
         creationCodeWithArgs[counter] = abi.encodePacked(type(Counter).creationCode);
         _setFeesData(feesData_);
+        _claimOwner(msg.sender);
     }
 
     function deployContracts(uint32 chainSlug) external async {

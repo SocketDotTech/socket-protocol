@@ -66,6 +66,7 @@ abstract contract WatcherPrecompileConfig is Ownable, IWatcherPrecompile {
         emit SwitchboardSet(chainSlug_, sbType_, switchboard_);
     }
 
+    // @dev app gateway can set the valid plugs for each chain slug
     function setIsValidInboxCaller(uint32 chainSlug_, address plug_, bool isValid_) external {
         isValidInboxCaller[msg.sender][chainSlug_][plug_] = isValid_;
     }

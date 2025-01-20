@@ -17,13 +17,6 @@ abstract contract Ownable {
     error OnlyNominee();
 
     /**
-     * @dev Sets the contract's owner to the address that is passed to the constructor.
-     */
-    constructor(address owner_) {
-        _claimOwner(owner_);
-    }
-
-    /**
      * @dev Modifier that restricts access to only the contract's owner.
      * Throws an error if the caller is not the owner.
      */
