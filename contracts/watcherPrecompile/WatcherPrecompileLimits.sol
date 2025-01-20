@@ -34,18 +34,18 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
     /**
      * @notice This function is used to set bridge limits.
      * @dev It can only be updated by the owner.
-     * @param updates An array of structs containing update parameters.
+     * @param updates_ An array of structs containing update parameters.
      */
-    function _updateLimitParams(UpdateLimitParams[] calldata updates) internal {
-        for (uint256 i = 0; i < updates.length; i++) {
-            _consumePartLimit(0, _limitParams[updates[i].appGateway][updates[i].limitType]); // To keep the current limit in sync
-            _limitParams[updates[i].appGateway][updates[i].limitType].maxLimit = updates[i]
+    function _updateLimitParams(UpdateLimitParams[] calldata updates_) internal {
+        for (uint256 i = 0; i < updates_.length; i++) {
+            _consumePartLimit(0, _limitParams[updates_[i].appGateway][updates_[i].limitType]); // To keep the current limit in sync
+            _limitParams[updates_[i].appGateway][updates_[i].limitType].maxLimit = updates_[i]
                 .maxLimit;
-            _limitParams[updates[i].appGateway][updates[i].limitType].ratePerSecond = updates[i]
+            _limitParams[updates_[i].appGateway][updates_[i].limitType].ratePerSecond = updates_[i]
                 .ratePerSecond;
         }
 
-        emit LimitParamsUpdated(updates);
+        emit LimitParamsUpdated(updates_);
     }
 
     /**
@@ -66,8 +66,8 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
     }
 
     function _getAppGateway(address appGateway_) internal view returns (address appGateway) {
-        address resolverAddress = msg.sender == addressResolver.deliveryHelper() ||
-            msg.sender == addressResolver.feesManager()
+        address resolverAddress = msg.sender == addressResolver__.deliveryHelper() ||
+            msg.sender == addressResolver__.feesManager()
             ? appGateway_
             : msg.sender;
 

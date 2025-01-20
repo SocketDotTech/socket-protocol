@@ -48,16 +48,16 @@ contract SuperTokenLockableDeployer is AppDeployerBase, Ownable {
         _claimOwner(owner_);
     }
 
-    function deployContracts(uint32 chainSlug) external async {
-        _deploy(superTokenLockable, chainSlug);
-        _deploy(limitHook, chainSlug);
+    function deployContracts(uint32 chainSlug_) external async {
+        _deploy(superTokenLockable, chainSlug_);
+        _deploy(limitHook, chainSlug_);
     }
 
     // don't need to call this directly, will be called automatically after all contracts are deployed.
     // check AppDeployerBase.allPayloadsExecuted and AppGateway.queueAndDeploy
-    function initialize(uint32 chainSlug) public override async {
-        address limitHookContract = getOnChainAddress(limitHook, chainSlug);
-        SuperTokenLockable(forwarderAddresses[superTokenLockable][chainSlug]).setLimitHook(
+    function initialize(uint32 chainSlug_) public override async {
+        address limitHookContract = getOnChainAddress(limitHook, chainSlug_);
+        SuperTokenLockable(forwarderAddresses[superTokenLockable][chainSlug_]).setLimitHook(
             limitHookContract
         );
     }

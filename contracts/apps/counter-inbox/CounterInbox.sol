@@ -9,8 +9,8 @@ contract CounterInbox is Ownable, PlugBase {
         _claimOwner(msg.sender);
     }
 
-    function increaseOnGateway(uint256 value) external returns (bytes32) {
-        return _callAppGateway(abi.encode(value), bytes32(0));
+    function increaseOnGateway(uint256 value_) external returns (bytes32) {
+        return _callAppGateway(abi.encode(value_), bytes32(0));
     }
 
     function connectSocket(address appGateway_, address socket_, address switchboard_) external {

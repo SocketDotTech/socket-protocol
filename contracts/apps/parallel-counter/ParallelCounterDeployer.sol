@@ -22,15 +22,15 @@ contract ParallelCounterDeployer is AppDeployerBase, Ownable {
         _claimOwner(msg.sender);
     }
 
-    function deployContracts(uint32 chainSlug) external async {
-        _deploy(counter1, chainSlug);
-        _deploy(counter2, chainSlug);
+    function deployContracts(uint32 chainSlug_) external async {
+        _deploy(counter1, chainSlug_);
+        _deploy(counter2, chainSlug_);
     }
 
-    function deployMultiChainContracts(uint32[] memory chainSlugs) external async {
-        for (uint32 i = 0; i < chainSlugs.length; i++) {
-            _deploy(counter1, chainSlugs[i]);
-            _deploy(counter2, chainSlugs[i]);
+    function deployMultiChainContracts(uint32[] memory chainSlugs_) external async {
+        for (uint32 i = 0; i < chainSlugs_.length; i++) {
+            _deploy(counter1, chainSlugs_[i]);
+            _deploy(counter2, chainSlugs_[i]);
         }
     }
 

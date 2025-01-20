@@ -17,13 +17,13 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
     }
 
     constructor(
-        address _addressResolver,
+        address addressResolver_,
         address deployerContract_,
         FeesData memory feesData_,
-        address _auctionManager
-    ) AppGatewayBase(_addressResolver, _auctionManager) {
+        address auctionManager_
+    ) AppGatewayBase(addressResolver_, auctionManager_) {
         // called to connect the deployer contract with this app
-        addressResolver.setContractsToGateways(deployerContract_);
+        addressResolver__.setContractsToGateways(deployerContract_);
 
         // sets the fees data like max fees, chain and token for all transfers
         // they can be updated for each transfer as well
@@ -31,8 +31,8 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         _claimOwner(msg.sender);
     }
 
-    function transfer(bytes memory _order) external async {
-        TransferOrder memory order = abi.decode(_order, (TransferOrder));
+    function transfer(bytes memory order_) external async {
+        TransferOrder memory order = abi.decode(order_, (TransferOrder));
         ISuperToken(order.srcToken).burn(order.user, order.srcAmount);
         ISuperToken(order.dstToken).mint(order.user, order.srcAmount);
 

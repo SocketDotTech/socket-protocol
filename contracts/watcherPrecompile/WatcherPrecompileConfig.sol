@@ -36,21 +36,21 @@ abstract contract WatcherPrecompileConfig is Ownable, IWatcherPrecompile {
     event SwitchboardSet(uint32 chainSlug, bytes32 sbType, address switchboard);
 
     /// @notice Configures app gateways with their respective plugs and switchboards
-    /// @param configs Array of configurations containing app gateway, network, plug, and switchboard details
+    /// @param configs_ Array of configurations containing app gateway, network, plug, and switchboard details
     /// @dev Only callable by the contract owner
     /// @dev This helps in verifying that plugs are called by respective app gateways
-    function setAppGateways(AppGatewayConfig[] calldata configs) external onlyOwner {
-        for (uint256 i = 0; i < configs.length; i++) {
+    function setAppGateways(AppGatewayConfig[] calldata configs_) external onlyOwner {
+        for (uint256 i = 0; i < configs_.length; i++) {
             // Store the plug configuration for this network and plug
-            _plugConfigs[configs[i].chainSlug][configs[i].plug] = PlugConfig({
-                appGateway: configs[i].appGateway,
-                switchboard: configs[i].switchboard
+            _plugConfigs[configs_[i].chainSlug][configs_[i].plug] = PlugConfig({
+                appGateway: configs_[i].appGateway,
+                switchboard: configs_[i].switchboard
             });
 
             // Create reverse mapping from app gateway to plug for easy lookup
-            appGatewayPlugs[configs[i].appGateway][configs[i].chainSlug] = configs[i].plug;
+            appGatewayPlugs[configs_[i].appGateway][configs_[i].chainSlug] = configs_[i].plug;
 
-            emit PlugAdded(configs[i].appGateway, configs[i].chainSlug, configs[i].plug);
+            emit PlugAdded(configs_[i].appGateway, configs_[i].chainSlug, configs_[i].plug);
         }
     }
 

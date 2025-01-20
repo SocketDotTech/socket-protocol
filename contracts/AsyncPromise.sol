@@ -16,11 +16,14 @@ enum AsyncPromiseState {
 /// @notice this contract stores the callback address and data to be executed once the previous call is executed
 /// This promise expires once the callback is executed
 contract AsyncPromise is IPromise, Initializable, AddressResolverUtil {
-    /// @notice The callback data to be used when the promise is resolved.
-    bytes public callbackData;
-
     /// @notice The callback selector to be called on the invoker.
     bytes4 public callbackSelector;
+
+    /// @notice Indicates whether the promise has been resolved.
+    bool public override resolved;
+
+    /// @notice The current state of the async promise.
+    AsyncPromiseState public state;
 
     /// @notice The local contract which initiated the async call.
     /// @dev The callback will be executed on this address
@@ -29,8 +32,8 @@ contract AsyncPromise is IPromise, Initializable, AddressResolverUtil {
     /// @notice The forwarder address which can call the callback
     address public forwarder;
 
-    /// @notice Indicates whether the promise has been resolved.
-    bool public override resolved;
+    /// @notice The callback data to be used when the promise is resolved.
+    bytes public callbackData;
 
     /// @notice Error thrown when attempting to resolve an already resolved promise.
     error PromiseAlreadyResolved();
@@ -39,30 +42,27 @@ contract AsyncPromise is IPromise, Initializable, AddressResolverUtil {
     /// @notice Error thrown when attempting to set an already existing promise
     error PromiseAlreadySetUp();
 
-    /// @notice The current state of the async promise.
-    AsyncPromiseState public state;
-
     /// @notice Initializer to replace constructor for upgradeable contracts
-    /// @param _invoker The address of the local invoker.
-    /// @param _forwarder The address of the forwarder.
-    /// @param _addressResolver The address resolver contract address.
+    /// @param invoker_ The address of the local invoker.
+    /// @param forwarder_ The address of the forwarder.
+    /// @param addressResolver_ The address resolver contract address.
     function initialize(
-        address _invoker,
-        address _forwarder,
-        address _addressResolver
+        address invoker_,
+        address forwarder_,
+        address addressResolver_
     ) public initializer {
-        _setAddressResolver(_addressResolver);
-        localInvoker = _invoker;
-        forwarder = _forwarder;
+        _setAddressResolver(addressResolver_);
+        localInvoker = invoker_;
+        forwarder = forwarder_;
         state = AsyncPromiseState.WAITING_FOR_SET_CALLBACK_SELECTOR;
         resolved = false;
     }
 
     /// @notice Marks the promise as resolved and executes the callback if set.
-    /// @param returnData The data returned from the async payload execution.
+    /// @param returnData_ The data returned from the async payload execution.
     /// @dev Only callable by the watcher precompile.
     function markResolved(
-        bytes memory returnData
+        bytes memory returnData_
     ) external override onlyWatcherPrecompile returns (bool success) {
         if (resolved) revert PromiseAlreadyResolved();
         resolved = true;
@@ -72,7 +72,7 @@ contract AsyncPromise is IPromise, Initializable, AddressResolverUtil {
         if (callbackSelector != bytes4(0)) {
             bytes memory combinedCalldata = abi.encodePacked(
                 callbackSelector,
-                abi.encode(callbackData, returnData)
+                abi.encode(callbackData, returnData_)
             );
 
             (success, ) = localInvoker.call(combinedCalldata);
@@ -84,10 +84,13 @@ contract AsyncPromise is IPromise, Initializable, AddressResolverUtil {
     }
 
     /// @notice Sets the callback selector and data for the promise.
-    /// @param selector The function selector for the callback.
-    /// @param data The data to be passed to the callback.
+    /// @param selector_ The function selector for the callback.
+    /// @param data_ The data to be passed to the callback.
     /// @return promise_ The address of the current promise.
-    function then(bytes4 selector, bytes memory data) external override returns (address promise_) {
+    function then(
+        bytes4 selector_,
+        bytes memory data_
+    ) external override returns (address promise_) {
         if (msg.sender != forwarder && msg.sender != localInvoker) {
             revert OnlyForwarderOrLocalInvoker();
         }
@@ -97,8 +100,8 @@ contract AsyncPromise is IPromise, Initializable, AddressResolverUtil {
         }
 
         if (state == AsyncPromiseState.WAITING_FOR_SET_CALLBACK_SELECTOR) {
-            callbackSelector = selector;
-            callbackData = data;
+            callbackSelector = selector_;
+            callbackData = data_;
             state = AsyncPromiseState.WAITING_FOR_CALLBACK_EXECUTION;
         }
 

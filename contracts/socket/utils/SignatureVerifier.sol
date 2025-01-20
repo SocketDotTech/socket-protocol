@@ -40,7 +40,7 @@ contract SignatureVerifier is ISignatureVerifier, AccessControl, Initializable {
     ) public pure override returns (address signer) {
         bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
         // recovered signer is checked for the valid roles later
-        signer = ECDSA.recover(digest, signature_);
+        signer = ECDSA._recover(digest, signature_);
     }
 
     /**
@@ -54,6 +54,6 @@ contract SignatureVerifier is ISignatureVerifier, AccessControl, Initializable {
         address rescueTo_,
         uint256 amount_
     ) external onlyRole(RESCUE_ROLE) {
-        RescueFundsLib.rescueFunds(token_, rescueTo_, amount_);
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

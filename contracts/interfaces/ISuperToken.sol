@@ -15,5 +15,5 @@ interface ISuperToken {
 
     function setController(address controller_) external;
 
-    function balanceOf(address account) external;
+    function balanceOf(address account_) external;
 }

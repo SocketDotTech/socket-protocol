@@ -11,6 +11,7 @@ import {NotSocket} from "../common/Errors.sol";
 abstract contract PlugBase is IPlug {
     ISocket public socket__;
     address public appGateway;
+
     event ConnectorPlugDisconnected();
 
     /// @notice Modifier to ensure only the socket can call the function
@@ -20,8 +21,8 @@ abstract contract PlugBase is IPlug {
         _;
     }
 
-    constructor(address _socket) {
-        socket__ = ISocket(_socket);
+    constructor(address socket_) {
+        socket__ = ISocket(socket_);
     }
 
     /// @notice Inbound function for handling incoming messages
@@ -40,7 +41,7 @@ abstract contract PlugBase is IPlug {
     }
 
     /// @notice Disconnects the plug from the socket
-    function disconnect() internal {
+    function _disconnect() internal {
         (, address switchboard) = socket__.getPlugConfig(address(this));
         socket__.connect(address(0), switchboard);
         emit ConnectorPlugDisconnected();

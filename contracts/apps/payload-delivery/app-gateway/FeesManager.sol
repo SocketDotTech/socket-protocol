@@ -58,7 +58,7 @@ contract FeesManager is AddressResolverUtil, Ownable, Initializable {
             transmitter: winningBid_.transmitter
         });
 
-        (payloadId, root) = watcherPrecompile().finalize(finalizeParams, appGateway);
+        (payloadId, root) = watcherPrecompile__().finalize(finalizeParams, appGateway);
         return (payloadId, root, payloadDetails);
     }
 
@@ -102,6 +102,6 @@ contract FeesManager is AddressResolverUtil, Ownable, Initializable {
     }
 
     function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (address) {
-        return watcherPrecompile().appGatewayPlugs(address(this), chainSlug_);
+        return watcherPrecompile__().appGatewayPlugs(address(this), chainSlug_);
     }
 }

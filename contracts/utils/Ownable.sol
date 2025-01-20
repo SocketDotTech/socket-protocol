@@ -10,11 +10,11 @@ abstract contract Ownable {
     address private _owner;
     address private _nominee;
 
-    event OwnerNominated(address indexed nominee);
-    event OwnerClaimed(address indexed claimer);
-
     error OnlyOwner();
     error OnlyNominee();
+
+    event OwnerNominated(address indexed nominee);
+    event OwnerClaimed(address indexed claimer);
 
     /**
      * @dev Modifier that restricts access to only the contract's owner.
