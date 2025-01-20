@@ -31,7 +31,7 @@ contract SocketBatcher is Ownable {
         ISwitchboard(params_.switchboard).attest(
             params_.payloadId,
             params_.root,
-            params_.watcherSignature 
+            params_.watcherSignature
         );
         return
             socket__.execute(

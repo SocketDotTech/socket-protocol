@@ -70,7 +70,11 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
     function _finishBatch(bytes32 asyncId_, PayloadBatch storage payloadBatch_) internal {
         (bytes32 payloadId_, bytes32 root_, PayloadDetails memory payloadDetails_) = IFeesManager(
             feesManager
-        ).distributeFees(payloadBatch_.appGateway, payloadBatch_.feesData, payloadBatch_.winningBid);
+        ).distributeFees(
+                payloadBatch_.appGateway,
+                payloadBatch_.feesData,
+                payloadBatch_.winningBid
+            );
 
         payloadIdToPayloadDetails[payloadId_] = payloadDetails_;
         payloadIdToBatchHash[payloadId_] = asyncId_;
@@ -143,7 +147,9 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
         address batchPromise_
     ) internal {
         uint256 endIndex = startIndex_;
-        while (endIndex + 1 < payloads_.length && payloads_[endIndex + 1].callType == CallType.READ) {
+        while (
+            endIndex + 1 < payloads_.length && payloads_[endIndex + 1].callType == CallType.READ
+        ) {
             endIndex++;
         }
 
@@ -189,7 +195,13 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
         address[] memory promises = new address[](1);
         promises[0] = payloads_[currentIndex_].next[0];
 
-        _executeWatcherCall(asyncId_, payloads_[currentIndex_], payloadBatch_, batchPromise_, false);
+        _executeWatcherCall(
+            asyncId_,
+            payloads_[currentIndex_],
+            payloadBatch_,
+            batchPromise_,
+            false
+        );
         _updateBatchState(payloadBatch_, promises, 1, currentIndex_ + 1);
     }
 

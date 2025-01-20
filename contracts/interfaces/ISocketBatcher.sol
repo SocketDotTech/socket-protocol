@@ -4,5 +4,7 @@ pragma solidity ^0.8.13;
 import "../common/Structs.sol";
 
 interface ISocketBatcher {
-    function attestAndExecute(ExecutePayloadParams calldata params_) external returns (bytes memory);
+    function attestAndExecute(
+        ExecutePayloadParams calldata params_
+    ) external returns (bytes memory);
 }
