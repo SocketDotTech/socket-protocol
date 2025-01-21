@@ -105,11 +105,11 @@ contract SetupTest is Test {
         proxyAdmin = new ProxyAdmin(owner);
 
         // Deploy implementations
-        addressResolverImpl = new AddressResolver();
-        watcherPrecompileImpl = new WatcherPrecompile();
-        signatureVerifierImpl = new SignatureVerifier();
         forwarderImpl = new Forwarder();
         asyncPromiseImpl = new AsyncPromise();
+        signatureVerifierImpl = new SignatureVerifier();
+        addressResolverImpl = new AddressResolver();
+        watcherPrecompileImpl = new WatcherPrecompile();
 
         // Deploy and initialize proxies
         bytes memory signatureVerifierData = abi.encodeWithSelector(
