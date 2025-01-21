@@ -66,16 +66,16 @@ contract SetupTest is Test {
     AsyncPromise public asyncPromiseImpl;
 
     function deploySocket(uint32 chainSlug_) internal returns (SocketContracts memory) {
-        Hasher hasher = new Hasher(owner);
         SignatureVerifier verifier = new SignatureVerifier();
         verifier.initialize(owner);
 
+        Hasher hasher = new Hasher(owner);
         Socket socket = new Socket(chainSlug_, address(hasher), address(verifier), owner, "test");
-        FastSwitchboard switchboard = new FastSwitchboard(chainSlug_, socket, verifier, owner);
         SocketBatcher socketBatcher = new SocketBatcher(owner, socket);
+        FastSwitchboard switchboard = new FastSwitchboard(chainSlug_, socket, verifier, owner);
 
-        ContractFactoryPlug contractFactoryPlug = new ContractFactoryPlug(address(socket), owner);
         FeesPlug feesPlug = new FeesPlug(address(socket), owner);
+        ContractFactoryPlug contractFactoryPlug = new ContractFactoryPlug(address(socket), owner);
 
         vm.startPrank(owner);
         // socket

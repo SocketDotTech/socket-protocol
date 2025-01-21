@@ -51,10 +51,18 @@ const main = async () => {
           const signatureVerifier: Contract = await getOrDeploy(
             contractName,
             `contracts/socket/utils/${contractName}.sol`,
-            [socketOwner],
+            [],
             deployUtils
           );
           deployUtils.addresses[contractName] = signatureVerifier.address;
+
+          await updateContractSettings(
+            signatureVerifier,
+            "owner",
+            "initialize",
+            socketOwner,
+            deployUtils.signer
+          );
 
           contractName = CORE_CONTRACTS.Hasher;
           const hasher: Contract = await getOrDeploy(
@@ -202,71 +210,89 @@ const deployWatcherVMContracts = async () => {
         signer: signer,
         currentChainSlug: chain as ChainSlug,
       };
-      let contractName: string = OffChainVMCoreContracts.AddressResolver;
-      let addressResolver: Contract = await getOrDeploy(
-        contractName,
-        `contracts/${contractName}.sol`,
+
+      // Deploy proxy admin contract
+      const proxyAdmin = await getOrDeploy(
+        "ProxyAdmin",
+        "contracts/proxy/ProxyAdmin.sol",
         [offChainVMOwner],
         deployUtils
       );
-      deployUtils.addresses[contractName] = addressResolver.address;
+      deployUtils.addresses["ProxyAdmin"] = proxyAdmin.address;
 
-      contractName = OffChainVMCoreContracts.WatcherPrecompile;
-      let watcherPrecompile: Contract = await getOrDeploy(
-        contractName,
-        `contracts/watcherPrecompile/${contractName}.sol`,
-        [offChainVMOwner, addressResolver.address],
-        deployUtils
-      );
-      deployUtils.addresses[contractName] = watcherPrecompile.address;
-
-      contractName = OffChainVMCoreContracts.SignatureVerifier;
-      const signatureVerifier: Contract = await getOrDeploy(
-        contractName,
-        `contracts/socket/utils/${contractName}.sol`,
+      deployUtils = await deployContractWithProxy(
+        OffChainVMCoreContracts.SignatureVerifier,
+        `contracts/socket/utils/SignatureVerifier.sol`,
+        proxyAdmin.address,
         [offChainVMOwner],
         deployUtils
       );
-      deployUtils.addresses[contractName] = signatureVerifier.address;
+      deployUtils = await deployContractWithProxy(
+        OffChainVMCoreContracts.AddressResolver,
+        `contracts/AddressResolver.sol`,
+        proxyAdmin.address,
+        [offChainVMOwner],
+        deployUtils
+      );
 
-      contractName = OffChainVMCoreContracts.AuctionManager;
-      let auctionManager: Contract = await getOrDeploy(
-        contractName,
-        `contracts/apps/payload-delivery/app-gateway/${contractName}.sol`,
+      const addressResolver = deployUtils.addresses[OffChainVMCoreContracts.AddressResolver]
+      const signatureVerifier = deployUtils.addresses[OffChainVMCoreContracts.SignatureVerifier]
+
+      deployUtils = await deployContractWithProxy(
+        OffChainVMCoreContracts.WatcherPrecompile,
+        `contracts/watcherPrecompile/WatcherPrecompile.sol`,
+        proxyAdmin.address,
+        [offChainVMOwner, addressResolver],
+        deployUtils
+      );
+
+      deployUtils = await deployContractWithProxy(
+        OffChainVMCoreContracts.AuctionManager,
+        `contracts/apps/payload-delivery/app-gateway/AuctionManager.sol`,
+        proxyAdmin.address,
         [
           OFF_CHAIN_VM_CHAIN_ID,
           auctionEndDelaySeconds,
-          addressResolver.address,
-          signatureVerifier.address,
+          addressResolver,
+          signatureVerifier,
           offChainVMOwner,
         ],
         deployUtils
       );
-      deployUtils.addresses[contractName] = auctionManager.address;
 
-      contractName = OffChainVMCoreContracts.FeesManager;
-      let feesManager: Contract = await getOrDeploy(
-        contractName,
-        `contracts/apps/payload-delivery/app-gateway/${contractName}.sol`,
-        [addressResolver.address, offChainVMOwner],
+      deployUtils = await deployContractWithProxy(
+        OffChainVMCoreContracts.FeesManager,
+        `contracts/apps/payload-delivery/app-gateway/FeesManager.sol`,
+        proxyAdmin.address,
+        [addressResolver, offChainVMOwner],
         deployUtils
       );
-      deployUtils.addresses[contractName] = feesManager.address;
+      const feesManager = deployUtils.addresses[OffChainVMCoreContracts.FeesManager]
 
-      contractName = OffChainVMCoreContracts.DeliveryHelper;
-      let deliveryHelper: Contract = await getOrDeploy(
-        contractName,
-        `contracts/apps/payload-delivery/app-gateway/${contractName}.sol`,
-        [addressResolver.address, feesManager.address, offChainVMOwner],
+      deployUtils = await deployContractWithProxy(
+        OffChainVMCoreContracts.DeliveryHelper,
+        `contracts/apps/payload-delivery/app-gateway/DeliveryHelper.sol`,
+        proxyAdmin.address,
+        [addressResolver, feesManager, offChainVMOwner],
         deployUtils
       );
-      deployUtils.addresses[contractName] = deliveryHelper.address;
+
+      const deliveryHelper = deployUtils.addresses[OffChainVMCoreContracts.DeliveryHelper]
+
+      deployUtils = await deployContractWithProxy(
+        OffChainVMCoreContracts.Forwarder,
+        `contracts/apps/payload-delivery/app-gateway/Forwarder.sol`,
+        proxyAdmin.address,
+        [addressResolver, deliveryHelper, offChainVMOwner],
+        deployUtils
+      );
+      const forwarder = deployUtils.addresses[OffChainVMCoreContracts.Forwarder]
 
       await updateContractSettings(
         addressResolver,
         "deliveryHelper",
         "setDeliveryHelper",
-        deliveryHelper.address,
+        deliveryHelper,
         deployUtils.signer
       );
 
@@ -274,7 +300,7 @@ const deployWatcherVMContracts = async () => {
         addressResolver,
         "feesManager",
         "setFeesManager",
-        feesManager.address,
+        feesManager,
         deployUtils.signer
       );
 
@@ -282,11 +308,10 @@ const deployWatcherVMContracts = async () => {
         addressResolver,
         "watcherPrecompile",
         "setWatcherPrecompile",
-        watcherPrecompile.address,
+        watcherPrecompile,
         deployUtils.signer
       );
 
-      // deployUtils = await deploySuperTokenAppContracts(deployUtils, signer);
 
       deployUtils.addresses.startBlock = deployUtils.addresses.startBlock
         ? deployUtils.addresses.startBlock
@@ -298,16 +323,59 @@ const deployWatcherVMContracts = async () => {
         DeploymentMode.DEV
       );
     } catch (error) {
-      // await storeAddresses(
-      //   deployUtils.addresses,
-      //   chain as ChainSlug,
-      //   DeploymentMode.DEV
-      // );
+      await storeAddresses(
+        deployUtils.addresses,
+        chain as ChainSlug,
+        DeploymentMode.DEV
+      );
       console.log("Error:", error);
     }
   } catch (error) {
     console.log("Error:", error);
   }
+};
+
+/**
+ * @notice Deploys a contract implementation and its transparent proxy, then initializes it
+ * @param contractName The name of the contract to deploy
+ * @param proxyAdmin The proxy admin contract address
+ * @param initParams Array of parameters for initialization
+ * @param signer The signer to execute transactions
+ * @returns Object containing both implementation and proxy contract instances
+ */
+const deployContractWithProxy = async (
+  contractName: string,
+  contractPath: string,
+  proxyAdmin: string,
+  initParams: any[],
+  deployUtils: DeployParams
+): Promise<DeployParams> => {
+  // Deploy implementation
+  const implementation = await getOrDeploy(
+    contractName,
+    contractPath,
+    [],
+    deployUtils
+  );
+  deployUtils.addresses[`${contractName}Impl`] = implementation.address;
+
+  // Create initialization data
+  const initializeFn = implementation.interface.getFunction("initialize");
+  const initData = implementation.interface.encodeFunctionData(
+    initializeFn,
+    initParams
+  );
+
+  // Deploy transparent proxy
+  const proxy = await getOrDeploy(
+    "TransparentUpgradeableProxy",
+    "contracts/proxy/TransparentUpgradeableProxy.sol",
+    [implementation.address, proxyAdmin, initData],
+    deployUtils
+  );
+  deployUtils.addresses[contractName] = proxy.address;
+
+  return deployUtils;
 };
 
 main()

@@ -63,7 +63,7 @@ contract DeliveryHelperTest is SetupTest {
         );
         TransparentUpgradeableProxy deliveryHelperProxy = new TransparentUpgradeableProxy(
             address(deliveryHelperImpl),
-            address(proxyAdmin), 
+            address(proxyAdmin),
             deliveryHelperData
         );
 
