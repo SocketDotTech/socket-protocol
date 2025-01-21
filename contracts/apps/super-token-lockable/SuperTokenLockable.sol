@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-import {ERC20} from "../super-token/ERC20.sol";
+import "solmate/tokens/ERC20.sol";
 import {OwnableTwoStep} from "../../utils/OwnableTwoStep.sol";
 import {LimitHook} from "./LimitHook.sol";
 import "../../base/PlugBase.sol";
