@@ -19,4 +19,8 @@ contract Counter is Ownable(msg.sender), PlugBase(msg.sender) {
         _claimOwner(socket_);
         _connectSocket(appGateway_, socket_, switchboard_);
     }
+
+    function getCounter() external view returns (uint256) {
+        return counter;
+    }
 }

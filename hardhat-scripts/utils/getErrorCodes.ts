@@ -37,6 +37,7 @@ function extractCustomErrors(filePath: string): string[] {
 // Main function
 async function main() {
   const contractsDir = path.join(__dirname, "../../contracts");
+  const errorsDir = path.join(__dirname, "../../Errors.md");
   const solFiles = getSolFiles(contractsDir);
 
   console.log("Custom Errors Found:");
@@ -61,7 +62,8 @@ async function main() {
   }
 
   // Write to Errors.md file
-  fs.writeFileSync("../../Errors.md", mdContent);
+  console.log(mdContent);
+  fs.writeFileSync(errorsDir, mdContent);
   console.log("\nError codes have been written to Errors.md");
 }
 
