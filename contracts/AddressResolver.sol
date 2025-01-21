@@ -5,7 +5,8 @@ import "./interfaces/IAddressResolver.sol";
 import {Forwarder} from "./Forwarder.sol";
 import {AsyncPromise} from "./AsyncPromise.sol";
 import {Ownable} from "./utils/Ownable.sol";
-import {TransparentUpgradeableProxy} from "openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {BeaconProxy} from "openzeppelin-contracts/contracts/proxy/beacon/BeaconProxy.sol";
+import {UpgradeableBeacon} from "openzeppelin-contracts/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import {Initializable} from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 /// @title AddressResolver Contract
@@ -16,11 +17,9 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
     address public override deliveryHelper;
     address public override feesManager;
 
-    // Proxy admin for managing upgrades
-    address public proxyAdmin;
-    // Implementation contracts
-    address public forwarderImplementation;
-    address public asyncPromiseImplementation;
+    // Beacons for managing upgrades
+    UpgradeableBeacon public forwarderBeacon;
+    UpgradeableBeacon public asyncPromiseBeacon;
 
     // Array to store promises
     address[] internal _promises;
@@ -32,11 +31,6 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
     // gateway to contract map
     mapping(address => address) public override gatewaysToContracts;
 
-    /// @notice Error thrown if AppGateway contract was already set by a different address
-    error AppGatewayContractAlreadySetByDifferentSender(address contractAddress_);
-    /// @notice Error thrown if it failed to deploy the create2 contract
-    error DeploymentFailed();
-
     event PlugAdded(address appGateway, uint32 chainSlug, address plug);
     event ForwarderDeployed(address newForwarder, bytes32 salt);
     event AsyncPromiseDeployed(address newAsyncPromise, bytes32 salt);
@@ -46,19 +40,17 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
     /// @param owner_ The address of the contract owner
     function initialize(
         address owner_,
-        address proxyAdmin_,
         address forwarderImplementation_,
         address asyncPromiseImplementation_
     ) public initializer {
-        proxyAdmin = proxyAdmin_;
         _claimOwner(owner_);
 
-        // Deploy implementation contracts
-        forwarderImplementation = forwarderImplementation_;
-        asyncPromiseImplementation = asyncPromiseImplementation_;
+        // Deploy beacons with initial implementations
+        forwarderBeacon = new UpgradeableBeacon(forwarderImplementation_);
+        asyncPromiseBeacon = new UpgradeableBeacon(asyncPromiseImplementation_);
 
-        emit ImplementationUpdated("Forwarder", forwarderImplementation);
-        emit ImplementationUpdated("AsyncPromise", asyncPromiseImplementation);
+        emit ImplementationUpdated("Forwarder", forwarderImplementation_);
+        emit ImplementationUpdated("AsyncPromise", asyncPromiseImplementation_);
     }
 
     /// @notice Gets or deploys a Forwarder proxy contract
@@ -87,10 +79,9 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
 
         bytes32 salt = keccak256(constructorArgs);
 
-        // Deploy proxy with CREATE2
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy{salt: salt}(
-            forwarderImplementation,
-            proxyAdmin,
+        // Deploy beacon proxy with CREATE2
+        BeaconProxy proxy = new BeaconProxy{salt: salt}(
+            address(forwarderBeacon),
             initData
         );
 
@@ -114,10 +105,9 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
 
         bytes32 salt = keccak256(abi.encodePacked(constructorArgs, asyncPromiseCounter++));
 
-        // Deploy proxy with CREATE2
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy{salt: salt}(
-            asyncPromiseImplementation,
-            proxyAdmin,
+        // Deploy beacon proxy with CREATE2
+        BeaconProxy proxy = new BeaconProxy{salt: salt}(
+            address(asyncPromiseBeacon),
             initData
         );
 
@@ -179,7 +169,7 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
     /// @param salt_ The salt used for address prediction
     /// @return The predicted address of the proxy contract
     function _predictProxyAddress(bytes32 salt_) internal view returns (address) {
-        bytes memory proxyBytecode = type(TransparentUpgradeableProxy).creationCode;
+        bytes memory proxyBytecode = type(BeaconProxy).creationCode;
         bytes32 hash = keccak256(
             abi.encodePacked(bytes1(0xff), address(this), salt_, keccak256(proxyBytecode))
         );
@@ -195,14 +185,14 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
     /// @notice Updates the implementation contract for Forwarder
     /// @param implementation_ The new implementation address
     function setForwarderImplementation(address implementation_) external onlyOwner {
-        forwarderImplementation = implementation_;
+        forwarderBeacon.upgradeTo(implementation_);
         emit ImplementationUpdated("Forwarder", implementation_);
     }
 
     /// @notice Updates the implementation contract for AsyncPromise
     /// @param implementation_ The new implementation address
     function setAsyncPromiseImplementation(address implementation_) external onlyOwner {
-        asyncPromiseImplementation = implementation_;
+        asyncPromiseBeacon.upgradeTo(implementation_);
         emit ImplementationUpdated("AsyncPromise", implementation_);
     }
 
