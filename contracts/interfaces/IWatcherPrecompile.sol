@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import {PayloadDetails, AsyncRequest, FinalizeParams, PayloadRootParams, AppGatewayConfig, PlugConfig, ResolvedPromises} from "../common/Structs.sol";
 
@@ -66,6 +66,7 @@ interface IWatcherPrecompile {
     /// @notice Resolves a timeout by executing the payload
     /// @param timeoutId_ The unique identifier for the timeout
     function resolveTimeout(bytes32 timeoutId_) external;
+
     /// @notice Calculates the root hash for payload parameters
     /// @param params_ The payload parameters used to calculate the root
     /// @return root The calculated merkle root hash

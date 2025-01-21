@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import {DeployParams, FeesData, CallType, PayloadBatch} from "../common/Structs.sol";
 import {AppGatewayBase} from "./AppGatewayBase.sol";
@@ -68,8 +68,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
-            .getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
     }
 
     /// @notice Callback in pd promise to be called after all contracts are deployed

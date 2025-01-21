@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import {Gauge} from "../utils/Gauge.sol";
 import {LimitParams, UpdateLimitParams} from "../common/Structs.sol";

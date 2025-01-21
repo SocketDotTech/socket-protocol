@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {ISocket} from "../interfaces/ISocket.sol";
