@@ -88,6 +88,10 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits, 
     /// @param executedAt The epoch time when the task was executed
     event TimeoutResolved(bytes32 timeoutId, address target, bytes payload, uint256 executedAt);
 
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
     /// @notice Initializer function to replace constructor
     /// @param _owner Address of the contract owner
     /// @param addressResolver_ The address resolver contract address

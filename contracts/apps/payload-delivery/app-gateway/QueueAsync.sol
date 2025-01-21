@@ -147,4 +147,6 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
     function getPayloadDetails(bytes32 payloadId_) external view returns (PayloadDetails memory) {
         return payloadIdToPayloadDetails[payloadId_];
     }
+
+    uint256[49] __gap;
 }

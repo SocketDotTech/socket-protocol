@@ -16,6 +16,10 @@ contract FeesManager is AddressResolverUtil, Ownable, Initializable {
     uint256 public feesCounter;
     mapping(uint32 => uint256) public feeCollectionGasLimit;
 
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
     /// @notice Initializer function to replace constructor
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the owner

@@ -42,6 +42,10 @@ contract AsyncPromise is IPromise, Initializable, AddressResolverUtil {
     /// @notice The current state of the async promise.
     AsyncPromiseState public state;
 
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
     /// @notice Initializer to replace constructor for upgradeable contracts
     /// @param _invoker The address of the local invoker.
     /// @param _forwarder The address of the forwarder.

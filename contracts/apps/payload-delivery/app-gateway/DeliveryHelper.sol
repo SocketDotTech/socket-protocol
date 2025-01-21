@@ -9,6 +9,10 @@ import "./BatchAsync.sol";
 import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 contract DeliveryHelper is BatchAsync, Ownable, Initializable {
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
     /// @notice Initializer function to replace constructor
     /// @param _addressResolver The address resolver contract
     /// @param _feesManager The fees manager contract

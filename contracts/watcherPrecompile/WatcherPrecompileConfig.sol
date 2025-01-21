@@ -85,4 +85,6 @@ abstract contract WatcherPrecompileConfig is Ownable, IWatcherPrecompile {
             _plugConfigs[chainSlug_][plug_].switchboard
         );
     }
+
+    uint256[49] __gap_config;
 }

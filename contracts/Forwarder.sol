@@ -24,6 +24,10 @@ contract Forwarder is IForwarder, Initializable {
     /// @notice caches the latest async promise address for the last call
     address public latestAsyncPromise;
 
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
     /// @notice Initializer to replace constructor for upgradeable contracts
     /// @param chainSlug_ chain id
     /// @param onChainAddress_ on-chain address

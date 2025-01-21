@@ -62,4 +62,7 @@ abstract contract AddressResolverUtil {
         appGateway = addressResolver.contractsToGateways(appGateway_);
         if (appGateway == address(0)) appGateway = appGateway_;
     }
+
+    // for proxy contracts
+    uint256[49] __gap_resolver_util;
 }
