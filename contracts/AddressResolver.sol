@@ -31,7 +31,10 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
     // gateway to contract map
     mapping(address => address) public override gatewaysToContracts;
 
+    /// @notice Error thrown if AppGateway contract was already set by a different address
     error AppGatewayContractAlreadySetByDifferentSender(address contractAddress_);
+    /// @notice Error thrown if it failed to deploy the create2 contract
+    error DeploymentFailed();
 
     event PlugAdded(address appGateway, uint32 chainSlug, address plug);
     event ForwarderDeployed(address newForwarder, bytes32 salt);
