@@ -31,10 +31,16 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
     // gateway to contract map
     mapping(address => address) public override gatewaysToContracts;
 
+    error AppGatewayContractAlreadySetByDifferentSender(address contractAddress_);
+
     event PlugAdded(address appGateway, uint32 chainSlug, address plug);
     event ForwarderDeployed(address newForwarder, bytes32 salt);
     event AsyncPromiseDeployed(address newAsyncPromise, bytes32 salt);
     event ImplementationUpdated(string contractName, address newImplementation);
+
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
 
     /// @notice Initializer to replace constructor for upgradeable contracts
     /// @param owner_ The address of the contract owner
@@ -46,8 +52,8 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
         _claimOwner(owner_);
 
         // Deploy beacons with initial implementations
-        forwarderBeacon = new UpgradeableBeacon(forwarderImplementation_);
-        asyncPromiseBeacon = new UpgradeableBeacon(asyncPromiseImplementation_);
+        forwarderBeacon = new UpgradeableBeacon(forwarderImplementation_, address(this));
+        asyncPromiseBeacon = new UpgradeableBeacon(asyncPromiseImplementation_, address(this));
 
         emit ImplementationUpdated("Forwarder", forwarderImplementation_);
         emit ImplementationUpdated("AsyncPromise", asyncPromiseImplementation_);
@@ -80,10 +86,7 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
         bytes32 salt = keccak256(constructorArgs);
 
         // Deploy beacon proxy with CREATE2
-        BeaconProxy proxy = new BeaconProxy{salt: salt}(
-            address(forwarderBeacon),
-            initData
-        );
+        BeaconProxy proxy = new BeaconProxy{salt: salt}(address(forwarderBeacon), initData);
 
         address newForwarder = address(proxy);
         _setConfig(appDeployer_, newForwarder);
@@ -106,10 +109,7 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
         bytes32 salt = keccak256(abi.encodePacked(constructorArgs, asyncPromiseCounter++));
 
         // Deploy beacon proxy with CREATE2
-        BeaconProxy proxy = new BeaconProxy{salt: salt}(
-            address(asyncPromiseBeacon),
-            initData
-        );
+        BeaconProxy proxy = new BeaconProxy{salt: salt}(address(asyncPromiseBeacon), initData);
 
         address newAsyncPromise = address(proxy);
         emit AsyncPromiseDeployed(newAsyncPromise, salt);

@@ -30,6 +30,10 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
     /// @notice Error thrown if winning bid is assigned to an invalid transmitter
     error InvalidTransmitter();
 
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
     /// @notice Initializer function to replace constructor
     /// @param vmChainSlug_ The chain slug for the VM
     /// @param auctionEndDelaySeconds_ The delay in seconds before an auction can end

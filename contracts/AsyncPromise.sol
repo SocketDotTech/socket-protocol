@@ -42,6 +42,10 @@ contract AsyncPromise is IPromise, Initializable, AddressResolverUtil {
     /// @notice Error thrown when attempting to set an already existing promise
     error PromiseAlreadySetUp();
 
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
     /// @notice Initializer to replace constructor for upgradeable contracts
     /// @param invoker_ The address of the local invoker.
     /// @param forwarder_ The address of the forwarder.

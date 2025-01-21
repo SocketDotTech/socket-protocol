@@ -73,4 +73,6 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
 
         appGateway = _getCoreAppGateway(resolverAddress);
     }
+
+    uint256[49] __gap;
 }
