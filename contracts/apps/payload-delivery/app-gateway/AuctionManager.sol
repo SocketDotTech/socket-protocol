@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Ownable} from "../../../utils/Ownable.sol";
+import {OwnableTwoStep} from "../../../utils/OwnableTwoStep.sol";
 import {SignatureVerifier} from "../../../socket/utils/SignatureVerifier.sol";
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
 import {FeesData} from "../../../common/Structs.sol";
@@ -11,7 +11,7 @@ import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 /// @title AuctionManager
 /// @notice Contract for managing auctions and placing bids
-contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initializable {
+contract AuctionManager is AddressResolverUtil, OwnableTwoStep, IAuctionManager, Initializable {
     SignatureVerifier public signatureVerifier;
     uint32 public vmChainSlug;
     mapping(bytes32 => Bid) public winningBids;

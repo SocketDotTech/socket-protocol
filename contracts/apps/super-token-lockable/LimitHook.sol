@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Ownable} from "../../utils/Ownable.sol";
+import {OwnableTwoStep} from "../../utils/OwnableTwoStep.sol";
 import "../../base/PlugBase.sol";
 
-contract LimitHook is Ownable, PlugBase {
+contract LimitHook is OwnableTwoStep, PlugBase {
     // Define any state variables or functions for the LimitHook contract here
     uint256 public burnLimit;
     uint256 public mintLimit;

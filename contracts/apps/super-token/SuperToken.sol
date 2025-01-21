@@ -2,14 +2,14 @@
 pragma solidity ^0.8.21;
 
 import "./ERC20.sol";
-import {Ownable} from "../../utils/Ownable.sol";
+import {OwnableTwoStep} from "../../utils/OwnableTwoStep.sol";
 import "../../base/PlugBase.sol";
 
 /**
  * @title SuperToken
  * @notice An ERC20 contract which enables bridging a token to its sibling chains.
  */
-contract SuperToken is ERC20, Ownable, PlugBase {
+contract SuperToken is ERC20, OwnableTwoStep, PlugBase {
     mapping(address => uint256) public lockedTokens;
 
     constructor(

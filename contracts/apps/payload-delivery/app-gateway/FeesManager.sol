@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Ownable} from "../../../utils/Ownable.sol";
+import {OwnableTwoStep} from "../../../utils/OwnableTwoStep.sol";
 import {SignatureVerifier} from "../../../socket/utils/SignatureVerifier.sol";
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
 import {Bid, FeesData, PayloadDetails, CallType, FinalizeParams} from "../../../common/Structs.sol";
@@ -12,7 +12,7 @@ import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 /// @title FeesManager
 /// @notice Contract for managing fees
-contract FeesManager is AddressResolverUtil, Ownable, Initializable {
+contract FeesManager is AddressResolverUtil, OwnableTwoStep, Initializable {
     uint256 public feesCounter;
     mapping(uint32 => uint256) public feeCollectionGasLimit;
 

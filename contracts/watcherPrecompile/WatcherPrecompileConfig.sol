@@ -2,12 +2,12 @@
 pragma solidity ^0.8.21;
 
 import "../interfaces/IWatcherPrecompile.sol";
-import {Ownable} from "../utils/Ownable.sol";
+import {OwnableTwoStep} from "../utils/OwnableTwoStep.sol";
 
 /// @title WatcherPrecompileConfig
 /// @notice Configuration contract for the Watcher Precompile system
 /// @dev Handles the mapping between networks, plugs, and app gateways for payload execution
-abstract contract WatcherPrecompileConfig is Ownable, IWatcherPrecompile {
+abstract contract WatcherPrecompileConfig is OwnableTwoStep, IWatcherPrecompile {
     /// @notice Maps network and plug to their configuration
     /// @dev chainSlug => plug => PlugConfig
     mapping(uint32 => mapping(address => PlugConfig)) internal _plugConfigs;

@@ -3,9 +3,9 @@ pragma solidity ^0.8.21;
 
 import "../../base/AppGatewayBase.sol";
 import {ISuperToken} from "../../interfaces/ISuperToken.sol";
-import "../../utils/Ownable.sol";
+import "../../utils/OwnableTwoStep.sol";
 
-contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
+contract SuperTokenLockableAppGateway is AppGatewayBase, OwnableTwoStep {
     uint256 public idCounter;
 
     event Bridged(bytes32 asyncId);

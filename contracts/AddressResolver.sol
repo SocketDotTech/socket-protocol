@@ -4,15 +4,15 @@ pragma solidity ^0.8.21;
 import "./interfaces/IAddressResolver.sol";
 import {Forwarder} from "./Forwarder.sol";
 import {AsyncPromise} from "./AsyncPromise.sol";
-import {Ownable} from "./utils/Ownable.sol";
+import {OwnableTwoStep} from "./utils/OwnableTwoStep.sol";
 import {BeaconProxy} from "openzeppelin-contracts/contracts/proxy/beacon/BeaconProxy.sol";
 import {UpgradeableBeacon} from "openzeppelin-contracts/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import {Initializable} from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 /// @title AddressResolver Contract
 /// @notice This contract is responsible for fetching latest core addresses and deploying Forwarder and AsyncPromise contracts.
-/// @dev Inherits the Ownable contract and implements the IAddressResolver interface.
-contract AddressResolver is Ownable, IAddressResolver, Initializable {
+/// @dev Inherits the OwnableTwoStep contract and implements the IAddressResolver interface.
+contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
     IWatcherPrecompile public override watcherPrecompile__;
     address public override deliveryHelper;
     address public override feesManager;

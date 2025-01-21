@@ -4,9 +4,9 @@ pragma solidity ^0.8.21;
 import "./SuperTokenLockable.sol";
 import "./LimitHook.sol";
 import "../../base/AppDeployerBase.sol";
-import "../../utils/Ownable.sol";
+import "../../utils/OwnableTwoStep.sol";
 
-contract SuperTokenLockableDeployer is AppDeployerBase, Ownable {
+contract SuperTokenLockableDeployer is AppDeployerBase, OwnableTwoStep {
     bytes32 public superTokenLockable = _createContractId("superTokenLockable");
     bytes32 public limitHook = _createContractId("limitHook");
 

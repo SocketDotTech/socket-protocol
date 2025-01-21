@@ -3,9 +3,9 @@ pragma solidity ^0.8.21;
 
 import "../../base/AppGatewayBase.sol";
 import "../../interfaces/ISuperToken.sol";
-import "../../utils/Ownable.sol";
+import "../../utils/OwnableTwoStep.sol";
 
-contract SuperTokenAppGateway is AppGatewayBase, Ownable {
+contract SuperTokenAppGateway is AppGatewayBase, OwnableTwoStep {
     event Transferred(bytes32 asyncId);
 
     struct TransferOrder {
