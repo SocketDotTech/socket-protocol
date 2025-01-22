@@ -8,9 +8,9 @@ interface IAuctionManager {
 
     function bid(
         bytes32 asyncId_,
-        uint256 fee,
-        bytes memory transmitterSignature,
-        bytes memory extraData
+        uint256 fee_,
+        bytes memory transmitterSignature_,
+        bytes memory extraData_
     ) external;
 
     function endAuction(bytes32 asyncId_) external;

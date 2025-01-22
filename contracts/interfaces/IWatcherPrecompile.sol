@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import {PayloadDetails, AsyncRequest, FinalizeParams, PayloadRootParams, AppGatewayConfig, PlugConfig, ResolvedPromises} from "../common/Structs.sol";
 
@@ -8,9 +8,9 @@ import {PayloadDetails, AsyncRequest, FinalizeParams, PayloadRootParams, AppGate
 /// @dev Defines core functionality for payload processing and promise resolution
 interface IWatcherPrecompile {
     /// @notice Sets up app gateway configurations
-    /// @param configs Array of app gateway configurations
+    /// @param configs_ Array of app gateway configurations
     /// @dev Only callable by authorized addresses
-    function setAppGateways(AppGatewayConfig[] calldata configs) external;
+    function setAppGateways(AppGatewayConfig[] calldata configs_) external;
 
     /// @notice Retrieves plug configuration for a specific network and plug
     /// @param chainSlug_ The identifier of the network
@@ -32,17 +32,17 @@ interface IWatcherPrecompile {
     ) external returns (bytes32 payloadId, bytes32 root);
 
     /// @notice Creates a new query request
-    /// @param chainSlug The identifier of the destination network
-    /// @param targetAddress The address of the target contract
-    /// @param asyncPromises Array of promise addresses to be resolved
-    /// @param payload The query payload data
+    /// @param chainSlug_ The identifier of the destination network
+    /// @param targetAddress_ The address of the target contract
+    /// @param asyncPromises_ Array of promise addresses to be resolved
+    /// @param payload_ The query payload data
     /// @return payloadId The unique identifier for the query
     function query(
-        uint32 chainSlug,
-        address targetAddress,
-        address appGateway,
-        address[] memory asyncPromises,
-        bytes memory payload
+        uint32 chainSlug_,
+        address targetAddress_,
+        address appGateway_,
+        address[] memory asyncPromises_,
+        bytes memory payload_
     ) external returns (bytes32 payloadId);
 
     /// @notice Marks a request as finalized with a signature
@@ -58,7 +58,7 @@ interface IWatcherPrecompile {
     /// @param payload_ The payload data
     /// @param delayInSeconds_ The timeout duration in seconds
     function setTimeout(
-        address appGateway,
+        address appGateway_,
         bytes calldata payload_,
         uint256 delayInSeconds_
     ) external;
@@ -66,6 +66,7 @@ interface IWatcherPrecompile {
     /// @notice Resolves a timeout by executing the payload
     /// @param timeoutId_ The unique identifier for the timeout
     function resolveTimeout(bytes32 timeoutId_) external;
+
     /// @notice Calculates the root hash for payload parameters
     /// @param params_ The payload parameters used to calculate the root
     /// @return root The calculated merkle root hash

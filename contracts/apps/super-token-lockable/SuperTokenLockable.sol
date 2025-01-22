@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
-import {ERC20} from "../super-token/ERC20.sol";
-import {Ownable} from "../../utils/Ownable.sol";
+import "solmate/tokens/ERC20.sol";
+import {OwnableTwoStep} from "../../utils/OwnableTwoStep.sol";
 import {LimitHook} from "./LimitHook.sol";
 import "../../base/PlugBase.sol";
 
@@ -10,8 +10,8 @@ import "../../base/PlugBase.sol";
  * @title SuperToken
  * @notice An ERC20 contract which enables bridging a token to its sibling chains.
  */
-contract SuperTokenLockable is ERC20, Ownable(msg.sender), PlugBase {
-    LimitHook public limitHook;
+contract SuperTokenLockable is ERC20, OwnableTwoStep, PlugBase {
+    LimitHook public limitHook__;
     mapping(address => uint256) public lockedTokens;
 
     error InsufficientBalance();
@@ -25,18 +25,19 @@ contract SuperTokenLockable is ERC20, Ownable(msg.sender), PlugBase {
         uint256 initialSupply_
     ) ERC20(name_, symbol_, decimals_) PlugBase(msg.sender) {
         _mint(initialSupplyHolder_, initialSupply_);
+        _claimOwner(msg.sender);
     }
 
     function lockTokens(address user_, uint256 amount_) external onlySocket {
         if (balanceOf[user_] < amount_) revert InsufficientBalance();
-        limitHook.beforeBurn(amount_);
+        limitHook__.beforeBurn(amount_);
 
         lockedTokens[user_] += amount_;
         _burn(user_, amount_);
     }
 
     function mint(address receiver_, uint256 amount_) external onlySocket {
-        limitHook.beforeMint(amount_);
+        limitHook__.beforeMint(amount_);
         _mint(receiver_, amount_);
     }
 
@@ -55,7 +56,7 @@ contract SuperTokenLockable is ERC20, Ownable(msg.sender), PlugBase {
     }
 
     function setLimitHook(address limitHook_) external onlyOwner {
-        limitHook = LimitHook(limitHook_);
+        limitHook__ = LimitHook(limitHook_);
     }
 
     function connectSocket(

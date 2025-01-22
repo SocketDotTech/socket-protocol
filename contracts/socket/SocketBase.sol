@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import "../interfaces/IHasher.sol";
 import "../interfaces/ISignatureVerifier.sol";
@@ -31,11 +31,12 @@ abstract contract SocketBase is SocketConfig {
         address signatureVerifier_,
         address owner_,
         string memory version_
-    ) AccessControl(owner_) {
+    ) {
         hasher__ = IHasher(hasher_);
         signatureVerifier__ = ISignatureVerifier(signatureVerifier_);
         chainSlug = chainSlug_;
         version = keccak256(bytes(version_));
+        _claimOwner(owner_);
     }
 
     ////////////////////////////////////////////////////////
@@ -111,6 +112,6 @@ abstract contract SocketBase is SocketConfig {
         address rescueTo_,
         uint256 amount_
     ) external onlyRole(RESCUE_ROLE) {
-        RescueFundsLib.rescueFunds(token_, rescueTo_, amount_);
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

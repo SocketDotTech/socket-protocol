@@ -19,6 +19,8 @@ import {FeesPlug} from "../contracts/apps/payload-delivery/FeesPlug.sol";
 import {ETH_ADDRESS} from "../contracts/common/Constants.sol";
 import {ResolvedPromises} from "../contracts/common/Structs.sol";
 
+import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+
 contract SetupTest is Test {
     uint public c = 1;
     address owner = address(uint160(c++));
@@ -55,15 +57,25 @@ contract SetupTest is Test {
     SocketContracts public arbConfig;
     SocketContracts public optConfig;
 
-    function deploySocket(uint32 chainSlug_) internal returns (SocketContracts memory) {
-        Hasher hasher = new Hasher(owner);
-        SignatureVerifier verifier = new SignatureVerifier(owner);
-        Socket socket = new Socket(chainSlug_, address(hasher), address(verifier), owner, "test");
-        FastSwitchboard switchboard = new FastSwitchboard(chainSlug_, socket, verifier, owner);
-        SocketBatcher socketBatcher = new SocketBatcher(owner, socket);
+    // Add new variables for proxy admin and implementation contracts
+    ProxyAdmin public proxyAdmin;
+    WatcherPrecompile public watcherPrecompileImpl;
+    AddressResolver public addressResolverImpl;
+    SignatureVerifier public signatureVerifierImpl;
 
-        ContractFactoryPlug contractFactoryPlug = new ContractFactoryPlug(address(socket), owner);
+    event Initialized(uint64 version);
+
+    function deploySocket(uint32 chainSlug_) internal returns (SocketContracts memory) {
+        SignatureVerifier verifier = new SignatureVerifier();
+        verifier.initialize(owner);
+
+        Hasher hasher = new Hasher(owner);
+        Socket socket = new Socket(chainSlug_, address(hasher), address(verifier), owner, "test");
+        SocketBatcher socketBatcher = new SocketBatcher(owner, socket);
+        FastSwitchboard switchboard = new FastSwitchboard(chainSlug_, socket, verifier, owner);
+
         FeesPlug feesPlug = new FeesPlug(address(socket), owner);
+        ContractFactoryPlug contractFactoryPlug = new ContractFactoryPlug(address(socket), owner);
 
         vm.startPrank(owner);
         // socket
@@ -89,9 +101,57 @@ contract SetupTest is Test {
     }
 
     function deployOffChainVMCore() internal {
-        signatureVerifier = new SignatureVerifier(owner);
-        addressResolver = new AddressResolver(watcherEOA);
-        watcherPrecompile = new WatcherPrecompile(watcherEOA, address(addressResolver));
+        // Deploy proxy admin
+        proxyAdmin = new ProxyAdmin(owner);
+
+        // Deploy implementations
+        signatureVerifierImpl = new SignatureVerifier();
+        addressResolverImpl = new AddressResolver();
+        watcherPrecompileImpl = new WatcherPrecompile();
+
+        // Deploy and initialize proxies
+        bytes memory signatureVerifierData = abi.encodeWithSelector(
+            SignatureVerifier.initialize.selector,
+            owner
+        );
+
+        vm.expectEmit(true, true, true, false);
+        emit Initialized(1);
+        TransparentUpgradeableProxy signatureVerifierProxy = new TransparentUpgradeableProxy(
+            address(signatureVerifierImpl),
+            address(proxyAdmin),
+            signatureVerifierData
+        );
+
+        bytes memory addressResolverData = abi.encodeWithSelector(
+            AddressResolver.initialize.selector,
+            watcherEOA
+        );
+        vm.expectEmit(true, true, true, false);
+        emit Initialized(1);
+        TransparentUpgradeableProxy addressResolverProxy = new TransparentUpgradeableProxy(
+            address(addressResolverImpl),
+            address(proxyAdmin),
+            addressResolverData
+        );
+
+        bytes memory watcherPrecompileData = abi.encodeWithSelector(
+            WatcherPrecompile.initialize.selector,
+            watcherEOA,
+            address(addressResolverProxy)
+        );
+        vm.expectEmit(true, true, true, false);
+        emit Initialized(1);
+        TransparentUpgradeableProxy watcherPrecompileProxy = new TransparentUpgradeableProxy(
+            address(watcherPrecompileImpl),
+            address(proxyAdmin),
+            watcherPrecompileData
+        );
+
+        // Assign proxy addresses to public variables
+        signatureVerifier = SignatureVerifier(address(signatureVerifierProxy));
+        addressResolver = AddressResolver(address(addressResolverProxy));
+        watcherPrecompile = WatcherPrecompile(address(watcherPrecompileProxy));
 
         hoax(watcherEOA);
         addressResolver.setWatcherPrecompile(address(watcherPrecompile));

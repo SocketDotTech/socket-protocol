@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import "../../interfaces/ISwitchboard.sol";
 import "../../interfaces/ISignatureVerifier.sol";
@@ -38,9 +38,10 @@ abstract contract SwitchboardBase is ISwitchboard, AccessControl {
         ISocket socket_,
         ISignatureVerifier signatureVerifier_,
         address owner_
-    ) AccessControl(owner_) {
+    ) {
         chainSlug = chainSlug_;
         socket__ = socket_;
         signatureVerifier__ = signatureVerifier_;
+        _claimOwner(owner_);
     }
 }

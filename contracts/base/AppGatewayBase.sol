@@ -26,7 +26,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     modifier async() {
         if (feesData.feePoolChain == 0) revert FeesDataNotSet();
         deliveryHelper().clearQueue();
-        addressResolver.clearPromises();
+        addressResolver__.clearPromises();
         _;
         deliveryHelper().batch(feesData, auctionManager, onCompleteData, sbType);
         _markValidPromises();
@@ -42,12 +42,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     }
 
     /// @notice Constructor for AppGatewayBase
-    /// @param _addressResolver The address resolver address
-    constructor(
-        address _addressResolver,
-        address _auctionManager
-    ) AddressResolverUtil(_addressResolver) {
-        auctionManager = _auctionManager;
+    /// @param addressResolver_ The address resolver address
+    constructor(address addressResolver_, address auctionManager_) {
+        _setAddressResolver(addressResolver_);
+        auctionManager = auctionManager_;
         isCallSequential = true;
     }
 
@@ -80,7 +78,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
 
     /// @notice Marks the promises as valid
     function _markValidPromises() internal {
-        address[] memory promises = addressResolver.getPromises();
+        address[] memory promises = addressResolver__.getPromises();
         for (uint256 i = 0; i < promises.length; i++) {
             isValidPromise[promises[i]] = true;
         }

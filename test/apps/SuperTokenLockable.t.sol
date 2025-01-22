@@ -201,7 +201,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             appContracts.superTokenLockableDeployer
         );
         assertEq(
-            address(SuperTokenLockable(onChainSuperToken).limitHook()),
+            address(SuperTokenLockable(onChainSuperToken).limitHook__()),
             address(onChainLimitHook),
             "Limit hook should be correct"
         );

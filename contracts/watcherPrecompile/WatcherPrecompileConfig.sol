@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import "../interfaces/IWatcherPrecompile.sol";
-import {Ownable} from "../utils/Ownable.sol";
+import {OwnableTwoStep} from "../utils/OwnableTwoStep.sol";
 
 /// @title WatcherPrecompileConfig
 /// @notice Configuration contract for the Watcher Precompile system
 /// @dev Handles the mapping between networks, plugs, and app gateways for payload execution
-abstract contract WatcherPrecompileConfig is Ownable, IWatcherPrecompile {
+abstract contract WatcherPrecompileConfig is OwnableTwoStep, IWatcherPrecompile {
     /// @notice Maps network and plug to their configuration
     /// @dev chainSlug => plug => PlugConfig
     mapping(uint32 => mapping(address => PlugConfig)) internal _plugConfigs;
@@ -36,21 +36,21 @@ abstract contract WatcherPrecompileConfig is Ownable, IWatcherPrecompile {
     event SwitchboardSet(uint32 chainSlug, bytes32 sbType, address switchboard);
 
     /// @notice Configures app gateways with their respective plugs and switchboards
-    /// @param configs Array of configurations containing app gateway, network, plug, and switchboard details
+    /// @param configs_ Array of configurations containing app gateway, network, plug, and switchboard details
     /// @dev Only callable by the contract owner
     /// @dev This helps in verifying that plugs are called by respective app gateways
-    function setAppGateways(AppGatewayConfig[] calldata configs) external onlyOwner {
-        for (uint256 i = 0; i < configs.length; i++) {
+    function setAppGateways(AppGatewayConfig[] calldata configs_) external onlyOwner {
+        for (uint256 i = 0; i < configs_.length; i++) {
             // Store the plug configuration for this network and plug
-            _plugConfigs[configs[i].chainSlug][configs[i].plug] = PlugConfig({
-                appGateway: configs[i].appGateway,
-                switchboard: configs[i].switchboard
+            _plugConfigs[configs_[i].chainSlug][configs_[i].plug] = PlugConfig({
+                appGateway: configs_[i].appGateway,
+                switchboard: configs_[i].switchboard
             });
 
             // Create reverse mapping from app gateway to plug for easy lookup
-            appGatewayPlugs[configs[i].appGateway][configs[i].chainSlug] = configs[i].plug;
+            appGatewayPlugs[configs_[i].appGateway][configs_[i].chainSlug] = configs_[i].plug;
 
-            emit PlugAdded(configs[i].appGateway, configs[i].chainSlug, configs[i].plug);
+            emit PlugAdded(configs_[i].appGateway, configs_[i].chainSlug, configs_[i].plug);
         }
     }
 
@@ -66,6 +66,7 @@ abstract contract WatcherPrecompileConfig is Ownable, IWatcherPrecompile {
         emit SwitchboardSet(chainSlug_, sbType_, switchboard_);
     }
 
+    // @dev app gateway can set the valid plugs for each chain slug
     function setIsValidInboxCaller(uint32 chainSlug_, address plug_, bool isValid_) external {
         isValidInboxCaller[msg.sender][chainSlug_][plug_] = isValid_;
     }
@@ -84,4 +85,6 @@ abstract contract WatcherPrecompileConfig is Ownable, IWatcherPrecompile {
             _plugConfigs[chainSlug_][plug_].switchboard
         );
     }
+
+    uint256[49] __gap_config;
 }

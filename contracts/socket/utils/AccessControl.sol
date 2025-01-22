@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
-import "../../utils/Ownable.sol";
+import "../../utils/OwnableTwoStep.sol";
 
 /**
  * @title AccessControl
@@ -9,7 +9,7 @@ import "../../utils/Ownable.sol";
  * Each role can have one or more addresses associated with it, which are granted
  * permission to execute functions with the onlyRole modifier.
  */
-abstract contract AccessControl is Ownable {
+abstract contract AccessControl is OwnableTwoStep {
     /**
      * @dev A mapping of roles to a mapping of addresses to boolean values indicating whether or not they have the role.
      */
@@ -29,11 +29,6 @@ abstract contract AccessControl is Ownable {
      * @dev Error message thrown when an address does not have permission to execute a function with onlyRole modifier.
      */
     error NoPermit(bytes32 role);
-
-    /**
-     * @dev Constructor that sets the owner of the contract.
-     */
-    constructor(address owner_) Ownable(owner_) {}
 
     /**
      * @dev Modifier that restricts access to addresses having roles

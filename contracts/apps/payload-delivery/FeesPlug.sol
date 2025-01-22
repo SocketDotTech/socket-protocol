@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import "solmate/utils/SafeTransferLib.sol";
 import "../../base/PlugBase.sol";
-import {Ownable} from "../../utils/Ownable.sol";
+import {OwnableTwoStep} from "../../utils/OwnableTwoStep.sol";
 import {ETH_ADDRESS} from "../../common/Constants.sol";
 
 /// @title FeesManager
 /// @notice Abstract contract for managing fees
-contract FeesPlug is PlugBase, Ownable {
+contract FeesPlug is PlugBase, OwnableTwoStep {
     mapping(address => mapping(address => uint256)) public balanceOf;
     mapping(bytes32 => bool) public feesRedeemed;
 
@@ -21,65 +21,67 @@ contract FeesPlug is PlugBase, Ownable {
     /// @notice Error thrown when deposit amount does not match msg.value
     error InvalidDepositAmount();
 
-    constructor(address socket_, address owner_) Ownable(owner_) PlugBase(socket_) {}
+    constructor(address socket_, address owner_) PlugBase(socket_) {
+        _claimOwner(owner_);
+    }
 
     function distributeFee(
-        address appGateway,
-        address feeToken,
-        uint256 fee,
-        address transmitter,
-        bytes32 feesId
+        address appGateway_,
+        address feeToken_,
+        uint256 fee_,
+        address transmitter_,
+        bytes32 feesId_
     ) external onlySocket returns (bytes memory) {
-        if (feesRedeemed[feesId]) revert FeesAlreadyPaid();
-        feesRedeemed[feesId] = true;
+        if (feesRedeemed[feesId_]) revert FeesAlreadyPaid();
+        feesRedeemed[feesId_] = true;
 
-        if (balanceOf[appGateway][feeToken] < fee) {
+        if (balanceOf[appGateway_][feeToken_] < fee_) {
             revert InsufficientBalanceForFees();
         }
 
-        balanceOf[appGateway][feeToken] -= fee;
+        balanceOf[appGateway_][feeToken_] -= fee_;
 
-        _transferTokens(feeToken, fee, transmitter);
+        _transferTokens(feeToken_, fee_, transmitter_);
         return bytes("");
     }
 
     function withdrawFees(
-        address appGateway,
-        address token,
-        uint256 amount,
-        address receiver
+        address appGateway_,
+        address token_,
+        uint256 amount_,
+        address receiver_
     ) external onlySocket returns (bytes memory) {
-        if (balanceOf[appGateway][token] < amount) {
+        if (balanceOf[appGateway_][token_] < amount_) {
             revert InsufficientBalanceForWithdrawl();
         }
 
-        balanceOf[appGateway][token] -= amount;
-        _transferTokens(token, amount, receiver);
+        balanceOf[appGateway_][token_] -= amount_;
+        _transferTokens(token_, amount_, receiver_);
         return bytes("");
     }
 
     /// @notice Deposits funds
-    /// @param token The token address
-    /// @param amount The amount
+    /// @param token_ The token address
+    /// @param amount_ The amount
     /// @param appGateway_ The app gateway address
-    function deposit(address token, uint256 amount, address appGateway_) external payable {
-        if (token == ETH_ADDRESS) {
-            if (msg.value != amount) revert InvalidDepositAmount();
+    function deposit(address token_, uint256 amount_, address appGateway_) external payable {
+        if (token_ == ETH_ADDRESS) {
+            if (msg.value != amount_) revert InvalidDepositAmount();
         } else {
-            SafeTransferLib.safeTransferFrom(ERC20(token), msg.sender, address(this), amount);
+            SafeTransferLib.safeTransferFrom(ERC20(token_), msg.sender, address(this), amount_);
         }
-        balanceOf[appGateway_][token] += amount;
+        balanceOf[appGateway_][token_] += amount_;
     }
 
     /// @notice Transfers tokens
-    /// @param token The token address
-    /// @param amount The amount
-    /// @param receiver The receiver address
-    function _transferTokens(address token, uint256 amount, address receiver) internal {
-        if (token == ETH_ADDRESS) {
-            SafeTransferLib.safeTransferETH(receiver, amount);
+    /// @param token_ The token address
+    /// @param amount_ The amount
+    /// @param receiver_ The receiver address
+    function _transferTokens(address token_, uint256 amount_, address receiver_) internal {
+        if (token_ == ETH_ADDRESS) {
+            SafeTransferLib.safeTransferETH(receiver_, amount_);
         } else {
-            SafeTransferLib.safeTransfer(ERC20(token), receiver, amount);
+            SafeTransferLib.safeTransfer(ERC20(token_), receiver_, amount_);
         }
     }
 

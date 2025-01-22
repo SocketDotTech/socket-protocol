@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import "./QueueAsync.sol";
 
@@ -52,14 +52,14 @@ abstract contract BatchAsync is QueueAsync {
         bytes memory onCompleteData_,
         bytes32 sbType_
     ) external returns (bytes32) {
-        PayloadDetails[] memory payloadDetailsArray = createPayloadDetailsArray(sbType_);
+        PayloadDetails[] memory payloadDetailsArray = _createPayloadDetailsArray(sbType_);
 
         if (payloadDetailsArray.length == 0) {
             return bytes32(0);
         }
 
         // Default flow for other cases (including mixed read/write)
-        return deliverPayload(payloadDetailsArray, feesData_, auctionManager_, onCompleteData_);
+        return _deliverPayload(payloadDetailsArray, feesData_, auctionManager_, onCompleteData_);
     }
 
     /// @notice Callback function for handling promises
@@ -72,7 +72,7 @@ abstract contract BatchAsync is QueueAsync {
     /// @param feesData_ The fees data
     /// @param auctionManager_ The auction manager address
     /// @return asyncId The ID of the batch
-    function deliverPayload(
+    function _deliverPayload(
         PayloadDetails[] memory payloadDetails_,
         FeesData memory feesData_,
         address auctionManager_,
@@ -82,16 +82,16 @@ abstract contract BatchAsync is QueueAsync {
         asyncCounter++;
 
         // Handle initial read operations first
-        uint256 readEndIndex = processReadOperations(payloadDetails_, asyncId);
+        uint256 readEndIndex = _processReadOperations(payloadDetails_, asyncId);
 
         // If only reads, return early
         if (readEndIndex == payloadDetails_.length) {
             return asyncId;
         }
 
-        address appGateway = processRemainingPayloads(payloadDetails_, readEndIndex, asyncId);
+        address appGateway = _processRemainingPayloads(payloadDetails_, readEndIndex, asyncId);
 
-        initializeBatch(
+        _initializeBatch(
             asyncId,
             appGateway,
             feesData_,
@@ -104,7 +104,7 @@ abstract contract BatchAsync is QueueAsync {
         return asyncId;
     }
 
-    function processReadOperations(
+    function _processReadOperations(
         PayloadDetails[] memory payloadDetails_,
         bytes32 asyncId
     ) internal returns (uint256) {
@@ -118,7 +118,7 @@ abstract contract BatchAsync is QueueAsync {
 
         if (readEndIndex > 0) {
             address[] memory lastBatchPromises = new address[](readEndIndex);
-            address batchPromise = IAddressResolver(addressResolver).deployAsyncPromiseContract(
+            address batchPromise = IAddressResolver(addressResolver__).deployAsyncPromiseContract(
                 address(this)
             );
             isValidPromise[batchPromise] = true;
@@ -127,7 +127,7 @@ abstract contract BatchAsync is QueueAsync {
                 payloadDetails_[i].next[1] = batchPromise;
                 lastBatchPromises[i] = payloadDetails_[i].next[0];
 
-                bytes32 payloadId = watcherPrecompile().query(
+                bytes32 payloadId = watcherPrecompile__().query(
                     payloadDetails_[i].chainSlug,
                     payloadDetails_[i].target,
                     payloadDetails_[i].appGateway,
@@ -144,7 +144,7 @@ abstract contract BatchAsync is QueueAsync {
         return readEndIndex;
     }
 
-    function processRemainingPayloads(
+    function _processRemainingPayloads(
         PayloadDetails[] memory payloadDetails_,
         uint256 readEndIndex,
         bytes32 asyncId
@@ -170,7 +170,7 @@ abstract contract BatchAsync is QueueAsync {
         return appGateway;
     }
 
-    function initializeBatch(
+    function _initializeBatch(
         bytes32 asyncId,
         address appGateway,
         FeesData memory feesData_,
@@ -192,7 +192,7 @@ abstract contract BatchAsync is QueueAsync {
         });
 
         uint256 delayInSeconds = IAuctionManager(auctionManager_).startAuction(asyncId);
-        watcherPrecompile().setTimeout(
+        watcherPrecompile__().setTimeout(
             appGateway,
             abi.encodeWithSelector(this.endTimeout.selector, asyncId),
             delayInSeconds
@@ -220,7 +220,7 @@ abstract contract BatchAsync is QueueAsync {
     /// @param chainSlug_ The chain identifier
     /// @return address The address of the payload delivery plug
     function getPlugAddress(address appGateway_, uint32 chainSlug_) public view returns (address) {
-        return watcherPrecompile().appGatewayPlugs(appGateway_, chainSlug_);
+        return watcherPrecompile__().appGatewayPlugs(appGateway_, chainSlug_);
     }
 
     /// @notice Gets the current async ID
@@ -262,6 +262,6 @@ abstract contract BatchAsync is QueueAsync {
             amount_,
             receiver_
         );
-        deliverPayload(payloadDetailsArray, feesData_, auctionManager_, new bytes(0));
+        _deliverPayload(payloadDetailsArray, feesData_, auctionManager_, new bytes(0));
     }
 }

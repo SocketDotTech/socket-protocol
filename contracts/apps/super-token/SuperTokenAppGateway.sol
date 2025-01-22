@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import "../../base/AppGatewayBase.sol";
 import "../../interfaces/ISuperToken.sol";
-import "../../utils/Ownable.sol";
+import "../../utils/OwnableTwoStep.sol";
 
-contract SuperTokenAppGateway is AppGatewayBase, Ownable {
+contract SuperTokenAppGateway is AppGatewayBase, OwnableTwoStep {
     event Transferred(bytes32 asyncId);
 
     struct TransferOrder {
@@ -17,21 +17,22 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
     }
 
     constructor(
-        address _addressResolver,
+        address addressResolver_,
         address deployerContract_,
         FeesData memory feesData_,
-        address _auctionManager
-    ) AppGatewayBase(_addressResolver, _auctionManager) Ownable(msg.sender) {
+        address auctionManager_
+    ) AppGatewayBase(addressResolver_, auctionManager_) {
         // called to connect the deployer contract with this app
-        addressResolver.setContractsToGateways(deployerContract_);
+        addressResolver__.setContractsToGateways(deployerContract_);
 
         // sets the fees data like max fees, chain and token for all transfers
         // they can be updated for each transfer as well
         _setFeesData(feesData_);
+        _claimOwner(msg.sender);
     }
 
-    function transfer(bytes memory _order) external async {
-        TransferOrder memory order = abi.decode(_order, (TransferOrder));
+    function transfer(bytes memory order_) external async {
+        TransferOrder memory order = abi.decode(order_, (TransferOrder));
         ISuperToken(order.srcToken).burn(order.user, order.srcAmount);
         ISuperToken(order.dstToken).mint(order.user, order.srcAmount);
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts (last updated v5.0.0) (utils/cryptography/ECDSA.sol)
 
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 /**
  * @dev Elliptic Curve Digital Signature Algorithm (ECDSA) operations.
@@ -53,11 +53,11 @@ library ECDSA {
      * - with https://web3js.readthedocs.io/en/v1.3.4/web3-eth-accounts.html#sign[Web3.js]
      * - with https://docs.ethers.io/v5/api/signer/#Signer-signMessage[ethers]
      */
-    function tryRecover(
-        bytes32 hash,
-        bytes memory signature
+    function _tryRecover(
+        bytes32 hash_,
+        bytes memory signature_
     ) internal pure returns (address, RecoverError, bytes32) {
-        if (signature.length == 65) {
+        if (signature_.length == 65) {
             bytes32 r;
             bytes32 s;
             uint8 v;
@@ -65,13 +65,13 @@ library ECDSA {
             // currently is to use assembly.
             /// @solidity memory-safe-assembly
             assembly {
-                r := mload(add(signature, 0x20))
-                s := mload(add(signature, 0x40))
-                v := byte(0, mload(add(signature, 0x60)))
+                r := mload(add(signature_, 0x20))
+                s := mload(add(signature_, 0x40))
+                v := byte(0, mload(add(signature_, 0x60)))
             }
-            return tryRecover(hash, v, r, s);
+            return _tryRecover(hash_, v, r, s);
         } else {
-            return (address(0), RecoverError.InvalidSignatureLength, bytes32(signature.length));
+            return (address(0), RecoverError.InvalidSignatureLength, bytes32(signature_.length));
         }
     }
 
@@ -89,8 +89,8 @@ library ECDSA {
      * this is by receiving a hash of the original message (which may otherwise
      * be too long), and then calling {MessageHashUtils-toEthSignedMessageHash} on it.
      */
-    function recover(bytes32 hash, bytes memory signature) internal pure returns (address) {
-        (address recovered, RecoverError error, bytes32 errorArg) = tryRecover(hash, signature);
+    function _recover(bytes32 hash_, bytes memory signature_) internal pure returns (address) {
+        (address recovered, RecoverError error, bytes32 errorArg) = _tryRecover(hash_, signature_);
         _throwError(error, errorArg);
         return recovered;
     }
@@ -100,25 +100,25 @@ library ECDSA {
      *
      * See https://eips.ethereum.org/EIPS/eip-2098[EIP-2098 short signatures]
      */
-    function tryRecover(
-        bytes32 hash,
-        bytes32 r,
-        bytes32 vs
+    function _tryRecover(
+        bytes32 hash_,
+        bytes32 r_,
+        bytes32 vs_
     ) internal pure returns (address, RecoverError, bytes32) {
         unchecked {
-            bytes32 s = vs &
+            bytes32 s_ = vs_ &
                 bytes32(0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
             // We do not check for an overflow here since the shift operation results in 0 or 1.
-            uint8 v = uint8((uint256(vs) >> 255) + 27);
-            return tryRecover(hash, v, r, s);
+            uint8 v_ = uint8((uint256(vs_) >> 255) + 27);
+            return _tryRecover(hash_, v_, r_, s_);
         }
     }
 
     /**
      * @dev Overload of {ECDSA-recover} that receives the `r and `vs` short-signature fields separately.
      */
-    function recover(bytes32 hash, bytes32 r, bytes32 vs) internal pure returns (address) {
-        (address recovered, RecoverError error, bytes32 errorArg) = tryRecover(hash, r, vs);
+    function _recover(bytes32 hash_, bytes32 r_, bytes32 vs_) internal pure returns (address) {
+        (address recovered, RecoverError error, bytes32 errorArg) = _tryRecover(hash_, r_, vs_);
         _throwError(error, errorArg);
         return recovered;
     }
@@ -127,11 +127,11 @@ library ECDSA {
      * @dev Overload of {ECDSA-tryRecover} that receives the `v`,
      * `r` and `s` signature fields separately.
      */
-    function tryRecover(
-        bytes32 hash,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+    function _tryRecover(
+        bytes32 hash_,
+        uint8 v_,
+        bytes32 r_,
+        bytes32 s_
     ) internal pure returns (address, RecoverError, bytes32) {
         // EIP-2 still allows signature malleability for ecrecover(). Remove this possibility and make the signature
         // unique. Appendix F in the Ethereum Yellow paper (https://ethereum.github.io/yellowpaper/paper.pdf), defines
@@ -142,41 +142,51 @@ library ECDSA {
         // with 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141 - s1 and flip v from 27 to 28 or
         // vice versa. If your library also generates signatures with 0/1 for v instead 27/28, add 27 to v to accept
         // these malleable signatures as well.
-        if (uint256(s) > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0) {
-            return (address(0), RecoverError.InvalidSignatureS, s);
+        if (uint256(s_) > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0) {
+            return (address(0), RecoverError.InvalidSignatureS, s_);
         }
 
         // If the signature is valid (and not malleable), return the signer address
-        address signer = ecrecover(hash, v, r, s);
-        if (signer == address(0)) {
+        address signer_ = ecrecover(hash_, v_, r_, s_);
+        if (signer_ == address(0)) {
             return (address(0), RecoverError.InvalidSignature, bytes32(0));
         }
 
-        return (signer, RecoverError.NoError, bytes32(0));
+        return (signer_, RecoverError.NoError, bytes32(0));
     }
 
     /**
      * @dev Overload of {ECDSA-recover} that receives the `v`,
      * `r` and `s` signature fields separately.
      */
-    function recover(bytes32 hash, uint8 v, bytes32 r, bytes32 s) internal pure returns (address) {
-        (address recovered, RecoverError error, bytes32 errorArg) = tryRecover(hash, v, r, s);
-        _throwError(error, errorArg);
-        return recovered;
+    function _recover(
+        bytes32 hash_,
+        uint8 v_,
+        bytes32 r_,
+        bytes32 s_
+    ) internal pure returns (address) {
+        (address recovered_, RecoverError error_, bytes32 errorArg_) = _tryRecover(
+            hash_,
+            v_,
+            r_,
+            s_
+        );
+        _throwError(error_, errorArg_);
+        return recovered_;
     }
 
     /**
      * @dev Optionally reverts with the corresponding custom error according to the `error` argument provided.
      */
-    function _throwError(RecoverError error, bytes32 errorArg) private pure {
-        if (error == RecoverError.NoError) {
+    function _throwError(RecoverError error_, bytes32 errorArg_) private pure {
+        if (error_ == RecoverError.NoError) {
             return; // no error: do nothing
-        } else if (error == RecoverError.InvalidSignature) {
+        } else if (error_ == RecoverError.InvalidSignature) {
             revert ECDSAInvalidSignature();
-        } else if (error == RecoverError.InvalidSignatureLength) {
-            revert ECDSAInvalidSignatureLength(uint256(errorArg));
-        } else if (error == RecoverError.InvalidSignatureS) {
-            revert ECDSAInvalidSignatureS(errorArg);
+        } else if (error_ == RecoverError.InvalidSignatureLength) {
+            revert ECDSAInvalidSignatureLength(uint256(errorArg_));
+        } else if (error_ == RecoverError.InvalidSignatureS) {
+            revert ECDSAInvalidSignatureS(errorArg_);
         }
     }
 }

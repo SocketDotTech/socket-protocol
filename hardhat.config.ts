@@ -1,5 +1,5 @@
 import "@nomiclabs/hardhat-ethers";
-import "@nomiclabs/hardhat-etherscan";
+import "@nomicfoundation/hardhat-verify";
 import "@typechain/hardhat";
 import "hardhat-preprocessor";
 import "hardhat-deploy";
@@ -140,6 +140,11 @@ const config: HardhatUserConfig = {
       },
     ],
   },
+  sourcify: {
+    // Disabled by default
+    // Doesn't need an API key
+    enabled: true,
+  },
   // This fully resolves paths for imports in the ./lib directory for Hardhat
   preprocess: {
     eachLine: (hre) => ({
@@ -156,7 +161,7 @@ const config: HardhatUserConfig = {
     }),
   },
   solidity: {
-    version: "0.8.13",
+    version: "0.8.22",
     settings: {
       optimizer: {
         enabled: true,

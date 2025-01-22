@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity ^0.8.21;
 
 import {Gauge} from "../utils/Gauge.sol";
 import {LimitParams, UpdateLimitParams} from "../common/Structs.sol";
@@ -7,8 +7,7 @@ import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 
 abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
     // appGateway => receivingLimitParams
-    mapping(address => mapping(bytes32 => LimitParams)) _limitParams;
-    error ActionNotSupported(address appGateway_, bytes32 limitType_);
+    mapping(address => mapping(bytes32 => LimitParams)) internal _limitParams;
 
     ////////////////////////////////////////////////////////
     ////////////////////// EVENTS //////////////////////////
@@ -16,25 +15,7 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
 
     // Emitted when limit parameters are updated
     event LimitParamsUpdated(UpdateLimitParams[] updates);
-
-    constructor(address addressResolver_) AddressResolverUtil(addressResolver_) {}
-
-    /**
-     * @notice This function is used to set bridge limits.
-     * @dev It can only be updated by the owner.
-     * @param updates An array of structs containing update parameters.
-     */
-    function _updateLimitParams(UpdateLimitParams[] calldata updates) internal {
-        for (uint256 i = 0; i < updates.length; i++) {
-            _consumePartLimit(0, _limitParams[updates[i].appGateway][updates[i].limitType]); // To keep the current limit in sync
-            _limitParams[updates[i].appGateway][updates[i].limitType].maxLimit = updates[i]
-                .maxLimit;
-            _limitParams[updates[i].appGateway][updates[i].limitType].ratePerSecond = updates[i]
-                .ratePerSecond;
-        }
-
-        emit LimitParamsUpdated(updates);
-    }
+    error ActionNotSupported(address appGateway_, bytes32 limitType_);
 
     function getCurrentLimit(
         bytes32 limitType_,
@@ -48,6 +29,23 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
         bytes32 limitType_
     ) external view returns (LimitParams memory) {
         return _limitParams[appGateway_][limitType_];
+    }
+
+    /**
+     * @notice This function is used to set bridge limits.
+     * @dev It can only be updated by the owner.
+     * @param updates_ An array of structs containing update parameters.
+     */
+    function _updateLimitParams(UpdateLimitParams[] calldata updates_) internal {
+        for (uint256 i = 0; i < updates_.length; i++) {
+            _consumePartLimit(0, _limitParams[updates_[i].appGateway][updates_[i].limitType]); // To keep the current limit in sync
+            _limitParams[updates_[i].appGateway][updates_[i].limitType].maxLimit = updates_[i]
+                .maxLimit;
+            _limitParams[updates_[i].appGateway][updates_[i].limitType].ratePerSecond = updates_[i]
+                .ratePerSecond;
+        }
+
+        emit LimitParamsUpdated(updates_);
     }
 
     /**
@@ -68,11 +66,13 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
     }
 
     function _getAppGateway(address appGateway_) internal view returns (address appGateway) {
-        address resolverAddress = msg.sender == addressResolver.deliveryHelper() ||
-            msg.sender == addressResolver.feesManager()
+        address resolverAddress = msg.sender == addressResolver__.deliveryHelper() ||
+            msg.sender == addressResolver__.feesManager()
             ? appGateway_
             : msg.sender;
 
         appGateway = _getCoreAppGateway(resolverAddress);
     }
+
+    uint256[49] __gap;
 }

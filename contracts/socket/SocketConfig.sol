@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import "../interfaces/ISocket.sol";
 import "../interfaces/ISwitchboard.sol";
@@ -23,20 +23,19 @@ abstract contract SocketConfig is ISocket, AccessControl {
         ISwitchboard switchboard__;
     }
 
+    // Error triggered when a switchboard already exists
     mapping(address => bool) public isValidSwitchboard;
 
     // plug => (appGateway, switchboard__)
     mapping(address => PlugConfig) internal _plugConfigs;
 
-    // Event triggered when a new switchboard is added
-    event SwitchboardAdded(address switchboard);
-
-    // Error triggered when a switchboard already exists
     error SwitchboardExists();
     // Error triggered when a connection is invalid
     error InvalidConnection();
-
     error InvalidSwitchboard();
+
+    // Event triggered when a new switchboard is added
+    event SwitchboardAdded(address switchboard);
 
     function registerSwitchboard() external {
         if (isValidSwitchboard[msg.sender]) revert SwitchboardExists();

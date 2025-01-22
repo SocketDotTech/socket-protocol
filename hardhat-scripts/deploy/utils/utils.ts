@@ -39,6 +39,7 @@ export interface DeployParams {
 }
 
 export const getOrDeploy = async (
+  keyName: string,
   contractName: string,
   path: string,
   args: any[],
@@ -48,7 +49,7 @@ export const getOrDeploy = async (
     throw new Error("No addresses found");
 
   let contract: Contract;
-  if (!deployUtils.addresses[contractName]) {
+  if (!deployUtils.addresses[keyName]) {
     contract = await deployContractWithArgs(
       path + `:${contractName}`,
       args,
@@ -65,10 +66,7 @@ export const getOrDeploy = async (
       deployUtils.mode
     );
   } else {
-    contract = await getInstance(
-      contractName,
-      deployUtils.addresses[contractName]
-    );
+    contract = await getInstance(contractName, deployUtils.addresses[keyName]);
     console.log(
       `${contractName} found on ${deployUtils.currentChainSlug} for ${deployUtils.mode} at address ${contract.address}`
     );

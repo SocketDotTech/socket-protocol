@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
-import "./ERC20.sol";
-import {Ownable} from "../../utils/Ownable.sol";
+import "solmate/tokens/ERC20.sol";
+import {OwnableTwoStep} from "../../utils/OwnableTwoStep.sol";
 import "../../base/PlugBase.sol";
 
 /**
  * @title SuperToken
  * @notice An ERC20 contract which enables bridging a token to its sibling chains.
  */
-contract SuperToken is ERC20, Ownable(msg.sender), PlugBase(msg.sender) {
+contract SuperToken is ERC20, OwnableTwoStep, PlugBase {
     mapping(address => uint256) public lockedTokens;
 
     constructor(
@@ -18,8 +18,9 @@ contract SuperToken is ERC20, Ownable(msg.sender), PlugBase(msg.sender) {
         uint8 decimals_,
         address initialSupplyHolder_,
         uint256 initialSupply_
-    ) ERC20(name_, symbol_, decimals_) {
+    ) ERC20(name_, symbol_, decimals_) PlugBase(msg.sender) {
         _mint(initialSupplyHolder_, initialSupply_);
+        _claimOwner(msg.sender);
     }
 
     function mint(address receiver_, uint256 amount_) external onlySocket {

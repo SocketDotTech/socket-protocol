@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Ownable} from "../../utils/Ownable.sol";
+import {OwnableTwoStep} from "../../utils/OwnableTwoStep.sol";
 import "../../base/PlugBase.sol";
 
-contract LimitHook is Ownable, PlugBase {
+contract LimitHook is OwnableTwoStep, PlugBase {
     // Define any state variables or functions for the LimitHook contract here
     uint256 public burnLimit;
     uint256 public mintLimit;
@@ -12,14 +12,15 @@ contract LimitHook is Ownable, PlugBase {
     error BurnLimitExceeded();
     error MintLimitExceeded();
 
-    constructor(uint256 _burnLimit, uint256 _mintLimit) Ownable(msg.sender) PlugBase(msg.sender) {
-        burnLimit = _burnLimit;
-        mintLimit = _mintLimit;
+    constructor(uint256 _burnLimit_, uint256 _mintLimit_) PlugBase(msg.sender) {
+        burnLimit = _burnLimit_;
+        mintLimit = _mintLimit_;
+        _claimOwner(msg.sender);
     }
 
-    function setLimits(uint256 _burnLimit, uint256 _mintLimit) external onlyOwner {
-        burnLimit = _burnLimit;
-        mintLimit = _mintLimit;
+    function setLimits(uint256 _burnLimit_, uint256 _mintLimit_) external onlyOwner {
+        burnLimit = _burnLimit_;
+        mintLimit = _mintLimit_;
     }
 
     function beforeBurn(uint256 amount_) external view {

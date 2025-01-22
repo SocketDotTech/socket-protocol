@@ -14,7 +14,8 @@ export enum OffChainVMCoreContracts {
   AuctionManager = "AuctionManager",
   FeesManager = "FeesManager",
   DeliveryHelper = "DeliveryHelper",
-  AddressAbstractor = "AddressAbstractor",
+  Forwarder = "Forwarder",
+  AsyncPromise = "AsyncPromise",
   AddressResolver = "AddressResolver",
 }
 

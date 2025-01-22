@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import "../../interfaces/IHasher.sol";
 import "../../interfaces/ISocket.sol";
@@ -19,7 +19,8 @@ contract Hasher is IHasher, AccessControl {
      * @notice initializes and grants RESCUE_ROLE to owner.
      * @param owner_ The address of the owner of the contract.
      */
-    constructor(address owner_) AccessControl(owner_) {
+    constructor(address owner_) {
+        _claimOwner(owner_);
         _grantRole(RESCUE_ROLE, owner_);
     }
 
@@ -56,6 +57,6 @@ contract Hasher is IHasher, AccessControl {
         address rescueTo_,
         uint256 amount_
     ) external onlyRole(RESCUE_ROLE) {
-        RescueFundsLib.rescueFunds(token_, rescueTo_, amount_);
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 interface ISuperToken {
     function burn(address user_, uint256 amount_) external;
@@ -15,5 +15,5 @@ interface ISuperToken {
 
     function setController(address controller_) external;
 
-    function balanceOf(address account) external;
+    function balanceOf(address account_) external;
 }

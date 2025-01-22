@@ -1,27 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 /**
- * @title Ownable
- * @dev The Ownable contract provides a simple way to manage ownership of a contract
+ * @title OwnableTwoStep
+ * @dev The OwnableTwoStep contract provides a simple way to manage ownership of a contract
  * and allows for ownership to be transferred to a nominated address.
  */
-abstract contract Ownable {
+abstract contract OwnableTwoStep {
     address private _owner;
     address private _nominee;
-
-    event OwnerNominated(address indexed nominee);
-    event OwnerClaimed(address indexed claimer);
 
     error OnlyOwner();
     error OnlyNominee();
 
-    /**
-     * @dev Sets the contract's owner to the address that is passed to the constructor.
-     */
-    constructor(address owner_) {
-        _claimOwner(owner_);
-    }
+    event OwnerNominated(address indexed nominee);
+    event OwnerClaimed(address indexed claimer);
 
     /**
      * @dev Modifier that restricts access to only the contract's owner.

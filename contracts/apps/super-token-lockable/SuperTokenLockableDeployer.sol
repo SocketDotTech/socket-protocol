@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import "./SuperTokenLockable.sol";
 import "./LimitHook.sol";
 import "../../base/AppDeployerBase.sol";
-import "../../utils/Ownable.sol";
+import "../../utils/OwnableTwoStep.sol";
 
-contract SuperTokenLockableDeployer is AppDeployerBase, Ownable {
+contract SuperTokenLockableDeployer is AppDeployerBase, OwnableTwoStep {
     bytes32 public superTokenLockable = _createContractId("superTokenLockable");
     bytes32 public limitHook = _createContractId("limitHook");
 
@@ -27,7 +27,7 @@ contract SuperTokenLockableDeployer is AppDeployerBase, Ownable {
         bytes32 sbType_,
         ConstructorParams memory params,
         FeesData memory feesData_
-    ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) Ownable(owner_) {
+    ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) {
         creationCodeWithArgs[superTokenLockable] = abi.encodePacked(
             type(SuperTokenLockable).creationCode,
             abi.encode(
@@ -45,18 +45,19 @@ contract SuperTokenLockableDeployer is AppDeployerBase, Ownable {
         );
 
         _setFeesData(feesData_);
+        _claimOwner(owner_);
     }
 
-    function deployContracts(uint32 chainSlug) external async {
-        _deploy(superTokenLockable, chainSlug);
-        _deploy(limitHook, chainSlug);
+    function deployContracts(uint32 chainSlug_) external async {
+        _deploy(superTokenLockable, chainSlug_);
+        _deploy(limitHook, chainSlug_);
     }
 
     // don't need to call this directly, will be called automatically after all contracts are deployed.
     // check AppDeployerBase.allPayloadsExecuted and AppGateway.queueAndDeploy
-    function initialize(uint32 chainSlug) public override async {
-        address limitHookContract = getOnChainAddress(limitHook, chainSlug);
-        SuperTokenLockable(forwarderAddresses[superTokenLockable][chainSlug]).setLimitHook(
+    function initialize(uint32 chainSlug_) public override async {
+        address limitHookContract = getOnChainAddress(limitHook, chainSlug_);
+        SuperTokenLockable(forwarderAddresses[superTokenLockable][chainSlug_]).setLimitHook(
             limitHookContract
         );
     }
