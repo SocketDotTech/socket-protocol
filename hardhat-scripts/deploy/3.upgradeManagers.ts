@@ -36,7 +36,10 @@ export const main = async () => {
       );
 
       const socketContract = (
-        await getInstance("Socket", chainAddresses[CORE_CONTRACTS.Socket])
+        await getInstance(
+          "contracts/socket/Socket.sol:Socket",
+          chainAddresses[CORE_CONTRACTS.Socket]
+        )
       ).connect(signer);
 
       await registerSb(
@@ -69,7 +72,7 @@ async function setSwitchboard(sbAddress, chain, addresses) {
   const watcherVMaddr = addresses[OFF_CHAIN_VM_CHAIN_ID]!;
   const watcherPrecompile = (
     await getInstance(
-      "WatcherPrecompile",
+      "contracts/watcherPrecompile/WatcherPrecompile.sol:WatcherPrecompile",
       watcherVMaddr[OffChainVMCoreContracts.WatcherPrecompile]
     )
   ).connect(signer);
@@ -92,7 +95,10 @@ const registerSb = async (sbAddress, signer, socket) => {
   try {
     // used fast switchboard here as all have same function signature
     const switchboard = (
-      await getInstance("FastSwitchboard", sbAddress)
+      await getInstance(
+        "contracts/socket/switchboard/FastSwitchboard.sol:FastSwitchboard",
+        sbAddress
+      )
     ).connect(signer);
 
     // send overrides while reading capacitor to avoid errors on mantle chain
