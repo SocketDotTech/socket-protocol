@@ -9,7 +9,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "socket protocol",
   "scripts": {
     "build": "hardhat export-abi && tsc --project lib.tsconfig.json",
