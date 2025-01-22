@@ -49,6 +49,8 @@ contract DeliveryHelperTest is SetupTest {
             address(addressResolver),
             owner
         );
+        vm.expectEmit(true, true, true, false);
+        emit Initialized(1);
         TransparentUpgradeableProxy feesManagerProxy = new TransparentUpgradeableProxy(
             address(feesManagerImpl),
             address(proxyAdmin),
@@ -61,6 +63,8 @@ contract DeliveryHelperTest is SetupTest {
             address(feesManagerProxy),
             owner
         );
+        vm.expectEmit(true, true, true, false);
+        emit Initialized(1);
         TransparentUpgradeableProxy deliveryHelperProxy = new TransparentUpgradeableProxy(
             address(deliveryHelperImpl),
             address(proxyAdmin),
@@ -75,6 +79,8 @@ contract DeliveryHelperTest is SetupTest {
             signatureVerifier,
             owner
         );
+        vm.expectEmit(true, true, true, false);
+        emit Initialized(1);
         TransparentUpgradeableProxy auctionManagerProxy = new TransparentUpgradeableProxy(
             address(auctionManagerImpl),
             address(proxyAdmin),

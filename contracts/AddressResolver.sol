@@ -21,6 +21,9 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
     UpgradeableBeacon public forwarderBeacon;
     UpgradeableBeacon public asyncPromiseBeacon;
 
+    address public forwarderImplementation;
+    address public asyncPromiseImplementation;
+
     // Array to store promises
     address[] internal _promises;
 
@@ -47,19 +50,18 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
 
     /// @notice Initializer to replace constructor for upgradeable contracts
     /// @param owner_ The address of the contract owner
-    function initialize(
-        address owner_,
-        address forwarderImplementation_,
-        address asyncPromiseImplementation_
-    ) public initializer {
+    function initialize(address owner_) public initializer {
         _claimOwner(owner_);
 
-        // Deploy beacons with initial implementations
-        forwarderBeacon = new UpgradeableBeacon(forwarderImplementation_, address(this));
-        asyncPromiseBeacon = new UpgradeableBeacon(asyncPromiseImplementation_, address(this));
+        forwarderImplementation = address(new Forwarder());
+        asyncPromiseImplementation = address(new AsyncPromise());
 
-        emit ImplementationUpdated("Forwarder", forwarderImplementation_);
-        emit ImplementationUpdated("AsyncPromise", asyncPromiseImplementation_);
+        // Deploy beacons with initial implementations
+        forwarderBeacon = new UpgradeableBeacon(forwarderImplementation, address(this));
+        asyncPromiseBeacon = new UpgradeableBeacon(asyncPromiseImplementation, address(this));
+
+        emit ImplementationUpdated("Forwarder", forwarderImplementation);
+        emit ImplementationUpdated("AsyncPromise", asyncPromiseImplementation);
     }
 
     /// @notice Gets or deploys a Forwarder proxy contract
