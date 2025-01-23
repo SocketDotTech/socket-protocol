@@ -10,29 +10,30 @@ const encoding = "utf8";
 // Read the .env file
 const envContent = fs.readFileSync(envFilePath, encoding);
 
-// Parse the .env content into an object
-const envVariables = envContent.split("\n").reduce((acc, line) => {
-  const [key, value] = line.split("=");
-  if (key && value) {
-    acc[key] = value;
-  }
-  return acc;
-}, {} as Record<string, string>);
+// Parse the .env content into an array of lines
+const lines = envContent.split("\n");
 
 // Get the latest addresses from dev_addresses
 const latestAddresses = dev_addresses[OFF_CHAIN_VM_CHAIN_ID];
 
-// Replace the addresses in the envVariables object
-envVariables["ADDRESS_RESOLVER"] = latestAddresses["AddressResolver"];
-envVariables["WATCHER_PRECOMPILE"] = latestAddresses["WatcherPrecompile"];
-envVariables["AUCTION_MANAGER"] = latestAddresses["AuctionManager"];
-envVariables["SOCKET"] = dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["Socket"];
-envVariables["SWITCHBOARD"] =
-  dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["FastSwitchboard"];
-// Convert the envVariables object back to a string
-const newEnvContent = Object.entries(envVariables)
-  .map(([key, value]) => `${key}=${value}`)
-  .join("\n");
+// Create a new array to hold the updated lines
+const updatedLines = lines.map(line => {
+  if (line.startsWith("ADDRESS_RESOLVER=")) {
+    return `ADDRESS_RESOLVER=${latestAddresses["AddressResolver"]}`;
+  } else if (line.startsWith("WATCHER_PRECOMPILE=")) {
+    return `WATCHER_PRECOMPILE=${latestAddresses["WatcherPrecompile"]}`;
+  } else if (line.startsWith("AUCTION_MANAGER=")) {
+    return `AUCTION_MANAGER=${latestAddresses["AuctionManager"]}`;
+  } else if (line.startsWith("SOCKET=")) {
+    return `SOCKET=${dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["Socket"]}`;
+  } else if (line.startsWith("SWITCHBOARD=")) {
+    return `SWITCHBOARD=${dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["FastSwitchboard"]}`;
+  }
+  return line; // Return the line unchanged if it doesn't match any of the above
+});
+
+// Join the updated lines back into a single string
+const newEnvContent = updatedLines.join("\n");
 
 // Write the new .env content back to the file
 fs.writeFileSync(envFilePath, newEnvContent, encoding);
