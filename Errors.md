@@ -5,7 +5,7 @@
 
 | Error | Signature |
 |-------|-----------|
-| `AppGatewayContractAlreadySetByDifferentSender(address contractAddress_)` | `0x4062307a` |
+| `AppGatewayContractAlreadySetByDifferentSender(address)` | `0xbe1ef5f1` |
 | `DeploymentFailed()` | `0x30116425` |
 
 ## AsyncPromise.sol
@@ -46,7 +46,7 @@
 |-------|-----------|
 | `AllPayloadsExecuted()` | `0x6bc43bfe` |
 | `NotFromForwarder()` | `0xe83aa6bd` |
-| `CallFailed(bytes32 payloadId)` | `0xe6176664` |
+| `CallFailed(bytes32)` | `0xe22e3683` |
 | `PayloadTooLarge()` | `0x492f620d` |
 | `OnlyAppGateway()` | `0xfec944ea` |
 
@@ -115,8 +115,8 @@
 | Error | Signature |
 |-------|-----------|
 | `ECDSAInvalidSignature()` | `0xf645eedf` |
-| `ECDSAInvalidSignatureLength(uint256 length)` | `0x367e2e27` |
-| `ECDSAInvalidSignatureS(bytes32 s)` | `0x5fedc3a1` |
+| `ECDSAInvalidSignatureLength(uint256)` | `0xfce698f7` |
+| `ECDSAInvalidSignatureS(bytes32)` | `0xd78bce0c` |
 
 ## libraries/RescueFundsLib.sol
 
@@ -182,7 +182,7 @@
 
 | Error | Signature |
 |-------|-----------|
-| `NoPermit(bytes32 role)` | `0x3db46572` |
+| `NoPermit(bytes32)` | `0x962f6333` |
 
 ## socket/utils/SignatureVerifier.sol
 
@@ -216,4 +216,4 @@
 
 | Error | Signature |
 |-------|-----------|
-| `ActionNotSupported(address appGateway_, bytes32 limitType_)` | `0xb820198b` |
+| `ActionNotSupported(address,bytes32)` | `0xa219158f` |
