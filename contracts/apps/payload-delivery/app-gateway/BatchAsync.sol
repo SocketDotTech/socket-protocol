@@ -135,9 +135,11 @@ abstract contract BatchAsync is QueueAsync {
                     payloadDetails_[i].payload
                 );
                 payloadIdToBatchHash[payloadId] = asyncId;
+                payloadBatchDetails[asyncId].push(payloadDetails_[i]);
                 emit PayloadAsyncRequested(asyncId, payloadId, bytes32(0), payloadDetails_[i]);
             }
 
+            payloadBatches[asyncId].lastBatchPromises = lastBatchPromises;
             IPromise(batchPromise).then(this.callback.selector, abi.encode(asyncId));
         }
 
@@ -187,7 +189,7 @@ abstract contract BatchAsync is QueueAsync {
             winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
             isBatchCancelled: false,
             totalPayloadsRemaining: payloadDetails_.length - readEndIndex,
-            lastBatchPromises: new address[](readEndIndex),
+            lastBatchPromises: payloadBatches[asyncId].lastBatchPromises,
             onCompleteData: onCompleteData_
         });
 
