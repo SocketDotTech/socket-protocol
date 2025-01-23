@@ -153,6 +153,5 @@ contract CounterTest is DeliveryHelperTest {
         finalizeQuery(payloadIds[1], abi.encode(Counter(optCounter).counter()));
         bidAndEndAuction(bridgeAsyncId);
         finalizeAndExecute(payloadIds[2], false);
-
     }
 }

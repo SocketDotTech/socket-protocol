@@ -23,3 +23,4 @@ error PlugDisconnected();
 error InvalidAppGateway();
 error AppGatewayAlreadyCalled();
 error InvalidInboxCaller();
+error PromisesNotResolved();

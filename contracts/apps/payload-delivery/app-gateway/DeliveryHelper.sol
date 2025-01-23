@@ -5,6 +5,7 @@ import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
 import {OwnableTwoStep} from "../../../utils/OwnableTwoStep.sol";
 import {Bid, PayloadBatch, FeesData, PayloadDetails, FinalizeParams} from "../../../common/Structs.sol";
 import {DISTRIBUTE_FEE, DEPLOY} from "../../../common/Constants.sol";
+import {PromisesNotResolved} from "../../../common/Errors.sol";
 import "./BatchAsync.sol";
 import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
@@ -39,8 +40,6 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         bytes32 asyncId = abi.decode(asyncId_, (bytes32));
         _process(asyncId);
     }
-
-    error PromisesNotResolved();
 
     function _process(bytes32 asyncId_) internal {
         PayloadBatch storage payloadBatch = payloadBatches[asyncId_];

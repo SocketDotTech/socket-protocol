@@ -24,26 +24,22 @@ contract CounterAppGateway is AppGatewayBase {
     function incrementCounters(address[] memory instances_) public async {
         // the increase function is called on given list of instances
         // this
-        for (uint256 i = 0; i < instances.length; i++) {
-            ICounter(instances[i]).increase();
+        for (uint256 i = 0; i < instances_.length; i++) {
+            ICounter(instances_[i]).increase();
         }
     }
 
-    function readCounters(address[] memory instances) public async {
+    function readCounters(address[] memory instances_) public async {
         // the increase function is called on given list of instances
         // this
         _readCallOn();
-        for (uint256 i = 0; i < instances.length; i++) {
-
-            uint32 chainSlug = IForwarder(instances[i]).getChainSlug();
-            ICounter(instances[i]).getCounter();
-            IPromise(instances[i]).then(
-                this.setCounterValues.selector,
-                abi.encode(chainSlug)
-            );
+        for (uint256 i = 0; i < instances_.length; i++) {
+            uint32 chainSlug = IForwarder(instances_[i]).getChainSlug();
+            ICounter(instances_[i]).getCounter();
+            IPromise(instances_[i]).then(this.setCounterValues.selector, abi.encode(chainSlug));
         }
         _readCallOff();
-        ICounter(instances[0]).increase();
+        ICounter(instances_[0]).increase();
     }
 
     function setCounterValues(bytes memory data, bytes memory returnData) external onlyPromises {
