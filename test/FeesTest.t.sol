@@ -115,7 +115,6 @@ contract FeesTest is DeliveryHelperTest {
         );
         bidAndEndAuction(asyncId);
         finalizeAndExecute(payloadIds[0], true);
-
         assertEq(0, address(feesConfig.feesPlug).balance, "Fees Balance should be correct");
 
         assertEq(

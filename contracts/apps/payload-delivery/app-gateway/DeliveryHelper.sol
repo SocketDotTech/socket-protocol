@@ -87,20 +87,43 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         uint256 currentIndex = payloadBatch_.currentPayloadIndex;
         PayloadDetails[] storage payloads = payloadBatchDetails[asyncId_];
 
+        // Check for empty payloads or index out of bounds
+        // todo: should revert
+        if (payloads.length == 0 || currentIndex >= payloads.length) {
+            _finishBatch(asyncId_, payloadBatch_);
+            return;
+        }
+
         // Deploy single promise for the next batch of operations
         address batchPromise = IAddressResolver(addressResolver__).deployAsyncPromiseContract(
             address(this)
         );
+
         isValidPromise[batchPromise] = true;
         IPromise(batchPromise).then(this.callback.selector, abi.encode(asyncId_));
 
         // Handle batch processing based on type
-        if (payloads[currentIndex].callType == CallType.READ) {
-            _processBatchedReads(asyncId_, payloadBatch_, payloads, currentIndex, batchPromise);
-        } else if (!payloads[currentIndex].isSequential) {
-            _processParallelCalls(asyncId_, payloadBatch_, payloads, currentIndex, batchPromise);
+        if (!payloads[currentIndex].isSequential) {
+            if (payloads[currentIndex].callType == CallType.READ) {
+                _processBatchedReads(asyncId_, payloadBatch_, payloads, currentIndex, batchPromise);
+            } else {
+                _processParallelCalls(
+                    asyncId_,
+                    payloadBatch_,
+                    payloads,
+                    currentIndex,
+                    batchPromise
+                );
+            }
         } else {
-            _processSequentialCall(asyncId_, payloadBatch_, payloads, currentIndex, batchPromise);
+            _processSequentialCall(
+                asyncId_,
+                payloadBatch_,
+                payloads,
+                currentIndex,
+                batchPromise,
+                payloads[currentIndex].callType == CallType.READ
+            );
         }
     }
 
@@ -145,9 +168,15 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         uint256 startIndex_,
         address batchPromise_
     ) internal {
+        // Validate input parameters
+        if (startIndex_ >= payloads_.length) revert InvalidIndex();
+
         uint256 endIndex = startIndex_;
+
         while (
-            endIndex + 1 < payloads_.length && payloads_[endIndex + 1].callType == CallType.READ
+            endIndex + 1 < payloads_.length &&
+            payloads_[endIndex + 1].callType == CallType.READ &&
+            !payloads_[endIndex + 1].isSequential
         ) {
             endIndex++;
         }
@@ -168,16 +197,17 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         uint256 startIndex_,
         address batchPromise_
     ) internal {
+        // Validate input parameters
+        if (startIndex_ >= payloads_.length) revert InvalidIndex();
+
         uint256 endIndex = startIndex_;
         while (endIndex + 1 < payloads_.length && !payloads_[endIndex + 1].isSequential) {
             endIndex++;
         }
 
-        // Store promises for last batch
         address[] memory promises = new address[](endIndex - startIndex_ + 1);
         for (uint256 i = startIndex_; i <= endIndex; i++) {
             promises[i - startIndex_] = payloads_[i].next[0];
-
             _executeWatcherCall(asyncId_, payloads_[i], payloadBatch_, batchPromise_, false);
         }
 
@@ -189,8 +219,12 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         PayloadBatch storage payloadBatch_,
         PayloadDetails[] storage payloads_,
         uint256 currentIndex_,
-        address batchPromise_
+        address batchPromise_,
+        bool isRead_
     ) internal {
+        // Validate input parameters
+        if (currentIndex_ >= payloads_.length) revert InvalidIndex();
+
         address[] memory promises = new address[](1);
         promises[0] = payloads_[currentIndex_].next[0];
 
@@ -199,7 +233,7 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
             payloads_[currentIndex_],
             payloadBatch_,
             batchPromise_,
-            false
+            isRead_
         );
         _updateBatchState(payloadBatch_, promises, 1, currentIndex_ + 1);
     }

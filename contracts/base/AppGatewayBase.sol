@@ -7,6 +7,7 @@ import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
 import {FeesData} from "../common/Structs.sol";
 import {FeesPlugin} from "../utils/FeesPlugin.sol";
+import {InvalidPromise, FeesDataNotSet} from "../common/Errors.sol";
 
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway
@@ -18,9 +19,6 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     bytes32 public sbType;
 
     mapping(address => bool) public isValidPromise;
-
-    error InvalidPromise();
-    error FeesDataNotSet();
 
     /// @notice Modifier to treat functions async
     modifier async() {

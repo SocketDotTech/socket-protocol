@@ -109,13 +109,17 @@ abstract contract BatchAsync is QueueAsync {
         bytes32 asyncId
     ) internal returns (uint256) {
         uint256 readEndIndex = 0;
+
+        // Find the end of parallel reads
         while (
             readEndIndex < payloadDetails_.length &&
-            payloadDetails_[readEndIndex].callType == CallType.READ
+            payloadDetails_[readEndIndex].callType == CallType.READ &&
+            !payloadDetails_[readEndIndex].isSequential
         ) {
             readEndIndex++;
         }
 
+        // If we have parallel reads, process them as a batch
         if (readEndIndex > 0) {
             address[] memory lastBatchPromises = new address[](readEndIndex);
             address batchPromise = IAddressResolver(addressResolver__).deployAsyncPromiseContract(
