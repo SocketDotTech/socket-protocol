@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import "./interfaces/IAddressResolver.sol";
 import {Forwarder} from "./Forwarder.sol";
 import {AsyncPromise} from "./AsyncPromise.sol";
-import {Ownable} from "./utils/Ownable.sol";
+import {OwnableTwoStep} from "./utils/OwnableTwoStep.sol";
 import {BeaconProxy} from "openzeppelin-contracts/contracts/proxy/beacon/BeaconProxy.sol";
 import {UpgradeableBeacon} from "openzeppelin-contracts/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import {Initializable} from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 /// @title AddressResolver Contract
 /// @notice This contract is responsible for fetching latest core addresses and deploying Forwarder and AsyncPromise contracts.
-/// @dev Inherits the Ownable contract and implements the IAddressResolver interface.
-contract AddressResolver is Ownable, IAddressResolver, Initializable {
+/// @dev Inherits the OwnableTwoStep contract and implements the IAddressResolver interface.
+contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
     IWatcherPrecompile public override watcherPrecompile__;
     address public override deliveryHelper;
     address public override feesManager;
@@ -20,6 +20,9 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
     // Beacons for managing upgrades
     UpgradeableBeacon public forwarderBeacon;
     UpgradeableBeacon public asyncPromiseBeacon;
+
+    address public forwarderImplementation;
+    address public asyncPromiseImplementation;
 
     // Array to store promises
     address[] internal _promises;
@@ -47,19 +50,18 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
 
     /// @notice Initializer to replace constructor for upgradeable contracts
     /// @param owner_ The address of the contract owner
-    function initialize(
-        address owner_,
-        address forwarderImplementation_,
-        address asyncPromiseImplementation_
-    ) public initializer {
+    function initialize(address owner_) public initializer {
         _claimOwner(owner_);
 
-        // Deploy beacons with initial implementations
-        forwarderBeacon = new UpgradeableBeacon(forwarderImplementation_, address(this));
-        asyncPromiseBeacon = new UpgradeableBeacon(asyncPromiseImplementation_, address(this));
+        forwarderImplementation = address(new Forwarder());
+        asyncPromiseImplementation = address(new AsyncPromise());
 
-        emit ImplementationUpdated("Forwarder", forwarderImplementation_);
-        emit ImplementationUpdated("AsyncPromise", asyncPromiseImplementation_);
+        // Deploy beacons with initial implementations
+        forwarderBeacon = new UpgradeableBeacon(forwarderImplementation, address(this));
+        asyncPromiseBeacon = new UpgradeableBeacon(asyncPromiseImplementation, address(this));
+
+        emit ImplementationUpdated("Forwarder", forwarderImplementation);
+        emit ImplementationUpdated("AsyncPromise", asyncPromiseImplementation);
     }
 
     /// @notice Gets or deploys a Forwarder proxy contract

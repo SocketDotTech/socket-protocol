@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 import {LimitParams} from "../common/Structs.sol";
 import {LimitReached} from "../common/Errors.sol";
 

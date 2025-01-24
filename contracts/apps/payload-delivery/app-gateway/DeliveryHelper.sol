@@ -2,13 +2,13 @@
 pragma solidity ^0.8.0;
 
 import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
-import {Ownable} from "../../../utils/Ownable.sol";
+import {OwnableTwoStep} from "../../../utils/OwnableTwoStep.sol";
 import {Bid, PayloadBatch, FeesData, PayloadDetails, FinalizeParams} from "../../../common/Structs.sol";
 import {DISTRIBUTE_FEE, DEPLOY} from "../../../common/Constants.sol";
 import "./BatchAsync.sol";
 import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
-contract DeliveryHelper is BatchAsync, Ownable, Initializable {
+contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
     constructor() {
         _disableInitializers(); // disable for implementation
     }

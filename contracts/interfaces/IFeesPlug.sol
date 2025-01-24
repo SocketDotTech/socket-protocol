@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 interface IFeesPlug {
     function balanceOf(address appGateway_, address token_) external view returns (uint256);
+
     function feesRedeemed(uint256 feesCounter_) external view returns (bool);
 
     function deposit(address token_, uint256 amount_, address appGateway_) external payable;

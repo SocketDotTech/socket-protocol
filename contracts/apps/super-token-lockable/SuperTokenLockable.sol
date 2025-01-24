@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
-import {ERC20} from "../super-token/ERC20.sol";
-import {Ownable} from "../../utils/Ownable.sol";
+import "solmate/tokens/ERC20.sol";
+import {OwnableTwoStep} from "../../utils/OwnableTwoStep.sol";
 import {LimitHook} from "./LimitHook.sol";
 import "../../base/PlugBase.sol";
 
@@ -10,7 +10,7 @@ import "../../base/PlugBase.sol";
  * @title SuperToken
  * @notice An ERC20 contract which enables bridging a token to its sibling chains.
  */
-contract SuperTokenLockable is ERC20, Ownable, PlugBase {
+contract SuperTokenLockable is ERC20, OwnableTwoStep, PlugBase {
     LimitHook public limitHook__;
     mapping(address => uint256) public lockedTokens;
 

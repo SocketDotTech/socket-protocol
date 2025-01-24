@@ -1,4 +1,4 @@
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 /// @title IAppDeployer
 /// @notice Interface for the app deployer

@@ -62,20 +62,20 @@ contract SetupTest is Test {
     WatcherPrecompile public watcherPrecompileImpl;
     AddressResolver public addressResolverImpl;
     SignatureVerifier public signatureVerifierImpl;
-    Forwarder public forwarderImpl;
-    AsyncPromise public asyncPromiseImpl;
+
+    event Initialized(uint64 version);
 
     function deploySocket(uint32 chainSlug_) internal returns (SocketContracts memory) {
-        Hasher hasher = new Hasher(owner);
         SignatureVerifier verifier = new SignatureVerifier();
         verifier.initialize(owner);
 
+        Hasher hasher = new Hasher(owner);
         Socket socket = new Socket(chainSlug_, address(hasher), address(verifier), owner, "test");
-        FastSwitchboard switchboard = new FastSwitchboard(chainSlug_, socket, verifier, owner);
         SocketBatcher socketBatcher = new SocketBatcher(owner, socket);
+        FastSwitchboard switchboard = new FastSwitchboard(chainSlug_, socket, verifier, owner);
 
-        ContractFactoryPlug contractFactoryPlug = new ContractFactoryPlug(address(socket), owner);
         FeesPlug feesPlug = new FeesPlug(address(socket), owner);
+        ContractFactoryPlug contractFactoryPlug = new ContractFactoryPlug(address(socket), owner);
 
         vm.startPrank(owner);
         // socket
@@ -105,17 +105,18 @@ contract SetupTest is Test {
         proxyAdmin = new ProxyAdmin(owner);
 
         // Deploy implementations
+        signatureVerifierImpl = new SignatureVerifier();
         addressResolverImpl = new AddressResolver();
         watcherPrecompileImpl = new WatcherPrecompile();
-        signatureVerifierImpl = new SignatureVerifier();
-        forwarderImpl = new Forwarder();
-        asyncPromiseImpl = new AsyncPromise();
 
         // Deploy and initialize proxies
         bytes memory signatureVerifierData = abi.encodeWithSelector(
             SignatureVerifier.initialize.selector,
             owner
         );
+
+        vm.expectEmit(true, true, true, false);
+        emit Initialized(1);
         TransparentUpgradeableProxy signatureVerifierProxy = new TransparentUpgradeableProxy(
             address(signatureVerifierImpl),
             address(proxyAdmin),
@@ -124,10 +125,10 @@ contract SetupTest is Test {
 
         bytes memory addressResolverData = abi.encodeWithSelector(
             AddressResolver.initialize.selector,
-            watcherEOA,
-            address(forwarderImpl),
-            address(asyncPromiseImpl)
+            watcherEOA
         );
+        vm.expectEmit(true, true, true, false);
+        emit Initialized(1);
         TransparentUpgradeableProxy addressResolverProxy = new TransparentUpgradeableProxy(
             address(addressResolverImpl),
             address(proxyAdmin),
@@ -139,6 +140,8 @@ contract SetupTest is Test {
             watcherEOA,
             address(addressResolverProxy)
         );
+        vm.expectEmit(true, true, true, false);
+        emit Initialized(1);
         TransparentUpgradeableProxy watcherPrecompileProxy = new TransparentUpgradeableProxy(
             address(watcherPrecompileImpl),
             address(proxyAdmin),

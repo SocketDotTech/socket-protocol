@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import "../../base/PlugBase.sol";
-import {Ownable} from "../../utils/Ownable.sol";
+import {OwnableTwoStep} from "../../utils/OwnableTwoStep.sol";
 import {NotSocket} from "../../common/Errors.sol";
 
 /// @title ContractFactory
 /// @notice Abstract contract for deploying contracts
-contract ContractFactoryPlug is PlugBase, Ownable {
+contract ContractFactoryPlug is PlugBase, OwnableTwoStep {
     event Deployed(address addr, bytes32 salt);
 
     /// @notice Error thrown if it failed to deploy the create2 contract

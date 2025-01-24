@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import {DeployParams, FeesData, CallType, PayloadBatch} from "../common/Structs.sol";
 import {AppGatewayBase} from "./AppGatewayBase.sol";

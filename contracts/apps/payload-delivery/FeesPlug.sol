@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.21;
 
 import "solmate/utils/SafeTransferLib.sol";
 import "../../base/PlugBase.sol";
-import {Ownable} from "../../utils/Ownable.sol";
+import {OwnableTwoStep} from "../../utils/OwnableTwoStep.sol";
 import {ETH_ADDRESS} from "../../common/Constants.sol";
 
 /// @title FeesManager
 /// @notice Abstract contract for managing fees
-contract FeesPlug is PlugBase, Ownable {
+contract FeesPlug is PlugBase, OwnableTwoStep {
     mapping(address => mapping(address => uint256)) public balanceOf;
     mapping(bytes32 => bool) public feesRedeemed;
 

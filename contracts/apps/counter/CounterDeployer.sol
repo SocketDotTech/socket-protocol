@@ -3,9 +3,9 @@ pragma solidity >=0.7.0 <0.9.0;
 
 import "./Counter.sol";
 import "../../base/AppDeployerBase.sol";
-import "../../utils/Ownable.sol";
+import "../../utils/OwnableTwoStep.sol";
 
-contract CounterDeployer is AppDeployerBase, Ownable {
+contract CounterDeployer is AppDeployerBase, OwnableTwoStep {
     bytes32 public counter = _createContractId("counter");
 
     constructor(
