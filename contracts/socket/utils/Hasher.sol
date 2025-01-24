@@ -19,7 +19,8 @@ contract Hasher is IHasher, AccessControl {
      * @notice initializes and grants RESCUE_ROLE to owner.
      * @param owner_ The address of the owner of the contract.
      */
-    constructor(address owner_) AccessControl(owner_) {
+    constructor(address owner_) {
+        _claimOwner(owner_);
         _grantRole(RESCUE_ROLE, owner_);
     }
 

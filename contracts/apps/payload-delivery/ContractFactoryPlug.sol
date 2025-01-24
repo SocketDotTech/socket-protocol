@@ -13,7 +13,9 @@ contract ContractFactoryPlug is PlugBase, Ownable {
     /// @notice Error thrown if it failed to deploy the create2 contract
     error DeploymentFailed();
 
-    constructor(address socket_, address owner_) Ownable(owner_) PlugBase(socket_) {}
+    constructor(address socket_, address owner_) PlugBase(socket_) {
+        _claimOwner(owner_);
+    }
 
     function deployContract(
         bytes memory creationCode,

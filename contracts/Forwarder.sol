@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity ^0.8.13;
 
 import "./interfaces/IAddressResolver.sol";
 import "./interfaces/IDeliveryHelper.sol";
@@ -7,27 +7,36 @@ import "./interfaces/IAppGateway.sol";
 import "./interfaces/IPromise.sol";
 import "./AsyncPromise.sol";
 import "./interfaces/IForwarder.sol";
+import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 /// @title Forwarder Contract
 /// @notice This contract acts as a forwarder for async calls to the on-chain contracts.
-contract Forwarder is IForwarder {
+contract Forwarder is IForwarder, Initializable {
     /// @notice chain id
-    uint32 immutable chainSlug;
+    uint32 public chainSlug;
 
     /// @notice on-chain address associated with this forwarder
-    address immutable onChainAddress;
+    address public onChainAddress;
 
     /// @notice address resolver contract address for imp addresses
-    address immutable addressResolver;
+    address public addressResolver;
 
     /// @notice caches the latest async promise address for the last call
-    address latestAsyncPromise;
+    address public latestAsyncPromise;
 
-    /// @notice Constructor to initialize the forwarder contract.
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
+    /// @notice Initializer to replace constructor for upgradeable contracts
     /// @param chainSlug_ chain id
     /// @param onChainAddress_ on-chain address
     /// @param addressResolver_ address resolver contract address
-    constructor(uint32 chainSlug_, address onChainAddress_, address addressResolver_) {
+    function initialize(
+        uint32 chainSlug_,
+        address onChainAddress_,
+        address addressResolver_
+    ) public initializer {
         chainSlug = chainSlug_;
         onChainAddress = onChainAddress_;
         addressResolver = addressResolver_;

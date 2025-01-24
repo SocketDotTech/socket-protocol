@@ -4,8 +4,10 @@ pragma solidity ^0.8.13;
 import "./interfaces/IAddressResolver.sol";
 import {Forwarder} from "./Forwarder.sol";
 import {AsyncPromise} from "./AsyncPromise.sol";
-
 import {Ownable} from "./utils/Ownable.sol";
+import {BeaconProxy} from "openzeppelin-contracts/contracts/proxy/beacon/BeaconProxy.sol";
+import {UpgradeableBeacon} from "openzeppelin-contracts/contracts/proxy/beacon/UpgradeableBeacon.sol";
+import {Initializable} from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 /// @title AddressResolver Contract
 /// @notice This contract is responsible for fetching latest core addresses and deploying Forwarder and AsyncPromise contracts.
@@ -15,41 +17,60 @@ contract AddressResolver is Ownable, IAddressResolver {
     address public override deliveryHelper;
     address public override feesManager;
 
-    uint256 public asyncPromiseCounter;
-    address[] internal promises;
+    // Beacons for managing upgrades
+    UpgradeableBeacon public forwarderBeacon;
+    UpgradeableBeacon public asyncPromiseBeacon;
 
-    bytes public forwarderBytecode = type(Forwarder).creationCode;
-    bytes public asyncPromiseBytecode = type(AsyncPromise).creationCode;
+    // Array to store promises
+    address[] internal _promises;
+
+    uint256 public asyncPromiseCounter;
+
     // contracts to gateway map
     mapping(address => address) public override contractsToGateways;
     // gateway to contract map
     mapping(address => address) public override gatewaysToContracts;
 
+    error AppGatewayContractAlreadySetByDifferentSender(address contractAddress_);
+
     event PlugAdded(address appGateway, uint32 chainSlug, address plug);
     event ForwarderDeployed(address newForwarder, bytes32 salt);
     event AsyncPromiseDeployed(address newAsyncPromise, bytes32 salt);
+    event ImplementationUpdated(string contractName, address newImplementation);
 
-    /// @notice Error thrown if AppGateway contract was already set by a different address
-    error AppGatewayContractAlreadySetByDifferentSender(
-        address contractAddress_
-    );
-    /// @notice Error thrown if it failed to deploy the create2 contract
-    error DeploymentFailed();
-
-    /// @notice Constructor to initialize the AddressResolver contract
-    /// @param _owner The address of the contract owner
-    constructor(address _owner) Ownable(_owner) {}
-
-    /// @notice Sets the bytecode for the Forwarder contract
-    /// @param _forwarderBytecode The bytecode of the Forwarder contract
-    function setForwarderBytecode(bytes memory _forwarderBytecode) external onlyOwner {
-        forwarderBytecode = _forwarderBytecode;
+    constructor() {
+        _disableInitializers(); // disable for implementation
     }
 
-    /// @notice Sets the bytecode for the AsyncPromise contract
-    /// @param _asyncPromiseBytecode The bytecode of the AsyncPromise contract
-    function setAsyncPromiseBytecode(bytes memory _asyncPromiseBytecode) external onlyOwner {
-        asyncPromiseBytecode = _asyncPromiseBytecode;
+    /// @notice Initializer to replace constructor for upgradeable contracts
+    /// @param owner_ The address of the contract owner
+    function initialize(
+        address owner_,
+        address forwarderImplementation_,
+        address asyncPromiseImplementation_
+    ) public initializer {
+        _claimOwner(owner_);
+
+        // Deploy beacons with initial implementations
+        forwarderBeacon = new UpgradeableBeacon(forwarderImplementation_, address(this));
+        asyncPromiseBeacon = new UpgradeableBeacon(asyncPromiseImplementation_, address(this));
+
+        emit ImplementationUpdated("Forwarder", forwarderImplementation_);
+        emit ImplementationUpdated("AsyncPromise", asyncPromiseImplementation_);
+    }
+
+    /// @notice Updates the implementation contract for Forwarder
+    /// @param _implementation The new implementation address
+    function setForwarderImplementation(address _implementation) external onlyOwner {
+        forwarderImplementation = _implementation;
+        emit ImplementationUpdated("Forwarder", _implementation);
+    }
+
+    /// @notice Updates the implementation contract for AsyncPromise
+    /// @param _implementation The new implementation address
+    function setAsyncPromiseImplementation(address _implementation) external onlyOwner {
+        asyncPromiseImplementation = _implementation;
+        emit ImplementationUpdated("AsyncPromise", _implementation);
     }
 
     /// @notice Updates the address of the delivery helper
@@ -70,19 +91,15 @@ contract AddressResolver is Ownable, IAddressResolver {
         watcherPrecompile = IWatcherPrecompile(_watcherPrecompile);
     }
 
-    /// @notice Gets or deploys a Forwarder contract
+    /// @notice Gets or deploys a Forwarder proxy contract
     /// @param chainContractAddress_ The address of the chain contract
     /// @param chainSlug_ The chain slug
-    /// @return The address of the deployed Forwarder contract
+    /// @return The address of the deployed Forwarder proxy contract
     function getOrDeployForwarderContract(
         address appDeployer_,
         address chainContractAddress_,
         uint32 chainSlug_
     ) public returns (address) {
-        bytes memory constructorArgs = abi.encode(chainSlug_, chainContractAddress_, address(this));
-
-        bytes memory combinedBytecode = abi.encodePacked(forwarderBytecode, constructorArgs);
-
         // predict address
         address forwarderAddress = getForwarderAddress(chainContractAddress_, chainSlug_);
         // check if addr has code, if yes, return
@@ -90,22 +107,20 @@ contract AddressResolver is Ownable, IAddressResolver {
             return forwarderAddress;
         }
 
+        bytes memory constructorArgs = abi.encode(chainSlug_, chainContractAddress_, address(this));
+        bytes memory initData = abi.encodeWithSelector(
+            Forwarder.initialize.selector,
+            chainSlug_,
+            chainContractAddress_,
+            address(this)
+        );
+
         bytes32 salt = keccak256(constructorArgs);
-        address newForwarder;
 
-        assembly {
-            newForwarder := create2(
-                callvalue(),
-                add(combinedBytecode, 0x20),
-                mload(combinedBytecode),
-                salt
-            )
-            if iszero(newForwarder) {
-                mstore(0, 0x30116425) // Error selector for DeploymentFailed
-                revert(0x1C, 0x04) // reverting with just 4 bytes
-            }
-        }
+        // Deploy beacon proxy with CREATE2
+        BeaconProxy proxy = new BeaconProxy{salt: salt}(address(forwarderBeacon), initData);
 
+        address newForwarder = address(proxy);
         _setConfig(appDeployer_, newForwarder);
         emit ForwarderDeployed(newForwarder, salt);
         return newForwarder;
@@ -117,30 +132,24 @@ contract AddressResolver is Ownable, IAddressResolver {
         contractsToGateways[newForwarder_] = gateway;
     }
 
-    /// @notice Deploys an AsyncPromise contract
+    /// @notice Deploys an AsyncPromise proxy contract
     /// @param invoker_ The address of the invoker
-    /// @return The address of the deployed AsyncPromise contract
+    /// @return The address of the deployed AsyncPromise proxy contract
     function deployAsyncPromiseContract(address invoker_) external returns (address) {
         bytes memory constructorArgs = abi.encode(invoker_, msg.sender, address(this));
-
-        bytes memory combinedBytecode = abi.encodePacked(asyncPromiseBytecode, constructorArgs);
+        bytes memory initData = abi.encodeWithSelector(
+            AsyncPromise.initialize.selector,
+            invoker_,
+            msg.sender,
+            address(this)
+        );
 
         bytes32 salt = keccak256(abi.encodePacked(constructorArgs, asyncPromiseCounter++));
 
-        address newAsyncPromise;
-        assembly {
-            newAsyncPromise := create2(
-                callvalue(),
-                add(combinedBytecode, 0x20),
-                mload(combinedBytecode),
-                salt
-            )
-            if iszero(newAsyncPromise) {
-                mstore(0, 0x30116425) // Error selector for DeploymentFailed
-                revert(0x1C, 0x04) // reverting with just 4 bytes
-            }
-        }
+        // Deploy beacon proxy with CREATE2
+        BeaconProxy proxy = new BeaconProxy{salt: salt}(address(asyncPromiseBeacon), initData);
 
+        address newAsyncPromise = address(proxy);
         emit AsyncPromiseDeployed(newAsyncPromise, salt);
         promises.push(newAsyncPromise);
         return newAsyncPromise;
@@ -170,51 +179,76 @@ contract AddressResolver is Ownable, IAddressResolver {
         contractsToGateways[contractAddress_] = msg.sender;
     }
 
-    /// @notice Gets the predicted address of a Forwarder contract
+    /// @notice Gets the predicted address of a Forwarder proxy contract
     /// @param chainContractAddress_ The address of the chain contract
     /// @param chainSlug_ The chain slug
-    /// @return The predicted address of the Forwarder contract
+    /// @return The predicted address of the Forwarder proxy contract
     function getForwarderAddress(
         address chainContractAddress_,
         uint32 chainSlug_
     ) public view returns (address) {
-        bytes memory constructorArgs = abi.encode(chainSlug_, chainContractAddress_, address(this));
-        return _predictAddress(forwarderBytecode, constructorArgs, keccak256(constructorArgs));
+        bytes32 salt = keccak256(abi.encode(chainSlug_, chainContractAddress_, address(this)));
+        return _predictProxyAddress(salt);
     }
 
-    /// @notice Gets the predicted address of an AsyncPromise contract
+    /// @notice Gets the predicted address of an AsyncPromise proxy contract
     /// @param invoker_ The address of the invoker
     /// @param forwarder_ The address of the forwarder
-    /// @return The predicted address of the AsyncPromise contract
+    /// @return The predicted address of the AsyncPromise proxy contract
     function getAsyncPromiseAddress(
         address invoker_,
         address forwarder_
     ) public view returns (address) {
-        bytes memory constructorArgs = abi.encode(invoker_, forwarder_, address(this));
-        return
-            _predictAddress(
-                asyncPromiseBytecode,
-                constructorArgs,
-                keccak256(abi.encodePacked(constructorArgs, asyncPromiseCounter))
-            );
+        bytes32 salt = keccak256(abi.encodePacked(invoker_, forwarder_, asyncPromiseCounter));
+        return _predictProxyAddress(salt);
     }
 
-    /// @notice Predicts the address of a contract
-    /// @param bytecode_ The bytecode of the contract
-    /// @param constructorArgs_ The constructor arguments of the contract
+    /// @notice Predicts the address of a proxy contract
     /// @param salt_ The salt used for address prediction
-    /// @return The predicted address of the contract
-    function _predictAddress(
-        bytes memory bytecode_,
-        bytes memory constructorArgs_,
-        bytes32 salt_
-    ) internal view returns (address) {
-        bytes memory combinedBytecode = abi.encodePacked(bytecode_, constructorArgs_);
-
+    /// @return The predicted address of the proxy contract
+    function _predictProxyAddress(bytes32 salt_) internal view returns (address) {
+        bytes memory proxyBytecode = type(BeaconProxy).creationCode;
         bytes32 hash = keccak256(
-            abi.encodePacked(bytes1(0xff), address(this), salt_, keccak256(combinedBytecode))
+            abi.encodePacked(bytes1(0xff), address(this), salt_, keccak256(proxyBytecode))
         );
-
         return address(uint160(uint256(hash)));
+    }
+
+    function _setConfig(address appDeployer_, address newForwarder_) internal {
+        address gateway = contractsToGateways[appDeployer_];
+        gatewaysToContracts[gateway] = newForwarder_;
+        contractsToGateways[newForwarder_] = gateway;
+    }
+
+    /// @notice Updates the implementation contract for Forwarder
+    /// @param implementation_ The new implementation address
+    function setForwarderImplementation(address implementation_) external onlyOwner {
+        forwarderBeacon.upgradeTo(implementation_);
+        emit ImplementationUpdated("Forwarder", implementation_);
+    }
+
+    /// @notice Updates the implementation contract for AsyncPromise
+    /// @param implementation_ The new implementation address
+    function setAsyncPromiseImplementation(address implementation_) external onlyOwner {
+        asyncPromiseBeacon.upgradeTo(implementation_);
+        emit ImplementationUpdated("AsyncPromise", implementation_);
+    }
+
+    /// @notice Updates the address of the delivery helper
+    /// @param deliveryHelper_ The address of the delivery helper
+    function setDeliveryHelper(address deliveryHelper_) external onlyOwner {
+        deliveryHelper = deliveryHelper_;
+    }
+
+    /// @notice Updates the address of the fees manager
+    /// @param feesManager_ The address of the fees manager
+    function setFeesManager(address feesManager_) external onlyOwner {
+        feesManager = feesManager_;
+    }
+
+    /// @notice Updates the address of the watcher precompile contract
+    /// @param watcherPrecompile_ The address of the watcher precompile contract
+    function setWatcherPrecompile(address watcherPrecompile_) external onlyOwner {
+        watcherPrecompile__ = IWatcherPrecompile(watcherPrecompile_);
     }
 }

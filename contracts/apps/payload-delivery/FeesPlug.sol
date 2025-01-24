@@ -21,7 +21,9 @@ contract FeesPlug is PlugBase, Ownable {
     /// @notice Error thrown when deposit amount does not match msg.value
     error InvalidDepositAmount();
 
-    constructor(address socket_, address owner_) Ownable(owner_) PlugBase(socket_) {}
+    constructor(address socket_, address owner_) PlugBase(socket_) {
+        _claimOwner(owner_);
+    }
 
     function distributeFee(
         address appGateway,

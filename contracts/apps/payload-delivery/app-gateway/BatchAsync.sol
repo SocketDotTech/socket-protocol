@@ -91,7 +91,7 @@ abstract contract BatchAsync is QueueAsync {
 
         address appGateway = processRemainingPayloads(payloadDetails_, readEndIndex, asyncId);
 
-        initializeBatch(
+        _initializeBatch(
             asyncId,
             appGateway,
             feesData_,
@@ -170,7 +170,7 @@ abstract contract BatchAsync is QueueAsync {
         return appGateway;
     }
 
-    function initializeBatch(
+    function _initializeBatch(
         bytes32 asyncId,
         address appGateway,
         FeesData memory feesData_,

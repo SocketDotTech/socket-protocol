@@ -10,7 +10,7 @@ import "../../base/PlugBase.sol";
  * @title SuperToken
  * @notice An ERC20 contract which enables bridging a token to its sibling chains.
  */
-contract SuperTokenLockable is ERC20, Ownable(msg.sender), PlugBase {
+contract SuperTokenLockable is ERC20, Ownable, PlugBase {
     LimitHook public limitHook;
     mapping(address => uint256) public lockedTokens;
 
@@ -25,6 +25,7 @@ contract SuperTokenLockable is ERC20, Ownable(msg.sender), PlugBase {
         uint256 initialSupply_
     ) ERC20(name_, symbol_, decimals_) PlugBase(msg.sender) {
         _mint(initialSupplyHolder_, initialSupply_);
+        _claimOwner(msg.sender);
     }
 
     function lockTokens(address user_, uint256 amount_) external onlySocket {

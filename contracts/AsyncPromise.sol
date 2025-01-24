@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity ^0.8.13;
 
 import {AddressResolverUtil} from "./utils/AddressResolverUtil.sol";
 import {IPromise} from "./interfaces/IPromise.sol";
+import {Initializable} from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+
 /// @notice The state of the async promise
 enum AsyncPromiseState {
     WAITING_FOR_SET_CALLBACK_SELECTOR,
@@ -13,7 +15,7 @@ enum AsyncPromiseState {
 /// @title AsyncPromise
 /// @notice this contract stores the callback address and data to be executed once the previous call is executed
 /// This promise expires once the callback is executed
-contract AsyncPromise is AddressResolverUtil, IPromise {
+contract AsyncPromise is IPromise, Initializable, AddressResolverUtil {
     /// @notice The callback data to be used when the promise is resolved.
     bytes public callbackData;
 
@@ -22,13 +24,13 @@ contract AsyncPromise is AddressResolverUtil, IPromise {
 
     /// @notice The local contract which initiated the async call.
     /// @dev The callback will be executed on this address
-    address public immutable localInvoker;
+    address public localInvoker;
 
     /// @notice The forwarder address which can call the callback
-    address public immutable forwarder;
+    address public forwarder;
 
     /// @notice Indicates whether the promise has been resolved.
-    bool public override resolved = false;
+    bool public override resolved;
 
     /// @notice Error thrown when attempting to resolve an already resolved promise.
     error PromiseAlreadyResolved();
@@ -38,25 +40,34 @@ contract AsyncPromise is AddressResolverUtil, IPromise {
     error PromiseAlreadySetUp();
 
     /// @notice The current state of the async promise.
-    AsyncPromiseState public state = AsyncPromiseState.WAITING_FOR_SET_CALLBACK_SELECTOR;
+    AsyncPromiseState public state;
 
-    /// @notice Constructor to initialize the AsyncPromise contract.
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
+    /// @notice Initializer to replace constructor for upgradeable contracts
     /// @param _invoker The address of the local invoker.
     /// @param _forwarder The address of the forwarder.
-    /// @param addressResolver_ The address resolver contract address.
-    constructor(
+    /// @param _addressResolver The address resolver contract address.
+    function initialize(
         address _invoker,
         address _forwarder,
-        address addressResolver_
-    ) AddressResolverUtil(addressResolver_) {
+        address _addressResolver
+    ) public initializer {
+        _setAddressResolver(_addressResolver);
         localInvoker = _invoker;
         forwarder = _forwarder;
+        state = AsyncPromiseState.WAITING_FOR_SET_CALLBACK_SELECTOR;
+        resolved = false;
     }
 
     /// @notice Marks the promise as resolved and executes the callback if set.
     /// @param returnData The data returned from the async payload execution.
     /// @dev Only callable by the watcher precompile.
-    function markResolved(bytes memory returnData) external override onlyWatcherPrecompile returns (bool success) {
+    function markResolved(
+        bytes memory returnData
+    ) external override onlyWatcherPrecompile returns (bool success) {
         if (resolved) revert PromiseAlreadyResolved();
         resolved = true;
         state = AsyncPromiseState.RESOLVED;

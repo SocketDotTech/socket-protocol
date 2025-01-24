@@ -31,11 +31,12 @@ abstract contract SocketBase is SocketConfig {
         address signatureVerifier_,
         address owner_,
         string memory version_
-    ) AccessControl(owner_) {
+    ) {
         hasher__ = IHasher(hasher_);
         signatureVerifier__ = ISignatureVerifier(signatureVerifier_);
         chainSlug = chainSlug_;
         version = keccak256(bytes(version_));
+        _claimOwner(owner_);
     }
 
     ////////////////////////////////////////////////////////

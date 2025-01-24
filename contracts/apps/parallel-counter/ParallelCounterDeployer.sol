@@ -14,11 +14,12 @@ contract ParallelCounterDeployer is AppDeployerBase, Ownable {
         address auctionManager_,
         bytes32 sbType_,
         FeesData memory feesData_
-    ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) Ownable(msg.sender) {
+    ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) {
         creationCodeWithArgs[counter1] = abi.encodePacked(type(Counter).creationCode);
         creationCodeWithArgs[counter2] = abi.encodePacked(type(Counter).creationCode);
         _setFeesData(feesData_);
         _setIsCallSequential(false);
+        _claimOwner(msg.sender);
     }
 
     function deployContracts(uint32 chainSlug) external async {

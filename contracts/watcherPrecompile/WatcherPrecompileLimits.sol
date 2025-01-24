@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity ^0.8.13;
 
 import {Gauge} from "../utils/Gauge.sol";
 import {LimitParams, UpdateLimitParams} from "../common/Structs.sol";
@@ -7,8 +7,7 @@ import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 
 abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
     // appGateway => receivingLimitParams
-    mapping(address => mapping(bytes32 => LimitParams)) _limitParams;
-    error ActionNotSupported(address appGateway_, bytes32 limitType_);
+    mapping(address => mapping(bytes32 => LimitParams)) internal _limitParams;
 
     ////////////////////////////////////////////////////////
     ////////////////////// EVENTS //////////////////////////
@@ -16,8 +15,21 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
 
     // Emitted when limit parameters are updated
     event LimitParamsUpdated(UpdateLimitParams[] updates);
+    error ActionNotSupported(address appGateway_, bytes32 limitType_);
 
-    constructor(address addressResolver_) AddressResolverUtil(addressResolver_) {}
+    function getCurrentLimit(
+        bytes32 limitType_,
+        address appGateway_
+    ) external view returns (uint256) {
+        return _getCurrentLimit(_limitParams[appGateway_][limitType_]);
+    }
+
+    function getLimitParams(
+        address appGateway_,
+        bytes32 limitType_
+    ) external view returns (LimitParams memory) {
+        return _limitParams[appGateway_][limitType_];
+    }
 
     /**
      * @notice This function is used to set bridge limits.
@@ -34,20 +46,6 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
         }
 
         emit LimitParamsUpdated(updates);
-    }
-
-    function getCurrentLimit(
-        bytes32 limitType_,
-        address appGateway_
-    ) external view returns (uint256) {
-        return _getCurrentLimit(_limitParams[appGateway_][limitType_]);
-    }
-
-    function getLimitParams(
-        address appGateway_,
-        bytes32 limitType_
-    ) external view returns (LimitParams memory) {
-        return _limitParams[appGateway_][limitType_];
     }
 
     /**
@@ -75,4 +73,6 @@ abstract contract WatcherPrecompileLimits is Gauge, AddressResolverUtil {
 
         appGateway = _getCoreAppGateway(resolverAddress);
     }
+
+    uint256[49] __gap;
 }

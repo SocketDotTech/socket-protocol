@@ -21,13 +21,14 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         address deployerContract_,
         FeesData memory feesData_,
         address _auctionManager
-    ) AppGatewayBase(_addressResolver, _auctionManager) Ownable(msg.sender) {
+    ) AppGatewayBase(_addressResolver, _auctionManager) {
         // called to connect the deployer contract with this app
         addressResolver.setContractsToGateways(deployerContract_);
 
         // sets the fees data like max fees, chain and token for all transfers
         // they can be updated for each transfer as well
         _setFeesData(feesData_);
+        _claimOwner(msg.sender);
     }
 
     function transfer(bytes memory _order) external async {

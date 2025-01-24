@@ -27,7 +27,7 @@ contract SuperTokenLockableDeployer is AppDeployerBase, Ownable {
         bytes32 sbType_,
         ConstructorParams memory params,
         FeesData memory feesData_
-    ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) Ownable(owner_) {
+    ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) {
         creationCodeWithArgs[superTokenLockable] = abi.encodePacked(
             type(SuperTokenLockable).creationCode,
             abi.encode(
@@ -45,6 +45,7 @@ contract SuperTokenLockableDeployer is AppDeployerBase, Ownable {
         );
 
         _setFeesData(feesData_);
+        _claimOwner(owner_);
     }
 
     function deployContracts(uint32 chainSlug) external async {

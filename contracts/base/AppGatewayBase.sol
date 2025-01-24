@@ -43,10 +43,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
 
     /// @notice Constructor for AppGatewayBase
     /// @param _addressResolver The address resolver address
-    constructor(
-        address _addressResolver,
-        address _auctionManager
-    ) AddressResolverUtil(_addressResolver) {
+    constructor(address _addressResolver, address _auctionManager) {
+        _setAddressResolver(_addressResolver);
         auctionManager = _auctionManager;
         isCallSequential = true;
     }

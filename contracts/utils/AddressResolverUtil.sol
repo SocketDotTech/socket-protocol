@@ -17,10 +17,10 @@ abstract contract AddressResolverUtil {
     /// @dev Used to look up system contract addresses
     IAddressResolver public addressResolver;
 
-    /// @notice Initializes the contract with an address resolver
+    /// @notice Internal function to set the address resolver
     /// @param _addressResolver The address of the resolver contract
-    /// @dev Sets up the initial configuration for address resolution
-    constructor(address _addressResolver) {
+    /// @dev Should be called in the initialization of inheriting contracts
+    function _setAddressResolver(address _addressResolver) internal {
         addressResolver = IAddressResolver(_addressResolver);
     }
 
@@ -58,17 +58,11 @@ abstract contract AddressResolverUtil {
         return IWatcherPrecompile(addressResolver.watcherPrecompile());
     }
 
-    /// @notice Updates the address resolver reference
-    /// @param _addressResolver New address resolver contract address
-    /// @dev Internal function to be called by inheriting contracts
-    /// @dev Should be protected with appropriate access control in implementing contracts
-    function setAddressResolver(address _addressResolver) internal {
-        // Update the address resolver reference
-        addressResolver = IAddressResolver(_addressResolver);
-    }
-
     function _getCoreAppGateway(address appGateway_) internal view returns (address appGateway) {
         appGateway = addressResolver.contractsToGateways(appGateway_);
         if (appGateway == address(0)) appGateway = appGateway_;
     }
+
+    // for proxy contracts
+    uint256[49] __gap_resolver_util;
 }

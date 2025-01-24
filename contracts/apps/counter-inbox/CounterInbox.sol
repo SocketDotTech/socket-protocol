@@ -4,7 +4,11 @@ pragma solidity >=0.7.0 <0.9.0;
 import "../../utils/Ownable.sol";
 import "../../base/PlugBase.sol";
 
-contract CounterInbox is Ownable(msg.sender), PlugBase(msg.sender) {
+contract CounterInbox is Ownable, PlugBase {
+    constructor() PlugBase(msg.sender) {
+        _claimOwner(msg.sender);
+    }
+
     function increaseOnGateway(uint256 value) external returns (bytes32) {
         return _callAppGateway(abi.encode(value), bytes32(0));
     }
