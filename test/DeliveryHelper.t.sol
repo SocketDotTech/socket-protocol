@@ -38,15 +38,53 @@ contract DeliveryHelperTest is SetupTest {
     function setUpDeliveryHelper() internal {
         // core
         deployOffChainVMCore();
-        feesManager = new FeesManager(address(addressResolver), owner);
-        deliveryHelper = new DeliveryHelper(address(addressResolver), address(feesManager), owner);
-        auctionManager = new AuctionManager(
+        // Deploy implementations
+        FeesManager feesManagerImpl = new FeesManager();
+        DeliveryHelper deliveryHelperImpl = new DeliveryHelper();
+        AuctionManager auctionManagerImpl = new AuctionManager();
+
+        // Deploy and initialize proxies
+        bytes memory feesManagerData = abi.encodeWithSelector(
+            FeesManager.initialize.selector,
+            address(addressResolver),
+            owner
+        );
+        TransparentUpgradeableProxy feesManagerProxy = new TransparentUpgradeableProxy(
+            address(feesManagerImpl),
+            address(proxyAdmin),
+            feesManagerData
+        );
+
+        bytes memory deliveryHelperData = abi.encodeWithSelector(
+            DeliveryHelper.initialize.selector,
+            address(addressResolver),
+            address(feesManagerProxy),
+            owner
+        );
+        TransparentUpgradeableProxy deliveryHelperProxy = new TransparentUpgradeableProxy(
+            address(deliveryHelperImpl),
+            address(proxyAdmin), 
+            deliveryHelperData
+        );
+
+        bytes memory auctionManagerData = abi.encodeWithSelector(
+            AuctionManager.initialize.selector,
             vmChainSlug,
             auctionEndDelaySeconds,
             address(addressResolver),
             signatureVerifier,
             owner
         );
+        TransparentUpgradeableProxy auctionManagerProxy = new TransparentUpgradeableProxy(
+            address(auctionManagerImpl),
+            address(proxyAdmin),
+            auctionManagerData
+        );
+
+        // Assign proxy addresses to contract variables
+        feesManager = FeesManager(address(feesManagerProxy));
+        deliveryHelper = DeliveryHelper(address(deliveryHelperProxy));
+        auctionManager = AuctionManager(address(auctionManagerProxy));
 
         hoax(watcherEOA);
         addressResolver.setDeliveryHelper(address(deliveryHelper));

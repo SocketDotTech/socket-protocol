@@ -52,7 +52,7 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
         _readCallOn();
         // goes to forwarder and deploys promise and stores it
         ISuperToken(order.srcToken).balanceOf(order.user);
-        IPromise(order.srcToken).then(this.checkBalance.selector, abi.encode(order_, asyncId_));
+        IPromise(order.srcToken).then(this.checkBalance.selector, abi.encode(order, asyncId_));
 
         _readCallOff();
         ISuperToken(order.dstToken).mint(order.user, order.srcAmount);
