@@ -275,7 +275,6 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         writePayloadIdCounter++;
 
         bytes32 bridgeAsyncId = getCurrentAsyncId();
-        asyncCounterTest++;
 
         bytes memory encodedOrder = abi.encode(userOrder);
         appContracts.superTokenLockableApp.bridge(encodedOrder);
@@ -330,7 +329,6 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         );
 
         bytes32 cancelAsyncId = getCurrentAsyncId();
-        asyncCounterTest++;
 
         // bidAndEndAuction(cancelAsyncId);
         // finalizeAndExecute(

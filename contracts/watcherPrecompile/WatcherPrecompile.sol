@@ -264,10 +264,13 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits, 
             address[] memory next = asyncRequests[resolvedPromises_[i].payloadId].next;
 
             // Resolve each promise with its corresponding return data
+            bool success;
             for (uint256 j = 0; j < next.length; j++) {
-                IPromise(next[j]).markResolved(resolvedPromises_[i].returnData[j]);
+                success = IPromise(next[j]).markResolved(resolvedPromises_[i].returnData[j]);
+                if (!success) continue;
             }
-            emit PromiseResolved(resolvedPromises_[i].payloadId);
+
+            if (success) emit PromiseResolved(resolvedPromises_[i].payloadId);
         }
     }
 

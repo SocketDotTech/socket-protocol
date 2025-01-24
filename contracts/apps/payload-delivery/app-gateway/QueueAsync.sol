@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
 import {CallParams, FeesData, PayloadDetails, CallType, Bid, PayloadBatch} from "../../../common/Structs.sol";
-import {NotAuctionManager} from "../../../common/Errors.sol";
+import {NotAuctionManager, InvalidPromise, InvalidIndex} from "../../../common/Errors.sol";
 import {AsyncPromise} from "../../../AsyncPromise.sol";
 import {IPromise} from "../../../interfaces/IPromise.sol";
 import {IAppDeployer} from "../../../interfaces/IAppDeployer.sol";
@@ -28,7 +28,6 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
     mapping(bytes32 => PayloadBatch) public payloadBatches;
     // asyncId => PayloadDetails[]
     mapping(bytes32 => PayloadDetails[]) public payloadBatchDetails;
-    error InvalidPromise();
 
     modifier onlyPromises() {
         if (!isValidPromise[msg.sender]) revert InvalidPromise();

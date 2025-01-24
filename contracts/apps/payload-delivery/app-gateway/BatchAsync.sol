@@ -109,13 +109,17 @@ abstract contract BatchAsync is QueueAsync {
         bytes32 asyncId
     ) internal returns (uint256) {
         uint256 readEndIndex = 0;
+
+        // Find the end of parallel reads
         while (
             readEndIndex < payloadDetails_.length &&
-            payloadDetails_[readEndIndex].callType == CallType.READ
+            payloadDetails_[readEndIndex].callType == CallType.READ &&
+            !payloadDetails_[readEndIndex].isSequential
         ) {
             readEndIndex++;
         }
 
+        // If we have parallel reads, process them as a batch
         if (readEndIndex > 0) {
             address[] memory lastBatchPromises = new address[](readEndIndex);
             address batchPromise = IAddressResolver(addressResolver__).deployAsyncPromiseContract(
@@ -135,9 +139,11 @@ abstract contract BatchAsync is QueueAsync {
                     payloadDetails_[i].payload
                 );
                 payloadIdToBatchHash[payloadId] = asyncId;
+                payloadBatchDetails[asyncId].push(payloadDetails_[i]);
                 emit PayloadAsyncRequested(asyncId, payloadId, bytes32(0), payloadDetails_[i]);
             }
 
+            payloadBatches[asyncId].lastBatchPromises = lastBatchPromises;
             IPromise(batchPromise).then(this.callback.selector, abi.encode(asyncId));
         }
 
@@ -187,7 +193,7 @@ abstract contract BatchAsync is QueueAsync {
             winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
             isBatchCancelled: false,
             totalPayloadsRemaining: payloadDetails_.length - readEndIndex,
-            lastBatchPromises: new address[](readEndIndex),
+            lastBatchPromises: payloadBatches[asyncId].lastBatchPromises,
             onCompleteData: onCompleteData_
         });
 
