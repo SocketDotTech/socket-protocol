@@ -15,10 +15,10 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     mapping(bytes32 => bytes) public creationCodeWithArgs;
 
     constructor(
-        address _addressResolver,
-        address _auctionManager,
+        address addressResolver_,
+        address auctionManager_,
         bytes32 sbType_
-    ) AppGatewayBase(_addressResolver, _auctionManager) {
+    ) AppGatewayBase(addressResolver_, auctionManager_) {
         sbType = sbType_;
     }
 
@@ -26,7 +26,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     /// @param contractId_ The contract ID
     /// @param chainSlug_ The chain slug
     function _deploy(bytes32 contractId_, uint32 chainSlug_) internal {
-        address asyncPromise = addressResolver.deployAsyncPromiseContract(address(this));
+        address asyncPromise = addressResolver__.deployAsyncPromiseContract(address(this));
         isValidPromise[asyncPromise] = true;
         IPromise(asyncPromise).then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
 
@@ -47,7 +47,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     function setAddress(bytes memory data_, bytes memory returnData_) external onlyPromises {
         (uint32 chainSlug, bytes32 contractId) = abi.decode(data_, (uint32, bytes32));
 
-        address forwarderContractAddress = addressResolver.getOrDeployForwarderContract(
+        address forwarderContractAddress = addressResolver__.getOrDeployForwarderContract(
             address(this),
             abi.decode(returnData_, (address)),
             chainSlug
@@ -57,40 +57,42 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     }
 
     /// @notice Gets the on-chain address
-    /// @param contractId The contract ID
-    /// @param chainSlug The chain slug
+    /// @param contractId_ The contract ID
+    /// @param chainSlug_ The chain slug
     /// @return onChainAddress The on-chain address
     function getOnChainAddress(
-        bytes32 contractId,
-        uint32 chainSlug
+        bytes32 contractId_,
+        uint32 chainSlug_
     ) public view returns (address onChainAddress) {
-        if (forwarderAddresses[contractId][chainSlug] == address(0)) {
+        if (forwarderAddresses[contractId_][chainSlug_] == address(0)) {
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId][chainSlug]).getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
+            .getOnChainAddress();
     }
 
     /// @notice Callback in pd promise to be called after all contracts are deployed
-    /// @param payloadBatch The payload batch
+    /// @param payloadBatch_ The payload batch
     /// @dev only payload delivery can call this
     /// @dev callback in pd promise to be called after all contracts are deployed
     function onBatchComplete(
         bytes32,
-        PayloadBatch memory payloadBatch
+        PayloadBatch memory payloadBatch_
     ) external override onlyDeliveryHelper {
-        uint32 chainSlug = abi.decode(payloadBatch.onCompleteData, (uint32));
+        uint32 chainSlug = abi.decode(payloadBatch_.onCompleteData, (uint32));
         initialize(chainSlug);
     }
 
     /// @notice Gets the socket address
-    /// @param chainSlug The chain slug
-    /// @return socketAddress The socket address
-    function getSocketAddress(uint32 chainSlug) public view returns (address) {
-        return watcherPrecompile().appGatewayPlugs(addressResolver.deliveryHelper(), chainSlug);
+    /// @param chainSlug_ The chain slug
+    /// @return socketAddress_ The socket address
+    function getSocketAddress(uint32 chainSlug_) public view returns (address) {
+        return
+            watcherPrecompile__().appGatewayPlugs(addressResolver__.deliveryHelper(), chainSlug_);
     }
 
     /// @notice Initializes the contract
-    /// @param chainSlug The chain slug
-    function initialize(uint32 chainSlug) public virtual {}
+    /// @param chainSlug_ The chain slug
+    function initialize(uint32 chainSlug_) public virtual {}
 }

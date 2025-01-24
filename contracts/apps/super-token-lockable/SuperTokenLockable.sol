@@ -11,7 +11,7 @@ import "../../base/PlugBase.sol";
  * @notice An ERC20 contract which enables bridging a token to its sibling chains.
  */
 contract SuperTokenLockable is ERC20, Ownable, PlugBase {
-    LimitHook public limitHook;
+    LimitHook public limitHook__;
     mapping(address => uint256) public lockedTokens;
 
     error InsufficientBalance();
@@ -30,14 +30,14 @@ contract SuperTokenLockable is ERC20, Ownable, PlugBase {
 
     function lockTokens(address user_, uint256 amount_) external onlySocket {
         if (balanceOf[user_] < amount_) revert InsufficientBalance();
-        limitHook.beforeBurn(amount_);
+        limitHook__.beforeBurn(amount_);
 
         lockedTokens[user_] += amount_;
         _burn(user_, amount_);
     }
 
     function mint(address receiver_, uint256 amount_) external onlySocket {
-        limitHook.beforeMint(amount_);
+        limitHook__.beforeMint(amount_);
         _mint(receiver_, amount_);
     }
 
@@ -56,7 +56,7 @@ contract SuperTokenLockable is ERC20, Ownable, PlugBase {
     }
 
     function setLimitHook(address limitHook_) external onlyOwner {
-        limitHook = LimitHook(limitHook_);
+        limitHook__ = LimitHook(limitHook_);
     }
 
     function connectSocket(

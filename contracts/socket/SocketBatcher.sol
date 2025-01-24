@@ -26,25 +26,25 @@ contract SocketBatcher is Ownable {
     }
 
     function attestAndExecute(
-        ExecutePayloadParams calldata params
+        ExecutePayloadParams calldata params_
     ) external returns (bytes memory) {
-        ISwitchboard(params.switchboard).attest(
-            params.payloadId,
-            params.root,
-            params.watcherSignature
+        ISwitchboard(params_.switchboard).attest(
+            params_.payloadId,
+            params_.root,
+            params_.watcherSignature
         );
         return
             socket__.execute(
-                params.payloadId,
-                params.appGateway,
-                params.target,
-                params.executionGasLimit,
-                params.transmitterSignature,
-                params.payload
+                params_.payloadId,
+                params_.appGateway,
+                params_.target,
+                params_.executionGasLimit,
+                params_.transmitterSignature,
+                params_.payload
             );
     }
 
     function rescueFunds(address token_, address to_, uint256 amount_) external onlyOwner {
-        RescueFundsLib.rescueFunds(token_, to_, amount_);
+        RescueFundsLib._rescueFunds(token_, to_, amount_);
     }
 }

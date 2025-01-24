@@ -7,12 +7,12 @@ interface IAppGateway {
 
     function isCallSequential() external view returns (bool);
 
-    function onBatchComplete(bytes32 asyncId, PayloadBatch memory payloadBatch) external;
+    function onBatchComplete(bytes32 asyncId_, PayloadBatch memory payloadBatch_) external;
 
     function callFromInbox(
-        uint32 chainSlug,
-        address plug,
-        bytes calldata payload,
-        bytes32 params
+        uint32 chainSlug_,
+        address plug_,
+        bytes calldata payload_,
+        bytes32 params_
     ) external;
 }

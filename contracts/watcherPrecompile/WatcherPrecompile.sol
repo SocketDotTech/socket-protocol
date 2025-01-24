@@ -93,11 +93,11 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits, 
     }
 
     /// @notice Initializer function to replace constructor
-    /// @param _owner Address of the contract owner
+    /// @param owner_ Address of the contract owner
     /// @param addressResolver_ The address resolver contract address
-    function initialize(address _owner, address addressResolver_) public initializer {
+    function initialize(address owner_, address addressResolver_) public initializer {
         _setAddressResolver(addressResolver_);
-        _claimOwner(_owner);
+        _claimOwner(owner_);
         maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
     }
 
@@ -130,26 +130,22 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits, 
     }
 
     /// @notice Ends the timeouts and calls the target address with the callback payload
-    /// @param timeoutId The unique identifier for the timeout
+    /// @param timeoutId_ The unique identifier for the timeout
     /// @dev Only callable by the contract owner
-    function resolveTimeout(bytes32 timeoutId) external onlyOwner {
-        TimeoutRequest storage timeoutRequest = timeoutRequests[timeoutId];
-        if (timeoutRequest.isResolved) revert TimeoutAlreadyResolved();
-        if (block.timestamp < timeoutRequest.executeAt) revert ResolvingTimeoutTooEarly();
-        (bool success, ) = address(timeoutRequest.target).call(timeoutRequest.payload);
+    function resolveTimeout(bytes32 timeoutId_) external onlyOwner {
+        TimeoutRequest storage timeoutRequest_ = timeoutRequests[timeoutId_];
+        if (timeoutRequest_.isResolved) revert TimeoutAlreadyResolved();
+        if (block.timestamp < timeoutRequest_.executeAt) revert ResolvingTimeoutTooEarly();
+        (bool success, ) = address(timeoutRequest_.target).call(timeoutRequest_.payload);
         if (!success) revert CallFailed();
-        timeoutRequest.isResolved = true;
-        timeoutRequest.executedAt = block.timestamp;
+        timeoutRequest_.isResolved = true;
+        timeoutRequest_.executedAt = block.timestamp;
         emit TimeoutResolved(
-            timeoutId,
-            timeoutRequest.target,
-            timeoutRequest.payload,
+            timeoutId_,
+            timeoutRequest_.target,
+            timeoutRequest_.payload,
             block.timestamp
         );
-    }
-
-    function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external onlyOwner {
-        maxTimeoutDelayInSeconds = maxTimeoutDelayInSeconds_;
     }
 
     // ================== Finalize functions ==================
@@ -217,17 +213,17 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits, 
 
     // ================== Query functions ==================
     /// @notice Creates a new query request
-    /// @param chainSlug The identifier of the destination chain
-    /// @param targetAddress The address of the target contract
-    /// @param asyncPromises Array of promise addresses to be resolved
-    /// @param payload The query payload data
+    /// @param chainSlug_ The identifier of the destination chain
+    /// @param targetAddress_ The address of the target contract
+    /// @param asyncPromises_ Array of promise addresses to be resolved
+    /// @param payload_ The query payload data
     /// @return payloadId The unique identifier for the query
     function query(
-        uint32 chainSlug,
-        address targetAddress,
+        uint32 chainSlug_,
+        address targetAddress_,
         address appGateway_,
-        address[] memory asyncPromises,
-        bytes memory payload
+        address[] memory asyncPromises_,
+        bytes memory payload_
     ) public returns (bytes32 payloadId) {
         // from payload delivery
         _consumeLimit(appGateway_, QUERY);
@@ -236,18 +232,18 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits, 
 
         // Create async request with minimal information for queries
         // Note: addresses set to 0 as they're not needed for queries
-        AsyncRequest memory asyncRequest = AsyncRequest(
-            asyncPromises,
+        AsyncRequest memory asyncRequest_ = AsyncRequest(
+            asyncPromises_,
             address(0),
             address(0),
-            targetAddress,
+            targetAddress_,
             0,
-            payload,
+            payload_,
             address(0),
             bytes32(0)
         );
-        asyncRequests[payloadId] = asyncRequest;
-        emit QueryRequested(chainSlug, targetAddress, payloadId, payload);
+        asyncRequests[payloadId] = asyncRequest_;
+        emit QueryRequested(chainSlug_, targetAddress_, payloadId, payload_);
     }
 
     /// @notice Marks a request as finalized with a signature
@@ -289,6 +285,10 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits, 
                 params_.payload
             )
         );
+    }
+
+    function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external onlyOwner {
+        maxTimeoutDelayInSeconds = maxTimeoutDelayInSeconds_;
     }
 
     // ================== On-Chain Inbox ==================
@@ -359,7 +359,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits, 
         return bytes32((uint256(uint160(address(this))) << 64) | timeoutCounter_);
     }
 
-    function updateLimitParams(UpdateLimitParams[] calldata updates) external onlyOwner {
-        _updateLimitParams(updates);
+    function updateLimitParams(UpdateLimitParams[] calldata updates_) external onlyOwner {
+        _updateLimitParams(updates_);
     }
 }

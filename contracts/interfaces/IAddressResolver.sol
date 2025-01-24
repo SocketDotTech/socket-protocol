@@ -25,17 +25,17 @@ interface IAddressResolver {
     /// @notice Gets the watcher precompile contract interface
     /// @return IWatcherPrecompile The watcher precompile interface
     /// @dev Returns interface pointing to zero address if not configured
-    function watcherPrecompile() external view returns (IWatcherPrecompile);
+    function watcherPrecompile__() external view returns (IWatcherPrecompile);
 
     /// @notice Maps contract addresses to their corresponding gateway addresses
-    /// @param contractAddress The address of the contract to lookup
+    /// @param contractAddress_ The address of the contract to lookup
     /// @return The gateway address associated with the contract
-    function contractsToGateways(address contractAddress) external view returns (address);
+    function contractsToGateways(address contractAddress_) external view returns (address);
 
     /// @notice Maps gateway addresses to their corresponding contract addresses
-    /// @param gatewayAddress The address of the gateway to lookup
+    /// @param gatewayAddress_ The address of the gateway to lookup
     /// @return The contract address associated with the gateway
-    function gatewaysToContracts(address gatewayAddress) external view returns (address);
+    function gatewaysToContracts(address gatewayAddress_) external view returns (address);
 
     /// @notice Gets the list of all deployed async promise contracts
     /// @return Array of async promise contract addresses
@@ -43,14 +43,14 @@ interface IAddressResolver {
 
     // State-changing functions
     /// @notice Sets the auction house contract address
-    /// @param _deliveryHelper The new delivery helper contract address
+    /// @param deliveryHelper_ The new delivery helper contract address
     /// @dev Only callable by contract owner
-    function setDeliveryHelper(address _deliveryHelper) external;
+    function setDeliveryHelper(address deliveryHelper_) external;
 
     /// @notice Sets the watcher precompile contract address
-    /// @param _watcherPrecompile The new watcher precompile contract address
+    /// @param watcherPrecompile_ The new watcher precompile contract address
     /// @dev Only callable by contract owner
-    function setWatcherPrecompile(address _watcherPrecompile) external;
+    function setWatcherPrecompile(address watcherPrecompile_) external;
 
     /// @notice Maps a contract address to its gateway
     /// @param contractAddress_ The contract address to map

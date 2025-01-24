@@ -17,17 +17,17 @@ interface IERC20 {
 
     function totalSupply() external view returns (uint256);
 
-    function balanceOf(address account) external view returns (uint256);
+    function balanceOf(address account_) external view returns (uint256);
 
-    function allowance(address owner, address spender) external view returns (uint256);
+    function allowance(address owner_, address spender_) external view returns (uint256);
 
     /*//////////////////////////////////////////////////////////////
                                ERC20 LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function approve(address spender, uint256 amount) external returns (bool);
+    function approve(address spender_, uint256 amount_) external returns (bool);
 
-    function transfer(address to, uint256 amount) external returns (bool);
+    function transfer(address to_, uint256 amount_) external returns (bool);
 
-    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+    function transferFrom(address from_, address to_, uint256 amount_) external returns (bool);
 }

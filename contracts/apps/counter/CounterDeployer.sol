@@ -19,8 +19,8 @@ contract CounterDeployer is AppDeployerBase, Ownable {
         _claimOwner(msg.sender);
     }
 
-    function deployContracts(uint32 chainSlug) external async {
-        _deploy(counter, chainSlug);
+    function deployContracts(uint32 chainSlug_) external async {
+        _deploy(counter, chainSlug_);
     }
 
     function initialize(uint32) public pure override {

@@ -42,6 +42,17 @@ contract Forwarder is IForwarder, Initializable {
         addressResolver = addressResolver_;
     }
 
+    /// @notice Stores the callback address and data to be executed once the promise is resolved.
+    /// @dev This function should not be called before the fallback function.
+    /// @param selector_ The function selector for callback
+    /// @param data_ The data to be passed to callback
+    /// @return promise_ The address of the new promise
+    function then(bytes4 selector_, bytes memory data_) external returns (address promise_) {
+        if (latestAsyncPromise == address(0)) revert("Forwarder: no async promise found");
+        promise_ = IPromise(latestAsyncPromise).then(selector_, data_);
+        latestAsyncPromise = address(0);
+    }
+
     /// @notice Returns the on-chain address associated with this forwarder.
     /// @return The on-chain address.
     function getOnChainAddress() external view returns (address) {
@@ -52,17 +63,6 @@ contract Forwarder is IForwarder, Initializable {
     /// @return chain id
     function getChainSlug() external view returns (uint32) {
         return chainSlug;
-    }
-
-    /// @notice Stores the callback address and data to be executed once the promise is resolved.
-    /// @dev This function should not be called before the fallback function.
-    /// @param selector The function selector for callback
-    /// @param data The data to be passed to callback
-    /// @return promise_ The address of the new promise
-    function then(bytes4 selector, bytes memory data) external returns (address promise_) {
-        if (latestAsyncPromise == address(0)) revert("Forwarder: no async promise found");
-        promise_ = IPromise(latestAsyncPromise).then(selector, data);
-        latestAsyncPromise = address(0);
     }
 
     /// @notice Fallback function to process the contract calls to onChainAddress

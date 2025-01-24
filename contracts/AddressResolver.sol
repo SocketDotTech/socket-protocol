@@ -12,8 +12,8 @@ import {Initializable} from "openzeppelin-contracts/contracts/proxy/utils/Initia
 /// @title AddressResolver Contract
 /// @notice This contract is responsible for fetching latest core addresses and deploying Forwarder and AsyncPromise contracts.
 /// @dev Inherits the Ownable contract and implements the IAddressResolver interface.
-contract AddressResolver is Ownable, IAddressResolver {
-    IWatcherPrecompile public override watcherPrecompile;
+contract AddressResolver is Ownable, IAddressResolver, Initializable {
+    IWatcherPrecompile public override watcherPrecompile__;
     address public override deliveryHelper;
     address public override feesManager;
 
@@ -31,7 +31,10 @@ contract AddressResolver is Ownable, IAddressResolver {
     // gateway to contract map
     mapping(address => address) public override gatewaysToContracts;
 
+    /// @notice Error thrown if AppGateway contract was already set by a different address
     error AppGatewayContractAlreadySetByDifferentSender(address contractAddress_);
+    /// @notice Error thrown if it failed to deploy the create2 contract
+    error DeploymentFailed();
 
     event PlugAdded(address appGateway, uint32 chainSlug, address plug);
     event ForwarderDeployed(address newForwarder, bytes32 salt);
@@ -57,38 +60,6 @@ contract AddressResolver is Ownable, IAddressResolver {
 
         emit ImplementationUpdated("Forwarder", forwarderImplementation_);
         emit ImplementationUpdated("AsyncPromise", asyncPromiseImplementation_);
-    }
-
-    /// @notice Updates the implementation contract for Forwarder
-    /// @param _implementation The new implementation address
-    function setForwarderImplementation(address _implementation) external onlyOwner {
-        forwarderImplementation = _implementation;
-        emit ImplementationUpdated("Forwarder", _implementation);
-    }
-
-    /// @notice Updates the implementation contract for AsyncPromise
-    /// @param _implementation The new implementation address
-    function setAsyncPromiseImplementation(address _implementation) external onlyOwner {
-        asyncPromiseImplementation = _implementation;
-        emit ImplementationUpdated("AsyncPromise", _implementation);
-    }
-
-    /// @notice Updates the address of the delivery helper
-    /// @param _deliveryHelper The address of the delivery helper
-    function setDeliveryHelper(address _deliveryHelper) external onlyOwner {
-        deliveryHelper = _deliveryHelper;
-    }
-
-    /// @notice Updates the address of the delivery helper
-    /// @param _feesManager The address of the fees manager
-    function setFeesManager(address _feesManager) external onlyOwner {
-        feesManager = _feesManager;
-    }
-
-    /// @notice Updates the address of the watcher precompile contract
-    /// @param _watcherPrecompile The address of the watcher precompile contract
-    function setWatcherPrecompile(address _watcherPrecompile) external onlyOwner {
-        watcherPrecompile = IWatcherPrecompile(_watcherPrecompile);
     }
 
     /// @notice Gets or deploys a Forwarder proxy contract
@@ -126,12 +97,6 @@ contract AddressResolver is Ownable, IAddressResolver {
         return newForwarder;
     }
 
-    function _setConfig(address appDeployer_, address newForwarder_) internal {
-        address gateway = contractsToGateways[appDeployer_];
-        gatewaysToContracts[gateway] = newForwarder_;
-        contractsToGateways[newForwarder_] = gateway;
-    }
-
     /// @notice Deploys an AsyncPromise proxy contract
     /// @param invoker_ The address of the invoker
     /// @return The address of the deployed AsyncPromise proxy contract
@@ -151,20 +116,20 @@ contract AddressResolver is Ownable, IAddressResolver {
 
         address newAsyncPromise = address(proxy);
         emit AsyncPromiseDeployed(newAsyncPromise, salt);
-        promises.push(newAsyncPromise);
+        _promises.push(newAsyncPromise);
         return newAsyncPromise;
     }
 
     /// @notice Clears the list of promises
     /// @dev this function helps in queueing the promises and whitelisting on gateway at the end.
     function clearPromises() external {
-        delete promises;
+        delete _promises;
     }
 
     /// @notice Gets the list of promises
     /// @return array of promises deployed while queueing async calls
     function getPromises() external view returns (address[] memory) {
-        return promises;
+        return _promises;
     }
 
     /// @notice Sets the contract to gateway mapping
