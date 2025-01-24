@@ -67,14 +67,6 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
     }
 
     function _finishBatch(bytes32 asyncId_, PayloadBatch storage payloadBatch_) internal {
-        (bytes32 payloadId_, bytes32 root_, PayloadDetails memory payloadDetails_) = IFeesManager(
-            feesManager
-        ).distributeFees(
-                payloadBatch_.appGateway,
-                payloadBatch_.feesData,
-                payloadBatch_.winningBid
-            );
-
         payloadIdToPayloadDetails[payloadId_] = payloadDetails_;
         payloadIdToBatchHash[payloadId_] = asyncId_;
         emit PayloadAsyncRequested(asyncId_, payloadId_, root_, payloadDetails_);

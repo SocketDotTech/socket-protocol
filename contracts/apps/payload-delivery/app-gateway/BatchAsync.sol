@@ -91,6 +91,18 @@ abstract contract BatchAsync is QueueAsync {
 
         address appGateway = _processRemainingPayloads(payloadDetails_, readEndIndex, asyncId);
 
+        // Get fee distribution payload from fees manager
+        PayloadDetails memory feePayloadDetails = IFeesManager(feesManager).blockAndDistributeFees(
+            appGateway,
+            feesData_,
+            payloadBatches[asyncId].winningBid,
+            asyncId
+        );
+
+        // Add fee distribution payload to batch
+        payloadBatchDetails[asyncId].push(feePayloadDetails);
+        payloadBatches[asyncId].totalPayloadsRemaining = payloadDetails_.length - readEndIndex + 1; // Add 1 for fees payload
+
         _initializeBatch(
             asyncId,
             appGateway,
@@ -192,7 +204,7 @@ abstract contract BatchAsync is QueueAsync {
             auctionManager: auctionManager_,
             winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
             isBatchCancelled: false,
-            totalPayloadsRemaining: payloadDetails_.length - readEndIndex,
+            totalPayloadsRemaining: payloadBatches[asyncId].totalPayloadsRemaining,
             lastBatchPromises: payloadBatches[asyncId].lastBatchPromises,
             onCompleteData: onCompleteData_
         });
