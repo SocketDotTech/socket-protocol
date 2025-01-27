@@ -55,6 +55,7 @@ struct PayloadBatch {
     address auctionManager;
     Bid winningBid;
     bool isBatchCancelled;
+    bool isBatchExecuted;
     uint256 totalPayloadsRemaining;
     address[] lastBatchPromises;
     bytes onCompleteData;

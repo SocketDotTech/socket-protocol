@@ -33,7 +33,19 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         Bid memory winningBid_
     ) external onlyAuctionManager(asyncId_) {
         payloadBatches[asyncId_].winningBid = winningBid_;
-        _process(asyncId_);
+
+        // update fees
+        IFeesManager(feesManager).updateTransmitterFees(winningBid_, asyncId_);
+
+        if (winningBid_.transmitter != address(0)) {
+            // process batch
+            _process(asyncId_);
+        } else {
+            // todo: check if this is correct?
+            // cancel batch
+            payloadBatches[asyncId_].isBatchCancelled = true;
+            emit BatchCancelled(asyncId_);
+        }
     }
 
     function callback(bytes memory asyncId_, bytes memory) external override onlyPromises {
@@ -69,8 +81,9 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
     function _finishBatch(bytes32 asyncId_, PayloadBatch storage payloadBatch_) internal {
         payloadIdToPayloadDetails[payloadId_] = payloadDetails_;
         payloadIdToBatchHash[payloadId_] = asyncId_;
-        emit PayloadAsyncRequested(asyncId_, payloadId_, root_, payloadDetails_);
+        payloadBatch_.isBatchExecuted = true;
 
+        emit PayloadAsyncRequested(asyncId_, payloadId_, root_, payloadDetails_);
         IAppGateway(payloadBatch_.appGateway).onBatchComplete(asyncId_, payloadBatch_);
     }
 
