@@ -120,7 +120,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         address appGateway_,
         address token_,
         uint256 amount_
-    ) external onlyWatcherPrecompile {
+    ) external onlyOwner {
         FeeInfo storage feeInfo = feesInfo[appGateway_][chainSlug_][token_];
         feeInfo.deposited += amount_;
         emit FeesDepositedUpdated(chainSlug_, appGateway_, token_, amount_);
@@ -267,7 +267,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
     /// @notice Updates blocked fees in case of failed execution
     /// @param asyncId_ The batch identifier
     /// @dev Only callable by delivery helper
-    function updateBlockedFees(bytes32 asyncId_, uint256 feesUsed_) external onlyWatcherPrecompile {
+    function updateBlockedFees(bytes32 asyncId_, uint256 feesUsed_) external onlyOwner {
         PayloadBatch memory batch = IDeliveryHelper(deliveryHelper()).getAsyncBatchDetails(
             asyncId_
         );
