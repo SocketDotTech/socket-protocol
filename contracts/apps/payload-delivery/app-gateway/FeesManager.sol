@@ -194,9 +194,26 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         bytes32[] storage transmitterIds = transmitterAsyncIds[transmitter];
         require(transmitterIds.length > 0, "No async IDs for transmitter");
 
-        delete transmitterAsyncIds[transmitter];
+        uint256 totalFees = _processFees(transmitter, transmitterIds, chainSlug_, token_, appGateway_);
 
-        uint256 totalFees = 0;
+        (payloadId, root, payloadDetails) = _createWithdrawPayload(
+            appGateway_,
+            chainSlug_,
+            token_,
+            totalFees,
+            receiver_,
+            transmitter
+        );
+    }
+
+    function _processFees(
+        address transmitter,
+        bytes32[] storage transmitterIds,
+        uint32 chainSlug_,
+        address token_,
+        address appGateway_
+    ) internal returns (uint256 totalFees) {
+        delete transmitterAsyncIds[transmitter];
 
         // Iterate through asyncIds and check completion
         for (uint256 i = 0; i < transmitterIds.length; i++) {
@@ -228,33 +245,40 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
             // Clear asyncId data
             delete asyncIdBlockedFees[asyncId];
         }
+    }
 
-        {
-            // Create fee distribution payload
-            bytes32 feesId = _encodeFeesId(feesCounter++);
-            bytes memory payload = abi.encodeCall(
-                IFeesPlug.distributeFee,
-                (appGateway_, token_, totalFees, transmitter, feesId)
-            );
+    function _createWithdrawPayload(
+        address appGateway_,
+        uint32 chainSlug_,
+        address token_,
+        uint256 totalFees,
+        address receiver_,
+        address transmitter
+    ) internal returns (bytes32 payloadId, bytes32 root, PayloadDetails memory payloadDetails) {
+        // Create fee distribution payload
+        bytes32 feesId = _encodeFeesId(feesCounter++);
+        bytes memory payload = abi.encodeCall(
+            IFeesPlug.distributeFee,
+            (appGateway_, token_, totalFees, receiver_, feesId)
+        );
 
-            payloadDetails = PayloadDetails({
-                appGateway: address(this),
-                chainSlug: chainSlug_,
-                target: _getFeesPlugAddress(chainSlug_),
-                payload: payload,
-                callType: CallType.WRITE,
-                executionGasLimit: 1000000,
-                next: new address[](0),
-                isSequential: true
-            });
+        payloadDetails = PayloadDetails({
+            appGateway: address(this),
+            chainSlug: chainSlug_,
+            target: _getFeesPlugAddress(chainSlug_),
+            payload: payload,
+            callType: CallType.WRITE,
+            executionGasLimit: 1000000,
+            next: new address[](0),
+            isSequential: true
+        });
 
-            FinalizeParams memory finalizeParams = FinalizeParams({
-                payloadDetails: payloadDetails,
-                transmitter: transmitter
-            });
+        FinalizeParams memory finalizeParams = FinalizeParams({
+            payloadDetails: payloadDetails,
+            transmitter: transmitter
+        });
 
-            (payloadId, root) = watcherPrecompile__().finalize(finalizeParams, appGateway_);
-        }
+        (payloadId, root) = watcherPrecompile__().finalize(finalizeParams, appGateway_);
     }
 
     /// @notice Updates blocked fees in case of failed execution
@@ -292,7 +316,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         address token_,
         uint256 amount_,
         address receiver_
-    ) public view returns (PayloadDetails memory) {
+    ) public returns (PayloadDetails memory) {
         address appGateway = _getCoreAppGateway(appGateway_);
 
         // Check if amount is available in fees plug

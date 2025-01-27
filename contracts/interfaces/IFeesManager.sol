@@ -20,5 +20,5 @@ interface IFeesManager {
         address token_,
         uint256 amount_,
         address receiver_
-    ) external view returns (PayloadDetails memory);
+    ) external returns (PayloadDetails memory);
 }
