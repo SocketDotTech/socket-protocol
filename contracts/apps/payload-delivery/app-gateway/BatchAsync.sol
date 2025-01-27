@@ -194,7 +194,6 @@ abstract contract BatchAsync is QueueAsync {
             auctionManager: auctionManager_,
             winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
             isBatchCancelled: false,
-            isBatchExecuted: false,
             totalPayloadsRemaining: payloadBatches[asyncId].totalPayloadsRemaining,
             lastBatchPromises: payloadBatches[asyncId].lastBatchPromises,
             onCompleteData: onCompleteData_
@@ -222,10 +221,11 @@ abstract contract BatchAsync is QueueAsync {
         }
 
         payloadBatches[asyncId_].isBatchCancelled = true;
-        
-        // temp marked as executed to release fees to transmitter
-        payloadBatches[asyncId_].isBatchExecuted = true;
-
+        IFeesManager(feesManager).unblockAndAssignFees(
+            asyncId_,
+            payloadBatches[asyncId_].winningBid.transmitter,
+            payloadBatches[asyncId_].appGateway
+        );
         emit BatchCancelled(asyncId_);
     }
 
