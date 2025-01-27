@@ -35,7 +35,11 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         payloadBatches[asyncId_].winningBid = winningBid_;
 
         // update fees
-        IFeesManager(feesManager).updateTransmitterFees(winningBid_, asyncId_);
+        IFeesManager(feesManager).updateTransmitterFees(
+            winningBid_,
+            asyncId_,
+            payloadBatches[asyncId_].appGateway
+        );
 
         if (winningBid_.transmitter != address(0)) {
             // process batch
@@ -79,11 +83,7 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
     }
 
     function _finishBatch(bytes32 asyncId_, PayloadBatch storage payloadBatch_) internal {
-        payloadIdToPayloadDetails[payloadId_] = payloadDetails_;
-        payloadIdToBatchHash[payloadId_] = asyncId_;
         payloadBatch_.isBatchExecuted = true;
-
-        emit PayloadAsyncRequested(asyncId_, payloadId_, root_, payloadDetails_);
         IAppGateway(payloadBatch_.appGateway).onBatchComplete(asyncId_, payloadBatch_);
     }
 

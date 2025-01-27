@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.3;
-import {PayloadDetails, Bid, FeesData, DeployParams, CallType} from "../common/Structs.sol";
+import {PayloadDetails, Bid, FeesData, DeployParams, CallType, PayloadBatch} from "../common/Structs.sol";
 
 interface IDeliveryHelper {
     event BidPlaced(
@@ -47,4 +47,6 @@ interface IDeliveryHelper {
     function getFeesData(bytes32 asyncId_) external view returns (FeesData memory);
 
     function getCurrentAsyncId() external view returns (bytes32);
+
+    function getAsyncBatchDetails(bytes32 asyncId_) external view returns (PayloadBatch memory);
 }

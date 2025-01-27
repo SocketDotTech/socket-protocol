@@ -143,6 +143,12 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
         return payloadBatches[asyncId_].feesData;
     }
 
+    function getAsyncBatchDetails(
+        bytes32 asyncId_
+    ) external view override returns (PayloadBatch memory) {
+        return payloadBatches[asyncId_];
+    }
+
     function getPayloadDetails(bytes32 payloadId_) external view returns (PayloadDetails memory) {
         return payloadIdToPayloadDetails[payloadId_];
     }

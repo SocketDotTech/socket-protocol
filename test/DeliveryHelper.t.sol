@@ -232,6 +232,7 @@ contract DeliveryHelperTest is SetupTest {
             Bid memory winningBid,
             bool isBatchCancelled,
             ,
+            ,
 
         ) = deliveryHelper.payloadBatches(asyncId);
 

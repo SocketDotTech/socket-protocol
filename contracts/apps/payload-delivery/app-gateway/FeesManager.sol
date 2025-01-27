@@ -4,15 +4,16 @@ pragma solidity ^0.8.0;
 import {OwnableTwoStep} from "../../../utils/OwnableTwoStep.sol";
 import {SignatureVerifier} from "../../../socket/utils/SignatureVerifier.sol";
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
-import {Bid, FeesData, PayloadDetails, CallType, FinalizeParams} from "../../../common/Structs.sol";
+import {Bid, FeesData, PayloadDetails, CallType, FinalizeParams, PayloadBatch} from "../../../common/Structs.sol";
 import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Constants.sol";
 import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
+import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 /// @title FeesManager
 /// @notice Contract for managing fees
-contract FeesManager is AddressResolverUtil, OwnableTwoStep, Initializable {
+contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initializable {
     uint256 public feesCounter;
     mapping(uint32 => uint256) public feeCollectionGasLimit;
 
@@ -92,7 +93,7 @@ contract FeesManager is AddressResolverUtil, OwnableTwoStep, Initializable {
         address appGateway_,
         address token_
     ) public view returns (uint256) {
-        FeeInfo memory feeInfo = fees[chainSlug_][appGateway_][token_];
+        FeeInfo memory feeInfo = feesInfo[chainSlug_][appGateway_][token_];
         if (feeInfo.deposited == 0 || feeInfo.deposited <= feeInfo.blocked) return 0;
         return feeInfo.deposited - feeInfo.blocked;
     }
@@ -107,8 +108,8 @@ contract FeesManager is AddressResolverUtil, OwnableTwoStep, Initializable {
         address appGateway_,
         address token_,
         uint256 amount_
-    ) external onlyWatcher {
-        FeeInfo storage feeInfo = fees[chainSlug_][appGateway_][token_];
+    ) external onlyWatcherPrecompile {
+        FeeInfo storage feeInfo = feesInfo[chainSlug_][appGateway_][token_];
         feeInfo.deposited += amount_;
         emit FeesDepositedUpdated(chainSlug_, appGateway_, token_, amount_);
     }
@@ -116,7 +117,6 @@ contract FeesManager is AddressResolverUtil, OwnableTwoStep, Initializable {
     /// @notice Blocks fees for transmitter
     /// @param appGateway_ The app gateway address
     /// @param feesData_ The fees data struct
-    /// @param winningBid_ The winning bid struct
     /// @param asyncId_ The batch identifier
     /// @dev Only callable by delivery helper
     function blockFees(
@@ -149,10 +149,11 @@ contract FeesManager is AddressResolverUtil, OwnableTwoStep, Initializable {
 
     function updateTransmitterFees(
         Bid memory winningBid_,
-        bytes32 asyncId_
+        bytes32 asyncId_,
+        address appGateway_
     ) external onlyDeliveryHelper {
         FeesData storage feesData = asyncIdBlockedFees[asyncId_];
-        FeeInfo storage feeInfo = feesInfo[feesData.feePoolChain][feesData.appGateway][
+        FeeInfo storage feeInfo = feesInfo[feesData.feePoolChain][appGateway_][
             feesData.feePoolToken
         ];
 
@@ -177,14 +178,17 @@ contract FeesManager is AddressResolverUtil, OwnableTwoStep, Initializable {
     /// @param appGateway_ The app gateway address
     /// @param chainSlug_ The chain identifier
     /// @param token_ The token address
-    /// @param amount_ The amount of tokens to withdraw
     /// @param receiver_ The address of the receiver
     function withdrawTransmitterFees(
         address appGateway_,
         uint32 chainSlug_,
         address token_,
         address receiver_
-    ) external onlyDeliveryHelper returns (bytes32 payloadId, bytes32 root, PayloadDetails memory) {
+    )
+        external
+        onlyDeliveryHelper
+        returns (bytes32 payloadId, bytes32 root, PayloadDetails memory payloadDetails)
+    {
         address transmitter = msg.sender;
         // Get all asyncIds for the transmitter
         bytes32[] storage transmitterIds = transmitterAsyncIds[transmitter];
@@ -206,7 +210,9 @@ contract FeesManager is AddressResolverUtil, OwnableTwoStep, Initializable {
             }
 
             // Check if batch is completed
-            PayloadBatch memory batch = IDeliveryHelper(deliveryHelper()).payloadBatches(asyncId);
+            PayloadBatch memory batch = IDeliveryHelper(deliveryHelper()).getAsyncBatchDetails(
+                asyncId
+            );
             if (!batch.isBatchExecuted && batch.appGateway == appGateway_) {
                 transmitterAsyncIds[transmitter].push(asyncId);
                 continue;
@@ -223,43 +229,41 @@ contract FeesManager is AddressResolverUtil, OwnableTwoStep, Initializable {
             delete asyncIdBlockedFees[asyncId];
         }
 
-        // Deploy promise for fee distribution
-        address promise = IAddressResolver(addressResolver__).deployAsyncPromiseContract(
-            address(this)
-        );
+        {
+            // Create fee distribution payload
+            bytes32 feesId = _encodeFeesId(feesCounter++);
+            bytes memory payload = abi.encodeCall(
+                IFeesPlug.distributeFee,
+                (appGateway_, token_, totalFees, transmitter, feesId)
+            );
 
-        // Create fee distribution payload
-        bytes32 feesId = _encodeFeesId(feesCounter++);
-        bytes memory payload = abi.encodeCall(
-            IFeesPlug.distributeFee,
-            (appGateway, feesData_.feePoolToken, winningBid_.fee, winningBid_.transmitter, feesId)
-        );
+            payloadDetails = PayloadDetails({
+                appGateway: address(this),
+                chainSlug: chainSlug_,
+                target: _getFeesPlugAddress(chainSlug_),
+                payload: payload,
+                callType: CallType.WRITE,
+                executionGasLimit: 1000000,
+                next: new address[](0),
+                isSequential: true
+            });
 
-        payloadDetails = PayloadDetails({
-            appGateway: address(this),
-            chainSlug: feesData_.feePoolChain,
-            target: _getFeesPlugAddress(feesData_.feePoolChain),
-            payload: payload,
-            callType: CallType.WRITE,
-            executionGasLimit: 1000000,
-            next: new address[](0),
-            isSequential: true
-        });
+            FinalizeParams memory finalizeParams = FinalizeParams({
+                payloadDetails: payloadDetails,
+                transmitter: transmitter
+            });
 
-        FinalizeParams memory finalizeParams = FinalizeParams({
-            payloadDetails: payloadDetails,
-            transmitter: transmitter_
-        });
-
-        (payloadId, root) = watcherPrecompile__().finalize(finalizeParams, appGateway);
-        return (payloadId, root, payloadDetails);
+            (payloadId, root) = watcherPrecompile__().finalize(finalizeParams, appGateway_);
+        }
     }
 
     /// @notice Updates blocked fees in case of failed execution
     /// @param asyncId_ The batch identifier
     /// @dev Only callable by delivery helper
-    function updateBlockedFees(bytes32 asyncId_, uint256 feesUsed_) external onlyWatcher {
-        PayloadBatch memory batch = IDeliveryHelper(deliveryHelper()).payloadBatches(asyncId_);
+    function updateBlockedFees(bytes32 asyncId_, uint256 feesUsed_) external onlyWatcherPrecompile {
+        PayloadBatch memory batch = IDeliveryHelper(deliveryHelper()).getAsyncBatchDetails(
+            asyncId_
+        );
 
         FeesData storage feesData = asyncIdBlockedFees[asyncId_];
         FeeInfo storage feeInfo = feesInfo[batch.feesData.feePoolChain][batch.appGateway][
@@ -269,7 +273,6 @@ contract FeesManager is AddressResolverUtil, OwnableTwoStep, Initializable {
         // Unblock unused fees
         uint256 unusedFees = feesData.maxFees - feesUsed_;
         feeInfo.blocked -= unusedFees;
-        feeInfo.deposited += unusedFees;
 
         // Update feesData with actual fees used
         feesData.maxFees = feesUsed_;
@@ -293,11 +296,11 @@ contract FeesManager is AddressResolverUtil, OwnableTwoStep, Initializable {
         address appGateway = _getCoreAppGateway(appGateway_);
 
         // Check if amount is available in fees plug
-        uint256 availableAmount = IFeesPlug(_getFeesPlugAddress(chainSlug_)).getAvailableFees(
-            appGateway,
-            token_
-        );
+        uint256 availableAmount = getAvailableFees(chainSlug_, appGateway, token_);
         require(availableAmount >= amount_, "Insufficient fees available");
+
+        FeeInfo storage feeInfo = feesInfo[chainSlug_][appGateway][token_];
+        feeInfo.deposited -= amount_;
 
         // Create payload for pool contract
         bytes memory payload = abi.encodeCall(
