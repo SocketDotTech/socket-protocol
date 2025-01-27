@@ -222,6 +222,10 @@ abstract contract BatchAsync is QueueAsync {
         }
 
         payloadBatches[asyncId_].isBatchCancelled = true;
+        
+        // temp marked as executed to release fees to transmitter
+        payloadBatches[asyncId_].isBatchExecuted = true;
+
         emit BatchCancelled(asyncId_);
     }
 

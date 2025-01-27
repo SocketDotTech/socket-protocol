@@ -14,6 +14,12 @@ interface IFeesManager {
 
     function updateBlockedFees(bytes32 asyncId_, uint256 feesUsed_) external;
 
+    function unblockAndAssignFees(
+        bytes32 asyncId_,
+        address transmitter_,
+        address appGateway_
+    ) external;
+
     function getWithdrawToPayload(
         address appGateway_,
         uint32 chainSlug_,
