@@ -22,6 +22,6 @@ contract DepositFees is Script {
         console.log("Sender balance:", balance);
 
         uint feesAmount = 0.001 ether;
-        feesPlug.deposit{value: feesAmount}(ETH_ADDRESS, feesAmount, appGateway);
+        feesPlug.deposit{value: feesAmount}(ETH_ADDRESS, appGateway, feesAmount);
     }
 }
