@@ -59,8 +59,8 @@ contract FeesTest is DeliveryHelperTest {
         hoax(owner);
         feesConfig.feesPlug.deposit{value: depositAmount}(
             ETH_ADDRESS,
-            depositAmount,
-            address(counterGateway)
+            address(counterGateway),
+            depositAmount
         );
 
         assertEq(
@@ -71,7 +71,7 @@ contract FeesTest is DeliveryHelperTest {
 
         assertEq(
             depositAmount,
-            feesConfig.feesPlug.balanceOf(address(counterGateway), ETH_ADDRESS),
+            feesConfig.feesPlug.balanceOf(ETH_ADDRESS),
             "FeesPlug balance of counterGateway should be correct"
         );
 
@@ -93,12 +93,12 @@ contract FeesTest is DeliveryHelperTest {
     function testWithdrawFeeTokens() public {
         feesConfig.feesPlug.deposit{value: depositAmount}(
             ETH_ADDRESS,
-            depositAmount,
-            address(counterGateway)
+            address(counterGateway),
+            depositAmount
         );
         assertEq(
             depositAmount,
-            feesConfig.feesPlug.balanceOf(address(counterGateway), ETH_ADDRESS),
+            feesConfig.feesPlug.balanceOf(ETH_ADDRESS),
             "Balance should be correct"
         );
 

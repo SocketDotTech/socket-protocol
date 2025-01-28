@@ -128,11 +128,11 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         timeoutRequests[timeoutId] = TimeoutRequest(
             timeoutId,
             msg.sender,
-            payload_,
             delayInSeconds_,
             executeAt,
             0,
-            false
+            false,
+            payload_
         );
         emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);
     }
@@ -187,10 +187,10 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
 
         // Construct parameters for root calculation
         PayloadRootParams memory rootParams_ = PayloadRootParams(
-            payloadId,
             params_.payloadDetails.appGateway,
             params_.transmitter,
             params_.payloadDetails.target,
+            payloadId,
             params_.payloadDetails.executionGasLimit,
             params_.payloadDetails.payload
         );
@@ -206,14 +206,14 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
 
         // Create and store the async request with all necessary details
         AsyncRequest memory asyncRequest = AsyncRequest(
-            params_.payloadDetails.next,
             params_.payloadDetails.appGateway,
             params_.transmitter,
             params_.payloadDetails.target,
-            params_.payloadDetails.executionGasLimit,
-            params_.payloadDetails.payload,
             switchboard,
-            root
+            params_.payloadDetails.executionGasLimit,
+            root,
+            params_.payloadDetails.payload,
+            params_.payloadDetails.next
         );
         asyncRequests[payloadId] = asyncRequest;
         emit FinalizeRequested(payloadId, asyncRequest);
@@ -241,14 +241,14 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         // Create async request with minimal information for queries
         // Note: addresses set to 0 as they're not needed for queries
         AsyncRequest memory asyncRequest_ = AsyncRequest(
-            asyncPromises_,
             address(0),
             address(0),
             targetAddress_,
-            0,
-            payload_,
             address(0),
-            bytes32(0)
+            0,
+            bytes32(0),
+            payload_,
+            asyncPromises_
         );
         asyncRequests[payloadId] = asyncRequest_;
         emit QueryRequested(chainSlug_, targetAddress_, payloadId, payload_);

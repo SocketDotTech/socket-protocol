@@ -226,13 +226,12 @@ contract DeliveryHelperTest is SetupTest {
 
         (
             address appGateway,
-            ,
-            ,
             address _auctionManager,
-            Bid memory winningBid,
             bool isBatchCancelled,
             ,
             ,
+            ,
+            Bid memory winningBid,
 
         ) = deliveryHelper.payloadBatches(asyncId);
 
@@ -463,10 +462,10 @@ contract DeliveryHelperTest is SetupTest {
         SocketContracts memory socketConfig = getSocketConfig(payloadDetails.chainSlug);
 
         PayloadRootParams memory rootParams_ = PayloadRootParams(
-            payloadId,
             payloadDetails.appGateway,
             transmitterEOA,
             payloadDetails.target,
+            payloadId,
             payloadDetails.executionGasLimit,
             payloadDetails.payload
         );
