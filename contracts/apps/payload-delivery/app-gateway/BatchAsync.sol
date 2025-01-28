@@ -84,6 +84,12 @@ abstract contract BatchAsync is QueueAsync {
         // Handle initial read operations first
         uint256 readEndIndex = _processReadOperations(payloadDetails_, asyncId);
 
+        watcherPrecompile__().checkAndUpdateLimit(
+            payloadDetails_[0].appGateway,
+            QUERY,
+            readEndIndex
+        );
+
         // If only reads, return early
         if (readEndIndex == payloadDetails_.length) {
             return asyncId;
@@ -159,6 +165,7 @@ abstract contract BatchAsync is QueueAsync {
     ) internal returns (address) {
         address appGateway = msg.sender;
 
+        uint256 writes = 0;
         for (uint256 i = readEndIndex; i < payloadDetails_.length; i++) {
             if (payloadDetails_[i].payload.length > 24.5 * 1024) revert PayloadTooLarge();
 
@@ -168,12 +175,23 @@ abstract contract BatchAsync is QueueAsync {
                     address(this),
                     payloadDetails_[i].chainSlug
                 );
+                writes++;
             } else if (payloadDetails_[i].callType == CallType.WRITE) {
                 appGateway = _getCoreAppGateway(appGateway);
                 payloadDetails_[i].appGateway = appGateway;
+                writes++;
             }
+
             payloadBatchDetails[asyncId].push(payloadDetails_[i]);
         }
+
+        watcherPrecompile__().checkAndUpdateLimit(
+            appGateway,
+            QUERY,
+            // remaining reads
+            payloadDetails_.length - writes - readEndIndex
+        );
+        watcherPrecompile__().checkAndUpdateLimit(appGateway, FINALIZE, writes);
 
         return appGateway;
     }
