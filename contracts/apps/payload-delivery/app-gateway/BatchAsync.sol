@@ -10,7 +10,7 @@ import {IAuctionManager} from "../../../interfaces/IAuctionManager.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 
 import {Bid, PayloadBatch, FeesData, PayloadDetails} from "../../../common/Structs.sol";
-import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Constants.sol";
+import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW, QUERY, FINALIZE} from "../../../common/Constants.sol";
 
 /// @title BatchAsync
 /// @notice Abstract contract for managing asynchronous payload batches
