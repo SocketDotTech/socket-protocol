@@ -2,19 +2,16 @@
 pragma solidity ^0.8.21;
 
 import "./WatcherPrecompileConfig.sol";
-import "./WatcherPrecompileLimits.sol";
 import "../interfaces/IAppGateway.sol";
-import "../interfaces/IWatcherPrecompile.sol";
 import "../interfaces/IPromise.sol";
 import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../common/Structs.sol";
-import {QUERY, FINALIZE, SCHEDULE} from "../common/Constants.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../common/Errors.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
-contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits, Initializable {
+contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     uint256 public maxTimeoutDelayInSeconds;
     /// @notice Counter for tracking query requests
     uint256 public queryCounter;
@@ -95,10 +92,21 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits, 
     /// @notice Initializer function to replace constructor
     /// @param owner_ Address of the contract owner
     /// @param addressResolver_ The address resolver contract address
-    function initialize(address owner_, address addressResolver_) public initializer {
+    function initialize(
+        address owner_,
+        address addressResolver_,
+        uint256 maxLimit_
+    ) public initializer {
         _setAddressResolver(addressResolver_);
         _claimOwner(owner_);
         maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
+
+        LIMIT_DECIMALS = 18;
+
+        // limit per day
+        maxLimit = maxLimit_ * 10 ** LIMIT_DECIMALS;
+        // limit per second
+        ratePerSecond = maxLimit / (24 * 60 * 60);
     }
 
     // ================== Timeout functions ==================
@@ -114,7 +122,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits, 
         if (delayInSeconds_ > maxTimeoutDelayInSeconds) revert TimeoutDelayTooLarge();
 
         // from auction manager
-        _consumeLimit(appGateway_, SCHEDULE);
+        _consumeLimit(appGateway_, SCHEDULE, 1);
         uint256 executeAt = block.timestamp + delayInSeconds_;
         bytes32 timeoutId = _encodeTimeoutId(timeoutCounter++);
         timeoutRequests[timeoutId] = TimeoutRequest(
@@ -161,7 +169,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits, 
         if (params_.transmitter == address(0)) revert InvalidTransmitter();
 
         // The app gateway is the caller of this function
-        _consumeLimit(originAppGateway_, FINALIZE);
+        _consumeLimit(originAppGateway_, FINALIZE, 1);
 
         // Verify that the app gateway is properly configured for this chain and target
         _verifyConnections(
@@ -226,7 +234,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits, 
         bytes memory payload_
     ) public returns (bytes32 payloadId) {
         // from payload delivery
-        _consumeLimit(appGateway_, QUERY);
+        _consumeLimit(appGateway_, QUERY, 1);
         // Generate unique payload ID from query counter
         payloadId = bytes32(queryCounter++);
 
@@ -360,9 +368,5 @@ contract WatcherPrecompile is WatcherPrecompileConfig, WatcherPrecompileLimits, 
     function _encodeTimeoutId(uint256 timeoutCounter_) internal view returns (bytes32) {
         // watcher address (160 bits) | counter (64 bits)
         return bytes32((uint256(uint160(address(this))) << 64) | timeoutCounter_);
-    }
-
-    function updateLimitParams(UpdateLimitParams[] calldata updates_) external onlyOwner {
-        _updateLimitParams(updates_);
     }
 }
