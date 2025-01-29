@@ -18,6 +18,7 @@ contract FeesPlug is PlugBase, OwnableTwoStep {
     error InsufficientTokenBalance(address token_);
     /// @notice Error thrown when deposit amount does not match msg.value
     error InvalidDepositAmount();
+    error InvalidTokenAddress();
 
     /// @notice Event emitted when fees are deposited
     event FeesDeposited(address appGateway, address token, uint256 amount);
@@ -64,10 +65,16 @@ contract FeesPlug is PlugBase, OwnableTwoStep {
     function deposit(address token_, address appGateway_, uint256 amount_) external payable {
         if (token_ == ETH_ADDRESS) {
             if (msg.value != amount_) revert InvalidDepositAmount();
+        } else {
+            if (token_.code.length == 0) revert InvalidTokenAddress();
         }
 
         balanceOf[token_] += amount_;
-        SafeTransferLib.safeTransferFrom(ERC20(token_), msg.sender, address(this), amount_);
+
+        if (token_ != ETH_ADDRESS) {
+            SafeTransferLib.safeTransferFrom(ERC20(token_), msg.sender, address(this), amount_);
+        }
+
         emit FeesDeposited(appGateway_, token_, amount_);
     }
 
