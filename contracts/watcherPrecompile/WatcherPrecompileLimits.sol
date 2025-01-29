@@ -14,8 +14,11 @@ abstract contract WatcherPrecompileLimits is
     OwnableTwoStep,
     IWatcherPrecompile
 {
+    /// @notice Maximum limit value for any app gateway
     uint256 public maxLimit;
+    /// @notice Rate at which limit replenishes per second
     uint256 public ratePerSecond;
+    /// @notice Number of decimals used in limit calculations
     uint256 public LIMIT_DECIMALS;
 
     // appGateway => limitType => receivingLimitParams
@@ -30,9 +33,24 @@ abstract contract WatcherPrecompileLimits is
 
     // Emitted when limit parameters are updated
     event LimitParamsUpdated(UpdateLimitParams[] updates);
+    // Emitted when an app gateway is activated with default limits
+    event AppGatewayActivated(address indexed appGateway, uint256 maxLimit, uint256 ratePerSecond);
+
     error ActionNotSupported(address appGateway_, bytes32 limitType_);
     error NotDeliveryHelper();
+    error LimitExceeded(
+        address appGateway,
+        bytes32 limitType,
+        uint256 requested,
+        uint256 available
+    );
 
+    /**
+     * @notice Get the current limit for a specific app gateway and limit type
+     * @param limitType_ The type of limit to query
+     * @param appGateway_ The app gateway address
+     * @return The current limit value
+     */
     function getCurrentLimit(
         bytes32 limitType_,
         address appGateway_
@@ -40,17 +58,24 @@ abstract contract WatcherPrecompileLimits is
         return _getCurrentLimit(_limitParams[appGateway_][limitType_]);
     }
 
+    /**
+     * @notice Get the limit parameters for a specific app gateway and limit type
+     * @param limitType_ The type of limit to query
+     * @param appGateway_ The app gateway address
+     * @return The limit parameters
+     */
     function getLimitParams(
-        address appGateway_,
-        bytes32 limitType_
+        bytes32 limitType_,
+        address appGateway_
     ) external view returns (LimitParams memory) {
         return _limitParams[appGateway_][limitType_];
     }
 
     /**
-     * @notice Checks, updates, and reverts based on the limit.
-     * @param appGateway_ The app gateway address to check limits for
+     * @notice Check and update limit for a specific app gateway
+     * @param appGateway_ The app gateway address
      * @param limitType_ The type of limit to check
+     * @param consumeLimit_ The amount of limit to consume
      */
     function checkAndUpdateLimit(
         address appGateway_,
@@ -61,18 +86,21 @@ abstract contract WatcherPrecompileLimits is
         _consumeLimit(appGateway_, limitType_, consumeLimit_);
     }
 
+    /**
+     * @notice Update limit parameters for multiple app gateways
+     * @param updates_ Array of limit parameter updates
+     */
     function updateLimitParams(UpdateLimitParams[] calldata updates_) external onlyOwner {
         _updateLimitParams(updates_);
     }
 
     /**
-     * @notice This function is used to set bridge limits.
-     * @dev It can only be updated by the owner.
-     * @param updates_ An array of structs containing update parameters.
+     * @notice Internal function to update limit parameters
+     * @param updates_ Array of limit parameter updates
      */
     function _updateLimitParams(UpdateLimitParams[] calldata updates_) internal {
         for (uint256 i = 0; i < updates_.length; i++) {
-            _consumePartLimit(0, _limitParams[updates_[i].appGateway][updates_[i].limitType]); // To keep the current limit in sync
+            _consumePartLimit(0, _limitParams[updates_[i].appGateway][updates_[i].limitType]);
             _limitParams[updates_[i].appGateway][updates_[i].limitType].maxLimit = updates_[i]
                 .maxLimit;
             _limitParams[updates_[i].appGateway][updates_[i].limitType].ratePerSecond = updates_[i]
@@ -84,8 +112,10 @@ abstract contract WatcherPrecompileLimits is
 
     /**
      * @notice Internal function to consume limit based on caller
-     * @param appGateway_ The app gateway address to check limits for
+     * @param appGateway_ The app gateway address
      * @param limitType_ The type of limit to consume
+     * @param consumeLimit_ The amount of limit to consume
+     * @return appGateway The resolved app gateway address
      */
     function _consumeLimit(
         address appGateway_,
@@ -111,12 +141,18 @@ abstract contract WatcherPrecompileLimits is
             _limitParams[appGateway][SCHEDULE] = limitParam;
 
             _activeAppGateways[appGateway] = true;
+            emit AppGatewayActivated(appGateway, maxLimit, ratePerSecond);
         }
 
         // Update the limit
         _consumeFullLimit(consumeLimit_, limitParams);
     }
 
+    /**
+     * @notice Internal function to get the core app gateway address
+     * @param appGateway_ The input app gateway address
+     * @return appGateway The resolved core app gateway address
+     */
     function _getAppGateway(address appGateway_) internal view returns (address appGateway) {
         address resolverAddress = msg.sender == addressResolver__.deliveryHelper()
             ? appGateway_
@@ -125,10 +161,18 @@ abstract contract WatcherPrecompileLimits is
         appGateway = _getCoreAppGateway(resolverAddress);
     }
 
+    /**
+     * @notice Set the maximum limit value
+     * @param maxLimit_ The new maximum limit value
+     */
     function setMaxLimit(uint256 maxLimit_) external onlyOwner {
         maxLimit = maxLimit_;
     }
 
+    /**
+     * @notice Set the rate at which limit replenishes
+     * @param ratePerSecond_ The new rate per second
+     */
     function setRatePerSecond(uint256 ratePerSecond_) external onlyOwner {
         ratePerSecond = ratePerSecond_;
     }
