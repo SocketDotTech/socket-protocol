@@ -23,14 +23,14 @@ contract ParallelCounterTest is DeliveryHelperTest {
             address(addressResolver),
             address(auctionManager),
             FAST,
-            createFeesData(feesAmount)
+            createFees(feesAmount)
         );
 
         parallelCounterGateway = new ParallelCounterAppGateway(
             address(addressResolver),
             address(parallelCounterDeployer),
             address(auctionManager),
-            createFeesData(feesAmount)
+            createFees(feesAmount)
         );
         setLimit(address(parallelCounterGateway));
 

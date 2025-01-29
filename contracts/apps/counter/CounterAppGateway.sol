@@ -15,10 +15,10 @@ contract CounterAppGateway is AppGatewayBase {
         address addressResolver_,
         address deployerContract_,
         address auctionManager_,
-        FeesData memory feesData_
+        Fees memory fees_
     ) AppGatewayBase(addressResolver_, auctionManager_) {
         addressResolver__.setContractsToGateways(deployerContract_);
-        _setFeesData(feesData_);
+        _setFees(fees_);
     }
 
     function incrementCounters(address[] memory instances_) public async {
@@ -54,8 +54,8 @@ contract CounterAppGateway is AppGatewayBase {
         }
     }
 
-    function setFees(FeesData memory feesData_) public {
-        feesData = feesData_;
+    function setFees(Fees memory fees_) public {
+        fees = fees_;
     }
 
     function withdrawFeeTokens(

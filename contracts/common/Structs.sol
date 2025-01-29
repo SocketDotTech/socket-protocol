@@ -68,7 +68,7 @@ struct ExecutePayloadParams {
     bytes payload;
 }
 
-struct FeesData {
+struct Fees {
     uint32 feePoolChain;
     address feePoolToken;
     uint256 maxFees;
