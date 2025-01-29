@@ -71,7 +71,7 @@ struct ExecutePayloadParams {
 struct Fees {
     uint32 feePoolChain;
     address feePoolToken;
-    uint256 maxFees;
+    uint256 amount;
 }
 
 struct FinalizeParams {
@@ -92,7 +92,7 @@ struct PayloadBatch {
     bool isBatchCancelled;
     uint256 currentPayloadIndex;
     uint256 totalPayloadsRemaining;
-    FeesData feesData;
+    Fees fees;
     Bid winningBid;
     address[] lastBatchPromises;
     bytes onCompleteData;
