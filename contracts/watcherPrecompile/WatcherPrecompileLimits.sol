@@ -122,7 +122,7 @@ abstract contract WatcherPrecompileLimits is
         bytes32 limitType_,
         uint256 consumeLimit_
     ) internal returns (address appGateway) {
-        if (msg.sender != addressResolver__.deliveryHelper()) return appGateway_;
+        if (msg.sender == addressResolver__.deliveryHelper()) return appGateway_;
 
         appGateway = _getAppGateway(appGateway_);
         LimitParams storage limitParams = _limitParams[appGateway][limitType_];
