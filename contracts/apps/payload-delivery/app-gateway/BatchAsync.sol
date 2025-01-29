@@ -9,7 +9,7 @@ import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
 import {IAuctionManager} from "../../../interfaces/IAuctionManager.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 
-import {Bid, PayloadBatch, FeesData, PayloadDetails} from "../../../common/Structs.sol";
+import {Bid, PayloadBatch, Fees, PayloadDetails} from "../../../common/Structs.sol";
 import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Constants.sol";
 
 /// @title BatchAsync
@@ -30,7 +30,7 @@ abstract contract BatchAsync is QueueAsync {
         bytes32 indexed asyncId,
         address indexed appGateway,
         PayloadDetails[] payloads,
-        FeesData feesData,
+        Fees fees,
         address auctionManager
     );
 
@@ -43,11 +43,11 @@ abstract contract BatchAsync is QueueAsync {
     event BatchCancelled(bytes32 indexed asyncId);
 
     /// @notice Initiates a batch of payloads
-    /// @param feesData_ The fees data
+    /// @param fees_ The fees data
     /// @param auctionManager_ The auction manager address
     /// @return asyncId The ID of the batch
     function batch(
-        FeesData memory feesData_,
+        Fees memory fees_,
         address auctionManager_,
         bytes memory onCompleteData_,
         bytes32 sbType_
@@ -59,7 +59,7 @@ abstract contract BatchAsync is QueueAsync {
         }
 
         // Default flow for other cases (including mixed read/write)
-        return _deliverPayload(payloadDetailsArray, feesData_, auctionManager_, onCompleteData_);
+        return _deliverPayload(payloadDetailsArray, fees_, auctionManager_, onCompleteData_);
     }
 
     /// @notice Callback function for handling promises
@@ -69,12 +69,12 @@ abstract contract BatchAsync is QueueAsync {
 
     /// @notice Delivers a payload batch
     /// @param payloadDetails_ The payload details
-    /// @param feesData_ The fees data
+    /// @param fees_ The fees data
     /// @param auctionManager_ The auction manager address
     /// @return asyncId The ID of the batch
     function _deliverPayload(
         PayloadDetails[] memory payloadDetails_,
-        FeesData memory feesData_,
+        Fees memory fees_,
         address auctionManager_,
         bytes memory onCompleteData_
     ) internal returns (bytes32) {
@@ -92,11 +92,11 @@ abstract contract BatchAsync is QueueAsync {
         address appGateway = _processRemainingPayloads(payloadDetails_, readEndIndex, asyncId);
         payloadBatches[asyncId].totalPayloadsRemaining = payloadDetails_.length - readEndIndex;
 
-        IFeesManager(feesManager).blockFees(appGateway, feesData_, asyncId);
+        IFeesManager(feesManager).blockFees(appGateway, fees_, asyncId);
         _initializeBatch(
             asyncId,
             appGateway,
-            feesData_,
+            fees_,
             auctionManager_,
             onCompleteData_,
             readEndIndex,
@@ -181,7 +181,7 @@ abstract contract BatchAsync is QueueAsync {
     function _initializeBatch(
         bytes32 asyncId,
         address appGateway,
-        FeesData memory feesData_,
+        Fees memory fees_,
         address auctionManager_,
         bytes memory onCompleteData_,
         uint256 readEndIndex,
@@ -189,7 +189,7 @@ abstract contract BatchAsync is QueueAsync {
     ) internal {
         payloadBatches[asyncId] = PayloadBatch({
             appGateway: appGateway,
-            feesData: feesData_,
+            fees: fees_,
             currentPayloadIndex: readEndIndex,
             auctionManager: auctionManager_,
             winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
@@ -206,7 +206,7 @@ abstract contract BatchAsync is QueueAsync {
             delayInSeconds
         );
 
-        emit PayloadSubmitted(asyncId, appGateway, payloadDetails_, feesData_, auctionManager_);
+        emit PayloadSubmitted(asyncId, appGateway, payloadDetails_, fees_, auctionManager_);
     }
 
     function endTimeout(bytes32 asyncId_) external onlyWatcherPrecompile {
@@ -258,14 +258,14 @@ abstract contract BatchAsync is QueueAsync {
     /// @param token_ The address of the token
     /// @param amount_ The amount of tokens to withdraw
     /// @param receiver_ The address of the receiver
-    /// @param feesData_ The fees data
+    /// @param fees_ The fees data
     function withdrawTo(
         uint32 chainSlug_,
         address token_,
         uint256 amount_,
         address receiver_,
         address auctionManager_,
-        FeesData memory feesData_
+        Fees memory fees_
     ) external {
         PayloadDetails[] memory payloadDetailsArray = new PayloadDetails[](1);
         payloadDetailsArray[0] = IFeesManager(feesManager).getWithdrawToPayload(
@@ -275,6 +275,6 @@ abstract contract BatchAsync is QueueAsync {
             amount_,
             receiver_
         );
-        _deliverPayload(payloadDetailsArray, feesData_, auctionManager_, new bytes(0));
+        _deliverPayload(payloadDetailsArray, fees_, auctionManager_, new bytes(0));
     }
 }

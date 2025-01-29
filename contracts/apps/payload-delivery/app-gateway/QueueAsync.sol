@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
-import {CallParams, FeesData, PayloadDetails, CallType, Bid, PayloadBatch} from "../../../common/Structs.sol";
+import {CallParams, Fees, PayloadDetails, CallType, Bid, PayloadBatch} from "../../../common/Structs.sol";
 import {NotAuctionManager, InvalidPromise, InvalidIndex} from "../../../common/Errors.sol";
 import {AsyncPromise} from "../../../AsyncPromise.sol";
 import {IPromise} from "../../../interfaces/IPromise.sol";
@@ -139,8 +139,8 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
             });
     }
 
-    function getFeesData(bytes32 asyncId_) external view returns (FeesData memory) {
-        return payloadBatches[asyncId_].feesData;
+    function getFees(bytes32 asyncId_) external view returns (Fees memory) {
+        return payloadBatches[asyncId_].fees;
     }
 
     function getAsyncBatchDetails(

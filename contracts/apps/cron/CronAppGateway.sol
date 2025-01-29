@@ -5,14 +5,15 @@ import "../../base/AppGatewayBase.sol";
 
 contract CronAppGateway is AppGatewayBase {
     event TimeoutResolved(uint256 creationTimestamp, uint256 executionTimestamp);
+
     constructor(
         address addressResolver_,
         address deployerContract_,
         address auctionManager_,
-        FeesData memory feesData_
+        Fees memory fees_
     ) AppGatewayBase(addressResolver_, auctionManager_) {
         addressResolver__.setContractsToGateways(deployerContract_);
-        _setFeesData(feesData_);
+        _setFees(fees_);
     }
 
     function setTimeout(uint256 delayInSeconds_) public {

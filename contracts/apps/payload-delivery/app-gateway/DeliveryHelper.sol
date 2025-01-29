@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
 import {OwnableTwoStep} from "../../../utils/OwnableTwoStep.sol";
-import {Bid, PayloadBatch, FeesData, PayloadDetails, FinalizeParams} from "../../../common/Structs.sol";
+import {Bid, PayloadBatch, Fees, PayloadDetails, FinalizeParams} from "../../../common/Structs.sol";
 import {DISTRIBUTE_FEE, DEPLOY} from "../../../common/Constants.sol";
 import {PromisesNotResolved} from "../../../common/Errors.sol";
 import "./BatchAsync.sol";

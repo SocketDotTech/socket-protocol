@@ -26,4 +26,4 @@ error InvalidInboxCaller();
 error PromisesNotResolved();
 error InvalidPromise();
 error InvalidIndex();
-error FeesDataNotSet();
+error FeesNotSet();
