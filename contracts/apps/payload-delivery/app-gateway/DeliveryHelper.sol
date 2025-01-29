@@ -113,17 +113,7 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
 
         // Handle batch processing based on type
         if (!payloads[currentIndex].isSequential) {
-            if (payloads[currentIndex].callType == CallType.READ) {
-                _processBatchedReads(asyncId_, payloadBatch_, payloads, currentIndex, batchPromise);
-            } else {
-                _processParallelCalls(
-                    asyncId_,
-                    payloadBatch_,
-                    payloads,
-                    currentIndex,
-                    batchPromise
-                );
-            }
+            _processParallelCalls(asyncId_, payloadBatch_, payloads, currentIndex, batchPromise);
         } else {
             _processSequentialCall(
                 asyncId_,
@@ -170,35 +160,6 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         emit PayloadAsyncRequested(asyncId_, payloadId, root, payloadDetails_);
     }
 
-    function _processBatchedReads(
-        bytes32 asyncId_,
-        PayloadBatch storage payloadBatch_,
-        PayloadDetails[] storage payloads_,
-        uint256 startIndex_,
-        address batchPromise_
-    ) internal {
-        // Validate input parameters
-        if (startIndex_ >= payloads_.length) revert InvalidIndex();
-
-        uint256 endIndex = startIndex_;
-
-        while (
-            endIndex + 1 < payloads_.length &&
-            payloads_[endIndex + 1].callType == CallType.READ &&
-            !payloads_[endIndex + 1].isSequential
-        ) {
-            endIndex++;
-        }
-
-        address[] memory promises = new address[](endIndex - startIndex_ + 1);
-        for (uint256 i = startIndex_; i <= endIndex; i++) {
-            promises[i - startIndex_] = payloads_[i].next[0];
-            _executeWatcherCall(asyncId_, payloads_[i], payloadBatch_, batchPromise_, true);
-        }
-
-        _updateBatchState(payloadBatch_, promises, endIndex - startIndex_ + 1, endIndex + 1);
-    }
-
     function _processParallelCalls(
         bytes32 asyncId_,
         PayloadBatch storage payloadBatch_,
@@ -217,7 +178,11 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         address[] memory promises = new address[](endIndex - startIndex_ + 1);
         for (uint256 i = startIndex_; i <= endIndex; i++) {
             promises[i - startIndex_] = payloads_[i].next[0];
-            _executeWatcherCall(asyncId_, payloads_[i], payloadBatch_, batchPromise_, false);
+            if (payloads_[i].callType == CallType.READ) {
+                _executeWatcherCall(asyncId_, payloads_[i], payloadBatch_, batchPromise_, true);
+            } else {
+                _executeWatcherCall(asyncId_, payloads_[i], payloadBatch_, batchPromise_, false);
+            }
         }
 
         _updateBatchState(payloadBatch_, promises, endIndex - startIndex_ + 1, endIndex + 1);
