@@ -177,8 +177,8 @@ contract SetupTest is Test {
         return chainSlug_ == arbChainSlug ? arbConfig : optConfig;
     }
 
-    function createFeesData(uint256 maxFees_) internal view returns (FeesData memory) {
-        return FeesData({feePoolChain: arbChainSlug, feePoolToken: ETH_ADDRESS, maxFees: maxFees_});
+    function createFees(uint256 maxFees_) internal view returns (Fees memory) {
+        return Fees({feePoolChain: arbChainSlug, feePoolToken: ETH_ADDRESS, amount: maxFees_});
     }
 
     function relayTx(

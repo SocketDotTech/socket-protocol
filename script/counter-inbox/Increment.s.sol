@@ -5,7 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {CounterInbox} from "../../contracts/apps/counter-inbox/CounterInbox.sol";
 import {CounterInboxAppGateway} from "../../contracts/apps/counter-inbox/CounterInboxAppGateway.sol";
-import {FeesData} from "../../contracts/common/Structs.sol";
+import {Fees} from "../../contracts/common/Structs.sol";
 import {ETH_ADDRESS, FAST} from "../../contracts/common/Constants.sol";
 
 contract Increment is Script {

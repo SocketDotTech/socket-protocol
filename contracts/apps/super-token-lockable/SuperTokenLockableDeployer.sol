@@ -26,7 +26,7 @@ contract SuperTokenLockableDeployer is AppDeployerBase, OwnableTwoStep {
         address auctionManager_,
         bytes32 sbType_,
         ConstructorParams memory params,
-        FeesData memory feesData_
+        Fees memory fees_
     ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) {
         creationCodeWithArgs[superTokenLockable] = abi.encodePacked(
             type(SuperTokenLockable).creationCode,
@@ -44,7 +44,7 @@ contract SuperTokenLockableDeployer is AppDeployerBase, OwnableTwoStep {
             abi.encode(params._burnLimit, params._mintLimit)
         );
 
-        _setFeesData(feesData_);
+        _setFees(fees_);
         _claimOwner(owner_);
     }
 

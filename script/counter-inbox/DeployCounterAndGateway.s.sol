@@ -5,7 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {CounterInbox} from "../../contracts/apps/counter-inbox/CounterInbox.sol";
 import {CounterInboxAppGateway} from "../../contracts/apps/counter-inbox/CounterInboxAppGateway.sol";
-import {FeesData} from "../../contracts/common/Structs.sol";
+import {Fees} from "../../contracts/common/Structs.sol";
 import {ETH_ADDRESS, FAST} from "../../contracts/common/Constants.sol";
 
 contract DeployCounterAndGateway is Script {
@@ -30,10 +30,10 @@ contract DeployCounterAndGateway is Script {
         uint256 offChainDeployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(offChainDeployerPrivateKey);
 
-        FeesData memory feesData = FeesData({
+        Fees memory fees = Fees({
             feePoolChain: 421614,
             feePoolToken: ETH_ADDRESS,
-            maxFees: 0.001 ether
+            amount: 0.001 ether
         });
 
         CounterInboxAppGateway gateway = new CounterInboxAppGateway(
@@ -41,7 +41,7 @@ contract DeployCounterAndGateway is Script {
             auctionManager,
             address(inbox),
             421614,
-            feesData
+            fees
         );
 
         console.log("CounterInboxAppGateway:", address(gateway));

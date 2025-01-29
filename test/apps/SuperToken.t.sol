@@ -76,12 +76,12 @@ contract SuperTokenTest is DeliveryHelperTest {
                 initialSupplyHolder_: owner,
                 initialSupply_: 1000000000 ether
             }),
-            createFeesData(maxFees)
+            createFees(maxFees)
         );
         SuperTokenAppGateway superTokenApp = new SuperTokenAppGateway(
             address(addressResolver),
             address(superTokenDeployer),
-            createFeesData(maxFees),
+            createFees(maxFees),
             address(auctionManager)
         );
         // Enable app gateways to do all operations in the Watcher: Read, Write and Schedule on VM

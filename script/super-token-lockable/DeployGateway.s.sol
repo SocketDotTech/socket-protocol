@@ -6,7 +6,7 @@ import {console} from "forge-std/Console.sol";
 import {SuperTokenLockableAppGateway} from "../../contracts/apps/super-token-lockable/SuperTokenLockableAppGateway.sol";
 import {SuperTokenLockableDeployer} from "../../contracts/apps/super-token-lockable/SuperTokenLockableDeployer.sol";
 import {SuperTokenLockable} from "../../contracts/apps/super-token-lockable/SuperTokenLockable.sol";
-import {FeesData} from "../../contracts/common/Structs.sol";
+import {Fees} from "../../contracts/common/Structs.sol";
 import {ETH_ADDRESS, FAST} from "../../contracts/common/Constants.sol";
 
 contract DeployGateway is Script {
@@ -19,10 +19,10 @@ contract DeployGateway is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        FeesData memory feesData = FeesData({
+        Fees memory fees = Fees({
             feePoolChain: 421614,
             feePoolToken: ETH_ADDRESS,
-            maxFees: 0.001 ether
+            amount: 0.001 ether
         });
 
         SuperTokenLockableDeployer deployer = new SuperTokenLockableDeployer(
@@ -39,14 +39,14 @@ contract DeployGateway is Script {
                 initialSupplyHolder_: owner,
                 initialSupply_: 1000000000 ether
             }),
-            feesData
+            fees
         );
 
         SuperTokenLockableAppGateway gateway = new SuperTokenLockableAppGateway(
             addressResolver,
             address(deployer),
             address(auctionManager),
-            feesData
+            fees
         );
 
         bytes32 superToken = deployer.superTokenLockable();

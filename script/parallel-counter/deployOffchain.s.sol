@@ -5,7 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {ParallelCounterAppGateway} from "../../contracts/apps/parallel-counter/ParallelCounterAppGateway.sol";
 import {ParallelCounterDeployer} from "../../contracts/apps/parallel-counter/ParallelCounterDeployer.sol";
-import {FeesData} from "../../contracts/common/Structs.sol";
+import {Fees} from "../../contracts/common/Structs.sol";
 import {ETH_ADDRESS, FAST} from "../../contracts/common/Constants.sol";
 
 contract CounterDeploy is Script {
@@ -19,24 +19,24 @@ contract CounterDeploy is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // Setting fee payment on Arbitrum Sepolia
-        FeesData memory feesData = FeesData({
+        Fees memory fees = Fees({
             feePoolChain: 421614,
             feePoolToken: ETH_ADDRESS,
-            maxFees: 0.01 ether
+            amount: 0.01 ether
         });
 
         ParallelCounterDeployer deployer = new ParallelCounterDeployer(
             addressResolver,
             auctionManager,
             FAST,
-            feesData
+            fees
         );
 
         ParallelCounterAppGateway gateway = new ParallelCounterAppGateway(
             addressResolver,
             address(deployer),
             auctionManager,
-            feesData
+            fees
         );
 
         console.log("Contracts deployed:");

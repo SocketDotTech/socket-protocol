@@ -5,9 +5,9 @@ import "../utils/AddressResolverUtil.sol";
 import "../interfaces/IDeliveryHelper.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
-import {FeesData} from "../common/Structs.sol";
+import {Fees} from "../common/Structs.sol";
 import {FeesPlugin} from "../utils/FeesPlugin.sol";
-import {InvalidPromise, FeesDataNotSet} from "../common/Errors.sol";
+import {InvalidPromise, FeesNotSet} from "../common/Errors.sol";
 
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway
@@ -22,11 +22,11 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
 
     /// @notice Modifier to treat functions async
     modifier async() {
-        if (feesData.feePoolChain == 0) revert FeesDataNotSet();
+        if (fees.feePoolChain == 0) revert FeesNotSet();
         deliveryHelper().clearQueue();
         addressResolver__.clearPromises();
         _;
-        deliveryHelper().batch(feesData, auctionManager, onCompleteData, sbType);
+        deliveryHelper().batch(fees, auctionManager, onCompleteData, sbType);
         _markValidPromises();
     }
 
@@ -105,14 +105,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         uint256 amount_,
         address receiver_
     ) internal {
-        deliveryHelper().withdrawTo(
-            chainSlug_,
-            token_,
-            amount_,
-            receiver_,
-            auctionManager,
-            feesData
-        );
+        deliveryHelper().withdrawTo(chainSlug_, token_, amount_, receiver_, auctionManager, fees);
     }
 
     /// @notice Callback in pd promise to be called after all contracts are deployed

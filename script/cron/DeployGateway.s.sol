@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {CronAppGateway} from "../../contracts/apps/cron/CronAppGateway.sol";
-import {FeesData} from "../../contracts/common/Structs.sol";
+import {Fees} from "../../contracts/common/Structs.sol";
 import {ETH_ADDRESS} from "../../contracts/common/Constants.sol";
 
 contract DeployGateway is Script {
@@ -19,16 +19,16 @@ contract DeployGateway is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // Setting fee payment on Arbitrum Sepolia
-        FeesData memory feesData = FeesData({
+        Fees memory fees = Fees({
             feePoolChain: 421614,
             feePoolToken: ETH_ADDRESS,
-            maxFees: 0.01 ether
+            amount: 0.01 ether
         });
         CronAppGateway gateway = new CronAppGateway(
             addressResolver,
             address(uint160(uint256(keccak256(abi.encodePacked(block.timestamp))))),
             auctionManager,
-            feesData
+            fees
         );
 
         console.log("Contracts deployed:");

@@ -12,10 +12,10 @@ contract CounterDeployer is AppDeployerBase, OwnableTwoStep {
         address addressResolver_,
         address auctionManager_,
         bytes32 sbType_,
-        FeesData memory feesData_
+        Fees memory fees_
     ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) {
         creationCodeWithArgs[counter] = abi.encodePacked(type(Counter).creationCode);
-        _setFeesData(feesData_);
+        _setFees(fees_);
         _claimOwner(msg.sender);
     }
 
@@ -27,7 +27,7 @@ contract CounterDeployer is AppDeployerBase, OwnableTwoStep {
         return;
     }
 
-    function setFees(FeesData memory feesData_) public {
-        feesData = feesData_;
+    function setFees(Fees memory fees_) public {
+        fees = fees_;
     }
 }

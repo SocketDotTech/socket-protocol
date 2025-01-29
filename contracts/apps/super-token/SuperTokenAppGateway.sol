@@ -19,7 +19,7 @@ contract SuperTokenAppGateway is AppGatewayBase, OwnableTwoStep {
     constructor(
         address addressResolver_,
         address deployerContract_,
-        FeesData memory feesData_,
+        Fees memory fees_,
         address auctionManager_
     ) AppGatewayBase(addressResolver_, auctionManager_) {
         // called to connect the deployer contract with this app
@@ -27,7 +27,7 @@ contract SuperTokenAppGateway is AppGatewayBase, OwnableTwoStep {
 
         // sets the fees data like max fees, chain and token for all transfers
         // they can be updated for each transfer as well
-        _setFeesData(feesData_);
+        _setFees(fees_);
         _claimOwner(msg.sender);
     }
 

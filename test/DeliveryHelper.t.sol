@@ -26,7 +26,7 @@ contract DeliveryHelperTest is SetupTest {
         bytes32 indexed asyncId,
         address indexed appGateway,
         PayloadDetails[] payloads,
-        FeesData feesData,
+        Fees fees,
         uint256 auctionEndDelay
     );
     event BidPlaced(bytes32 indexed asyncId, Bid bid);
@@ -231,6 +231,7 @@ contract DeliveryHelperTest is SetupTest {
             address _auctionManager,
             Bid memory winningBid,
             bool isBatchCancelled,
+            ,
             ,
 
         ) = deliveryHelper.payloadBatches(asyncId);
