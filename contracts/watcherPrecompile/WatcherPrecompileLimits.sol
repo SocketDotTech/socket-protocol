@@ -145,7 +145,7 @@ abstract contract WatcherPrecompileLimits is
         }
 
         // Update the limit
-        _consumeFullLimit(consumeLimit_, limitParams);
+        _consumeFullLimit(consumeLimit_ * 10 ** LIMIT_DECIMALS, limitParams);
     }
 
     /**
