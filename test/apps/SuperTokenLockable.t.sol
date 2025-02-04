@@ -55,7 +55,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             address(auctionManager),
             createFees(maxFees)
         );
-        setLimit(address(superTokenLockableApp));
+        depositFees(address(superTokenLockableApp), createFees(1 ether));
 
         appContracts = AppContracts({
             superTokenLockableApp: superTokenLockableApp,

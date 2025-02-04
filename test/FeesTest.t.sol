@@ -9,6 +9,7 @@ import {CounterAppGateway} from "../contracts/apps/counter/CounterAppGateway.sol
 contract FeesTest is DeliveryHelperTest {
     uint256 constant depositAmount = 1 ether;
     uint256 constant feesAmount = 0.01 ether;
+    address receiver = address(uint160(c++));
 
     uint32 feesChainSlug = arbChainSlug;
     SocketContracts feesConfig;
@@ -34,7 +35,7 @@ contract FeesTest is DeliveryHelperTest {
             address(auctionManager),
             createFees(feesAmount)
         );
-        setLimit(address(counterGateway));
+        depositFees(address(counterGateway), createFees(depositAmount));
 
         bytes32[] memory contractIds = new bytes32[](1);
         contractIds[0] = counterDeployer.counter();
@@ -48,64 +49,55 @@ contract FeesTest is DeliveryHelperTest {
     }
 
     function testDistributeFee() public {
-        bytes32 payloadId = getWritePayloadId(
-            feesChainSlug,
-            address(getSocketConfig(feesChainSlug).switchboard),
-            writePayloadIdCounter - 1
-        );
-
-        deal(owner, depositAmount);
-
-        hoax(owner);
-        feesConfig.feesPlug.deposit{value: depositAmount}(
-            ETH_ADDRESS,
-            address(counterGateway),
-            depositAmount
-        );
+        uint256 initialFeesPlugBalance = address(feesConfig.feesPlug).balance;
 
         assertEq(
-            depositAmount,
+            initialFeesPlugBalance,
             address(feesConfig.feesPlug).balance,
             "FeesPlug Balance should be correct"
         );
 
         assertEq(
-            depositAmount,
+            initialFeesPlugBalance,
             feesConfig.feesPlug.balanceOf(ETH_ADDRESS),
             "FeesPlug balance of counterGateway should be correct"
         );
 
-        uint256 transmitterBalanceBefore = address(transmitterEOA).balance;
-        finalizeAndExecute(payloadId, true);
+        uint256 transmitterReceiverBalanceBefore = address(receiver).balance;
 
+        hoax(transmitterEOA);
+        (bytes32 payloadId, , PayloadDetails memory payloadDetails) = feesManager
+            .withdrawTransmitterFees(feesChainSlug, ETH_ADDRESS, address(receiver));
+        writePayloadIdCounter++;
+
+        finalizeAndExecute(payloadId, true, payloadDetails);
         assertEq(
-            transmitterBalanceBefore + bidAmount,
-            address(transmitterEOA).balance,
+            transmitterReceiverBalanceBefore + bidAmount,
+            address(receiver).balance,
             "Transmitter Balance should be correct"
         );
         assertEq(
-            depositAmount - bidAmount,
+            initialFeesPlugBalance - bidAmount,
             address(feesConfig.feesPlug).balance,
             "FeesPlug Balance should be correct"
         );
     }
 
     function testWithdrawFeeTokens() public {
-        feesConfig.feesPlug.deposit{value: depositAmount}(
-            ETH_ADDRESS,
-            address(counterGateway),
-            depositAmount
-        );
         assertEq(
             depositAmount,
             feesConfig.feesPlug.balanceOf(ETH_ADDRESS),
             "Balance should be correct"
         );
 
-        address receiver = address(uint160(c++));
-
         uint256 receiverBalanceBefore = receiver.balance;
-        counterGateway.withdrawFeeTokens(feesChainSlug, ETH_ADDRESS, depositAmount, receiver);
+        uint256 withdrawAmount = 0.5 ether;
+        counterGateway.withdrawFeeTokens(
+            feesChainSlug,
+            ETH_ADDRESS,
+            withdrawAmount,
+            receiver
+        );
 
         asyncId = getCurrentAsyncId();
         bytes32[] memory payloadIds = getWritePayloadIds(
@@ -115,10 +107,14 @@ contract FeesTest is DeliveryHelperTest {
         );
         bidAndEndAuction(asyncId);
         finalizeAndExecute(payloadIds[0], true);
-        assertEq(0, address(feesConfig.feesPlug).balance, "Fees Balance should be correct");
+        assertEq(
+            depositAmount - withdrawAmount,
+            address(feesConfig.feesPlug).balance,
+            "Fees Balance should be correct"
+        );
 
         assertEq(
-            receiverBalanceBefore + depositAmount,
+            receiverBalanceBefore + withdrawAmount,
             receiver.balance,
             "Receiver Balance should be correct"
         );

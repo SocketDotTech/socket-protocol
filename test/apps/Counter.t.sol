@@ -31,7 +31,7 @@ contract CounterTest is DeliveryHelperTest {
             address(auctionManager),
             createFees(feesAmount)
         );
-        setLimit(address(counterGateway));
+        depositFees(address(counterGateway), createFees(1 ether));
 
         counterId = counterDeployer.counter();
         contractIds[0] = counterId;
@@ -140,17 +140,18 @@ contract CounterTest is DeliveryHelperTest {
         bytes32[] memory payloadIds = new bytes32[](3);
         payloadIds[0] = bytes32(readPayloadIdCounter++);
         payloadIds[1] = bytes32(readPayloadIdCounter++);
+
         payloadIds[2] = getWritePayloadId(
             arbChainSlug,
             address(getSocketConfig(arbChainSlug).switchboard),
             writePayloadIdCounter++
         );
-        writePayloadIdCounter++;
         bytes32 bridgeAsyncId = getCurrentAsyncId();
 
         counterGateway.readCounters(instances);
         finalizeQuery(payloadIds[0], abi.encode(Counter(arbCounter).counter()));
         finalizeQuery(payloadIds[1], abi.encode(Counter(optCounter).counter()));
+
         bidAndEndAuction(bridgeAsyncId);
         finalizeAndExecute(payloadIds[2], false);
     }

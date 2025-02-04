@@ -4,7 +4,6 @@ pragma solidity ^0.8.21;
 import "../interfaces/IPlug.sol";
 import "./SocketBase.sol";
 import {PlugDisconnected, InvalidAppGateway} from "../common/Errors.sol";
-
 /**
  * @title SocketDst
  * @dev SocketDst is an abstract contract that inherits from SocketBase and
@@ -110,7 +109,9 @@ contract Socket is SocketBase {
         address switchboard = _decodeSwitchboard(payloadId_);
         uint32 localSlug = _decodeChainSlug(payloadId_);
 
+
         PlugConfig memory plugConfig = _plugConfigs[target_];
+
         if (switchboard != address(plugConfig.switchboard__)) revert InvalidSwitchboard();
 
         if (localSlug != chainSlug) revert InvalidSlug();

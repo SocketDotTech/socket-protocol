@@ -5,7 +5,6 @@ import "solmate/utils/SafeTransferLib.sol";
 import "../../base/PlugBase.sol";
 import {OwnableTwoStep} from "../../utils/OwnableTwoStep.sol";
 import {ETH_ADDRESS} from "../../common/Constants.sol";
-
 /// @title FeesManager
 /// @notice Abstract contract for managing fees
 contract FeesPlug is PlugBase, OwnableTwoStep {
@@ -84,7 +83,7 @@ contract FeesPlug is PlugBase, OwnableTwoStep {
     /// @param receiver_ The receiver address
     function _transferTokens(address token_, uint256 amount_, address receiver_) internal {
         if (token_ == ETH_ADDRESS) {
-            SafeTransferLib.safeTransferETH(receiver_, amount_);
+            SafeTransferLib.safeTransferETH(payable(receiver_), amount_);
         } else {
             SafeTransferLib.safeTransfer(ERC20(token_), receiver_, amount_);
         }

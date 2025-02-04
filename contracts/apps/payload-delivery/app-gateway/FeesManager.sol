@@ -10,7 +10,6 @@ import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Co
 import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
-
 /// @title FeesManager
 /// @notice Contract for managing fees
 contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initializable {
@@ -122,9 +121,11 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         address token_,
         uint256 amount_
     ) external onlyOwner {
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway_][chainSlug_][token_];
+        address appGateway = _getCoreAppGateway(appGateway_);
+
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][chainSlug_][token_];
         tokenBalance.deposited += amount_;
-        emit FeesDepositedUpdated(chainSlug_, appGateway_, token_, amount_);
+        emit FeesDepositedUpdated(chainSlug_, appGateway, token_, amount_);
     }
 
     /// @notice Blocks fees for transmitter
@@ -137,15 +138,16 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         Fees memory fees_,
         bytes32 asyncId_
     ) external onlyDeliveryHelper {
+        address appGateway = _getCoreAppGateway(appGateway_);
         // Block fees
         uint256 availableFees = getAvailableFees(
             fees_.feePoolChain,
-            appGateway_,
+            appGateway,
             fees_.feePoolToken
         );
         if (availableFees < fees_.amount) revert InsufficientFeesAvailable();
 
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway_][fees_.feePoolChain][
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees_.feePoolChain][
             fees_.feePoolToken
         ];
         tokenBalance.blocked += fees_.amount;
@@ -159,8 +161,10 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         bytes32 asyncId_,
         address appGateway_
     ) external onlyDeliveryHelper {
+        address appGateway = _getCoreAppGateway(appGateway_);
+
         Fees storage fees = asyncIdBlockedFees[asyncId_];
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway_][fees.feePoolChain][
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees.feePoolChain][
             fees.feePoolToken
         ];
 
@@ -189,7 +193,8 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         Fees memory fees = asyncIdBlockedFees[asyncId_];
         if (fees.amount == 0) revert NoFeesBlocked();
 
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway_][fees.feePoolChain][
+        address appGateway = _getCoreAppGateway(appGateway_);
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees.feePoolChain][
             fees.feePoolToken
         ];
 
@@ -213,11 +218,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         uint32 chainSlug_,
         address token_,
         address receiver_
-    )
-        external
-        onlyDeliveryHelper
-        returns (bytes32 payloadId, bytes32 root, PayloadDetails memory payloadDetails)
-    {
+    ) external returns (bytes32 payloadId, bytes32 root, PayloadDetails memory payloadDetails) {
         address transmitter = msg.sender;
         // Get all asyncIds for the transmitter
         uint256 totalFees = transmitterFees[transmitter][chainSlug_][token_];
@@ -246,17 +247,18 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         CallType callType_,
         uint32 chainSlug_,
         bytes memory payload_
-    ) internal view returns (PayloadDetails memory payloadDetails) {
-        payloadDetails = PayloadDetails({
-            appGateway: address(this),
-            chainSlug: chainSlug_,
-            target: _getFeesPlugAddress(chainSlug_),
-            payload: payload_,
-            callType: callType_,
-            executionGasLimit: 1000000,
-            next: new address[](2),
-            isSequential: true
-        });
+    ) internal view returns (PayloadDetails memory) {
+        return
+            PayloadDetails({
+                appGateway: address(this),
+                chainSlug: chainSlug_,
+                target: _getFeesPlugAddress(chainSlug_),
+                payload: payload_,
+                callType: callType_,
+                executionGasLimit: 1000000,
+                next: new address[](2),
+                isSequential: true
+            });
     }
 
     /// @notice Updates blocked fees in case of failed execution
@@ -296,11 +298,13 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         uint256 amount_,
         address receiver_
     ) public returns (PayloadDetails memory) {
+        address appGateway = _getCoreAppGateway(appGateway_);
+
         // Check if amount is available in fees plug
-        uint256 availableAmount = getAvailableFees(chainSlug_, appGateway_, token_);
+        uint256 availableAmount = getAvailableFees(chainSlug_, appGateway, token_);
         if (availableAmount < amount_) revert InsufficientFeesAvailable();
 
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway_][chainSlug_][token_];
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][chainSlug_][token_];
         tokenBalance.deposited -= amount_;
 
         // Create payload for pool contract
