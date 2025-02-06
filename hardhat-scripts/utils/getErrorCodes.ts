@@ -28,9 +28,9 @@ function extractCustomErrors(filePath: string): string[] {
   while ((match = errorRegex.exec(content)) !== null) {
     const errorName = match[1];
     const params = match[2]
-      .split(',')
-      .map(param => param.trim().split(' ')[0]) // Extract only the type
-      .join(',');
+      .split(",")
+      .map((param) => param.trim().split(" ")[0]) // Extract only the type
+      .join(",");
     errors.push(`${errorName}(${params})`);
   }
 

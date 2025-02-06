@@ -17,7 +17,7 @@ const lines = envContent.split("\n");
 const latestAddresses = dev_addresses[OFF_CHAIN_VM_CHAIN_ID];
 
 // Create a new array to hold the updated lines
-const updatedLines = lines.map(line => {
+const updatedLines = lines.map((line) => {
   if (line.startsWith("ADDRESS_RESOLVER=")) {
     return `ADDRESS_RESOLVER=${latestAddresses["AddressResolver"]}`;
   } else if (line.startsWith("WATCHER_PRECOMPILE=")) {
@@ -27,7 +27,9 @@ const updatedLines = lines.map(line => {
   } else if (line.startsWith("SOCKET=")) {
     return `SOCKET=${dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["Socket"]}`;
   } else if (line.startsWith("SWITCHBOARD=")) {
-    return `SWITCHBOARD=${dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["FastSwitchboard"]}`;
+    return `SWITCHBOARD=${
+      dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["FastSwitchboard"]
+    }`;
   }
   return line; // Return the line unchanged if it doesn't match any of the above
 });
