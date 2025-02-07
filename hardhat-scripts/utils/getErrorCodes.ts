@@ -27,7 +27,10 @@ function extractCustomErrors(filePath: string): string[] {
   let match;
   while ((match = errorRegex.exec(content)) !== null) {
     const errorName = match[1];
-    const params = match[2].trim();
+    const params = match[2]
+      .split(",")
+      .map((param) => param.trim().split(" ")[0]) // Extract only the type
+      .join(",");
     errors.push(`${errorName}(${params})`);
   }
 
@@ -37,6 +40,7 @@ function extractCustomErrors(filePath: string): string[] {
 // Main function
 async function main() {
   const contractsDir = path.join(__dirname, "../../contracts");
+  const errorsDir = path.join(__dirname, "../../Errors.md");
   const solFiles = getSolFiles(contractsDir);
 
   console.log("Custom Errors Found:");
@@ -61,7 +65,7 @@ async function main() {
   }
 
   // Write to Errors.md file
-  fs.writeFileSync("../../Errors.md", mdContent);
+  fs.writeFileSync(errorsDir, mdContent);
   console.log("\nError codes have been written to Errors.md");
 }
 
