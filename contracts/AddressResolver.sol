@@ -65,12 +65,12 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
     /// @notice Gets or deploys a Forwarder proxy contract
     /// @param chainContractAddress_ The address of the chain contract
     /// @param chainSlug_ The chain slug
-    /// @return The address of the deployed Forwarder proxy contract
+    /// @return newForwarder The address of the deployed Forwarder proxy contract
     function getOrDeployForwarderContract(
         address appDeployer_,
         address chainContractAddress_,
         uint32 chainSlug_
-    ) public returns (address) {
+    ) public returns (address newForwarder) {
         // predict address
         address forwarderAddress = getForwarderAddress(chainContractAddress_, chainSlug_);
         // check if addr has code, if yes, return
@@ -78,46 +78,67 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
             return forwarderAddress;
         }
 
+        (bytes32 salt, bytes memory initData) = _createForwarderParams(
+            chainContractAddress_,
+            chainSlug_
+        );
+
+        newForwarder = _deployProxy(salt, address(forwarderBeacon), initData);
+        _setConfig(appDeployer_, newForwarder);
+        emit ForwarderDeployed(newForwarder, salt);
+    }
+
+    function _createForwarderParams(
+        address chainContractAddress_,
+        uint32 chainSlug_
+    ) internal view returns (bytes32 salt, bytes memory initData) {
         bytes memory constructorArgs = abi.encode(chainSlug_, chainContractAddress_, address(this));
-        bytes memory initData = abi.encodeWithSelector(
+        initData = abi.encodeWithSelector(
             Forwarder.initialize.selector,
             chainSlug_,
             chainContractAddress_,
             address(this)
         );
-
-        bytes32 salt = keccak256(constructorArgs);
-
-        // Deploy beacon proxy with CREATE2
-        BeaconProxy proxy = new BeaconProxy{salt: salt}(address(forwarderBeacon), initData);
-
-        address newForwarder = address(proxy);
-        _setConfig(appDeployer_, newForwarder);
-        emit ForwarderDeployed(newForwarder, salt);
-        return newForwarder;
+        salt = keccak256(constructorArgs);
     }
 
-    /// @notice Deploys an AsyncPromise proxy contract
-    /// @param invoker_ The address of the invoker
-    /// @return The address of the deployed AsyncPromise proxy contract
-    function deployAsyncPromiseContract(address invoker_) external returns (address) {
+    function _createAsyncPromiseParams(
+        address invoker_
+    ) internal view returns (bytes32 salt, bytes memory initData) {
         bytes memory constructorArgs = abi.encode(invoker_, msg.sender, address(this));
-        bytes memory initData = abi.encodeWithSelector(
+        initData = abi.encodeWithSelector(
             AsyncPromise.initialize.selector,
             invoker_,
             msg.sender,
             address(this)
         );
 
-        bytes32 salt = keccak256(abi.encodePacked(constructorArgs, asyncPromiseCounter++));
+        salt = keccak256(abi.encodePacked(constructorArgs, asyncPromiseCounter));
+    }
 
-        // Deploy beacon proxy with CREATE2
-        BeaconProxy proxy = new BeaconProxy{salt: salt}(address(asyncPromiseBeacon), initData);
+    /// @notice Deploys an AsyncPromise proxy contract
+    /// @param invoker_ The address of the invoker
+    /// @return newAsyncPromise The address of the deployed AsyncPromise proxy contract
+    function deployAsyncPromiseContract(
+        address invoker_
+    ) external returns (address newAsyncPromise) {
+        (bytes32 salt, bytes memory initData) = _createAsyncPromiseParams(invoker_);
+        asyncPromiseCounter++;
 
-        address newAsyncPromise = address(proxy);
-        emit AsyncPromiseDeployed(newAsyncPromise, salt);
+        newAsyncPromise = _deployProxy(salt, address(asyncPromiseBeacon), initData);
         _promises.push(newAsyncPromise);
-        return newAsyncPromise;
+
+        emit AsyncPromiseDeployed(newAsyncPromise, salt);
+    }
+
+    function _deployProxy(
+        bytes32 salt_,
+        address beacon_,
+        bytes memory initData_
+    ) internal returns (address) {
+        // Deploy beacon proxy with CREATE2
+        BeaconProxy proxy = new BeaconProxy{salt: salt_}(beacon_, initData_);
+        return address(proxy);
     }
 
     /// @notice Clears the list of promises
@@ -152,27 +173,34 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
         address chainContractAddress_,
         uint32 chainSlug_
     ) public view returns (address) {
-        bytes32 salt = keccak256(abi.encode(chainSlug_, chainContractAddress_, address(this)));
-        return _predictProxyAddress(salt);
+        (bytes32 salt, bytes memory initData) = _createForwarderParams(
+            chainContractAddress_,
+            chainSlug_
+        );
+        return _predictProxyAddress(salt, initData, address(forwarderBeacon));
     }
 
     /// @notice Gets the predicted address of an AsyncPromise proxy contract
     /// @param invoker_ The address of the invoker
-    /// @param forwarder_ The address of the forwarder
     /// @return The predicted address of the AsyncPromise proxy contract
-    function getAsyncPromiseAddress(
-        address invoker_,
-        address forwarder_
-    ) public view returns (address) {
-        bytes32 salt = keccak256(abi.encodePacked(invoker_, forwarder_, asyncPromiseCounter));
-        return _predictProxyAddress(salt);
+    function getAsyncPromiseAddress(address invoker_) public view returns (address) {
+        (bytes32 salt, bytes memory initData) = _createAsyncPromiseParams(invoker_);
+        return _predictProxyAddress(salt, initData, address(asyncPromiseBeacon));
     }
 
     /// @notice Predicts the address of a proxy contract
     /// @param salt_ The salt used for address prediction
+    /// @param initData_ The initialization data used for address prediction
     /// @return The predicted address of the proxy contract
-    function _predictProxyAddress(bytes32 salt_) internal view returns (address) {
-        bytes memory proxyBytecode = type(BeaconProxy).creationCode;
+    function _predictProxyAddress(
+        bytes32 salt_,
+        bytes memory initData_,
+        address beacon_
+    ) internal view returns (address) {
+        bytes memory proxyBytecode = abi.encodePacked(
+            type(BeaconProxy).creationCode,
+            abi.encode(beacon_, initData_)
+        );
         bytes32 hash = keccak256(
             abi.encodePacked(bytes1(0xff), address(this), salt_, keccak256(proxyBytecode))
         );
