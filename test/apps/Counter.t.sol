@@ -22,14 +22,14 @@ contract CounterTest is DeliveryHelperTest {
             address(addressResolver),
             address(auctionManager),
             FAST,
-            createFeesData(feesAmount)
+            createFees(feesAmount)
         );
 
         counterGateway = new CounterAppGateway(
             address(addressResolver),
             address(counterDeployer),
             address(auctionManager),
-            createFeesData(feesAmount)
+            createFees(feesAmount)
         );
         setLimit(address(counterGateway));
 

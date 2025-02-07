@@ -47,13 +47,13 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
                 initialSupplyHolder_: owner,
                 initialSupply_: 1000000000 ether
             }),
-            createFeesData(maxFees)
+            createFees(maxFees)
         );
         SuperTokenLockableAppGateway superTokenLockableApp = new SuperTokenLockableAppGateway(
             address(addressResolver),
             address(superTokenLockableDeployer),
             address(auctionManager),
-            createFeesData(maxFees)
+            createFees(maxFees)
         );
         setLimit(address(superTokenLockableApp));
 

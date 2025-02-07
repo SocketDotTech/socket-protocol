@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {OwnableTwoStep} from "../../../utils/OwnableTwoStep.sol";
 import {SignatureVerifier} from "../../../socket/utils/SignatureVerifier.sol";
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
-import {Bid, FeesData, PayloadDetails, CallType, FinalizeParams, PayloadBatch} from "../../../common/Structs.sol";
+import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, PayloadBatch} from "../../../common/Structs.sol";
 import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Constants.sol";
 import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
@@ -18,18 +18,19 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
     mapping(uint32 => uint256) public feeCollectionGasLimit;
 
     /// @notice Struct containing fee amounts and status
-    struct FeeInfo {
+    struct TokenBalance {
         uint256 deposited; // Amount deposited
         uint256 blocked; // Amount blocked
     }
 
     /// @notice Master mapping tracking all fee information
-    /// @dev appGateway => chainSlug => token => FeeInfo
-    mapping(address => mapping(uint32 => mapping(address => FeeInfo))) public feesInfo;
+    /// @dev appGateway => chainSlug => token => TokenBalance
+    mapping(address => mapping(uint32 => mapping(address => TokenBalance)))
+        public appGatewayFeeBalances;
 
     /// @notice Mapping to track blocked fees for each async id
-    /// @dev asyncId => FeesData
-    mapping(bytes32 => FeesData) public asyncIdBlockedFees;
+    /// @dev asyncId => Fees
+    mapping(bytes32 => Fees) public asyncIdBlockedFees;
 
     /// @notice Mapping to track fees to be distributed to transmitters
     /// @dev transmitter => chainSlug => token => amount
@@ -105,9 +106,9 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         address appGateway_,
         address token_
     ) public view returns (uint256) {
-        FeeInfo memory feeInfo = feesInfo[appGateway_][chainSlug_][token_];
-        if (feeInfo.deposited == 0 || feeInfo.deposited <= feeInfo.blocked) return 0;
-        return feeInfo.deposited - feeInfo.blocked;
+        TokenBalance memory tokenBalance = appGatewayFeeBalances[appGateway_][chainSlug_][token_];
+        if (tokenBalance.deposited == 0 || tokenBalance.deposited <= tokenBalance.blocked) return 0;
+        return tokenBalance.deposited - tokenBalance.blocked;
     }
 
     /// @notice Adds the fees deposited for an app gateway on a chain
@@ -121,41 +122,36 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         address token_,
         uint256 amount_
     ) external onlyOwner {
-        FeeInfo storage feeInfo = feesInfo[appGateway_][chainSlug_][token_];
-        feeInfo.deposited += amount_;
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway_][chainSlug_][token_];
+        tokenBalance.deposited += amount_;
         emit FeesDepositedUpdated(chainSlug_, appGateway_, token_, amount_);
     }
 
     /// @notice Blocks fees for transmitter
     /// @param appGateway_ The app gateway address
-    /// @param feesData_ The fees data struct
+    /// @param fees_ The fees data struct
     /// @param asyncId_ The batch identifier
     /// @dev Only callable by delivery helper
     function blockFees(
         address appGateway_,
-        FeesData memory feesData_,
+        Fees memory fees_,
         bytes32 asyncId_
     ) external onlyDeliveryHelper {
         // Block fees
         uint256 availableFees = getAvailableFees(
-            feesData_.feePoolChain,
+            fees_.feePoolChain,
             appGateway_,
-            feesData_.feePoolToken
+            fees_.feePoolToken
         );
-        if (availableFees < feesData_.maxFees) revert InsufficientFeesAvailable();
+        if (availableFees < fees_.amount) revert InsufficientFeesAvailable();
 
-        FeeInfo storage feeInfo = feesInfo[appGateway_][feesData_.feePoolChain][
-            feesData_.feePoolToken
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway_][fees_.feePoolChain][
+            fees_.feePoolToken
         ];
-        feeInfo.blocked += feesData_.maxFees;
+        tokenBalance.blocked += fees_.amount;
 
-        asyncIdBlockedFees[asyncId_] = feesData_;
-        emit FeesBlocked(
-            asyncId_,
-            feesData_.feePoolChain,
-            feesData_.feePoolToken,
-            feesData_.maxFees
-        );
+        asyncIdBlockedFees[asyncId_] = fees_;
+        emit FeesBlocked(asyncId_, fees_.feePoolChain, fees_.feePoolToken, fees_.amount);
     }
 
     function updateTransmitterFees(
@@ -163,21 +159,21 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         bytes32 asyncId_,
         address appGateway_
     ) external onlyDeliveryHelper {
-        FeesData storage feesData = asyncIdBlockedFees[asyncId_];
-        FeeInfo storage feeInfo = feesInfo[appGateway_][feesData.feePoolChain][
-            feesData.feePoolToken
+        Fees storage fees = asyncIdBlockedFees[asyncId_];
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway_][fees.feePoolChain][
+            fees.feePoolToken
         ];
 
         // if no transmitter assigned after auction, unblock fees
         if (winningBid_.transmitter == address(0)) {
-            feeInfo.blocked -= feesData.maxFees;
+            tokenBalance.blocked -= fees.amount;
             delete asyncIdBlockedFees[asyncId_];
             return;
         }
 
-        // update new maxFees
-        feesData.maxFees = winningBid_.fee;
-        feeInfo.blocked = feeInfo.blocked - feesData.maxFees + winningBid_.fee;
+        // update new amount
+        fees.amount = winningBid_.fee;
+        tokenBalance.blocked = tokenBalance.blocked - fees.amount + winningBid_.fee;
 
         emit TransmitterFeesUpdated(asyncId_, winningBid_.transmitter, winningBid_.fee);
     }
@@ -190,24 +186,23 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         address transmitter_,
         address appGateway_
     ) external override onlyDeliveryHelper {
-        FeesData memory feesData = asyncIdBlockedFees[asyncId_];
-        if (feesData.maxFees == 0) revert NoFeesBlocked();
+        Fees memory fees = asyncIdBlockedFees[asyncId_];
+        if (fees.amount == 0) revert NoFeesBlocked();
 
-        FeeInfo storage feeInfo = feesInfo[appGateway_][feesData.feePoolChain][
-            feesData.feePoolToken
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway_][fees.feePoolChain][
+            fees.feePoolToken
         ];
 
         // Unblock fees from deposit
-        feeInfo.blocked -= feesData.maxFees;
-        feeInfo.deposited -= feesData.maxFees;
+        tokenBalance.blocked -= fees.amount;
+        tokenBalance.deposited -= fees.amount;
 
         // Assign fees to transmitter
-        transmitterFees[transmitter_][feesData.feePoolChain][feesData.feePoolToken] += feesData
-            .maxFees;
+        transmitterFees[transmitter_][fees.feePoolChain][fees.feePoolToken] += fees.amount;
 
         // Clean up storage
         delete asyncIdBlockedFees[asyncId_];
-        emit FeesUnblockedAndAssigned(asyncId_, transmitter_, feesData.maxFees);
+        emit FeesUnblockedAndAssigned(asyncId_, transmitter_, fees.amount);
     }
 
     /// @notice Withdraws fees to a specified receiver
@@ -272,18 +267,19 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
             asyncId_
         );
 
-        FeesData storage feesData = asyncIdBlockedFees[asyncId_];
-        FeeInfo storage feeInfo = feesInfo[batch.appGateway][batch.feesData.feePoolChain][
-            batch.feesData.feePoolToken
-        ];
+        Fees storage fees = asyncIdBlockedFees[asyncId_];
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[batch.appGateway][
+            batch.fees.feePoolChain
+        ][batch.fees.feePoolToken];
 
+        // todo how to settle fees here?
         // Unblock unused fees
-        uint256 unusedFees = feesData.maxFees - feesUsed_;
-        feeInfo.blocked -= unusedFees;
+        uint256 unusedFees = fees.amount - feesUsed_;
+        tokenBalance.blocked -= unusedFees;
 
-        // Update feesData with actual fees used
-        feesData.maxFees = feesUsed_;
-        asyncIdBlockedFees[asyncId_] = feesData;
+        // Update fees with actual fees used
+        fees.amount = feesUsed_;
+        asyncIdBlockedFees[asyncId_] = fees;
     }
 
     /// @notice Withdraws funds to a specified receiver
@@ -304,8 +300,8 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         uint256 availableAmount = getAvailableFees(chainSlug_, appGateway_, token_);
         if (availableAmount < amount_) revert InsufficientFeesAvailable();
 
-        FeeInfo storage feeInfo = feesInfo[appGateway_][chainSlug_][token_];
-        feeInfo.deposited -= amount_;
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway_][chainSlug_][token_];
+        tokenBalance.deposited -= amount_;
 
         // Create payload for pool contract
         return
