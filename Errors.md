@@ -80,7 +80,7 @@
 | Error              | Signature    |
 | ------------------ | ------------ |
 | `InvalidPromise()` | `0x45f2d176` |
-| `FeesNotSet()` | `0x2ec61400` |
+| `FeesNotSet()`     | `0x2ec61400` |
 
 ## common/Errors.sol
 

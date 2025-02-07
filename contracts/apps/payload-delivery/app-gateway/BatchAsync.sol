@@ -10,7 +10,7 @@ import {IAuctionManager} from "../../../interfaces/IAuctionManager.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 
 import {Bid, PayloadBatch, Fees, PayloadDetails} from "../../../common/Structs.sol";
-import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Constants.sol";
+import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW, QUERY, FINALIZE} from "../../../common/Constants.sol";
 
 /// @title BatchAsync
 /// @notice Abstract contract for managing asynchronous payload batches
@@ -83,6 +83,12 @@ abstract contract BatchAsync is QueueAsync {
 
         // Handle initial read operations first
         uint256 readEndIndex = _processReadOperations(payloadDetails_, asyncId);
+
+        watcherPrecompile__().checkAndUpdateLimit(
+            payloadDetails_[0].appGateway,
+            QUERY,
+            readEndIndex
+        );
 
         // If only reads, return early
         if (readEndIndex == payloadDetails_.length) {
@@ -159,6 +165,7 @@ abstract contract BatchAsync is QueueAsync {
     ) internal returns (address) {
         address appGateway = msg.sender;
 
+        uint256 writes = 0;
         for (uint256 i = readEndIndex; i < payloadDetails_.length; i++) {
             if (payloadDetails_[i].payload.length > 24.5 * 1024) revert PayloadTooLarge();
 
@@ -168,12 +175,23 @@ abstract contract BatchAsync is QueueAsync {
                     address(this),
                     payloadDetails_[i].chainSlug
                 );
+                writes++;
             } else if (payloadDetails_[i].callType == CallType.WRITE) {
                 appGateway = _getCoreAppGateway(appGateway);
                 payloadDetails_[i].appGateway = appGateway;
+                writes++;
             }
+
             payloadBatchDetails[asyncId].push(payloadDetails_[i]);
         }
+
+        watcherPrecompile__().checkAndUpdateLimit(
+            appGateway,
+            QUERY,
+            // remaining reads
+            payloadDetails_.length - writes - readEndIndex
+        );
+        watcherPrecompile__().checkAndUpdateLimit(appGateway, FINALIZE, writes);
 
         return appGateway;
     }
