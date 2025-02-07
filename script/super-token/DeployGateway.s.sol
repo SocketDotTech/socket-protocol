@@ -6,7 +6,7 @@ import {console} from "forge-std/Console.sol";
 import {SuperTokenAppGateway} from "../../contracts/apps/super-token/SuperTokenAppGateway.sol";
 import {SuperTokenDeployer} from "../../contracts/apps/super-token/SuperTokenDeployer.sol";
 import {SuperToken} from "../../contracts/apps/super-token/SuperToken.sol";
-import {FeesData} from "../../contracts/common/Structs.sol";
+import {Fees} from "../../contracts/common/Structs.sol";
 import {ETH_ADDRESS, FAST} from "../../contracts/common/Constants.sol";
 
 contract DeployGateway is Script {
@@ -17,10 +17,10 @@ contract DeployGateway is Script {
         address auctionManager = vm.envAddress("AUCTION_MANAGER");
         address owner = vm.envAddress("OWNER");
 
-        FeesData memory feesData = FeesData({
+        Fees memory fees = Fees({
             feePoolChain: 421614,
             feePoolToken: ETH_ADDRESS,
-            maxFees: 0.001 ether
+            amount: 0.001 ether
         });
 
         SuperTokenDeployer deployer = new SuperTokenDeployer(
@@ -35,13 +35,13 @@ contract DeployGateway is Script {
                 initialSupplyHolder_: owner,
                 initialSupply_: 1000000000 ether
             }),
-            feesData
+            fees
         );
 
         SuperTokenAppGateway gateway = new SuperTokenAppGateway(
             addressResolver,
             address(deployer),
-            feesData,
+            fees,
             address(auctionManager)
         );
 

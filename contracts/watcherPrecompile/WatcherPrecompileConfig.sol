@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import "../interfaces/IWatcherPrecompile.sol";
-import {OwnableTwoStep} from "../utils/OwnableTwoStep.sol";
+import "./WatcherPrecompileLimits.sol";
 
 /// @title WatcherPrecompileConfig
 /// @notice Configuration contract for the Watcher Precompile system
 /// @dev Handles the mapping between networks, plugs, and app gateways for payload execution
-abstract contract WatcherPrecompileConfig is OwnableTwoStep, IWatcherPrecompile {
+abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
     /// @notice Maps network and plug to their configuration
     /// @dev chainSlug => plug => PlugConfig
     mapping(uint32 => mapping(address => PlugConfig)) internal _plugConfigs;

@@ -1,14 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.3;
 
-import {FeesData, Bid, PayloadDetails} from "../common/Structs.sol";
+import {Fees, Bid, PayloadDetails} from "../common/Structs.sol";
 
 interface IFeesManager {
-    function distributeFees(
-        address appGateway_,
-        FeesData memory feesData_,
-        Bid memory winningBid_
-    ) external returns (bytes32 payloadId, bytes32 root, PayloadDetails memory);
+    function blockFees(address appGateway_, Fees memory fees_, bytes32 asyncId_) external;
+
+    function updateTransmitterFees(
+        Bid memory winningBid_,
+        bytes32 asyncId_,
+        address appGateway_
+    ) external;
+
+    function updateBlockedFees(bytes32 asyncId_, uint256 feesUsed_) external;
+
+    function unblockAndAssignFees(
+        bytes32 asyncId_,
+        address transmitter_,
+        address appGateway_
+    ) external;
 
     function getWithdrawToPayload(
         address appGateway_,
@@ -16,5 +26,5 @@ interface IFeesManager {
         address token_,
         uint256 amount_,
         address receiver_
-    ) external view returns (PayloadDetails memory);
+    ) external returns (PayloadDetails memory);
 }

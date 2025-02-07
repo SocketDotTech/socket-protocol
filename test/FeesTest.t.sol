@@ -25,14 +25,14 @@ contract FeesTest is DeliveryHelperTest {
             address(addressResolver),
             address(auctionManager),
             FAST,
-            createFeesData(feesAmount)
+            createFees(feesAmount)
         );
 
         counterGateway = new CounterAppGateway(
             address(addressResolver),
             address(counterDeployer),
             address(auctionManager),
-            createFeesData(feesAmount)
+            createFees(feesAmount)
         );
         setLimit(address(counterGateway));
 
@@ -108,7 +108,6 @@ contract FeesTest is DeliveryHelperTest {
         counterGateway.withdrawFeeTokens(feesChainSlug, ETH_ADDRESS, depositAmount, receiver);
 
         asyncId = getCurrentAsyncId();
-        asyncCounterTest++;
         bytes32[] memory payloadIds = getWritePayloadIds(
             feesChainSlug,
             address(getSocketConfig(feesChainSlug).switchboard),
@@ -116,7 +115,6 @@ contract FeesTest is DeliveryHelperTest {
         );
         bidAndEndAuction(asyncId);
         finalizeAndExecute(payloadIds[0], true);
-
         assertEq(0, address(feesConfig.feesPlug).balance, "Fees Balance should be correct");
 
         assertEq(

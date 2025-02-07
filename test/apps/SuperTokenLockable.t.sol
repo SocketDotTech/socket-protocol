@@ -47,13 +47,13 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
                 initialSupplyHolder_: owner,
                 initialSupply_: 1000000000 ether
             }),
-            createFeesData(maxFees)
+            createFees(maxFees)
         );
         SuperTokenLockableAppGateway superTokenLockableApp = new SuperTokenLockableAppGateway(
             address(addressResolver),
             address(superTokenLockableDeployer),
             address(auctionManager),
-            createFeesData(maxFees)
+            createFees(maxFees)
         );
         setLimit(address(superTokenLockableApp));
 
@@ -275,7 +275,6 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         writePayloadIdCounter++;
 
         bytes32 bridgeAsyncId = getCurrentAsyncId();
-        asyncCounterTest++;
 
         bytes memory encodedOrder = abi.encode(userOrder);
         appContracts.superTokenLockableApp.bridge(encodedOrder);
@@ -330,7 +329,6 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         );
 
         bytes32 cancelAsyncId = getCurrentAsyncId();
-        asyncCounterTest++;
 
         // bidAndEndAuction(cancelAsyncId);
         // finalizeAndExecute(

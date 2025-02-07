@@ -26,7 +26,7 @@ contract DeliveryHelperTest is SetupTest {
         bytes32 indexed asyncId,
         address indexed appGateway,
         PayloadDetails[] payloads,
-        FeesData feesData,
+        Fees fees,
         uint256 auctionEndDelay
     );
     event BidPlaced(bytes32 indexed asyncId, Bid bid);
@@ -232,6 +232,7 @@ contract DeliveryHelperTest is SetupTest {
             Bid memory winningBid,
             bool isBatchCancelled,
             ,
+            ,
 
         ) = deliveryHelper.payloadBatches(asyncId);
 
@@ -270,7 +271,6 @@ contract DeliveryHelperTest is SetupTest {
             totalPayloads
         );
         asyncId = getCurrentAsyncId();
-        asyncCounterTest++;
 
         appDeployer_.deployContracts(chainSlug_);
         bidAndExecute(payloadIds, asyncId);
@@ -284,7 +284,6 @@ contract DeliveryHelperTest is SetupTest {
         address appGateway_
     ) internal returns (bytes32 asyncId) {
         asyncId = getCurrentAsyncId();
-        asyncCounterTest++;
         bytes32[] memory payloadIds = new bytes32[](contractIds.length * chainSlugs_.length);
         for (uint32 i = 0; i < chainSlugs_.length; i++) {
             for (uint j = 0; j < contractIds.length; j++) {
@@ -334,14 +333,12 @@ contract DeliveryHelperTest is SetupTest {
         uint256 totalPayloads
     ) internal returns (bytes32 asyncId) {
         asyncId = getCurrentAsyncId();
-        asyncCounterTest++;
     }
 
     function _executeReadBatchMultiChain(
         uint32[] memory chainSlugs_
     ) internal returns (bytes32 asyncId) {
         asyncId = getCurrentAsyncId();
-        asyncCounterTest++;
     }
 
     function _executeWriteBatchSingleChain(
@@ -349,7 +346,6 @@ contract DeliveryHelperTest is SetupTest {
         uint256 totalPayloads
     ) internal returns (bytes32 asyncId) {
         asyncId = getCurrentAsyncId();
-        asyncCounterTest++;
         bytes32[] memory payloadIds = getWritePayloadIds(
             chainSlug_,
             address(getSocketConfig(chainSlug_).switchboard),
@@ -362,7 +358,6 @@ contract DeliveryHelperTest is SetupTest {
         uint32[] memory chainSlugs_
     ) internal returns (bytes32 asyncId) {
         asyncId = getCurrentAsyncId();
-        asyncCounterTest++;
 
         bidAndEndAuction(asyncId);
         for (uint i = 0; i < chainSlugs_.length; i++) {
@@ -609,7 +604,11 @@ contract DeliveryHelperTest is SetupTest {
         return address(uint160(uint256(hash)));
     }
 
-    function getCurrentAsyncId() public view returns (bytes32) {
+    function getCurrentAsyncId() public returns (bytes32) {
+        return bytes32((uint256(uint160(address(deliveryHelper))) << 64) | asyncCounterTest++);
+    }
+
+    function getLatestAsyncId() public view returns (bytes32) {
         return bytes32((uint256(uint160(address(deliveryHelper))) << 64) | asyncCounterTest);
     }
 

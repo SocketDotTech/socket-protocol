@@ -13,11 +13,11 @@ contract ParallelCounterDeployer is AppDeployerBase, OwnableTwoStep {
         address addressResolver_,
         address auctionManager_,
         bytes32 sbType_,
-        FeesData memory feesData_
+        Fees memory fees_
     ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) {
         creationCodeWithArgs[counter1] = abi.encodePacked(type(Counter).creationCode);
         creationCodeWithArgs[counter2] = abi.encodePacked(type(Counter).creationCode);
-        _setFeesData(feesData_);
+        _setFees(fees_);
         _setIsCallSequential(false);
         _claimOwner(msg.sender);
     }
@@ -38,7 +38,7 @@ contract ParallelCounterDeployer is AppDeployerBase, OwnableTwoStep {
         return;
     }
 
-    function setFees(FeesData memory feesData_) public {
-        feesData = feesData_;
+    function setFees(Fees memory fees_) public {
+        fees = fees_;
     }
 }

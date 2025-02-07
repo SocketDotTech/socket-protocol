@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {OwnableTwoStep} from "../../../utils/OwnableTwoStep.sol";
 import {SignatureVerifier} from "../../../socket/utils/SignatureVerifier.sol";
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
-import {FeesData} from "../../../common/Structs.sol";
+import {Fees} from "../../../common/Structs.sol";
 import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 import "../../../interfaces/IAuctionManager.sol";
 import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
@@ -91,10 +91,8 @@ contract AuctionManager is AddressResolverUtil, OwnableTwoStep, IAuctionManager,
 
         Bid memory newBid = Bid({fee: fee, transmitter: transmitter, extraData: extraData});
 
-        FeesData memory feesData = IDeliveryHelper(addressResolver__.deliveryHelper()).getFeesData(
-            asyncId_
-        );
-        if (fee > feesData.maxFees) revert BidExceedsMaxFees();
+        Fees memory fees = IDeliveryHelper(addressResolver__.deliveryHelper()).getFees(asyncId_);
+        if (fee > fees.amount) revert BidExceedsMaxFees();
         if (fee < winningBids[asyncId_].fee) return;
 
         winningBids[asyncId_] = newBid;

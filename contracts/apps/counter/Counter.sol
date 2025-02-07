@@ -23,4 +23,8 @@ contract Counter is OwnableTwoStep, PlugBase {
         _claimOwner(socket_);
         _connectSocket(appGateway_, socket_, switchboard_);
     }
+
+    function getCounter() external view returns (uint256) {
+        return counter;
+    }
 }

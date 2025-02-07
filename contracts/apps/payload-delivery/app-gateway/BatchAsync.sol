@@ -9,8 +9,8 @@ import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
 import {IAuctionManager} from "../../../interfaces/IAuctionManager.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 
-import {Bid, PayloadBatch, FeesData, PayloadDetails} from "../../../common/Structs.sol";
-import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Constants.sol";
+import {Bid, PayloadBatch, Fees, PayloadDetails} from "../../../common/Structs.sol";
+import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW, QUERY, FINALIZE} from "../../../common/Constants.sol";
 
 /// @title BatchAsync
 /// @notice Abstract contract for managing asynchronous payload batches
@@ -30,7 +30,7 @@ abstract contract BatchAsync is QueueAsync {
         bytes32 indexed asyncId,
         address indexed appGateway,
         PayloadDetails[] payloads,
-        FeesData feesData,
+        Fees fees,
         address auctionManager
     );
 
@@ -43,11 +43,11 @@ abstract contract BatchAsync is QueueAsync {
     event BatchCancelled(bytes32 indexed asyncId);
 
     /// @notice Initiates a batch of payloads
-    /// @param feesData_ The fees data
+    /// @param fees_ The fees data
     /// @param auctionManager_ The auction manager address
     /// @return asyncId The ID of the batch
     function batch(
-        FeesData memory feesData_,
+        Fees memory fees_,
         address auctionManager_,
         bytes memory onCompleteData_,
         bytes32 sbType_
@@ -59,7 +59,7 @@ abstract contract BatchAsync is QueueAsync {
         }
 
         // Default flow for other cases (including mixed read/write)
-        return _deliverPayload(payloadDetailsArray, feesData_, auctionManager_, onCompleteData_);
+        return _deliverPayload(payloadDetailsArray, fees_, auctionManager_, onCompleteData_);
     }
 
     /// @notice Callback function for handling promises
@@ -69,12 +69,12 @@ abstract contract BatchAsync is QueueAsync {
 
     /// @notice Delivers a payload batch
     /// @param payloadDetails_ The payload details
-    /// @param feesData_ The fees data
+    /// @param fees_ The fees data
     /// @param auctionManager_ The auction manager address
     /// @return asyncId The ID of the batch
     function _deliverPayload(
         PayloadDetails[] memory payloadDetails_,
-        FeesData memory feesData_,
+        Fees memory fees_,
         address auctionManager_,
         bytes memory onCompleteData_
     ) internal returns (bytes32) {
@@ -84,17 +84,25 @@ abstract contract BatchAsync is QueueAsync {
         // Handle initial read operations first
         uint256 readEndIndex = _processReadOperations(payloadDetails_, asyncId);
 
+        watcherPrecompile__().checkAndUpdateLimit(
+            payloadDetails_[0].appGateway,
+            QUERY,
+            readEndIndex
+        );
+
         // If only reads, return early
         if (readEndIndex == payloadDetails_.length) {
             return asyncId;
         }
 
         address appGateway = _processRemainingPayloads(payloadDetails_, readEndIndex, asyncId);
+        payloadBatches[asyncId].totalPayloadsRemaining = payloadDetails_.length - readEndIndex;
 
+        IFeesManager(feesManager).blockFees(appGateway, fees_, asyncId);
         _initializeBatch(
             asyncId,
             appGateway,
-            feesData_,
+            fees_,
             auctionManager_,
             onCompleteData_,
             readEndIndex,
@@ -109,13 +117,17 @@ abstract contract BatchAsync is QueueAsync {
         bytes32 asyncId
     ) internal returns (uint256) {
         uint256 readEndIndex = 0;
+
+        // Find the end of parallel reads
         while (
             readEndIndex < payloadDetails_.length &&
-            payloadDetails_[readEndIndex].callType == CallType.READ
+            payloadDetails_[readEndIndex].callType == CallType.READ &&
+            !payloadDetails_[readEndIndex].isSequential
         ) {
             readEndIndex++;
         }
 
+        // If we have parallel reads, process them as a batch
         if (readEndIndex > 0) {
             address[] memory lastBatchPromises = new address[](readEndIndex);
             address batchPromise = IAddressResolver(addressResolver__).deployAsyncPromiseContract(
@@ -135,9 +147,11 @@ abstract contract BatchAsync is QueueAsync {
                     payloadDetails_[i].payload
                 );
                 payloadIdToBatchHash[payloadId] = asyncId;
+                payloadBatchDetails[asyncId].push(payloadDetails_[i]);
                 emit PayloadAsyncRequested(asyncId, payloadId, bytes32(0), payloadDetails_[i]);
             }
 
+            payloadBatches[asyncId].lastBatchPromises = lastBatchPromises;
             IPromise(batchPromise).then(this.callback.selector, abi.encode(asyncId));
         }
 
@@ -151,6 +165,7 @@ abstract contract BatchAsync is QueueAsync {
     ) internal returns (address) {
         address appGateway = msg.sender;
 
+        uint256 writes = 0;
         for (uint256 i = readEndIndex; i < payloadDetails_.length; i++) {
             if (payloadDetails_[i].payload.length > 24.5 * 1024) revert PayloadTooLarge();
 
@@ -160,12 +175,23 @@ abstract contract BatchAsync is QueueAsync {
                     address(this),
                     payloadDetails_[i].chainSlug
                 );
+                writes++;
             } else if (payloadDetails_[i].callType == CallType.WRITE) {
                 appGateway = _getCoreAppGateway(appGateway);
                 payloadDetails_[i].appGateway = appGateway;
+                writes++;
             }
+
             payloadBatchDetails[asyncId].push(payloadDetails_[i]);
         }
+
+        watcherPrecompile__().checkAndUpdateLimit(
+            appGateway,
+            QUERY,
+            // remaining reads
+            payloadDetails_.length - writes - readEndIndex
+        );
+        watcherPrecompile__().checkAndUpdateLimit(appGateway, FINALIZE, writes);
 
         return appGateway;
     }
@@ -173,7 +199,7 @@ abstract contract BatchAsync is QueueAsync {
     function _initializeBatch(
         bytes32 asyncId,
         address appGateway,
-        FeesData memory feesData_,
+        Fees memory fees_,
         address auctionManager_,
         bytes memory onCompleteData_,
         uint256 readEndIndex,
@@ -181,13 +207,13 @@ abstract contract BatchAsync is QueueAsync {
     ) internal {
         payloadBatches[asyncId] = PayloadBatch({
             appGateway: appGateway,
-            feesData: feesData_,
+            fees: fees_,
             currentPayloadIndex: readEndIndex,
             auctionManager: auctionManager_,
             winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
             isBatchCancelled: false,
-            totalPayloadsRemaining: payloadDetails_.length - readEndIndex,
-            lastBatchPromises: new address[](readEndIndex),
+            totalPayloadsRemaining: payloadBatches[asyncId].totalPayloadsRemaining,
+            lastBatchPromises: payloadBatches[asyncId].lastBatchPromises,
             onCompleteData: onCompleteData_
         });
 
@@ -198,7 +224,7 @@ abstract contract BatchAsync is QueueAsync {
             delayInSeconds
         );
 
-        emit PayloadSubmitted(asyncId, appGateway, payloadDetails_, feesData_, auctionManager_);
+        emit PayloadSubmitted(asyncId, appGateway, payloadDetails_, fees_, auctionManager_);
     }
 
     function endTimeout(bytes32 asyncId_) external onlyWatcherPrecompile {
@@ -213,6 +239,11 @@ abstract contract BatchAsync is QueueAsync {
         }
 
         payloadBatches[asyncId_].isBatchCancelled = true;
+        IFeesManager(feesManager).unblockAndAssignFees(
+            asyncId_,
+            payloadBatches[asyncId_].winningBid.transmitter,
+            payloadBatches[asyncId_].appGateway
+        );
         emit BatchCancelled(asyncId_);
     }
 
@@ -245,14 +276,14 @@ abstract contract BatchAsync is QueueAsync {
     /// @param token_ The address of the token
     /// @param amount_ The amount of tokens to withdraw
     /// @param receiver_ The address of the receiver
-    /// @param feesData_ The fees data
+    /// @param fees_ The fees data
     function withdrawTo(
         uint32 chainSlug_,
         address token_,
         uint256 amount_,
         address receiver_,
         address auctionManager_,
-        FeesData memory feesData_
+        Fees memory fees_
     ) external {
         PayloadDetails[] memory payloadDetailsArray = new PayloadDetails[](1);
         payloadDetailsArray[0] = IFeesManager(feesManager).getWithdrawToPayload(
@@ -262,6 +293,6 @@ abstract contract BatchAsync is QueueAsync {
             amount_,
             receiver_
         );
-        _deliverPayload(payloadDetailsArray, feesData_, auctionManager_, new bytes(0));
+        _deliverPayload(payloadDetailsArray, fees_, auctionManager_, new bytes(0));
     }
 }

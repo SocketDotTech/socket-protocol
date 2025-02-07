@@ -22,14 +22,14 @@ contract CounterTest is DeliveryHelperTest {
             address(addressResolver),
             address(auctionManager),
             FAST,
-            createFeesData(feesAmount)
+            createFees(feesAmount)
         );
 
         counterGateway = new CounterAppGateway(
             address(addressResolver),
             address(counterDeployer),
             address(auctionManager),
-            createFeesData(feesAmount)
+            createFees(feesAmount)
         );
         setLimit(address(counterGateway));
 
@@ -89,7 +89,7 @@ contract CounterTest is DeliveryHelperTest {
         assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
     }
 
-    function testCounterIncrementMultipleChains() external {
+    function testCounterIncrementMultipleChains() public {
         deploySetup();
         deployCounterApp(arbChainSlug);
         deployCounterApp(optChainSlug);
@@ -119,5 +119,39 @@ contract CounterTest is DeliveryHelperTest {
         _executeWriteBatchMultiChain(chains);
         assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
         assertEq(Counter(optCounter).counter(), optCounterBefore + 1);
+    }
+
+    function testCounterReadMultipleChains() external {
+        testCounterIncrementMultipleChains();
+        (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
+            arbChainSlug,
+            counterId,
+            counterDeployer
+        );
+        (address optCounter, address optCounterForwarder) = getOnChainAndForwarderAddresses(
+            optChainSlug,
+            counterId,
+            counterDeployer
+        );
+
+        address[] memory instances = new address[](2);
+        instances[0] = arbCounterForwarder;
+        instances[1] = optCounterForwarder;
+        bytes32[] memory payloadIds = new bytes32[](3);
+        payloadIds[0] = bytes32(readPayloadIdCounter++);
+        payloadIds[1] = bytes32(readPayloadIdCounter++);
+        payloadIds[2] = getWritePayloadId(
+            arbChainSlug,
+            address(getSocketConfig(arbChainSlug).switchboard),
+            writePayloadIdCounter++
+        );
+        writePayloadIdCounter++;
+        bytes32 bridgeAsyncId = getCurrentAsyncId();
+
+        counterGateway.readCounters(instances);
+        finalizeQuery(payloadIds[0], abi.encode(Counter(arbCounter).counter()));
+        finalizeQuery(payloadIds[1], abi.encode(Counter(optCounter).counter()));
+        bidAndEndAuction(bridgeAsyncId);
+        finalizeAndExecute(payloadIds[2], false);
     }
 }

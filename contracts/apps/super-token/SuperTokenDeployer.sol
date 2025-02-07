@@ -21,7 +21,7 @@ contract SuperTokenDeployer is AppDeployerBase, OwnableTwoStep {
         address auctionManager_,
         bytes32 sbType_,
         ConstructorParams memory params_,
-        FeesData memory feesData_
+        Fees memory fees_
     ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) {
         _claimOwner(owner_);
         creationCodeWithArgs[superToken] = abi.encodePacked(
@@ -34,7 +34,7 @@ contract SuperTokenDeployer is AppDeployerBase, OwnableTwoStep {
                 params_.initialSupply_
             )
         );
-        _setFeesData(feesData_);
+        _setFees(fees_);
     }
 
     function deployContracts(uint32 chainSlug_) external async {

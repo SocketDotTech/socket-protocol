@@ -86,4 +86,10 @@ interface IWatcherPrecompile {
     function switchboards(uint32 chainSlug_, bytes32 sbType_) external view returns (address);
 
     function setIsValidInboxCaller(uint32 chainSlug_, address plug_, bool isValid_) external;
+
+    function checkAndUpdateLimit(
+        address appGateway_,
+        bytes32 limitType_,
+        uint256 consumeLimit_
+    ) external;
 }
