@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/Console.sol";
 import {FeesPlug} from "../contracts/apps/payload-delivery/FeesPlug.sol";
-import {FeesData} from "../contracts/common/Structs.sol";
+import {Fees} from "../contracts/common/Structs.sol";
 import {ETH_ADDRESS} from "../contracts/common/Constants.sol";
 
 contract DepositFees is Script {
@@ -22,6 +22,6 @@ contract DepositFees is Script {
         console.log("Sender balance:", balance);
 
         uint feesAmount = 0.001 ether;
-        feesPlug.deposit{value: feesAmount}(ETH_ADDRESS, feesAmount, appGateway);
+        feesPlug.deposit{value: feesAmount}(ETH_ADDRESS, appGateway, feesAmount);
     }
 }

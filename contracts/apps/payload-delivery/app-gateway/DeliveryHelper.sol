@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
 import {OwnableTwoStep} from "../../../utils/OwnableTwoStep.sol";
-import {Bid, PayloadBatch, FeesData, PayloadDetails, FinalizeParams} from "../../../common/Structs.sol";
+import {Bid, PayloadBatch, Fees, PayloadDetails, FinalizeParams} from "../../../common/Structs.sol";
 import {DISTRIBUTE_FEE, DEPLOY} from "../../../common/Constants.sol";
 import {PromisesNotResolved} from "../../../common/Errors.sol";
 import "./BatchAsync.sol";
@@ -33,7 +33,23 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         Bid memory winningBid_
     ) external onlyAuctionManager(asyncId_) {
         payloadBatches[asyncId_].winningBid = winningBid_;
-        _process(asyncId_);
+
+        // update fees
+        IFeesManager(feesManager).updateTransmitterFees(
+            winningBid_,
+            asyncId_,
+            payloadBatches[asyncId_].appGateway
+        );
+
+        if (winningBid_.transmitter != address(0)) {
+            // process batch
+            _process(asyncId_);
+        } else {
+            // todo: check if this is correct?
+            // cancel batch
+            payloadBatches[asyncId_].isBatchCancelled = true;
+            emit BatchCancelled(asyncId_);
+        }
     }
 
     function callback(bytes memory asyncId_, bytes memory) external override onlyPromises {
@@ -67,18 +83,11 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
     }
 
     function _finishBatch(bytes32 asyncId_, PayloadBatch storage payloadBatch_) internal {
-        (bytes32 payloadId_, bytes32 root_, PayloadDetails memory payloadDetails_) = IFeesManager(
-            feesManager
-        ).distributeFees(
-                payloadBatch_.appGateway,
-                payloadBatch_.feesData,
-                payloadBatch_.winningBid
-            );
-
-        payloadIdToPayloadDetails[payloadId_] = payloadDetails_;
-        payloadIdToBatchHash[payloadId_] = asyncId_;
-        emit PayloadAsyncRequested(asyncId_, payloadId_, root_, payloadDetails_);
-
+        IFeesManager(feesManager).unblockAndAssignFees(
+            asyncId_,
+            payloadBatch_.winningBid.transmitter,
+            payloadBatch_.appGateway
+        );
         IAppGateway(payloadBatch_.appGateway).onBatchComplete(asyncId_, payloadBatch_);
     }
 
