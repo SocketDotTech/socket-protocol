@@ -13,7 +13,7 @@ import { getProviderFromChainSlug } from "../constants";
 import { ethers } from "hardhat";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { auctionEndDelaySeconds, chains } from "./config";
-import { OFF_CHAIN_VM_CHAIN_ID } from "../constants/constants";
+import { MAX_LIMIT, OFF_CHAIN_VM_CHAIN_ID } from "../constants/constants";
 import { CORE_CONTRACTS, OffChainVMCoreContracts } from "../../src";
 
 const main = async () => {
@@ -27,6 +27,7 @@ const main = async () => {
     };
     try {
       await deployWatcherVMContracts();
+      return;
 
       console.log("Deploying Socket contracts");
       addresses = dev_addresses as unknown as DeploymentAddresses;
@@ -232,7 +233,7 @@ const deployWatcherVMContracts = async () => {
         OffChainVMCoreContracts.WatcherPrecompile,
         `contracts/watcherPrecompile/WatcherPrecompile.sol`,
         proxyAdmin.address,
-        [offChainVMOwner, addressResolver.address],
+        [offChainVMOwner, addressResolver.address, MAX_LIMIT],
         deployUtils
       );
 

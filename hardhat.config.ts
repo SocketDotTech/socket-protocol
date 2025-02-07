@@ -5,7 +5,7 @@ import "hardhat-preprocessor";
 import "hardhat-deploy";
 import "hardhat-abi-exporter";
 import "hardhat-change-network";
-
+import "@openzeppelin/hardhat-upgrades";
 import { config as dotenvConfig } from "dotenv";
 import type { HardhatUserConfig } from "hardhat/config";
 import type {
@@ -165,8 +165,15 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 999999,
+        runs: 999999,  
+        details: {
+          yul: true,
+          yulDetails: {
+            stackAllocation: true,
+          }
+        }
       },
+      viaIR: true
     },
   },
 };
