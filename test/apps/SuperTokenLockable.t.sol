@@ -128,7 +128,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
 
     function testPredictPromiseAddress() external {
         address invoker = address(uint160(c++));
-        
+
         address predicted = addressResolver.getAsyncPromiseAddress(invoker);
         address asyncPromise = addressResolver.deployAsyncPromiseContract(invoker);
 

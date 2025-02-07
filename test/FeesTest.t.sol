@@ -92,12 +92,7 @@ contract FeesTest is DeliveryHelperTest {
 
         uint256 receiverBalanceBefore = receiver.balance;
         uint256 withdrawAmount = 0.5 ether;
-        counterGateway.withdrawFeeTokens(
-            feesChainSlug,
-            ETH_ADDRESS,
-            withdrawAmount,
-            receiver
-        );
+        counterGateway.withdrawFeeTokens(feesChainSlug, ETH_ADDRESS, withdrawAmount, receiver);
 
         asyncId = getCurrentAsyncId();
         bytes32[] memory payloadIds = getWritePayloadIds(
