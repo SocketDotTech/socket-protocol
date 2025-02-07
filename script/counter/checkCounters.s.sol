@@ -8,7 +8,7 @@ import {Counter} from "../../contracts/apps//counter/Counter.sol";
 
 contract CheckCounters is Script {
     function run() external {
-        CounterDeployer deployer = CounterDeployer(vm.envAddress("COUNTER_DEPLOYER"));
+        CounterDeployer deployer = CounterDeployer(vm.envAddress("DEPLOYER"));
 
         vm.createSelectFork(vm.envString("OFF_CHAIN_VM_RPC"));
         address counterInstanceArbitrumSepolia = deployer.getOnChainAddress(
