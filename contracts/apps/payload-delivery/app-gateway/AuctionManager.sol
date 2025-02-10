@@ -97,6 +97,13 @@ contract AuctionManager is AddressResolverUtil, OwnableTwoStep, IAuctionManager,
 
         winningBids[asyncId_] = newBid;
         emit BidPlaced(asyncId_, newBid);
+        auctionClosed[asyncId_] = true;
+
+        emit AuctionEnded(asyncId_, newBid);
+        IDeliveryHelper(addressResolver__.deliveryHelper()).startBatchProcessing(
+            asyncId_,
+            newBid
+        );
     }
 
     /// @notice Ends an auction
@@ -107,9 +114,5 @@ contract AuctionManager is AddressResolverUtil, OwnableTwoStep, IAuctionManager,
         if (winningBid.transmitter == address(0)) revert InvalidTransmitter();
 
         emit AuctionEnded(asyncId_, winningBid);
-        IDeliveryHelper(addressResolver__.deliveryHelper()).startBatchProcessing(
-            asyncId_,
-            winningBid
-        );
     }
 }

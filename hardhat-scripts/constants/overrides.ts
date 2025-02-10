@@ -41,7 +41,8 @@ export const getOverrides = async (
   let gasPrice = overrides?.gasPrice;
   let gasLimit = overrides?.gasLimit;
   let type = overrides?.type;
-  if (!gasPrice) gasPrice = (await getGasPrice(chainSlug, provider)).toNumber();
+  if (gasPrice == undefined || gasPrice == null)
+    gasPrice = (await getGasPrice(chainSlug, provider)).toNumber();
   if (type == undefined) type = defaultType;
   // if gas limit is undefined, ethers will calcuate it automatically. If want to override,
   // add in the overrides object. Dont set a default value
