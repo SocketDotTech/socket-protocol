@@ -187,6 +187,23 @@ contract DeliveryHelperTest is SetupTest {
         skip(100);
     }
 
+    function depositFees(address appGateway_, Fees memory fees_) internal {
+        SocketContracts memory socketConfig = getSocketConfig(fees_.feePoolChain);
+        socketConfig.feesPlug.deposit{value: fees_.amount}(
+            fees_.feePoolToken,
+            appGateway_,
+            fees_.amount
+        );
+
+        hoax(owner);
+        feesManager.incrementFeesDeposited(
+            fees_.feePoolChain,
+            appGateway_,
+            fees_.feePoolToken,
+            fees_.amount
+        );
+    }
+
     //// BATCH DEPLOY AND EXECUTE HELPERS ////
     function getContractFactoryPlug(uint32 chainSlug_) internal view returns (address) {
         return address(getSocketConfig(chainSlug_).contractFactoryPlug);
@@ -226,13 +243,12 @@ contract DeliveryHelperTest is SetupTest {
 
         (
             address appGateway,
-            ,
-            ,
             address _auctionManager,
-            Bid memory winningBid,
             bool isBatchCancelled,
             ,
             ,
+            ,
+            Bid memory winningBid,
 
         ) = deliveryHelper.payloadBatches(asyncId);
 
@@ -346,6 +362,7 @@ contract DeliveryHelperTest is SetupTest {
         uint256 totalPayloads
     ) internal returns (bytes32 asyncId) {
         asyncId = getCurrentAsyncId();
+
         bytes32[] memory payloadIds = getWritePayloadIds(
             chainSlug_,
             address(getSocketConfig(chainSlug_).switchboard),
@@ -369,8 +386,7 @@ contract DeliveryHelperTest is SetupTest {
             finalizeAndExecute(payloadId, false);
         }
 
-        // for fees
-        writePayloadIdCounter += chainSlugs_.length + 1;
+        writePayloadIdCounter += chainSlugs_.length;
     }
 
     function createDeployPayloadDetail(
@@ -458,15 +474,17 @@ contract DeliveryHelperTest is SetupTest {
         watcherPrecompile.resolveTimeout(timeoutId);
     }
 
-    function finalize(bytes32 payloadId) internal view returns (bytes memory, bytes32) {
-        PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(payloadId);
+    function finalize(
+        bytes32 payloadId,
+        PayloadDetails memory payloadDetails
+    ) internal view returns (bytes memory, bytes32) {
         SocketContracts memory socketConfig = getSocketConfig(payloadDetails.chainSlug);
 
         PayloadRootParams memory rootParams_ = PayloadRootParams(
-            payloadId,
             payloadDetails.appGateway,
             transmitterEOA,
             payloadDetails.target,
+            payloadId,
             payloadDetails.executionGasLimit,
             payloadDetails.payload
         );
@@ -567,9 +585,17 @@ contract DeliveryHelperTest is SetupTest {
     }
 
     function finalizeAndExecute(bytes32 payloadId, bool isWithdraw) internal {
-        (bytes memory watcherSig, bytes32 root) = finalize(payloadId);
-
         PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(payloadId);
+        finalizeAndExecute(payloadId, isWithdraw, payloadDetails);
+    }
+
+    function finalizeAndExecute(
+        bytes32 payloadId,
+        bool isWithdraw,
+        PayloadDetails memory payloadDetails
+    ) internal {
+        (bytes memory watcherSig, bytes32 root) = finalize(payloadId, payloadDetails);
+
         bytes memory returnData = relayTx(
             payloadDetails.chainSlug,
             payloadId,

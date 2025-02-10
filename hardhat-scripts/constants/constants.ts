@@ -12,3 +12,4 @@ export const fees = {
 
 export const BASE_SEPOLIA_CHAIN_ID = 84532;
 export const OFF_CHAIN_VM_CHAIN_ID = 7625382;
+export const MAX_LIMIT = 100;

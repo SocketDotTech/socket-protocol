@@ -18,9 +18,9 @@ contract CheckLimitsScript is Script {
         console.log("CronAppGateway address:", cronAppGateway);
         WatcherPrecompile watcherContract = WatcherPrecompile(watcherPrecompile);
 
-        LimitParams memory scheduleLimit = watcherContract.getLimitParams(cronAppGateway, SCHEDULE);
-        LimitParams memory queryLimit = watcherContract.getLimitParams(cronAppGateway, QUERY);
-        LimitParams memory finalizeLimit = watcherContract.getLimitParams(cronAppGateway, FINALIZE);
+        LimitParams memory scheduleLimit = watcherContract.getLimitParams(SCHEDULE, cronAppGateway);
+        LimitParams memory queryLimit = watcherContract.getLimitParams(QUERY, cronAppGateway);
+        LimitParams memory finalizeLimit = watcherContract.getLimitParams(FINALIZE, cronAppGateway);
 
         uint256 scheduleCurrentLimit = watcherContract.getCurrentLimit(SCHEDULE, cronAppGateway);
         uint256 queryCurrentLimit = watcherContract.getCurrentLimit(QUERY, cronAppGateway);

@@ -25,7 +25,6 @@ contract InboxTest is DeliveryHelperTest {
             arbChainSlug,
             createFees(feesAmount)
         );
-        setLimit(address(gateway));
 
         // Connect the inbox to the gateway and socket
         inbox.connectSocket(

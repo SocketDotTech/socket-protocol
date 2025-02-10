@@ -9,7 +9,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "socket protocol",
   "scripts": {
     "build": "hardhat export-abi && tsc --project lib.tsconfig.json",
@@ -23,8 +23,9 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.1.1",
+    "@nomiclabs/hardhat-ethers": "2.2.3",
     "@nomicfoundation/hardhat-verify": "^2.0.12",
+    "@openzeppelin/hardhat-upgrades": "1.22.1",
     "@socket.tech/dl-core": "^2.35.0",
     "@typechain/ethers-v5": "^10.0.0",
     "@typechain/hardhat": "6.0.0",
