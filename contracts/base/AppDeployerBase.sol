@@ -13,6 +13,8 @@ import {IDeliveryHelper} from "../interfaces/IDeliveryHelper.sol";
 abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     mapping(bytes32 => mapping(uint32 => address)) public override forwarderAddresses;
     mapping(bytes32 => bytes) public creationCodeWithArgs;
+    bytes32 public constant implementationType = keccak256("IMPLEMENTATION_DEPLOYMENT");
+    bytes32 public constant proxyType = keccak256("PROXY_DEPLOYMENT");
 
     constructor(
         address addressResolver_,
@@ -25,12 +27,12 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     /// @notice Deploys a contract
     /// @param contractId_ The contract ID
     /// @param chainSlug_ The chain slug
-    function _deploy(bytes32 contractId_, uint32 chainSlug_) internal {
+    function _deploy(bytes32 contractId_, uint32 chainSlug_, bytes32 deploymentType_) internal {
         address asyncPromise = addressResolver__.deployAsyncPromiseContract(address(this));
         isValidPromise[asyncPromise] = true;
         IPromise(asyncPromise).then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
 
-        onCompleteData = abi.encode(chainSlug_);
+        onCompleteData = abi.encode(deploymentType_, chainSlug_);
         IDeliveryHelper(deliveryHelper()).queue(
             isCallSequential,
             chainSlug_,
@@ -39,6 +41,14 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
             CallType.DEPLOY,
             creationCodeWithArgs[contractId_]
         );
+    }
+
+    function _deployProxy(bytes32 contractId_, uint32 chainSlug_) internal {
+        _deploy(contractId_, chainSlug_, proxyType);
+    }
+
+    function _deployImplementation(bytes32 contractId_, uint32 chainSlug_) internal {
+        _deploy(contractId_, chainSlug_, implementationType);
     }
 
     /// @notice Sets the address for a deployed contract
@@ -80,8 +90,12 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
         bytes32,
         PayloadBatch memory payloadBatch_
     ) external override onlyDeliveryHelper {
-        uint32 chainSlug = abi.decode(payloadBatch_.onCompleteData, (uint32));
-        initialize(chainSlug);
+        (bytes32 deploymentType, uint32 chainSlug) = abi.decode(payloadBatch_.onCompleteData, (bytes32, uint32));
+        if (deploymentType == implementationType) {
+            deployProxies(chainSlug);
+        } else if (deploymentType == proxyType) {
+            initialize(chainSlug);
+        }
     }
 
     /// @notice Gets the socket address
@@ -95,4 +109,6 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     /// @notice Initializes the contract
     /// @param chainSlug_ The chain slug
     function initialize(uint32 chainSlug_) public virtual {}
+    function deployProxies(uint32 chainSlug_) public virtual {}
 }
+    
