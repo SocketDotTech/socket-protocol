@@ -12,8 +12,6 @@ contract DeployCounterAndGateway is Script {
     function run() external {
         address addressResolver = vm.envAddress("ADDRESS_RESOLVER");
         address auctionManager = vm.envAddress("AUCTION_MANAGER");
-        address socket = vm.envAddress("SOCKET");
-        address switchboard = vm.envAddress("SWITCHBOARD");
 
         string memory arbRpc = vm.envString("ARBITRUM_SEPOLIA_RPC");
         vm.createSelectFork(arbRpc);

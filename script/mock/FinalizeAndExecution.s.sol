@@ -33,6 +33,7 @@ contract InboxTest is Script {
         });
         FinalizeParams memory finalizeParams = FinalizeParams({
             payloadDetails: payloadDetails,
+            asyncId: bytes32(0),
             transmitter: address(0)
         });
         (bytes32 payloadId, ) = watcherInstance.finalize(finalizeParams);
