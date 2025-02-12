@@ -181,7 +181,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
 
         Fees storage fees = asyncIdBlockedFees[asyncId_];
         TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees.feePoolChain][
-            fees.feePoolToken
+           fees.feePoolToken
         ];
 
         // if no transmitter assigned after auction, unblock fees
@@ -210,9 +210,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         if (fees.amount == 0) revert NoFeesBlocked();
 
         address appGateway = _getCoreAppGateway(appGateway_);
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees.feePoolChain][
-            fees.feePoolToken
-        ];
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees.feePoolChain][fees.feePoolToken];
 
         // Unblock fees from deposit
         tokenBalance.blocked -= fees.amount;

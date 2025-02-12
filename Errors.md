@@ -2,10 +2,10 @@
 
 ## AddressResolver.sol
 
-| Error                                                                     | Signature    |
-| ------------------------------------------------------------------------- | ------------ |
-| `AppGatewayContractAlreadySetByDifferentSender(address contractAddress_)` | `0x4062307a` |
-| `DeploymentFailed()`                                                      | `0x30116425` |
+| Error                                                    | Signature    |
+| -------------------------------------------------------- | ------------ |
+| `AppGatewayContractAlreadySetByDifferentSender(address)` | `0xbe1ef5f1` |
+| `DeploymentFailed()`                                     | `0x30116425` |
 
 ## AsyncPromise.sol
 
@@ -41,13 +41,13 @@
 
 ## apps/payload-delivery/app-gateway/BatchAsync.sol
 
-| Error                           | Signature    |
-| ------------------------------- | ------------ |
-| `AllPayloadsExecuted()`         | `0x6bc43bfe` |
-| `NotFromForwarder()`            | `0xe83aa6bd` |
-| `CallFailed(bytes32 payloadId)` | `0xe6176664` |
-| `PayloadTooLarge()`             | `0x492f620d` |
-| `OnlyAppGateway()`              | `0xfec944ea` |
+| Error                   | Signature    |
+| ----------------------- | ------------ |
+| `AllPayloadsExecuted()` | `0x6bc43bfe` |
+| `NotFromForwarder()`    | `0xe83aa6bd` |
+| `CallFailed(bytes32)`   | `0xe22e3683` |
+| `PayloadTooLarge()`     | `0x492f620d` |
+| `OnlyAppGateway()`      | `0xfec944ea` |
 
 ## apps/payload-delivery/app-gateway/DeliveryHelper.sol
 
@@ -80,7 +80,7 @@
 | Error              | Signature    |
 | ------------------ | ------------ |
 | `InvalidPromise()` | `0x45f2d176` |
-| `FeesNotSet()` | `0x2ec61400` |
+| `FeesNotSet()`     | `0x2ec61400` |
 
 ## common/Errors.sol
 
@@ -111,11 +111,11 @@
 
 ## libraries/ECDSA.sol
 
-| Error                                         | Signature    |
-| --------------------------------------------- | ------------ |
-| `ECDSAInvalidSignature()`                     | `0xf645eedf` |
-| `ECDSAInvalidSignatureLength(uint256 length)` | `0x367e2e27` |
-| `ECDSAInvalidSignatureS(bytes32 s)`           | `0x5fedc3a1` |
+| Error                                  | Signature    |
+| -------------------------------------- | ------------ |
+| `ECDSAInvalidSignature()`              | `0xf645eedf` |
+| `ECDSAInvalidSignatureLength(uint256)` | `0xfce698f7` |
+| `ECDSAInvalidSignatureS(bytes32)`      | `0xd78bce0c` |
 
 ## libraries/RescueFundsLib.sol
 
@@ -179,9 +179,9 @@
 
 ## socket/utils/AccessControl.sol
 
-| Error                    | Signature    |
-| ------------------------ | ------------ |
-| `NoPermit(bytes32 role)` | `0x3db46572` |
+| Error               | Signature    |
+| ------------------- | ------------ |
+| `NoPermit(bytes32)` | `0x962f6333` |
 
 ## socket/utils/SignatureVerifier.sol
 
@@ -196,7 +196,7 @@
 | `OnlyPayloadDelivery()`   | `0x7ccc3a43` |
 | `OnlyWatcherPrecompile()` | `0x663a892a` |
 
-## utils/Ownable.sol
+## utils/OwnableTwoStep.sol
 
 | Error           | Signature    |
 | --------------- | ------------ |
@@ -213,6 +213,6 @@
 
 ## watcherPrecompile/WatcherPrecompileLimits.sol
 
-| Error                                                         | Signature    |
-| ------------------------------------------------------------- | ------------ |
-| `ActionNotSupported(address appGateway_, bytes32 limitType_)` | `0xb820198b` |
+| Error                                 | Signature    |
+| ------------------------------------- | ------------ |
+| `ActionNotSupported(address,bytes32)` | `0xa219158f` |

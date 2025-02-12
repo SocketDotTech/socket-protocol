@@ -53,7 +53,8 @@ export const getOrDeploy = async (
     contract = await deployContractWithArgs(
       path + `:${contractName}`,
       args,
-      deployUtils.signer
+      deployUtils.signer,
+      deployUtils.currentChainSlug
     );
 
     console.log(
@@ -78,7 +79,8 @@ export const getOrDeploy = async (
 export async function deployContractWithArgs(
   contractName: string,
   args: Array<any>,
-  signer: SignerWithAddress | Wallet
+  signer: SignerWithAddress | Wallet,
+  chainSlug: ChainSlug
 ) {
   try {
     const Contract: ContractFactory = await ethers.getContractFactory(
@@ -86,7 +88,7 @@ export async function deployContractWithArgs(
     );
     // gasLimit is set to undefined to not use the value set in overrides
     const contract: Contract = await Contract.connect(signer).deploy(...args, {
-      ...(await overrides(await signer.getChainId())),
+      ...(await overrides(chainSlug)),
     });
     await contract.deployed();
     return contract;

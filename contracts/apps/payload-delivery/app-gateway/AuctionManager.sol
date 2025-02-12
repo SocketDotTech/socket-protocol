@@ -114,6 +114,13 @@ contract AuctionManager is AddressResolverUtil, OwnableTwoStep, IAuctionManager,
         }
 
         emit BidPlaced(asyncId_, newBid);
+        auctionClosed[asyncId_] = true;
+
+        emit AuctionEnded(asyncId_, newBid);
+        IDeliveryHelper(addressResolver__.deliveryHelper()).startBatchProcessing(
+            asyncId_,
+            newBid
+        );
     }
 
     /// @notice Ends an auction

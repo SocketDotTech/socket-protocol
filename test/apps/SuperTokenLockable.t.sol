@@ -112,6 +112,29 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         return payloadDetails;
     }
 
+    function testPredictForwarderAddress() external {
+        address appDeployer = address(uint160(c++));
+        address chainContractAddress = address(uint160(c++));
+
+        address forwarder = addressResolver.getOrDeployForwarderContract(
+            appDeployer,
+            chainContractAddress,
+            vmChainSlug
+        );
+        address predicted = addressResolver.getForwarderAddress(chainContractAddress, vmChainSlug);
+
+        assertEq(forwarder, predicted);
+    }
+
+    function testPredictPromiseAddress() external {
+        address invoker = address(uint160(c++));
+
+        address predicted = addressResolver.getAsyncPromiseAddress(invoker);
+        address asyncPromise = addressResolver.deployAsyncPromiseContract(invoker);
+
+        assertEq(asyncPromise, predicted);
+    }
+
     function testContractDeployment() public {
         bytes32 asyncId = _deploy(
             contractIds,

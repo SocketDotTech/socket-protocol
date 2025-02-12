@@ -109,7 +109,6 @@ contract Socket is SocketBase {
         address switchboard = _decodeSwitchboard(payloadId_);
         uint32 localSlug = _decodeChainSlug(payloadId_);
 
-
         PlugConfig memory plugConfig = _plugConfigs[target_];
 
         if (switchboard != address(plugConfig.switchboard__)) revert InvalidSwitchboard();
