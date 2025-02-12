@@ -25,6 +25,10 @@ abstract contract BatchAsync is QueueAsync {
     error PayloadTooLarge();
     /// @notice Error thrown if trying to cancel a batch without being the application gateway
     error OnlyAppGateway();
+    /// @notice Error thrown when a winning bid exists
+    error WinningBidExists();
+    /// @notice Error thrown when a bid is insufficient
+    error InsufficientFees();
 
     event PayloadSubmitted(
         bytes32 indexed asyncId,
@@ -34,12 +38,18 @@ abstract contract BatchAsync is QueueAsync {
         address auctionManager
     );
 
+    /// @notice Emitted when fees are increased
+    event FeesIncreased(address indexed appGateway, bytes32 indexed asyncId, uint256 newMaxFees);
+
+    /// @notice Emitted when a payload is requested asynchronously
     event PayloadAsyncRequested(
         bytes32 indexed asyncId,
         bytes32 indexed payloadId,
         bytes32 indexed root,
         PayloadDetails payloadDetails
     );
+
+    /// @notice Emitted when a batch is cancelled
     event BatchCancelled(bytes32 indexed asyncId);
 
     /// @notice Initiates a batch of payloads
@@ -81,6 +91,8 @@ abstract contract BatchAsync is QueueAsync {
         bytes32 asyncId = getCurrentAsyncId();
         asyncCounter++;
 
+        if (!IFeesManager(feesManager).isFeesEnough(msg.sender, fees_)) revert InsufficientFees();
+
         // Handle initial read operations first
         uint256 readEndIndex = _processReadOperations(payloadDetails_, asyncId);
 
@@ -96,9 +108,8 @@ abstract contract BatchAsync is QueueAsync {
         }
 
         address appGateway = _processRemainingPayloads(payloadDetails_, readEndIndex, asyncId);
-        payloadBatches[asyncId].totalPayloadsRemaining = payloadDetails_.length - readEndIndex;
+        _payloadBatches[asyncId].totalPayloadsRemaining = payloadDetails_.length - readEndIndex;
 
-        IFeesManager(feesManager).blockFees(appGateway, fees_, asyncId);
         _initializeBatch(
             asyncId,
             appGateway,
@@ -151,7 +162,7 @@ abstract contract BatchAsync is QueueAsync {
                 emit PayloadAsyncRequested(asyncId, payloadId, bytes32(0), payloadDetails_[i]);
             }
 
-            payloadBatches[asyncId].lastBatchPromises = lastBatchPromises;
+            _payloadBatches[asyncId].lastBatchPromises = lastBatchPromises;
             IPromise(batchPromise).then(this.callback.selector, abi.encode(asyncId));
         }
 
@@ -205,46 +216,61 @@ abstract contract BatchAsync is QueueAsync {
         uint256 readEndIndex,
         PayloadDetails[] memory payloadDetails_
     ) internal {
-        payloadBatches[asyncId] = PayloadBatch({
+        _payloadBatches[asyncId] = PayloadBatch({
             appGateway: appGateway,
             fees: fees_,
             currentPayloadIndex: readEndIndex,
             auctionManager: auctionManager_,
             winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
             isBatchCancelled: false,
-            totalPayloadsRemaining: payloadBatches[asyncId].totalPayloadsRemaining,
-            lastBatchPromises: payloadBatches[asyncId].lastBatchPromises,
+            totalPayloadsRemaining: _payloadBatches[asyncId].totalPayloadsRemaining,
+            lastBatchPromises: _payloadBatches[asyncId].lastBatchPromises,
             onCompleteData: onCompleteData_
         });
-
-        uint256 delayInSeconds = IAuctionManager(auctionManager_).startAuction(asyncId);
-        watcherPrecompile__().setTimeout(
-            appGateway,
-            abi.encodeWithSelector(this.endTimeout.selector, asyncId),
-            delayInSeconds
-        );
 
         emit PayloadSubmitted(asyncId, appGateway, payloadDetails_, fees_, auctionManager_);
     }
 
     function endTimeout(bytes32 asyncId_) external onlyWatcherPrecompile {
-        IAuctionManager(payloadBatches[asyncId_].auctionManager).endAuction(asyncId_);
+        IAuctionManager(_payloadBatches[asyncId_].auctionManager).endAuction(asyncId_);
     }
 
     /// @notice Cancels a transaction
     /// @param asyncId_ The ID of the batch
     function cancelTransaction(bytes32 asyncId_) external {
-        if (msg.sender != payloadBatches[asyncId_].appGateway) {
+        if (msg.sender != _payloadBatches[asyncId_].appGateway) {
             revert OnlyAppGateway();
         }
 
-        payloadBatches[asyncId_].isBatchCancelled = true;
-        IFeesManager(feesManager).unblockAndAssignFees(
-            asyncId_,
-            payloadBatches[asyncId_].winningBid.transmitter,
-            payloadBatches[asyncId_].appGateway
-        );
+        _payloadBatches[asyncId_].isBatchCancelled = true;
+
+        if (_payloadBatches[asyncId_].winningBid.transmitter != address(0)) {
+            IFeesManager(feesManager).unblockAndAssignFees(
+                asyncId_,
+                _payloadBatches[asyncId_].winningBid.transmitter,
+                _payloadBatches[asyncId_].appGateway
+            );
+        } else {
+            IFeesManager(feesManager).unblockFees(asyncId_, _payloadBatches[asyncId_].appGateway);
+        }
+
         emit BatchCancelled(asyncId_);
+    }
+
+    function increaseFees(
+        bytes32 asyncId_,
+        uint256 newMaxFees_
+    ) external override {
+        address appGateway = _getCoreAppGateway(msg.sender);
+        if (appGateway != _payloadBatches[asyncId_].appGateway) {
+            revert OnlyAppGateway();
+        }
+
+        if (_payloadBatches[asyncId_].winningBid.transmitter != address(0))
+            revert WinningBidExists();
+
+        _payloadBatches[asyncId_].fees.amount = newMaxFees_;
+        emit FeesIncreased(appGateway, asyncId_, newMaxFees_);
     }
 
     /// @notice Gets the payload delivery plug address
@@ -258,17 +284,6 @@ abstract contract BatchAsync is QueueAsync {
     /// @return bytes32 The current async ID
     function getCurrentAsyncId() public view returns (bytes32) {
         return bytes32((uint256(uint160(address(this))) << 64) | asyncCounter);
-    }
-
-    /// @notice Gets the payload details for a given index
-    /// @param asyncId_ The ID of the batch
-    /// @param index_ The index of the payload
-    /// @return PayloadDetails The payload details
-    function getPayloadDetails(
-        bytes32 asyncId_,
-        uint256 index_
-    ) external view returns (PayloadDetails memory) {
-        return payloadBatchDetails[asyncId_][index_];
     }
 
     /// @notice Withdraws funds to a specified receiver

@@ -16,4 +16,6 @@ interface IAppGateway {
         bytes calldata payload_,
         bytes32 params_
     ) external;
+
+    function handleRevert(bytes32 asyncId_, bytes32 payloadId_) external;
 }

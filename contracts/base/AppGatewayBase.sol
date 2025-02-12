@@ -94,6 +94,18 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         deliveryHelper().cancelTransaction(asyncId_);
     }
 
+    /// @notice increases the transaction fees
+    /// @param asyncId_ The async ID
+    function increaseFees(bytes32 asyncId_, uint256 newMaxFees_) internal {
+        deliveryHelper().increaseFees(asyncId_, newMaxFees_);
+    }
+
+    /// @notice hook to handle the revert in callbacks or onchain executions
+    /// @dev can be overridden by the app gateway to add custom logic
+    /// @param asyncId_ The async ID
+    /// @param payloadId_ The payload ID
+    function handleRevert(bytes32 asyncId_, bytes32 payloadId_) external override onlyPromises {}
+
     /// @notice Withdraws fee tokens
     /// @param chainSlug_ The chain slug
     /// @param token_ The token address

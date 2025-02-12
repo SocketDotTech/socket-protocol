@@ -13,6 +13,10 @@ interface IDeliveryHelper {
         Bid winningBid // Replaced winningTransmitter and winningBid with Bid struct
     );
 
+    function bidTimeout() external view returns (uint256);
+
+    function payloadBatches(bytes32) external view returns (PayloadBatch memory);
+
     function clearQueue() external;
 
     function queue(
@@ -41,6 +45,8 @@ interface IDeliveryHelper {
     ) external;
 
     function cancelTransaction(bytes32 asyncId_) external;
+
+    function increaseFees(bytes32 asyncId_, uint256 fees_) external;
 
     function startBatchProcessing(bytes32 asyncId_, Bid memory winningBid_) external;
 

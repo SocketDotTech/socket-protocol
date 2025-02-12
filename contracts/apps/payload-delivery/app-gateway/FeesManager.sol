@@ -10,6 +10,7 @@ import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Co
 import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+
 /// @title FeesManager
 /// @notice Contract for managing fees
 contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initializable {
@@ -79,8 +80,16 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         uint256 amount
     );
 
+    /// @notice Emitted when fees are unblocked
+    /// @param asyncId The batch identifier
+    /// @param appGateway The app gateway address
+    event FeesUnblocked(bytes32 indexed asyncId, address indexed appGateway);
+
+    /// @notice Error thrown when insufficient fees are available
     error InsufficientFeesAvailable();
+    /// @notice Error thrown when no fees are available for a transmitter
     error NoFeesForTransmitter();
+    /// @notice Error thrown when no fees was blocked
     error NoFeesBlocked();
 
     constructor() {
@@ -128,16 +137,23 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         emit FeesDepositedUpdated(chainSlug_, appGateway, token_, amount_);
     }
 
+    function isFeesEnough(address appGateway_, Fees memory fees_) external view returns (bool) {
+        address appGateway = _getCoreAppGateway(appGateway_);
+        uint256 availableFees = getAvailableFees(
+            fees_.feePoolChain,
+            appGateway,
+            fees_.feePoolToken
+        );
+        return availableFees >= fees_.amount;
+    }
+
     /// @notice Blocks fees for transmitter
     /// @param appGateway_ The app gateway address
     /// @param fees_ The fees data struct
     /// @param asyncId_ The batch identifier
     /// @dev Only callable by delivery helper
-    function blockFees(
-        address appGateway_,
-        Fees memory fees_,
-        bytes32 asyncId_
-    ) external onlyDeliveryHelper {
+    function blockFees(address appGateway_, Fees memory fees_, bytes32 asyncId_) external {
+        // todo: only auction manager can call this
         address appGateway = _getCoreAppGateway(appGateway_);
         // Block fees
         uint256 availableFees = getAvailableFees(
@@ -210,6 +226,23 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         emit FeesUnblockedAndAssigned(asyncId_, transmitter_, fees.amount);
     }
 
+    function unblockFees(bytes32 asyncId_, address appGateway_) external onlyDeliveryHelper {
+        Fees memory fees = asyncIdBlockedFees[asyncId_];
+        if (fees.amount == 0) revert NoFeesBlocked();
+
+        address appGateway = _getCoreAppGateway(appGateway_);
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees.feePoolChain][
+            fees.feePoolToken
+        ];
+
+        // Unblock fees from deposit
+        tokenBalance.blocked -= fees.amount;
+        tokenBalance.deposited += fees.amount;
+
+        delete asyncIdBlockedFees[asyncId_];
+        emit FeesUnblocked(asyncId_, appGateway);
+    }
+
     /// @notice Withdraws fees to a specified receiver
     /// @param chainSlug_ The chain identifier
     /// @param token_ The token address
@@ -235,8 +268,11 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
 
         // Create payload for plug contract
         payloadDetails = _createPayloadDetails(CallType.WRITE, chainSlug_, payload);
+
+        // todo: revisit
         FinalizeParams memory finalizeParams = FinalizeParams({
             payloadDetails: payloadDetails,
+            asyncId: bytes32(0),
             transmitter: transmitter
         });
 
