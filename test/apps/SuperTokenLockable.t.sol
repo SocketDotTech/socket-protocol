@@ -55,7 +55,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             address(auctionManager),
             createFees(maxFees)
         );
-        setLimit(address(superTokenLockableApp));
+        depositFees(address(superTokenLockableApp), createFees(1 ether));
 
         appContracts = AppContracts({
             superTokenLockableApp: superTokenLockableApp,
@@ -110,6 +110,29 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         );
 
         return payloadDetails;
+    }
+
+    function testPredictForwarderAddress() external {
+        address appDeployer = address(uint160(c++));
+        address chainContractAddress = address(uint160(c++));
+
+        address forwarder = addressResolver.getOrDeployForwarderContract(
+            appDeployer,
+            chainContractAddress,
+            vmChainSlug
+        );
+        address predicted = addressResolver.getForwarderAddress(chainContractAddress, vmChainSlug);
+
+        assertEq(forwarder, predicted);
+    }
+
+    function testPredictPromiseAddress() external {
+        address invoker = address(uint160(c++));
+
+        address predicted = addressResolver.getAsyncPromiseAddress(invoker);
+        address asyncPromise = addressResolver.deployAsyncPromiseContract(invoker);
+
+        assertEq(asyncPromise, predicted);
     }
 
     function testContractDeployment() public {
@@ -293,14 +316,14 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         emit FinalizeRequested(
             payloadIds[2],
             AsyncRequest(
-                payloadDetails.next,
                 address(0),
                 transmitterEOA,
                 payloadDetails.target,
-                payloadDetails.executionGasLimit,
-                payloadDetails.payload,
                 address(0),
-                bytes32(0)
+                payloadDetails.executionGasLimit,
+                bytes32(0),
+                payloadDetails.payload,
+                payloadDetails.next
             )
         );
         finalizeQuery(payloadIds[1], abi.encode(srcAmount));

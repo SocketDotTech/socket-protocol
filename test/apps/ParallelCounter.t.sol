@@ -32,8 +32,7 @@ contract ParallelCounterTest is DeliveryHelperTest {
             address(auctionManager),
             createFees(feesAmount)
         );
-        setLimit(address(parallelCounterGateway));
-
+        depositFees(address(parallelCounterGateway), createFees(1 ether));
         counterId1 = parallelCounterDeployer.counter1();
         counterId2 = parallelCounterDeployer.counter2();
         contractIds[0] = counterId1;

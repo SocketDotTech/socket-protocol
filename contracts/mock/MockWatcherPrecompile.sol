@@ -95,11 +95,11 @@ contract MockWatcherPrecompile {
         timeoutRequests[timeoutId] = TimeoutRequest(
             timeoutId,
             msg.sender,
-            payload_,
             delayInSeconds_,
             executeAt,
             0,
-            false
+            false,
+            payload_
         );
         emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);
     }
@@ -140,14 +140,14 @@ contract MockWatcherPrecompile {
         emit FinalizeRequested(
             payloadId,
             AsyncRequest(
-                next,
                 address(0),
                 address(0),
                 params_.payloadDetails.target,
-                0,
-                bytes(""),
                 address(0),
-                bytes32(0)
+                0,
+                bytes32(0),
+                bytes(""),
+                next
             )
         );
     }

@@ -40,6 +40,8 @@ contract SetupTest is Test {
     uint256 public readPayloadIdCounter = 0;
     uint256 public timeoutPayloadIdCounter = 0;
 
+    uint256 public maxLimit = 1000;
+
     bytes public asyncPromiseBytecode = type(AsyncPromise).creationCode;
 
     struct SocketContracts {
@@ -138,7 +140,8 @@ contract SetupTest is Test {
         bytes memory watcherPrecompileData = abi.encodeWithSelector(
             WatcherPrecompile.initialize.selector,
             watcherEOA,
-            address(addressResolverProxy)
+            address(addressResolverProxy),
+            maxLimit
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(1);
@@ -248,8 +251,7 @@ contract SetupTest is Test {
             payloadIds[i] = getWritePayloadId(chainSlug_, switchboard_, i + writePayloadIdCounter);
         }
 
-        // +1 for fees
-        writePayloadIdCounter += numPayloads + 1;
+        writePayloadIdCounter += numPayloads;
         return payloadIds;
     }
 
