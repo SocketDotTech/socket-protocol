@@ -5,8 +5,8 @@ import "./interfaces/IAddressResolver.sol";
 import {Forwarder} from "./Forwarder.sol";
 import {AsyncPromise} from "./AsyncPromise.sol";
 import {OwnableTwoStep} from "./utils/OwnableTwoStep.sol";
-import {BeaconProxy} from "openzeppelin-contracts/contracts/proxy/beacon/BeaconProxy.sol";
-import {UpgradeableBeacon} from "openzeppelin-contracts/contracts/proxy/beacon/UpgradeableBeacon.sol";
+import {LibClone} from "solady/utils/LibClone.sol";
+import {UpgradeableBeacon} from "solady/utils/UpgradeableBeacon.sol";
 import {Initializable} from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 /// @title AddressResolver Contract
@@ -55,11 +55,12 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
         asyncPromiseImplementation = address(new AsyncPromise());
 
         // Deploy beacons with initial implementations
-        forwarderBeacon = new UpgradeableBeacon(forwarderImplementation, address(this));
-        asyncPromiseBeacon = new UpgradeableBeacon(asyncPromiseImplementation, address(this));
+        forwarderBeacon = _deployBeacon(forwarderImplementation);
+        asyncPromiseBeacon = _deployBeacon(asyncPromiseImplementation);
+    }
 
-        emit ImplementationUpdated("Forwarder", forwarderImplementation);
-        emit ImplementationUpdated("AsyncPromise", asyncPromiseImplementation);
+    function _deployBeacon(address implementation_) internal returns (UpgradeableBeacon) {
+        return new UpgradeableBeacon(address(this), implementation_);
     }
 
     /// @notice Gets or deploys a Forwarder proxy contract
@@ -137,8 +138,7 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
         bytes memory initData_
     ) internal returns (address) {
         // Deploy beacon proxy with CREATE2
-        BeaconProxy proxy = new BeaconProxy{salt: salt_}(beacon_, initData_);
-        return address(proxy);
+        return LibClone.deployDeterministicERC1967BeaconProxy(beacon_, initData_, salt_);
     }
 
     /// @notice Clears the list of promises
@@ -197,14 +197,13 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
         bytes memory initData_,
         address beacon_
     ) internal view returns (address) {
-        bytes memory proxyBytecode = abi.encodePacked(
-            type(BeaconProxy).creationCode,
-            abi.encode(beacon_, initData_)
-        );
-        bytes32 hash = keccak256(
-            abi.encodePacked(bytes1(0xff), address(this), salt_, keccak256(proxyBytecode))
-        );
-        return address(uint160(uint256(hash)));
+        return
+            LibClone.predictDeterministicAddressERC1967IBeaconProxy(
+                beacon_,
+                initData_,
+                salt_,
+                address(this)
+            );
     }
 
     function _setConfig(address appDeployer_, address newForwarder_) internal {
