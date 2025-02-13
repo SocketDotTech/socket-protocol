@@ -51,9 +51,9 @@ contract DeliveryHelperTest is SetupTest {
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(1);
-        TransparentUpgradeableProxy feesManagerProxy = new TransparentUpgradeableProxy(
+        address feesManagerProxy = proxyFactory.deployAndCall(
             address(feesManagerImpl),
-            address(proxyAdmin),
+            watcherEOA,
             feesManagerData
         );
 
@@ -65,9 +65,9 @@ contract DeliveryHelperTest is SetupTest {
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(1);
-        TransparentUpgradeableProxy deliveryHelperProxy = new TransparentUpgradeableProxy(
+        address deliveryHelperProxy = proxyFactory.deployAndCall(
             address(deliveryHelperImpl),
-            address(proxyAdmin),
+            watcherEOA,
             deliveryHelperData
         );
 
@@ -81,9 +81,9 @@ contract DeliveryHelperTest is SetupTest {
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(1);
-        TransparentUpgradeableProxy auctionManagerProxy = new TransparentUpgradeableProxy(
+        address auctionManagerProxy = proxyFactory.deployAndCall(
             address(auctionManagerImpl),
-            address(proxyAdmin),
+            watcherEOA,
             auctionManagerData
         );
 
@@ -246,7 +246,11 @@ contract DeliveryHelperTest is SetupTest {
         assertEq(payloadBatch.appGateway, appGateway_, "AppGateway mismatch");
         assertEq(payloadBatch.auctionManager, address(auctionManager), "AuctionManager mismatch");
         assertEq(payloadBatch.winningBid.fee, bidAmount, "WinningBid mismatch");
-        assertEq(payloadBatch.winningBid.transmitter, transmitterEOA, "WinningBid transmitter mismatch");
+        assertEq(
+            payloadBatch.winningBid.transmitter,
+            transmitterEOA,
+            "WinningBid transmitter mismatch"
+        );
         assertEq(payloadBatch.isBatchCancelled, false, "IsBatchCancelled mismatch");
     }
 
