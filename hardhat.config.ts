@@ -165,15 +165,15 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 999999,  
+        runs: 999999,
         details: {
           yul: true,
           yulDetails: {
             stackAllocation: true,
-          }
-        }
+          },
+        },
       },
-      viaIR: true
+      viaIR: true,
     },
   },
 };

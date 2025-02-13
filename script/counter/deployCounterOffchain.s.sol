@@ -22,7 +22,7 @@ contract CounterDeploy is Script {
         Fees memory fees = Fees({
             feePoolChain: 421614,
             feePoolToken: ETH_ADDRESS,
-            amount: 0.01 ether
+            amount: 0.001 ether
         });
 
         CounterDeployer deployer = new CounterDeployer(addressResolver, auctionManager, FAST, fees);
@@ -37,5 +37,7 @@ contract CounterDeploy is Script {
         console.log("Contracts deployed:");
         console.log("CounterDeployer:", address(deployer));
         console.log("CounterAppGateway:", address(gateway));
+        console.log("counterId:");
+        console.logBytes32(deployer.counter());
     }
 }

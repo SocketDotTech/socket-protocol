@@ -12,32 +12,38 @@ contract CheckLimitsScript is Script {
         vm.createSelectFork(rpc);
 
         address watcherPrecompile = vm.envAddress("WATCHER_PRECOMPILE");
-        address cronAppGateway = vm.envAddress("APP_GATEWAY");
+        address appGateway = vm.envAddress("APP_GATEWAY");
 
         console.log("WatcherPrecompile address:", watcherPrecompile);
-        console.log("CronAppGateway address:", cronAppGateway);
+        console.log("AppGateway address:", appGateway);
         WatcherPrecompile watcherContract = WatcherPrecompile(watcherPrecompile);
 
         LimitParams memory scheduleLimit = watcherContract.getLimitParams(SCHEDULE, cronAppGateway);
         LimitParams memory queryLimit = watcherContract.getLimitParams(QUERY, cronAppGateway);
         LimitParams memory finalizeLimit = watcherContract.getLimitParams(FINALIZE, cronAppGateway);
 
-        uint256 scheduleCurrentLimit = watcherContract.getCurrentLimit(SCHEDULE, cronAppGateway);
-        uint256 queryCurrentLimit = watcherContract.getCurrentLimit(QUERY, cronAppGateway);
-        uint256 finalizeCurrentLimit = watcherContract.getCurrentLimit(FINALIZE, cronAppGateway);
+        uint256 scheduleCurrentLimit = watcherContract.getCurrentLimit(SCHEDULE, appGateway);
+        uint256 queryCurrentLimit = watcherContract.getCurrentLimit(QUERY, appGateway);
+        uint256 finalizeCurrentLimit = watcherContract.getCurrentLimit(FINALIZE, appGateway);
 
-        console.log("Schedule limit:");
+        console.log("Schedule max limit:");
         console.log(scheduleLimit.maxLimit);
+        console.log("Schedule rate per second:");
+        console.log(scheduleLimit.ratePerSecond);
         console.log("Schedule current limit:");
         console.log(scheduleCurrentLimit);
 
-        console.log("Query limit:");
+        console.log("Query max limit:");
         console.log(queryLimit.maxLimit);
+        console.log("Query rate per second:");
+        console.log(queryLimit.ratePerSecond);
         console.log("Query current limit:");
         console.log(queryCurrentLimit);
 
-        console.log("Finalize limit:");
+        console.log("Finalize max limit:");
         console.log(finalizeLimit.maxLimit);
+        console.log("Finalize rate per second:");
+        console.log(finalizeLimit.ratePerSecond);
         console.log("Finalize current limit:");
         console.log(finalizeCurrentLimit);
     }

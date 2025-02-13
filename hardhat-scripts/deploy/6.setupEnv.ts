@@ -24,12 +24,16 @@ const updatedLines = lines.map((line) => {
     return `WATCHER_PRECOMPILE=${latestAddresses["WatcherPrecompile"]}`;
   } else if (line.startsWith("AUCTION_MANAGER=")) {
     return `AUCTION_MANAGER=${latestAddresses["AuctionManager"]}`;
+  } else if (line.startsWith("FEES_MANAGER=")) {
+    return `FEES_MANAGER=${latestAddresses["FeesManager"]}`;
   } else if (line.startsWith("SOCKET=")) {
     return `SOCKET=${dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["Socket"]}`;
   } else if (line.startsWith("SWITCHBOARD=")) {
     return `SWITCHBOARD=${
       dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["FastSwitchboard"]
     }`;
+  } else if (line.startsWith("FEES_PLUG=")) {
+    return `FEES_PLUG=${dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["FeesPlug"]}`;
   }
   return line; // Return the line unchanged if it doesn't match any of the above
 });
