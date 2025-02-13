@@ -6,7 +6,8 @@ import "../../interfaces/ISignatureVerifier.sol";
 import "../../libraries/RescueFundsLib.sol";
 import "../utils/AccessControl.sol";
 import {RESCUE_ROLE} from "../utils/AccessRoles.sol";
-import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+import "solady/utils/Initializable.sol";
+
 
 /**
  * @title Signature Verifier

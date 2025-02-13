@@ -7,7 +7,7 @@ import "./interfaces/IAppGateway.sol";
 import "./interfaces/IPromise.sol";
 import "./AsyncPromise.sol";
 import "./interfaces/IForwarder.sol";
-import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+import "solady/utils/Initializable.sol";
 
 /// @title Forwarder Contract
 /// @notice This contract acts as a forwarder for async calls to the on-chain contracts.

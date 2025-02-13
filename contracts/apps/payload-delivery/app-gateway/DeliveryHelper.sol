@@ -7,7 +7,7 @@ import {Bid, PayloadBatch, Fees, PayloadDetails, FinalizeParams} from "../../../
 import {DISTRIBUTE_FEE, DEPLOY} from "../../../common/Constants.sol";
 import {PromisesNotResolved} from "../../../common/Errors.sol";
 import "./BatchAsync.sol";
-import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+import "solady/utils/Initializable.sol";
 
 contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
     constructor() {

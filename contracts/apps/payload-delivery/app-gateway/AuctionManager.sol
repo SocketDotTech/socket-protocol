@@ -8,7 +8,7 @@ import {Fees, Bid, PayloadBatch} from "../../../common/Structs.sol";
 import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 import "../../../interfaces/IAuctionManager.sol";
-import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+import "solady/utils/Initializable.sol";
 
 /// @title AuctionManager
 /// @notice Contract for managing auctions and placing bids
@@ -117,10 +117,7 @@ contract AuctionManager is AddressResolverUtil, OwnableTwoStep, IAuctionManager,
         auctionClosed[asyncId_] = true;
 
         emit AuctionEnded(asyncId_, newBid);
-        IDeliveryHelper(addressResolver__.deliveryHelper()).startBatchProcessing(
-            asyncId_,
-            newBid
-        );
+        IDeliveryHelper(addressResolver__.deliveryHelper()).startBatchProcessing(asyncId_, newBid);
     }
 
     /// @notice Ends an auction
@@ -160,10 +157,7 @@ contract AuctionManager is AddressResolverUtil, OwnableTwoStep, IAuctionManager,
         // todo: should be less than total payloads in batch or zero?
         if (batch.totalPayloadsRemaining == 0) return;
 
-        IFeesManager(addressResolver__.feesManager()).unblockFees(
-            asyncId_,
-            batch.appGateway
-        );
+        IFeesManager(addressResolver__.feesManager()).unblockFees(asyncId_, batch.appGateway);
         winningBids[asyncId_] = Bid({fee: 0, transmitter: address(0), extraData: ""});
         auctionClosed[asyncId_] = false;
     }
