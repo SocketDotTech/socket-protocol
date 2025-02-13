@@ -5,15 +5,18 @@ import {
 import { getProviderFromChainSlug } from "../constants";
 import { Contract, ethers, providers, Wallet } from "ethers";
 import { getInstance } from "./utils";
-import WatcherABI from "../../out/WatcherPrecompile.sol/WatcherPrecompile.json";
-import SocketABI from "../../out/Socket.sol/Socket.json";
 import { chains } from "./config";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { OFF_CHAIN_VM_CHAIN_ID } from "../constants/constants";
 import { CORE_CONTRACTS, OffChainVMCoreContracts } from "../../src";
 
 const plugs = [CORE_CONTRACTS.ContractFactoryPlug, CORE_CONTRACTS.FeesPlug];
-
+export type AppGatewayConfig = {
+  plug: string;
+  appGateway: string;
+  switchboard: string;
+  chainSlug: number;
+};
 // Maps plug contracts to their corresponding app gateways
 export const getAppGateway = (plug: string, addresses: DeploymentAddresses) => {
   switch (plug) {
@@ -71,11 +74,9 @@ async function connectPlug(
   const plug = (await getInstance(plugContract, addr[plugContract])).connect(
     socketSigner
   );
-  const socket = new Contract(
-    addr[CORE_CONTRACTS.Socket],
-    SocketABI.abi,
-    socketSigner
-  );
+  const socket = (
+    await getInstance(CORE_CONTRACTS.Socket, addr[CORE_CONTRACTS.Socket])
+  ).connect(socketSigner);
 
   // Get switchboard and app gateway addresses
   const switchboard = addr[CORE_CONTRACTS.FastSwitchboard];
@@ -141,12 +142,7 @@ export const updateConfigWatcherVM = async () => {
   try {
     console.log("Connecting plugs on OffChainVM");
     const addresses = dev_addresses as unknown as DeploymentAddresses;
-    const appConfigs: Array<{
-      plug: string;
-      chainSlug: number;
-      appGateway: string;
-      switchboard: string;
-    }> = [];
+    const appConfigs: AppGatewayConfig[] = [];
 
     // Set up Watcher contract
     const providerInstance = new providers.StaticJsonRpcProvider(
@@ -157,11 +153,12 @@ export const updateConfigWatcherVM = async () => {
       providerInstance
     );
     const watcherVMaddr = addresses[OFF_CHAIN_VM_CHAIN_ID]!;
-    const watcher = new Contract(
-      watcherVMaddr[OffChainVMCoreContracts.WatcherPrecompile],
-      WatcherABI.abi,
-      signer
-    );
+    const watcher = (
+      await getInstance(
+        OffChainVMCoreContracts.WatcherPrecompile,
+        watcherVMaddr[OffChainVMCoreContracts.WatcherPrecompile]
+      )
+    ).connect(signer);
 
     // Collect configs for each chain and plug
     await Promise.all(

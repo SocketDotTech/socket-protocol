@@ -27,7 +27,6 @@ const main = async () => {
     };
     try {
       await deployWatcherVMContracts();
-      return;
 
       console.log("Deploying Socket contracts");
       addresses = dev_addresses as unknown as DeploymentAddresses;

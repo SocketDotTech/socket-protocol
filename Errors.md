@@ -5,7 +5,6 @@
 | Error                                                    | Signature    |
 | -------------------------------------------------------- | ------------ |
 | `AppGatewayContractAlreadySetByDifferentSender(address)` | `0xbe1ef5f1` |
-| `DeploymentFailed()`                                     | `0x30116425` |
 
 ## AsyncPromise.sol
 
@@ -26,9 +25,9 @@
 | Error                               | Signature    |
 | ----------------------------------- | ------------ |
 | `FeesAlreadyPaid()`                 | `0xd3b1ad69` |
-| `InsufficientBalanceForFees()`      | `0x8adc4ac2` |
-| `InsufficientBalanceForWithdrawl()` | `0xdaf06913` |
+| `InsufficientTokenBalance(address)` | `0x642faafa` |
 | `InvalidDepositAmount()`            | `0xfe9ba5cd` |
+| `InvalidTokenAddress()`             | `0x1eb00b06` |
 
 ## apps/payload-delivery/app-gateway/AuctionManager.sol
 
@@ -49,17 +48,13 @@
 | `PayloadTooLarge()`     | `0x492f620d` |
 | `OnlyAppGateway()`      | `0xfec944ea` |
 
-## apps/payload-delivery/app-gateway/DeliveryHelper.sol
+## apps/payload-delivery/app-gateway/FeesManager.sol
 
-| Error                   | Signature    |
-| ----------------------- | ------------ |
-| `PromisesNotResolved()` | `0xb91dbe7d` |
-
-## apps/payload-delivery/app-gateway/QueueAsync.sol
-
-| Error              | Signature    |
-| ------------------ | ------------ |
-| `InvalidPromise()` | `0x45f2d176` |
+| Error                         | Signature    |
+| ----------------------------- | ------------ |
+| `InsufficientFeesAvailable()` | `0x51488f54` |
+| `NoFeesForTransmitter()`      | `0x248bac55` |
+| `NoFeesBlocked()`             | `0x116d68f9` |
 
 ## apps/super-token-lockable/LimitHook.sol
 
@@ -74,13 +69,6 @@
 | ---------------------------- | ------------ |
 | `InsufficientBalance()`      | `0xf4d678b8` |
 | `InsufficientLockedTokens()` | `0x4f6d2a3e` |
-
-## base/AppGatewayBase.sol
-
-| Error              | Signature    |
-| ------------------ | ------------ |
-| `InvalidPromise()` | `0x45f2d176` |
-| `FeesNotSet()`     | `0x2ec61400` |
 
 ## common/Errors.sol
 
@@ -108,6 +96,10 @@
 | `InvalidAppGateway()`        | `0x82ded261` |
 | `AppGatewayAlreadyCalled()`  | `0xb224683f` |
 | `InvalidInboxCaller()`       | `0x4f1aa61e` |
+| `PromisesNotResolved()`      | `0xb91dbe7d` |
+| `InvalidPromise()`           | `0x45f2d176` |
+| `InvalidIndex()`             | `0x63df8171` |
+| `FeesNotSet()`               | `0x2a831034` |
 
 ## libraries/ECDSA.sol
 
@@ -213,6 +205,8 @@
 
 ## watcherPrecompile/WatcherPrecompileLimits.sol
 
-| Error                                 | Signature    |
-| ------------------------------------- | ------------ |
-| `ActionNotSupported(address,bytes32)` | `0xa219158f` |
+| Error                                            | Signature    |
+| ------------------------------------------------ | ------------ |
+| `ActionNotSupported(address,bytes32)`            | `0xa219158f` |
+| `NotDeliveryHelper()`                            | `0x29029c67` |
+| `LimitExceeded(address,bytes32,uint256,uint256)` | `0x80bb2621` |
