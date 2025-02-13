@@ -4,8 +4,9 @@ pragma solidity ^0.8.0;
 import {OwnableTwoStep} from "../../../utils/OwnableTwoStep.sol";
 import {SignatureVerifier} from "../../../socket/utils/SignatureVerifier.sol";
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
-import {Fees} from "../../../common/Structs.sol";
+import {Fees, Bid, PayloadBatch} from "../../../common/Structs.sol";
 import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
+import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 import "../../../interfaces/IAuctionManager.sol";
 import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
@@ -62,14 +63,12 @@ contract AuctionManager is AddressResolverUtil, OwnableTwoStep, IAuctionManager,
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
     }
 
-    function startAuction(bytes32 asyncId_) external onlyDeliveryHelper returns (uint256) {
+    function startAuction(bytes32 asyncId_) internal {
         if (auctionClosed[asyncId_]) revert AuctionClosed();
         if (auctionStarted[asyncId_]) revert AuctionAlreadyStarted();
 
         auctionStarted[asyncId_] = true;
         emit AuctionStarted(asyncId_);
-
-        return auctionEndDelaySeconds;
     }
 
     /// @notice Places a bid for an auction
@@ -91,11 +90,29 @@ contract AuctionManager is AddressResolverUtil, OwnableTwoStep, IAuctionManager,
 
         Bid memory newBid = Bid({fee: fee, transmitter: transmitter, extraData: extraData});
 
-        Fees memory fees = IDeliveryHelper(addressResolver__.deliveryHelper()).getFees(asyncId_);
-        if (fee > fees.amount) revert BidExceedsMaxFees();
+        PayloadBatch memory payloadBatch = IDeliveryHelper(addressResolver__.deliveryHelper())
+            .payloadBatches(asyncId_);
+        if (fee > payloadBatch.fees.amount) revert BidExceedsMaxFees();
         if (fee < winningBids[asyncId_].fee) return;
 
         winningBids[asyncId_] = newBid;
+        IFeesManager(addressResolver__.feesManager()).blockFees(
+            payloadBatch.appGateway,
+            payloadBatch.fees,
+            asyncId_
+        );
+
+        if (auctionEndDelaySeconds > 0) {
+            startAuction(asyncId_);
+            watcherPrecompile__().setTimeout(
+                payloadBatch.appGateway,
+                abi.encodeWithSelector(this.endAuction.selector, asyncId_),
+                auctionEndDelaySeconds
+            );
+        } else {
+            _endAuction(asyncId_);
+        }
+
         emit BidPlaced(asyncId_, newBid);
         auctionClosed[asyncId_] = true;
 
@@ -109,10 +126,45 @@ contract AuctionManager is AddressResolverUtil, OwnableTwoStep, IAuctionManager,
     /// @notice Ends an auction
     /// @param asyncId_ The ID of the auction
     function endAuction(bytes32 asyncId_) external onlyDeliveryHelper {
+        _endAuction(asyncId_);
+    }
+
+    function _endAuction(bytes32 asyncId_) internal {
         auctionClosed[asyncId_] = true;
         Bid memory winningBid = winningBids[asyncId_];
         if (winningBid.transmitter == address(0)) revert InvalidTransmitter();
 
         emit AuctionEnded(asyncId_, winningBid);
+
+        PayloadBatch memory payloadBatch = IDeliveryHelper(addressResolver__.deliveryHelper())
+            .payloadBatches(asyncId_);
+
+        watcherPrecompile__().setTimeout(
+            payloadBatch.appGateway,
+            abi.encodeWithSelector(this.expireBid.selector, asyncId_),
+            IDeliveryHelper(addressResolver__.deliveryHelper()).bidTimeout()
+        );
+
+        IDeliveryHelper(addressResolver__.deliveryHelper()).startBatchProcessing(
+            asyncId_,
+            winningBid
+        );
+
+        // add scheduler for a time to retry auction
+    }
+
+    function expireBid(bytes32 asyncId_) external onlyWatcherPrecompile {
+        PayloadBatch memory batch = IDeliveryHelper(addressResolver__.deliveryHelper())
+            .payloadBatches(asyncId_);
+        // if executed, bid is not expired
+        // todo: should be less than total payloads in batch or zero?
+        if (batch.totalPayloadsRemaining == 0) return;
+
+        IFeesManager(addressResolver__.feesManager()).unblockFees(
+            asyncId_,
+            batch.appGateway
+        );
+        winningBids[asyncId_] = Bid({fee: 0, transmitter: address(0), extraData: ""});
+        auctionClosed[asyncId_] = false;
     }
 }

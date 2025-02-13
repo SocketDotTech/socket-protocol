@@ -21,6 +21,7 @@ struct AsyncRequest {
     address target;
     address switchboard;
     uint256 executionGasLimit;
+    bytes32 asyncId;
     bytes32 root;
     bytes payload;
     address[] next;
@@ -76,6 +77,7 @@ struct Fees {
 
 struct FinalizeParams {
     address transmitter;
+    bytes32 asyncId;
     PayloadDetails payloadDetails;
 }
 
@@ -115,6 +117,7 @@ struct PayloadRootParams {
     address target;
     bytes32 payloadId;
     uint256 executionGasLimit;
+    uint256 expiryTime;
     bytes payload;
 }
 

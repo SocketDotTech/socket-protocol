@@ -215,7 +215,7 @@ contract DeliveryHelperTest is SetupTest {
         address appGateway_
     ) internal view {
         for (uint i = 0; i < payloadDetails.length; i++) {
-            PayloadDetails memory payloadDetail = deliveryHelper.getPayloadDetails(asyncId, i);
+            PayloadDetails memory payloadDetail = deliveryHelper.getPayloadIndexDetails(asyncId, i);
 
             assertEq(payloadDetail.chainSlug, payloadDetails[i].chainSlug, "ChainSlug mismatch");
             // todo
@@ -241,22 +241,13 @@ contract DeliveryHelperTest is SetupTest {
             // );
         }
 
-        (
-            address appGateway,
-            address _auctionManager,
-            bool isBatchCancelled,
-            ,
-            ,
-            ,
-            Bid memory winningBid,
+        PayloadBatch memory payloadBatch = deliveryHelper.getAsyncBatchDetails(asyncId);
 
-        ) = deliveryHelper.payloadBatches(asyncId);
-
-        assertEq(appGateway_, appGateway, "AppGateway mismatch");
-        assertEq(_auctionManager, address(auctionManager), "AuctionManager mismatch");
-        assertEq(winningBid.fee, bidAmount, "WinningBid mismatch");
-        assertEq(winningBid.transmitter, transmitterEOA, "WinningBid transmitter mismatch");
-        assertEq(isBatchCancelled, false, "IsBatchCancelled mismatch");
+        assertEq(payloadBatch.appGateway, appGateway_, "AppGateway mismatch");
+        assertEq(payloadBatch.auctionManager, address(auctionManager), "AuctionManager mismatch");
+        assertEq(payloadBatch.winningBid.fee, bidAmount, "WinningBid mismatch");
+        assertEq(payloadBatch.winningBid.transmitter, transmitterEOA, "WinningBid transmitter mismatch");
+        assertEq(payloadBatch.isBatchCancelled, false, "IsBatchCancelled mismatch");
     }
 
     function bidAndEndAuction(bytes32 asyncId) internal {
@@ -486,6 +477,7 @@ contract DeliveryHelperTest is SetupTest {
             payloadDetails.target,
             payloadId,
             payloadDetails.executionGasLimit,
+            block.timestamp + 1000,
             payloadDetails.payload
         );
         bytes32 root = watcherPrecompile.getRoot(rootParams_);

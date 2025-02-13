@@ -17,7 +17,11 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
     uint256 public asyncCounter;
     address public feesManager;
 
+    uint256 public bidTimeout;
+
+    /// @notice The call parameters array
     CallParams[] public callParamsArray;
+    /// @notice The mapping of valid promises
     mapping(address => bool) public isValidPromise;
 
     // payloadId => asyncId
@@ -25,7 +29,20 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
     mapping(bytes32 => PayloadDetails) public payloadIdToPayloadDetails;
 
     // asyncId => PayloadBatch
-    mapping(bytes32 => PayloadBatch) public payloadBatches;
+    mapping(bytes32 => PayloadBatch) internal _payloadBatches;
+
+    event PayloadBatchCancelled(bytes32 asyncId_);
+
+    error PromisesNotResolved();
+
+    function payloadBatches(bytes32 asyncId_) external view override returns (PayloadBatch memory) {
+        return _payloadBatches[asyncId_];
+    }
+
+    function getPayloadDetails(bytes32 payloadId_) external view returns (PayloadDetails memory) {
+        return payloadIdToPayloadDetails[payloadId_];
+    }
+
     // asyncId => PayloadDetails[]
     mapping(bytes32 => PayloadDetails[]) public payloadBatchDetails;
 
@@ -37,7 +54,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
     }
 
     modifier onlyAuctionManager(bytes32 asyncId_) {
-        if (msg.sender != payloadBatches[asyncId_].auctionManager) revert NotAuctionManager();
+        if (msg.sender != _payloadBatches[asyncId_].auctionManager) revert NotAuctionManager();
         _;
     }
 
@@ -86,7 +103,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
             // getting switchboard address for sbType given. It is updated by watcherPrecompile by watcher
             address switchboard = watcherPrecompile__().switchboards(params.chainSlug, sbType_);
 
-            PayloadDetails memory payloadDetails = _getPayloadDetails(params, switchboard);
+            PayloadDetails memory payloadDetails = _createPayloadDetails(params, switchboard);
             payloadDetailsArray[i] = payloadDetails;
         }
 
@@ -97,7 +114,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
     /// @param params_ The call parameters
     /// @param switchboard_ The switchboard address
     /// @return payloadDetails The payload details
-    function _getPayloadDetails(
+    function _createPayloadDetails(
         CallParams memory params_,
         address switchboard_
     ) internal returns (PayloadDetails memory) {
@@ -139,18 +156,20 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
             });
     }
 
+    function getPayloadIndexDetails(
+        bytes32 asyncId_,
+        uint256 index_
+    ) external view returns (PayloadDetails memory) {
+        if (index_ >= payloadBatchDetails[asyncId_].length) revert InvalidIndex();
+        return payloadBatchDetails[asyncId_][index_];
+    }
+
     function getFees(bytes32 asyncId_) external view returns (Fees memory) {
-        return payloadBatches[asyncId_].fees;
+        return _payloadBatches[asyncId_].fees;
     }
 
-    function getAsyncBatchDetails(
-        bytes32 asyncId_
-    ) external view override returns (PayloadBatch memory) {
-        return payloadBatches[asyncId_];
-    }
-
-    function getPayloadDetails(bytes32 payloadId_) external view returns (PayloadDetails memory) {
-        return payloadIdToPayloadDetails[payloadId_];
+    function getAsyncBatchDetails(bytes32 asyncId_) external view returns (PayloadBatch memory) {
+        return _payloadBatches[asyncId_];
     }
 
     uint256[49] __gap;

@@ -21,10 +21,12 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
     function initialize(
         address addressResolver_,
         address feesManager_,
-        address owner_
+        address owner_,
+        uint256 bidTimeout_
     ) public initializer {
         _setAddressResolver(addressResolver_);
         feesManager = feesManager_;
+        bidTimeout = bidTimeout_;
         _claimOwner(owner_);
     }
 
@@ -32,13 +34,13 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         bytes32 asyncId_,
         Bid memory winningBid_
     ) external onlyAuctionManager(asyncId_) {
-        payloadBatches[asyncId_].winningBid = winningBid_;
+        _payloadBatches[asyncId_].winningBid = winningBid_;
 
         // update fees
         IFeesManager(feesManager).updateTransmitterFees(
             winningBid_,
             asyncId_,
-            payloadBatches[asyncId_].appGateway
+            _payloadBatches[asyncId_].appGateway
         );
 
         if (winningBid_.transmitter != address(0)) {
@@ -47,7 +49,7 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         } else {
             // todo: check if this is correct?
             // cancel batch
-            payloadBatches[asyncId_].isBatchCancelled = true;
+            _payloadBatches[asyncId_].isBatchCancelled = true;
             emit BatchCancelled(asyncId_);
         }
     }
@@ -58,7 +60,7 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
     }
 
     function _process(bytes32 asyncId_) internal {
-        PayloadBatch storage payloadBatch = payloadBatches[asyncId_];
+        PayloadBatch storage payloadBatch = _payloadBatches[asyncId_];
         if (payloadBatch.isBatchCancelled) return;
 
         // Check if there are remaining payloads to process
@@ -92,7 +94,7 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
     }
 
     function _finalizeNextPayload(bytes32 asyncId_) internal {
-        PayloadBatch storage payloadBatch_ = payloadBatches[asyncId_];
+        PayloadBatch storage payloadBatch_ = _payloadBatches[asyncId_];
         uint256 currentIndex = payloadBatch_.currentPayloadIndex;
         PayloadDetails[] storage payloads = payloadBatchDetails[asyncId_];
 
@@ -146,6 +148,7 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         } else {
             FinalizeParams memory finalizeParams = FinalizeParams({
                 payloadDetails: payloadDetails_,
+                asyncId: asyncId_,
                 transmitter: payloadBatch_.winningBid.transmitter
             });
             (payloadId, root) = watcherPrecompile__().finalize(
@@ -221,5 +224,10 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         batch_.totalPayloadsRemaining -= completedCount_;
         batch_.currentPayloadIndex = nextIndex_;
         batch_.lastBatchPromises = promises_;
+    }
+
+    function _retryAuction(bytes32 asyncId_) internal {
+        // release funds to transmitter
+        // restart auction
     }
 }

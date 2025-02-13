@@ -14,6 +14,9 @@ interface IFeesManager {
 
     function updateBlockedFees(bytes32 asyncId_, uint256 feesUsed_) external;
 
+    function unblockFees(bytes32 asyncId_, address appGateway_) external;
+
+    function isFeesEnough(address appGateway_, Fees memory fees_) external view returns (bool);
     function unblockAndAssignFees(
         bytes32 asyncId_,
         address transmitter_,

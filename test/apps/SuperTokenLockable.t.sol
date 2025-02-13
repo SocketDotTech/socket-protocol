@@ -307,11 +307,11 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
 
     function testBridge() public {
         (bytes32 bridgeAsyncId, bytes32[] memory payloadIds) = _bridge();
-        PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(bridgeAsyncId, 0);
+        PayloadDetails memory payloadDetails = deliveryHelper.getPayloadIndexDetails(bridgeAsyncId, 0);
 
         finalizeAndExecute(payloadIds[0], false);
 
-        payloadDetails = deliveryHelper.getPayloadDetails(bridgeAsyncId, 2);
+        payloadDetails = deliveryHelper.getPayloadIndexDetails(bridgeAsyncId, 2);
         vm.expectEmit(true, false, false, false);
         emit FinalizeRequested(
             payloadIds[2],
@@ -321,6 +321,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
                 payloadDetails.target,
                 address(0),
                 payloadDetails.executionGasLimit,
+                bridgeAsyncId,
                 bytes32(0),
                 payloadDetails.payload,
                 payloadDetails.next
@@ -329,7 +330,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         finalizeQuery(payloadIds[1], abi.encode(srcAmount));
         finalizeAndExecute(payloadIds[2], false);
 
-        payloadDetails = deliveryHelper.getPayloadDetails(bridgeAsyncId, 3);
+        payloadDetails = deliveryHelper.getPayloadIndexDetails(bridgeAsyncId, 3);
         finalizeAndExecute(payloadIds[3], false);
     }
 

@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 import "./WatcherPrecompileConfig.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
+import "../interfaces/IFeesManager.sol";
 import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../common/Structs.sol";
@@ -19,6 +20,9 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     uint256 public payloadCounter;
     /// @notice Counter for tracking timeout requests
     uint256 public timeoutCounter;
+    /// @notice The expiry time for the payload
+    uint256 public expiryTime;
+
     /// @notice Mapping to store async requests
     /// @dev payloadId => AsyncRequest struct
     mapping(bytes32 => AsyncRequest) public asyncRequests;
@@ -69,7 +73,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
 
     /// @notice Emitted when a promise is resolved
     /// @param payloadId The unique identifier for the resolved promise
-    event PromiseResolved(bytes32 indexed payloadId);
+    event PromiseResolved(bytes32 indexed payloadId, bool success, address asyncPromise);
 
     event TimeoutRequested(
         bytes32 timeoutId,
@@ -192,6 +196,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
             params_.payloadDetails.target,
             payloadId,
             params_.payloadDetails.executionGasLimit,
+            expiryTime,
             params_.payloadDetails.payload
         );
 
@@ -211,6 +216,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
             params_.payloadDetails.target,
             switchboard,
             params_.payloadDetails.executionGasLimit,
+            params_.asyncId,
             root,
             params_.payloadDetails.payload,
             params_.payloadDetails.next
@@ -247,6 +253,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
             address(0),
             0,
             bytes32(0),
+            bytes32(0),
             payload_,
             asyncPromises_
         );
@@ -254,7 +261,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         emit QueryRequested(chainSlug_, targetAddress_, payloadId, payload_);
     }
 
-    /// @notice Marks a request as finalized with a signature
+    /// @notice Marks a request as finalized with a signature on root
     /// @param payloadId_ The unique identifier of the request
     /// @param signature_ The watcher's signature
     /// @dev Only callable by the contract owner
@@ -269,16 +276,39 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     function resolvePromises(ResolvedPromises[] calldata resolvedPromises_) external onlyOwner {
         for (uint256 i = 0; i < resolvedPromises_.length; i++) {
             // Get the array of promise addresses for this payload
-            address[] memory next = asyncRequests[resolvedPromises_[i].payloadId].next;
+            AsyncRequest memory asyncRequest_ = asyncRequests[resolvedPromises_[i].payloadId];
+            address[] memory next = asyncRequest_.next;
 
             // Resolve each promise with its corresponding return data
             bool success;
             for (uint256 j = 0; j < next.length; j++) {
-                success = IPromise(next[j]).markResolved(resolvedPromises_[i].returnData[j]);
-                if (!success) continue;
-            }
+                success = IPromise(next[j]).markResolved(
+                    asyncRequest_.asyncId,
+                    resolvedPromises_[i].payloadId,
+                    resolvedPromises_[i].returnData[j]
+                );
 
-            if (success) emit PromiseResolved(resolvedPromises_[i].payloadId);
+                if (!success) continue;
+                emit PromiseResolved(resolvedPromises_[i].payloadId, success, next[j]);
+            }
+        }
+    }
+
+    // wait till expiry time to assign fees
+    function markRevert(bytes32 payloadId_, bool isRevertingOnchain_) external onlyOwner {
+        AsyncRequest memory asyncRequest_ = asyncRequests[payloadId_];
+        address[] memory next = asyncRequest_.next;
+
+        for (uint256 j = 0; j < next.length; j++) {
+            if (isRevertingOnchain_)
+                IPromise(next[j]).markOnchainRevert(asyncRequest_.asyncId, payloadId_);
+
+            // assign fees after expiry time
+            IFeesManager(asyncRequest_.appGateway).unblockAndAssignFees(
+                asyncRequest_.asyncId,
+                asyncRequest_.transmitter,
+                asyncRequest_.appGateway
+            );
         }
     }
 
@@ -368,5 +398,9 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     function _encodeTimeoutId(uint256 timeoutCounter_) internal view returns (bytes32) {
         // watcher address (160 bits) | counter (64 bits)
         return bytes32((uint256(uint160(address(this))) << 64) | timeoutCounter_);
+    }
+
+    function setExpiryTime(uint256 expiryTime_) external onlyOwner {
+        expiryTime = expiryTime_;
     }
 }
