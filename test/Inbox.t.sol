@@ -23,7 +23,7 @@ contract InboxTest is DeliveryHelperTest {
             address(auctionManager),
             address(inbox),
             arbChainSlug,
-            createFeesData(feesAmount)
+            createFees(feesAmount)
         );
         setLimit(address(gateway));
 

@@ -8,10 +8,10 @@ enum CallType {
     WITHDRAW
 }
 
-struct FeesData {
+struct Fees {
     uint32 feePoolChain;
     address feePoolToken;
-    uint256 maxFees;
+    uint256 amount;
 }
 
 struct PayloadDetails {
@@ -50,7 +50,7 @@ struct Bid {
 struct PayloadBatch {
     // will be core app gateway always, limit check happens on this address
     address appGateway;
-    FeesData feesData;
+    Fees fees;
     uint256 currentPayloadIndex;
     address auctionManager;
     Bid winningBid;

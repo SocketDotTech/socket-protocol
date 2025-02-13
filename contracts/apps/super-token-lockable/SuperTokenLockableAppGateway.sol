@@ -22,10 +22,10 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, OwnableTwoStep {
         address addressResolver_,
         address deployerContract_,
         address auctionManager_,
-        FeesData memory feesData_
+        Fees memory fees_
     ) AppGatewayBase(addressResolver_, auctionManager_) {
         addressResolver__.setContractsToGateways(deployerContract_);
-        _setFeesData(feesData_);
+        _setFees(fees_);
         _claimOwner(msg.sender);
     }
 
