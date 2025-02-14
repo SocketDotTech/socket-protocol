@@ -10,6 +10,8 @@ import "./BatchAsync.sol";
 import "solady/utils/Initializable.sol";
 
 contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
+    event CallBackReverted(bytes32 asyncId_, bytes32 payloadId_);
+
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -82,6 +84,8 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         } else {
             _finishBatch(asyncId_, payloadBatch);
         }
+
+        isValidPromise[msg.sender] = false;
     }
 
     function _finishBatch(bytes32 asyncId_, PayloadBatch storage payloadBatch_) internal {
@@ -222,12 +226,12 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         uint256 nextIndex_
     ) internal {
         batch_.totalPayloadsRemaining -= completedCount_;
+
         batch_.currentPayloadIndex = nextIndex_;
         batch_.lastBatchPromises = promises_;
     }
 
-    function _retryAuction(bytes32 asyncId_) internal {
-        // release funds to transmitter
-        // restart auction
+    function handleRevert(bytes32 asyncId_, bytes32 payloadId_) external onlyPromises {
+        emit CallBackReverted(asyncId_, payloadId_);
     }
 }
