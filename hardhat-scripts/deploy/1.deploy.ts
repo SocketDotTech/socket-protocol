@@ -13,11 +13,7 @@ import { getProviderFromChainSlug } from "../constants";
 import { ethers } from "hardhat";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { auctionEndDelaySeconds, chains } from "./config";
-import {
-  MAX_LIMIT,
-  OFF_CHAIN_VM_CHAIN_ID,
-  BID_TIMEOUT,
-} from "../constants/constants";
+import { MAX_LIMIT, EVMX_CHAIN_ID, BID_TIMEOUT } from "../constants/constants";
 import { CORE_CONTRACTS, OffChainVMCoreContracts } from "../../src";
 
 let offChainVMOwner: string;
@@ -28,7 +24,7 @@ const main = async () => {
       addresses: {} as ChainSocketAddresses,
       mode: DeploymentMode.DEV,
       signer: new ethers.Wallet(process.env.SOCKET_SIGNER_KEY as string),
-      currentChainSlug: OFF_CHAIN_VM_CHAIN_ID as ChainSlug,
+      currentChainSlug: EVMX_CHAIN_ID as ChainSlug,
     };
     try {
       await deployWatcherVMContracts();
@@ -93,7 +89,7 @@ const main = async () => {
               hasher.address,
               signatureVerifier.address,
               socketOwner,
-              "OFF_CHAIN_VM",
+              "EVMX",
             ],
             deployUtils
           );
@@ -177,9 +173,9 @@ const deployWatcherVMContracts = async () => {
       addresses: {} as ChainSocketAddresses,
       mode: DeploymentMode.DEV,
       signer: new ethers.Wallet(process.env.WATCHER_PRIVATE_KEY as string),
-      currentChainSlug: OFF_CHAIN_VM_CHAIN_ID as ChainSlug,
+      currentChainSlug: EVMX_CHAIN_ID as ChainSlug,
     };
-    const chain = OFF_CHAIN_VM_CHAIN_ID;
+    const chain = EVMX_CHAIN_ID;
     try {
       console.log("Deploying OffChainVM contracts");
       addresses = dev_addresses as unknown as DeploymentAddresses;
@@ -188,7 +184,7 @@ const deployWatcherVMContracts = async () => {
         : ({} as ChainSocketAddresses);
 
       const providerInstance = new providers.StaticJsonRpcProvider(
-        process.env.OFF_CHAIN_VM_RPC as string
+        process.env.EVMX_RPC as string
       );
       const signer: Wallet = new ethers.Wallet(
         process.env.WATCHER_PRIVATE_KEY as string,
@@ -270,7 +266,7 @@ const deployWatcherVMContracts = async () => {
         OffChainVMCoreContracts.AuctionManager,
         `contracts/apps/payload-delivery/app-gateway/AuctionManager.sol`,
         [
-          OFF_CHAIN_VM_CHAIN_ID,
+          EVMX_CHAIN_ID,
           auctionEndDelaySeconds,
           addressResolver.address,
           deployUtils.addresses[OffChainVMCoreContracts.SignatureVerifier],

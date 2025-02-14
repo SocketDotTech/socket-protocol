@@ -25,7 +25,7 @@ import {
 } from "@socket.tech/dl-core";
 import {
   BASE_SEPOLIA_CHAIN_ID,
-  OFF_CHAIN_VM_CHAIN_ID,
+  EVMX_CHAIN_ID,
 } from "./hardhat-scripts/constants/constants";
 
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || "./.env";
@@ -61,10 +61,10 @@ let liveNetworks = {
     ChainSlug.OPTIMISM_SEPOLIA
   ),
   [HardhatChainName.SEPOLIA]: getChainConfig(ChainSlug.SEPOLIA),
-  OFF_CHAIN_VM: {
+  EVMX: {
     accounts: [`0x${privateKey}`],
-    chainId: OFF_CHAIN_VM_CHAIN_ID,
-    url: process.env.OFF_CHAIN_VM_RPC,
+    chainId: EVMX_CHAIN_ID,
+    url: process.env.EVMX_RPC,
   },
   ["base_sepolia"]: {
     accounts: [`0x${privateKey}`],
@@ -131,7 +131,7 @@ const config: HardhatUserConfig = {
       },
       {
         network: "offChainVM",
-        chainId: OFF_CHAIN_VM_CHAIN_ID,
+        chainId: EVMX_CHAIN_ID,
         urls: {
           apiURL: "https://explorer-socket-composer-testnet.t.conduit.xyz/api",
           browserURL: "https://explorer-socket-composer-testnet.t.conduit.xyz",

@@ -1,7 +1,7 @@
 import { ethers, upgrades } from "hardhat";
 import * as fs from "fs";
 import * as path from "path";
-import { OFF_CHAIN_VM_CHAIN_ID } from "../constants/constants";
+import { EVMX_CHAIN_ID } from "../constants/constants";
 
 const upgradeableContracts = [
   "SignatureVerifier",
@@ -20,8 +20,8 @@ async function main() {
   );
   const addresses = JSON.parse(fs.readFileSync(addressesPath, "utf8"));
 
-  if (!addresses[OFF_CHAIN_VM_CHAIN_ID]) {
-    throw new Error(`No addresses found for chain ID ${OFF_CHAIN_VM_CHAIN_ID}`);
+  if (!addresses[EVMX_CHAIN_ID]) {
+    throw new Error(`No addresses found for chain ID ${EVMX_CHAIN_ID}`);
   }
 
   // Loop through each upgradeable contract
@@ -32,7 +32,7 @@ async function main() {
     const NewImplementation = await ethers.getContractFactory(contractName);
 
     // Get proxy address from JSON
-    const PROXY_ADDRESS = addresses[OFF_CHAIN_VM_CHAIN_ID][contractName];
+    const PROXY_ADDRESS = addresses[EVMX_CHAIN_ID][contractName];
     if (!PROXY_ADDRESS) {
       console.log(`Contract address not found for ${contractName}`);
       continue;
@@ -48,7 +48,7 @@ async function main() {
 
       // Get the implementation address from JSON
       const newImplementation =
-        addresses[OFF_CHAIN_VM_CHAIN_ID][`${contractName}Impl`];
+        addresses[EVMX_CHAIN_ID][`${contractName}Impl`];
       if (!newImplementation) {
         console.log(`No implementation address found for ${contractName}`);
         continue;

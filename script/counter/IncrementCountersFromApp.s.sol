@@ -8,7 +8,7 @@ import {CounterAppGateway} from "../../contracts/apps//counter/CounterAppGateway
 
 contract IncrementCounters is Script {
     function run() external {
-        string memory socketRPC = vm.envString("OFF_CHAIN_VM_RPC");
+        string memory socketRPC = vm.envString("EVMX_RPC");
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.createSelectFork(socketRPC);

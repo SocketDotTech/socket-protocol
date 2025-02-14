@@ -7,7 +7,7 @@ import {CronAppGateway} from "../../contracts/apps/cron/CronAppGateway.sol";
 
 contract SetTimeoutScript is Script {
     function run() external {
-        string memory socketRPC = vm.envString("OFF_CHAIN_VM_RPC");
+        string memory socketRPC = vm.envString("EVMX_RPC");
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.createSelectFork(socketRPC);
         address gatewayAddress = vm.envAddress("APP_GATEWAY");

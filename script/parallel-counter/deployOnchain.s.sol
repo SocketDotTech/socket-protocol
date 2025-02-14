@@ -8,7 +8,7 @@ import {ETH_ADDRESS} from "../../contracts/common/Constants.sol";
 
 contract CounterDeployOnchain is Script {
     function run() external {
-        string memory rpc = vm.envString("OFF_CHAIN_VM_RPC");
+        string memory rpc = vm.envString("EVMX_RPC");
         console.log(rpc);
         vm.createSelectFork(rpc);
 

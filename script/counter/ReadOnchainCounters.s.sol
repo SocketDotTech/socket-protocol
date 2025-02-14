@@ -10,7 +10,7 @@ contract CheckCounters is Script {
     function run() external {
         CounterDeployer deployer = CounterDeployer(vm.envAddress("DEPLOYER"));
 
-        vm.createSelectFork(vm.envString("OFF_CHAIN_VM_RPC"));
+        vm.createSelectFork(vm.envString("EVMX_RPC"));
         address counterInstanceArbitrumSepolia = deployer.getOnChainAddress(
             deployer.counter(),
             421614

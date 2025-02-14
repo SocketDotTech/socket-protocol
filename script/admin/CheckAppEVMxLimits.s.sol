@@ -8,7 +8,7 @@ import {SCHEDULE, QUERY, FINALIZE} from "../../contracts/common/Constants.sol";
 
 contract CheckLimitsScript is Script {
     function run() external {
-        string memory rpc = vm.envString("OFF_CHAIN_VM_RPC");
+        string memory rpc = vm.envString("EVMX_RPC");
         vm.createSelectFork(rpc);
 
         address watcherPrecompile = vm.envAddress("WATCHER_PRECOMPILE");
@@ -18,9 +18,9 @@ contract CheckLimitsScript is Script {
         console.log("AppGateway address:", appGateway);
         WatcherPrecompile watcherContract = WatcherPrecompile(watcherPrecompile);
 
-        LimitParams memory scheduleLimit = watcherContract.getLimitParams(SCHEDULE, cronAppGateway);
-        LimitParams memory queryLimit = watcherContract.getLimitParams(QUERY, cronAppGateway);
-        LimitParams memory finalizeLimit = watcherContract.getLimitParams(FINALIZE, cronAppGateway);
+        LimitParams memory scheduleLimit = watcherContract.getLimitParams(SCHEDULE, appGateway);
+        LimitParams memory queryLimit = watcherContract.getLimitParams(QUERY, appGateway);
+        LimitParams memory finalizeLimit = watcherContract.getLimitParams(FINALIZE, appGateway);
 
         uint256 scheduleCurrentLimit = watcherContract.getCurrentLimit(SCHEDULE, appGateway);
         uint256 queryCurrentLimit = watcherContract.getCurrentLimit(QUERY, appGateway);

@@ -16,7 +16,7 @@ import { getProviderFromChainSlug } from "../constants";
 import { Wallet } from "ethers";
 import { getInstance, storeAddresses } from "./utils";
 import { OffChainVMCoreContracts } from "../../src";
-import { OFF_CHAIN_VM_CHAIN_ID } from "../constants/constants";
+import { EVMX_CHAIN_ID } from "../constants/constants";
 
 export const main = async () => {
   let addresses: DeploymentAddresses;
@@ -63,13 +63,13 @@ export const main = async () => {
 
 async function setSwitchboard(sbAddress, chain, addresses) {
   const providerInstance = getProviderFromChainSlug(
-    OFF_CHAIN_VM_CHAIN_ID as ChainSlug
+    EVMX_CHAIN_ID as ChainSlug
   );
   const signer: Wallet = new ethers.Wallet(
     process.env.WATCHER_PRIVATE_KEY as string,
     providerInstance
   );
-  const watcherVMaddr = addresses[OFF_CHAIN_VM_CHAIN_ID]!;
+  const watcherVMaddr = addresses[EVMX_CHAIN_ID]!;
   const watcherPrecompile = (
     await getInstance(
       "contracts/watcherPrecompile/WatcherPrecompile.sol:WatcherPrecompile",

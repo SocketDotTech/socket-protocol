@@ -7,7 +7,7 @@ import {CounterInboxAppGateway} from "../../contracts/apps/counter-inbox/Counter
 
 contract CheckGatewayCounter is Script {
     function run() external {
-        string memory rpc = vm.envString("OFF_CHAIN_VM_RPC");
+        string memory rpc = vm.envString("EVMX_RPC");
         vm.createSelectFork(rpc);
 
         address gatewayAddress = vm.envAddress("APP_GATEWAY");
