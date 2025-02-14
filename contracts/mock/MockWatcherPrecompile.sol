@@ -8,6 +8,7 @@ import "../interfaces/IPromise.sol";
 import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams, PlugConfig, ResolvedPromises, AppGatewayConfig} from "../common/Structs.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../common/Constants.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../common/Errors.sol";
+import "solady/utils/ERC1967Factory.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
