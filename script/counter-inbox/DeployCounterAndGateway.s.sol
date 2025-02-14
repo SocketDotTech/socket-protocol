@@ -23,7 +23,7 @@ contract DeployCounterAndGateway is Script {
 
         vm.stopBroadcast();
 
-        string memory offChainRpc = vm.envString("OFF_CHAIN_VM_RPC");
+        string memory offChainRpc = vm.envString("EVMX_RPC");
         vm.createSelectFork(offChainRpc);
         uint256 offChainDeployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(offChainDeployerPrivateKey);

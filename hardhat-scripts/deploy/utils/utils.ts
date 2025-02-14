@@ -156,7 +156,12 @@ export const storeAddresses = async (
     deploymentAddresses = JSON.parse(deploymentAddressesString);
   }
 
-  deploymentAddresses[chainSlug] = addresses;
+  // Sort addresses object by key name for readability
+  const sortedAddresses = Object.fromEntries(
+    Object.entries(addresses).sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+  ) as ChainSocketAddresses;
+
+  deploymentAddresses[chainSlug] = sortedAddresses;
   fs.writeFileSync(
     addressesPath,
     JSON.stringify(deploymentAddresses, null, 2) + "\n"
@@ -301,7 +306,7 @@ export const getAddresses = async (
   return deploymentAddresses[chainSlug];
 };
 
-export const createObj = function (
+export const createObj = function(
   obj: ChainSocketAddresses,
   keys: string[],
   value: any

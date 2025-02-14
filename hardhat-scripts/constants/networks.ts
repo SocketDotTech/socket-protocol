@@ -7,7 +7,7 @@ import {
   HardhatChainName,
   chainSlugToHardhatChainName,
 } from "@socket.tech/dl-core";
-import { BASE_SEPOLIA_CHAIN_ID, OFF_CHAIN_VM_CHAIN_ID } from "./constants";
+import { BASE_SEPOLIA_CHAIN_ID, EVMX_CHAIN_ID } from "./constants";
 
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || "./.env";
 dotenvConfig({ path: resolve(__dirname, dotenvConfigPath) });
@@ -24,8 +24,8 @@ function createReverseEnumMap(enumObj: any) {
 export const rpcKeys = (chainSlug: ChainSlug) => {
   if (chainSlug == (BASE_SEPOLIA_CHAIN_ID as ChainSlug)) {
     return "BASE_SEPOLIA_RPC";
-  } else if (chainSlug == (OFF_CHAIN_VM_CHAIN_ID as ChainSlug)) {
-    return "OFF_CHAIN_VM_RPC";
+  } else if (chainSlug == (EVMX_CHAIN_ID as ChainSlug)) {
+    return "EVMX_RPC";
   }
   let chainName = chainSlugToHardhatChainName[chainSlug].toString();
   // console.log("chainName", chainName);

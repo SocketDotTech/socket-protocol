@@ -7,7 +7,7 @@ import {MockWatcherPrecompile} from "../../contracts/mock/MockWatcherPrecompile.
 import {MockSocket} from "../../contracts/mock/MockSocket.sol";
 contract DeployVM is Script {
     function run() external {
-        string memory rpc = vm.envString("OFF_CHAIN_VM_RPC");
+        string memory rpc = vm.envString("EVMX_RPC");
         vm.createSelectFork(rpc);
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);

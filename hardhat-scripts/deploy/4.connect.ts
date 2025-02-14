@@ -7,7 +7,7 @@ import { Contract, ethers, providers, Wallet } from "ethers";
 import { getInstance } from "./utils";
 import { chains } from "./config";
 import dev_addresses from "../../deployments/dev_addresses.json";
-import { OFF_CHAIN_VM_CHAIN_ID } from "../constants/constants";
+import { EVMX_CHAIN_ID } from "../constants/constants";
 import { CORE_CONTRACTS, OffChainVMCoreContracts } from "../../src";
 
 const plugs = [CORE_CONTRACTS.ContractFactoryPlug, CORE_CONTRACTS.FeesPlug];
@@ -21,11 +21,11 @@ export type AppGatewayConfig = {
 export const getAppGateway = (plug: string, addresses: DeploymentAddresses) => {
   switch (plug) {
     case CORE_CONTRACTS.ContractFactoryPlug:
-      return addresses?.[OFF_CHAIN_VM_CHAIN_ID]?.[
+      return addresses?.[EVMX_CHAIN_ID]?.[
         OffChainVMCoreContracts.DeliveryHelper
       ];
     case CORE_CONTRACTS.FeesPlug:
-      return addresses?.[OFF_CHAIN_VM_CHAIN_ID]?.[
+      return addresses?.[EVMX_CHAIN_ID]?.[
         OffChainVMCoreContracts.FeesManager
       ];
     default:
@@ -146,13 +146,13 @@ export const updateConfigWatcherVM = async () => {
 
     // Set up Watcher contract
     const providerInstance = new providers.StaticJsonRpcProvider(
-      process.env.OFF_CHAIN_VM_RPC as string
+      process.env.EVMX_RPC as string
     );
     const signer = new ethers.Wallet(
       process.env.WATCHER_PRIVATE_KEY as string,
       providerInstance
     );
-    const watcherVMaddr = addresses[OFF_CHAIN_VM_CHAIN_ID]!;
+    const watcherVMaddr = addresses[EVMX_CHAIN_ID]!;
     const watcher = (
       await getInstance(
         OffChainVMCoreContracts.WatcherPrecompile,

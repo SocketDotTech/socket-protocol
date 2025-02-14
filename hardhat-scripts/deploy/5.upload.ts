@@ -4,7 +4,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { config as dotenvConfig } from "dotenv";
 import {
   BASE_SEPOLIA_CHAIN_ID,
-  OFF_CHAIN_VM_CHAIN_ID,
+  EVMX_CHAIN_ID,
 } from "../constants/constants";
 import { ChainSlug } from "@socket.tech/dl-core";
 
@@ -77,10 +77,10 @@ export let config: S3Config = {
     confirmations: 0,
     eventBlockRange: 5000,
   },
-  [OFF_CHAIN_VM_CHAIN_ID]: {
+  [EVMX_CHAIN_ID]: {
     eventBlockRangePerCron: 5000,
-    rpc: process.env.OFF_CHAIN_VM_RPC,
-    wssRpc: process.env.OFF_CHAIN_VM_WSS_RPC,
+    rpc: process.env.EVMX_RPC,
+    wssRpc: process.env.EVMX_WSS_RPC,
     confirmations: 0,
     eventBlockRange: 5000,
   },
@@ -96,7 +96,7 @@ export let config: S3Config = {
     ChainSlug.ARBITRUM_SEPOLIA,
     ChainSlug.OPTIMISM_SEPOLIA,
     // ChainSlug.SEPOLIA,
-    OFF_CHAIN_VM_CHAIN_ID,
+    EVMX_CHAIN_ID,
     // BASE_SEPOLIA_CHAIN_ID,
   ],
 };

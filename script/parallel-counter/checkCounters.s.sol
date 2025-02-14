@@ -10,7 +10,7 @@ contract CheckCounters is Script {
     function run() external {
         ParallelCounterDeployer deployer = ParallelCounterDeployer(vm.envAddress("DEPLOYER"));
 
-        vm.createSelectFork(vm.envString("OFF_CHAIN_VM_RPC"));
+        vm.createSelectFork(vm.envString("EVMX_RPC"));
         address counter1InstanceArbitrumSepolia = deployer.getOnChainAddress(
             deployer.counter1(),
             421614
@@ -68,7 +68,7 @@ contract CheckCounters is Script {
             console.log("Counter2 not yet deployed on Optimism Sepolia");
         }
 
-        vm.createSelectFork(vm.envString("OFF_CHAIN_VM_RPC"));
+        vm.createSelectFork(vm.envString("EVMX_RPC"));
         address forwarderArb1 = deployer.forwarderAddresses(deployer.counter1(), 421614);
         address forwarderArb2 = deployer.forwarderAddresses(deployer.counter2(), 421614);
         address forwarderOpt1 = deployer.forwarderAddresses(deployer.counter1(), 11155420);

@@ -10,7 +10,7 @@ import path from "path";
 import fs from "fs";
 import {
   BASE_SEPOLIA_CHAIN_ID,
-  OFF_CHAIN_VM_CHAIN_ID,
+  EVMX_CHAIN_ID,
 } from "../constants/constants";
 
 export type VerifyParams = {
@@ -41,8 +41,8 @@ export const main = async () => {
       console.log({ chain });
       if (chain == (BASE_SEPOLIA_CHAIN_ID as ChainSlug)) {
         chainName = "base_sepolia";
-      } else if (chain == (OFF_CHAIN_VM_CHAIN_ID as ChainSlug)) {
-        chainName = "OFF_CHAIN_VM";
+      } else if (chain == (EVMX_CHAIN_ID as ChainSlug)) {
+        chainName = "EVMX";
       } else {
         chainName = ChainSlugToKey[chain];
       }
