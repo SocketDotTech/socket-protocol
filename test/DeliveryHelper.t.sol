@@ -18,10 +18,12 @@ contract DeliveryHelperTest is SetupTest {
     uint256 public asyncPromiseCounterLocal = 0;
     uint256 public asyncCounterTest;
     uint256 public auctionEndDelaySeconds = 0;
+    uint256 public bidTimeout = 86400;
 
     DeliveryHelper deliveryHelper;
     FeesManager feesManager;
     AuctionManager auctionManager;
+
     event PayloadSubmitted(
         bytes32 indexed asyncId,
         address indexed appGateway,
@@ -49,11 +51,12 @@ contract DeliveryHelperTest is SetupTest {
             address(addressResolver),
             owner
         );
+
         vm.expectEmit(true, true, true, false);
         emit Initialized(1);
-        TransparentUpgradeableProxy feesManagerProxy = new TransparentUpgradeableProxy(
+        address feesManagerProxy = proxyFactory.deployAndCall(
             address(feesManagerImpl),
-            address(proxyAdmin),
+            watcherEOA,
             feesManagerData
         );
 
@@ -61,13 +64,15 @@ contract DeliveryHelperTest is SetupTest {
             DeliveryHelper.initialize.selector,
             address(addressResolver),
             address(feesManagerProxy),
-            owner
+            owner,
+            bidTimeout
         );
+
         vm.expectEmit(true, true, true, false);
         emit Initialized(1);
-        TransparentUpgradeableProxy deliveryHelperProxy = new TransparentUpgradeableProxy(
+        address deliveryHelperProxy = proxyFactory.deployAndCall(
             address(deliveryHelperImpl),
-            address(proxyAdmin),
+            watcherEOA,
             deliveryHelperData
         );
 
@@ -81,9 +86,9 @@ contract DeliveryHelperTest is SetupTest {
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(1);
-        TransparentUpgradeableProxy auctionManagerProxy = new TransparentUpgradeableProxy(
+        address auctionManagerProxy = proxyFactory.deployAndCall(
             address(auctionManagerImpl),
-            address(proxyAdmin),
+            watcherEOA,
             auctionManagerData
         );
 
@@ -246,7 +251,11 @@ contract DeliveryHelperTest is SetupTest {
         assertEq(payloadBatch.appGateway, appGateway_, "AppGateway mismatch");
         assertEq(payloadBatch.auctionManager, address(auctionManager), "AuctionManager mismatch");
         assertEq(payloadBatch.winningBid.fee, bidAmount, "WinningBid mismatch");
-        assertEq(payloadBatch.winningBid.transmitter, transmitterEOA, "WinningBid transmitter mismatch");
+        assertEq(
+            payloadBatch.winningBid.transmitter,
+            transmitterEOA,
+            "WinningBid transmitter mismatch"
+        );
         assertEq(payloadBatch.isBatchCancelled, false, "IsBatchCancelled mismatch");
     }
 
@@ -262,6 +271,18 @@ contract DeliveryHelperTest is SetupTest {
         for (uint i = 0; i < payloadIds.length; i++) {
             finalizeAndExecute(payloadIds[i], false);
         }
+    }
+
+    function bidAndExecuteParallel(bytes32[] memory payloadIds, bytes32 asyncId_) internal {
+        bidAndEndAuction(asyncId_);
+
+        bytes[] memory returnData = new bytes[](payloadIds.length);
+        for (uint i = 0; i < payloadIds.length; i++) {
+            PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(payloadIds[i]);
+            returnData[i] = finalizeAndRelay(payloadIds[i], payloadDetails);
+        }
+
+        resolvePromises(payloadIds, returnData);
     }
 
     function _deploy(
@@ -461,6 +482,7 @@ contract DeliveryHelperTest is SetupTest {
         //     Bid({fee: bidAmount, transmitter: transmitterEOA, extraData: ""})
         // );
 
+        if (auctionEndDelaySeconds == 0) return;
         hoax(watcherEOA);
         watcherPrecompile.resolveTimeout(timeoutId);
     }
@@ -586,19 +608,25 @@ contract DeliveryHelperTest is SetupTest {
         bool isWithdraw,
         PayloadDetails memory payloadDetails
     ) internal {
-        (bytes memory watcherSig, bytes32 root) = finalize(payloadId, payloadDetails);
+        bytes memory returnData = finalizeAndRelay(payloadId, payloadDetails);
+        if (!isWithdraw) {
+            resolvePromise(payloadId, returnData);
+        }
+    }
 
-        bytes memory returnData = relayTx(
+    function finalizeAndRelay(
+        bytes32 payloadId_,
+        PayloadDetails memory payloadDetails
+    ) internal returns (bytes memory returnData) {
+        (bytes memory watcherSig, bytes32 root) = finalize(payloadId_, payloadDetails);
+
+        returnData = relayTx(
             payloadDetails.chainSlug,
-            payloadId,
+            payloadId_,
             root,
             payloadDetails,
             watcherSig
         );
-
-        if (!isWithdraw) {
-            resolvePromise(payloadId, returnData);
-        }
     }
 
     function predictAsyncPromiseAddress(

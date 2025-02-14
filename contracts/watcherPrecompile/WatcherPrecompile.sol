@@ -5,7 +5,7 @@ import "./WatcherPrecompileConfig.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
 import "../interfaces/IFeesManager.sol";
-import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+import "solady/utils/Initializable.sol";
 
 import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../common/Structs.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../common/Errors.sol";
@@ -93,14 +93,12 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         _disableInitializers(); // disable for implementation
     }
 
-    /// @notice Initializer function to replace constructor
-    /// @param owner_ Address of the contract owner
-    /// @param addressResolver_ The address resolver contract address
+    /// @notice Initial initialization (version 1)
     function initialize(
         address owner_,
         address addressResolver_,
         uint256 maxLimit_
-    ) public initializer {
+    ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _claimOwner(owner_);
         maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours

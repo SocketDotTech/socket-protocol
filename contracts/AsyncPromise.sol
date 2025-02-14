@@ -4,7 +4,7 @@ pragma solidity ^0.8.21;
 import {AddressResolverUtil} from "./utils/AddressResolverUtil.sol";
 import {IPromise} from "./interfaces/IPromise.sol";
 import {IAppGateway} from "./interfaces/IAppGateway.sol";
-import {Initializable} from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+import {Initializable} from "solady/utils/Initializable.sol";
 
 /// @notice The state of the async promise
 enum AsyncPromiseState {
@@ -59,7 +59,7 @@ contract AsyncPromise is IPromise, Initializable, AddressResolverUtil {
         address invoker_,
         address forwarder_,
         address addressResolver_
-    ) public initializer {
+    ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         localInvoker = invoker_;
         forwarder = forwarder_;

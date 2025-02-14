@@ -7,9 +7,11 @@ import {Bid, PayloadBatch, Fees, PayloadDetails, FinalizeParams} from "../../../
 import {DISTRIBUTE_FEE, DEPLOY} from "../../../common/Constants.sol";
 import {PromisesNotResolved} from "../../../common/Errors.sol";
 import "./BatchAsync.sol";
-import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+import "solady/utils/Initializable.sol";
 
 contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
+    event CallBackReverted(bytes32 asyncId_, bytes32 payloadId_);
+
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -23,7 +25,7 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         address feesManager_,
         address owner_,
         uint256 bidTimeout_
-    ) public initializer {
+    ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         feesManager = feesManager_;
         bidTimeout = bidTimeout_;
@@ -82,6 +84,8 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         } else {
             _finishBatch(asyncId_, payloadBatch);
         }
+
+        isValidPromise[msg.sender] = false;
     }
 
     function _finishBatch(bytes32 asyncId_, PayloadBatch storage payloadBatch_) internal {
@@ -222,12 +226,12 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         uint256 nextIndex_
     ) internal {
         batch_.totalPayloadsRemaining -= completedCount_;
+
         batch_.currentPayloadIndex = nextIndex_;
         batch_.lastBatchPromises = promises_;
     }
 
-    function _retryAuction(bytes32 asyncId_) internal {
-        // release funds to transmitter
-        // restart auction
+    function handleRevert(bytes32 asyncId_, bytes32 payloadId_) external onlyPromises {
+        emit CallBackReverted(asyncId_, payloadId_);
     }
 }

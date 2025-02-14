@@ -33,8 +33,6 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
 
     event PayloadBatchCancelled(bytes32 asyncId_);
 
-    error PromisesNotResolved();
-
     function payloadBatches(bytes32 asyncId_) external view override returns (PayloadBatch memory) {
         return _payloadBatches[asyncId_];
     }
@@ -48,8 +46,6 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
 
     modifier onlyPromises() {
         if (!isValidPromise[msg.sender]) revert InvalidPromise();
-        // remove promise once resolved
-        isValidPromise[msg.sender] = false;
         _;
     }
 
