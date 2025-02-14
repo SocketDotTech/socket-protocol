@@ -11,7 +11,7 @@ pragma solidity ^0.8.21;
  */
 interface ISocket {
     /**
-     * @notice emits the status of payload after inbound call
+     * @notice emits the status of payload after external call
      * @param payloadId msg id which is executed
      */
     event ExecutionSuccess(bytes32 payloadId, bytes returnData);
@@ -31,7 +31,7 @@ interface ISocket {
      * @param plug local plug address
      * @param appGateway appGateway address to trigger the call
      * @param params params, for specifying details like fee pool chain, fee pool token and max fees if required
-     * @param payload the data which will be used by inbound at remote
+     * @param payload the data which will be used by contracts on chain
      */
     event AppGatewayCallRequested(
         bytes32 callId,
@@ -66,7 +66,7 @@ interface ISocket {
 
     /**
      * @notice sets the config specific to the plug
-     * @param appGateway_ address of plug present at sibling chain to call inbound
+     * @param appGateway_ address of plug present at sibling chain
      * @param switchboard_ the address of switchboard to use for executing payloads
      */
     function connect(address appGateway_, address switchboard_) external;

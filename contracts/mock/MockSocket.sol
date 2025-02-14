@@ -124,7 +124,7 @@ contract MockSocket is ISocket {
     ////////////////////////////////////////////////////////
 
     function _verify(bytes32 root_, bytes32 payloadId_, ISwitchboard switchboard__) internal view {
-        // NOTE: is the the first un-trusted call in the system, another one is Plug.inbound
+        // NOTE: is the the first un-trusted call in the system, another one is Plug.call
         if (!switchboard__.allowPacket(root_, payloadId_)) revert VerificationFailed();
     }
 

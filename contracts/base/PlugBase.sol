@@ -25,11 +25,6 @@ abstract contract PlugBase is IPlug {
         socket__ = ISocket(socket_);
     }
 
-    /// @notice Inbound function for handling incoming messages
-    /// @param payload_ The payload
-    /// @return bytes memory The encoded return data
-    function inbound(bytes calldata payload_) external payable virtual returns (bytes memory) {}
-
     /// @notice Connects the plug to the app gateway and switchboard
     /// @param appGateway_ The app gateway address
     /// @param switchboard_ The switchboard address
