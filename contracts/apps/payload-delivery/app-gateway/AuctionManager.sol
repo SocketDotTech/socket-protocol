@@ -117,7 +117,6 @@ contract AuctionManager is AddressResolverUtil, OwnableTwoStep, IAuctionManager,
         auctionClosed[asyncId_] = true;
 
         emit AuctionEnded(asyncId_, newBid);
-        IDeliveryHelper(addressResolver__.deliveryHelper()).startBatchProcessing(asyncId_, newBid);
     }
 
     /// @notice Ends an auction
@@ -147,7 +146,7 @@ contract AuctionManager is AddressResolverUtil, OwnableTwoStep, IAuctionManager,
             winningBid
         );
 
-        // add scheduler for a time to retry auction
+        // todo: add scheduler for a time to retry auction
     }
 
     function expireBid(bytes32 asyncId_) external onlyWatcherPrecompile {

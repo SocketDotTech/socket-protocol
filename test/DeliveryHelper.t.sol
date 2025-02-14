@@ -18,10 +18,12 @@ contract DeliveryHelperTest is SetupTest {
     uint256 public asyncPromiseCounterLocal = 0;
     uint256 public asyncCounterTest;
     uint256 public auctionEndDelaySeconds = 0;
+    uint256 public bidTimeout = 86400;
 
     DeliveryHelper deliveryHelper;
     FeesManager feesManager;
     AuctionManager auctionManager;
+
     event PayloadSubmitted(
         bytes32 indexed asyncId,
         address indexed appGateway,
@@ -49,6 +51,7 @@ contract DeliveryHelperTest is SetupTest {
             address(addressResolver),
             owner
         );
+
         vm.expectEmit(true, true, true, false);
         emit Initialized(1);
         address feesManagerProxy = proxyFactory.deployAndCall(
@@ -61,8 +64,10 @@ contract DeliveryHelperTest is SetupTest {
             DeliveryHelper.initialize.selector,
             address(addressResolver),
             address(feesManagerProxy),
-            owner
+            owner,
+            bidTimeout
         );
+
         vm.expectEmit(true, true, true, false);
         emit Initialized(1);
         address deliveryHelperProxy = proxyFactory.deployAndCall(
@@ -268,6 +273,18 @@ contract DeliveryHelperTest is SetupTest {
         }
     }
 
+    function bidAndExecuteParallel(bytes32[] memory payloadIds, bytes32 asyncId_) internal {
+        bidAndEndAuction(asyncId_);
+
+        bytes[] memory returnData = new bytes[](payloadIds.length);
+        for (uint i = 0; i < payloadIds.length; i++) {
+            PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(payloadIds[i]);
+            returnData[i] = finalizeAndRelay(payloadIds[i], payloadDetails);
+        }
+
+        resolvePromises(payloadIds, returnData);
+    }
+
     function _deploy(
         bytes32[] memory contractIds,
         uint32 chainSlug_,
@@ -465,6 +482,7 @@ contract DeliveryHelperTest is SetupTest {
         //     Bid({fee: bidAmount, transmitter: transmitterEOA, extraData: ""})
         // );
 
+        if (auctionEndDelaySeconds == 0) return;
         hoax(watcherEOA);
         watcherPrecompile.resolveTimeout(timeoutId);
     }
@@ -590,19 +608,25 @@ contract DeliveryHelperTest is SetupTest {
         bool isWithdraw,
         PayloadDetails memory payloadDetails
     ) internal {
-        (bytes memory watcherSig, bytes32 root) = finalize(payloadId, payloadDetails);
+        bytes memory returnData = finalizeAndRelay(payloadId, payloadDetails);
+        if (!isWithdraw) {
+            resolvePromise(payloadId, returnData);
+        }
+    }
 
-        bytes memory returnData = relayTx(
+    function finalizeAndRelay(
+        bytes32 payloadId_,
+        PayloadDetails memory payloadDetails
+    ) internal returns (bytes memory returnData) {
+        (bytes memory watcherSig, bytes32 root) = finalize(payloadId_, payloadDetails);
+
+        returnData = relayTx(
             payloadDetails.chainSlug,
-            payloadId,
+            payloadId_,
             root,
             payloadDetails,
             watcherSig
         );
-
-        if (!isWithdraw) {
-            resolvePromise(payloadId, returnData);
-        }
     }
 
     function predictAsyncPromiseAddress(
