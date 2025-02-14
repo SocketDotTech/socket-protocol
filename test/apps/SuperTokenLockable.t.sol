@@ -116,12 +116,12 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         address appDeployer = address(uint160(c++));
         address chainContractAddress = address(uint160(c++));
 
+        address predicted = addressResolver.getForwarderAddress(chainContractAddress, vmChainSlug);
         address forwarder = addressResolver.getOrDeployForwarderContract(
             appDeployer,
             chainContractAddress,
             vmChainSlug
         );
-        address predicted = addressResolver.getForwarderAddress(chainContractAddress, vmChainSlug);
 
         assertEq(forwarder, predicted);
     }
@@ -307,8 +307,11 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
 
     function testBridge() public {
         (bytes32 bridgeAsyncId, bytes32[] memory payloadIds) = _bridge();
-        PayloadDetails memory payloadDetails = deliveryHelper.getPayloadIndexDetails(bridgeAsyncId, 0);
 
+        PayloadDetails memory payloadDetails = deliveryHelper.getPayloadIndexDetails(
+            bridgeAsyncId,
+            0
+        );
         finalizeAndExecute(payloadIds[0], false);
 
         payloadDetails = deliveryHelper.getPayloadIndexDetails(bridgeAsyncId, 2);

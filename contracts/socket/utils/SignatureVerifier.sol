@@ -6,7 +6,7 @@ import "../../interfaces/ISignatureVerifier.sol";
 import "../../libraries/RescueFundsLib.sol";
 import "../utils/AccessControl.sol";
 import {RESCUE_ROLE} from "../utils/AccessRoles.sol";
-import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+import "solady/utils/Initializable.sol";
 
 /**
  * @title Signature Verifier
@@ -23,7 +23,7 @@ contract SignatureVerifier is ISignatureVerifier, AccessControl, Initializable {
      * @notice initializes and grants RESCUE_ROLE to owner.
      * @param owner_ The address of the owner of the contract.
      */
-    function initialize(address owner_) public initializer {
+    function initialize(address owner_) public reinitializer(1) {
         _claimOwner(owner_);
         _grantRole(RESCUE_ROLE, owner_);
     }

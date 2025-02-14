@@ -13,9 +13,10 @@ import { getProviderFromChainSlug } from "../constants";
 import { ethers } from "hardhat";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { auctionEndDelaySeconds, chains } from "./config";
-import { MAX_LIMIT, EVMX_CHAIN_ID } from "../constants/constants";
+import { MAX_LIMIT, EVMX_CHAIN_ID, BID_TIMEOUT } from "../constants/constants";
 import { CORE_CONTRACTS, OffChainVMCoreContracts } from "../../src";
 
+let offChainVMOwner: string;
 const main = async () => {
   try {
     let addresses: DeploymentAddresses;
@@ -49,6 +50,7 @@ const main = async () => {
             signer: signer,
             currentChainSlug: chain as ChainSlug,
           };
+
           let contractName: string = CORE_CONTRACTS.SignatureVerifier;
           const signatureVerifier: Contract = await getOrDeploy(
             contractName,
@@ -188,7 +190,7 @@ const deployWatcherVMContracts = async () => {
         process.env.WATCHER_PRIVATE_KEY as string,
         providerInstance
       );
-      const offChainVMOwner = signer.address;
+      offChainVMOwner = signer.address;
 
       deployUtils = {
         addresses: chainAddresses,
@@ -198,28 +200,29 @@ const deployWatcherVMContracts = async () => {
       };
 
       // Deploy proxy admin contract
-      const contractName = "ProxyAdmin";
-      const proxyAdmin = await getOrDeploy(
+      const contractName = "ERC1967Factory";
+      const proxyFactory = await getOrDeploy(
         contractName,
         contractName,
-        "lib/openzeppelin-contracts/contracts/proxy/transparent/ProxyAdmin.sol",
-        [offChainVMOwner],
+        "lib/solady/src/utils/ERC1967Factory.sol",
+        [],
         deployUtils
       );
-      deployUtils.addresses[contractName] = proxyAdmin.address;
+      deployUtils.addresses[contractName] = proxyFactory.address;
 
       deployUtils = await deployContractWithProxy(
         OffChainVMCoreContracts.SignatureVerifier,
         `contracts/socket/utils/SignatureVerifier.sol`,
-        proxyAdmin.address,
         [offChainVMOwner],
+        proxyFactory,
         deployUtils
       );
+
       deployUtils = await deployContractWithProxy(
         OffChainVMCoreContracts.AddressResolver,
         `contracts/AddressResolver.sol`,
-        proxyAdmin.address,
         [offChainVMOwner],
+        proxyFactory,
         deployUtils
       );
 
@@ -231,16 +234,16 @@ const deployWatcherVMContracts = async () => {
       deployUtils = await deployContractWithProxy(
         OffChainVMCoreContracts.WatcherPrecompile,
         `contracts/watcherPrecompile/WatcherPrecompile.sol`,
-        proxyAdmin.address,
         [offChainVMOwner, addressResolver.address, MAX_LIMIT],
+        proxyFactory,
         deployUtils
       );
 
       deployUtils = await deployContractWithProxy(
         OffChainVMCoreContracts.FeesManager,
         `contracts/apps/payload-delivery/app-gateway/FeesManager.sol`,
-        proxyAdmin.address,
         [addressResolver.address, offChainVMOwner],
+        proxyFactory,
         deployUtils
       );
       const feesManagerAddress =
@@ -249,15 +252,19 @@ const deployWatcherVMContracts = async () => {
       deployUtils = await deployContractWithProxy(
         OffChainVMCoreContracts.DeliveryHelper,
         `contracts/apps/payload-delivery/app-gateway/DeliveryHelper.sol`,
-        proxyAdmin.address,
-        [addressResolver.address, feesManagerAddress, offChainVMOwner],
+        [
+          addressResolver.address,
+          feesManagerAddress,
+          offChainVMOwner,
+          BID_TIMEOUT,
+        ],
+        proxyFactory,
         deployUtils
       );
 
       deployUtils = await deployContractWithProxy(
         OffChainVMCoreContracts.AuctionManager,
         `contracts/apps/payload-delivery/app-gateway/AuctionManager.sol`,
-        proxyAdmin.address,
         [
           EVMX_CHAIN_ID,
           auctionEndDelaySeconds,
@@ -265,6 +272,7 @@ const deployWatcherVMContracts = async () => {
           deployUtils.addresses[OffChainVMCoreContracts.SignatureVerifier],
           offChainVMOwner,
         ],
+        proxyFactory,
         deployUtils
       );
 
@@ -346,8 +354,8 @@ async function updateContractSettings(
 const deployContractWithProxy = async (
   contractName: string,
   contractPath: string,
-  proxyAdmin: string,
   initParams: any[],
+  proxyFactory: Contract,
   deployUtils: DeployParams
 ): Promise<DeployParams> => {
   // Deploy implementation
@@ -367,16 +375,19 @@ const deployContractWithProxy = async (
     initializeFn,
     initParams
   );
+  if (deployUtils.addresses[contractName] !== undefined) return deployUtils;
 
   // Deploy transparent proxy
-  const proxy = await getOrDeploy(
-    contractName,
-    "TransparentUpgradeableProxy",
-    "lib/openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol",
-    [implementation.address, proxyAdmin, initData],
-    deployUtils
+  const tx = await proxyFactory.connect(deployUtils.signer).deployAndCall(
+    implementation.address,
+    offChainVMOwner,
+    initData
   );
-  deployUtils.addresses[contractName] = proxy.address;
+  const receipt = await tx.wait();
+  const proxyAddress = receipt.events?.find(
+    (e) => e.event === "Deployed"
+  )?.args?.proxy;
+  deployUtils.addresses[contractName] = proxyAddress;
 
   return deployUtils;
 };

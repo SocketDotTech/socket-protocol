@@ -9,7 +9,7 @@ import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Constants.sol";
 import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
-import "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+import "solady/utils/Initializable.sol";
 
 /// @title FeesManager
 /// @notice Contract for managing fees
@@ -99,7 +99,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
     /// @notice Initializer function to replace constructor
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the owner
-    function initialize(address addressResolver_, address owner_) public initializer {
+    function initialize(address addressResolver_, address owner_) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _claimOwner(owner_);
     }
@@ -181,7 +181,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
 
         Fees storage fees = asyncIdBlockedFees[asyncId_];
         TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees.feePoolChain][
-           fees.feePoolToken
+            fees.feePoolToken
         ];
 
         // if no transmitter assigned after auction, unblock fees
@@ -210,7 +210,9 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
         if (fees.amount == 0) revert NoFeesBlocked();
 
         address appGateway = _getCoreAppGateway(appGateway_);
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees.feePoolChain][fees.feePoolToken];
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees.feePoolChain][
+            fees.feePoolToken
+        ];
 
         // Unblock fees from deposit
         tokenBalance.blocked -= fees.amount;

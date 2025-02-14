@@ -19,7 +19,7 @@ import {FeesPlug} from "../contracts/apps/payload-delivery/FeesPlug.sol";
 import {ETH_ADDRESS} from "../contracts/common/Constants.sol";
 import {ResolvedPromises} from "../contracts/common/Structs.sol";
 
-import "openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import "solady/utils/ERC1967Factory.sol";
 
 contract SetupTest is Test {
     uint public c = 1;
@@ -60,10 +60,10 @@ contract SetupTest is Test {
     SocketContracts public optConfig;
 
     // Add new variables for proxy admin and implementation contracts
-    ProxyAdmin public proxyAdmin;
     WatcherPrecompile public watcherPrecompileImpl;
     AddressResolver public addressResolverImpl;
     SignatureVerifier public signatureVerifierImpl;
+    ERC1967Factory public proxyFactory;
 
     event Initialized(uint64 version);
 
@@ -103,13 +103,11 @@ contract SetupTest is Test {
     }
 
     function deployOffChainVMCore() internal {
-        // Deploy proxy admin
-        proxyAdmin = new ProxyAdmin(owner);
-
         // Deploy implementations
         signatureVerifierImpl = new SignatureVerifier();
         addressResolverImpl = new AddressResolver();
         watcherPrecompileImpl = new WatcherPrecompile();
+        proxyFactory = new ERC1967Factory();
 
         // Deploy and initialize proxies
         bytes memory signatureVerifierData = abi.encodeWithSelector(
@@ -119,9 +117,9 @@ contract SetupTest is Test {
 
         vm.expectEmit(true, true, true, false);
         emit Initialized(1);
-        TransparentUpgradeableProxy signatureVerifierProxy = new TransparentUpgradeableProxy(
+        address signatureVerifierProxy = proxyFactory.deployAndCall(
             address(signatureVerifierImpl),
-            address(proxyAdmin),
+            watcherEOA,
             signatureVerifierData
         );
 
@@ -131,9 +129,9 @@ contract SetupTest is Test {
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(1);
-        TransparentUpgradeableProxy addressResolverProxy = new TransparentUpgradeableProxy(
+        address addressResolverProxy = proxyFactory.deployAndCall(
             address(addressResolverImpl),
-            address(proxyAdmin),
+            watcherEOA,
             addressResolverData
         );
 
@@ -145,9 +143,9 @@ contract SetupTest is Test {
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(1);
-        TransparentUpgradeableProxy watcherPrecompileProxy = new TransparentUpgradeableProxy(
+        address watcherPrecompileProxy = proxyFactory.deployAndCall(
             address(watcherPrecompileImpl),
-            address(proxyAdmin),
+            watcherEOA,
             watcherPrecompileData
         );
 

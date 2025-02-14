@@ -10,10 +10,7 @@ interface IPromise {
         bytes memory returnData_
     ) external returns (bool success);
 
-    function markOnchainRevert(
-        bytes32 asyncId_,
-        bytes32 payloadId_
-    ) external;
+    function markOnchainRevert(bytes32 asyncId_, bytes32 payloadId_) external;
 
     function resolved() external view returns (bool);
 }

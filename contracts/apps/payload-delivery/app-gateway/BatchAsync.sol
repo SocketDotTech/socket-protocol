@@ -257,10 +257,7 @@ abstract contract BatchAsync is QueueAsync {
         emit BatchCancelled(asyncId_);
     }
 
-    function increaseFees(
-        bytes32 asyncId_,
-        uint256 newMaxFees_
-    ) external override {
+    function increaseFees(bytes32 asyncId_, uint256 newMaxFees_) external override {
         address appGateway = _getCoreAppGateway(msg.sender);
         if (appGateway != _payloadBatches[asyncId_].appGateway) {
             revert OnlyAppGateway();
