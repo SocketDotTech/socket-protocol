@@ -33,7 +33,9 @@ const updatedLines = lines.map((line) => {
       dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["FastSwitchboard"]
     }`;
   } else if (line.startsWith("ARBITRUM_FEES_PLUG=")) {
-    return `ARBITRUM_FEES_PLUG=${dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["FeesPlug"]}`;
+    return `ARBITRUM_FEES_PLUG=${
+      dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["FeesPlug"]
+    }`;
   }
   return line; // Return the line unchanged if it doesn't match any of the above
 });

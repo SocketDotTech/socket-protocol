@@ -25,9 +25,7 @@ export const getAppGateway = (plug: string, addresses: DeploymentAddresses) => {
         OffChainVMCoreContracts.DeliveryHelper
       ];
     case CORE_CONTRACTS.FeesPlug:
-      return addresses?.[EVMX_CHAIN_ID]?.[
-        OffChainVMCoreContracts.FeesManager
-      ];
+      return addresses?.[EVMX_CHAIN_ID]?.[OffChainVMCoreContracts.FeesManager];
     default:
       throw new Error(`Unknown plug: ${plug}`);
   }
