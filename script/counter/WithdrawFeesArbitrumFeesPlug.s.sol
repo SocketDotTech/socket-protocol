@@ -23,6 +23,7 @@ contract WithdrawFees is Script {
         console.log("Sender balance:", balance);
 
         uint256 appBalance = feesPlug.balanceOf(appGatewayAddress);
+        console.log("AppBalance:", appBalance);
         if (appBalance > 0) {
             appGateway.withdrawFeeTokens(421614, ETH_ADDRESS, appBalance, sender);
             console.log("Withdrew:", appBalance);
