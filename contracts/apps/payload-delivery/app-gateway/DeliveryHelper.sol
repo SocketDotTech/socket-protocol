@@ -25,7 +25,7 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         address feesManager_,
         address owner_,
         uint256 bidTimeout_
-    ) public initializer {
+    ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         feesManager = feesManager_;
         bidTimeout = bidTimeout_;

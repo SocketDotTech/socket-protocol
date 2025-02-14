@@ -59,7 +59,7 @@ contract AsyncPromise is IPromise, Initializable, AddressResolverUtil {
         address invoker_,
         address forwarder_,
         address addressResolver_
-    ) public initializer {
+    ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         localInvoker = invoker_;
         forwarder = forwarder_;

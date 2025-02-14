@@ -47,7 +47,7 @@ contract AuctionManager is AddressResolverUtil, OwnableTwoStep, IAuctionManager,
         address addressResolver_,
         SignatureVerifier signatureVerifier_,
         address owner_
-    ) public initializer {
+    ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _claimOwner(owner_);
         vmChainSlug = vmChainSlug_;

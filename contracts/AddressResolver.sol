@@ -48,7 +48,7 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
 
     /// @notice Initializer to replace constructor for upgradeable contracts
     /// @param owner_ The address of the contract owner
-    function initialize(address owner_) public initializer {
+    function initialize(address owner_) public reinitializer(1) {
         _claimOwner(owner_);
 
         forwarderImplementation = address(new Forwarder());

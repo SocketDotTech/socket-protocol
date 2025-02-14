@@ -5,6 +5,7 @@ import "./SetupTest.t.sol";
 import "../contracts/socket/utils/SignatureVerifier.sol";
 import "../contracts/AddressResolver.sol";
 import "../contracts/watcherPrecompile/WatcherPrecompile.sol";
+import "./MockWatcherPrecompileImpl.sol";
 
 contract MigrationTest is SetupTest {
     // ERC1967Factory emits this event with both proxy and implementation addresses
@@ -105,7 +106,7 @@ contract MigrationTest is SetupTest {
 
     function testUpgradeWithInitializationData() public {
         // Deploy new implementation
-        WatcherPrecompile newImpl = new WatcherPrecompile();
+        MockWatcherPrecompileImpl newImpl = new MockWatcherPrecompileImpl();
 
         // Store old implementation address for verification
         address oldImpl = getImplementation(address(watcherPrecompile));
@@ -113,7 +114,7 @@ contract MigrationTest is SetupTest {
         // Prepare initialization data with new maxLimit
         uint256 newMaxLimit = 2000;
         bytes memory initData = abi.encodeWithSelector(
-            WatcherPrecompile.initialize.selector,
+            MockWatcherPrecompileImpl.mockReinitialize.selector,
             watcherEOA,
             address(addressResolver),
             newMaxLimit
@@ -130,7 +131,11 @@ contract MigrationTest is SetupTest {
         address newImplAddr = getImplementation(address(watcherPrecompile));
         assertNotEq(oldImpl, newImplAddr, "Implementation should have changed");
         assertEq(newImplAddr, address(newImpl), "New implementation not set correctly");
-        assertEq(watcherPrecompile.maxLimit(), newMaxLimit, "MaxLimit should be updated");
+        assertEq(
+            watcherPrecompile.maxLimit(),
+            newMaxLimit * 10 ** 18,
+            "MaxLimit should be updated"
+        );
     }
 
     function testUnauthorizedUpgrade() public {
