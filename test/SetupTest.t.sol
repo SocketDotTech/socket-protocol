@@ -43,6 +43,7 @@ contract SetupTest is Test {
     uint256 public maxLimit = 1000;
 
     bytes public asyncPromiseBytecode = type(AsyncPromise).creationCode;
+    uint64 public version = 1;
 
     struct SocketContracts {
         uint32 chainSlug;
@@ -69,7 +70,7 @@ contract SetupTest is Test {
 
     function deploySocket(uint32 chainSlug_) internal returns (SocketContracts memory) {
         SignatureVerifier verifier = new SignatureVerifier();
-        verifier.initialize(owner);
+        verifier.initialize(owner, version);
 
         Hasher hasher = new Hasher(owner);
         Socket socket = new Socket(chainSlug_, address(hasher), address(verifier), owner, "test");
@@ -112,7 +113,8 @@ contract SetupTest is Test {
         // Deploy and initialize proxies
         bytes memory signatureVerifierData = abi.encodeWithSelector(
             SignatureVerifier.initialize.selector,
-            owner
+            owner,
+            version
         );
 
         vm.expectEmit(true, true, true, false);
@@ -125,7 +127,8 @@ contract SetupTest is Test {
 
         bytes memory addressResolverData = abi.encodeWithSelector(
             AddressResolver.initialize.selector,
-            watcherEOA
+            watcherEOA,
+            version
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(1);
@@ -139,7 +142,8 @@ contract SetupTest is Test {
             WatcherPrecompile.initialize.selector,
             watcherEOA,
             address(addressResolverProxy),
-            maxLimit
+            maxLimit,
+            version
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(1);

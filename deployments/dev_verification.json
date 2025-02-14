@@ -1,15 +1,6 @@
 {
   "421614": [
     [
-      "0x87cC19AedD434ebD3B74FfdC073CAeC7dC1E92EA",
-      "ContractFactoryPlug",
-      "contracts/apps/payload-delivery/ContractFactoryPlug.sol",
-      [
-        "0xa09217Cfc47F399C382E982778f6128685e13aD4",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
       "0x63d3F60Db6a7Eb2fa730F850dA247C73aD162656",
       "FeesPlug",
       "contracts/apps/payload-delivery/FeesPlug.sol",
@@ -17,58 +8,6 @@
         "0xa09217Cfc47F399C382E982778f6128685e13aD4",
         "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
       ]
-    ],
-    [
-      "0x5aA84ffE5eCCB5263d1AE6aEd5682EAb39Bc7036",
-      "FastSwitchboard",
-      "contracts/socket/switchboard/FastSwitchboard.sol",
-      [
-        421614,
-        "0xa09217Cfc47F399C382E982778f6128685e13aD4",
-        "0x5e5CF700c97BC8B3F6215D98E65f85D4A44d7D06",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0x80568677f2B092bd974657FE47Fc8531bfE5DBDC",
-      "SocketBatcher",
-      "contracts/socket/SocketBatcher.sol",
-      [
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "0xa09217Cfc47F399C382E982778f6128685e13aD4"
-      ]
-    ],
-    [
-      "0xa09217Cfc47F399C382E982778f6128685e13aD4",
-      "Socket",
-      "contracts/socket/Socket.sol",
-      [
-        421614,
-        "0x6A8e801B3299FeB96D0607A01a62Db8A9239Bdc0",
-        "0x5e5CF700c97BC8B3F6215D98E65f85D4A44d7D06",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "OFF_CHAIN_VM"
-      ]
-    ],
-    [
-      "0x6A8e801B3299FeB96D0607A01a62Db8A9239Bdc0",
-      "Hasher",
-      "contracts/socket/utils/Hasher.sol",
-      [
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0x5e5CF700c97BC8B3F6215D98E65f85D4A44d7D06",
-      "SignatureVerifier",
-      "contracts/socket/utils/SignatureVerifier.sol",
-      []
-    ],
-    [
-      "0xBB4Bca54f566fc04b7A7489fF00265a1cE38b929",
-      "SignatureVerifier",
-      "contracts/socket/utils/SignatureVerifier.sol",
-      []
     ]
   ],
   "7625382": [
@@ -182,9 +121,7 @@
       "0xd36C1Dcb65CB09b7fCFABf153D7cdd42312C782E",
       "Hasher",
       "contracts/socket/utils/Hasher.sol",
-      [
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
+      ["0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"]
     ],
     [
       "0x36AC527afA283c95EA7dD11c8E93225d9F139028",

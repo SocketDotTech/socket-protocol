@@ -23,6 +23,7 @@ contract Forwarder is IForwarder, Initializable {
 
     /// @notice caches the latest async promise address for the last call
     address public latestAsyncPromise;
+    uint64 public version;
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -35,8 +36,10 @@ contract Forwarder is IForwarder, Initializable {
     function initialize(
         uint32 chainSlug_,
         address onChainAddress_,
-        address addressResolver_
-    ) public reinitializer(1) {
+        address addressResolver_,
+        uint64 version_
+    ) public reinitializer(version_) {
+        version = version_;
         chainSlug = chainSlug_;
         onChainAddress = onChainAddress_;
         addressResolver = addressResolver_;

@@ -11,6 +11,7 @@ import "solady/utils/Initializable.sol";
 
 contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
     event CallBackReverted(bytes32 asyncId_, bytes32 payloadId_);
+    uint64 public version;
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -24,9 +25,11 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         address addressResolver_,
         address feesManager_,
         address owner_,
-        uint256 bidTimeout_
-    ) public reinitializer(1) {
+        uint256 bidTimeout_,
+        uint64 version_
+    ) public reinitializer(version_) {
         _setAddressResolver(addressResolver_);
+        version = version_;
         feesManager = feesManager_;
         bidTimeout = bidTimeout_;
         _claimOwner(owner_);

@@ -8,10 +8,7 @@ import {
 } from "@socket.tech/dl-core";
 import path from "path";
 import fs from "fs";
-import {
-  BASE_SEPOLIA_CHAIN_ID,
-  EVMX_CHAIN_ID,
-} from "../constants/constants";
+import { BASE_SEPOLIA_CHAIN_ID, EVMX_CHAIN_ID } from "../constants/constants";
 
 export type VerifyParams = {
   [chain in HardhatChainName]?: VerifyArgs[];
