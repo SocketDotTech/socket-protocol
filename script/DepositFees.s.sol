@@ -11,9 +11,9 @@ contract DepositFees is Script {
     function run() external {
         vm.createSelectFork(vm.envString("ARBITRUM_SEPOLIA_RPC"));
 
-        uint256 privateKey = vm.envUint("SPONSOR_KEY");
+        uint256 privateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(privateKey);
-        FeesPlug feesPlug = FeesPlug(payable(vm.envAddress("FEES_PLUG")));
+        FeesPlug feesPlug = FeesPlug(payable(vm.envAddress("ARBITRUM_FEES_PLUG")));
         address appGateway = vm.envAddress("APP_GATEWAY");
 
         address sender = vm.addr(privateKey);

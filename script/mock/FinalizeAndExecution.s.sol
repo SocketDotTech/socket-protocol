@@ -9,7 +9,7 @@ import {CallType, FinalizeParams, PayloadDetails} from "../../contracts/common/S
 contract InboxTest is Script {
     function run() external {
         string memory arbRpc = vm.envString("ARBITRUM_SEPOLIA_RPC");
-        string memory offChainRpc = vm.envString("OFF_CHAIN_VM_RPC");
+        string memory offChainRpc = vm.envString("EVMX_RPC");
         uint256 offChainDeployerPrivateKey = vm.envUint("PRIVATE_KEY");
         uint256 arbDeployerPrivateKey = vm.envUint("SOCKET_SIGNER_KEY");
 

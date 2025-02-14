@@ -14,7 +14,7 @@ contract DeployGateway is Script {
         address addressResolver = vm.envAddress("ADDRESS_RESOLVER");
         address auctionManager = vm.envAddress("AUCTION_MANAGER");
         address owner = vm.envAddress("SUPERTOKEN_OWNER");
-        string memory rpc = vm.envString("OFF_CHAIN_VM_RPC");
+        string memory rpc = vm.envString("EVMX_RPC");
         vm.createSelectFork(rpc);
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);

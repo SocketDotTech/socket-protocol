@@ -1,6 +1,6 @@
 import fs from "fs";
 import dev_addresses from "../../deployments/dev_addresses.json";
-import { OFF_CHAIN_VM_CHAIN_ID } from "../constants/constants";
+import { EVMX_CHAIN_ID } from "../constants/constants";
 import path from "path";
 import { ChainSlug } from "@socket.tech/dl-core";
 
@@ -14,7 +14,7 @@ const envContent = fs.readFileSync(envFilePath, encoding);
 const lines = envContent.split("\n");
 
 // Get the latest addresses from dev_addresses
-const latestAddresses = dev_addresses[OFF_CHAIN_VM_CHAIN_ID];
+const latestAddresses = dev_addresses[EVMX_CHAIN_ID];
 
 // Create a new array to hold the updated lines
 const updatedLines = lines.map((line) => {
@@ -24,16 +24,16 @@ const updatedLines = lines.map((line) => {
     return `WATCHER_PRECOMPILE=${latestAddresses["WatcherPrecompile"]}`;
   } else if (line.startsWith("AUCTION_MANAGER=")) {
     return `AUCTION_MANAGER=${latestAddresses["AuctionManager"]}`;
-  } else if (line.startsWith("FEES_MANAGER=")) {
-    return `FEES_MANAGER=${latestAddresses["FeesManager"]}`;
+  } else if (line.startsWith("ARBITRUM_FEES_PLUG=")) {
+    return `ARBITRUM_FEES_PLUG=${latestAddresses["FeesManager"]}`;
   } else if (line.startsWith("SOCKET=")) {
     return `SOCKET=${dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["Socket"]}`;
   } else if (line.startsWith("SWITCHBOARD=")) {
     return `SWITCHBOARD=${
       dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["FastSwitchboard"]
     }`;
-  } else if (line.startsWith("FEES_PLUG=")) {
-    return `FEES_PLUG=${dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["FeesPlug"]}`;
+  } else if (line.startsWith("ARBITRUM_FEES_PLUG=")) {
+    return `ARBITRUM_FEES_PLUG=${dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["FeesPlug"]}`;
   }
   return line; // Return the line unchanged if it doesn't match any of the above
 });
