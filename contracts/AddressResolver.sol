@@ -55,12 +55,8 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
         asyncPromiseImplementation = address(new AsyncPromise());
 
         // Deploy beacons with initial implementations
-        forwarderBeacon = _deployBeacon(forwarderImplementation);
-        asyncPromiseBeacon = _deployBeacon(asyncPromiseImplementation);
-    }
-
-    function _deployBeacon(address implementation_) internal returns (UpgradeableBeacon) {
-        return new UpgradeableBeacon(address(this), implementation_);
+        forwarderBeacon = new UpgradeableBeacon(address(this), forwarderImplementation);
+        asyncPromiseBeacon = new UpgradeableBeacon(address(this), asyncPromiseImplementation);
     }
 
     /// @notice Gets or deploys a Forwarder proxy contract
