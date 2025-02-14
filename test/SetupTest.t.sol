@@ -19,7 +19,7 @@ import {FeesPlug} from "../contracts/apps/payload-delivery/FeesPlug.sol";
 import {ETH_ADDRESS} from "../contracts/common/Constants.sol";
 import {ResolvedPromises} from "../contracts/common/Structs.sol";
 
-import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import "openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract SetupTest is Test {
     uint public c = 1;
