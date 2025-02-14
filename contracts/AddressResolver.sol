@@ -28,6 +28,7 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
     address[] internal _promises;
 
     uint256 public asyncPromiseCounter;
+    uint64 public version;
 
     // contracts to gateway map
     mapping(address => address) public override contractsToGateways;
@@ -48,7 +49,8 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
 
     /// @notice Initializer to replace constructor for upgradeable contracts
     /// @param owner_ The address of the contract owner
-    function initialize(address owner_) public reinitializer(1) {
+    function initialize(address owner_, uint64 version_) public reinitializer(version_) {
+        version = version_;
         _claimOwner(owner_);
 
         forwarderImplementation = address(new Forwarder());
@@ -98,7 +100,8 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
             Forwarder.initialize.selector,
             chainSlug_,
             chainContractAddress_,
-            address(this)
+            address(this),
+            version
         );
         salt = keccak256(constructorArgs);
     }
@@ -111,7 +114,8 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
             AsyncPromise.initialize.selector,
             invoker_,
             msg.sender,
-            address(this)
+            address(this),
+            version
         );
 
         salt = keccak256(abi.encodePacked(constructorArgs, asyncPromiseCounter));

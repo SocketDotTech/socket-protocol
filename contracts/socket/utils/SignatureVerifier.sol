@@ -14,6 +14,8 @@ import "solady/utils/Initializable.sol";
  * @dev This contract is modular component in socket to support different signing algorithms.
  */
 contract SignatureVerifier is ISignatureVerifier, AccessControl, Initializable {
+    uint64 public version;
+
     /*
      * @dev Error thrown when signature length is invalid
      */
@@ -23,7 +25,8 @@ contract SignatureVerifier is ISignatureVerifier, AccessControl, Initializable {
      * @notice initializes and grants RESCUE_ROLE to owner.
      * @param owner_ The address of the owner of the contract.
      */
-    function initialize(address owner_) public reinitializer(1) {
+    function initialize(address owner_, uint64 version_) public reinitializer(version_) {
+        version = version_;
         _claimOwner(owner_);
         _grantRole(RESCUE_ROLE, owner_);
     }

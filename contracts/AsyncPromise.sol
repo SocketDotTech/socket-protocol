@@ -37,6 +37,7 @@ contract AsyncPromise is IPromise, Initializable, AddressResolverUtil {
 
     /// @notice The callback data to be used when the promise is resolved.
     bytes public callbackData;
+    uint64 public version;
 
     /// @notice Error thrown when attempting to resolve an already resolved promise.
     error PromiseAlreadyResolved();
@@ -58,8 +59,10 @@ contract AsyncPromise is IPromise, Initializable, AddressResolverUtil {
     function initialize(
         address invoker_,
         address forwarder_,
-        address addressResolver_
-    ) public reinitializer(1) {
+        address addressResolver_,
+        uint64 version_
+    ) public reinitializer(version_) {
+        version = version_;
         _setAddressResolver(addressResolver_);
         localInvoker = invoker_;
         forwarder = forwarder_;
