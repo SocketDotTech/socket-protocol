@@ -137,8 +137,14 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
         address beacon_,
         bytes memory initData_
     ) internal returns (address) {
-        // Deploy beacon proxy with CREATE2
-        return LibClone.deployDeterministicERC1967BeaconProxy(beacon_, initData_, salt_);
+        // 1. Deploy proxy without initialization args
+        address proxy = LibClone.deployDeterministicERC1967BeaconProxy(beacon_, salt_);
+
+        // 2. Explicitly initialize after deployment
+        (bool success, ) = proxy.call(initData_);
+        require(success, "Initialization failed");
+
+        return proxy;
     }
 
     /// @notice Clears the list of promises
@@ -173,37 +179,25 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
         address chainContractAddress_,
         uint32 chainSlug_
     ) public view returns (address) {
-        (bytes32 salt, bytes memory initData) = _createForwarderParams(
-            chainContractAddress_,
-            chainSlug_
-        );
-        return _predictProxyAddress(salt, initData, address(forwarderBeacon));
+        (bytes32 salt, ) = _createForwarderParams(chainContractAddress_, chainSlug_);
+        return _predictProxyAddress(salt, address(forwarderBeacon));
     }
 
     /// @notice Gets the predicted address of an AsyncPromise proxy contract
     /// @param invoker_ The address of the invoker
     /// @return The predicted address of the AsyncPromise proxy contract
     function getAsyncPromiseAddress(address invoker_) public view returns (address) {
-        (bytes32 salt, bytes memory initData) = _createAsyncPromiseParams(invoker_);
-        return _predictProxyAddress(salt, initData, address(asyncPromiseBeacon));
+        (bytes32 salt, ) = _createAsyncPromiseParams(invoker_);
+        return _predictProxyAddress(salt, address(asyncPromiseBeacon));
     }
 
     /// @notice Predicts the address of a proxy contract
     /// @param salt_ The salt used for address prediction
-    /// @param initData_ The initialization data used for address prediction
+    /// @param beacon_ The beacon used for address prediction
     /// @return The predicted address of the proxy contract
-    function _predictProxyAddress(
-        bytes32 salt_,
-        bytes memory initData_,
-        address beacon_
-    ) internal view returns (address) {
+    function _predictProxyAddress(bytes32 salt_, address beacon_) internal view returns (address) {
         return
-            LibClone.predictDeterministicAddressERC1967IBeaconProxy(
-                beacon_,
-                initData_,
-                salt_,
-                address(this)
-            );
+            LibClone.predictDeterministicAddressERC1967BeaconProxy(beacon_, salt_, address(this));
     }
 
     function _setConfig(address appDeployer_, address newForwarder_) internal {
