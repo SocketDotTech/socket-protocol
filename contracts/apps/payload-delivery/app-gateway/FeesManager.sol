@@ -11,7 +11,6 @@ import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 import "solady/utils/Initializable.sol";
 
-
 /// @title FeesManager
 /// @notice Contract for managing fees
 contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initializable {

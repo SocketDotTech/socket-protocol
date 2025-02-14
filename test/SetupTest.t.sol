@@ -107,7 +107,6 @@ contract SetupTest is Test {
         signatureVerifierImpl = new SignatureVerifier();
         addressResolverImpl = new AddressResolver();
         watcherPrecompileImpl = new WatcherPrecompile();
-
         proxyFactory = new ERC1967Factory();
 
         // Deploy and initialize proxies

@@ -8,7 +8,6 @@ import "../utils/AccessControl.sol";
 import {RESCUE_ROLE} from "../utils/AccessRoles.sol";
 import "solady/utils/Initializable.sol";
 
-
 /**
  * @title Signature Verifier
  * @notice Verifies the signatures and returns the address of signer recovered from the input signature or digest.
