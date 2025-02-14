@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
-import {console} from "forge-std/Console.sol";
+import {console} from "forge-std/console.sol";
 import {SuperTokenLockableAppGateway} from "../../contracts/apps/super-token-lockable/SuperTokenLockableAppGateway.sol";
 import {SuperTokenLockableDeployer} from "../../contracts/apps/super-token-lockable/SuperTokenLockableDeployer.sol";
 import {SuperTokenLockable} from "../../contracts/apps/super-token-lockable/SuperTokenLockable.sol";
