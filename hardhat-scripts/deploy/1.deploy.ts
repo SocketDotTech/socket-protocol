@@ -375,6 +375,7 @@ const deployContractWithProxy = async (
     deployUtils
   );
   deployUtils.addresses[keyName] = implementation.address;
+  if (deployUtils.addresses[contractName] !== undefined) return deployUtils;
 
   // Create initialization data
   const initializeFn = implementation.interface.getFunction("initialize");
@@ -382,7 +383,6 @@ const deployContractWithProxy = async (
     initializeFn,
     initParams
   );
-  if (deployUtils.addresses[contractName] !== undefined) return deployUtils;
 
   // Deploy transparent proxy
   const tx = await proxyFactory
