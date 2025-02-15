@@ -97,6 +97,8 @@ async function main() {
         console.log("version variable not found");
       }
 
+      if (contractName === "AddressResolver") await verifyBeaconImplementation(contract, signer);
+
       if (
         currentImplAddress.toLowerCase() === newImplementation.toLowerCase()
       ) {
@@ -135,6 +137,11 @@ async function main() {
 
       version = await contract.version();
       console.log("Version on contract after upgrade:", version);
+
+      if (contractName === "AddressResolver") {
+        await verifyBeaconImplementation(contract, signer);
+      }
+
       console.log("Upgrade successful and verified");
     } catch (error) {
       console.error(`Error upgrading ${contractName}:`, error);
@@ -143,6 +150,33 @@ async function main() {
   }
 }
 
+async function verifyBeaconImplementation(contract: Contract, signer: Wallet) {
+  console.log("Verifying beacon implementations...");
+  const forwarderBeaconAddress = await contract.forwarderBeacon();
+  const forwarderImplementationAddress = await contract.forwarderImplementation();
+  const asyncPromiseBeaconAddress = await contract.asyncPromiseBeacon();
+  const asyncPromiseImplementationAddress = await contract.asyncPromiseImplementation();
+
+  const upgradeableBeaconAbi = [
+    "function implementation() view returns (address)",
+  ];
+
+  const forwarderBeacon = new ethers.Contract(forwarderBeaconAddress, upgradeableBeaconAbi);
+  const asyncPromiseBeacon = new ethers.Contract(asyncPromiseBeaconAddress, upgradeableBeaconAbi);
+
+  // Verify forwarder beacon implementation
+  const forwarderBeaconImplementation = await forwarderBeacon.connect(signer).implementation();
+  if (forwarderBeaconImplementation.toLowerCase() !== forwarderImplementationAddress.toLowerCase()) {
+    throw new Error("Forwarder beacon implementation mismatch");
+  }
+
+  // Verify async promise beacon implementation
+  const asyncPromiseBeaconImplementation = await asyncPromiseBeacon.connect(signer).implementation();
+  if (asyncPromiseBeaconImplementation.toLowerCase() !== asyncPromiseImplementationAddress.toLowerCase()) {
+    throw new Error("Async promise beacon implementation mismatch");
+  }
+
+}
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
 main()
