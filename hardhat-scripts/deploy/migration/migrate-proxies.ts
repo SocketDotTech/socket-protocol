@@ -2,7 +2,7 @@ import { ethers } from "hardhat";
 import { Contract, utils, Wallet } from "ethers";
 import * as fs from "fs";
 import * as path from "path";
-import { EVMX_CHAIN_ID } from "../../constants/constants";
+import { EVMX_CHAIN_ID, VERSION } from "../../constants/constants";
 import { getProviderFromChainSlug } from "../../constants";
 import { ChainSlug } from "@socket.tech/dl-core";
 
@@ -107,11 +107,10 @@ async function main() {
       // Upgrade proxy
       console.log("Upgrading proxy...");
 
-      version = 2;
       const initializeFn = contract.interface.getFunction("initialize");
       const initData = contract.interface.encodeFunctionData(
         initializeFn,
-        [version]
+        [VERSION]
       );
 
       const tx = await proxyFactory.upgradeAndCall(

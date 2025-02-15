@@ -36,10 +36,8 @@ contract Forwarder is IForwarder, Initializable {
     function initialize(
         uint32 chainSlug_,
         address onChainAddress_,
-        address addressResolver_,
-        uint64 version_
-    ) public reinitializer(version_) {
-        version = version_;
+        address addressResolver_
+    ) public initializer {
         chainSlug = chainSlug_;
         onChainAddress = onChainAddress_;
         addressResolver = addressResolver_;
