@@ -27,9 +27,9 @@ export const chainOverrides: {
     // gasPrice: 212_000_000_000,
   },
   [EVMX_CHAIN_ID as ChainSlug]: {
-    // type: 1,
-    gasLimit: 1_000_000_000,
-    // gasPrice: 212_000_000_000,
+    type: 0,
+    // gasLimit: 1_000_000_000,
+    gasPrice: 0,
   },
 };
 
