@@ -133,8 +133,8 @@ const config: HardhatUserConfig = {
         network: "offChainVM",
         chainId: EVMX_CHAIN_ID,
         urls: {
-          apiURL: "https://explorer-socket-composer-testnet.t.conduit.xyz/api",
-          browserURL: "https://explorer-socket-composer-testnet.t.conduit.xyz",
+          apiURL: "",
+          browserURL: "",
         },
       },
     ],

@@ -66,11 +66,12 @@ const main = async () => {
           );
           deployUtils.addresses[contractName] = signatureVerifier.address;
 
-          await updateContractSettings(
+          await initializeSigVerifier(
             signatureVerifier,
             "owner",
             "initialize",
             socketOwner,
+            [socketOwner, VERSION],
             deployUtils.signer
           );
 
@@ -328,6 +329,29 @@ const deployWatcherVMContracts = async () => {
     console.log("Error:", error);
   }
 };
+
+async function initializeSigVerifier(
+  contract: Contract,
+  getterMethod: string,
+  setterMethod: string,
+  requiredAddress: string,
+  initParams: any[],
+  signer: Signer
+) {
+  const currentValue = await contract.connect(signer)[getterMethod]();
+
+  if (currentValue.toLowerCase() !== requiredAddress.toLowerCase()) {
+    console.log({
+      setterMethod,
+      current: currentValue,
+      required: requiredAddress,
+    });
+    const tx = await contract.connect(signer)[setterMethod](...initParams);
+    console.log(`Setting ${getterMethod} for ${contract.address} to`, tx.hash);
+    await tx.wait();
+  }
+}
+
 
 async function updateContractSettings(
   contract: Contract,

@@ -1,66 +1,103 @@
 {
   "421614": [
     [
-      "0x63d3F60Db6a7Eb2fa730F850dA247C73aD162656",
+      "0x1dc20d27F06876cA74ee4e2E9a4724f06a4a5E54",
+      "ContractFactoryPlug",
+      "contracts/apps/payload-delivery/ContractFactoryPlug.sol",
+      [
+        "0x9B06e2Dae351ed8B1112C036e5c306E8fBe4C9c5",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
+      ]
+    ],
+    [
+      "0xb2B779ab8FC851bCE986d25B2824933B0Cd101d9",
       "FeesPlug",
       "contracts/apps/payload-delivery/FeesPlug.sol",
       [
-        "0xa09217Cfc47F399C382E982778f6128685e13aD4",
+        "0x9B06e2Dae351ed8B1112C036e5c306E8fBe4C9c5",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
+      ]
+    ],
+    [
+      "0xaFFfaD81e6DDE509Bd83Ab2024225b2FF537BeA7",
+      "FastSwitchboard",
+      "contracts/socket/switchboard/FastSwitchboard.sol",
+      [
+        421614,
+        "0x9B06e2Dae351ed8B1112C036e5c306E8fBe4C9c5",
+        "0xb6d39d1dB2cB14043182a008EfFC079A9C578208",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
+      ]
+    ],
+    [
+      "0xd627BFe7d2fCAC1147c996a6F2CAaB2E1e1bD344",
+      "SocketBatcher",
+      "contracts/socket/SocketBatcher.sol",
+      [
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
+        "0x9B06e2Dae351ed8B1112C036e5c306E8fBe4C9c5"
+      ]
+    ],
+    [
+      "0x9B06e2Dae351ed8B1112C036e5c306E8fBe4C9c5",
+      "Socket",
+      "contracts/socket/Socket.sol",
+      [
+        421614,
+        "0x49f24A72e738Fe86263Aa26696370972e049498B",
+        "0xb6d39d1dB2cB14043182a008EfFC079A9C578208",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
+        "EVMX"
+      ]
+    ],
+    [
+      "0x49f24A72e738Fe86263Aa26696370972e049498B",
+      "Hasher",
+      "contracts/socket/utils/Hasher.sol",
+      [
         "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
       ]
     ]
   ],
   "7625382": [
     [
-      "0x6B94BfF71631f21166946e80967774F3f45e9A0b",
+      "0x4C68058509d754Cc0dE474eBC20aE94e4787E704",
       "AuctionManager",
       "contracts/apps/payload-delivery/app-gateway/AuctionManager.sol",
       []
     ],
     [
-      "0xAEE7D460fD1d8c4be069443a65187BC50A0BA89A",
+      "0x3c9f5172feb0dDfC06176cE67B566EFbb01CCe98",
       "DeliveryHelper",
       "contracts/apps/payload-delivery/app-gateway/DeliveryHelper.sol",
       []
     ],
     [
-      "0x3Ee25f844976888B29A921443b34374d9eCC466d",
+      "0xF4D3BDe438416938217d4624c82AEbEb46CeD371",
       "FeesManager",
       "contracts/apps/payload-delivery/app-gateway/FeesManager.sol",
       []
     ],
     [
-      "0x345c85aCc495E6FeDCf52987BDc0636A12F8AEd7",
+      "0x8F18fC10a8b40b548C6F04Fb252481c783A9ace0",
       "WatcherPrecompile",
       "contracts/watcherPrecompile/WatcherPrecompile.sol",
       []
     ],
     [
-      "0xaAF245274e877795B01671602a753AafAc459297",
-      "ERC1967Factory",
-      "lib/solady/src/utils/ERC1967Factory.sol",
-      []
-    ],
-    [
-      "0x8AAE7259Fd08cb555076A384bc228c8B20BcC4a7",
-      "ERC1967Factory",
-      "lib/solady/src/utils/ERC1967Factory.sol",
-      []
-    ],
-    [
-      "0xBCF275473fdECEf5AFe22D1c771Cb79317be58dB",
+      "0x8662FC08dEC7c61Dd3432fAF45a5bC024BB60B00",
       "AddressResolver",
       "contracts/AddressResolver.sol",
       []
     ],
     [
-      "0xCd44A8068117d888fb44Eb4fDe49bc9B7085189E",
+      "0x3cf47Ad0F040dFF1208E649C8f8e23e6B5A08916",
       "SignatureVerifier",
       "contracts/socket/utils/SignatureVerifier.sol",
       []
     ],
     [
-      "0xa93B1119677f02445DAb5034841FC6C937340900",
+      "0xbBfb525ADc6eC38Ef0D4b807d327c2Dd1C286de1",
       "ERC1967Factory",
       "lib/solady/src/utils/ERC1967Factory.sol",
       []
@@ -68,63 +105,65 @@
   ],
   "11155420": [
     [
-      "0x0E0F673C9b34d08b99407F1947A10Fe73aa17928",
+      "0x0EE19F0D0e34Cdd2eb4F61E24DC837b0b7c34e69",
       "ContractFactoryPlug",
       "contracts/apps/payload-delivery/ContractFactoryPlug.sol",
       [
-        "0xB0e1D8536ed769860f344Cf795f2B4fAaa41F0C8",
+        "0x0BAAD473580c9F7Ca8b2758759aF3ce5E3154bC6",
         "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
       ]
     ],
     [
-      "0xc13eb89675c12efF5faf5bE9B4773F9ed9192107",
+      "0x7F5D263572469Fdf1875Cd858D557B45e9FC7f23",
       "FeesPlug",
       "contracts/apps/payload-delivery/FeesPlug.sol",
       [
-        "0xB0e1D8536ed769860f344Cf795f2B4fAaa41F0C8",
+        "0x0BAAD473580c9F7Ca8b2758759aF3ce5E3154bC6",
         "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
       ]
     ],
     [
-      "0x688cf2744cd66F00E34f8BbAd15C8fb2438D62be",
+      "0x70bfB36F8b8de7763F1D52d954225ae88F6Ed595",
       "FastSwitchboard",
       "contracts/socket/switchboard/FastSwitchboard.sol",
       [
         11155420,
-        "0xB0e1D8536ed769860f344Cf795f2B4fAaa41F0C8",
-        "0x36AC527afA283c95EA7dD11c8E93225d9F139028",
+        "0x0BAAD473580c9F7Ca8b2758759aF3ce5E3154bC6",
+        "0x0452225B52Ef6134499232CbBEDF05fD8cc38530",
         "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
       ]
     ],
     [
-      "0x5fef21aD7Dc13CB1b7Cb9EAD404e3EA38d153348",
+      "0xCf731f35EFd775F692fe24e650e75Fd64bBaD810",
       "SocketBatcher",
       "contracts/socket/SocketBatcher.sol",
       [
         "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "0xB0e1D8536ed769860f344Cf795f2B4fAaa41F0C8"
+        "0x0BAAD473580c9F7Ca8b2758759aF3ce5E3154bC6"
       ]
     ],
     [
-      "0xB0e1D8536ed769860f344Cf795f2B4fAaa41F0C8",
+      "0x0BAAD473580c9F7Ca8b2758759aF3ce5E3154bC6",
       "Socket",
       "contracts/socket/Socket.sol",
       [
         11155420,
-        "0xd36C1Dcb65CB09b7fCFABf153D7cdd42312C782E",
-        "0x36AC527afA283c95EA7dD11c8E93225d9F139028",
+        "0xe37D675646A6FEEC3E41A0FF9535E0E716f5cD89",
+        "0x0452225B52Ef6134499232CbBEDF05fD8cc38530",
         "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "OFF_CHAIN_VM"
+        "EVMX"
       ]
     ],
     [
-      "0xd36C1Dcb65CB09b7fCFABf153D7cdd42312C782E",
+      "0xe37D675646A6FEEC3E41A0FF9535E0E716f5cD89",
       "Hasher",
       "contracts/socket/utils/Hasher.sol",
-      ["0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"]
+      [
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
+      ]
     ],
     [
-      "0x36AC527afA283c95EA7dD11c8E93225d9F139028",
+      "0x0452225B52Ef6134499232CbBEDF05fD8cc38530",
       "SignatureVerifier",
       "contracts/socket/utils/SignatureVerifier.sol",
       []
