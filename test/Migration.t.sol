@@ -267,11 +267,11 @@ contract MigrationTest is SetupTest {
 
         vm.startPrank(unauthorizedUser);
         // Try upgrading forwarder beacon
-        vm.expectRevert(abi.encodeWithSignature("OnlyOwner()"));
+        vm.expectRevert(abi.encodeWithSelector(Ownable.Unauthorized.selector));
         addressResolver.setForwarderImplementation(address(newForwarderImpl));
 
         // Try upgrading async promise beacon
-        vm.expectRevert(abi.encodeWithSignature("OnlyOwner()"));
+        vm.expectRevert(abi.encodeWithSelector(Ownable.Unauthorized.selector));
         addressResolver.setAsyncPromiseImplementation(address(newAsyncPromiseImpl));
 
         vm.stopPrank();

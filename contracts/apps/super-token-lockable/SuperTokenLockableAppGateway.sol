@@ -3,9 +3,9 @@ pragma solidity ^0.8.21;
 
 import "../../base/AppGatewayBase.sol";
 import {ISuperToken} from "../../interfaces/ISuperToken.sol";
-import "../../utils/OwnableTwoStep.sol";
+import "solady/auth/Ownable.sol";
 
-contract SuperTokenLockableAppGateway is AppGatewayBase, OwnableTwoStep {
+contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
     uint256 public idCounter;
 
     event Bridged(bytes32 asyncId);
@@ -26,7 +26,7 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, OwnableTwoStep {
     ) AppGatewayBase(addressResolver_, auctionManager_) {
         addressResolver__.setContractsToGateways(deployerContract_);
         _setOverrides(fees_);
-        _claimOwner(msg.sender);
+        _initializeOwner(msg.sender);
     }
 
     function checkBalance(bytes memory data_, bytes memory returnData_) external onlyPromises {

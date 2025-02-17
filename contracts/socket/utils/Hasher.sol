@@ -20,7 +20,7 @@ contract Hasher is IHasher, AccessControl {
      * @param owner_ The address of the owner of the contract.
      */
     constructor(address owner_) {
-        _claimOwner(owner_);
+        _initializeOwner(owner_);
         _grantRole(RESCUE_ROLE, owner_);
     }
 

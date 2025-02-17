@@ -2,14 +2,14 @@
 pragma solidity ^0.8.0;
 
 import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
-import {OwnableTwoStep} from "../../../utils/OwnableTwoStep.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
 import {Bid, PayloadBatch, Fees, PayloadDetails, FinalizeParams} from "../../../common/Structs.sol";
 import {DISTRIBUTE_FEE, DEPLOY} from "../../../common/Constants.sol";
 import {PromisesNotResolved} from "../../../common/Errors.sol";
 import "./BatchAsync.sol";
 import "solady/utils/Initializable.sol";
 
-contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
+contract DeliveryHelper is BatchAsync, Ownable, Initializable {
     event CallBackReverted(bytes32 asyncId_, bytes32 payloadId_);
     uint64 public version;
 
@@ -32,7 +32,7 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         version = version_;
         feesManager = feesManager_;
         bidTimeout = bidTimeout_;
-        _claimOwner(owner_);
+        _initializeOwner(owner_);
     }
 
     function startBatchProcessing(

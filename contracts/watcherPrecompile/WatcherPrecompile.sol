@@ -103,7 +103,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         uint64 version_
     ) public reinitializer(version_) {
         _setAddressResolver(addressResolver_);
-        _claimOwner(owner_);
+        _initializeOwner(owner_);
         version = version_;
         maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
 

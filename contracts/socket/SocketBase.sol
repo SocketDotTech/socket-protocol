@@ -36,7 +36,7 @@ abstract contract SocketBase is SocketConfig {
         signatureVerifier__ = ISignatureVerifier(signatureVerifier_);
         chainSlug = chainSlug_;
         version = keccak256(bytes(version_));
-        _claimOwner(owner_);
+        _initializeOwner(owner_);
     }
 
     ////////////////////////////////////////////////////////

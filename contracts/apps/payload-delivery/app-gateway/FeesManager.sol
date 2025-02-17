@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {OwnableTwoStep} from "../../../utils/OwnableTwoStep.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
 import {SignatureVerifier} from "../../../socket/utils/SignatureVerifier.sol";
 import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
 import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, PayloadBatch} from "../../../common/Structs.sol";
@@ -13,7 +13,7 @@ import "solady/utils/Initializable.sol";
 
 /// @title FeesManager
 /// @notice Contract for managing fees
-contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initializable {
+contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializable {
     uint256 public feesCounter;
     mapping(uint32 => uint256) public feeCollectionGasLimit;
     uint64 public version;
@@ -107,7 +107,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
     ) public reinitializer(version_) {
         version = version_;
         _setAddressResolver(addressResolver_);
-        _claimOwner(owner_);
+        _initializeOwner(owner_);
     }
 
     /// @notice Returns available (unblocked) fees for a gateway

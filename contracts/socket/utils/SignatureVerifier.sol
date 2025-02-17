@@ -27,7 +27,7 @@ contract SignatureVerifier is ISignatureVerifier, AccessControl, Initializable {
      */
     function initialize(address owner_, uint64 version_) public reinitializer(version_) {
         version = version_;
-        _claimOwner(owner_);
+        _initializeOwner(owner_);
         _grantRole(RESCUE_ROLE, owner_);
     }
 

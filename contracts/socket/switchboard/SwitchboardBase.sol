@@ -42,6 +42,6 @@ abstract contract SwitchboardBase is ISwitchboard, AccessControl {
         chainSlug = chainSlug_;
         socket__ = socket_;
         signatureVerifier__ = signatureVerifier_;
-        _claimOwner(owner_);
+        _initializeOwner(owner_);
     }
 }

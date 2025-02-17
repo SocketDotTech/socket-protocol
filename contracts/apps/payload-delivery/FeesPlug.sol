@@ -3,11 +3,12 @@ pragma solidity ^0.8.21;
 
 import "solmate/utils/SafeTransferLib.sol";
 import "../../base/PlugBase.sol";
-import {OwnableTwoStep} from "../../utils/OwnableTwoStep.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
 import {ETH_ADDRESS} from "../../common/Constants.sol";
+
 /// @title FeesManager
 /// @notice Abstract contract for managing fees
-contract FeesPlug is PlugBase, OwnableTwoStep {
+contract FeesPlug is PlugBase, Ownable {
     mapping(address => uint256) public balanceOf;
     mapping(bytes32 => bool) public feesRedeemed;
 
@@ -30,7 +31,7 @@ contract FeesPlug is PlugBase, OwnableTwoStep {
     }
 
     constructor(address socket_, address owner_) PlugBase(socket_) {
-        _claimOwner(owner_);
+        _initializeOwner(owner_);
     }
 
     function distributeFee(

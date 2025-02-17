@@ -4,15 +4,15 @@ pragma solidity ^0.8.21;
 import "./interfaces/IAddressResolver.sol";
 import {Forwarder} from "./Forwarder.sol";
 import {AsyncPromise} from "./AsyncPromise.sol";
-import {OwnableTwoStep} from "./utils/OwnableTwoStep.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
 import {LibClone} from "solady/utils/LibClone.sol";
 import {UpgradeableBeacon} from "solady/utils/UpgradeableBeacon.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
 
 /// @title AddressResolver Contract
 /// @notice This contract is responsible for fetching latest core addresses and deploying Forwarder and AsyncPromise contracts.
-/// @dev Inherits the OwnableTwoStep contract and implements the IAddressResolver interface.
-contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
+/// @dev Inherits the Ownable contract and implements the IAddressResolver interface.
+contract AddressResolver is Ownable, IAddressResolver, Initializable {
     IWatcherPrecompile public override watcherPrecompile__;
     address public override deliveryHelper;
     address public override feesManager;
@@ -51,7 +51,7 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
     /// @param owner_ The address of the contract owner
     function initialize(address owner_, uint64 version_) public reinitializer(version_) {
         version = version_;
-        _claimOwner(owner_);
+        _initializeOwner(owner_);
 
         forwarderImplementation = address(new Forwarder());
         asyncPromiseImplementation = address(new AsyncPromise());
