@@ -16,8 +16,7 @@ import { auctionEndDelaySeconds, chains } from "./config";
 import {
   MAX_LIMIT,
   EVMX_CHAIN_ID,
-  BID_TIMEOUT,
-  VERSION,
+  BID_TIMEOUT
 } from "../constants/constants";
 import { CORE_CONTRACTS, OffChainVMCoreContracts } from "../../src";
 
@@ -71,7 +70,7 @@ const main = async () => {
             "owner",
             "initialize",
             socketOwner,
-            [socketOwner, VERSION],
+            [socketOwner],
             deployUtils.signer
           );
 
@@ -219,7 +218,7 @@ const deployWatcherVMContracts = async () => {
       deployUtils = await deployContractWithProxy(
         OffChainVMCoreContracts.SignatureVerifier,
         `contracts/socket/utils/SignatureVerifier.sol`,
-        [offChainVMOwner, VERSION],
+        [offChainVMOwner],
         proxyFactory,
         deployUtils
       );
@@ -227,7 +226,7 @@ const deployWatcherVMContracts = async () => {
       deployUtils = await deployContractWithProxy(
         OffChainVMCoreContracts.AddressResolver,
         `contracts/AddressResolver.sol`,
-        [offChainVMOwner, VERSION],
+        [offChainVMOwner],
         proxyFactory,
         deployUtils
       );
@@ -240,7 +239,7 @@ const deployWatcherVMContracts = async () => {
       deployUtils = await deployContractWithProxy(
         OffChainVMCoreContracts.WatcherPrecompile,
         `contracts/watcherPrecompile/WatcherPrecompile.sol`,
-        [offChainVMOwner, addressResolver.address, MAX_LIMIT, VERSION],
+        [offChainVMOwner, addressResolver.address, MAX_LIMIT],
         proxyFactory,
         deployUtils
       );
@@ -248,7 +247,7 @@ const deployWatcherVMContracts = async () => {
       deployUtils = await deployContractWithProxy(
         OffChainVMCoreContracts.FeesManager,
         `contracts/apps/payload-delivery/app-gateway/FeesManager.sol`,
-        [addressResolver.address, offChainVMOwner, VERSION],
+        [addressResolver.address, offChainVMOwner],
         proxyFactory,
         deployUtils
       );
@@ -262,8 +261,7 @@ const deployWatcherVMContracts = async () => {
           addressResolver.address,
           feesManagerAddress,
           offChainVMOwner,
-          BID_TIMEOUT,
-          VERSION,
+          BID_TIMEOUT
         ],
         proxyFactory,
         deployUtils
@@ -277,8 +275,7 @@ const deployWatcherVMContracts = async () => {
           auctionEndDelaySeconds,
           addressResolver.address,
           deployUtils.addresses[OffChainVMCoreContracts.SignatureVerifier],
-          offChainVMOwner,
-          VERSION,
+          offChainVMOwner
         ],
         proxyFactory,
         deployUtils

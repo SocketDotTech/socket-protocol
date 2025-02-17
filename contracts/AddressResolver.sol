@@ -49,8 +49,8 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
 
     /// @notice Initializer to replace constructor for upgradeable contracts
     /// @param owner_ The address of the contract owner
-    function initialize(address owner_, uint64 version_) public reinitializer(version_) {
-        version = version_;
+    function initialize(address owner_) public reinitializer(1) {
+        version = 1;
         _initializeOwner(owner_);
 
         forwarderImplementation = address(new Forwarder());

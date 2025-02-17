@@ -47,12 +47,11 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
         uint256 auctionEndDelaySeconds_,
         address addressResolver_,
         SignatureVerifier signatureVerifier_,
-        address owner_,
-        uint64 version_
-    ) public reinitializer(version_) {
+        address owner_
+    ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
-        version = version_;
+        version = 1;
         vmChainSlug = vmChainSlug_;
         signatureVerifier = signatureVerifier_;
         auctionEndDelaySeconds = auctionEndDelaySeconds_;

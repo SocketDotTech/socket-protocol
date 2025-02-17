@@ -25,8 +25,8 @@ contract SignatureVerifier is ISignatureVerifier, AccessControl, Initializable {
      * @notice initializes and grants RESCUE_ROLE to owner.
      * @param owner_ The address of the owner of the contract.
      */
-    function initialize(address owner_, uint64 version_) public reinitializer(version_) {
-        version = version_;
+    function initialize(address owner_) public reinitializer(1) {
+        version = 1;
         _initializeOwner(owner_);
         _grantRole(RESCUE_ROLE, owner_);
     }

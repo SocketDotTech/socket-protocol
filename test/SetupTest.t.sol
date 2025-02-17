@@ -70,7 +70,7 @@ contract SetupTest is Test {
 
     function deploySocket(uint32 chainSlug_) internal returns (SocketContracts memory) {
         SignatureVerifier verifier = new SignatureVerifier();
-        verifier.initialize(owner, version);
+        verifier.initialize(owner);
 
         Hasher hasher = new Hasher(owner);
         Socket socket = new Socket(chainSlug_, address(hasher), address(verifier), owner, "test");
@@ -113,12 +113,11 @@ contract SetupTest is Test {
         // Deploy and initialize proxies
         bytes memory signatureVerifierData = abi.encodeWithSelector(
             SignatureVerifier.initialize.selector,
-            owner,
-            version
+            owner
         );
 
         vm.expectEmit(true, true, true, false);
-        emit Initialized(1);
+        emit Initialized(version);
         address signatureVerifierProxy = proxyFactory.deployAndCall(
             address(signatureVerifierImpl),
             watcherEOA,
@@ -127,11 +126,10 @@ contract SetupTest is Test {
 
         bytes memory addressResolverData = abi.encodeWithSelector(
             AddressResolver.initialize.selector,
-            watcherEOA,
-            version
+            watcherEOA
         );
         vm.expectEmit(true, true, true, false);
-        emit Initialized(1);
+        emit Initialized(version);
         address addressResolverProxy = proxyFactory.deployAndCall(
             address(addressResolverImpl),
             watcherEOA,
@@ -142,11 +140,10 @@ contract SetupTest is Test {
             WatcherPrecompile.initialize.selector,
             watcherEOA,
             address(addressResolverProxy),
-            maxLimit,
-            version
+            maxLimit
         );
         vm.expectEmit(true, true, true, false);
-        emit Initialized(1);
+        emit Initialized(version);
         address watcherPrecompileProxy = proxyFactory.deployAndCall(
             address(watcherPrecompileImpl),
             watcherEOA,

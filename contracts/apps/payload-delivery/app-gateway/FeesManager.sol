@@ -100,12 +100,8 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
     /// @notice Initializer function to replace constructor
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the owner
-    function initialize(
-        address addressResolver_,
-        address owner_,
-        uint64 version_
-    ) public reinitializer(version_) {
-        version = version_;
+    function initialize(address addressResolver_, address owner_) public reinitializer(1) {
+        version = 1;
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
     }

@@ -25,11 +25,10 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
         address addressResolver_,
         address feesManager_,
         address owner_,
-        uint256 bidTimeout_,
-        uint64 version_
-    ) public reinitializer(version_) {
+        uint256 bidTimeout_
+    ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
-        version = version_;
+        version = 1;
         feesManager = feesManager_;
         bidTimeout = bidTimeout_;
         _initializeOwner(owner_);

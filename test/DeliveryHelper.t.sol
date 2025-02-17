@@ -49,12 +49,11 @@ contract DeliveryHelperTest is SetupTest {
         bytes memory feesManagerData = abi.encodeWithSelector(
             FeesManager.initialize.selector,
             address(addressResolver),
-            owner,
-            version
+            owner
         );
 
         vm.expectEmit(true, true, true, false);
-        emit Initialized(1);
+        emit Initialized(version);
         address feesManagerProxy = proxyFactory.deployAndCall(
             address(feesManagerImpl),
             watcherEOA,
@@ -66,12 +65,11 @@ contract DeliveryHelperTest is SetupTest {
             address(addressResolver),
             address(feesManagerProxy),
             owner,
-            bidTimeout,
-            version
+            bidTimeout
         );
 
         vm.expectEmit(true, true, true, false);
-        emit Initialized(1);
+        emit Initialized(version);
         address deliveryHelperProxy = proxyFactory.deployAndCall(
             address(deliveryHelperImpl),
             watcherEOA,
@@ -88,7 +86,7 @@ contract DeliveryHelperTest is SetupTest {
             version
         );
         vm.expectEmit(true, true, true, false);
-        emit Initialized(1);
+        emit Initialized(version);
         address auctionManagerProxy = proxyFactory.deployAndCall(
             address(auctionManagerImpl),
             watcherEOA,
