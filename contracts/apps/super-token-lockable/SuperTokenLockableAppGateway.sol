@@ -25,7 +25,7 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, OwnableTwoStep {
         Fees memory fees_
     ) AppGatewayBase(addressResolver_, auctionManager_) {
         addressResolver__.setContractsToGateways(deployerContract_);
-        _setFees(fees_);
+        _setOverrides(fees_);
         _claimOwner(msg.sender);
     }
 
@@ -49,12 +49,12 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, OwnableTwoStep {
         asyncId_ = _getCurrentAsyncId();
         ISuperToken(order.srcToken).lockTokens(order.user, order.srcAmount);
 
-        _readCallOn();
+        _setOverrides(Read.ON);
         // goes to forwarder and deploys promise and stores it
         ISuperToken(order.srcToken).balanceOf(order.user);
         IPromise(order.srcToken).then(this.checkBalance.selector, abi.encode(order, asyncId_));
 
-        _readCallOff();
+        _setOverrides(Read.OFF);
         ISuperToken(order.dstToken).mint(order.user, order.srcAmount);
         ISuperToken(order.srcToken).burn(order.user, order.srcAmount);
 

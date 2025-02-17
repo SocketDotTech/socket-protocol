@@ -27,7 +27,7 @@ contract SuperTokenAppGateway is AppGatewayBase, OwnableTwoStep {
 
         // sets the fees data like max fees, chain and token for all transfers
         // they can be updated for each transfer as well
-        _setFees(fees_);
+        _setOverrides(fees_);
         _claimOwner(msg.sender);
     }
 

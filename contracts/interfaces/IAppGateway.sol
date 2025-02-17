@@ -8,6 +8,8 @@ interface IAppGateway {
 
     function isCallSequential() external view returns (bool);
 
+    function gasLimit() external view returns (uint256);
+
     function onBatchComplete(bytes32 asyncId_, PayloadBatch memory payloadBatch_) external;
 
     function callFromInbox(

@@ -13,7 +13,7 @@ contract CronAppGateway is AppGatewayBase {
         Fees memory fees_
     ) AppGatewayBase(addressResolver_, auctionManager_) {
         addressResolver__.setContractsToGateways(deployerContract_);
-        _setFees(fees_);
+        _setOverrides(fees_);
     }
 
     function setTimeout(uint256 delayInSeconds_) public {

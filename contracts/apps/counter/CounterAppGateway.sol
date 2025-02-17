@@ -18,7 +18,7 @@ contract CounterAppGateway is AppGatewayBase {
         Fees memory fees_
     ) AppGatewayBase(addressResolver_, auctionManager_) {
         addressResolver__.setContractsToGateways(deployerContract_);
-        _setFees(fees_);
+        _setOverrides(fees_);
     }
 
     function incrementCounters(address[] memory instances_) public async {
@@ -32,15 +32,13 @@ contract CounterAppGateway is AppGatewayBase {
     function readCounters(address[] memory instances_) public async {
         // the increase function is called on given list of instances
         // this
-        _readCallOn();
-        _setIsCallSequential(false);
+        _setOverrides(Sequential.TRUE);
         for (uint256 i = 0; i < instances_.length; i++) {
             uint32 chainSlug = IForwarder(instances_[i]).getChainSlug();
             ICounter(instances_[i]).getCounter();
             IPromise(instances_[i]).then(this.setCounterValues.selector, abi.encode(chainSlug));
         }
-        _readCallOff();
-        _setIsCallSequential(true);
+        _setOverrides(Sequential.FALSE);
         ICounter(instances_[0]).increase();
     }
 
