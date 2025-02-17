@@ -49,8 +49,35 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         isCallSequential = true;
     }
 
+    /// @notice Creates a contract ID
+    /// @param contractName_ The contract name
+    /// @return bytes32 The contract ID
+    function _createContractId(string memory contractName_) internal pure returns (bytes32) {
+        return keccak256(abi.encode(contractName_));
+    }
+
+    /// @notice Gets the current async ID
+    /// @return bytes32 The current async ID
+    function _getCurrentAsyncId() internal view returns (bytes32) {
+        return deliveryHelper().getCurrentAsyncId();
+    }
+
+    /// @notice Sets the auction manager
+    /// @param auctionManager_ The auction manager
+    function _setAuctionManager(address auctionManager_) internal {
+        auctionManager = auctionManager_;
+    }
+
+    /// @notice Marks the promises as valid
+    function _markValidPromises() internal {
+        address[] memory promises = addressResolver__.getPromises();
+        for (uint256 i = 0; i < promises.length; i++) {
+            isValidPromise[promises[i]] = true;
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////// OVERRIDE HELPERS ///////////////////////////////////////////////////
+    ///////////////////////////////// TX OVERRIDE HELPERS ///////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// @notice Sets multiple overrides in one call
@@ -67,7 +94,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         isReadCall = isReadCall_;
         isCallSequential = isCallSequential_;
         gasLimit = gasLimit_;
-        _setFees(fees_);
+        fees = fees_;
     }
 
     /// @notice Sets isReadCall, fees and gasLimit overrides
@@ -103,35 +130,12 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @notice Sets fees overrides
     /// @param fees_ The fees configuration
     function _setOverrides(Fees memory fees_) internal {
-        _setFees(fees_);
+        fees = fees_;
     }
 
-    /// @notice Creates a contract ID
-    /// @param contractName_ The contract name
-    /// @return bytes32 The contract ID
-    function _createContractId(string memory contractName_) internal pure returns (bytes32) {
-        return keccak256(abi.encode(contractName_));
-    }
-
-    /// @notice Sets the auction manager
-    /// @param auctionManager_ The auction manager
-    function _setAuctionManager(address auctionManager_) internal {
-        auctionManager = auctionManager_;
-    }
-
-    /// @notice Marks the promises as valid
-    function _markValidPromises() internal {
-        address[] memory promises = addressResolver__.getPromises();
-        for (uint256 i = 0; i < promises.length; i++) {
-            isValidPromise[promises[i]] = true;
-        }
-    }
-
-    /// @notice Gets the current async ID
-    /// @return bytes32 The current async ID
-    function _getCurrentAsyncId() internal view returns (bytes32) {
-        return deliveryHelper().getCurrentAsyncId();
-    }
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////// ASYNC BATCH HELPERS /////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// @notice Reverts the transaction
     /// @param asyncId_ The async ID
@@ -160,7 +164,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////// OVERRIDE HOOKS /////////////////////////////////////////////////
+    ///////////////////////////////// HOOKS /////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// @notice Callback in pd promise to be called after all contracts are deployed

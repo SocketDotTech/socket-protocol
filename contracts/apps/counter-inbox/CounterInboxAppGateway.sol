@@ -14,7 +14,7 @@ contract CounterInboxAppGateway is AppGatewayBase {
         Fees memory fees_
     ) AppGatewayBase(addressResolver_, auctionManager_) {
         watcherPrecompile__().setIsValidInboxCaller(chainSlug_, address(counterInbox_), true);
-        _setFees(fees_);
+        _setOverrides(fees_);
     }
 
     function callFromInbox(

@@ -34,7 +34,7 @@ contract SuperTokenDeployer is AppDeployerBase, OwnableTwoStep {
                 params_.initialSupply_
             )
         );
-        _setFees(fees_);
+        _setOverrides(fees_);
     }
 
     function deployContracts(uint32 chainSlug_) external async {

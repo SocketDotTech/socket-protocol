@@ -15,7 +15,7 @@ contract CounterDeployer is AppDeployerBase, OwnableTwoStep {
         Fees memory fees_
     ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) {
         creationCodeWithArgs[counter] = abi.encodePacked(type(Counter).creationCode);
-        _setFees(fees_);
+        _setOverrides(fees_);
         _claimOwner(msg.sender);
     }
 
