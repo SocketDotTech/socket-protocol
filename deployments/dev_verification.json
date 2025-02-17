@@ -2,43 +2,43 @@
   "421614": [],
   "7625382": [
     [
-      "0x4C68058509d754Cc0dE474eBC20aE94e4787E704",
+      "0xb888e3a8F9cC8F0281796958B01862427417b0Ea",
       "AuctionManager",
       "contracts/apps/payload-delivery/app-gateway/AuctionManager.sol",
       []
     ],
     [
-      "0x3c9f5172feb0dDfC06176cE67B566EFbb01CCe98",
+      "0x5bA4C527883F7D9e12d71Da5Cd170f26eCF2F901",
       "DeliveryHelper",
       "contracts/apps/payload-delivery/app-gateway/DeliveryHelper.sol",
       []
     ],
     [
-      "0xF4D3BDe438416938217d4624c82AEbEb46CeD371",
+      "0x731f609cae8C9B6862B4c1D43dE29d4759f878F8",
       "FeesManager",
       "contracts/apps/payload-delivery/app-gateway/FeesManager.sol",
       []
     ],
     [
-      "0x8F18fC10a8b40b548C6F04Fb252481c783A9ace0",
+      "0x32D3c608405b9b037A574550a40477F8Ea1f8B5B",
       "WatcherPrecompile",
       "contracts/watcherPrecompile/WatcherPrecompile.sol",
       []
     ],
     [
-      "0x8662FC08dEC7c61Dd3432fAF45a5bC024BB60B00",
+      "0xE6C9cf66F57f6aF78585235E36E94007020e3746",
       "AddressResolver",
       "contracts/AddressResolver.sol",
       []
     ],
     [
-      "0x3cf47Ad0F040dFF1208E649C8f8e23e6B5A08916",
+      "0x70BA68CbDFc530E1AD62d9aFAf43a40B87D0730b",
       "SignatureVerifier",
       "contracts/socket/utils/SignatureVerifier.sol",
       []
     ],
     [
-      "0xbBfb525ADc6eC38Ef0D4b807d327c2Dd1C286de1",
+      "0x494660a4bDcafC43a5522B98117D678654c6D3d5",
       "ERC1967Factory",
       "lib/solady/src/utils/ERC1967Factory.sol",
       []
