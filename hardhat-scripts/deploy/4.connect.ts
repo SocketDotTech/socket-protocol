@@ -8,7 +8,7 @@ import { getInstance } from "./utils";
 import { chains } from "./config";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { EVMX_CHAIN_ID } from "../constants/constants";
-import { CORE_CONTRACTS, OffChainVMCoreContracts } from "../../src";
+import { CORE_CONTRACTS, EVMxCoreContracts } from "../../src";
 
 const plugs = [CORE_CONTRACTS.ContractFactoryPlug, CORE_CONTRACTS.FeesPlug];
 export type AppGatewayConfig = {
@@ -22,11 +22,11 @@ export const getAppGateway = (plug: string, addresses: DeploymentAddresses) => {
   switch (plug) {
     case CORE_CONTRACTS.ContractFactoryPlug:
       return addresses?.[EVMX_CHAIN_ID]?.[
-        OffChainVMCoreContracts.DeliveryHelper
+        EVMxCoreContracts.DeliveryHelper
       ];
     case CORE_CONTRACTS.FeesPlug:
       return addresses?.[EVMX_CHAIN_ID]?.[
-        OffChainVMCoreContracts.FeesManager
+        EVMxCoreContracts.FeesManager
       ];
     default:
       throw new Error(`Unknown plug: ${plug}`);
@@ -54,9 +54,9 @@ export const isConfigSetOnSocket = async (
   const plugConfigRegistered = await socket.getPlugConfig(plug.address);
   return (
     plugConfigRegistered.appGateway.toLowerCase() ===
-      appGateway?.toLowerCase() &&
+    appGateway?.toLowerCase() &&
     plugConfigRegistered.switchboard__.toLowerCase() ===
-      switchboard.toLowerCase()
+    switchboard.toLowerCase()
   );
 };
 
@@ -140,7 +140,7 @@ export const isConfigSetOnWatcherVM = async (
 // Configure plugs on the Watcher VM
 export const updateConfigWatcherVM = async () => {
   try {
-    console.log("Connecting plugs on OffChainVM");
+    console.log("Connecting plugs on EVMx");
     const addresses = dev_addresses as unknown as DeploymentAddresses;
     const appConfigs: AppGatewayConfig[] = [];
 
@@ -155,8 +155,8 @@ export const updateConfigWatcherVM = async () => {
     const watcherVMaddr = addresses[EVMX_CHAIN_ID]!;
     const watcher = (
       await getInstance(
-        OffChainVMCoreContracts.WatcherPrecompile,
-        watcherVMaddr[OffChainVMCoreContracts.WatcherPrecompile]
+        EVMxCoreContracts.WatcherPrecompile,
+        watcherVMaddr[EVMxCoreContracts.WatcherPrecompile]
       )
     ).connect(signer);
 
@@ -198,7 +198,7 @@ export const updateConfigWatcherVM = async () => {
     if (appConfigs.length > 0) {
       console.log({ appConfigs });
       const tx = await watcher.setAppGateways(appConfigs);
-      console.log(`Updating OffChainVM Config tx hash: ${tx.hash}`);
+      console.log(`Updating EVMx Config tx hash: ${tx.hash}`);
       await tx.wait();
     }
   } catch (error) {
