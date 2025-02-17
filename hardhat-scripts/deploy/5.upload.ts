@@ -2,10 +2,7 @@ import fs from "fs";
 import path from "path";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { config as dotenvConfig } from "dotenv";
-import {
-  BASE_SEPOLIA_CHAIN_ID,
-  EVMX_CHAIN_ID,
-} from "../constants/constants";
+import { BASE_SEPOLIA_CHAIN_ID, EVMX_CHAIN_ID } from "../constants/constants";
 import { ChainSlug } from "@socket.tech/dl-core";
 
 // import applicationGateway from "../../artifacts/abi/SuperTokenApp.json";
