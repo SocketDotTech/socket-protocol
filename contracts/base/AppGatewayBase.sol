@@ -20,6 +20,16 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     bytes public onCompleteData;
     bytes32 public sbType;
 
+    enum Read {
+        ON,
+        OFF
+    }
+
+    enum Sequential {
+        TRUE,
+        FALSE
+    }
+
     mapping(address => bool) public isValidPromise;
 
     /// @notice Modifier to treat functions async
@@ -86,13 +96,13 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @param gasLimit_ The gas limit
     /// @param isCallSequential_ The sequential call flag
     function _setOverrides(
-        bool isReadCall_,
-        bool isCallSequential_,
+        Read isReadCall_,
+        Sequential isCallSequential_,
         uint256 gasLimit_,
         Fees memory fees_
     ) internal {
-        isReadCall = isReadCall_;
-        isCallSequential = isCallSequential_;
+        isReadCall = isReadCall_ == Read.ON;
+        isCallSequential = isCallSequential_ == Sequential.TRUE;
         gasLimit = gasLimit_;
         fees = fees_;
     }
@@ -101,24 +111,34 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @param isReadCall_ The read call flag
     /// @param isCallSequential_ The sequential call flag
     /// @param gasLimit_ The gas limit
-    function _setOverrides(bool isReadCall_, bool isCallSequential_, uint256 gasLimit_) internal {
-        isReadCall = isReadCall_;
-        isCallSequential = isCallSequential_;
+    function _setOverrides(
+        Read isReadCall_,
+        Sequential isCallSequential_,
+        uint256 gasLimit_
+    ) internal {
+        isReadCall = isReadCall_ == Read.ON;
+        isCallSequential = isCallSequential_ == Sequential.TRUE;
         gasLimit = gasLimit_;
     }
 
     /// @notice Sets isReadCall and isCallSequential overrides
     /// @param isReadCall_ The read call flag
     /// @param isCallSequential_ The sequential call flag
-    function _setOverrides(bool isReadCall_, bool isCallSequential_) internal {
-        isReadCall = isReadCall_;
-        isCallSequential = isCallSequential_;
+    function _setOverrides(Read isReadCall_, Sequential isCallSequential_) internal {
+        isReadCall = isReadCall_ == Read.ON;
+        isCallSequential = isCallSequential_ == Sequential.TRUE;
+    }
+
+    /// @notice Sets isReadCall and gasLimit overrides
+    /// @param isCallSequential_ The sequential call flag
+    function _setOverrides(Sequential isCallSequential_) internal {
+        isCallSequential = isCallSequential_ == Sequential.TRUE;
     }
 
     /// @notice Sets isReadCall and gasLimit overrides
     /// @param isReadCall_ The read call flag
-    function _setOverrides(bool isReadCall_) internal {
-        isReadCall = isReadCall_;
+    function _setOverrides(Read isReadCall_) internal {
+        isReadCall = isReadCall_ == Read.ON;
     }
 
     /// @notice Sets gasLimit overrides
