@@ -352,7 +352,6 @@ async function initializeSigVerifier(
   }
 }
 
-
 async function updateContractSettings(
   contract: Contract,
   getterMethod: string,
