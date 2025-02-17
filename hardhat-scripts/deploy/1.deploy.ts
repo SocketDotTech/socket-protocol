@@ -19,7 +19,7 @@ import {
   BID_TIMEOUT,
   VERSION,
 } from "../constants/constants";
-import { CORE_CONTRACTS, OffChainVMCoreContracts } from "../../src";
+import { CORE_CONTRACTS, EVMxCoreContracts } from "../constants/protocolConstants";
 
 let offChainVMOwner: string;
 const main = async () => {
@@ -183,7 +183,7 @@ const deployWatcherVMContracts = async () => {
     };
     const chain = EVMX_CHAIN_ID;
     try {
-      console.log("Deploying OffChainVM contracts");
+      console.log("Deploying EVMx contracts");
       addresses = dev_addresses as unknown as DeploymentAddresses;
       let chainAddresses: ChainSocketAddresses = addresses[chain]
         ? (addresses[chain] as ChainSocketAddresses)
@@ -217,7 +217,7 @@ const deployWatcherVMContracts = async () => {
       deployUtils.addresses[contractName] = proxyFactory.address;
 
       deployUtils = await deployContractWithProxy(
-        OffChainVMCoreContracts.SignatureVerifier,
+        EVMxCoreContracts.SignatureVerifier,
         `contracts/socket/utils/SignatureVerifier.sol`,
         [offChainVMOwner, VERSION],
         proxyFactory,
@@ -225,7 +225,7 @@ const deployWatcherVMContracts = async () => {
       );
 
       deployUtils = await deployContractWithProxy(
-        OffChainVMCoreContracts.AddressResolver,
+        EVMxCoreContracts.AddressResolver,
         `contracts/AddressResolver.sol`,
         [offChainVMOwner, VERSION],
         proxyFactory,
@@ -233,12 +233,12 @@ const deployWatcherVMContracts = async () => {
       );
 
       const addressResolver = await ethers.getContractAt(
-        OffChainVMCoreContracts.AddressResolver,
-        deployUtils.addresses[OffChainVMCoreContracts.AddressResolver]
+        EVMxCoreContracts.AddressResolver,
+        deployUtils.addresses[EVMxCoreContracts.AddressResolver]
       );
 
       deployUtils = await deployContractWithProxy(
-        OffChainVMCoreContracts.WatcherPrecompile,
+        EVMxCoreContracts.WatcherPrecompile,
         `contracts/watcherPrecompile/WatcherPrecompile.sol`,
         [offChainVMOwner, addressResolver.address, MAX_LIMIT, VERSION],
         proxyFactory,
@@ -246,17 +246,17 @@ const deployWatcherVMContracts = async () => {
       );
 
       deployUtils = await deployContractWithProxy(
-        OffChainVMCoreContracts.FeesManager,
+        EVMxCoreContracts.FeesManager,
         `contracts/apps/payload-delivery/app-gateway/FeesManager.sol`,
         [addressResolver.address, offChainVMOwner, VERSION],
         proxyFactory,
         deployUtils
       );
       const feesManagerAddress =
-        deployUtils.addresses[OffChainVMCoreContracts.FeesManager];
+        deployUtils.addresses[EVMxCoreContracts.FeesManager];
 
       deployUtils = await deployContractWithProxy(
-        OffChainVMCoreContracts.DeliveryHelper,
+        EVMxCoreContracts.DeliveryHelper,
         `contracts/apps/payload-delivery/app-gateway/DeliveryHelper.sol`,
         [
           addressResolver.address,
@@ -270,13 +270,13 @@ const deployWatcherVMContracts = async () => {
       );
 
       deployUtils = await deployContractWithProxy(
-        OffChainVMCoreContracts.AuctionManager,
+        EVMxCoreContracts.AuctionManager,
         `contracts/apps/payload-delivery/app-gateway/AuctionManager.sol`,
         [
           EVMX_CHAIN_ID,
           auctionEndDelaySeconds,
           addressResolver.address,
-          deployUtils.addresses[OffChainVMCoreContracts.SignatureVerifier],
+          deployUtils.addresses[EVMxCoreContracts.SignatureVerifier],
           offChainVMOwner,
           VERSION,
         ],
@@ -288,7 +288,7 @@ const deployWatcherVMContracts = async () => {
         addressResolver,
         "deliveryHelper",
         "setDeliveryHelper",
-        deployUtils.addresses[OffChainVMCoreContracts.DeliveryHelper],
+        deployUtils.addresses[EVMxCoreContracts.DeliveryHelper],
         deployUtils.signer
       );
 
@@ -304,7 +304,7 @@ const deployWatcherVMContracts = async () => {
         addressResolver,
         "watcherPrecompile__",
         "setWatcherPrecompile",
-        deployUtils.addresses[OffChainVMCoreContracts.WatcherPrecompile],
+        deployUtils.addresses[EVMxCoreContracts.WatcherPrecompile],
         deployUtils.signer
       );
 
