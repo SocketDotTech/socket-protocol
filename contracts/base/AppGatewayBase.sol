@@ -14,6 +14,8 @@ import {InvalidPromise, FeesNotSet} from "../common/Errors.sol";
 abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin {
     bool public override isReadCall;
     bool public override isCallSequential;
+    uint256 public override gasLimit;
+
     address public auctionManager;
     bytes public onCompleteData;
     bytes32 public sbType;
@@ -47,8 +49,61 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         isCallSequential = true;
     }
 
-    function _setIsCallSequential(bool isCallSequential_) internal {
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////// OVERRIDE HELPERS ///////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Sets multiple overrides in one call
+    /// @param isReadCall_ The read call flag
+    /// @param fees_ The fees configuration
+    /// @param gasLimit_ The gas limit
+    /// @param isCallSequential_ The sequential call flag
+    function _setOverrides(
+        bool isReadCall_,
+        bool isCallSequential_,
+        uint256 gasLimit_,
+        Fees memory fees_
+    ) internal {
+        isReadCall = isReadCall_;
         isCallSequential = isCallSequential_;
+        gasLimit = gasLimit_;
+        _setFees(fees_);
+    }
+
+    /// @notice Sets isReadCall, fees and gasLimit overrides
+    /// @param isReadCall_ The read call flag
+    /// @param isCallSequential_ The sequential call flag
+    /// @param gasLimit_ The gas limit
+    function _setOverrides(bool isReadCall_, bool isCallSequential_, uint256 gasLimit_) internal {
+        isReadCall = isReadCall_;
+        isCallSequential = isCallSequential_;
+        gasLimit = gasLimit_;
+    }
+
+    /// @notice Sets isReadCall and isCallSequential overrides
+    /// @param isReadCall_ The read call flag
+    /// @param isCallSequential_ The sequential call flag
+    function _setOverrides(bool isReadCall_, bool isCallSequential_) internal {
+        isReadCall = isReadCall_;
+        isCallSequential = isCallSequential_;
+    }
+
+    /// @notice Sets isReadCall and gasLimit overrides
+    /// @param isReadCall_ The read call flag
+    function _setOverrides(bool isReadCall_) internal {
+        isReadCall = isReadCall_;
+    }
+
+    /// @notice Sets gasLimit overrides
+    /// @param gasLimit_ The gas limit
+    function _setOverrides(uint256 gasLimit_) internal {
+        gasLimit = gasLimit_;
+    }
+
+    /// @notice Sets fees overrides
+    /// @param fees_ The fees configuration
+    function _setOverrides(Fees memory fees_) internal {
+        _setFees(fees_);
     }
 
     /// @notice Creates a contract ID
@@ -62,16 +117,6 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @param auctionManager_ The auction manager
     function _setAuctionManager(address auctionManager_) internal {
         auctionManager = auctionManager_;
-    }
-
-    /// @notice Sets the read call flag
-    function _readCallOn() internal {
-        isReadCall = true;
-    }
-
-    /// @notice Turns off the read call flag
-    function _readCallOff() internal {
-        isReadCall = false;
     }
 
     /// @notice Marks the promises as valid
@@ -96,15 +141,9 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
 
     /// @notice increases the transaction fees
     /// @param asyncId_ The async ID
-    function increaseFees(bytes32 asyncId_, uint256 newMaxFees_) internal {
+    function _increaseFees(bytes32 asyncId_, uint256 newMaxFees_) internal {
         deliveryHelper().increaseFees(asyncId_, newMaxFees_);
     }
-
-    /// @notice hook to handle the revert in callbacks or onchain executions
-    /// @dev can be overridden by the app gateway to add custom logic
-    /// @param asyncId_ The async ID
-    /// @param payloadId_ The payload ID
-    function handleRevert(bytes32 asyncId_, bytes32 payloadId_) external override onlyPromises {}
 
     /// @notice Withdraws fee tokens
     /// @param chainSlug_ The chain slug
@@ -120,6 +159,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         deliveryHelper().withdrawTo(chainSlug_, token_, amount_, receiver_, auctionManager, fees);
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////// OVERRIDE HOOKS /////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
     /// @notice Callback in pd promise to be called after all contracts are deployed
     /// @param asyncId_ The async ID
     /// @param payloadBatch_ The payload batch
@@ -134,4 +177,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         bytes calldata payload_,
         bytes32 params_
     ) external virtual onlyWatcherPrecompile {}
+
+    /// @notice hook to handle the revert in callbacks or onchain executions
+    /// @dev can be overridden by the app gateway to add custom logic
+    /// @param asyncId_ The async ID
+    /// @param payloadId_ The payload ID
+    function handleRevert(bytes32 asyncId_, bytes32 payloadId_) external override onlyPromises {}
 }

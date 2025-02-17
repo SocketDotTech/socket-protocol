@@ -49,12 +49,12 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, OwnableTwoStep {
         asyncId_ = _getCurrentAsyncId();
         ISuperToken(order.srcToken).lockTokens(order.user, order.srcAmount);
 
-        _readCallOn();
+        _setOverrides(true);
         // goes to forwarder and deploys promise and stores it
         ISuperToken(order.srcToken).balanceOf(order.user);
         IPromise(order.srcToken).then(this.checkBalance.selector, abi.encode(order, asyncId_));
 
-        _readCallOff();
+        _setOverrides(false);
         ISuperToken(order.dstToken).mint(order.user, order.srcAmount);
         ISuperToken(order.srcToken).burn(order.user, order.srcAmount);
 
