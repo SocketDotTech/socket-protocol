@@ -133,8 +133,8 @@ const config: HardhatUserConfig = {
         network: "offChainVM",
         chainId: EVMX_CHAIN_ID,
         urls: {
-          apiURL: "https://explorer-socket-composer-testnet.t.conduit.xyz/api",
-          browserURL: "https://explorer-socket-composer-testnet.t.conduit.xyz",
+          apiURL: "",
+          browserURL: "",
         },
       },
     ],
@@ -162,6 +162,7 @@ const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.22",
     settings: {
+      evmVersion: "paris",
       optimizer: {
         enabled: true,
         runs: 999999,

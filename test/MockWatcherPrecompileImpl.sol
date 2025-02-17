@@ -18,8 +18,7 @@ contract MockWatcherPrecompileImpl is WatcherPrecompile {
 
         // limit per day
         maxLimit = maxLimit_ * 10 ** LIMIT_DECIMALS;
-        // limit per second  
+        // limit per second
         ratePerSecond = maxLimit / (24 * 60 * 60);
     }
 }
-

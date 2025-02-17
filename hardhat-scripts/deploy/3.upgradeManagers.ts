@@ -62,9 +62,7 @@ export const main = async () => {
 };
 
 async function setSwitchboard(sbAddress, chain, addresses) {
-  const providerInstance = getProviderFromChainSlug(
-    EVMX_CHAIN_ID as ChainSlug
-  );
+  const providerInstance = getProviderFromChainSlug(EVMX_CHAIN_ID as ChainSlug);
   const signer: Wallet = new ethers.Wallet(
     process.env.WATCHER_PRIVATE_KEY as string,
     providerInstance

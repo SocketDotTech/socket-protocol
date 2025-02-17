@@ -16,6 +16,7 @@ import "solady/utils/Initializable.sol";
 contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initializable {
     uint256 public feesCounter;
     mapping(uint32 => uint256) public feeCollectionGasLimit;
+    uint64 public version;
 
     /// @notice Struct containing fee amounts and status
     struct TokenBalance {
@@ -99,7 +100,12 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
     /// @notice Initializer function to replace constructor
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the owner
-    function initialize(address addressResolver_, address owner_) public reinitializer(1) {
+    function initialize(
+        address addressResolver_,
+        address owner_,
+        uint64 version_
+    ) public reinitializer(version_) {
+        version = version_;
         _setAddressResolver(addressResolver_);
         _claimOwner(owner_);
     }
@@ -152,7 +158,12 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
     /// @param fees_ The fees data struct
     /// @param asyncId_ The batch identifier
     /// @dev Only callable by delivery helper
-    function blockFees(address appGateway_, Fees memory fees_, bytes32 asyncId_) external {
+    function blockFees(
+        address appGateway_,
+        Fees memory fees_,
+        Bid memory winningBid_,
+        bytes32 asyncId_
+    ) external {
         // todo: only auction manager can call this
         address appGateway = _getCoreAppGateway(appGateway_);
         // Block fees
@@ -161,15 +172,15 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
             appGateway,
             fees_.feePoolToken
         );
-        if (availableFees < fees_.amount) revert InsufficientFeesAvailable();
+        if (availableFees < winningBid_.fee) revert InsufficientFeesAvailable();
 
         TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees_.feePoolChain][
             fees_.feePoolToken
         ];
-        tokenBalance.blocked += fees_.amount;
+        tokenBalance.blocked += winningBid_.fee;
 
         asyncIdBlockedFees[asyncId_] = fees_;
-        emit FeesBlocked(asyncId_, fees_.feePoolChain, fees_.feePoolToken, fees_.amount);
+        emit FeesBlocked(asyncId_, fees_.feePoolChain, fees_.feePoolToken, winningBid_.fee);
     }
 
     function updateTransmitterFees(

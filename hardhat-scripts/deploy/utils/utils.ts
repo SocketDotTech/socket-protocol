@@ -306,7 +306,7 @@ export const getAddresses = async (
   return deploymentAddresses[chainSlug];
 };
 
-export const createObj = function(
+export const createObj = function (
   obj: ChainSocketAddresses,
   keys: string[],
   value: any
