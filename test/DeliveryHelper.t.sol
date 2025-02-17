@@ -49,7 +49,8 @@ contract DeliveryHelperTest is SetupTest {
         bytes memory feesManagerData = abi.encodeWithSelector(
             FeesManager.initialize.selector,
             address(addressResolver),
-            owner
+            owner,
+            version
         );
 
         vm.expectEmit(true, true, true, false);
@@ -65,7 +66,8 @@ contract DeliveryHelperTest is SetupTest {
             address(addressResolver),
             address(feesManagerProxy),
             owner,
-            bidTimeout
+            bidTimeout,
+            version
         );
 
         vm.expectEmit(true, true, true, false);
@@ -82,7 +84,8 @@ contract DeliveryHelperTest is SetupTest {
             auctionEndDelaySeconds,
             address(addressResolver),
             signatureVerifier,
-            owner
+            owner,
+            version
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(1);
