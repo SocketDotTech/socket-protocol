@@ -15,7 +15,7 @@ import { chains } from "./config";
 import { getProviderFromChainSlug } from "../constants";
 import { Wallet } from "ethers";
 import { getInstance, storeAddresses } from "./utils";
-import { EVMxCoreContracts } from "../../src";
+import { EVMxCoreContracts } from "../constants/protocolConstants";
 import { EVMX_CHAIN_ID } from "../constants/constants";
 
 export const main = async () => {

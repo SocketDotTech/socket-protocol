@@ -14,7 +14,7 @@ import { ethers } from "hardhat";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { auctionEndDelaySeconds, chains } from "./config";
 import { MAX_LIMIT, EVMX_CHAIN_ID, BID_TIMEOUT } from "../constants/constants";
-import { CORE_CONTRACTS, EVMxCoreContracts } from "../../src";
+import { CORE_CONTRACTS, EVMxCoreContracts } from "../constants/protocolConstants";
 
 let offChainVMOwner: string;
 const main = async () => {

@@ -8,7 +8,7 @@ import { getInstance } from "./utils";
 import { chains } from "./config";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { EVMX_CHAIN_ID } from "../constants/constants";
-import { CORE_CONTRACTS, EVMxCoreContracts } from "../../src";
+import { CORE_CONTRACTS, EVMxCoreContracts } from "../constants/protocolConstants";
 
 const plugs = [CORE_CONTRACTS.ContractFactoryPlug, CORE_CONTRACTS.FeesPlug];
 export type AppGatewayConfig = {
