@@ -2,10 +2,10 @@
 pragma solidity ^0.8.21;
 
 import "solady/auth/Ownable.sol";
-import "../interfaces/ISocket.sol";
-import "../interfaces/ISwitchboard.sol";
-import "../libraries/RescueFundsLib.sol";
-import {ExecutePayloadParams} from "../common/Structs.sol";
+import "../../interfaces/ISocket.sol";
+import "../../interfaces/ISwitchboard.sol";
+import "../utils/RescueFundsLib.sol";
+import {ExecutePayloadParams} from "../../protocol/utils/common/Structs.sol";
 
 /**
  * @title SocketBatcher

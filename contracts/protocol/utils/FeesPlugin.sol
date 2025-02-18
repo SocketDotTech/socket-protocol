@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-import {Fees} from "../common/Structs.sol";
+import {Fees} from "../utils/common/Structs.sol";
 
 /// @title FeesPlugin
 /// @notice Abstract contract for managing fee configurations

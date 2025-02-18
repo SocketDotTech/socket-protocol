@@ -3,8 +3,8 @@ pragma solidity ^0.8.21;
 
 import "solmate/utils/SafeTransferLib.sol";
 import "solmate/tokens/ERC20.sol";
-import {ZeroAddress} from "../common/Errors.sol";
-import {ETH_ADDRESS} from "../common/Constants.sol";
+import {ZeroAddress} from "../utils/common/Errors.sol";
+import {ETH_ADDRESS} from "../utils/common/Constants.sol";
 
 /**
  * @title RescueFundsLib

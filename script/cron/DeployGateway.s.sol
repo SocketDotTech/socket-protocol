@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {CronAppGateway} from "../../contracts/apps/cron/CronAppGateway.sol";
-import {Fees} from "../../contracts/common/Structs.sol";
-import {ETH_ADDRESS} from "../../contracts/common/Constants.sol";
+import {Fees} from "../../contracts/protocol/utils/common/Structs.sol";
+import {ETH_ADDRESS} from "../../contracts/protocol/utils/common/Constants.sol";
 
 contract DeployGateway is Script {
     function run() external {

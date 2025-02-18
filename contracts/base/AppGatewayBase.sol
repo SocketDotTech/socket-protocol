@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.3;
 
-import "../utils/AddressResolverUtil.sol";
+import "../protocol/utils/AddressResolverUtil.sol";
 import "../interfaces/IDeliveryHelper.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
-import {Fees, Read, Parallel} from "../common/Structs.sol";
-import {FeesPlugin} from "../utils/FeesPlugin.sol";
-import {InvalidPromise, FeesNotSet} from "../common/Errors.sol";
+import {Fees, Read, Parallel} from "../protocol/utils/common/Structs.sol";
+import {FeesPlugin} from "../protocol/utils/FeesPlugin.sol";
+import {InvalidPromise, FeesNotSet} from "../protocol/utils/common/Errors.sol";
 
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway

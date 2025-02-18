@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../contracts/payload-delivery/app-gateway/DeliveryHelper.sol";
-import "../contracts/payload-delivery/app-gateway/FeesManager.sol";
-import "../contracts/payload-delivery/app-gateway/AuctionManager.sol";
+import "../contracts/protocol/payload-delivery/app-gateway/DeliveryHelper.sol";
+import "../contracts/protocol/payload-delivery/app-gateway/FeesManager.sol";
+import "../contracts/protocol/payload-delivery/app-gateway/AuctionManager.sol";
 
-import "../contracts/Forwarder.sol";
+import "../contracts/protocol/Forwarder.sol";
 import "../contracts/interfaces/IAppDeployer.sol";
 import "../contracts/interfaces/IMultiChainAppDeployer.sol";
 

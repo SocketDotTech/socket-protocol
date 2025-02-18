@@ -2,20 +2,20 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import "../contracts/common/Structs.sol";
-import "../contracts/common/Constants.sol";
-import "../contracts/watcherPrecompile/WatcherPrecompile.sol";
+import "../contracts/protocol/utils/common/Structs.sol";
+import "../contracts/protocol/utils/common/Constants.sol";
+import "../contracts/protocol/watcherPrecompile/WatcherPrecompile.sol";
 import "../contracts/interfaces/IForwarder.sol";
-import "../contracts/utils/AccessRoles.sol";
-import {Socket} from "../contracts/socket/Socket.sol";
-import "../contracts/socket/switchboard/FastSwitchboard.sol";
-import "../contracts/socket/SocketBatcher.sol";
-import "../contracts/AddressResolver.sol";
-import {ContractFactoryPlug} from "../contracts/payload-delivery/ContractFactoryPlug.sol";
-import {FeesPlug} from "../contracts/payload-delivery/FeesPlug.sol";
+import "../contracts/protocol/utils/common/AccessRoles.sol";
+import {Socket} from "../contracts/protocol/socket/Socket.sol";
+import "../contracts/protocol/socket/switchboard/FastSwitchboard.sol";
+import "../contracts/protocol/socket/SocketBatcher.sol";
+import "../contracts/protocol/AddressResolver.sol";
+import {ContractFactoryPlug} from "../contracts/protocol/payload-delivery/ContractFactoryPlug.sol";
+import {FeesPlug} from "../contracts/protocol/payload-delivery/FeesPlug.sol";
 
-import {ETH_ADDRESS} from "../contracts/common/Constants.sol";
-import {ResolvedPromises} from "../contracts/common/Structs.sol";
+import {ETH_ADDRESS} from "../contracts/protocol/utils/common/Constants.sol";
+import {ResolvedPromises} from "../contracts/protocol/utils/common/Structs.sol";
 
 import "solady/utils/ERC1967Factory.sol";
 
@@ -38,7 +38,7 @@ contract SetupTest is Test {
     uint256 public readPayloadIdCounter = 0;
     uint256 public timeoutPayloadIdCounter = 0;
 
-    uint256 public maxLimit = 1000;
+    uint256 public defaultLimit = 1000;
 
     bytes public asyncPromiseBytecode = type(AsyncPromise).creationCode;
     uint64 public version = 1;
@@ -118,7 +118,7 @@ contract SetupTest is Test {
             WatcherPrecompile.initialize.selector,
             watcherEOA,
             address(addressResolverProxy),
-            maxLimit
+            defaultLimit
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(version);

@@ -2,8 +2,8 @@
 pragma solidity ^0.8.21;
 
 import {AddressResolverUtil} from "./utils/AddressResolverUtil.sol";
-import {IPromise} from "./interfaces/IPromise.sol";
-import {IAppGateway} from "./interfaces/IAppGateway.sol";
+import {IPromise} from "../interfaces/IPromise.sol";
+import {IAppGateway} from "../interfaces/IAppGateway.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
 
 /// @notice The state of the async promise

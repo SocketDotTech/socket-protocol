@@ -2,10 +2,10 @@
 pragma solidity ^0.8.0;
 
 import "./SetupTest.t.sol";
-import "../contracts/AddressResolver.sol";
-import "../contracts/watcherPrecompile/WatcherPrecompile.sol";
-import "../contracts/Forwarder.sol";
-import "../contracts/AsyncPromise.sol";
+import "../contracts/protocol/AddressResolver.sol";
+import "../contracts/protocol/watcherPrecompile/WatcherPrecompile.sol";
+import "../contracts/protocol/Forwarder.sol";
+import "../contracts/protocol/AsyncPromise.sol";
 import "./MockWatcherPrecompileImpl.sol";
 
 contract MigrationTest is SetupTest {
@@ -100,7 +100,11 @@ contract MigrationTest is SetupTest {
             address(addressResolver),
             "AddressResolver should be preserved"
         );
-        assertEq(watcherPrecompile.maxLimit(), maxLimit * 10 ** 18, "MaxLimit should be preserved");
+        assertEq(
+            watcherPrecompile.defaultLimit(),
+            defaultLimit * 10 ** 18,
+            "DefaultLimit should be preserved"
+        );
     }
 
     function testUpgradeWithInitializationData() public {
@@ -110,13 +114,13 @@ contract MigrationTest is SetupTest {
         // Store old implementation address for verification
         address oldImpl = getImplementation(address(watcherPrecompile));
 
-        // Prepare initialization data with new maxLimit
-        uint256 newMaxLimit = 2000;
+        // Prepare initialization data with new defaultLimit
+        uint256 newDefaultLimit = 2000;
         bytes memory initData = abi.encodeWithSelector(
             MockWatcherPrecompileImpl.mockReinitialize.selector,
             watcherEOA,
             address(addressResolver),
-            newMaxLimit
+            newDefaultLimit
         );
 
         // Upgrade proxy with initialization data
@@ -131,9 +135,9 @@ contract MigrationTest is SetupTest {
         assertNotEq(oldImpl, newImplAddr, "Implementation should have changed");
         assertEq(newImplAddr, address(newImpl), "New implementation not set correctly");
         assertEq(
-            watcherPrecompile.maxLimit(),
-            newMaxLimit * 10 ** 18,
-            "MaxLimit should be updated"
+            watcherPrecompile.defaultLimit(),
+            newDefaultLimit * 10 ** 18,
+            "DefaultLimit should be updated"
         );
     }
 

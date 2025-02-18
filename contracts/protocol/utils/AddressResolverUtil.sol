@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import "../interfaces/IAddressResolver.sol";
-import "../interfaces/IDeliveryHelper.sol";
-import "../interfaces/IWatcherPrecompile.sol";
+import "../../interfaces/IAddressResolver.sol";
+import "../../interfaces/IDeliveryHelper.sol";
+import "../../interfaces/IWatcherPrecompile.sol";
 
 /// @title AddressResolverUtil
 /// @notice Utility contract for resolving system contract addresses
