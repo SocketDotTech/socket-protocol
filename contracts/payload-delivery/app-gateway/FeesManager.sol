@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {OwnableTwoStep} from "../../../utils/OwnableTwoStep.sol";
-import {SignatureVerifier} from "../../../socket/utils/SignatureVerifier.sol";
-import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
-import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, PayloadBatch, Parallel} from "../../../common/Structs.sol";
-import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
-import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Constants.sol";
-import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
-import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
+import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
+import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, PayloadBatch, Parallel} from "../../common/Structs.sol";
+import {IDeliveryHelper} from "../../interfaces/IDeliveryHelper.sol";
+import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../common/Constants.sol";
+import {IFeesPlug} from "../../interfaces/IFeesPlug.sol";
+import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 import "solady/utils/Initializable.sol";
 
 /// @title FeesManager
 /// @notice Contract for managing fees
-contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initializable {
+contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializable {
     uint256 public feesCounter;
     mapping(uint32 => uint256) public feeCollectionGasLimit;
     uint64 public version;
@@ -100,14 +99,10 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
     /// @notice Initializer function to replace constructor
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the owner
-    function initialize(
-        address addressResolver_,
-        address owner_,
-        uint64 version_
-    ) public reinitializer(version_) {
-        version = version_;
+    function initialize(address addressResolver_, address owner_) public reinitializer(1) {
+        version = 1;
         _setAddressResolver(addressResolver_);
-        _claimOwner(owner_);
+        _initializeOwner(owner_);
     }
 
     /// @notice Returns available (unblocked) fees for a gateway

@@ -1,6 +1,4 @@
 export enum CORE_CONTRACTS {
-  Hasher = "Hasher",
-  SignatureVerifier = "SignatureVerifier",
   Socket = "Socket",
   SocketBatcher = "SocketBatcher",
   FastSwitchboard = "FastSwitchboard",
@@ -8,8 +6,7 @@ export enum CORE_CONTRACTS {
   ContractFactoryPlug = "ContractFactoryPlug",
 }
 
-export enum EVMxCoreContracts {
-  SignatureVerifier = "SignatureVerifier",
+export enum OffChainVMCoreContracts {
   WatcherPrecompile = "WatcherPrecompile",
   AuctionManager = "AuctionManager",
   FeesManager = "FeesManager",

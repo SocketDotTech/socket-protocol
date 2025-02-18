@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {FeesPlug} from "../contracts/apps/payload-delivery/FeesPlug.sol";
+import {FeesPlug} from "../contracts/payload-delivery/FeesPlug.sol";
 import {Fees} from "../contracts/common/Structs.sol";
 import {ETH_ADDRESS} from "../contracts/common/Constants.sol";
 

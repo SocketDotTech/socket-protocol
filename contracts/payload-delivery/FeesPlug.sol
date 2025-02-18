@@ -2,12 +2,15 @@
 pragma solidity ^0.8.21;
 
 import "solmate/utils/SafeTransferLib.sol";
-import "../../base/PlugBase.sol";
-import {OwnableTwoStep} from "../../utils/OwnableTwoStep.sol";
-import {ETH_ADDRESS} from "../../common/Constants.sol";
+import "../base/PlugBase.sol";
+import "../utils/AccessControl.sol";
+import {RESCUE_ROLE} from "../utils/AccessRoles.sol";
+import "../libraries/RescueFundsLib.sol";
+import {ETH_ADDRESS} from "../common/Constants.sol";
+
 /// @title FeesManager
 /// @notice Abstract contract for managing fees
-contract FeesPlug is PlugBase, OwnableTwoStep {
+contract FeesPlug is PlugBase, AccessControl {
     mapping(address => uint256) public balanceOf;
     mapping(bytes32 => bool) public feesRedeemed;
 
@@ -30,7 +33,7 @@ contract FeesPlug is PlugBase, OwnableTwoStep {
     }
 
     constructor(address socket_, address owner_) PlugBase(socket_) {
-        _claimOwner(owner_);
+        _initializeOwner(owner_);
     }
 
     function distributeFee(
@@ -95,6 +98,21 @@ contract FeesPlug is PlugBase, OwnableTwoStep {
         address switchboard_
     ) external onlyOwner {
         _connectSocket(appGateway_, socket_, switchboard_);
+    }
+
+    /**
+     * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
+     * theoretically need this function but it is added for safety.
+     * @param token_ The address of the token contract.
+     * @param rescueTo_ The address where rescued tokens need to be sent.
+     * @param amount_ The amount of tokens to be rescued.
+     */
+    function rescueFunds(
+        address token_,
+        address rescueTo_,
+        uint256 amount_
+    ) external onlyRole(RESCUE_ROLE) {
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 
     fallback() external payable {}

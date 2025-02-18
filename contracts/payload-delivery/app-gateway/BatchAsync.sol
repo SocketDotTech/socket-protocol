@@ -3,14 +3,14 @@ pragma solidity ^0.8.21;
 
 import "./QueueAsync.sol";
 
-import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
-import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
-import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
-import {IAuctionManager} from "../../../interfaces/IAuctionManager.sol";
-import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
+import {IDeliveryHelper} from "../../interfaces/IDeliveryHelper.sol";
+import {IAppGateway} from "../../interfaces/IAppGateway.sol";
+import {IAddressResolver} from "../../interfaces/IAddressResolver.sol";
+import {IAuctionManager} from "../../interfaces/IAuctionManager.sol";
+import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 
-import {Bid, PayloadBatch, Fees, PayloadDetails} from "../../../common/Structs.sol";
-import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW, QUERY, FINALIZE} from "../../../common/Constants.sol";
+import {Bid, PayloadBatch, Fees, PayloadDetails} from "../../common/Structs.sol";
+import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW, QUERY, FINALIZE} from "../../common/Constants.sol";
 
 /// @title BatchAsync
 /// @notice Abstract contract for managing asynchronous payload batches
@@ -184,7 +184,7 @@ abstract contract BatchAsync is QueueAsync {
 
             if (payloadDetails_[i].callType == CallType.DEPLOY) {
                 // contract factory plug deploys new contracts
-                payloadDetails_[i].target = getPlugAddress(
+                payloadDetails_[i].target = getDeliveryHelperPlugAddress(
                     address(this),
                     payloadDetails_[i].chainSlug
                 );
@@ -278,7 +278,10 @@ abstract contract BatchAsync is QueueAsync {
     /// @notice Gets the payload delivery plug address
     /// @param chainSlug_ The chain identifier
     /// @return address The address of the payload delivery plug
-    function getPlugAddress(address appGateway_, uint32 chainSlug_) public view returns (address) {
+    function getDeliveryHelperPlugAddress(
+        address appGateway_,
+        uint32 chainSlug_
+    ) public view returns (address) {
         return watcherPrecompile__().appGatewayPlugs(appGateway_, chainSlug_);
     }
 

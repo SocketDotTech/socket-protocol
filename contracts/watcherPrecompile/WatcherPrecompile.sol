@@ -99,12 +99,11 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     function initialize(
         address owner_,
         address addressResolver_,
-        uint256 maxLimit_,
-        uint64 version_
-    ) public reinitializer(version_) {
+        uint256 maxLimit_
+    ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
-        _claimOwner(owner_);
-        version = version_;
+        _initializeOwner(owner_);
+        version = 1;
         maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
 
         LIMIT_DECIMALS = 18;

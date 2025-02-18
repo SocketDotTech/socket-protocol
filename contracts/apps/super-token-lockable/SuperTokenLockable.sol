@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 import "solmate/tokens/ERC20.sol";
-import {OwnableTwoStep} from "../../utils/OwnableTwoStep.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
 import {LimitHook} from "./LimitHook.sol";
 import "../../base/PlugBase.sol";
 
@@ -10,7 +10,7 @@ import "../../base/PlugBase.sol";
  * @title SuperToken
  * @notice An ERC20 contract which enables bridging a token to its sibling chains.
  */
-contract SuperTokenLockable is ERC20, OwnableTwoStep, PlugBase {
+contract SuperTokenLockable is ERC20, Ownable, PlugBase {
     LimitHook public limitHook__;
     mapping(address => uint256) public lockedTokens;
 
@@ -25,7 +25,7 @@ contract SuperTokenLockable is ERC20, OwnableTwoStep, PlugBase {
         uint256 initialSupply_
     ) ERC20(name_, symbol_, decimals_) PlugBase(msg.sender) {
         _mint(initialSupplyHolder_, initialSupply_);
-        _claimOwner(msg.sender);
+        _initializeOwner(msg.sender);
     }
 
     function lockTokens(address user_, uint256 amount_) external onlySocket {
@@ -64,7 +64,7 @@ contract SuperTokenLockable is ERC20, OwnableTwoStep, PlugBase {
         address socket_,
         address switchboard_
     ) external onlyOwner {
-        _claimOwner(socket_);
+        _initializeOwner(socket_);
         _connectSocket(appGateway_, socket_, switchboard_);
     }
 }

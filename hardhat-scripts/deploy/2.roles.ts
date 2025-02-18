@@ -16,8 +16,10 @@ import { Wallet } from "ethers";
 import { getInstance, getRoleHash } from "./utils";
 
 export const REQUIRED_ROLES = {
-  FastSwitchboard: ROLES.WATCHER_ROLE,
-  Socket: ROLES.GOVERNANCE_ROLE,
+  FastSwitchboard: [ROLES.WATCHER_ROLE, ROLES.RESCUE_ROLE],
+  Socket: [ROLES.GOVERNANCE_ROLE, ROLES.RESCUE_ROLE],
+  FeesPlug: [ROLES.RESCUE_ROLE],
+  ContractFactoryPlug: [ROLES.RESCUE_ROLE],
 };
 
 export const main = async () => {
@@ -37,47 +39,35 @@ export const main = async () => {
         providerInstance
       );
 
-      let socket = await getInstance(
-        CORE_CONTRACTS.Socket,
-        chainAddresses[CORE_CONTRACTS.Socket]!
-      );
-      socket = socket.connect(signer);
+      for (const [contractName, roleHash] of Object.entries(REQUIRED_ROLES)) {
+        if (!chainAddresses[contractName as keyof ChainSocketAddresses]) continue;
 
-      const hasGovRole = await socket.callStatic["hasRole(bytes32,address)"](
-        getRoleHash(REQUIRED_ROLES.Socket),
-        signer.address,
-        {
-          from: signer.address,
-        }
-      );
-
-      if (!hasGovRole) {
-        const tx = await socket.grantRole(
-          getRoleHash(REQUIRED_ROLES.Socket),
-          signer.address
+        let contract = await getInstance(
+          contractName as CORE_CONTRACTS,
+          chainAddresses[contractName as keyof ChainSocketAddresses]!
         );
-        console.log("granting gov role", chain, tx.hash);
-        await tx.wait();
-      }
+        contract = contract.connect(signer);
 
-      let sb = await getInstance(
-        CORE_CONTRACTS.FastSwitchboard,
-        chainAddresses[CORE_CONTRACTS.FastSwitchboard]!
-      );
-      sb = sb.connect(signer);
+        const targetAddress = contractName === CORE_CONTRACTS.FastSwitchboard ? watcher : signer.address;
 
-      const hasRole = await sb.callStatic["hasRole(bytes32,address)"](
-        getRoleHash(REQUIRED_ROLES.FastSwitchboard),
-        watcher,
-        {
-          from: signer.address,
+        const hasRole = await contract.callStatic["hasRole(bytes32,address)"](
+          getRoleHash(roleHash),
+          targetAddress,
+          {
+            from: signer.address,
+          }
+        );
+
+        if (!hasRole) {
+          let tx;
+          if (contractName === CORE_CONTRACTS.FastSwitchboard) {
+            tx = await contract.grantWatcherRole(targetAddress);
+          } else {
+            tx = await contract.grantRole(getRoleHash(roleHash), targetAddress);
+          }
+          console.log(`granting ${roleHash} role to ${targetAddress} for ${contractName}`, chain, tx.hash);
+          await tx.wait();
         }
-      );
-
-      if (!hasRole) {
-        const tx = await sb.grantWatcherRole(watcher);
-        console.log("granting role to watcher", chain, tx.hash);
-        await tx.wait();
       }
     }
   } catch (error) {

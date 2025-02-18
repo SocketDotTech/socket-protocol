@@ -3,9 +3,9 @@ pragma solidity ^0.8.21;
 
 import "./SuperToken.sol";
 import "../../base/AppDeployerBase.sol";
-import "../../utils/OwnableTwoStep.sol";
+import "solady/auth/Ownable.sol";
 
-contract SuperTokenDeployer is AppDeployerBase, OwnableTwoStep {
+contract SuperTokenDeployer is AppDeployerBase, Ownable {
     bytes32 public superToken = _createContractId("superToken");
     struct ConstructorParams {
         string name_;
@@ -23,7 +23,7 @@ contract SuperTokenDeployer is AppDeployerBase, OwnableTwoStep {
         ConstructorParams memory params_,
         Fees memory fees_
     ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) {
-        _claimOwner(owner_);
+        _initializeOwner(owner_);
         creationCodeWithArgs[superToken] = abi.encodePacked(
             type(SuperToken).creationCode,
             abi.encode(

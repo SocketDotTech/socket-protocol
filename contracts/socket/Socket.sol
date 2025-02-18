@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 import "../interfaces/IPlug.sol";
 import "./SocketBase.sol";
 import {PlugDisconnected, InvalidAppGateway} from "../common/Errors.sol";
+
 /**
  * @title SocketDst
  * @dev SocketDst is an abstract contract that inherits from SocketBase and
@@ -53,11 +54,9 @@ contract Socket is SocketBase {
 
     constructor(
         uint32 chainSlug_,
-        address hasher_,
-        address signatureVerifier_,
         address owner_,
         string memory version_
-    ) SocketBase(chainSlug_, hasher_, signatureVerifier_, owner_, version_) {}
+    ) SocketBase(chainSlug_, owner_, version_) {}
 
     ////////////////////////////////////////////////////////
     ////////////////////// OPERATIONS //////////////////////////
@@ -115,13 +114,13 @@ contract Socket is SocketBase {
 
         if (localSlug != chainSlug) revert InvalidSlug();
 
-        address transmitter = signatureVerifier__.recoverSigner(
+        address transmitter = _recoverSigner(
             keccak256(abi.encode(address(this), payloadId_)),
             transmitterSignature_
         );
 
         // create packed payload
-        bytes32 root = hasher__.packPayload(
+        bytes32 root = _packPayload(
             payloadId_,
             appGateway_,
             transmitter,

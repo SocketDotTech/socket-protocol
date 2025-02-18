@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../contracts/apps/payload-delivery/app-gateway/DeliveryHelper.sol";
-import "../contracts/apps/payload-delivery/app-gateway/FeesManager.sol";
-import "../contracts/apps/payload-delivery/app-gateway/AuctionManager.sol";
+import "../contracts/payload-delivery/app-gateway/DeliveryHelper.sol";
+import "../contracts/payload-delivery/app-gateway/FeesManager.sol";
+import "../contracts/payload-delivery/app-gateway/AuctionManager.sol";
 
 import "../contracts/Forwarder.sol";
 import "../contracts/interfaces/IAppDeployer.sol";
@@ -49,12 +49,11 @@ contract DeliveryHelperTest is SetupTest {
         bytes memory feesManagerData = abi.encodeWithSelector(
             FeesManager.initialize.selector,
             address(addressResolver),
-            owner,
-            version
+            owner
         );
 
         vm.expectEmit(true, true, true, false);
-        emit Initialized(1);
+        emit Initialized(version);
         address feesManagerProxy = proxyFactory.deployAndCall(
             address(feesManagerImpl),
             watcherEOA,
@@ -66,12 +65,11 @@ contract DeliveryHelperTest is SetupTest {
             address(addressResolver),
             address(feesManagerProxy),
             owner,
-            bidTimeout,
-            version
+            bidTimeout
         );
 
         vm.expectEmit(true, true, true, false);
-        emit Initialized(1);
+        emit Initialized(version);
         address deliveryHelperProxy = proxyFactory.deployAndCall(
             address(deliveryHelperImpl),
             watcherEOA,
@@ -83,12 +81,11 @@ contract DeliveryHelperTest is SetupTest {
             vmChainSlug,
             auctionEndDelaySeconds,
             address(addressResolver),
-            signatureVerifier,
             owner,
             version
         );
         vm.expectEmit(true, true, true, false);
-        emit Initialized(1);
+        emit Initialized(version);
         address auctionManagerProxy = proxyFactory.deployAndCall(
             address(auctionManagerImpl),
             watcherEOA,

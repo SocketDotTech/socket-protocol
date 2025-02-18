@@ -3,9 +3,9 @@ pragma solidity ^0.8.21;
 
 import "../../base/AppGatewayBase.sol";
 import "../../interfaces/ISuperToken.sol";
-import "../../utils/OwnableTwoStep.sol";
+import "solady/auth/Ownable.sol";
 
-contract SuperTokenAppGateway is AppGatewayBase, OwnableTwoStep {
+contract SuperTokenAppGateway is AppGatewayBase, Ownable {
     event Transferred(bytes32 asyncId);
 
     struct TransferOrder {
@@ -28,7 +28,7 @@ contract SuperTokenAppGateway is AppGatewayBase, OwnableTwoStep {
         // sets the fees data like max fees, chain and token for all transfers
         // they can be updated for each transfer as well
         _setOverrides(fees_);
-        _claimOwner(msg.sender);
+        _initializeOwner(msg.sender);
     }
 
     function transfer(bytes memory order_) external async {

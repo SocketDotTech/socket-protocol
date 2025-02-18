@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
-import {CallParams, Fees, PayloadDetails, CallType, Bid, PayloadBatch, Parallel} from "../../../common/Structs.sol";
-import {NotAuctionManager, InvalidPromise, InvalidIndex} from "../../../common/Errors.sol";
-import {AsyncPromise} from "../../../AsyncPromise.sol";
-import {IPromise} from "../../../interfaces/IPromise.sol";
-import {IAppDeployer} from "../../../interfaces/IAppDeployer.sol";
-import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
-import {IContractFactoryPlug} from "../../../interfaces/IContractFactoryPlug.sol";
-import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
+import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
+import {CallParams, Fees, PayloadDetails, CallType, Bid, PayloadBatch, Parallel} from "../../common/Structs.sol";
+import {NotAuctionManager, InvalidPromise, InvalidIndex} from "../../common/Errors.sol";
+import {AsyncPromise} from "../../AsyncPromise.sol";
+import {IPromise} from "../../interfaces/IPromise.sol";
+import {IAppDeployer} from "../../interfaces/IAppDeployer.sol";
+import {IAddressResolver} from "../../interfaces/IAddressResolver.sol";
+import {IContractFactoryPlug} from "../../interfaces/IContractFactoryPlug.sol";
+import {IDeliveryHelper} from "../../interfaces/IDeliveryHelper.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
 abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {

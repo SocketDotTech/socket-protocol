@@ -2,30 +2,6 @@
   "421614": [],
   "7625382": [
     [
-      "0x16F3caAF1Dd731A058B96FbA737b181D070803ee",
-      "DeliveryHelper",
-      "contracts/apps/payload-delivery/app-gateway/DeliveryHelper.sol",
-      []
-    ],
-    [
-      "0xA894Fa3dab8897ED038e2B15DBc8d61ccb25eEec",
-      "AuctionManager",
-      "contracts/apps/payload-delivery/app-gateway/AuctionManager.sol",
-      []
-    ],
-    [
-      "0xa495982D3402B98c3EBA3cdA1Be72495A510FC40",
-      "FeesManager",
-      "contracts/apps/payload-delivery/app-gateway/FeesManager.sol",
-      []
-    ],
-    [
-      "0xD9981f14e70825818ffd0B29C7057a1ca441Cf33",
-      "FeesManager",
-      "contracts/apps/payload-delivery/app-gateway/FeesManager.sol",
-      []
-    ],
-    [
       "0xb888e3a8F9cC8F0281796958B01862427417b0Ea",
       "AuctionManager",
       "contracts/apps/payload-delivery/app-gateway/AuctionManager.sol",
@@ -56,13 +32,7 @@
       []
     ],
     [
-      "0x70BA68CbDFc530E1AD62d9aFAf43a40B87D0730b",
-      "SignatureVerifier",
-      "contracts/socket/utils/SignatureVerifier.sol",
-      []
-    ],
-    [
-      "0x494660a4bDcafC43a5522B98117D678654c6D3d5",
+      "0xbBfb525ADc6eC38Ef0D4b807d327c2Dd1C286de1",
       "ERC1967Factory",
       "lib/solady/src/utils/ERC1967Factory.sol",
       []
