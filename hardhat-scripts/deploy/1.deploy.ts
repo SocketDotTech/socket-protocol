@@ -13,11 +13,7 @@ import { getProviderFromChainSlug } from "../constants";
 import { ethers } from "hardhat";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { auctionEndDelaySeconds, chains } from "./config";
-import {
-  MAX_LIMIT,
-  EVMX_CHAIN_ID,
-  BID_TIMEOUT
-} from "../constants/constants";
+import { MAX_LIMIT, EVMX_CHAIN_ID, BID_TIMEOUT } from "../constants/constants";
 import { CORE_CONTRACTS, OffChainVMCoreContracts } from "../../src";
 
 let offChainVMOwner: string;
@@ -55,36 +51,12 @@ const main = async () => {
             currentChainSlug: chain as ChainSlug,
           };
 
-          let contractName: string = CORE_CONTRACTS.SignatureVerifier;
-          const signatureVerifier: Contract = await getOrDeploy(
-            contractName,
-            contractName,
-            `contracts/socket/utils/${contractName}.sol`,
-            [],
-            deployUtils
-          );
-          deployUtils.addresses[contractName] = signatureVerifier.address;
-
-          await initializeSigVerifier(
-            signatureVerifier,
-            "owner",
-            "initialize",
-            socketOwner,
-            [socketOwner],
-            deployUtils.signer
-          );
-
-          contractName = CORE_CONTRACTS.Socket;
+          let contractName = CORE_CONTRACTS.Socket;
           const socket: Contract = await getOrDeploy(
             contractName,
             contractName,
             `contracts/socket/${contractName}.sol`,
-            [
-              chain as ChainSlug,
-              signatureVerifier.address,
-              socketOwner,
-              "EVMX",
-            ],
+            [chain as ChainSlug, socketOwner, "EVMX"],
             deployUtils
           );
           deployUtils.addresses[contractName] = socket.address;
@@ -104,12 +76,7 @@ const main = async () => {
             contractName,
             contractName,
             `contracts/socket/switchboard/${contractName}.sol`,
-            [
-              chain as ChainSlug,
-              socket.address,
-              signatureVerifier.address,
-              socketOwner,
-            ],
+            [chain as ChainSlug, socket.address, socketOwner],
             deployUtils
           );
           deployUtils.addresses[contractName] = sb.address;
@@ -205,14 +172,6 @@ const deployWatcherVMContracts = async () => {
       deployUtils.addresses[contractName] = proxyFactory.address;
 
       deployUtils = await deployContractWithProxy(
-        OffChainVMCoreContracts.SignatureVerifier,
-        `contracts/socket/utils/SignatureVerifier.sol`,
-        [offChainVMOwner],
-        proxyFactory,
-        deployUtils
-      );
-
-      deployUtils = await deployContractWithProxy(
         OffChainVMCoreContracts.AddressResolver,
         `contracts/AddressResolver.sol`,
         [offChainVMOwner],
@@ -250,7 +209,7 @@ const deployWatcherVMContracts = async () => {
           addressResolver.address,
           feesManagerAddress,
           offChainVMOwner,
-          BID_TIMEOUT
+          BID_TIMEOUT,
         ],
         proxyFactory,
         deployUtils
@@ -263,8 +222,7 @@ const deployWatcherVMContracts = async () => {
           EVMX_CHAIN_ID,
           auctionEndDelaySeconds,
           addressResolver.address,
-          deployUtils.addresses[OffChainVMCoreContracts.SignatureVerifier],
-          offChainVMOwner
+          offChainVMOwner,
         ],
         proxyFactory,
         deployUtils

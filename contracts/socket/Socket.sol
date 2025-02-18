@@ -54,10 +54,9 @@ contract Socket is SocketBase {
 
     constructor(
         uint32 chainSlug_,
-        address signatureVerifier_,
         address owner_,
         string memory version_
-    ) SocketBase(chainSlug_, signatureVerifier_, owner_, version_) {}
+    ) SocketBase(chainSlug_, owner_, version_) {}
 
     ////////////////////////////////////////////////////////
     ////////////////////// OPERATIONS //////////////////////////
@@ -115,7 +114,7 @@ contract Socket is SocketBase {
 
         if (localSlug != chainSlug) revert InvalidSlug();
 
-        address transmitter = signatureVerifier__.recoverSigner(
+        address transmitter = _recoverSigner(
             keccak256(abi.encode(address(this), payloadId_)),
             transmitterSignature_
         );

@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import "./SetupTest.t.sol";
-import "../contracts/socket/utils/SignatureVerifier.sol";
 import "../contracts/AddressResolver.sol";
 import "../contracts/watcherPrecompile/WatcherPrecompile.sol";
 import "../contracts/Forwarder.sol";
@@ -45,26 +44,6 @@ contract MigrationTest is SetupTest {
     function getBeacon(address proxy) internal view returns (address) {
         bytes32 value = vm.load(proxy, _BEACON_SLOT);
         return address(uint160(uint256(value)));
-    }
-
-    function testSignatureVerifierUpgrade() public {
-        // Deploy new implementation
-        SignatureVerifier newImpl = new SignatureVerifier();
-
-        // Store old implementation address
-        address oldImpl = getImplementation(address(signatureVerifier));
-
-        // Upgrade proxy to new implementation
-        vm.startPrank(watcherEOA);
-        vm.expectEmit(true, true, true, true, address(proxyFactory));
-        emit Upgraded(address(signatureVerifier), address(newImpl));
-        proxyFactory.upgradeAndCall(address(signatureVerifier), address(newImpl), "");
-        vm.stopPrank();
-
-        // Verify upgrade was successful
-        address newImplAddr = getImplementation(address(signatureVerifier));
-        assertNotEq(oldImpl, newImplAddr, "Implementation should have changed");
-        assertEq(newImplAddr, address(newImpl), "New implementation not set correctly");
     }
 
     function testAddressResolverUpgrade() public {
@@ -160,19 +139,19 @@ contract MigrationTest is SetupTest {
 
     function testUnauthorizedUpgrade() public {
         // Deploy new implementation
-        SignatureVerifier newImpl = new SignatureVerifier();
+        WatcherPrecompile newImpl = new WatcherPrecompile();
 
         // Try to upgrade from unauthorized account
         address unauthorizedUser = address(0xBEEF);
         vm.startPrank(unauthorizedUser);
         vm.expectRevert(UNAUTHORIZED_SELECTOR);
-        proxyFactory.upgradeAndCall(address(signatureVerifier), address(newImpl), "");
+        proxyFactory.upgradeAndCall(address(watcherPrecompile), address(newImpl), "");
         vm.stopPrank();
 
         // Verify implementation was not changed
         assertEq(
-            getImplementation(address(signatureVerifier)),
-            address(signatureVerifierImpl),
+            getImplementation(address(watcherPrecompile)),
+            address(watcherPrecompileImpl),
             "Implementation should not have changed"
         );
     }

@@ -2,14 +2,11 @@
 pragma solidity ^0.8.21;
 
 import "../../interfaces/ISwitchboard.sol";
-import "../../interfaces/ISignatureVerifier.sol";
 import "../../interfaces/ISocket.sol";
 import "../utils/AccessControl.sol";
+import {ECDSA} from "solady/utils/ECDSA.sol";
 
 abstract contract SwitchboardBase is ISwitchboard, AccessControl {
-    // signature verifier contract
-    ISignatureVerifier public immutable signatureVerifier__;
-
     ISocket public immutable socket__;
 
     // chain slug of deployed chain
@@ -31,17 +28,20 @@ abstract contract SwitchboardBase is ISwitchboard, AccessControl {
     /**
      * @dev Constructor of SwitchboardBase
      * @param chainSlug_ Chain slug of deployment chain
-     * @param signatureVerifier_ signatureVerifier_ contract
+     * @param socket_ socket_ contract
      */
-    constructor(
-        uint32 chainSlug_,
-        ISocket socket_,
-        ISignatureVerifier signatureVerifier_,
-        address owner_
-    ) {
+    constructor(uint32 chainSlug_, ISocket socket_, address owner_) {
         chainSlug = chainSlug_;
         socket__ = socket_;
-        signatureVerifier__ = signatureVerifier_;
         _initializeOwner(owner_);
+    }
+
+    function _recoverSigner(
+        bytes32 digest_,
+        bytes memory signature_
+    ) internal view returns (address signer) {
+        bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
+        // recovered signer is checked for the valid roles later
+        signer = ECDSA.recover(digest, signature_);
     }
 }

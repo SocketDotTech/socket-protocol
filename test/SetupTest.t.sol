@@ -8,7 +8,6 @@ import "../contracts/watcherPrecompile/WatcherPrecompile.sol";
 import "../contracts/interfaces/IForwarder.sol";
 import "../contracts/socket/utils/AccessRoles.sol";
 import {Socket} from "../contracts/socket/Socket.sol";
-import {SignatureVerifier} from "../contracts/socket/utils/SignatureVerifier.sol";
 import "../contracts/socket/switchboard/FastSwitchboard.sol";
 import "../contracts/socket/SocketBatcher.sol";
 import "../contracts/AddressResolver.sol";
@@ -55,25 +54,20 @@ contract SetupTest is Test {
 
     AddressResolver public addressResolver;
     WatcherPrecompile public watcherPrecompile;
-    SignatureVerifier public signatureVerifier;
     SocketContracts public arbConfig;
     SocketContracts public optConfig;
 
     // Add new variables for proxy admin and implementation contracts
     WatcherPrecompile public watcherPrecompileImpl;
     AddressResolver public addressResolverImpl;
-    SignatureVerifier public signatureVerifierImpl;
     ERC1967Factory public proxyFactory;
 
     event Initialized(uint64 version);
 
     function deploySocket(uint32 chainSlug_) internal returns (SocketContracts memory) {
-        SignatureVerifier verifier = new SignatureVerifier();
-        verifier.initialize(owner);
-
-        Socket socket = new Socket(chainSlug_, address(verifier), owner, "test");
+        Socket socket = new Socket(chainSlug_, owner, "test");
         SocketBatcher socketBatcher = new SocketBatcher(owner, socket);
-        FastSwitchboard switchboard = new FastSwitchboard(chainSlug_, socket, verifier, owner);
+        FastSwitchboard switchboard = new FastSwitchboard(chainSlug_, socket, owner);
 
         FeesPlug feesPlug = new FeesPlug(address(socket), owner);
         ContractFactoryPlug contractFactoryPlug = new ContractFactoryPlug(address(socket), owner);
@@ -103,25 +97,11 @@ contract SetupTest is Test {
 
     function deployOffChainVMCore() internal {
         // Deploy implementations
-        signatureVerifierImpl = new SignatureVerifier();
         addressResolverImpl = new AddressResolver();
         watcherPrecompileImpl = new WatcherPrecompile();
         proxyFactory = new ERC1967Factory();
 
         // Deploy and initialize proxies
-        bytes memory signatureVerifierData = abi.encodeWithSelector(
-            SignatureVerifier.initialize.selector,
-            owner
-        );
-
-        vm.expectEmit(true, true, true, false);
-        emit Initialized(version);
-        address signatureVerifierProxy = proxyFactory.deployAndCall(
-            address(signatureVerifierImpl),
-            watcherEOA,
-            signatureVerifierData
-        );
-
         bytes memory addressResolverData = abi.encodeWithSelector(
             AddressResolver.initialize.selector,
             watcherEOA
@@ -149,7 +129,6 @@ contract SetupTest is Test {
         );
 
         // Assign proxy addresses to public variables
-        signatureVerifier = SignatureVerifier(address(signatureVerifierProxy));
         addressResolver = AddressResolver(address(addressResolverProxy));
         watcherPrecompile = WatcherPrecompile(address(watcherPrecompileProxy));
 

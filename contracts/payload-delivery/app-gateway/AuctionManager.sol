@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Ownable} from "solady/auth/Ownable.sol";
-import {SignatureVerifier} from "../../socket/utils/SignatureVerifier.sol";
+import {ECDSA} from "solady/utils/ECDSA.sol";
 import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
 import {Fees, Bid, PayloadBatch} from "../../common/Structs.sol";
 import {IDeliveryHelper} from "../../interfaces/IDeliveryHelper.sol";
@@ -13,7 +13,6 @@ import "solady/utils/Initializable.sol";
 /// @title AuctionManager
 /// @notice Contract for managing auctions and placing bids
 contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initializable {
-    SignatureVerifier public signatureVerifier;
     uint32 public vmChainSlug;
     mapping(bytes32 => Bid) public winningBids;
     // asyncId => auction status
@@ -40,20 +39,17 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
     /// @param vmChainSlug_ The chain slug for the VM
     /// @param auctionEndDelaySeconds_ The delay in seconds before an auction can end
     /// @param addressResolver_ The address of the address resolver
-    /// @param signatureVerifier_ The address of the signature verifier
     /// @param owner_ The address of the contract owner
     function initialize(
         uint32 vmChainSlug_,
         uint256 auctionEndDelaySeconds_,
         address addressResolver_,
-        SignatureVerifier signatureVerifier_,
         address owner_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
         version = 1;
         vmChainSlug = vmChainSlug_;
-        signatureVerifier = signatureVerifier_;
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
     }
 
@@ -85,7 +81,7 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
     ) external {
         if (auctionClosed[asyncId_]) revert AuctionClosed();
 
-        address transmitter = signatureVerifier.recoverSigner(
+        address transmitter = _recoverSigner(
             keccak256(abi.encode(address(this), vmChainSlug, asyncId_, fee, extraData)),
             transmitterSignature
         );
@@ -161,5 +157,14 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
         IFeesManager(addressResolver__.feesManager()).unblockFees(asyncId_, batch.appGateway);
         winningBids[asyncId_] = Bid({fee: 0, transmitter: address(0), extraData: ""});
         auctionClosed[asyncId_] = false;
+    }
+
+    function _recoverSigner(
+        bytes32 digest_,
+        bytes memory signature_
+    ) internal view returns (address signer) {
+        bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
+        // recovered signer is checked for the valid roles later
+        signer = ECDSA.recover(digest, signature_);
     }
 }

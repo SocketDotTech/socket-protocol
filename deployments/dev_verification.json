@@ -32,12 +32,6 @@
       []
     ],
     [
-      "0x3cf47Ad0F040dFF1208E649C8f8e23e6B5A08916",
-      "SignatureVerifier",
-      "contracts/socket/utils/SignatureVerifier.sol",
-      []
-    ],
-    [
       "0xbBfb525ADc6eC38Ef0D4b807d327c2Dd1C286de1",
       "ERC1967Factory",
       "lib/solady/src/utils/ERC1967Factory.sol",

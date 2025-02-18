@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../interfaces/ISignatureVerifier.sol";
-
 import "../libraries/RescueFundsLib.sol";
 import "./SocketConfig.sol";
+import {ECDSA} from "solady/utils/ECDSA.sol";
 
 /**
  * @title SocketBase
@@ -23,24 +22,11 @@ abstract contract SocketBase is SocketConfig {
      * @param owner_ The address of the owner who has the initial admin role.
      * @param version_ The version string which is hashed and stored in socket.
      */
-    constructor(
-        uint32 chainSlug_,
-        address signatureVerifier_,
-        address owner_,
-        string memory version_
-    ) {
-        signatureVerifier__ = ISignatureVerifier(signatureVerifier_);
+    constructor(uint32 chainSlug_, address owner_, string memory version_) {
         chainSlug = chainSlug_;
         version = keccak256(bytes(version_));
         _initializeOwner(owner_);
     }
-
-    ////////////////////////////////////////////////////////
-    //////////// PERIPHERY CONTRACT CONNECTORS ////////////
-    ////////////////////////////////////////////////////////
-
-    // Signature Verifier contract
-    ISignatureVerifier public signatureVerifier__;
 
     ////////////////////////////////////////////////////////
     ////////////////////// ERRORS //////////////////////////
@@ -50,28 +36,6 @@ abstract contract SocketBase is SocketConfig {
      * @dev Error thrown when non-transmitter tries to execute
      */
     error InvalidTransmitter();
-
-    ////////////////////////////////////////////////////////
-    ////////////////////// EVENTS //////////////////////////
-    ////////////////////////////////////////////////////////
-    /**
-     * @notice An event that is emitted when a new signatureVerifier contract is set
-     * @param signatureVerifier address of new signatureVerifier contract
-     */
-    event SignatureVerifierSet(address signatureVerifier);
-
-    //////////////////////////////////////////////////
-    //////////// GOV Permissioned setters ////////////
-    //////////////////////////////////////////////////
-    /**
-     * @notice updates signatureVerifier__
-     * @dev Only governance can call this function
-     * @param signatureVerifier_ address of signatureVerifier
-     */
-    function setSignatureVerifier(address signatureVerifier_) external onlyRole(GOVERNANCE_ROLE) {
-        signatureVerifier__ = ISignatureVerifier(signatureVerifier_);
-        emit SignatureVerifierSet(signatureVerifier_);
-    }
 
     /**
      * @notice Packs the payload into a bytes32 hash
@@ -102,6 +66,15 @@ abstract contract SocketBase is SocketConfig {
                     payload_
                 )
             );
+    }
+
+    function _recoverSigner(
+        bytes32 digest_,
+        bytes memory signature_
+    ) internal view returns (address signer) {
+        bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
+        // recovered signer is checked for the valid roles later
+        signer = ECDSA.recover(digest, signature_);
     }
 
     //////////////////////////////////////////////

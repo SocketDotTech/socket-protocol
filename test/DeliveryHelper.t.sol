@@ -81,7 +81,6 @@ contract DeliveryHelperTest is SetupTest {
             vmChainSlug,
             auctionEndDelaySeconds,
             address(addressResolver),
-            signatureVerifier,
             owner,
             version
         );

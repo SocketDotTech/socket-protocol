@@ -38,7 +38,6 @@ type ConfigEntry = {
   confirmations: number;
   eventBlockRange: number;
   addresses?: {
-    SignatureVerifier: string;
     Socket: string;
     FastSwitchboard: string;
     SocketBatcher: string;

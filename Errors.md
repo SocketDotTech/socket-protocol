@@ -101,14 +101,6 @@
 | `InvalidIndex()`             | `0x63df8171` |
 | `FeesNotSet()`               | `0x2a831034` |
 
-## libraries/ECDSA.sol
-
-| Error                                  | Signature    |
-| -------------------------------------- | ------------ |
-| `ECDSAInvalidSignature()`              | `0xf645eedf` |
-| `ECDSAInvalidSignatureLength(uint256)` | `0xfce698f7` |
-| `ECDSAInvalidSignatureS(bytes32)`      | `0xd78bce0c` |
-
 ## libraries/RescueFundsLib.sol
 
 | Error                   | Signature    |
@@ -174,12 +166,6 @@
 | Error               | Signature    |
 | ------------------- | ------------ |
 | `NoPermit(bytes32)` | `0x962f6333` |
-
-## socket/utils/SignatureVerifier.sol
-
-| Error                | Signature    |
-| -------------------- | ------------ |
-| `InvalidSigLength()` | `0xd2453293` |
 
 ## utils/AddressResolverUtil.sol
 
