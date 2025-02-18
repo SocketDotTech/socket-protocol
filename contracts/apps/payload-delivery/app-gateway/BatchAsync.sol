@@ -91,7 +91,9 @@ abstract contract BatchAsync is QueueAsync {
         bytes32 asyncId = getCurrentAsyncId();
         asyncCounter++;
 
-        if (!IFeesManager(feesManager).isFeesEnough(msg.sender, fees_)) revert InsufficientFees();
+
+        if (!IFeesManager(addressResolver__.feesManager()).isFeesEnough(msg.sender, fees_))
+            revert InsufficientFees();
 
         // Handle initial read operations first
         uint256 readEndIndex = _processReadOperations(payloadDetails_, asyncId);
@@ -245,13 +247,16 @@ abstract contract BatchAsync is QueueAsync {
         _payloadBatches[asyncId_].isBatchCancelled = true;
 
         if (_payloadBatches[asyncId_].winningBid.transmitter != address(0)) {
-            IFeesManager(feesManager).unblockAndAssignFees(
+            IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
                 asyncId_,
                 _payloadBatches[asyncId_].winningBid.transmitter,
                 _payloadBatches[asyncId_].appGateway
             );
         } else {
-            IFeesManager(feesManager).unblockFees(asyncId_, _payloadBatches[asyncId_].appGateway);
+            IFeesManager(addressResolver__.feesManager()).unblockFees(
+                asyncId_,
+                _payloadBatches[asyncId_].appGateway
+            );
         }
 
         emit BatchCancelled(asyncId_);
@@ -298,7 +303,7 @@ abstract contract BatchAsync is QueueAsync {
         Fees memory fees_
     ) external {
         PayloadDetails[] memory payloadDetailsArray = new PayloadDetails[](1);
-        payloadDetailsArray[0] = IFeesManager(feesManager).getWithdrawToPayload(
+        payloadDetailsArray[0] = IFeesManager(addressResolver__.feesManager()).getWithdrawToPayload(
             msg.sender,
             chainSlug_,
             token_,

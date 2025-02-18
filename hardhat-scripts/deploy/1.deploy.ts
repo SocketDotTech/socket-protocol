@@ -19,6 +19,7 @@ import {
   BID_TIMEOUT,
   VERSION,
 } from "../constants/constants";
+import { getImplementationAddress } from "./migration/migrate-proxies";
 import { CORE_CONTRACTS, EVMxCoreContracts } from "../constants/protocolConstants";
 
 let offChainVMOwner: string;
@@ -255,16 +256,12 @@ const deployWatcherVMContracts = async () => {
       const feesManagerAddress =
         deployUtils.addresses[EVMxCoreContracts.FeesManager];
 
+      console.log("Deploying DeliveryHelper");
+
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.DeliveryHelper,
         `contracts/apps/payload-delivery/app-gateway/DeliveryHelper.sol`,
-        [
-          addressResolver.address,
-          feesManagerAddress,
-          offChainVMOwner,
-          BID_TIMEOUT,
-          VERSION,
-        ],
+        [addressResolver.address, offChainVMOwner, BID_TIMEOUT, VERSION],
         proxyFactory,
         deployUtils
       );
@@ -398,7 +395,31 @@ const deployContractWithProxy = async (
     deployUtils
   );
   deployUtils.addresses[keyName] = implementation.address;
-  if (deployUtils.addresses[contractName] !== undefined) return deployUtils;
+
+  if (deployUtils.addresses[contractName] !== undefined) {
+    const currentImplAddress = await getImplementationAddress(
+      deployUtils.addresses[contractName]
+    );
+    const newImplementation = implementation.address;
+
+    console.log("Current implementation:", currentImplAddress);
+    console.log("New implementation:", newImplementation);
+
+    if (currentImplAddress.toLowerCase() === newImplementation.toLowerCase())
+      return deployUtils;
+
+    console.log("Upgrading contract");
+
+    const tx = await proxyFactory
+      .connect(deployUtils.signer)
+      .upgrade(deployUtils.addresses[contractName], newImplementation);
+
+    console.log("Upgraded contract", tx.hash);
+
+    await tx.wait();
+
+    return deployUtils;
+  }
 
   // Create initialization data
   const initializeFn = implementation.interface.getFunction("initialize");

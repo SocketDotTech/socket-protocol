@@ -15,7 +15,6 @@ import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
     uint256 public saltCounter;
     uint256 public asyncCounter;
-    address public feesManager;
 
     uint256 public bidTimeout;
 
