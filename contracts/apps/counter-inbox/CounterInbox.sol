@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.7.0 <0.9.0;
 
-import "../../utils/OwnableTwoStep.sol";
+import "solady/auth/Ownable.sol";
 import "../../base/PlugBase.sol";
 
-contract CounterInbox is OwnableTwoStep, PlugBase {
+contract CounterInbox is Ownable, PlugBase {
     constructor() PlugBase(msg.sender) {
-        _claimOwner(msg.sender);
+        _initializeOwner(msg.sender);
     }
 
     function increaseOnGateway(uint256 value_) external returns (bytes32) {
@@ -14,7 +14,7 @@ contract CounterInbox is OwnableTwoStep, PlugBase {
     }
 
     function connectSocket(address appGateway_, address socket_, address switchboard_) external {
-        _claimOwner(socket_);
+        _initializeOwner(socket_);
         _connectSocket(appGateway_, socket_, switchboard_);
     }
 }

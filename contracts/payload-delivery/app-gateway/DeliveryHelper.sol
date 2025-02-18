@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
-import {OwnableTwoStep} from "../../../utils/OwnableTwoStep.sol";
-import {Bid, PayloadBatch, Fees, PayloadDetails, FinalizeParams} from "../../../common/Structs.sol";
-import {DISTRIBUTE_FEE, DEPLOY} from "../../../common/Constants.sol";
-import {PromisesNotResolved} from "../../../common/Errors.sol";
+import {IAppGateway} from "../../interfaces/IAppGateway.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
+import {Bid, PayloadBatch, Fees, PayloadDetails, FinalizeParams} from "../../common/Structs.sol";
+import {DISTRIBUTE_FEE, DEPLOY} from "../../common/Constants.sol";
+import {PromisesNotResolved} from "../../common/Errors.sol";
 import "./BatchAsync.sol";
 import "solady/utils/Initializable.sol";
 
-contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
+contract DeliveryHelper is BatchAsync, Ownable, Initializable {
     event CallBackReverted(bytes32 asyncId_, bytes32 payloadId_);
+    uint64 public version;
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -18,18 +19,16 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
 
     /// @notice Initializer function to replace constructor
     /// @param addressResolver_ The address resolver contract
-    /// @param feesManager_ The fees manager contract
     /// @param owner_ The owner address
     function initialize(
         address addressResolver_,
-        address feesManager_,
         address owner_,
         uint256 bidTimeout_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
-        feesManager = feesManager_;
+        version = 1;
         bidTimeout = bidTimeout_;
-        _claimOwner(owner_);
+        _initializeOwner(owner_);
     }
 
     function startBatchProcessing(
@@ -39,7 +38,7 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         _payloadBatches[asyncId_].winningBid = winningBid_;
 
         // update fees
-        IFeesManager(feesManager).updateTransmitterFees(
+        IFeesManager(addressResolver__.feesManager()).updateTransmitterFees(
             winningBid_,
             asyncId_,
             _payloadBatches[asyncId_].appGateway
@@ -89,7 +88,7 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
     }
 
     function _finishBatch(bytes32 asyncId_, PayloadBatch storage payloadBatch_) internal {
-        IFeesManager(feesManager).unblockAndAssignFees(
+        IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
             asyncId_,
             payloadBatch_.winningBid.transmitter,
             payloadBatch_.appGateway
@@ -118,7 +117,7 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         IPromise(batchPromise).then(this.callback.selector, abi.encode(asyncId_));
 
         // Handle batch processing based on type
-        if (!payloads[currentIndex].isSequential) {
+        if (payloads[currentIndex].isParallel == Parallel.ON) {
             _processParallelCalls(asyncId_, payloadBatch_, payloads, currentIndex, batchPromise);
         } else {
             _processSequentialCall(
@@ -178,7 +177,9 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         if (startIndex_ >= payloads_.length) revert InvalidIndex();
 
         uint256 endIndex = startIndex_;
-        while (endIndex + 1 < payloads_.length && !payloads_[endIndex + 1].isSequential) {
+        while (
+            endIndex + 1 < payloads_.length && payloads_[endIndex + 1].isParallel == Parallel.ON
+        ) {
             endIndex++;
         }
 

@@ -14,7 +14,7 @@ import type {
 import { resolve } from "path";
 import fs from "fs";
 
-import "./tasks/accounts";
+import "./hardhat-scripts/utils/accounts";
 import { getJsonRpcUrl } from "./hardhat-scripts/constants/networks";
 import {
   ChainId,
@@ -130,11 +130,11 @@ const config: HardhatUserConfig = {
         },
       },
       {
-        network: "offChainVM",
+        network: "EVMx",
         chainId: EVMX_CHAIN_ID,
         urls: {
-          apiURL: "https://explorer-socket-composer-testnet.t.conduit.xyz/api",
-          browserURL: "https://explorer-socket-composer-testnet.t.conduit.xyz",
+          apiURL: "",
+          browserURL: "",
         },
       },
     ],
@@ -162,9 +162,10 @@ const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.22",
     settings: {
+      evmVersion: "paris",
       optimizer: {
         enabled: true,
-        runs: 999999,
+        runs: 999,
         details: {
           yul: true,
           yulDetails: {

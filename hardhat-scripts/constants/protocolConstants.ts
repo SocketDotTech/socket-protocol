@@ -1,6 +1,4 @@
 export enum CORE_CONTRACTS {
-  Hasher = "Hasher",
-  SignatureVerifier = "SignatureVerifier",
   Socket = "Socket",
   SocketBatcher = "SocketBatcher",
   FastSwitchboard = "FastSwitchboard",
@@ -9,7 +7,6 @@ export enum CORE_CONTRACTS {
 }
 
 export enum OffChainVMCoreContracts {
-  SignatureVerifier = "SignatureVerifier",
   WatcherPrecompile = "WatcherPrecompile",
   AuctionManager = "AuctionManager",
   FeesManager = "FeesManager",
@@ -17,9 +14,4 @@ export enum OffChainVMCoreContracts {
   Forwarder = "Forwarder",
   AsyncPromise = "AsyncPromise",
   AddressResolver = "AddressResolver",
-}
-
-export enum AppContracts {
-  SuperTokenApp = "SuperTokenApp",
-  SuperTokenDeployer = "SuperTokenDeployer",
 }

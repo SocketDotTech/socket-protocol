@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
+import "solady/auth/Ownable.sol";
 import "../interfaces/ISocket.sol";
 import "../interfaces/ISwitchboard.sol";
-import "../utils/OwnableTwoStep.sol";
 import "../libraries/RescueFundsLib.sol";
 import {ExecutePayloadParams} from "../common/Structs.sol";
 
@@ -11,7 +11,7 @@ import {ExecutePayloadParams} from "../common/Structs.sol";
  * @title SocketBatcher
  * @notice The SocketBatcher contract is responsible for batching payloads and transmitting them to the destination chain
  */
-contract SocketBatcher is OwnableTwoStep {
+contract SocketBatcher is Ownable {
     // socket contract
     ISocket public immutable socket__;
 
@@ -22,7 +22,7 @@ contract SocketBatcher is OwnableTwoStep {
      */
     constructor(address owner_, ISocket socket_) {
         socket__ = socket_;
-        _claimOwner(owner_);
+        _initializeOwner(owner_);
     }
 
     function attestAndExecute(

@@ -22,14 +22,12 @@ contract FastSwitchboard is SwitchboardBase {
     /**
      * @dev Constructor function for the FastSwitchboard contract
      * @param chainSlug_ Chain slug of the chain where the contract is deployed
-     * @param signatureVerifier_ The address of the signature verifier contract
      */
     constructor(
         uint32 chainSlug_,
         ISocket socket_,
-        ISignatureVerifier signatureVerifier_,
         address owner_
-    ) SwitchboardBase(chainSlug_, socket_, signatureVerifier_, owner_) {}
+    ) SwitchboardBase(chainSlug_, socket_, owner_) {}
 
     /**
      * @dev Function to attest a packet
@@ -41,10 +39,7 @@ contract FastSwitchboard is SwitchboardBase {
      *  with same root, we are storing attestations against root instead of packetId and proposalCount.
      */
     function attest(bytes32 payloadId_, bytes32 root_, bytes calldata signature_) external {
-        address watcher = signatureVerifier__.recoverSigner(
-            keccak256(abi.encode(address(this), root_)),
-            signature_
-        );
+        address watcher = _recoverSigner(keccak256(abi.encode(address(this), root_)), signature_);
 
         if (isAttested[root_]) revert AlreadyAttested();
         if (!_hasRole(WATCHER_ROLE, watcher)) revert WatcherNotFound();

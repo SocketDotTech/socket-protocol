@@ -4,9 +4,9 @@ pragma solidity ^0.8.21;
 import "./SuperTokenLockable.sol";
 import "./LimitHook.sol";
 import "../../base/AppDeployerBase.sol";
-import "../../utils/OwnableTwoStep.sol";
+import "solady/auth/Ownable.sol";
 
-contract SuperTokenLockableDeployer is AppDeployerBase, OwnableTwoStep {
+contract SuperTokenLockableDeployer is AppDeployerBase, Ownable {
     bytes32 public superTokenLockable = _createContractId("superTokenLockable");
     bytes32 public limitHook = _createContractId("limitHook");
 
@@ -44,8 +44,8 @@ contract SuperTokenLockableDeployer is AppDeployerBase, OwnableTwoStep {
             abi.encode(params._burnLimit, params._mintLimit)
         );
 
-        _setFees(fees_);
-        _claimOwner(owner_);
+        _setOverrides(fees_);
+        _initializeOwner(owner_);
     }
 
     function deployContracts(uint32 chainSlug_) external async {

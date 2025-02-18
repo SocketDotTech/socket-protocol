@@ -3,14 +3,14 @@ pragma solidity ^0.8.21;
 
 import "./QueueAsync.sol";
 
-import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
-import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
-import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
-import {IAuctionManager} from "../../../interfaces/IAuctionManager.sol";
-import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
+import {IDeliveryHelper} from "../../interfaces/IDeliveryHelper.sol";
+import {IAppGateway} from "../../interfaces/IAppGateway.sol";
+import {IAddressResolver} from "../../interfaces/IAddressResolver.sol";
+import {IAuctionManager} from "../../interfaces/IAuctionManager.sol";
+import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 
-import {Bid, PayloadBatch, Fees, PayloadDetails} from "../../../common/Structs.sol";
-import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW, QUERY, FINALIZE} from "../../../common/Constants.sol";
+import {Bid, PayloadBatch, Fees, PayloadDetails} from "../../common/Structs.sol";
+import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW, QUERY, FINALIZE} from "../../common/Constants.sol";
 
 /// @title BatchAsync
 /// @notice Abstract contract for managing asynchronous payload batches
@@ -91,7 +91,9 @@ abstract contract BatchAsync is QueueAsync {
         bytes32 asyncId = getCurrentAsyncId();
         asyncCounter++;
 
-        if (!IFeesManager(feesManager).isFeesEnough(msg.sender, fees_)) revert InsufficientFees();
+
+        if (!IFeesManager(addressResolver__.feesManager()).isFeesEnough(msg.sender, fees_))
+            revert InsufficientFees();
 
         // Handle initial read operations first
         uint256 readEndIndex = _processReadOperations(payloadDetails_, asyncId);
@@ -133,7 +135,7 @@ abstract contract BatchAsync is QueueAsync {
         while (
             readEndIndex < payloadDetails_.length &&
             payloadDetails_[readEndIndex].callType == CallType.READ &&
-            !payloadDetails_[readEndIndex].isSequential
+            payloadDetails_[readEndIndex].isParallel == Parallel.ON
         ) {
             readEndIndex++;
         }
@@ -182,7 +184,7 @@ abstract contract BatchAsync is QueueAsync {
 
             if (payloadDetails_[i].callType == CallType.DEPLOY) {
                 // contract factory plug deploys new contracts
-                payloadDetails_[i].target = getPlugAddress(
+                payloadDetails_[i].target = getDeliveryHelperPlugAddress(
                     address(this),
                     payloadDetails_[i].chainSlug
                 );
@@ -245,13 +247,16 @@ abstract contract BatchAsync is QueueAsync {
         _payloadBatches[asyncId_].isBatchCancelled = true;
 
         if (_payloadBatches[asyncId_].winningBid.transmitter != address(0)) {
-            IFeesManager(feesManager).unblockAndAssignFees(
+            IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
                 asyncId_,
                 _payloadBatches[asyncId_].winningBid.transmitter,
                 _payloadBatches[asyncId_].appGateway
             );
         } else {
-            IFeesManager(feesManager).unblockFees(asyncId_, _payloadBatches[asyncId_].appGateway);
+            IFeesManager(addressResolver__.feesManager()).unblockFees(
+                asyncId_,
+                _payloadBatches[asyncId_].appGateway
+            );
         }
 
         emit BatchCancelled(asyncId_);
@@ -273,7 +278,10 @@ abstract contract BatchAsync is QueueAsync {
     /// @notice Gets the payload delivery plug address
     /// @param chainSlug_ The chain identifier
     /// @return address The address of the payload delivery plug
-    function getPlugAddress(address appGateway_, uint32 chainSlug_) public view returns (address) {
+    function getDeliveryHelperPlugAddress(
+        address appGateway_,
+        uint32 chainSlug_
+    ) public view returns (address) {
         return watcherPrecompile__().appGatewayPlugs(appGateway_, chainSlug_);
     }
 
@@ -298,7 +306,7 @@ abstract contract BatchAsync is QueueAsync {
         Fees memory fees_
     ) external {
         PayloadDetails[] memory payloadDetailsArray = new PayloadDetails[](1);
-        payloadDetailsArray[0] = IFeesManager(feesManager).getWithdrawToPayload(
+        payloadDetailsArray[0] = IFeesManager(addressResolver__.feesManager()).getWithdrawToPayload(
             msg.sender,
             chainSlug_,
             token_,

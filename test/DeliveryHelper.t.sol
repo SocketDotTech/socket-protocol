@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../contracts/apps/payload-delivery/app-gateway/DeliveryHelper.sol";
-import "../contracts/apps/payload-delivery/app-gateway/FeesManager.sol";
-import "../contracts/apps/payload-delivery/app-gateway/AuctionManager.sol";
+import "../contracts/payload-delivery/app-gateway/DeliveryHelper.sol";
+import "../contracts/payload-delivery/app-gateway/FeesManager.sol";
+import "../contracts/payload-delivery/app-gateway/AuctionManager.sol";
 
 import "../contracts/Forwarder.sol";
 import "../contracts/interfaces/IAppDeployer.sol";
@@ -53,7 +53,7 @@ contract DeliveryHelperTest is SetupTest {
         );
 
         vm.expectEmit(true, true, true, false);
-        emit Initialized(1);
+        emit Initialized(version);
         address feesManagerProxy = proxyFactory.deployAndCall(
             address(feesManagerImpl),
             watcherEOA,
@@ -69,7 +69,7 @@ contract DeliveryHelperTest is SetupTest {
         );
 
         vm.expectEmit(true, true, true, false);
-        emit Initialized(1);
+        emit Initialized(version);
         address deliveryHelperProxy = proxyFactory.deployAndCall(
             address(deliveryHelperImpl),
             watcherEOA,
@@ -81,11 +81,11 @@ contract DeliveryHelperTest is SetupTest {
             vmChainSlug,
             auctionEndDelaySeconds,
             address(addressResolver),
-            signatureVerifier,
-            owner
+            owner,
+            version
         );
         vm.expectEmit(true, true, true, false);
-        emit Initialized(1);
+        emit Initialized(version);
         address auctionManagerProxy = proxyFactory.deployAndCall(
             address(auctionManagerImpl),
             watcherEOA,
@@ -453,7 +453,7 @@ contract DeliveryHelperTest is SetupTest {
                 callType: callType_,
                 executionGasLimit: executionGasLimit_,
                 next: next_,
-                isSequential: false
+                isParallel: Parallel.ON
             });
     }
 

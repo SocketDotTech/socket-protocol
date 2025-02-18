@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.3;
-import {PayloadDetails, Bid, Fees, DeployParams, CallType, PayloadBatch} from "../common/Structs.sol";
+import {PayloadDetails, Bid, Fees, DeployParams, CallType, PayloadBatch, Parallel} from "../common/Structs.sol";
 
 interface IDeliveryHelper {
     event BidPlaced(
@@ -20,7 +20,7 @@ interface IDeliveryHelper {
     function clearQueue() external;
 
     function queue(
-        bool isSequential_,
+        Parallel isParallel_,
         uint32 chainSlug_,
         address target_,
         address asyncPromise_,

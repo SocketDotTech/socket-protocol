@@ -13,8 +13,13 @@ import { getProviderFromChainSlug } from "../constants";
 import { ethers } from "hardhat";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { auctionEndDelaySeconds, chains } from "./config";
-import { MAX_LIMIT, EVMX_CHAIN_ID, BID_TIMEOUT } from "../constants/constants";
-import { CORE_CONTRACTS, OffChainVMCoreContracts } from "../../src";
+import {
+  MAX_LIMIT,
+  EVMX_CHAIN_ID,
+  BID_TIMEOUT
+} from "../constants/constants";
+import { getImplementationAddress } from "./migration/migrate-proxies";
+import { CORE_CONTRACTS, EVMxCoreContracts } from "../constants/protocolConstants";
 
 let offChainVMOwner: string;
 const main = async () => {
@@ -51,46 +56,12 @@ const main = async () => {
             currentChainSlug: chain as ChainSlug,
           };
 
-          let contractName: string = CORE_CONTRACTS.SignatureVerifier;
-          const signatureVerifier: Contract = await getOrDeploy(
-            contractName,
-            contractName,
-            `contracts/socket/utils/${contractName}.sol`,
-            [],
-            deployUtils
-          );
-          deployUtils.addresses[contractName] = signatureVerifier.address;
-
-          await updateContractSettings(
-            signatureVerifier,
-            "owner",
-            "initialize",
-            socketOwner,
-            deployUtils.signer
-          );
-
-          contractName = CORE_CONTRACTS.Hasher;
-          const hasher: Contract = await getOrDeploy(
-            contractName,
-            contractName,
-            `contracts/socket/utils/${contractName}.sol`,
-            [socketOwner],
-            deployUtils
-          );
-          deployUtils.addresses[contractName] = hasher.address;
-
-          contractName = CORE_CONTRACTS.Socket;
+          let contractName = CORE_CONTRACTS.Socket;
           const socket: Contract = await getOrDeploy(
             contractName,
             contractName,
             `contracts/socket/${contractName}.sol`,
-            [
-              chain as ChainSlug,
-              hasher.address,
-              signatureVerifier.address,
-              socketOwner,
-              "EVMX",
-            ],
+            [chain as ChainSlug, socketOwner, "EVMX"],
             deployUtils
           );
           deployUtils.addresses[contractName] = socket.address;
@@ -110,12 +81,7 @@ const main = async () => {
             contractName,
             contractName,
             `contracts/socket/switchboard/${contractName}.sol`,
-            [
-              chain as ChainSlug,
-              socket.address,
-              signatureVerifier.address,
-              socketOwner,
-            ],
+            [chain as ChainSlug, socket.address, socketOwner],
             deployUtils
           );
           deployUtils.addresses[contractName] = sb.address;
@@ -177,7 +143,7 @@ const deployWatcherVMContracts = async () => {
     };
     const chain = EVMX_CHAIN_ID;
     try {
-      console.log("Deploying OffChainVM contracts");
+      console.log("Deploying EVMx contracts");
       addresses = dev_addresses as unknown as DeploymentAddresses;
       let chainAddresses: ChainSocketAddresses = addresses[chain]
         ? (addresses[chain] as ChainSocketAddresses)
@@ -211,14 +177,6 @@ const deployWatcherVMContracts = async () => {
       deployUtils.addresses[contractName] = proxyFactory.address;
 
       deployUtils = await deployContractWithProxy(
-        OffChainVMCoreContracts.SignatureVerifier,
-        `contracts/socket/utils/SignatureVerifier.sol`,
-        [offChainVMOwner],
-        proxyFactory,
-        deployUtils
-      );
-
-      deployUtils = await deployContractWithProxy(
         OffChainVMCoreContracts.AddressResolver,
         `contracts/AddressResolver.sol`,
         [offChainVMOwner],
@@ -227,12 +185,12 @@ const deployWatcherVMContracts = async () => {
       );
 
       const addressResolver = await ethers.getContractAt(
-        OffChainVMCoreContracts.AddressResolver,
-        deployUtils.addresses[OffChainVMCoreContracts.AddressResolver]
+        EVMxCoreContracts.AddressResolver,
+        deployUtils.addresses[EVMxCoreContracts.AddressResolver]
       );
 
       deployUtils = await deployContractWithProxy(
-        OffChainVMCoreContracts.WatcherPrecompile,
+        EVMxCoreContracts.WatcherPrecompile,
         `contracts/watcherPrecompile/WatcherPrecompile.sol`,
         [offChainVMOwner, addressResolver.address, MAX_LIMIT],
         proxyFactory,
@@ -240,21 +198,22 @@ const deployWatcherVMContracts = async () => {
       );
 
       deployUtils = await deployContractWithProxy(
-        OffChainVMCoreContracts.FeesManager,
+        EVMxCoreContracts.FeesManager,
         `contracts/apps/payload-delivery/app-gateway/FeesManager.sol`,
         [addressResolver.address, offChainVMOwner],
         proxyFactory,
         deployUtils
       );
       const feesManagerAddress =
-        deployUtils.addresses[OffChainVMCoreContracts.FeesManager];
+        deployUtils.addresses[EVMxCoreContracts.FeesManager];
+
+      console.log("Deploying DeliveryHelper");
 
       deployUtils = await deployContractWithProxy(
-        OffChainVMCoreContracts.DeliveryHelper,
+        EVMxCoreContracts.DeliveryHelper,
         `contracts/apps/payload-delivery/app-gateway/DeliveryHelper.sol`,
         [
           addressResolver.address,
-          feesManagerAddress,
           offChainVMOwner,
           BID_TIMEOUT,
         ],
@@ -263,13 +222,12 @@ const deployWatcherVMContracts = async () => {
       );
 
       deployUtils = await deployContractWithProxy(
-        OffChainVMCoreContracts.AuctionManager,
+        EVMxCoreContracts.AuctionManager,
         `contracts/apps/payload-delivery/app-gateway/AuctionManager.sol`,
         [
           EVMX_CHAIN_ID,
           auctionEndDelaySeconds,
           addressResolver.address,
-          deployUtils.addresses[OffChainVMCoreContracts.SignatureVerifier],
           offChainVMOwner,
         ],
         proxyFactory,
@@ -280,7 +238,7 @@ const deployWatcherVMContracts = async () => {
         addressResolver,
         "deliveryHelper",
         "setDeliveryHelper",
-        deployUtils.addresses[OffChainVMCoreContracts.DeliveryHelper],
+        deployUtils.addresses[EVMxCoreContracts.DeliveryHelper],
         deployUtils.signer
       );
 
@@ -296,7 +254,7 @@ const deployWatcherVMContracts = async () => {
         addressResolver,
         "watcherPrecompile__",
         "setWatcherPrecompile",
-        deployUtils.addresses[OffChainVMCoreContracts.WatcherPrecompile],
+        deployUtils.addresses[EVMxCoreContracts.WatcherPrecompile],
         deployUtils.signer
       );
 
@@ -321,6 +279,28 @@ const deployWatcherVMContracts = async () => {
     console.log("Error:", error);
   }
 };
+
+async function initializeSigVerifier(
+  contract: Contract,
+  getterMethod: string,
+  setterMethod: string,
+  requiredAddress: string,
+  initParams: any[],
+  signer: Signer
+) {
+  const currentValue = await contract.connect(signer)[getterMethod]();
+
+  if (currentValue.toLowerCase() !== requiredAddress.toLowerCase()) {
+    console.log({
+      setterMethod,
+      current: currentValue,
+      required: requiredAddress,
+    });
+    const tx = await contract.connect(signer)[setterMethod](...initParams);
+    console.log(`Setting ${getterMethod} for ${contract.address} to`, tx.hash);
+    await tx.wait();
+  }
+}
 
 async function updateContractSettings(
   contract: Contract,
@@ -369,24 +349,45 @@ const deployContractWithProxy = async (
   );
   deployUtils.addresses[keyName] = implementation.address;
 
+  if (deployUtils.addresses[contractName] !== undefined) {
+    const currentImplAddress = await getImplementationAddress(
+      deployUtils.addresses[contractName]
+    );
+    const newImplementation = implementation.address;
+
+    console.log("Current implementation:", currentImplAddress);
+    console.log("New implementation:", newImplementation);
+
+    if (currentImplAddress.toLowerCase() === newImplementation.toLowerCase())
+      return deployUtils;
+
+    console.log("Upgrading contract");
+
+    const tx = await proxyFactory
+      .connect(deployUtils.signer)
+      .upgrade(deployUtils.addresses[contractName], newImplementation);
+
+    console.log("Upgraded contract", tx.hash);
+
+    await tx.wait();
+
+    return deployUtils;
+  }
+
   // Create initialization data
   const initializeFn = implementation.interface.getFunction("initialize");
   const initData = implementation.interface.encodeFunctionData(
     initializeFn,
     initParams
   );
-  if (deployUtils.addresses[contractName] !== undefined) return deployUtils;
 
   // Deploy transparent proxy
-  const tx = await proxyFactory.connect(deployUtils.signer).deployAndCall(
-    implementation.address,
-    offChainVMOwner,
-    initData
-  );
+  const tx = await proxyFactory
+    .connect(deployUtils.signer)
+    .deployAndCall(implementation.address, offChainVMOwner, initData);
   const receipt = await tx.wait();
-  const proxyAddress = receipt.events?.find(
-    (e) => e.event === "Deployed"
-  )?.args?.proxy;
+  const proxyAddress = receipt.events?.find((e) => e.event === "Deployed")?.args
+    ?.proxy;
   deployUtils.addresses[contractName] = proxyAddress;
 
   return deployUtils;

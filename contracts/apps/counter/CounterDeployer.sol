@@ -3,9 +3,9 @@ pragma solidity >=0.7.0 <0.9.0;
 
 import "./Counter.sol";
 import "../../base/AppDeployerBase.sol";
-import "../../utils/OwnableTwoStep.sol";
+import "solady/auth/Ownable.sol";
 
-contract CounterDeployer is AppDeployerBase, OwnableTwoStep {
+contract CounterDeployer is AppDeployerBase, Ownable {
     bytes32 public counter = _createContractId("counter");
 
     constructor(
@@ -15,8 +15,8 @@ contract CounterDeployer is AppDeployerBase, OwnableTwoStep {
         Fees memory fees_
     ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) {
         creationCodeWithArgs[counter] = abi.encodePacked(type(Counter).creationCode);
-        _setFees(fees_);
-        _claimOwner(msg.sender);
+        _setOverrides(fees_);
+        _initializeOwner(msg.sender);
     }
 
     function deployContracts(uint32 chainSlug_) external async {

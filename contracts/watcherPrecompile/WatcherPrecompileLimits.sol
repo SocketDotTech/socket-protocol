@@ -5,13 +5,13 @@ import {Gauge} from "../utils/Gauge.sol";
 import {LimitParams, UpdateLimitParams} from "../common/Structs.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import "../interfaces/IWatcherPrecompile.sol";
-import {OwnableTwoStep} from "../utils/OwnableTwoStep.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../common/Constants.sol";
 
 abstract contract WatcherPrecompileLimits is
     Gauge,
     AddressResolverUtil,
-    OwnableTwoStep,
+    Ownable,
     IWatcherPrecompile
 {
     /// @notice Maximum limit value for any app gateway

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.7.0 <0.9.0;
 
+import "solady/auth/Ownable.sol";
 import "../counter/Counter.sol";
 import "../../base/AppDeployerBase.sol";
-import "../../utils/OwnableTwoStep.sol";
 
-contract ParallelCounterDeployer is AppDeployerBase, OwnableTwoStep {
+contract ParallelCounterDeployer is AppDeployerBase, Ownable {
     bytes32 public counter1 = _createContractId("counter1");
     bytes32 public counter2 = _createContractId("counter2");
 
@@ -17,9 +17,8 @@ contract ParallelCounterDeployer is AppDeployerBase, OwnableTwoStep {
     ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) {
         creationCodeWithArgs[counter1] = abi.encodePacked(type(Counter).creationCode);
         creationCodeWithArgs[counter2] = abi.encodePacked(type(Counter).creationCode);
-        _setFees(fees_);
-        _setIsCallSequential(false);
-        _claimOwner(msg.sender);
+        _setOverrides(Read.OFF, Parallel.ON, 1000000, fees_);
+        _initializeOwner(msg.sender);
     }
 
     function deployContracts(uint32 chainSlug_) external async {

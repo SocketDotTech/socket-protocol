@@ -11,15 +11,14 @@ contract MockWatcherPrecompileImpl is WatcherPrecompile {
         uint256 maxLimit_
     ) external reinitializer(2) {
         _setAddressResolver(addressResolver_);
-        _claimOwner(owner_);
+        _initializeOwner(owner_);
         maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
 
         LIMIT_DECIMALS = 18;
 
         // limit per day
         maxLimit = maxLimit_ * 10 ** LIMIT_DECIMALS;
-        // limit per second  
+        // limit per second
         ratePerSecond = maxLimit / (24 * 60 * 60);
     }
 }
-

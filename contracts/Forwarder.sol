@@ -23,6 +23,7 @@ contract Forwarder is IForwarder, Initializable {
 
     /// @notice caches the latest async promise address for the last call
     address public latestAsyncPromise;
+    uint64 public version;
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -36,7 +37,7 @@ contract Forwarder is IForwarder, Initializable {
         uint32 chainSlug_,
         address onChainAddress_,
         address addressResolver_
-    ) public reinitializer(1) {
+    ) public initializer {
         chainSlug = chainSlug_;
         onChainAddress = onChainAddress_;
         addressResolver = addressResolver_;
@@ -80,16 +81,16 @@ contract Forwarder is IForwarder, Initializable {
         );
 
         // Determine if the call is a read or write operation.
-        bool isReadCall = IAppGateway(msg.sender).isReadCall();
-        bool isCallSequential = IAppGateway(msg.sender).isCallSequential();
+        Read isReadCall = IAppGateway(msg.sender).isReadCall();
+        Parallel isParallelCall = IAppGateway(msg.sender).isParallelCall();
 
         // Queue the call in the auction house.
         IDeliveryHelper(deliveryHelper).queue(
-            isCallSequential,
+            isParallelCall,
             chainSlug,
             onChainAddress,
             latestAsyncPromise,
-            isReadCall ? CallType.READ : CallType.WRITE,
+            isReadCall == Read.ON ? CallType.READ : CallType.WRITE,
             msg.data
         );
     }

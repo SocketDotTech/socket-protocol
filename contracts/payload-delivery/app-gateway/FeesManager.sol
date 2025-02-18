@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {OwnableTwoStep} from "../../../utils/OwnableTwoStep.sol";
-import {SignatureVerifier} from "../../../socket/utils/SignatureVerifier.sol";
-import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
-import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, PayloadBatch} from "../../../common/Structs.sol";
-import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
-import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../common/Constants.sol";
-import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
-import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
+import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
+import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, PayloadBatch, Parallel} from "../../common/Structs.sol";
+import {IDeliveryHelper} from "../../interfaces/IDeliveryHelper.sol";
+import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../common/Constants.sol";
+import {IFeesPlug} from "../../interfaces/IFeesPlug.sol";
+import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 import "solady/utils/Initializable.sol";
 
 /// @title FeesManager
 /// @notice Contract for managing fees
-contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initializable {
+contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializable {
     uint256 public feesCounter;
     mapping(uint32 => uint256) public feeCollectionGasLimit;
+    uint64 public version;
 
     /// @notice Struct containing fee amounts and status
     struct TokenBalance {
@@ -100,8 +100,9 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the owner
     function initialize(address addressResolver_, address owner_) public reinitializer(1) {
+        version = 1;
         _setAddressResolver(addressResolver_);
-        _claimOwner(owner_);
+        _initializeOwner(owner_);
     }
 
     /// @notice Returns available (unblocked) fees for a gateway
@@ -152,7 +153,12 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
     /// @param fees_ The fees data struct
     /// @param asyncId_ The batch identifier
     /// @dev Only callable by delivery helper
-    function blockFees(address appGateway_, Fees memory fees_, bytes32 asyncId_) external {
+    function blockFees(
+        address appGateway_,
+        Fees memory fees_,
+        Bid memory winningBid_,
+        bytes32 asyncId_
+    ) external {
         // todo: only auction manager can call this
         address appGateway = _getCoreAppGateway(appGateway_);
         // Block fees
@@ -161,15 +167,15 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
             appGateway,
             fees_.feePoolToken
         );
-        if (availableFees < fees_.amount) revert InsufficientFeesAvailable();
+        if (availableFees < winningBid_.fee) revert InsufficientFeesAvailable();
 
         TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees_.feePoolChain][
             fees_.feePoolToken
         ];
-        tokenBalance.blocked += fees_.amount;
+        tokenBalance.blocked += winningBid_.fee;
 
         asyncIdBlockedFees[asyncId_] = fees_;
-        emit FeesBlocked(asyncId_, fees_.feePoolChain, fees_.feePoolToken, fees_.amount);
+        emit FeesBlocked(asyncId_, fees_.feePoolChain, fees_.feePoolToken, winningBid_.fee);
     }
 
     function updateTransmitterFees(
@@ -293,7 +299,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
                 callType: callType_,
                 executionGasLimit: 1000000,
                 next: new address[](2),
-                isSequential: true
+                isParallel: Parallel.OFF
             });
     }
 

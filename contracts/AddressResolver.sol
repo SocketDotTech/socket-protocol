@@ -4,15 +4,15 @@ pragma solidity ^0.8.21;
 import "./interfaces/IAddressResolver.sol";
 import {Forwarder} from "./Forwarder.sol";
 import {AsyncPromise} from "./AsyncPromise.sol";
-import {OwnableTwoStep} from "./utils/OwnableTwoStep.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
 import {LibClone} from "solady/utils/LibClone.sol";
 import {UpgradeableBeacon} from "solady/utils/UpgradeableBeacon.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
 
 /// @title AddressResolver Contract
 /// @notice This contract is responsible for fetching latest core addresses and deploying Forwarder and AsyncPromise contracts.
-/// @dev Inherits the OwnableTwoStep contract and implements the IAddressResolver interface.
-contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
+/// @dev Inherits the Ownable contract and implements the IAddressResolver interface.
+contract AddressResolver is Ownable, IAddressResolver, Initializable {
     IWatcherPrecompile public override watcherPrecompile__;
     address public override deliveryHelper;
     address public override feesManager;
@@ -28,6 +28,7 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
     address[] internal _promises;
 
     uint256 public asyncPromiseCounter;
+    uint64 public version;
 
     // contracts to gateway map
     mapping(address => address) public override contractsToGateways;
@@ -49,7 +50,8 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
     /// @notice Initializer to replace constructor for upgradeable contracts
     /// @param owner_ The address of the contract owner
     function initialize(address owner_) public reinitializer(1) {
-        _claimOwner(owner_);
+        version = 1;
+        _initializeOwner(owner_);
 
         forwarderImplementation = address(new Forwarder());
         asyncPromiseImplementation = address(new AsyncPromise());
@@ -94,7 +96,8 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
             Forwarder.initialize.selector,
             chainSlug_,
             chainContractAddress_,
-            address(this)
+            address(this),
+            version
         );
         salt = keccak256(constructorArgs);
     }
@@ -107,7 +110,8 @@ contract AddressResolver is OwnableTwoStep, IAddressResolver, Initializable {
             AsyncPromise.initialize.selector,
             invoker_,
             msg.sender,
-            address(this)
+            address(this),
+            version
         );
 
         salt = keccak256(abi.encodePacked(constructorArgs, asyncPromiseCounter));
