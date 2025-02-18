@@ -158,7 +158,12 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
     /// @param fees_ The fees data struct
     /// @param asyncId_ The batch identifier
     /// @dev Only callable by delivery helper
-    function blockFees(address appGateway_, Fees memory fees_, bytes32 asyncId_) external {
+    function blockFees(
+        address appGateway_,
+        Fees memory fees_,
+        Bid memory winningBid_,
+        bytes32 asyncId_
+    ) external {
         // todo: only auction manager can call this
         address appGateway = _getCoreAppGateway(appGateway_);
         // Block fees
@@ -167,15 +172,15 @@ contract FeesManager is IFeesManager, AddressResolverUtil, OwnableTwoStep, Initi
             appGateway,
             fees_.feePoolToken
         );
-        if (availableFees < fees_.amount) revert InsufficientFeesAvailable();
+        if (availableFees < winningBid_.fee) revert InsufficientFeesAvailable();
 
         TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees_.feePoolChain][
             fees_.feePoolToken
         ];
-        tokenBalance.blocked += fees_.amount;
+        tokenBalance.blocked += winningBid_.fee;
 
         asyncIdBlockedFees[asyncId_] = fees_;
-        emit FeesBlocked(asyncId_, fees_.feePoolChain, fees_.feePoolToken, fees_.amount);
+        emit FeesBlocked(asyncId_, fees_.feePoolChain, fees_.feePoolToken, winningBid_.fee);
     }
 
     function updateTransmitterFees(

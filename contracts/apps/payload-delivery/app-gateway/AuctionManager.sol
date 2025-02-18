@@ -99,9 +99,11 @@ contract AuctionManager is AddressResolverUtil, OwnableTwoStep, IAuctionManager,
         if (fee < winningBids[asyncId_].fee) return;
 
         winningBids[asyncId_] = newBid;
+
         IFeesManager(addressResolver__.feesManager()).blockFees(
             payloadBatch.appGateway,
             payloadBatch.fees,
+            newBid,
             asyncId_
         );
 
