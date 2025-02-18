@@ -11,13 +11,21 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
     /// @dev chainSlug => plug => PlugConfig
     mapping(uint32 => mapping(address => PlugConfig)) internal _plugConfigs;
 
-    /// @notice Maps app gateway to their associated plugs per network
-    /// @dev appGateway => chainSlug => plug
-    mapping(address => mapping(uint32 => address)) public appGatewayPlugs;
-
     /// @notice Maps chain slug to their associated switchboard
     /// @dev chainSlug => sb type => switchboard address
     mapping(uint32 => mapping(bytes32 => address)) public switchboards;
+
+    /// @notice Maps chain slug to their associated socket
+    /// @dev chainSlug => socket address
+    mapping(uint32 => address) public sockets;
+
+    /// @notice Maps chain slug to their associated contract factory plug
+    /// @dev chainSlug => contract factory plug address
+    mapping(uint32 => address) public contractFactoryPlug;
+
+    /// @notice Maps chain slug to their associated fees plug
+    /// @dev chainSlug => fees plug address
+    mapping(uint32 => address) public feesPlug;
 
     // appGateway => chainSlug => plug => isValid
     mapping(address => mapping(uint32 => mapping(address => bool))) public isValidInboxCaller;
@@ -34,6 +42,22 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
     /// @param switchboard The address of the switchboard
     event SwitchboardSet(uint32 chainSlug, bytes32 sbType, address switchboard);
 
+    /// @notice Emitted when contracts are set for a network
+    /// @param chainSlug The identifier of the network
+    /// @param sbType The type of switchboard
+    /// @param switchboard The address of the switchboard
+    /// @param socket The address of the socket
+    /// @param contractFactoryPlug The address of the contract factory plug
+    /// @param feesPlug The address of the fees plug
+    event OnChainContractSet(
+        uint32 chainSlug,
+        bytes32 sbType,
+        address switchboard,
+        address socket,
+        address contractFactoryPlug,
+        address feesPlug
+    );
+
     /// @notice Configures app gateways with their respective plugs and switchboards
     /// @param configs_ Array of configurations containing app gateway, network, plug, and switchboard details
     /// @dev Only callable by the contract owner
@@ -46,9 +70,6 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
                 switchboard: configs_[i].switchboard
             });
 
-            // Create reverse mapping from app gateway to plug for easy lookup
-            appGatewayPlugs[configs_[i].appGateway][configs_[i].chainSlug] = configs_[i].plug;
-
             emit PlugAdded(configs_[i].appGateway, configs_[i].chainSlug, configs_[i].plug);
         }
     }
@@ -56,13 +77,27 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
     /// @notice Sets the switchboard for a network
     /// @param chainSlug_ The identifier of the network
     /// @param switchboard_ The address of the switchboard
-    function setSwitchboard(
+    function setOnChainContracts(
         uint32 chainSlug_,
         bytes32 sbType_,
-        address switchboard_
-    ) external onlyOwner {
+        address switchboard_,
+        address socket_,
+        address contractFactoryPlug_,
+        address feesPlug_
+    ) external override onlyOwner {
         switchboards[chainSlug_][sbType_] = switchboard_;
-        emit SwitchboardSet(chainSlug_, sbType_, switchboard_);
+        sockets[chainSlug_] = socket_;
+        contractFactoryPlug[chainSlug_] = contractFactoryPlug_;
+        feesPlug[chainSlug_] = feesPlug_;
+
+        emit OnChainContractSet(
+            chainSlug_,
+            sbType_,
+            switchboard_,
+            socket_,
+            contractFactoryPlug_,
+            feesPlug_
+        );
     }
 
     // @dev app gateway can set the valid plugs for each chain slug

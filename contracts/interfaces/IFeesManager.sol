@@ -4,7 +4,12 @@ pragma solidity ^0.8.3;
 import {Fees, Bid, PayloadDetails} from "../protocol/utils/common/Structs.sol";
 
 interface IFeesManager {
-    function blockFees(address appGateway_, Fees memory fees_, Bid memory winningBid_, bytes32 asyncId_) external;
+    function blockFees(
+        address appGateway_,
+        Fees memory fees_,
+        Bid memory winningBid_,
+        bytes32 asyncId_
+    ) external;
 
     function updateTransmitterFees(
         Bid memory winningBid_,

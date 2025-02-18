@@ -88,8 +88,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     /// @param chainSlug_ The chain slug
     /// @return socketAddress_ The socket address
     function getSocketAddress(uint32 chainSlug_) public view returns (address) {
-        return
-            watcherPrecompile__().appGatewayPlugs(addressResolver__.deliveryHelper(), chainSlug_);
+        return watcherPrecompile__().sockets(chainSlug_);
     }
 
     /// @notice Initializes the contract

@@ -8,7 +8,10 @@ import { getInstance } from "./utils";
 import { chains } from "./config";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { EVMX_CHAIN_ID } from "../constants/constants";
-import { CORE_CONTRACTS, EVMxCoreContracts } from "../constants/protocolConstants";
+import {
+  CORE_CONTRACTS,
+  EVMxCoreContracts,
+} from "../constants/protocolConstants";
 
 const plugs = [CORE_CONTRACTS.ContractFactoryPlug, CORE_CONTRACTS.FeesPlug];
 export type AppGatewayConfig = {
@@ -21,9 +24,7 @@ export type AppGatewayConfig = {
 export const getAppGateway = (plug: string, addresses: DeploymentAddresses) => {
   switch (plug) {
     case CORE_CONTRACTS.ContractFactoryPlug:
-      return addresses?.[EVMX_CHAIN_ID]?.[
-        EVMxCoreContracts.DeliveryHelper
-      ];
+      return addresses?.[EVMX_CHAIN_ID]?.[EVMxCoreContracts.DeliveryHelper];
     case CORE_CONTRACTS.FeesPlug:
       return addresses?.[EVMX_CHAIN_ID]?.[EVMxCoreContracts.FeesManager];
     default:
@@ -52,9 +53,9 @@ export const isConfigSetOnSocket = async (
   const plugConfigRegistered = await socket.getPlugConfig(plug.address);
   return (
     plugConfigRegistered.appGateway.toLowerCase() ===
-    appGateway?.toLowerCase() &&
+      appGateway?.toLowerCase() &&
     plugConfigRegistered.switchboard__.toLowerCase() ===
-    switchboard.toLowerCase()
+      switchboard.toLowerCase()
   );
 };
 

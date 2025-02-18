@@ -91,7 +91,6 @@ abstract contract BatchAsync is QueueAsync {
         bytes32 asyncId = getCurrentAsyncId();
         asyncCounter++;
 
-
         if (!IFeesManager(addressResolver__.feesManager()).isFeesEnough(msg.sender, fees_))
             revert InsufficientFees();
 
@@ -282,7 +281,7 @@ abstract contract BatchAsync is QueueAsync {
         address appGateway_,
         uint32 chainSlug_
     ) public view returns (address) {
-        return watcherPrecompile__().appGatewayPlugs(appGateway_, chainSlug_);
+        return watcherPrecompile__().contractFactoryPlug(chainSlug_);
     }
 
     /// @notice Gets the current async ID

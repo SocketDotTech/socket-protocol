@@ -365,6 +365,6 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
     }
 
     function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (address) {
-        return watcherPrecompile__().appGatewayPlugs(address(this), chainSlug_);
+        return watcherPrecompile__().feesPlug(chainSlug_);
     }
 }

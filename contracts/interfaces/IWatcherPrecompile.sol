@@ -12,6 +12,17 @@ interface IWatcherPrecompile {
     /// @dev Only callable by authorized addresses
     function setAppGateways(AppGatewayConfig[] calldata configs_) external;
 
+    /// @notice Sets up on-chain contract configurations
+    /// @dev Only callable by authorized addresses
+    function setOnChainContracts(
+        uint32 chainSlug_,
+        bytes32 sbType_,
+        address switchboard_,
+        address socket_,
+        address contractFactoryPlug_,
+        address feesPlug_
+    ) external;
+
     /// @notice Retrieves plug configuration for a specific network and plug
     /// @param chainSlug_ The identifier of the network
     /// @param plug_ The address of the plug
@@ -72,18 +83,15 @@ interface IWatcherPrecompile {
     /// @return root The calculated merkle root hash
     function getRoot(PayloadRootParams memory params_) external pure returns (bytes32 root);
 
-    /// @notice Gets the plug address for a given app gateway and chain
-    /// @param appGateway_ The address of the app gateway contract
-    /// @param chainSlug_ The identifier of the destination chain
-    /// @return The plug address for the given app gateway and chain
-    function appGatewayPlugs(
-        address appGateway_,
-        uint32 chainSlug_
-    ) external view returns (address);
-
     function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external;
 
     function switchboards(uint32 chainSlug_, bytes32 sbType_) external view returns (address);
+
+    function sockets(uint32 chainSlug_) external view returns (address);
+
+    function contractFactoryPlug(uint32 chainSlug_) external view returns (address);
+
+    function feesPlug(uint32 chainSlug_) external view returns (address);
 
     function setIsValidInboxCaller(uint32 chainSlug_, address plug_, bool isValid_) external;
 

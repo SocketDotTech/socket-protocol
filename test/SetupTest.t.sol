@@ -82,7 +82,14 @@ contract SetupTest is Test {
         vm.stopPrank();
 
         hoax(watcherEOA);
-        watcherPrecompile.setSwitchboard(chainSlug_, FAST, address(switchboard));
+        watcherPrecompile.setOnChainContracts(
+            chainSlug_,
+            FAST,
+            address(switchboard),
+            address(socket),
+            address(contractFactoryPlug),
+            address(feesPlug)
+        );
 
         return
             SocketContracts({
