@@ -3,8 +3,8 @@ pragma solidity ^0.8.21;
 
 import "../interfaces/ISocket.sol";
 import "../interfaces/ISwitchboard.sol";
-import "./utils/AccessControl.sol";
-import "./utils/AccessRoles.sol";
+import "../utils/AccessControl.sol";
+import {RESCUE_ROLE} from "../utils/AccessRoles.sol";
 
 /**
  * @title SocketConfig

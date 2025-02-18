@@ -2,12 +2,14 @@
 pragma solidity ^0.8.21;
 
 import "../base/PlugBase.sol";
-import {Ownable} from "solady/auth/Ownable.sol";
+import "../utils/AccessControl.sol";
+import {RESCUE_ROLE} from "../utils/AccessRoles.sol";
+import "../libraries/RescueFundsLib.sol";
 import {NotSocket} from "../common/Errors.sol";
 
 /// @title ContractFactory
 /// @notice Abstract contract for deploying contracts
-contract ContractFactoryPlug is PlugBase, Ownable {
+contract ContractFactoryPlug is PlugBase, AccessControl {
     event Deployed(address addr, bytes32 salt);
 
     /// @notice Error thrown if it failed to deploy the create2 contract
@@ -59,5 +61,20 @@ contract ContractFactoryPlug is PlugBase, Ownable {
         address switchboard_
     ) external onlyOwner {
         _connectSocket(appGateway_, socket_, switchboard_);
+    }
+
+    /**
+     * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
+     * theoretically need this function but it is added for safety.
+     * @param token_ The address of the token contract.
+     * @param rescueTo_ The address where rescued tokens need to be sent.
+     * @param amount_ The amount of tokens to be rescued.
+     */
+    function rescueFunds(
+        address token_,
+        address rescueTo_,
+        uint256 amount_
+    ) external onlyRole(RESCUE_ROLE) {
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

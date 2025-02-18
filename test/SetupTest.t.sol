@@ -6,7 +6,7 @@ import "../contracts/common/Structs.sol";
 import "../contracts/common/Constants.sol";
 import "../contracts/watcherPrecompile/WatcherPrecompile.sol";
 import "../contracts/interfaces/IForwarder.sol";
-import "../contracts/socket/utils/AccessRoles.sol";
+import "../contracts/utils/AccessRoles.sol";
 import {Socket} from "../contracts/socket/Socket.sol";
 import "../contracts/socket/switchboard/FastSwitchboard.sol";
 import "../contracts/socket/SocketBatcher.sol";
