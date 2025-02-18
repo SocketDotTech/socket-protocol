@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 import {DeployParams, Fees, CallType, PayloadBatch} from "../protocol/utils/common/Structs.sol";
-import {AppGatewayBase} from "./AppGatewayBase.sol";
+import "./AppGatewayBase.sol";
 import {IForwarder} from "../interfaces/IForwarder.sol";
 import {IPromise} from "../interfaces/IPromise.sol";
 import {IAppDeployer} from "../interfaces/IAppDeployer.sol";
