@@ -19,7 +19,9 @@ const upgradeableContracts = [
   "AuctionManager",
 ];
 
-async function getImplementationAddress(proxyAddress: string): Promise<string> {
+export async function getImplementationAddress(
+  proxyAddress: string
+): Promise<string> {
   const customProvider = new ethers.providers.JsonRpcProvider(
     process.env.EVMX_RPC as string
   );
@@ -33,10 +35,7 @@ async function getImplementationAddress(proxyAddress: string): Promise<string> {
   return utils.getAddress("0x" + implHex.slice(-40));
 }
 
-async function main() {
-  // @ts-ignore - Hardhat Runtime Environment will be injected by hardhat
-
-  // Read addresses from JSON file
+async function loadAddresses() {
   const addressesPath = path.join(
     __dirname,
     "../../../deployments/dev_addresses.json"
@@ -47,106 +46,137 @@ async function main() {
     throw new Error(`No addresses found for chain ID ${EVMX_CHAIN_ID}`);
   }
 
+  return addresses;
+}
+
+async function setupSigner() {
   const providerInstance = getProviderFromChainSlug(EVMX_CHAIN_ID as ChainSlug);
-  const signer: Wallet = new ethers.Wallet(
+  return new ethers.Wallet(
     process.env.WATCHER_PRIVATE_KEY as string,
     providerInstance
   );
+}
 
-  // Get the proxy factory
+async function setupProxyFactory(addresses: any, signer: Wallet) {
   let proxyFactory = await ethers.getContractAt(
     "ERC1967Factory",
     addresses[EVMX_CHAIN_ID].ERC1967Factory
   );
-  proxyFactory = proxyFactory.connect(signer);
+  return proxyFactory.connect(signer);
+}
 
-  // Loop through each upgradeable contract
-  for (const contractName of upgradeableContracts) {
-    console.log(`\nProcessing ${contractName}...`);
+async function upgradeContract(
+  contractName: string,
+  addresses: any,
+  proxyFactory: Contract,
+  signer: Wallet
+) {
+  console.log(`\nProcessing ${contractName}...`);
 
-    const PROXY_ADDRESS = addresses[EVMX_CHAIN_ID][contractName];
-    if (!PROXY_ADDRESS) {
-      console.log(`Contract address not found for ${contractName}`);
-      continue;
-    }
-
-    try {
-      // Get current implementation
-      const currentImplAddress = await getImplementationAddress(PROXY_ADDRESS);
-      console.log(
-        `Current implementation for ${contractName}: ${currentImplAddress}`
-      );
-
-      // Get new implementation address
-      const newImplementation = addresses[EVMX_CHAIN_ID][`${contractName}Impl`];
-      if (!newImplementation) {
-        console.log(`No implementation address found for ${contractName}`);
-        continue;
-      }
-
-      // Get contract instance for state verification
-      let contract = await ethers.getContractAt(contractName, PROXY_ADDRESS);
-      contract = contract.connect(signer);
-
-      let version;
-      try {
-        version = await contract.version();
-        console.log("Version on contract before upgrade:", version);
-      } catch (error) {
-        console.log("version variable not found");
-      }
-
-      if (contractName === "AddressResolver")
-        await verifyBeaconImplementation(contract, signer);
-
-      if (
-        currentImplAddress.toLowerCase() === newImplementation.toLowerCase()
-      ) {
-        console.log("Implementation is already up to date");
-        continue;
-      }
-
-      // Upgrade proxy
-      console.log("Upgrading proxy...");
-
-      const initializeFn = contract.interface.getFunction("initialize");
-      const initData = contract.interface.encodeFunctionData(initializeFn, [
-        VERSION,
-      ]);
-
-      const tx = await proxyFactory.upgradeAndCall(
-        PROXY_ADDRESS,
-        newImplementation,
-        initData
-      );
-      console.log("tx", tx.hash);
-      await tx.wait();
-
-      // Verify upgrade
-      const updatedImplAddress = await getImplementationAddress(PROXY_ADDRESS);
-      console.log("New implementation:", updatedImplAddress);
-
-      if (
-        updatedImplAddress.toLowerCase() !== newImplementation.toLowerCase()
-      ) {
-        throw new Error(
-          "Upgrade verification failed - implementation mismatch"
-        );
-      }
-
-      version = await contract.version();
-      console.log("Version on contract after upgrade:", version);
-
-      if (contractName === "AddressResolver") {
-        await verifyBeaconImplementation(contract, signer);
-      }
-
-      console.log("Upgrade successful and verified");
-    } catch (error) {
-      console.error(`Error upgrading ${contractName}:`, error);
-      process.exit(1);
-    }
+  const PROXY_ADDRESS = addresses[EVMX_CHAIN_ID][contractName];
+  if (!PROXY_ADDRESS) {
+    console.log(`Contract address not found for ${contractName}`);
+    return;
   }
+
+  try {
+    const currentImplAddress = await getImplementationAddress(PROXY_ADDRESS);
+    console.log(
+      `Current implementation for ${contractName}: ${currentImplAddress}`
+    );
+
+    const newImplementation = addresses[EVMX_CHAIN_ID][`${contractName}Impl`];
+    if (!newImplementation) {
+      console.log(`No implementation address found for ${contractName}`);
+      return;
+    }
+
+    let contract = await ethers.getContractAt(contractName, PROXY_ADDRESS);
+    contract = contract.connect(signer);
+
+    await verifyAndUpgradeContract(
+      contract,
+      contractName,
+      currentImplAddress,
+      newImplementation,
+      proxyFactory,
+      signer
+    );
+  } catch (error) {
+    console.error(`Error upgrading ${contractName}:`, error);
+    process.exit(1);
+  }
+}
+
+async function verifyAndUpgradeContract(
+  contract: Contract,
+  contractName: string,
+  currentImplAddress: string,
+  newImplementation: string,
+  proxyFactory: Contract,
+  signer: Wallet
+) {
+  let version;
+  try {
+    version = await contract.version();
+    console.log("Version on contract before upgrade:", version);
+  } catch (error) {
+    console.log("version variable not found");
+  }
+
+  if (contractName === "AddressResolver")
+    await verifyBeaconImplementation(contract, signer);
+
+  if (currentImplAddress.toLowerCase() === newImplementation.toLowerCase()) {
+    console.log("Implementation is already up to date");
+    return;
+  }
+
+  await performUpgrade(contract, proxyFactory, newImplementation);
+  await verifyUpgrade(contract, newImplementation, contractName, signer);
+}
+
+async function performUpgrade(
+  contract: Contract,
+  proxyFactory: Contract,
+  newImplementation: string
+) {
+  console.log("Upgrading proxy...");
+  const initializeFn = contract.interface.getFunction("initialize");
+  const initData = contract.interface.encodeFunctionData(initializeFn, [
+    VERSION,
+  ]);
+
+  const tx = await proxyFactory.upgradeAndCall(
+    contract.address,
+    newImplementation,
+    initData
+  );
+  console.log("tx", tx.hash);
+  await tx.wait();
+}
+
+async function verifyUpgrade(
+  contract: Contract,
+  newImplementation: string,
+  contractName: string,
+  signer: Wallet
+) {
+  const updatedImplAddress = await getImplementationAddress(contract.address);
+  console.log("New implementation:", updatedImplAddress);
+
+  if (updatedImplAddress.toLowerCase() !== newImplementation.toLowerCase()) {
+    throw new Error("Upgrade verification failed - implementation mismatch");
+  }
+
+  const version = await contract.version();
+  console.log("Version on contract after upgrade:", version);
+
+  if (contractName === "AddressResolver") {
+    await verifyBeaconImplementation(contract, signer);
+  }
+
+  console.log("Upgrade successful and verified");
 }
 
 async function verifyBeaconImplementation(contract: Contract, signer: Wallet) {
@@ -193,11 +223,14 @@ async function verifyBeaconImplementation(contract: Contract, signer: Wallet) {
     throw new Error("Async promise beacon implementation mismatch");
   }
 }
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+
+async function main() {
+  // @ts-ignore - Hardhat Runtime Environment will be injected by hardhat
+  const addresses = await loadAddresses();
+  const signer = await setupSigner();
+  const proxyFactory = await setupProxyFactory(addresses, signer);
+
+  for (const contractName of upgradeableContracts) {
+    await upgradeContract(contractName, addresses, proxyFactory, signer);
+  }
+}
