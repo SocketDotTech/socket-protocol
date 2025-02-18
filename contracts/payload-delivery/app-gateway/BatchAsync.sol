@@ -273,7 +273,10 @@ abstract contract BatchAsync is QueueAsync {
     /// @notice Gets the payload delivery plug address
     /// @param chainSlug_ The chain identifier
     /// @return address The address of the payload delivery plug
-    function getDeliveryHelperPlugAddress(address appGateway_, uint32 chainSlug_) public view returns (address) {
+    function getDeliveryHelperPlugAddress(
+        address appGateway_,
+        uint32 chainSlug_
+    ) public view returns (address) {
         return watcherPrecompile__().appGatewayPlugs(appGateway_, chainSlug_);
     }
 
