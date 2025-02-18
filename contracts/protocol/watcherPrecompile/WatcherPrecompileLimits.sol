@@ -17,7 +17,7 @@ abstract contract WatcherPrecompileLimits is
     /// @notice Default limit value for any app gateway
     uint256 public defaultLimit;
     /// @notice Rate at which limit replenishes per second
-    uint256 public ratePerSecond;
+    uint256 public defaultRatePerSecond;
     /// @notice Number of decimals used in limit calculations
     uint256 public LIMIT_DECIMALS;
 
@@ -132,7 +132,7 @@ abstract contract WatcherPrecompileLimits is
         if (!_activeAppGateways[appGateway]) {
             LimitParams memory limitParam = LimitParams({
                 maxLimit: defaultLimit,
-                ratePerSecond: ratePerSecond,
+                ratePerSecond: defaultRatePerSecond,
                 lastUpdateTimestamp: block.timestamp,
                 lastUpdateLimit: defaultLimit
             });
@@ -142,7 +142,7 @@ abstract contract WatcherPrecompileLimits is
             _limitParams[appGateway][SCHEDULE] = limitParam;
 
             _activeAppGateways[appGateway] = true;
-            emit AppGatewayActivated(appGateway, defaultLimit, ratePerSecond);
+            emit AppGatewayActivated(appGateway, defaultLimit, defaultRatePerSecond);
         }
 
         // Update the limit
@@ -172,10 +172,10 @@ abstract contract WatcherPrecompileLimits is
 
     /**
      * @notice Set the rate at which limit replenishes
-     * @param ratePerSecond_ The new rate per second
+     * @param defaultRatePerSecond_ The new rate per second
      */
-    function setRatePerSecond(uint256 ratePerSecond_) external onlyOwner {
-        ratePerSecond = ratePerSecond_;
+    function setDefaultRatePerSecond(uint256 defaultRatePerSecond_) external onlyOwner {
+        defaultRatePerSecond = defaultRatePerSecond_;
     }
 
     uint256[49] __gap;

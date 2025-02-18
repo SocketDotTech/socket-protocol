@@ -19,6 +19,6 @@ contract MockWatcherPrecompileImpl is WatcherPrecompile {
         // limit per day
         defaultLimit = defaultLimit_ * 10 ** LIMIT_DECIMALS;
         // limit per second
-        ratePerSecond = defaultLimit / (24 * 60 * 60);
+        defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
     }
 }
