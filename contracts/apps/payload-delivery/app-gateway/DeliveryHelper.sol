@@ -30,7 +30,6 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
     ) public reinitializer(version_) {
         _setAddressResolver(addressResolver_);
         version = version_;
-        feesManager = feesManager_;
         bidTimeout = bidTimeout_;
         _claimOwner(owner_);
     }
@@ -42,7 +41,7 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         _payloadBatches[asyncId_].winningBid = winningBid_;
 
         // update fees
-        IFeesManager(feesManager).updateTransmitterFees(
+        IFeesManager(addressResolver__.feesManager()).updateTransmitterFees(
             winningBid_,
             asyncId_,
             _payloadBatches[asyncId_].appGateway
@@ -92,7 +91,7 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
     }
 
     function _finishBatch(bytes32 asyncId_, PayloadBatch storage payloadBatch_) internal {
-        IFeesManager(feesManager).unblockAndAssignFees(
+        IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
             asyncId_,
             payloadBatch_.winningBid.transmitter,
             payloadBatch_.appGateway

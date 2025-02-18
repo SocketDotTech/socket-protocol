@@ -2,6 +2,12 @@
   "421614": [],
   "7625382": [
     [
+      "0x16F3caAF1Dd731A058B96FbA737b181D070803ee",
+      "DeliveryHelper",
+      "contracts/apps/payload-delivery/app-gateway/DeliveryHelper.sol",
+      []
+    ],
+    [
       "0xA894Fa3dab8897ED038e2B15DBc8d61ccb25eEec",
       "AuctionManager",
       "contracts/apps/payload-delivery/app-gateway/AuctionManager.sol",
