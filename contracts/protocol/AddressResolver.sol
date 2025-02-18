@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import "./interfaces/IAddressResolver.sol";
-import {Forwarder} from "./Forwarder.sol";
-import {AsyncPromise} from "./AsyncPromise.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
 import {LibClone} from "solady/utils/LibClone.sol";
 import {UpgradeableBeacon} from "solady/utils/UpgradeableBeacon.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
+import "../interfaces/IAddressResolver.sol";
+import {Forwarder} from "./Forwarder.sol";
+import {AsyncPromise} from "./AsyncPromise.sol";
 
 /// @title AddressResolver Contract
 /// @notice This contract is responsible for fetching latest core addresses and deploying Forwarder and AsyncPromise contracts.

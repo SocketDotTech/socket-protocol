@@ -5,8 +5,8 @@ import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {CounterAppGateway} from "../../contracts/apps//counter/CounterAppGateway.sol";
 import {CounterDeployer} from "../../contracts/apps//counter/CounterDeployer.sol";
-import {Fees} from "../../contracts/common/Structs.sol";
-import {ETH_ADDRESS, FAST} from "../../contracts/common/Constants.sol";
+import {Fees} from "../../contracts/protocol/utils/common/Structs.sol";
+import {ETH_ADDRESS, FAST} from "../../contracts/protocol/utils/common/Constants.sol";
 
 contract CounterDeploy is Script {
     function run() external {

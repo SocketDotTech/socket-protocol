@@ -2,13 +2,13 @@
 pragma solidity ^0.8.21;
 
 import "./WatcherPrecompileConfig.sol";
-import "../interfaces/IAppGateway.sol";
-import "../interfaces/IPromise.sol";
-import "../interfaces/IFeesManager.sol";
+import "../../interfaces/IAppGateway.sol";
+import "../../interfaces/IPromise.sol";
+import "../../interfaces/IFeesManager.sol";
 import "solady/utils/Initializable.sol";
 
-import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../common/Structs.sol";
-import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../common/Errors.sol";
+import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../utils/common/Structs.sol";
+import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../utils/common/Errors.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations

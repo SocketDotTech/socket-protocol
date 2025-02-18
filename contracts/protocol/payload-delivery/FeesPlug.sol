@@ -2,11 +2,11 @@
 pragma solidity ^0.8.21;
 
 import "solmate/utils/SafeTransferLib.sol";
-import "../base/PlugBase.sol";
+import "../../base/PlugBase.sol";
 import "../utils/AccessControl.sol";
-import {RESCUE_ROLE} from "../utils/AccessRoles.sol";
-import "../libraries/RescueFundsLib.sol";
-import {ETH_ADDRESS} from "../common/Constants.sol";
+import {RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
+import "../utils/RescueFundsLib.sol";
+import {ETH_ADDRESS} from "../utils/common/Constants.sol";
 
 /// @title FeesManager
 /// @notice Abstract contract for managing fees

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../libraries/RescueFundsLib.sol";
+import "../utils/RescueFundsLib.sol";
 import "./SocketConfig.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
 

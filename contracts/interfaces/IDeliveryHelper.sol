@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.3;
-import {PayloadDetails, Bid, Fees, DeployParams, CallType, PayloadBatch, Parallel} from "../common/Structs.sol";
+import {PayloadDetails, Bid, Fees, DeployParams, CallType, PayloadBatch, Parallel} from "../protocol/utils/common/Structs.sol";
 
 interface IDeliveryHelper {
     event BidPlaced(
