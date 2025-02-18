@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-import "../../base/PlugBase.sol";
+import "../base/PlugBase.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
-import {NotSocket} from "../../common/Errors.sol";
+import {NotSocket} from "../common/Errors.sol";
 
 /// @title ContractFactory
 /// @notice Abstract contract for deploying contracts
@@ -36,7 +36,7 @@ contract ContractFactoryPlug is PlugBase, Ownable {
             }
         }
 
-        IPlug(addr).initSocket(appGateway_, msg.sender, switchboard_);
+        IPlug(addr).connectSocket(appGateway_, msg.sender, switchboard_);
         emit Deployed(addr, salt_);
         return addr;
     }

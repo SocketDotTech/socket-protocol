@@ -2,9 +2,9 @@
 pragma solidity ^0.8.21;
 
 import "solmate/utils/SafeTransferLib.sol";
-import "../../base/PlugBase.sol";
+import "../base/PlugBase.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
-import {ETH_ADDRESS} from "../../common/Constants.sol";
+import {ETH_ADDRESS} from "../common/Constants.sol";
 
 /// @title FeesManager
 /// @notice Abstract contract for managing fees

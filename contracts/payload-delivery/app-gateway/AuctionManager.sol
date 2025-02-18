@@ -2,12 +2,12 @@
 pragma solidity ^0.8.0;
 
 import {Ownable} from "solady/auth/Ownable.sol";
-import {SignatureVerifier} from "../../../socket/utils/SignatureVerifier.sol";
-import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
-import {Fees, Bid, PayloadBatch} from "../../../common/Structs.sol";
-import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
-import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
-import "../../../interfaces/IAuctionManager.sol";
+import {SignatureVerifier} from "../../socket/utils/SignatureVerifier.sol";
+import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
+import {Fees, Bid, PayloadBatch} from "../../common/Structs.sol";
+import {IDeliveryHelper} from "../../interfaces/IDeliveryHelper.sol";
+import {IFeesManager} from "../../interfaces/IFeesManager.sol";
+import {IAuctionManager} from "../../interfaces/IAuctionManager.sol";
 import "solady/utils/Initializable.sol";
 
 /// @title AuctionManager

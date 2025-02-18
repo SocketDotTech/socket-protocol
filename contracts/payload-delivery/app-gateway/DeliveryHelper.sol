@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
+import {IAppGateway} from "../../interfaces/IAppGateway.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
-import {Bid, PayloadBatch, Fees, PayloadDetails, FinalizeParams} from "../../../common/Structs.sol";
-import {DISTRIBUTE_FEE, DEPLOY} from "../../../common/Constants.sol";
-import {PromisesNotResolved} from "../../../common/Errors.sol";
+import {Bid, PayloadBatch, Fees, PayloadDetails, FinalizeParams} from "../../common/Structs.sol";
+import {DISTRIBUTE_FEE, DEPLOY} from "../../common/Constants.sol";
+import {PromisesNotResolved} from "../../common/Errors.sol";
 import "./BatchAsync.sol";
 import "solady/utils/Initializable.sol";
 
