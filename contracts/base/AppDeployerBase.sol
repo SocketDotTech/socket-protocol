@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 import {DeployParams, Fees, CallType, PayloadBatch} from "../common/Structs.sol";
-import {AppGatewayBase} from "./AppGatewayBase.sol";
+import "./AppGatewayBase.sol";
 import {IForwarder} from "../interfaces/IForwarder.sol";
 import {IPromise} from "../interfaces/IPromise.sol";
 import {IAppDeployer} from "../interfaces/IAppDeployer.sol";
@@ -32,7 +32,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
 
         onCompleteData = abi.encode(chainSlug_);
         IDeliveryHelper(deliveryHelper()).queue(
-            isCallSequential,
+            isParallelCall,
             chainSlug_,
             address(0),
             asyncPromise,

@@ -44,7 +44,7 @@ contract SuperTokenLockableDeployer is AppDeployerBase, OwnableTwoStep {
             abi.encode(params._burnLimit, params._mintLimit)
         );
 
-        _setFees(fees_);
+        _setOverrides(fees_);
         _claimOwner(owner_);
     }
 

@@ -17,8 +17,7 @@ contract ParallelCounterDeployer is AppDeployerBase, OwnableTwoStep {
     ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) {
         creationCodeWithArgs[counter1] = abi.encodePacked(type(Counter).creationCode);
         creationCodeWithArgs[counter2] = abi.encodePacked(type(Counter).creationCode);
-        _setFees(fees_);
-        _setIsCallSequential(false);
+        _setOverrides(Read.OFF, Parallel.ON, 1000000, fees_);
         _claimOwner(msg.sender);
     }
 
