@@ -5,7 +5,7 @@ import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 
 import {AddressResolverUtil} from "../../../protocol/utils/AddressResolverUtil.sol";
-import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, PayloadBatch} from "../../../protocol/utils/common/Structs.sol";
+import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, PayloadBatch, Parallel} from "../../../protocol/utils/common/Structs.sol";
 import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../protocol/utils/common/Constants.sol";
 import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
@@ -154,7 +154,12 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
     /// @param fees_ The fees data struct
     /// @param asyncId_ The batch identifier
     /// @dev Only callable by delivery helper
-    function blockFees(address appGateway_, Fees memory fees_, bytes32 asyncId_) external {
+    function blockFees(
+        address appGateway_,
+        Fees memory fees_,
+        Bid memory winningBid_,
+        bytes32 asyncId_
+    ) external {
         // todo: only auction manager can call this
         address appGateway = _getCoreAppGateway(appGateway_);
         // Block fees
@@ -163,15 +168,15 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
             appGateway,
             fees_.feePoolToken
         );
-        if (availableFees < fees_.amount) revert InsufficientFeesAvailable();
+        if (availableFees < winningBid_.fee) revert InsufficientFeesAvailable();
 
         TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees_.feePoolChain][
             fees_.feePoolToken
         ];
-        tokenBalance.blocked += fees_.amount;
+        tokenBalance.blocked += winningBid_.fee;
 
         asyncIdBlockedFees[asyncId_] = fees_;
-        emit FeesBlocked(asyncId_, fees_.feePoolChain, fees_.feePoolToken, fees_.amount);
+        emit FeesBlocked(asyncId_, fees_.feePoolChain, fees_.feePoolToken, winningBid_.fee);
     }
 
     function updateTransmitterFees(
@@ -295,7 +300,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
                 callType: callType_,
                 executionGasLimit: 1000000,
                 next: new address[](2),
-                isSequential: true
+                isParallel: Parallel.OFF
             });
     }
 

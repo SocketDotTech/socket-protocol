@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 import {AddressResolverUtil} from "../../../protocol/utils/AddressResolverUtil.sol";
-import {CallParams, Fees, PayloadDetails, CallType, Bid, PayloadBatch} from "../../../protocol/utils/common/Structs.sol";
+import {CallParams, Fees, PayloadDetails, CallType, Bid, PayloadBatch, Parallel} from "../../../protocol/utils/common/Structs.sol";
 import {NotAuctionManager, InvalidPromise, InvalidIndex} from "../../../protocol/utils/common/Errors.sol";
 import {AsyncPromise} from "../../AsyncPromise.sol";
 import {IPromise} from "../../../interfaces/IPromise.sol";
@@ -15,7 +15,6 @@ import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
     uint256 public saltCounter;
     uint256 public asyncCounter;
-    address public feesManager;
 
     uint256 public bidTimeout;
 
@@ -66,7 +65,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
     /// @param callType_ The call type
     /// @param payload_ The payload
     function queue(
-        bool isSequential_,
+        Parallel isParallel_,
         uint32 chainSlug_,
         address target_,
         address asyncPromise_,
@@ -82,7 +81,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
                 target: target_,
                 payload: payload_,
                 gasLimit: 10000000,
-                isSequential: isSequential_
+                isParallel: isParallel_
             })
         );
     }
@@ -148,7 +147,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
                 callType: params_.callType,
                 executionGasLimit: params_.gasLimit == 0 ? 1_000_000 : params_.gasLimit,
                 next: next,
-                isSequential: params_.isSequential
+                isParallel: params_.isParallel
             });
     }
 

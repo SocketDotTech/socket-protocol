@@ -35,7 +35,7 @@ export const chains: Array<ChainSlug> = [
 export const capacitorType = 1;
 export const maxPacketLength = 1;
 export const initialPacketCount = 0;
-export const auctionEndDelaySeconds = 5;
+export const auctionEndDelaySeconds = 0;
 
 const MSG_VALUE_MAX_THRESHOLD = utils.parseEther("0.001");
 export const msgValueMaxThreshold = (chain: ChainSlug): BigNumberish => {

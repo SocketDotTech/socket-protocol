@@ -20,17 +20,14 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
 
     /// @notice Initializer function to replace constructor
     /// @param addressResolver_ The address resolver contract
-    /// @param feesManager_ The fees manager contract
     /// @param owner_ The owner address
     function initialize(
         address addressResolver_,
-        address feesManager_,
         address owner_,
         uint256 bidTimeout_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         version = 1;
-        feesManager = feesManager_;
         bidTimeout = bidTimeout_;
         _initializeOwner(owner_);
     }
@@ -42,7 +39,7 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
         _payloadBatches[asyncId_].winningBid = winningBid_;
 
         // update fees
-        IFeesManager(feesManager).updateTransmitterFees(
+        IFeesManager(addressResolver__.feesManager()).updateTransmitterFees(
             winningBid_,
             asyncId_,
             _payloadBatches[asyncId_].appGateway
@@ -92,7 +89,7 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
     }
 
     function _finishBatch(bytes32 asyncId_, PayloadBatch storage payloadBatch_) internal {
-        IFeesManager(feesManager).unblockAndAssignFees(
+        IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
             asyncId_,
             payloadBatch_.winningBid.transmitter,
             payloadBatch_.appGateway
@@ -121,7 +118,7 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
         IPromise(batchPromise).then(this.callback.selector, abi.encode(asyncId_));
 
         // Handle batch processing based on type
-        if (!payloads[currentIndex].isSequential) {
+        if (payloads[currentIndex].isParallel == Parallel.ON) {
             _processParallelCalls(asyncId_, payloadBatch_, payloads, currentIndex, batchPromise);
         } else {
             _processSequentialCall(
@@ -181,7 +178,9 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
         if (startIndex_ >= payloads_.length) revert InvalidIndex();
 
         uint256 endIndex = startIndex_;
-        while (endIndex + 1 < payloads_.length && !payloads_[endIndex + 1].isSequential) {
+        while (
+            endIndex + 1 < payloads_.length && payloads_[endIndex + 1].isParallel == Parallel.ON
+        ) {
             endIndex++;
         }
 

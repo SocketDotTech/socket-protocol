@@ -12,7 +12,7 @@ contract ParallelCounterAppGateway is AppGatewayBase {
         Fees memory fees_
     ) AppGatewayBase(addressResolver_, auctionManager_) {
         addressResolver__.setContractsToGateways(deployerContract_);
-        _setOverrides(false, true, 1000000, fees_);
+        _setOverrides(Read.OFF, Parallel.OFF, 1000000, fees_);
     }
 
     function incrementCounters(address[] memory instances_) public async {

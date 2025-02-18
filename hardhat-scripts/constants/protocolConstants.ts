@@ -15,8 +15,3 @@ export enum OffChainVMCoreContracts {
   AsyncPromise = "AsyncPromise",
   AddressResolver = "AddressResolver",
 }
-
-export enum AppContracts {
-  SuperTokenApp = "SuperTokenApp",
-  SuperTokenDeployer = "SuperTokenDeployer",
-}
