@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.3;
 
-import {Bid, Fees} from "../common/Structs.sol";
+import {Bid, Fees} from "../protocol/utils/common/Structs.sol";
 
 interface IAuctionManager {
     function bid(

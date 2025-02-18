@@ -6,8 +6,8 @@ import {console} from "forge-std/Console.sol";
 import {SuperTokenAppGateway} from "../../contracts/apps/super-token/SuperTokenAppGateway.sol";
 import {SuperTokenDeployer} from "../../contracts/apps/super-token/SuperTokenDeployer.sol";
 import {SuperToken} from "../../contracts/apps/super-token/SuperToken.sol";
-import {Fees} from "../../contracts/common/Structs.sol";
-import {ETH_ADDRESS} from "../../contracts/common/Constants.sol";
+import {Fees} from "../../contracts/protocol/utils/common/Structs.sol";
+import {ETH_ADDRESS} from "../../contracts/protocol/utils/common/Constants.sol";
 
 contract DeployContracts is Script {
     function run() external {

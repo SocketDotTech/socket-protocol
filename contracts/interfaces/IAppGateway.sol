@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {PayloadBatch} from "../common/Structs.sol";
+import {PayloadBatch} from "../protocol/utils/common/Structs.sol";
 
 interface IAppGateway {
     function isReadCall() external view returns (bool);

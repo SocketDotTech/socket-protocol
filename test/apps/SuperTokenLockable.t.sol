@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {SuperTokenLockableDeployer} from "../../contracts/apps/super-token-lockable/SuperTokenLockableDeployer.sol";
 import {SuperTokenLockableAppGateway} from "../../contracts/apps/super-token-lockable/SuperTokenLockableAppGateway.sol";
 import {SuperTokenLockable} from "../../contracts/apps/super-token-lockable/SuperTokenLockable.sol";
-import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/common/Constants.sol";
+import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/protocol/utils/common/Constants.sol";
 
 import "../DeliveryHelper.t.sol";
 

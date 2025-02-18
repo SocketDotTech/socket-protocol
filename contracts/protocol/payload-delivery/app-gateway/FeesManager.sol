@@ -2,13 +2,14 @@
 pragma solidity ^0.8.0;
 
 import {Ownable} from "solady/auth/Ownable.sol";
-import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
-import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, PayloadBatch} from "../../common/Structs.sol";
-import {IDeliveryHelper} from "../../interfaces/IDeliveryHelper.sol";
-import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../common/Constants.sol";
-import {IFeesPlug} from "../../interfaces/IFeesPlug.sol";
-import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 import "solady/utils/Initializable.sol";
+
+import {AddressResolverUtil} from "../../../protocol/utils/AddressResolverUtil.sol";
+import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, PayloadBatch} from "../../../protocol/utils/common/Structs.sol";
+import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
+import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../protocol/utils/common/Constants.sol";
+import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
+import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 
 /// @title FeesManager
 /// @notice Contract for managing fees
