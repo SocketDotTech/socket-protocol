@@ -99,7 +99,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     function initialize(
         address owner_,
         address addressResolver_,
-        uint256 maxLimit_
+        uint256 defaultLimit_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
@@ -109,9 +109,9 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         LIMIT_DECIMALS = 18;
 
         // limit per day
-        maxLimit = maxLimit_ * 10 ** LIMIT_DECIMALS;
+        defaultLimit = defaultLimit_ * 10 ** LIMIT_DECIMALS;
         // limit per second
-        ratePerSecond = maxLimit / (24 * 60 * 60);
+        defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
     }
 
     // ================== Timeout functions ==================
