@@ -1,5 +1,4 @@
 export enum CORE_CONTRACTS {
-  Hasher = "Hasher",
   SignatureVerifier = "SignatureVerifier",
   Socket = "Socket",
   SocketBatcher = "SocketBatcher",

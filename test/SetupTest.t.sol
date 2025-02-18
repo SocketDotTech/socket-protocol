@@ -9,12 +9,11 @@ import "../contracts/interfaces/IForwarder.sol";
 import "../contracts/socket/utils/AccessRoles.sol";
 import {Socket} from "../contracts/socket/Socket.sol";
 import {SignatureVerifier} from "../contracts/socket/utils/SignatureVerifier.sol";
-import {Hasher} from "../contracts/socket/utils/Hasher.sol";
 import "../contracts/socket/switchboard/FastSwitchboard.sol";
 import "../contracts/socket/SocketBatcher.sol";
 import "../contracts/AddressResolver.sol";
-import {ContractFactoryPlug} from "../contracts/apps/payload-delivery/ContractFactoryPlug.sol";
-import {FeesPlug} from "../contracts/apps/payload-delivery/FeesPlug.sol";
+import {ContractFactoryPlug} from "../contracts/payload-delivery/ContractFactoryPlug.sol";
+import {FeesPlug} from "../contracts/payload-delivery/FeesPlug.sol";
 
 import {ETH_ADDRESS} from "../contracts/common/Constants.sol";
 import {ResolvedPromises} from "../contracts/common/Structs.sol";
@@ -72,8 +71,7 @@ contract SetupTest is Test {
         SignatureVerifier verifier = new SignatureVerifier();
         verifier.initialize(owner);
 
-        Hasher hasher = new Hasher(owner);
-        Socket socket = new Socket(chainSlug_, address(hasher), address(verifier), owner, "test");
+        Socket socket = new Socket(chainSlug_, address(verifier), owner, "test");
         SocketBatcher socketBatcher = new SocketBatcher(owner, socket);
         FastSwitchboard switchboard = new FastSwitchboard(chainSlug_, socket, verifier, owner);
 

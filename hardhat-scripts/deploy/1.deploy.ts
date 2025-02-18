@@ -74,16 +74,6 @@ const main = async () => {
             deployUtils.signer
           );
 
-          contractName = CORE_CONTRACTS.Hasher;
-          const hasher: Contract = await getOrDeploy(
-            contractName,
-            contractName,
-            `contracts/socket/utils/${contractName}.sol`,
-            [socketOwner],
-            deployUtils
-          );
-          deployUtils.addresses[contractName] = hasher.address;
-
           contractName = CORE_CONTRACTS.Socket;
           const socket: Contract = await getOrDeploy(
             contractName,
@@ -91,7 +81,6 @@ const main = async () => {
             `contracts/socket/${contractName}.sol`,
             [
               chain as ChainSlug,
-              hasher.address,
               signatureVerifier.address,
               socketOwner,
               "EVMX",
