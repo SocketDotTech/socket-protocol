@@ -133,7 +133,7 @@ abstract contract BatchAsync is QueueAsync {
         while (
             readEndIndex < payloadDetails_.length &&
             payloadDetails_[readEndIndex].callType == CallType.READ &&
-            !payloadDetails_[readEndIndex].isSequential
+            payloadDetails_[readEndIndex].isParallel == Parallel.ON
         ) {
             readEndIndex++;
         }

@@ -5,30 +5,20 @@ import "../utils/AddressResolverUtil.sol";
 import "../interfaces/IDeliveryHelper.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
-import {Fees} from "../common/Structs.sol";
+import {Fees, Read, Parallel} from "../common/Structs.sol";
 import {FeesPlugin} from "../utils/FeesPlugin.sol";
 import {InvalidPromise, FeesNotSet} from "../common/Errors.sol";
 
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway
 abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin {
-    bool public override isReadCall;
-    bool public override isCallSequential;
+    Read public override isReadCall;
+    Parallel public override isParallelCall;
     uint256 public override gasLimit;
 
     address public auctionManager;
     bytes public onCompleteData;
     bytes32 public sbType;
-
-    enum Read {
-        ON,
-        OFF
-    }
-
-    enum Sequential {
-        TRUE,
-        FALSE
-    }
 
     mapping(address => bool) public isValidPromise;
 
@@ -56,7 +46,6 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     constructor(address addressResolver_, address auctionManager_) {
         _setAddressResolver(addressResolver_);
         auctionManager = auctionManager_;
-        isCallSequential = true;
     }
 
     /// @notice Creates a contract ID
@@ -94,51 +83,47 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @param isReadCall_ The read call flag
     /// @param fees_ The fees configuration
     /// @param gasLimit_ The gas limit
-    /// @param isCallSequential_ The sequential call flag
+    /// @param isParallelCall_ The sequential call flag
     function _setOverrides(
         Read isReadCall_,
-        Sequential isCallSequential_,
+        Parallel isParallelCall_,
         uint256 gasLimit_,
         Fees memory fees_
     ) internal {
-        isReadCall = isReadCall_ == Read.ON;
-        isCallSequential = isCallSequential_ == Sequential.TRUE;
+        isReadCall = isReadCall_;
+        isParallelCall = isParallelCall_;
         gasLimit = gasLimit_;
         fees = fees_;
     }
 
     /// @notice Sets isReadCall, fees and gasLimit overrides
     /// @param isReadCall_ The read call flag
-    /// @param isCallSequential_ The sequential call flag
+    /// @param isParallelCall_ The sequential call flag
     /// @param gasLimit_ The gas limit
-    function _setOverrides(
-        Read isReadCall_,
-        Sequential isCallSequential_,
-        uint256 gasLimit_
-    ) internal {
-        isReadCall = isReadCall_ == Read.ON;
-        isCallSequential = isCallSequential_ == Sequential.TRUE;
+    function _setOverrides(Read isReadCall_, Parallel isParallelCall_, uint256 gasLimit_) internal {
+        isReadCall = isReadCall_;
+        isParallelCall = isParallelCall_;
         gasLimit = gasLimit_;
     }
 
-    /// @notice Sets isReadCall and isCallSequential overrides
+    /// @notice Sets isReadCall and isParallelCall overrides
     /// @param isReadCall_ The read call flag
-    /// @param isCallSequential_ The sequential call flag
-    function _setOverrides(Read isReadCall_, Sequential isCallSequential_) internal {
-        isReadCall = isReadCall_ == Read.ON;
-        isCallSequential = isCallSequential_ == Sequential.TRUE;
+    /// @param isParallelCall_ The sequential call flag
+    function _setOverrides(Read isReadCall_, Parallel isParallelCall_) internal {
+        isReadCall = isReadCall_;
+        isParallelCall = isParallelCall_;
     }
 
-    /// @notice Sets isReadCall and gasLimit overrides
-    /// @param isCallSequential_ The sequential call flag
-    function _setOverrides(Sequential isCallSequential_) internal {
-        isCallSequential = isCallSequential_ == Sequential.TRUE;
+    /// @notice Sets isParallelCall overrides
+    /// @param isParallelCall_ The sequential call flag
+    function _setOverrides(Parallel isParallelCall_) internal {
+        isParallelCall = isParallelCall_;
     }
 
-    /// @notice Sets isReadCall and gasLimit overrides
+    /// @notice Sets isReadCall overrides
     /// @param isReadCall_ The read call flag
     function _setOverrides(Read isReadCall_) internal {
-        isReadCall = isReadCall_ == Read.ON;
+        isReadCall = isReadCall_;
     }
 
     /// @notice Sets gasLimit overrides

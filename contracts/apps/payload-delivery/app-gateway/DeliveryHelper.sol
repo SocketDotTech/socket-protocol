@@ -121,7 +121,7 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         IPromise(batchPromise).then(this.callback.selector, abi.encode(asyncId_));
 
         // Handle batch processing based on type
-        if (!payloads[currentIndex].isSequential) {
+        if (payloads[currentIndex].isParallel == Parallel.ON) {
             _processParallelCalls(asyncId_, payloadBatch_, payloads, currentIndex, batchPromise);
         } else {
             _processSequentialCall(
@@ -181,7 +181,7 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
         if (startIndex_ >= payloads_.length) revert InvalidIndex();
 
         uint256 endIndex = startIndex_;
-        while (endIndex + 1 < payloads_.length && !payloads_[endIndex + 1].isSequential) {
+        while (endIndex + 1 < payloads_.length && payloads_[endIndex + 1].isParallel == Parallel.ON) {
             endIndex++;
         }
 
