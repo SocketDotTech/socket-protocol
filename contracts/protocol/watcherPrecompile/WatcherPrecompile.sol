@@ -106,8 +106,6 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         version = 1;
         maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
 
-        LIMIT_DECIMALS = 18;
-
         // limit per day
         defaultLimit = defaultLimit_ * 10 ** LIMIT_DECIMALS;
         // limit per second
