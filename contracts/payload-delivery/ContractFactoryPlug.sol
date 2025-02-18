@@ -38,7 +38,7 @@ contract ContractFactoryPlug is PlugBase, AccessControl {
             }
         }
 
-        IPlug(addr).initSocket(appGateway_, msg.sender, switchboard_);
+        IPlug(addr).connectSocket(appGateway_, msg.sender, switchboard_);
         emit Deployed(addr, salt_);
         return addr;
     }

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
-import {CallParams, Fees, PayloadDetails, CallType, Bid, PayloadBatch} from "../../common/Structs.sol";
+import {CallParams, Fees, PayloadDetails, CallType, Bid, PayloadBatch, Parallel} from "../../common/Structs.sol";
 import {NotAuctionManager, InvalidPromise, InvalidIndex} from "../../common/Errors.sol";
 import {AsyncPromise} from "../../AsyncPromise.sol";
 import {IPromise} from "../../interfaces/IPromise.sol";
