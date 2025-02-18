@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Ownable} from "solady/auth/Ownable.sol";
 import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
-import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, PayloadBatch} from "../../common/Structs.sol";
+import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, PayloadBatch, Parallel} from "../../common/Structs.sol";
 import {IDeliveryHelper} from "../../interfaces/IDeliveryHelper.sol";
 import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../common/Constants.sol";
 import {IFeesPlug} from "../../interfaces/IFeesPlug.sol";
