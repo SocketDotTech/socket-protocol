@@ -15,7 +15,7 @@ import { chains } from "./config";
 import { getProviderFromChainSlug } from "../constants";
 import { Wallet } from "ethers";
 import { getInstance, storeAddresses } from "./utils";
-import { OffChainVMCoreContracts } from "../../src";
+import { EVMxCoreContracts } from "../constants/protocolConstants";
 import { EVMX_CHAIN_ID } from "../constants/constants";
 
 export const main = async () => {
@@ -71,7 +71,7 @@ async function setSwitchboard(sbAddress, chain, addresses) {
   const watcherPrecompile = (
     await getInstance(
       "contracts/watcherPrecompile/WatcherPrecompile.sol:WatcherPrecompile",
-      watcherVMaddr[OffChainVMCoreContracts.WatcherPrecompile]
+      watcherVMaddr[EVMxCoreContracts.WatcherPrecompile]
     )
   ).connect(signer);
 

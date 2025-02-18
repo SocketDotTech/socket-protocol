@@ -8,7 +8,7 @@ export enum CORE_CONTRACTS {
   ContractFactoryPlug = "ContractFactoryPlug",
 }
 
-export enum OffChainVMCoreContracts {
+export enum EVMxCoreContracts {
   SignatureVerifier = "SignatureVerifier",
   WatcherPrecompile = "WatcherPrecompile",
   AuctionManager = "AuctionManager",
@@ -17,9 +17,4 @@ export enum OffChainVMCoreContracts {
   Forwarder = "Forwarder",
   AsyncPromise = "AsyncPromise",
   AddressResolver = "AddressResolver",
-}
-
-export enum AppContracts {
-  SuperTokenApp = "SuperTokenApp",
-  SuperTokenDeployer = "SuperTokenDeployer",
 }
