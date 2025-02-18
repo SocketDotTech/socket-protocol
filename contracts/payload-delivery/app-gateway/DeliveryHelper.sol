@@ -180,7 +180,9 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
         if (startIndex_ >= payloads_.length) revert InvalidIndex();
 
         uint256 endIndex = startIndex_;
-        while (endIndex + 1 < payloads_.length && payloads_[endIndex + 1].isParallel == Parallel.ON) {
+        while (
+            endIndex + 1 < payloads_.length && payloads_[endIndex + 1].isParallel == Parallel.ON
+        ) {
             endIndex++;
         }
 
