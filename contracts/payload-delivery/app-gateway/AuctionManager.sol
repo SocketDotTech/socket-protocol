@@ -30,6 +30,8 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
     error BidExceedsMaxFees();
     /// @notice Error thrown if winning bid is assigned to an invalid transmitter
     error InvalidTransmitter();
+    /// @notice Error thrown if a lower bid already exists
+    error LowerBidAlreadyExists();
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -91,7 +93,9 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
         PayloadBatch memory payloadBatch = IDeliveryHelper(addressResolver__.deliveryHelper())
             .payloadBatches(asyncId_);
         if (fee > payloadBatch.fees.amount) revert BidExceedsMaxFees();
-        if (fee < winningBids[asyncId_].fee) return;
+
+        if (winningBids[asyncId_].transmitter != address(0) && fee >= winningBids[asyncId_].fee)
+            revert LowerBidAlreadyExists();
 
         winningBids[asyncId_] = newBid;
 
@@ -121,7 +125,7 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
 
     /// @notice Ends an auction
     /// @param asyncId_ The ID of the auction
-    function endAuction(bytes32 asyncId_) external onlyDeliveryHelper {
+    function endAuction(bytes32 asyncId_) external onlyWatcherPrecompile {
         _endAuction(asyncId_);
     }
 

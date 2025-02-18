@@ -14,7 +14,7 @@ import type {
 import { resolve } from "path";
 import fs from "fs";
 
-import "./tasks/accounts";
+import "./hardhat-scripts/utils/accounts";
 import { getJsonRpcUrl } from "./hardhat-scripts/constants/networks";
 import {
   ChainId,
@@ -130,7 +130,7 @@ const config: HardhatUserConfig = {
         },
       },
       {
-        network: "offChainVM",
+        network: "EVMx",
         chainId: EVMX_CHAIN_ID,
         urls: {
           apiURL: "",
@@ -165,7 +165,7 @@ const config: HardhatUserConfig = {
       evmVersion: "paris",
       optimizer: {
         enabled: true,
-        runs: 999999,
+        runs: 999,
         details: {
           yul: true,
           yulDetails: {
