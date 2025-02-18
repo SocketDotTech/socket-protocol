@@ -14,8 +14,8 @@ abstract contract WatcherPrecompileLimits is
     Ownable,
     IWatcherPrecompile
 {
-    /// @notice Maximum limit value for any app gateway
-    uint256 public maxLimit;
+    /// @notice Default limit value for any app gateway
+    uint256 public defaultLimit;
     /// @notice Rate at which limit replenishes per second
     uint256 public ratePerSecond;
     /// @notice Number of decimals used in limit calculations
@@ -131,10 +131,10 @@ abstract contract WatcherPrecompileLimits is
         // Initialize limit if not active
         if (!_activeAppGateways[appGateway]) {
             LimitParams memory limitParam = LimitParams({
-                maxLimit: maxLimit,
+                maxLimit: defaultLimit,
                 ratePerSecond: ratePerSecond,
                 lastUpdateTimestamp: block.timestamp,
-                lastUpdateLimit: maxLimit
+                lastUpdateLimit: defaultLimit
             });
 
             _limitParams[appGateway][QUERY] = limitParam;
@@ -142,7 +142,7 @@ abstract contract WatcherPrecompileLimits is
             _limitParams[appGateway][SCHEDULE] = limitParam;
 
             _activeAppGateways[appGateway] = true;
-            emit AppGatewayActivated(appGateway, maxLimit, ratePerSecond);
+            emit AppGatewayActivated(appGateway, defaultLimit, ratePerSecond);
         }
 
         // Update the limit
@@ -163,11 +163,11 @@ abstract contract WatcherPrecompileLimits is
     }
 
     /**
-     * @notice Set the maximum limit value
-     * @param maxLimit_ The new maximum limit value
+     * @notice Set the default limit value
+     * @param defaultLimit_ The new default limit value
      */
-    function setMaxLimit(uint256 maxLimit_) external onlyOwner {
-        maxLimit = maxLimit_;
+    function setDefaultLimit(uint256 defaultLimit_) external onlyOwner {
+        defaultLimit = defaultLimit_;
     }
 
     /**

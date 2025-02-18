@@ -38,7 +38,7 @@ contract SetupTest is Test {
     uint256 public readPayloadIdCounter = 0;
     uint256 public timeoutPayloadIdCounter = 0;
 
-    uint256 public maxLimit = 1000;
+    uint256 public defaultLimit = 1000;
 
     bytes public asyncPromiseBytecode = type(AsyncPromise).creationCode;
     uint64 public version = 1;
@@ -118,7 +118,7 @@ contract SetupTest is Test {
             WatcherPrecompile.initialize.selector,
             watcherEOA,
             address(addressResolverProxy),
-            maxLimit
+            defaultLimit
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(version);
