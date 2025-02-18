@@ -5,7 +5,7 @@ import {SuperTokenDeployer} from "../../contracts/apps/super-token/SuperTokenDep
 import {SuperTokenAppGateway} from "../../contracts/apps/super-token/SuperTokenAppGateway.sol";
 import {SuperToken} from "../../contracts/apps/super-token/SuperToken.sol";
 import "../DeliveryHelper.t.sol";
-import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/common/Constants.sol";
+import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/protocol/utils/common/Constants.sol";
 
 /**
  * @title SuperToken Test

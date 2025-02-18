@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../interfaces/ISocket.sol";
-import "../interfaces/ISwitchboard.sol";
+import "../../interfaces/ISocket.sol";
+import "../../interfaces/ISwitchboard.sol";
 import "../utils/AccessControl.sol";
-import {RESCUE_ROLE} from "../utils/AccessRoles.sol";
+import {RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
 
 /**
  * @title SocketConfig

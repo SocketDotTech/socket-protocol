@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 import "../interfaces/IPlug.sol";
-import {PlugDisconnected, InvalidAppGateway} from "../common/Errors.sol";
+import {PlugDisconnected, InvalidAppGateway} from "../protocol/utils/common/Errors.sol";
 import "../interfaces/ISwitchboard.sol";
 import "../interfaces/ISocket.sol";
 

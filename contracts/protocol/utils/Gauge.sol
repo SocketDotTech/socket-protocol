@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
-import {LimitParams} from "../common/Structs.sol";
-import {LimitReached} from "../common/Errors.sol";
+import {LimitParams} from "../utils/common/Structs.sol";
+import {LimitReached} from "../utils/common/Errors.sol";
 
 abstract contract Gauge {
     function _getCurrentLimit(LimitParams storage params_) internal view returns (uint256 _limit) {

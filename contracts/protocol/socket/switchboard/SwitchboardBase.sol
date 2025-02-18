@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../../interfaces/ISwitchboard.sol";
-import "../../interfaces/ISocket.sol";
+import "../../../interfaces/ISwitchboard.sol";
+import "../../../interfaces/ISocket.sol";
 import "../../utils/AccessControl.sol";
-import {RESCUE_ROLE} from "../../utils/AccessRoles.sol";
-import "../../libraries/RescueFundsLib.sol";
+import {RESCUE_ROLE} from "../../utils/common/AccessRoles.sol";
+import "../../utils/RescueFundsLib.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
 
 abstract contract SwitchboardBase is ISwitchboard, AccessControl {

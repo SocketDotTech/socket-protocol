@@ -4,10 +4,10 @@ pragma solidity ^0.8.0;
 import {Ownable} from "solady/auth/Ownable.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
 import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
-import {Fees, Bid, PayloadBatch} from "../../common/Structs.sol";
-import {IDeliveryHelper} from "../../interfaces/IDeliveryHelper.sol";
-import {IFeesManager} from "../../interfaces/IFeesManager.sol";
-import {IAuctionManager} from "../../interfaces/IAuctionManager.sol";
+import {Fees, Bid, PayloadBatch} from "../../utils/common/Structs.sol";
+import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
+import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
+import {IAuctionManager} from "../../../interfaces/IAuctionManager.sol";
 import "solady/utils/Initializable.sol";
 
 /// @title AuctionManager
