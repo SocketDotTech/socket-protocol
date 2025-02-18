@@ -294,7 +294,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
                 callType: callType_,
                 executionGasLimit: 1000000,
                 next: new address[](2),
-                isSequential: true
+                isParallel: Parallel.OFF
             });
     }
 

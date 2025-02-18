@@ -453,7 +453,7 @@ contract DeliveryHelperTest is SetupTest {
                 callType: callType_,
                 executionGasLimit: executionGasLimit_,
                 next: next_,
-                isSequential: false
+                isParallel: Parallel.ON
             });
     }
 

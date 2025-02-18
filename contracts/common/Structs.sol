@@ -8,6 +8,16 @@ enum CallType {
     WITHDRAW
 }
 
+enum Read {
+    OFF,
+    ON
+}
+
+enum Parallel {
+    OFF,
+    ON
+}
+
 struct AppGatewayConfig {
     address plug;
     address appGateway;
@@ -47,7 +57,7 @@ struct CallParams {
     address target;
     uint32 chainSlug;
     CallType callType;
-    bool isSequential;
+    Parallel isParallel;
     uint256 gasLimit;
     bytes payload;
 }
@@ -104,7 +114,7 @@ struct PayloadDetails {
     address appGateway;
     address target;
     uint32 chainSlug;
-    bool isSequential;
+    Parallel isParallel;
     CallType callType;
     uint256 executionGasLimit;
     bytes payload;
