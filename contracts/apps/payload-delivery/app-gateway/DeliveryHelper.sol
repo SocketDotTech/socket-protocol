@@ -19,11 +19,9 @@ contract DeliveryHelper is BatchAsync, OwnableTwoStep, Initializable {
 
     /// @notice Initializer function to replace constructor
     /// @param addressResolver_ The address resolver contract
-    /// @param feesManager_ The fees manager contract
     /// @param owner_ The owner address
     function initialize(
         address addressResolver_,
-        address feesManager_,
         address owner_,
         uint256 bidTimeout_,
         uint64 version_
