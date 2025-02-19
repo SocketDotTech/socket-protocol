@@ -8,7 +8,7 @@ import "../interfaces/ISocket.sol";
 
 /**
  * @title SocketDst
- * @dev SocketDst is an abstract contract that inherits from SocketBase and
+ * @dev SocketDst is an abstract contract that inherits from SocketUtils and
  * provides functionality for payload execution, verification.
  * It manages the mapping of payload execution status
  * timestamps

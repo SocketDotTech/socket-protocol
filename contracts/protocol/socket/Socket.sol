@@ -2,18 +2,18 @@
 pragma solidity ^0.8.21;
 
 import "../../interfaces/IPlug.sol";
-import "./SocketBase.sol";
+import "./SocketUtils.sol";
 import {PlugDisconnected, InvalidAppGateway} from "../utils/common/Errors.sol";
 
 /**
  * @title SocketDst
- * @dev SocketDst is an abstract contract that inherits from SocketBase and
+ * @dev SocketDst is an abstract contract that inherits from SocketUtils and
  * provides functionality for payload execution, verification.
  * It manages the mapping of payload execution status
  * timestamps
  * It also includes functions for payload execution and verification
  */
-contract Socket is SocketBase {
+contract Socket is SocketUtils {
     ////////////////////////////////////////////////////////
     ////////////////////// ERRORS //////////////////////////
     ////////////////////////////////////////////////////////
@@ -56,7 +56,7 @@ contract Socket is SocketBase {
         uint32 chainSlug_,
         address owner_,
         string memory version_
-    ) SocketBase(chainSlug_, owner_, version_) {}
+    ) SocketUtils(chainSlug_, owner_, version_) {}
 
     ////////////////////////////////////////////////////////
     ////////////////////// OPERATIONS //////////////////////////
