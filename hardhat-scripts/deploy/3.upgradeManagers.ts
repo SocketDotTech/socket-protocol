@@ -124,7 +124,7 @@ const registerSb = async (sbAddress, signer, socket) => {
       from: signer.address,
     });
 
-    if (!sb) {
+    if (Number(sb) == 0) {
       const registerTx = await switchboard.registerSwitchboard();
       console.log(`Registering Switchboard ${sbAddress}: ${registerTx.hash}`);
       await registerTx.wait();
