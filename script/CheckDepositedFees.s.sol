@@ -13,7 +13,11 @@ contract CheckDepositedFees is Script {
         FeesManager feesManager = FeesManager(payable(vm.envAddress("FEES_MANAGER")));
         address appGateway = vm.envAddress("APP_GATEWAY");
 
-        (uint256 deposited, uint256 blocked) = feesManager.appGatewayFeeBalances(appGateway, 421614, ETH_ADDRESS);
+        (uint256 deposited, uint256 blocked) = feesManager.appGatewayFeeBalances(
+            appGateway,
+            421614,
+            ETH_ADDRESS
+        );
         console.log("App Gateway:", appGateway);
         console.log("Deposited fees:", deposited);
         console.log("Blocked fees:", blocked);
@@ -22,4 +26,3 @@ contract CheckDepositedFees is Script {
         console.log("Available fees:", availableFees);
     }
 }
-

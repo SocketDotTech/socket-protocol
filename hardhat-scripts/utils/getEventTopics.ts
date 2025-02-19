@@ -2,7 +2,6 @@ import fs from "fs";
 import path from "path";
 import { ethers } from "ethers";
 
-
 // Function to recursively get all .sol files
 function getSolFiles(dir: string, fileList: string[] = []): string[] {
   const files = fs.readdirSync(dir);
