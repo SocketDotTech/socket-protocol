@@ -10,10 +10,6 @@
     "moduleResolution": "node",
     "allowJs": true
   },
-  "include": [
-    "src/**/*.ts", 
-    "lib/**/*.ts", 
-    "deployments/"
-  ],
+  "include": ["src/**/*.ts", "lib/**/*.ts", "deployments/"],
   "exclude": ["node_modules", "dist"]
 }

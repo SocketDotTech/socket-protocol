@@ -283,10 +283,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
             transmitter: transmitter
         });
 
-        (payloadId, root) = watcherPrecompile__().finalize(
-            address(this),
-            finalizeParams
-        );
+        (payloadId, root) = watcherPrecompile__().finalize(address(this), finalizeParams);
     }
 
     function _createPayloadDetails(
