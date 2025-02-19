@@ -184,7 +184,6 @@ abstract contract BatchAsync is QueueAsync {
             if (payloadDetails_[i].callType == CallType.DEPLOY) {
                 // contract factory plug deploys new contracts
                 payloadDetails_[i].target = getDeliveryHelperPlugAddress(
-                    address(this),
                     payloadDetails_[i].chainSlug
                 );
                 writes++;
@@ -277,10 +276,7 @@ abstract contract BatchAsync is QueueAsync {
     /// @notice Gets the payload delivery plug address
     /// @param chainSlug_ The chain identifier
     /// @return address The address of the payload delivery plug
-    function getDeliveryHelperPlugAddress(
-        address appGateway_,
-        uint32 chainSlug_
-    ) public view returns (address) {
+    function getDeliveryHelperPlugAddress(uint32 chainSlug_) public view returns (address) {
         return watcherPrecompile__().contractFactoryPlug(chainSlug_);
     }
 

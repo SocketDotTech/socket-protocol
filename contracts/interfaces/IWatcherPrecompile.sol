@@ -61,6 +61,11 @@ interface IWatcherPrecompile {
     /// @param signature_ The watcher's signature
     function finalized(bytes32 payloadId_, bytes calldata signature_) external;
 
+    /// @notice Finalizes a payload execution request with a new transmitter
+    /// @param payloadId_ The unique identifier of the request
+    /// @param newTransmitter_ The new transmitter address
+    function finalizeWithNewTransmitter(bytes32 payloadId_, address newTransmitter_) external;
+
     /// @notice Resolves multiple promises with their return data
     /// @param resolvedPromises_ Array of resolved promises and their return data
     function resolvePromises(ResolvedPromises[] calldata resolvedPromises_) external;
