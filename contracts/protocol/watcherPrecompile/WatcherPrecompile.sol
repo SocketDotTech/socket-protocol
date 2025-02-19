@@ -14,14 +14,13 @@ import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, Resolv
 /// @notice Contract that handles payload verification, execution and app configurations
 contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     uint256 public maxTimeoutDelayInSeconds;
-    /// @notice Counter for tracking query requests
-    uint256 public queryCounter;
-    /// @notice Counter for tracking payload execution requests
+    /// @notice Counter for tracking payload requests
     uint256 public payloadCounter;
-    /// @notice Counter for tracking timeout requests
-    uint256 public timeoutCounter;
     /// @notice The expiry time for the payload
     uint256 public expiryTime;
+
+    /// @notice The chain slug of the watcher precompile
+    uint32 public vmChainSlug;
 
     /// @notice Mapping to store async requests
     /// @dev payloadId => AsyncRequest struct
@@ -99,7 +98,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     function initialize(
         address owner_,
         address addressResolver_,
-        uint256 defaultLimit_
+        uint256 defaultLimit_,
+        uint32 vmChainSlug_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
@@ -110,6 +110,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         defaultLimit = defaultLimit_ * 10 ** LIMIT_DECIMALS;
         // limit per second
         defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
+
+        vmChainSlug = vmChainSlug_;
     }
 
     // ================== Timeout functions ==================
@@ -127,7 +129,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         // from auction manager
         _consumeLimit(appGateway_, SCHEDULE, 1);
         uint256 executeAt = block.timestamp + delayInSeconds_;
-        bytes32 timeoutId = _encodeTimeoutId(timeoutCounter++);
+        bytes32 timeoutId = _encodeWritePayloadId(vmChainSlug, address(this));
         timeoutRequests[timeoutId] = TimeoutRequest(
             timeoutId,
             msg.sender,
@@ -182,10 +184,9 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         );
 
         // Generate a unique payload ID by combining chain, target, and counter
-        payloadId = _encodePayloadId(
+        payloadId = _encodeWritePayloadId(
             params_.payloadDetails.chainSlug,
-            params_.payloadDetails.target,
-            payloadCounter++
+            params_.payloadDetails.target
         );
 
         // Construct parameters for root calculation
@@ -241,7 +242,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         // from payload delivery
         _consumeLimit(appGateway_, QUERY, 1);
         // Generate unique payload ID from query counter
-        payloadId = bytes32(queryCounter++);
+        payloadId = _encodeWritePayloadId(vmChainSlug, address(this));
 
         // Create async request with minimal information for queries
         // Note: addresses set to 0 as they're not needed for queries
@@ -375,28 +376,29 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @notice Encodes a unique payload ID from chain slug, plug address, and counter
     /// @param chainSlug_ The identifier of the chain
     /// @param plug_ The plug address
-    /// @param counter_ The current counter value
     /// @return The encoded payload ID as bytes32
     /// @dev Reverts if chainSlug is 0
-    function _encodePayloadId(
+    function _encodeWritePayloadId(
         uint32 chainSlug_,
-        address plug_,
-        uint256 counter_
+        address plug_
     ) internal view returns (bytes32) {
         if (chainSlug_ == 0) revert InvalidChainSlug();
         (, address switchboard) = getPlugConfigs(chainSlug_, plug_);
-        // Encode payload ID by bit-shifting and combining:
-        // chainSlug (32 bits) | switchboard address (160 bits) | counter (64 bits)
-
-        return
-            bytes32(
-                (uint256(chainSlug_) << 224) | (uint256(uint160(switchboard)) << 64) | counter_
-            );
+        return _encodeId(chainSlug_, switchboard);
     }
 
-    function _encodeTimeoutId(uint256 timeoutCounter_) internal view returns (bytes32) {
-        // watcher address (160 bits) | counter (64 bits)
-        return bytes32((uint256(uint160(address(this))) << 64) | timeoutCounter_);
+    function _encodeId(
+        uint32 chainSlug_,
+        address switchboardOrWatcher
+    ) internal view returns (bytes32) {
+        // Encode payload ID by bit-shifting and combining:
+        // chainSlug (32 bits) | switchboard or watcher precompile address (160 bits) | counter (64 bits)
+        return
+            bytes32(
+                (uint256(chainSlug_) << 224) |
+                    (uint256(uint160(switchboardOrWatcher)) << 64) |
+                    payloadCounter
+            );
     }
 
     function setExpiryTime(uint256 expiryTime_) external onlyOwner {
