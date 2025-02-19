@@ -65,17 +65,20 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
     /// @param callType_ The call type
     /// @param payload_ The payload
     function queue(
+        bool isPlug_,
         Parallel isParallel_,
         uint32 chainSlug_,
         address target_,
         address asyncPromise_,
         uint256 value_,
         CallType callType_,
-        bytes memory payload_
+        bytes memory payload_,
+        bytes memory initCallData_
     ) external {
         // todo: sb related details
         callParamsArray.push(
             CallParams({
+                isPlug: isPlug_,
                 callType: callType_,
                 asyncPromise: asyncPromise_,
                 chainSlug: chainSlug_,
@@ -83,7 +86,8 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
                 payload: payload_,
                 value: value_,
                 gasLimit: 10000000,
-                isParallel: isParallel_
+                isParallel: isParallel_,
+                initCallData: initCallData_
             })
         );
     }
@@ -130,10 +134,12 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
             // app gateway is set in the plug deployed on chain
             payload_ = abi.encodeWithSelector(
                 IContractFactoryPlug.deployContract.selector,
-                payload_,
+                params_.isPlug,
                 salt_,
                 appGatewayForPlug_,
-                switchboard_
+                switchboard_,
+                payload_,
+                params_.initCallData
             );
 
             // for deploy, we set delivery helper as app gateway of contract factory plug

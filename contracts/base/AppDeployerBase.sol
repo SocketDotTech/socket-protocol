@@ -25,20 +25,34 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     /// @notice Deploys a contract
     /// @param contractId_ The contract ID
     /// @param chainSlug_ The chain slug
-    function _deploy(bytes32 contractId_, uint32 chainSlug_) internal {
+    function _deploy(bytes32 contractId_, uint32 chainSlug_, bool isPlug_) internal {
+        _deploy(contractId_, chainSlug_, isPlug_, bytes(""));
+    }
+
+    /// @notice Deploys a contract
+    /// @param contractId_ The contract ID
+    /// @param chainSlug_ The chain slug
+    function _deploy(
+        bytes32 contractId_,
+        uint32 chainSlug_,
+        bool isPlug_,
+        bytes memory initCallData_
+    ) internal {
         address asyncPromise = addressResolver__.deployAsyncPromiseContract(address(this));
         isValidPromise[asyncPromise] = true;
         IPromise(asyncPromise).then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
 
         onCompleteData = abi.encode(chainSlug_);
         IDeliveryHelper(deliveryHelper()).queue(
+            isPlug_,
             isParallelCall,
             chainSlug_,
             address(0),
             asyncPromise,
             0,
             CallType.DEPLOY,
-            creationCodeWithArgs[contractId_]
+            creationCodeWithArgs[contractId_],
+            initCallData_
         );
     }
 
@@ -69,8 +83,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
-            .getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
     }
 
     /// @notice Callback in pd promise to be called after all contracts are deployed

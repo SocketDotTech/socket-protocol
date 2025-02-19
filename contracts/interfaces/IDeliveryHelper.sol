@@ -20,13 +20,15 @@ interface IDeliveryHelper {
     function clearQueue() external;
 
     function queue(
+        bool isPlug_,
         Parallel isParallel_,
         uint32 chainSlug_,
         address target_,
         address asyncPromise_,
         uint256 value_,
         CallType callType_,
-        bytes memory payload_
+        bytes memory payload_,
+        bytes memory initCallData_
     ) external;
 
     function batch(

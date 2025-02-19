@@ -414,8 +414,12 @@ contract DeliveryHelperTest is SetupTest {
         bytes32 salt = keccak256(abi.encode(appDeployer_, chainSlug_, deployCounter++));
         bytes memory payload = abi.encodeWithSelector(
             IContractFactoryPlug.deployContract.selector,
+            true,
+            salt,
+            address(appDeployer_),
+            address(0),
             bytecode_,
-            salt
+            ""
         );
 
         address asyncPromise = predictAsyncPromiseAddress(

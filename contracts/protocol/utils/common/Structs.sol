@@ -55,6 +55,7 @@ struct CallFromInboxParams {
 }
 
 struct CallParams {
+    bool isPlug;
     address asyncPromise;
     address target;
     uint32 chainSlug;
@@ -63,6 +64,7 @@ struct CallParams {
     uint256 gasLimit;
     uint256 value;
     bytes payload;
+    bytes initCallData;
 }
 
 struct DeployParams {

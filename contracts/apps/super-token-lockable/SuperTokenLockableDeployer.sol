@@ -49,8 +49,8 @@ contract SuperTokenLockableDeployer is AppDeployerBase, Ownable {
     }
 
     function deployContracts(uint32 chainSlug_) external async {
-        _deploy(superTokenLockable, chainSlug_);
-        _deploy(limitHook, chainSlug_);
+        _deploy(superTokenLockable, chainSlug_, true);
+        _deploy(limitHook, chainSlug_, true);
     }
 
     // don't need to call this directly, will be called automatically after all contracts are deployed.
