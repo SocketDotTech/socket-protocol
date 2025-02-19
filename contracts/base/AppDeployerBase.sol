@@ -36,6 +36,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
             chainSlug_,
             address(0),
             asyncPromise,
+            0,
             CallType.DEPLOY,
             creationCodeWithArgs[contractId_]
         );

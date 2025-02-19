@@ -24,6 +24,7 @@ interface IDeliveryHelper {
         uint32 chainSlug_,
         address target_,
         address asyncPromise_,
+        uint256 value_,
         CallType callType_,
         bytes memory payload_
     ) external;

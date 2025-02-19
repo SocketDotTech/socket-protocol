@@ -457,6 +457,7 @@ contract DeliveryHelperTest is SetupTest {
                 payload: payload_,
                 callType: callType_,
                 executionGasLimit: executionGasLimit_,
+                value: 0,
                 next: next_,
                 isParallel: Parallel.ON
             });
@@ -506,6 +507,7 @@ contract DeliveryHelperTest is SetupTest {
             transmitterEOA,
             payloadDetails.target,
             payloadId,
+            payloadDetails.value,
             payloadDetails.executionGasLimit,
             block.timestamp + 1000,
             payloadDetails.payload

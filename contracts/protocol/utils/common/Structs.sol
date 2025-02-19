@@ -61,6 +61,7 @@ struct CallParams {
     CallType callType;
     Parallel isParallel;
     uint256 gasLimit;
+    uint256 value;
     bytes payload;
 }
 
@@ -119,6 +120,7 @@ struct PayloadDetails {
     uint32 chainSlug;
     Parallel isParallel;
     CallType callType;
+    uint256 value;
     uint256 executionGasLimit;
     bytes payload;
     address[] next;
@@ -129,6 +131,7 @@ struct PayloadRootParams {
     address transmitter;
     address target;
     bytes32 payloadId;
+    uint256 value;
     uint256 executionGasLimit;
     uint256 expiryTime;
     bytes payload;

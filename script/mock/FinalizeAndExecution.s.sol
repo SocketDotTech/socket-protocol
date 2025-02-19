@@ -28,6 +28,7 @@ contract InboxTest is Script {
             ),
             callType: CallType.WRITE,
             executionGasLimit: 1000000,
+            value: 0,
             next: new address[](0),
             isParallel: Parallel.OFF
         });

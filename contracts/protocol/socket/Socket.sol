@@ -61,7 +61,6 @@ contract Socket is SocketUtils {
     ////////////////////////////////////////////////////////
     ////////////////////// OPERATIONS //////////////////////////
     ////////////////////////////////////////////////////////
-
     /**
      * @notice To send message to a connected remote chain. Should only be called by a plug.
      * @param payload bytes to be delivered to the Plug on the siblingChainSlug_
@@ -126,7 +125,8 @@ contract Socket is SocketUtils {
             transmitter,
             target_,
             executionGasLimit_,
-            payload_
+            payload_,
+            msg.value
         );
 
         // verify payload was part of the packet and

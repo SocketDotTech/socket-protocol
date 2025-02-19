@@ -69,6 +69,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
         uint32 chainSlug_,
         address target_,
         address asyncPromise_,
+        uint256 value_,
         CallType callType_,
         bytes memory payload_
     ) external {
@@ -80,6 +81,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
                 chainSlug: chainSlug_,
                 target: target_,
                 payload: payload_,
+                value: value_,
                 gasLimit: 10000000,
                 isParallel: isParallel_
             })
@@ -143,6 +145,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
                 appGateway: appGateway_,
                 chainSlug: params_.chainSlug,
                 target: params_.target,
+                value: params_.value,
                 payload: payload_,
                 callType: params_.callType,
                 executionGasLimit: params_.gasLimit == 0 ? 1_000_000 : params_.gasLimit,

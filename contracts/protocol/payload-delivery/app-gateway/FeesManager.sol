@@ -298,6 +298,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
                 target: _getFeesPlugAddress(chainSlug_),
                 payload: payload_,
                 callType: callType_,
+                value: 0,
                 executionGasLimit: 1000000,
                 next: new address[](2),
                 isParallel: Parallel.OFF

@@ -90,6 +90,7 @@ contract Forwarder is IForwarder, Initializable {
             chainSlug,
             onChainAddress,
             latestAsyncPromise,
+            0,
             isReadCall == Read.ON ? CallType.READ : CallType.WRITE,
             msg.data
         );
