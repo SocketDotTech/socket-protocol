@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../interfaces/IPlug.sol";
 import {PlugDisconnected, InvalidAppGateway} from "../protocol/utils/common/Errors.sol";
 import "../interfaces/ISwitchboard.sol";
 import "../interfaces/ISocket.sol";

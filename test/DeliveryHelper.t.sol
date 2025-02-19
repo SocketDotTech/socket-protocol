@@ -112,23 +112,23 @@ contract DeliveryHelperTest is SetupTest {
 
     function connectDeliveryHelper() internal {
         vm.startPrank(owner);
-        arbConfig.contractFactoryPlug.connectSocket(
+        arbConfig.contractFactoryPlug.initSocket(
             address(deliveryHelper),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
-        optConfig.contractFactoryPlug.connectSocket(
+        optConfig.contractFactoryPlug.initSocket(
             address(deliveryHelper),
             address(optConfig.socket),
             address(optConfig.switchboard)
         );
 
-        arbConfig.feesPlug.connectSocket(
+        arbConfig.feesPlug.initSocket(
             address(feesManager),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
-        optConfig.feesPlug.connectSocket(
+        optConfig.feesPlug.initSocket(
             address(feesManager),
             address(optConfig.socket),
             address(optConfig.switchboard)

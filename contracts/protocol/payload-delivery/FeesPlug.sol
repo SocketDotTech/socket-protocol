@@ -32,7 +32,8 @@ contract FeesPlug is PlugBase, AccessControl {
         _;
     }
 
-    constructor(address socket_, address owner_) PlugBase(socket_) {
+    constructor(address socket_, address owner_) {
+        _setSocket(socket_);
         _initializeOwner(owner_);
     }
 
