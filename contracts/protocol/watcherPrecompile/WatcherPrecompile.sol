@@ -225,6 +225,14 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         emit FinalizeRequested(payloadId, asyncRequest);
     }
 
+    function finalizeWithNewTransmitter(bytes32 payloadId_, address newTransmitter_) external {
+        if (msg.sender != addressResolver__.deliveryHelper()) revert NotDeliveryHelper();
+
+        AsyncRequest storage asyncRequest = asyncRequests[payloadId_];
+        asyncRequest.transmitter = newTransmitter_;
+        emit FinalizeRequested(payloadId_, asyncRequest);
+    }
+
     // ================== Query functions ==================
     /// @notice Creates a new query request
     /// @param chainSlug_ The identifier of the destination chain

@@ -36,24 +36,21 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
         bytes32 asyncId_,
         Bid memory winningBid_
     ) external onlyAuctionManager(asyncId_) {
+        if (winningBid_.transmitter == address(0)) revert InvalidTransmitter();
+
+        bool isRestarted = _payloadBatches[asyncId_].winningBid.transmitter != address(0);
         _payloadBatches[asyncId_].winningBid = winningBid_;
 
         // update fees
+        // todo: revisit
         IFeesManager(addressResolver__.feesManager()).updateTransmitterFees(
             winningBid_,
             asyncId_,
             _payloadBatches[asyncId_].appGateway
         );
 
-        if (winningBid_.transmitter != address(0)) {
-            // process batch
-            _process(asyncId_);
-        } else {
-            // todo: check if this is correct?
-            // cancel batch
-            _payloadBatches[asyncId_].isBatchCancelled = true;
-            emit BatchCancelled(asyncId_);
-        }
+        if (!isRestarted) return _process(asyncId_);
+        watcherPrecompile__().finalizeWithNewTransmitter(asyncId_, winningBid_.transmitter);
     }
 
     function callback(bytes memory asyncId_, bytes memory) external override onlyPromises {
