@@ -44,6 +44,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     error InvalidConnection();
     /// @notice Error thrown if winning bid is assigned to an invalid transmitter
     error InvalidTransmitter();
+    /// @notice Error thrown when a timeout request is invalid
+    error InvalidTimeoutRequest();
 
     event CalledAppGateway(
         bytes32 callId,
@@ -147,12 +149,17 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @dev Only callable by the contract owner
     function resolveTimeout(bytes32 timeoutId_) external onlyOwner {
         TimeoutRequest storage timeoutRequest_ = timeoutRequests[timeoutId_];
+        if (timeoutRequest_.target == address(0)) revert InvalidTimeoutRequest();
+
         if (timeoutRequest_.isResolved) revert TimeoutAlreadyResolved();
         if (block.timestamp < timeoutRequest_.executeAt) revert ResolvingTimeoutTooEarly();
+
         (bool success, ) = address(timeoutRequest_.target).call(timeoutRequest_.payload);
         if (!success) revert CallFailed();
+
         timeoutRequest_.isResolved = true;
         timeoutRequest_.executedAt = block.timestamp;
+
         emit TimeoutResolved(
             timeoutId_,
             timeoutRequest_.target,
@@ -273,6 +280,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @param payloadId_ The unique identifier of the request
     /// @param signature_ The watcher's signature
     /// @dev Only callable by the contract owner
+    /// @dev Watcher signs on following digest for validation on switchboard:
+    /// @dev keccak256(abi.encode(switchboard, root))
     function finalized(bytes32 payloadId_, bytes calldata signature_) external onlyOwner {
         watcherSignatures[payloadId_] = signature_;
         emit Finalized(payloadId_, asyncRequests[payloadId_], signature_);
