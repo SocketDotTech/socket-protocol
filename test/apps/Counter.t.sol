@@ -138,13 +138,13 @@ contract CounterTest is DeliveryHelperTest {
         instances[0] = arbCounterForwarder;
         instances[1] = optCounterForwarder;
         bytes32[] memory payloadIds = new bytes32[](3);
-        payloadIds[0] = bytes32(readPayloadIdCounter++);
-        payloadIds[1] = bytes32(readPayloadIdCounter++);
+        payloadIds[0] = _encodeId(vmChainSlug, address(watcherPrecompile), payloadIdCounter++);
+        payloadIds[1] = _encodeId(vmChainSlug, address(watcherPrecompile), payloadIdCounter++);
 
         payloadIds[2] = getWritePayloadId(
             arbChainSlug,
             address(getSocketConfig(arbChainSlug).switchboard),
-            writePayloadIdCounter++
+            payloadIdCounter++
         );
         bytes32 bridgeAsyncId = getCurrentAsyncId();
 

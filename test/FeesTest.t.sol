@@ -68,7 +68,7 @@ contract FeesTest is DeliveryHelperTest {
         hoax(transmitterEOA);
         (bytes32 payloadId, , PayloadDetails memory payloadDetails) = feesManager
             .withdrawTransmitterFees(feesChainSlug, ETH_ADDRESS, address(receiver));
-        writePayloadIdCounter++;
+        payloadIdCounter++;
 
         finalizeAndExecute(payloadId, true, payloadDetails);
         assertEq(

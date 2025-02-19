@@ -282,20 +282,20 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         payloadIds[0] = getWritePayloadId(
             srcChainSlug,
             address(getSocketConfig(srcChainSlug).switchboard),
-            writePayloadIdCounter++
+            payloadIdCounter++
         );
-        payloadIds[1] = bytes32(readPayloadIdCounter++);
+        payloadIds[1] = _encodeId(vmChainSlug, address(watcherPrecompile), payloadIdCounter++);
         payloadIds[2] = getWritePayloadId(
             dstChainSlug,
             address(getSocketConfig(dstChainSlug).switchboard),
-            writePayloadIdCounter++
+            payloadIdCounter++
         );
         payloadIds[3] = getWritePayloadId(
             srcChainSlug,
             address(getSocketConfig(srcChainSlug).switchboard),
-            writePayloadIdCounter++
+            payloadIdCounter++
         );
-        writePayloadIdCounter++;
+        payloadIdCounter++;
 
         bytes32 bridgeAsyncId = getCurrentAsyncId();
 
@@ -352,7 +352,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         cancelPayloadIds[0] = getWritePayloadId(
             srcChainSlug,
             address(getSocketConfig(srcChainSlug).switchboard),
-            writePayloadIdCounter++
+            payloadIdCounter++
         );
 
         bytes32 cancelAsyncId = getCurrentAsyncId();
@@ -538,20 +538,20 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //     payloadIds[0] = getWritePayloadId(
     //         srcChainSlug,
     //         address(getSocketConfig(srcChainSlug).contractFactoryPlug),
-    //         writePayloadIdCounter++
+    //         payloadIdCounter++
     //     );
-    //     payloadIds[1] = bytes32(readPayloadIdCounter++);
+    //     payloadIds[1] = _encodeId(vmChainSlug, address(watcherPrecompile), payloadIdCounter++);
     //     payloadIds[2] = getWritePayloadId(
     //         dstChainSlug,
     //         address(getSocketConfig(dstChainSlug).contractFactoryPlug),
-    //         writePayloadIdCounter++
+    //         payloadIdCounter++
     //     );
     //     payloadIds[3] = getWritePayloadId(
     //         srcChainSlug,
     //         address(getSocketConfig(srcChainSlug).contractFactoryPlug),
-    //         writePayloadIdCounter++
+    //         payloadIdCounter++
     //     );
-    //     writePayloadIdCounter++;
+    //     payloadIdCounter++;
 
     //     PayloadDetails[]
     //         memory payloadDetails = createBridgePayloadDetailsArray(
@@ -635,7 +635,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //     cancelPayloadIds[0] = getWritePayloadId(
     //         srcChainSlug,
     //         address(getSocketConfig(srcChainSlug).contractFactoryPlug),
-    //         writePayloadIdCounter++
+    //         payloadIdCounter++
     //     );
 
     //     PayloadDetails[]

@@ -260,10 +260,10 @@ contract DeliveryHelperTest is SetupTest {
     }
 
     function bidAndEndAuction(bytes32 asyncId) internal {
+        // for scheduling bid expiry
+        payloadIdCounter++;
         placeBid(asyncId);
-
-        bytes32 timeoutId = encodeTimeoutId(timeoutPayloadIdCounter++);
-        endAuction(timeoutId);
+        endAuction();
     }
 
     function bidAndExecute(bytes32[] memory payloadIds, bytes32 asyncId_) internal {
@@ -293,6 +293,9 @@ contract DeliveryHelperTest is SetupTest {
         address appGateway_
     ) internal returns (bytes32 asyncId) {
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
+
+        // for scheduling auction
+        payloadIdCounter++;
         bytes32[] memory payloadIds = getWritePayloadIds(
             chainSlug_,
             address(socketConfig.switchboard),
@@ -311,6 +314,7 @@ contract DeliveryHelperTest is SetupTest {
         IMultiChainAppDeployer appDeployer_,
         address appGateway_
     ) internal returns (bytes32 asyncId) {
+        payloadIdCounter++;
         asyncId = getCurrentAsyncId();
         bytes32[] memory payloadIds = new bytes32[](contractIds.length * chainSlugs_.length);
         for (uint32 i = 0; i < chainSlugs_.length; i++) {
@@ -318,12 +322,12 @@ contract DeliveryHelperTest is SetupTest {
                 payloadIds[i * contractIds.length + j] = getWritePayloadId(
                     chainSlugs_[i],
                     address(getSocketConfig(chainSlugs_[i]).switchboard),
-                    i * contractIds.length + j + writePayloadIdCounter
+                    i * contractIds.length + j + payloadIdCounter
                 );
             }
         }
         // for fees
-        writePayloadIdCounter += chainSlugs_.length * contractIds.length + 1;
+        payloadIdCounter += chainSlugs_.length * contractIds.length + 1;
 
         appDeployer_.deployMultiChainContracts(chainSlugs_);
         bidAndExecute(payloadIds, asyncId);
@@ -375,6 +379,7 @@ contract DeliveryHelperTest is SetupTest {
     ) internal returns (bytes32 asyncId) {
         asyncId = getCurrentAsyncId();
 
+        payloadIdCounter++;
         bytes32[] memory payloadIds = getWritePayloadIds(
             chainSlug_,
             address(getSocketConfig(chainSlug_).switchboard),
@@ -387,18 +392,18 @@ contract DeliveryHelperTest is SetupTest {
         uint32[] memory chainSlugs_
     ) internal returns (bytes32 asyncId) {
         asyncId = getCurrentAsyncId();
-
+        payloadIdCounter++;
         bidAndEndAuction(asyncId);
         for (uint i = 0; i < chainSlugs_.length; i++) {
             bytes32 payloadId = getWritePayloadId(
                 chainSlugs_[i],
                 address(getSocketConfig(chainSlugs_[i]).switchboard),
-                i + writePayloadIdCounter
+                i + payloadIdCounter
             );
             finalizeAndExecute(payloadId, false);
         }
 
-        writePayloadIdCounter += chainSlugs_.length;
+        payloadIdCounter += chainSlugs_.length;
     }
 
     function createDeployPayloadDetail(
@@ -471,10 +476,11 @@ contract DeliveryHelperTest is SetupTest {
             keccak256(abi.encode(address(auctionManager), vmChainSlug, asyncId, bidAmount, "")),
             transmitterPrivateKey
         );
+
         auctionManager.bid(asyncId, bidAmount, transmitterSignature, "");
     }
 
-    function endAuction(bytes32 timeoutId) internal {
+    function endAuction() internal {
         // todo:
         // vm.expectEmit(true, false, false, true);
         // emit AuctionEnded(
@@ -483,6 +489,8 @@ contract DeliveryHelperTest is SetupTest {
         // );
 
         if (auctionEndDelaySeconds == 0) return;
+        bytes32 timeoutId = _encodeId(vmChainSlug, address(watcherPrecompile), payloadIdCounter++);
+
         hoax(watcherEOA);
         watcherPrecompile.resolveTimeout(timeoutId);
     }
@@ -656,10 +664,6 @@ contract DeliveryHelperTest is SetupTest {
 
     function getLatestAsyncId() public view returns (bytes32) {
         return bytes32((uint256(uint160(address(deliveryHelper))) << 64) | asyncCounterTest);
-    }
-
-    function getTimeoutPayloadId(uint256 counter_) internal view returns (bytes32) {
-        return bytes32((uint256(uint160(address(deliveryHelper))) << 64) | counter_);
     }
 
     function getOnChainAndForwarderAddresses(

@@ -129,7 +129,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         // from auction manager
         _consumeLimit(appGateway_, SCHEDULE, 1);
         uint256 executeAt = block.timestamp + delayInSeconds_;
-        bytes32 timeoutId = _encodeWritePayloadId(vmChainSlug, address(this));
+        bytes32 timeoutId = _encodeId(vmChainSlug, address(this));
         timeoutRequests[timeoutId] = TimeoutRequest(
             timeoutId,
             msg.sender,
@@ -242,7 +242,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         // from payload delivery
         _consumeLimit(appGateway_, QUERY, 1);
         // Generate unique payload ID from query counter
-        payloadId = _encodeWritePayloadId(vmChainSlug, address(this));
+        payloadId = _encodeId(vmChainSlug, address(this));
 
         // Create async request with minimal information for queries
         // Note: addresses set to 0 as they're not needed for queries
@@ -378,10 +378,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @param plug_ The plug address
     /// @return The encoded payload ID as bytes32
     /// @dev Reverts if chainSlug is 0
-    function _encodeWritePayloadId(
-        uint32 chainSlug_,
-        address plug_
-    ) internal view returns (bytes32) {
+    function _encodeWritePayloadId(uint32 chainSlug_, address plug_) internal returns (bytes32) {
         if (chainSlug_ == 0) revert InvalidChainSlug();
         (, address switchboard) = getPlugConfigs(chainSlug_, plug_);
         return _encodeId(chainSlug_, switchboard);
@@ -389,15 +386,15 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
 
     function _encodeId(
         uint32 chainSlug_,
-        address switchboardOrWatcher
-    ) internal view returns (bytes32) {
+        address switchboardOrWatcher_
+    ) internal returns (bytes32) {
         // Encode payload ID by bit-shifting and combining:
         // chainSlug (32 bits) | switchboard or watcher precompile address (160 bits) | counter (64 bits)
         return
             bytes32(
                 (uint256(chainSlug_) << 224) |
-                    (uint256(uint160(switchboardOrWatcher)) << 64) |
-                    payloadCounter
+                    (uint256(uint160(switchboardOrWatcher_)) << 64) |
+                    payloadCounter++
             );
     }
 
