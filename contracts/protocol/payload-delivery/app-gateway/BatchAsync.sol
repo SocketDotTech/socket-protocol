@@ -225,6 +225,7 @@ abstract contract BatchAsync is QueueAsync {
             isBatchCancelled: false,
             totalPayloadsRemaining: _payloadBatches[asyncId].totalPayloadsRemaining,
             lastBatchPromises: _payloadBatches[asyncId].lastBatchPromises,
+            lastBatchOfPayloads: new bytes32[](0),
             onCompleteData: onCompleteData_
         });
 

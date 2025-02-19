@@ -33,6 +33,8 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
     /// @notice Error thrown if a lower bid already exists
     error LowerBidAlreadyExists();
 
+    event AuctionRestarted(bytes32 asyncId);
+
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -149,8 +151,6 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
             asyncId_,
             winningBid
         );
-
-        // todo: add scheduler for a time to retry auction
     }
 
     function expireBid(bytes32 asyncId_) external onlyWatcherPrecompile {
@@ -158,11 +158,13 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
             .payloadBatches(asyncId_);
         // if executed, bid is not expired
         // todo: should be less than total payloads in batch or zero?
-        if (batch.totalPayloadsRemaining == 0) return;
+        if (batch.totalPayloadsRemaining == 0 || batch.isBatchCancelled) return;
 
         IFeesManager(addressResolver__.feesManager()).unblockFees(asyncId_, batch.appGateway);
         winningBids[asyncId_] = Bid({fee: 0, transmitter: address(0), extraData: ""});
         auctionClosed[asyncId_] = false;
+
+        emit AuctionRestarted(asyncId_);
     }
 
     function _recoverSigner(

@@ -26,11 +26,13 @@ struct AppGatewayConfig {
 }
 
 struct AsyncRequest {
+    address finalizedBy;
     address appGateway;
     address transmitter;
     address target;
     address switchboard;
     uint256 executionGasLimit;
+    uint256 expiryTime;
     bytes32 asyncId;
     bytes32 root;
     bytes payload;
@@ -107,6 +109,7 @@ struct PayloadBatch {
     Fees fees;
     Bid winningBid;
     address[] lastBatchPromises;
+    bytes32[] lastBatchOfPayloads;
     bytes onCompleteData;
 }
 

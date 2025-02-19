@@ -38,8 +38,8 @@ interface IWatcherPrecompile {
     /// @return payloadId The unique identifier for the request
     /// @return root The merkle root of the payload parameters
     function finalize(
-        FinalizeParams memory params_,
-        address originAppGateway_
+        address originAppGateway_,
+        FinalizeParams memory params_
     ) external returns (bytes32 payloadId, bytes32 root);
 
     /// @notice Creates a new query request
@@ -61,10 +61,10 @@ interface IWatcherPrecompile {
     /// @param signature_ The watcher's signature
     function finalized(bytes32 payloadId_, bytes calldata signature_) external;
 
-    /// @notice Finalizes a payload execution request with a new transmitter
+    /// @notice Finalizes multiple payload execution requests with a new transmitter
     /// @param payloadId_ The unique identifier of the request
-    /// @param newTransmitter_ The new transmitter address
-    function finalizeWithNewTransmitter(bytes32 payloadId_, address newTransmitter_) external;
+    /// @param params_ The parameters for finalization
+    function refinalize(bytes32 payloadId_, FinalizeParams memory params_) external;
 
     /// @notice Resolves multiple promises with their return data
     /// @param resolvedPromises_ Array of resolved promises and their return data

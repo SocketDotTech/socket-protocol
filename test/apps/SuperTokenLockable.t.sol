@@ -319,11 +319,13 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         emit FinalizeRequested(
             payloadIds[2],
             AsyncRequest(
+                address(deliveryHelper),
                 address(0),
                 transmitterEOA,
                 payloadDetails.target,
                 address(0),
                 payloadDetails.executionGasLimit,
+                0,
                 bridgeAsyncId,
                 bytes32(0),
                 payloadDetails.payload,

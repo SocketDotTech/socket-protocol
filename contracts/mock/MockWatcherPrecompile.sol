@@ -138,11 +138,13 @@ contract MockWatcherPrecompile {
         emit FinalizeRequested(
             payloadId,
             AsyncRequest(
+                msg.sender,
                 address(0),
                 address(0),
                 params_.payloadDetails.target,
                 address(0),
                 0,
+                block.timestamp + 1000,
                 params_.asyncId,
                 bytes32(0),
                 bytes(""),

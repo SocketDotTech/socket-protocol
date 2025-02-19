@@ -46,6 +46,10 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     error InvalidTransmitter();
     /// @notice Error thrown when a timeout request is invalid
     error InvalidTimeoutRequest();
+    /// @notice Error thrown when a payload id is invalid
+    error InvalidPayloadId();
+    /// @notice Error thrown when a caller is invalid
+    error InvalidCaller();
 
     event CalledAppGateway(
         bytes32 callId,
@@ -149,8 +153,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @dev Only callable by the contract owner
     function resolveTimeout(bytes32 timeoutId_) external onlyOwner {
         TimeoutRequest storage timeoutRequest_ = timeoutRequests[timeoutId_];
-        if (timeoutRequest_.target == address(0)) revert InvalidTimeoutRequest();
 
+        if (timeoutRequest_.target == address(0)) revert InvalidTimeoutRequest();
         if (timeoutRequest_.isResolved) revert TimeoutAlreadyResolved();
         if (block.timestamp < timeoutRequest_.executeAt) revert ResolvingTimeoutTooEarly();
 
@@ -175,9 +179,30 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @return payloadId The unique identifier for the finalized request
     /// @return root The merkle root of the payload parameters
     function finalize(
-        FinalizeParams memory params_,
-        address originAppGateway_
+        address originAppGateway_,
+        FinalizeParams memory params_
     ) external returns (bytes32 payloadId, bytes32 root) {
+        // Generate a unique payload ID by combining chain, target, and counter
+        payloadId = _encodeWritePayloadId(
+            params_.payloadDetails.chainSlug,
+            params_.payloadDetails.target
+        );
+
+        root = _finalize(payloadId, originAppGateway_, params_);
+    }
+
+    function refinalize(bytes32 payloadId_, FinalizeParams memory params_) external {
+        if (asyncRequests[payloadId_].appGateway == address(0)) revert InvalidPayloadId();
+        if (asyncRequests[payloadId_].finalizedBy != msg.sender) revert InvalidCaller();
+
+        _finalize(payloadId_, asyncRequests[payloadId_].appGateway, params_);
+    }
+
+    function _finalize(
+        bytes32 payloadId_,
+        address originAppGateway_,
+        FinalizeParams memory params_
+    ) internal returns (bytes32 root) {
         if (params_.transmitter == address(0)) revert InvalidTransmitter();
 
         // The app gateway is the caller of this function
@@ -190,8 +215,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
             params_.payloadDetails.appGateway
         );
 
-        // Generate a unique payload ID by combining chain, target, and counter
-        payloadId = _encodeWritePayloadId(
+        // Get the switchboard address from plug configurations
+        (, address switchboard) = getPlugConfigs(
             params_.payloadDetails.chainSlug,
             params_.payloadDetails.target
         );
@@ -201,42 +226,30 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
             params_.payloadDetails.appGateway,
             params_.transmitter,
             params_.payloadDetails.target,
-            payloadId,
+            payloadId_,
             params_.payloadDetails.executionGasLimit,
-            expiryTime,
+            block.timestamp + expiryTime,
             params_.payloadDetails.payload
         );
 
         // Calculate merkle root from payload parameters
         root = getRoot(rootParams_);
 
-        // Get the switchboard address from plug configurations
-        (, address switchboard) = getPlugConfigs(
-            params_.payloadDetails.chainSlug,
-            params_.payloadDetails.target
-        );
-
         // Create and store the async request with all necessary details
         AsyncRequest memory asyncRequest = AsyncRequest(
+            msg.sender,
             params_.payloadDetails.appGateway,
             params_.transmitter,
             params_.payloadDetails.target,
             switchboard,
             params_.payloadDetails.executionGasLimit,
+            block.timestamp + expiryTime,
             params_.asyncId,
             root,
             params_.payloadDetails.payload,
             params_.payloadDetails.next
         );
-        asyncRequests[payloadId] = asyncRequest;
-        emit FinalizeRequested(payloadId, asyncRequest);
-    }
-
-    function finalizeWithNewTransmitter(bytes32 payloadId_, address newTransmitter_) external {
-        if (msg.sender != addressResolver__.deliveryHelper()) revert NotDeliveryHelper();
-
-        AsyncRequest storage asyncRequest = asyncRequests[payloadId_];
-        asyncRequest.transmitter = newTransmitter_;
+        asyncRequests[payloadId_] = asyncRequest;
         emit FinalizeRequested(payloadId_, asyncRequest);
     }
 
@@ -262,11 +275,13 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         // Create async request with minimal information for queries
         // Note: addresses set to 0 as they're not needed for queries
         AsyncRequest memory asyncRequest_ = AsyncRequest(
+            msg.sender,
             address(0),
             address(0),
             targetAddress_,
             address(0),
             0,
+            block.timestamp + expiryTime,
             bytes32(0),
             bytes32(0),
             payload_,
@@ -326,6 +341,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
                 asyncRequest_.transmitter,
                 asyncRequest_.appGateway
             );
+
+            // batch.isBatchCancelled
         }
     }
 

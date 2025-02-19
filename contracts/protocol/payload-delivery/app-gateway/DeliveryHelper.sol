@@ -14,6 +14,8 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
     event CallBackReverted(bytes32 asyncId_, bytes32 payloadId_);
     uint64 public version;
 
+    bytes32[] public tempPayloadIds;
+
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -50,7 +52,19 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
         );
 
         if (!isRestarted) return _process(asyncId_);
-        watcherPrecompile__().finalizeWithNewTransmitter(asyncId_, winningBid_.transmitter);
+
+        // Refinalize all payloads in the batch if a new transmitter is assigned
+        bytes32[] memory payloadIds = _payloadBatches[asyncId_].lastBatchOfPayloads;
+        for (uint256 i = 0; i < payloadIds.length; i++) {
+            watcherPrecompile__().refinalize(
+                payloadIds[i],
+                FinalizeParams({
+                    payloadDetails: payloadIdToPayloadDetails[payloadIds[i]],
+                    asyncId: asyncId_,
+                    transmitter: winningBid_.transmitter
+                })
+            );
+        }
     }
 
     function callback(bytes memory asyncId_, bytes memory) external override onlyPromises {
@@ -76,8 +90,11 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
         }
 
         if (payloadBatch.totalPayloadsRemaining > 0) {
+            delete tempPayloadIds;
+
             // Proceed with next payload only if all promises are resolved
             _finalizeNextPayload(asyncId_);
+            payloadBatch.lastBatchOfPayloads = tempPayloadIds;
         } else {
             _finishBatch(asyncId_, payloadBatch);
         }
@@ -153,11 +170,12 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
                 transmitter: payloadBatch_.winningBid.transmitter
             });
             (payloadId, root) = watcherPrecompile__().finalize(
-                finalizeParams,
-                payloadBatch_.appGateway
+                payloadBatch_.appGateway,
+                finalizeParams
             );
         }
 
+        tempPayloadIds.push(payloadId);
         payloadIdToBatchHash[payloadId] = asyncId_;
         payloadIdToPayloadDetails[payloadId] = payloadDetails_;
 
