@@ -13,6 +13,7 @@
 | `PromiseAlreadyResolved()`      | `0x56b63537` |
 | `OnlyForwarderOrLocalInvoker()` | `0xa9fb0b28` |
 | `PromiseAlreadySetUp()`         | `0x927c53d5` |
+| `PromiseRevertFailed()`         | `0x0175b9de` |
 
 ## apps/payload-delivery/ContractFactoryPlug.sol
 
@@ -47,6 +48,8 @@
 | `CallFailed(bytes32)`   | `0xe22e3683` |
 | `PayloadTooLarge()`     | `0x492f620d` |
 | `OnlyAppGateway()`      | `0xfec944ea` |
+| `WinningBidExists()`    | `0xe8733654` |
+| `InsufficientFees()`    | `0x8d53e553` |
 
 ## apps/payload-delivery/app-gateway/FeesManager.sol
 
@@ -100,6 +103,14 @@
 | `InvalidPromise()`           | `0x45f2d176` |
 | `InvalidIndex()`             | `0x63df8171` |
 | `FeesNotSet()`               | `0x2a831034` |
+
+## libraries/ECDSA.sol
+
+| Error                                  | Signature    |
+| -------------------------------------- | ------------ |
+| `ECDSAInvalidSignature()`              | `0xf645eedf` |
+| `ECDSAInvalidSignatureLength(uint256)` | `0xfce698f7` |
+| `ECDSAInvalidSignatureS(bytes32)`      | `0xd78bce0c` |
 
 ## libraries/RescueFundsLib.sol
 
@@ -166,6 +177,12 @@
 | Error               | Signature    |
 | ------------------- | ------------ |
 | `NoPermit(bytes32)` | `0x962f6333` |
+
+## socket/utils/SignatureVerifier.sol
+
+| Error                | Signature    |
+| -------------------- | ------------ |
+| `InvalidSigLength()` | `0xd2453293` |
 
 ## utils/AddressResolverUtil.sol
 
