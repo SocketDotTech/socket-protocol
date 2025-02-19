@@ -8,7 +8,7 @@ source .env && forge script script/parallel-counter/checkCounters.s.sol --broadc
 
 
 ## Counter 
-source .env && forge script script/counter/DeployCounterOffchain.s.sol --broadcast --skip-simulation
+source .env && forge script script/counter/deployEVMxCounterApp.s.sol --broadcast --skip-simulation
 source .env && forge script script/counter/DeployCounterOnchain.s.sol --broadcast --skip-simulation
 ## set limits for the app gateway using API
 source .env && cast send $DEPLOYER "deployContracts(uint32)" 421614 --private-key $PRIVATE_KEY
@@ -53,4 +53,5 @@ source .env && forge script script/admin/UpdateLimits.s.sol --broadcast --skip-s
 
 
 # add fees
-source .env && forge script script/DepositFees.s.sol --broadcast --skip-simulation 
+source .env && forge script script/PayFeesInArbitrumETH.s.sol --broadcast --skip-simulation 
+source .env && forge script script/CheckDepositedFees.s.sol 
