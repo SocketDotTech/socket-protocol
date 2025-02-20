@@ -7,6 +7,7 @@ import "../utils/AccessControl.sol";
 import {RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
 import "../utils/RescueFundsLib.sol";
 import {ETH_ADDRESS} from "../utils/common/Constants.sol";
+import {InvalidTokenAddress} from "../utils/common/Errors.sol";
 
 /// @title FeesManager
 /// @notice Abstract contract for managing fees
@@ -21,7 +22,6 @@ contract FeesPlug is PlugBase, AccessControl {
     error InsufficientTokenBalance(address token_);
     /// @notice Error thrown when deposit amount does not match msg.value
     error InvalidDepositAmount();
-    error InvalidTokenAddress();
     error TokenNotWhitelisted(address token_);
 
     /// @notice Event emitted when fees are deposited

@@ -6,7 +6,6 @@ import "../../interfaces/IAppGateway.sol";
 import "../../interfaces/IPromise.sol";
 import "../../interfaces/IFeesManager.sol";
 import "solady/utils/Initializable.sol";
-import "forge-std/console.sol";
 import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../utils/common/Structs.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../utils/common/Errors.sol";
 
@@ -35,8 +34,6 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @notice Mapping to store if appGateway has been called with trigger from on-chain Inbox
     /// @dev callId => bool
     mapping(bytes32 => bool) public appGatewayCalled;
-
-    uint64 public version;
 
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
@@ -110,7 +107,6 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
-        version = 1;
         maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
         expiryTime = expiryTime_;
 
@@ -317,6 +313,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
             // Resolve each promise with its corresponding return data
             bool success;
             for (uint256 j = 0; j < next.length; j++) {
+                if (next[j] == address(0)) continue;
                 success = IPromise(next[j]).markResolved(
                     asyncRequest_.asyncId,
                     resolvedPromises_[i].payloadId,
@@ -427,8 +424,6 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         uint32 chainSlug_,
         address switchboardOrWatcher_
     ) internal returns (bytes32) {
-        console.log("chainSlug_", chainSlug_);
-        console.log("payloadCounter", payloadCounter);
         // Encode payload ID by bit-shifting and combining:
         // chainSlug (32 bits) | switchboard or watcher precompile address (160 bits) | counter (64 bits)
         return

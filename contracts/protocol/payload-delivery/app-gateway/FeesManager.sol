@@ -11,12 +11,12 @@ import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../protocol/
 import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 
+import {NotAuctionManager} from "../../../protocol/utils/common/Errors.sol";
+
 /// @title FeesManager
 /// @notice Contract for managing fees
 contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializable {
     uint256 public feesCounter;
-    mapping(uint32 => uint256) public feeCollectionGasLimit;
-    uint64 public version;
 
     /// @notice Struct containing fee amounts and status
     struct TokenBalance {
@@ -101,7 +101,6 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the owner
     function initialize(address addressResolver_, address owner_) public reinitializer(1) {
-        version = 1;
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
     }
@@ -151,58 +150,51 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
 
     /// @notice Blocks fees for transmitter
     /// @param appGateway_ The app gateway address
-    /// @param fees_ The fees data struct
+    /// @param feesGivenByApp_ The fees data struct given by the app gateway
     /// @param asyncId_ The batch identifier
     /// @dev Only callable by delivery helper
     function blockFees(
         address appGateway_,
-        Fees memory fees_,
+        Fees memory feesGivenByApp_,
         Bid memory winningBid_,
         bytes32 asyncId_
     ) external {
-        // todo: only auction manager can call this
+        if (msg.sender != deliveryHelper().getAsyncBatchDetails(asyncId_).auctionManager)
+            revert NotAuctionManager();
+
         address appGateway = _getCoreAppGateway(appGateway_);
         // Block fees
         uint256 availableFees = getAvailableFees(
-            fees_.feePoolChain,
+            feesGivenByApp_.feePoolChain,
             appGateway,
-            fees_.feePoolToken
+            feesGivenByApp_.feePoolToken
         );
+
+        if (asyncIdBlockedFees[asyncId_].amount > 0)
+            availableFees += asyncIdBlockedFees[asyncId_].amount;
+
         if (availableFees < winningBid_.fee) revert InsufficientFeesAvailable();
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][
+            feesGivenByApp_.feePoolChain
+        ][feesGivenByApp_.feePoolToken];
 
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees_.feePoolChain][
-            fees_.feePoolToken
-        ];
-        tokenBalance.blocked += winningBid_.fee;
+        tokenBalance.blocked =
+            tokenBalance.blocked +
+            winningBid_.fee -
+            asyncIdBlockedFees[asyncId_].amount;
 
-        asyncIdBlockedFees[asyncId_] = fees_;
-        emit FeesBlocked(asyncId_, fees_.feePoolChain, fees_.feePoolToken, winningBid_.fee);
-    }
+        asyncIdBlockedFees[asyncId_] = Fees({
+            feePoolChain: feesGivenByApp_.feePoolChain,
+            feePoolToken: feesGivenByApp_.feePoolToken,
+            amount: winningBid_.fee
+        });
 
-    function updateTransmitterFees(
-        Bid memory winningBid_,
-        bytes32 asyncId_,
-        address appGateway_
-    ) external onlyDeliveryHelper {
-        address appGateway = _getCoreAppGateway(appGateway_);
-
-        Fees storage fees = asyncIdBlockedFees[asyncId_];
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees.feePoolChain][
-            fees.feePoolToken
-        ];
-
-        // if no transmitter assigned after auction, unblock fees
-        if (winningBid_.transmitter == address(0)) {
-            tokenBalance.blocked -= fees.amount;
-            delete asyncIdBlockedFees[asyncId_];
-            return;
-        }
-
-        // update new amount
-        fees.amount = winningBid_.fee;
-        tokenBalance.blocked = tokenBalance.blocked - fees.amount + winningBid_.fee;
-
-        emit TransmitterFeesUpdated(asyncId_, winningBid_.transmitter, winningBid_.fee);
+        emit FeesBlocked(
+            asyncId_,
+            feesGivenByApp_.feePoolChain,
+            feesGivenByApp_.feePoolToken,
+            winningBid_.fee
+        );
     }
 
     /// @notice Unblocks fees after successful execution and assigns them to the transmitter
@@ -275,8 +267,6 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
 
         // Create payload for plug contract
         payloadDetails = _createPayloadDetails(CallType.WRITE, chainSlug_, payload);
-
-        // todo: revisit
         FinalizeParams memory finalizeParams = FinalizeParams({
             payloadDetails: payloadDetails,
             asyncId: bytes32(0),
@@ -303,29 +293,6 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
                 next: new address[](2),
                 isParallel: Parallel.OFF
             });
-    }
-
-    /// @notice Updates blocked fees in case of failed execution
-    /// @param asyncId_ The batch identifier
-    /// @dev Only callable by delivery helper
-    function updateBlockedFees(bytes32 asyncId_, uint256 feesUsed_) external onlyOwner {
-        PayloadBatch memory batch = IDeliveryHelper(deliveryHelper()).getAsyncBatchDetails(
-            asyncId_
-        );
-
-        Fees storage fees = asyncIdBlockedFees[asyncId_];
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[batch.appGateway][
-            batch.fees.feePoolChain
-        ][batch.fees.feePoolToken];
-
-        // todo how to settle fees here?
-        // Unblock unused fees
-        uint256 unusedFees = fees.amount - feesUsed_;
-        tokenBalance.blocked -= unusedFees;
-
-        // Update fees with actual fees used
-        fees.amount = feesUsed_;
-        asyncIdBlockedFees[asyncId_] = fees;
     }
 
     /// @notice Withdraws funds to a specified receiver

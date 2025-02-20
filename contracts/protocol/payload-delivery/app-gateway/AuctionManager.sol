@@ -20,7 +20,6 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
     mapping(bytes32 => bool) public override auctionStarted;
 
     uint256 public auctionEndDelaySeconds;
-    uint64 public version;
 
     /// @notice Error thrown when trying to start or bid a closed auction
     error AuctionClosed();
@@ -52,7 +51,6 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
-        version = 1;
         vmChainSlug = vmChainSlug_;
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
     }
@@ -154,8 +152,8 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
     function expireBid(bytes32 asyncId_) external onlyWatcherPrecompile {
         PayloadBatch memory batch = IDeliveryHelper(addressResolver__.deliveryHelper())
             .payloadBatches(asyncId_);
+        
         // if executed, bid is not expired
-        // todo: should be less than total payloads in batch or zero?
         if (batch.totalPayloadsRemaining == 0 || batch.isBatchCancelled) return;
 
         IFeesManager(addressResolver__.feesManager()).unblockFees(asyncId_, batch.appGateway);

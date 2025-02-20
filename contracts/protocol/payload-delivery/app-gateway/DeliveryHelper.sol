@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 
 import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
@@ -10,7 +9,7 @@ import {DISTRIBUTE_FEE, DEPLOY} from "../../../protocol/utils/common/Constants.s
 import {PromisesNotResolved, InvalidTransmitter} from "../../../protocol/utils/common/Errors.sol";
 import "./BatchAsync.sol";
 
-contract DeliveryHelper is BatchAsync, Ownable, Initializable {
+contract DeliveryHelper is BatchAsync, Initializable {
     event CallBackReverted(bytes32 asyncId_, bytes32 payloadId_);
     uint64 public version;
 
@@ -42,14 +41,6 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
 
         bool isRestarted = _payloadBatches[asyncId_].winningBid.transmitter != address(0);
         _payloadBatches[asyncId_].winningBid = winningBid_;
-
-        // update fees
-        // todo: revisit
-        IFeesManager(addressResolver__.feesManager()).updateTransmitterFees(
-            winningBid_,
-            asyncId_,
-            _payloadBatches[asyncId_].appGateway
-        );
 
         if (!isRestarted) return _process(asyncId_, false);
 
@@ -119,10 +110,8 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
         PayloadDetails[] storage payloads = payloadBatchDetails[asyncId_];
 
         // Check for empty payloads or index out of bounds
-        // todo: should revert
         if (payloads.length == 0 || currentIndex >= payloads.length) {
-            _finishBatch(asyncId_, payloadBatch_);
-            return;
+            revert InvalidIndex();
         }
 
         // Deploy single promise for the next batch of operations

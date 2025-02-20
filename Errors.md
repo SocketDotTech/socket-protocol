@@ -112,12 +112,6 @@
 | `ECDSAInvalidSignatureLength(uint256)` | `0xfce698f7` |
 | `ECDSAInvalidSignatureS(bytes32)`      | `0xd78bce0c` |
 
-## libraries/RescueFundsLib.sol
-
-| Error                   | Signature    |
-| ----------------------- | ------------ |
-| `InvalidTokenAddress()` | `0x1eb00b06` |
-
 ## mock/MockSocket.sol
 
 | Error                      | Signature    |
