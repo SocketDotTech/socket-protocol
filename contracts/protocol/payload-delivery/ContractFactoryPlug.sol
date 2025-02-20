@@ -7,6 +7,7 @@ import "../utils/RescueFundsLib.sol";
 import {NotSocket} from "../utils/common/Errors.sol";
 import "../../base/PlugBase.sol";
 import "../../interfaces/IContractFactoryPlug.sol";
+
 /// @title ContractFactory
 /// @notice Abstract contract for deploying contracts
 contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
@@ -76,6 +77,14 @@ contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
         );
 
         return address(uint160(uint256(hash)));
+    }
+
+    function connectSocket(
+        address appGateway_,
+        address socket_,
+        address switchboard_
+    ) external onlyOwner {
+        _connectSocket(appGateway_, socket_, switchboard_);
     }
 
     /**
