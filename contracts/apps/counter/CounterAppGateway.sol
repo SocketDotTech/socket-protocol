@@ -31,13 +31,13 @@ contract CounterAppGateway is AppGatewayBase {
 
     function readCounters(address[] memory instances_) public async {
         // the increase function is called on given list of instances
-        // this
+        _setOverrides(Read.ON, Parallel.ON);
         for (uint256 i = 0; i < instances_.length; i++) {
             uint32 chainSlug = IForwarder(instances_[i]).getChainSlug();
             ICounter(instances_[i]).getCounter();
             IPromise(instances_[i]).then(this.setCounterValues.selector, abi.encode(chainSlug));
         }
-        _setOverrides(Parallel.ON);
+        _setOverrides(Read.OFF, Parallel.OFF);
         ICounter(instances_[0]).increase();
     }
 

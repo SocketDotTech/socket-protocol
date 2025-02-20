@@ -260,8 +260,6 @@ contract DeliveryHelperTest is SetupTest {
     }
 
     function bidAndEndAuction(bytes32 asyncId) internal {
-        // for scheduling bid expiry
-        payloadIdCounter++;
         placeBid(asyncId);
         endAuction();
     }
@@ -269,7 +267,7 @@ contract DeliveryHelperTest is SetupTest {
     function bidAndExecute(bytes32[] memory payloadIds, bytes32 asyncId_) internal {
         bidAndEndAuction(asyncId_);
         for (uint i = 0; i < payloadIds.length; i++) {
-            finalizeAndExecute(payloadIds[i], false);
+            finalizeAndExecute(payloadIds[i]);
         }
     }
 
@@ -294,14 +292,12 @@ contract DeliveryHelperTest is SetupTest {
     ) internal returns (bytes32 asyncId) {
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
 
-        // for scheduling auction
-        payloadIdCounter++;
+        asyncId = getCurrentAsyncId();
         bytes32[] memory payloadIds = getWritePayloadIds(
             chainSlug_,
             address(socketConfig.switchboard),
             totalPayloads
         );
-        asyncId = getCurrentAsyncId();
 
         appDeployer_.deployContracts(chainSlug_);
         bidAndExecute(payloadIds, asyncId);
@@ -314,7 +310,6 @@ contract DeliveryHelperTest is SetupTest {
         IMultiChainAppDeployer appDeployer_,
         address appGateway_
     ) internal returns (bytes32 asyncId) {
-        payloadIdCounter++;
         asyncId = getCurrentAsyncId();
         bytes32[] memory payloadIds = new bytes32[](contractIds.length * chainSlugs_.length);
         for (uint32 i = 0; i < chainSlugs_.length; i++) {
@@ -379,7 +374,6 @@ contract DeliveryHelperTest is SetupTest {
     ) internal returns (bytes32 asyncId) {
         asyncId = getCurrentAsyncId();
 
-        payloadIdCounter++;
         bytes32[] memory payloadIds = getWritePayloadIds(
             chainSlug_,
             address(getSocketConfig(chainSlug_).switchboard),
@@ -392,18 +386,15 @@ contract DeliveryHelperTest is SetupTest {
         uint32[] memory chainSlugs_
     ) internal returns (bytes32 asyncId) {
         asyncId = getCurrentAsyncId();
-        payloadIdCounter++;
         bidAndEndAuction(asyncId);
         for (uint i = 0; i < chainSlugs_.length; i++) {
             bytes32 payloadId = getWritePayloadId(
                 chainSlugs_[i],
                 address(getSocketConfig(chainSlugs_[i]).switchboard),
-                i + payloadIdCounter
+                payloadIdCounter++
             );
-            finalizeAndExecute(payloadId, false);
+            finalizeAndExecute(payloadId);
         }
-
-        payloadIdCounter += chainSlugs_.length;
     }
 
     function createDeployPayloadDetail(
@@ -613,20 +604,10 @@ contract DeliveryHelperTest is SetupTest {
         resolvePromise(payloadId, returnData_);
     }
 
-    function finalizeAndExecute(bytes32 payloadId, bool isWithdraw) internal {
+    function finalizeAndExecute(bytes32 payloadId) internal {
         PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(payloadId);
-        finalizeAndExecute(payloadId, isWithdraw, payloadDetails);
-    }
-
-    function finalizeAndExecute(
-        bytes32 payloadId,
-        bool isWithdraw,
-        PayloadDetails memory payloadDetails
-    ) internal {
         bytes memory returnData = finalizeAndRelay(payloadId, payloadDetails);
-        if (!isWithdraw) {
-            resolvePromise(payloadId, returnData);
-        }
+        resolvePromise(payloadId, returnData);
     }
 
     function finalizeAndRelay(
@@ -666,11 +647,8 @@ contract DeliveryHelperTest is SetupTest {
     }
 
     function getCurrentAsyncId() public returns (bytes32) {
+        payloadIdCounter++;
         return bytes32((uint256(uint160(address(deliveryHelper))) << 64) | asyncCounterTest++);
-    }
-
-    function getLatestAsyncId() public view returns (bytes32) {
-        return bytes32((uint256(uint160(address(deliveryHelper))) << 64) | asyncCounterTest);
     }
 
     function getOnChainAndForwarderAddresses(

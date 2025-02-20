@@ -6,7 +6,7 @@ import "../../interfaces/IAppGateway.sol";
 import "../../interfaces/IPromise.sol";
 import "../../interfaces/IFeesManager.sol";
 import "solady/utils/Initializable.sol";
-
+import "forge-std/console.sol";
 import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../utils/common/Structs.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../utils/common/Errors.sol";
 
@@ -427,6 +427,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         uint32 chainSlug_,
         address switchboardOrWatcher_
     ) internal returns (bytes32) {
+        console.log("chainSlug_", chainSlug_);
+        console.log("payloadCounter", payloadCounter);
         // Encode payload ID by bit-shifting and combining:
         // chainSlug (32 bits) | switchboard or watcher precompile address (160 bits) | counter (64 bits)
         return

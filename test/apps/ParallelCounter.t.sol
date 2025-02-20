@@ -77,6 +77,8 @@ contract ParallelCounterTest is DeliveryHelperTest {
             parallelCounterDeployer
         );
 
+        console.log("forwarderArb1", forwarderArb1);
+
         assertEq(
             IForwarder(forwarderArb1).getChainSlug(),
             arbChainSlug,

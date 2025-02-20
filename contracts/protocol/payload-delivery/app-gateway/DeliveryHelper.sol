@@ -51,7 +51,7 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
             _payloadBatches[asyncId_].appGateway
         );
 
-        if (!isRestarted) return _process(asyncId_);
+        if (!isRestarted) return _process(asyncId_, false);
 
         // Refinalize all payloads in the batch if a new transmitter is assigned
         bytes32[] memory payloadIds = _payloadBatches[asyncId_].lastBatchOfPayloads;
@@ -69,10 +69,10 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
 
     function callback(bytes memory asyncId_, bytes memory) external override onlyPromises {
         bytes32 asyncId = abi.decode(asyncId_, (bytes32));
-        _process(asyncId);
+        _process(asyncId, true);
     }
 
-    function _process(bytes32 asyncId_) internal {
+    function _process(bytes32 asyncId_, bool isCallback_) internal {
         PayloadBatch storage payloadBatch = _payloadBatches[asyncId_];
         if (payloadBatch.isBatchCancelled) return;
 
@@ -82,11 +82,13 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
             // Check if all promises are resolved
             for (uint256 i = 0; i < payloadBatch.lastBatchPromises.length; i++) {
                 if (!IPromise(payloadBatch.lastBatchPromises[i]).resolved()) {
-                    revert PromisesNotResolved();
+                    if (isCallback_) revert PromisesNotResolved();
                 }
             }
             // Clear promises array after all are resolved
-            delete payloadBatch.lastBatchPromises;
+            if (isCallback_) {
+                delete payloadBatch.lastBatchPromises;
+            }
         }
 
         if (payloadBatch.totalPayloadsRemaining > 0) {

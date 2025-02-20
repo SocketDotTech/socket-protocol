@@ -83,8 +83,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
-            .getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
     }
 
     /// @notice Callback in pd promise to be called after all contracts are deployed

@@ -69,8 +69,8 @@ contract FeesTest is DeliveryHelperTest {
         (bytes32 payloadId, , PayloadDetails memory payloadDetails) = feesManager
             .withdrawTransmitterFees(feesChainSlug, ETH_ADDRESS, address(receiver));
         payloadIdCounter++;
+        finalizeAndRelay(payloadId, payloadDetails);
 
-        finalizeAndExecute(payloadId, true, payloadDetails);
         assertEq(
             transmitterReceiverBalanceBefore + bidAmount,
             address(receiver).balance,
@@ -101,7 +101,7 @@ contract FeesTest is DeliveryHelperTest {
             1
         );
         bidAndEndAuction(asyncId);
-        finalizeAndExecute(payloadIds[0], true);
+        finalizeAndExecute(payloadIds[0]);
         assertEq(
             depositAmount - withdrawAmount,
             address(feesConfig.feesPlug).balance,
