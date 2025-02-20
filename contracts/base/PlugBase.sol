@@ -26,8 +26,8 @@ abstract contract PlugBase is IPlug {
     /// @notice Modifier to ensure the socket is initialized
     modifier socketInitializer() {
         if (isSocketInitialized == 1) revert SocketAlreadyInitialized();
-        _;
         isSocketInitialized = 1;
+        _;
     }
 
     /// @notice Connects the plug to the app gateway and switchboard

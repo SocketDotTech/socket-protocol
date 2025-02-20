@@ -505,6 +505,7 @@ contract DeliveryHelperTest is SetupTest {
         PayloadDetails memory payloadDetails
     ) internal view returns (bytes memory, bytes32) {
         SocketContracts memory socketConfig = getSocketConfig(payloadDetails.chainSlug);
+        (, , , , , , uint256 deadline, , , ) = watcherPrecompile.asyncRequests(payloadId);
 
         PayloadRootParams memory rootParams_ = PayloadRootParams(
             payloadDetails.appGateway,
@@ -513,7 +514,7 @@ contract DeliveryHelperTest is SetupTest {
             payloadId,
             payloadDetails.value,
             payloadDetails.executionGasLimit,
-            block.timestamp + 1000,
+            deadline,
             payloadDetails.payload
         );
         bytes32 root = watcherPrecompile.getRoot(rootParams_);

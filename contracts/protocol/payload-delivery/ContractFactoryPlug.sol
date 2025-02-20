@@ -5,7 +5,9 @@ import "../utils/AccessControl.sol";
 import {RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
 import "../utils/RescueFundsLib.sol";
 import {NotSocket} from "../utils/common/Errors.sol";
+import {IsPlug} from "../utils/common/Structs.sol";
 import "../../base/PlugBase.sol";
+import "forge-std/console.sol";
 
 /// @title ContractFactory
 /// @notice Abstract contract for deploying contracts
@@ -22,13 +24,30 @@ contract ContractFactoryPlug is PlugBase, AccessControl {
     }
 
     function deployContract(
-        bool canConnectSocket_,
+        IsPlug isPlug_,
         bytes32 salt_,
         address appGateway_,
         address switchboard_,
         bytes memory creationCode_,
         bytes memory initCallData_
     ) public returns (address) {
+        console.log("deployContract called");
+        console.log("msg.sender", msg.sender);
+        console.log("socket address", address(socket__));
+
+        // Log detailed payload information
+        console.log("creationCode length", creationCode_.length);
+        console.log("initCallData length", initCallData_.length);
+
+        // Hex logging for deeper inspection
+        console.logBytes(creationCode_);
+        console.logBytes(initCallData_);
+
+        // Detailed hex logging
+        for (uint i = 0; i < initCallData_.length; i++) {
+            console.logBytes1(initCallData_[i]);
+        }
+
         if (msg.sender != address(socket__)) {
             revert NotSocket();
         }
@@ -42,12 +61,25 @@ contract ContractFactoryPlug is PlugBase, AccessControl {
             }
         }
 
-        if (canConnectSocket_) IPlug(addr).initSocket(appGateway_, msg.sender, switchboard_);
+        if (isPlug_ == IsPlug.YES) IPlug(addr).initSocket(appGateway_, msg.sender, switchboard_);
 
         bytes memory returnData;
         if (initCallData_.length > 0) {
-            (bool success, bytes memory returnData_) = addr.call(initCallData_);
+            console.log("Attempting to call with initCallData");
+
+            // Capture more detailed error information
+            (bool success, bytes memory returnData_) = addr.call{gas: gasleft()}(initCallData_);
+
             if (!success) {
+                console.log("Call failed");
+
+                // Additional error logging
+                assembly {
+                    let ptr := mload(0x40)
+                    returndatacopy(ptr, 0, returndatasize())
+                    log0(ptr, returndatasize())
+                }
+
                 revert ExecutionFailed();
             }
             returnData = returnData_;
