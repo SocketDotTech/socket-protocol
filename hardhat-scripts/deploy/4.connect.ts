@@ -17,11 +17,16 @@ export type AppGatewayConfig = {
 };
 // Maps plug contracts to their corresponding app gateways
 export const getAppGateway = (plug: string, addresses: DeploymentAddresses) => {
+  let address: string = '';
   switch (plug) {
     case CORE_CONTRACTS.ContractFactoryPlug:
-      return addresses?.[EVMX_CHAIN_ID]?.[EVMxCoreContracts.DeliveryHelper];
+      address = addresses?.[EVMX_CHAIN_ID]?.[EVMxCoreContracts.DeliveryHelper];
+      if (!address) throw new Error(`DeliveryHelper not found on EVMX`);
+      return address;
     case CORE_CONTRACTS.FeesPlug:
-      return addresses?.[EVMX_CHAIN_ID]?.[EVMxCoreContracts.FeesManager];
+      address = addresses?.[EVMX_CHAIN_ID]?.[EVMxCoreContracts.FeesManager];
+      if (!address) throw new Error(`FeesManager not found on EVMX`);
+      return address;
     default:
       throw new Error(`Unknown plug: ${plug}`);
   }

@@ -24,12 +24,12 @@ const updatedLines = lines.map((line) => {
     return `WATCHER_PRECOMPILE=${latestAddresses["WatcherPrecompile"]}`;
   } else if (line.startsWith("AUCTION_MANAGER=")) {
     return `AUCTION_MANAGER=${latestAddresses["AuctionManager"]}`;
-  } else if (line.startsWith("ARBITRUM_FEES_PLUG=")) {
-    return `ARBITRUM_FEES_PLUG=${latestAddresses["FeesManager"]}`;
-  } else if (line.startsWith("SOCKET=")) {
-    return `SOCKET=${dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["Socket"]}`;
-  } else if (line.startsWith("SWITCHBOARD=")) {
-    return `SWITCHBOARD=${
+  } else if (line.startsWith("FEES_MANAGER=")) {
+    return `FEES_MANAGER=${latestAddresses["FeesManager"]}`;
+  } else if (line.startsWith("ARBITRUM_SOCKET=")) {
+    return `ARBITRUM_SOCKET=${dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["Socket"]}`;
+  } else if (line.startsWith("ARBITRUM_SWITCHBOARD=")) {
+    return `ARBITRUM_SWITCHBOARD=${
       dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["FastSwitchboard"]
     }`;
   } else if (line.startsWith("ARBITRUM_FEES_PLUG=")) {

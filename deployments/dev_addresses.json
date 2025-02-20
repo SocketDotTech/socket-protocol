@@ -8,18 +8,18 @@
     "startBlock": 125604419
   },
   "7625382": {
-    "AddressResolver": "0x5d16F235471531521ec23e1c75F26F55b15f51F1",
-    "AddressResolverImpl": "0x3d981a431c38B9b781178279AecFb91509BDa645",
-    "AuctionManager": "0x7DC27a33f99252FaF2388416620E3178597cfBdC",
-    "AuctionManagerImpl": "0x48228f8ebdCA92B7F7fdC9C545372123f5Bcc4C4",
-    "DeliveryHelper": "0xC415FA4baE9183a2439FA0a06dd558bb4FCc0051",
-    "DeliveryHelperImpl": "0xc67BEa5A43cb0D908866F3577D1f967f901Dbc75",
-    "ERC1967Factory": "0xC36e58c0c505435179417a318333e4a7C1867247",
-    "FeesManager": "0x7B03A532aCea55bc06aB39b844797dD5d82Af012",
-    "FeesManagerImpl": "0xaF369f1fc1523dc8086c2ACDD7e7A73aA8732FE6",
-    "startBlock": 5534,
-    "WatcherPrecompile": "0x71B25Fc5f47E786574aFca919Ca61611168d94D0",
-    "WatcherPrecompileImpl": "0xCF9728Dc37da5c5B08780F818B6fB65c64d6a402"
+    "AddressResolver": "0xE0692012B818cdc72972CbF3A2dCbf5299FFa2bA",
+    "AddressResolverImpl": "0x764F5812F89584c053652B6Bcec62050F649ABf3",
+    "AuctionManager": "0x977036A2B56cE7Bc87161614802fE381629A5298",
+    "AuctionManagerImpl": "0x484fDd713323bD8cfb944620c20986A7AEBa4880",
+    "DeliveryHelper": "0x0e89e59C9FB5e440F07a8A67D8bBC53Ec07e92C0",
+    "DeliveryHelperImpl": "0x635E9fEac9fe3Ff19c41974B3a457D52F9521b9B",
+    "ERC1967Factory": "0x794b92C2Ade7D33Fb34d138B13014C63aB27CBC0",
+    "FeesManager": "0xBC83ad0Df55a3B52B93D3f16d466283902b31BEB",
+    "FeesManagerImpl": "0xD83B7753212efe1c81CE42F642661701eAeDA80A",
+    "startBlock": 138,
+    "WatcherPrecompile": "0x0245a1Aece4bfd16bc85d08B4aFfa5e63CDE8908",
+    "WatcherPrecompileImpl": "0xaf76e485B26C5c5964b403CA2C5c1a9D6Cd8022F"
   },
   "11155420": {
     "ContractFactoryPlug": "0x43942f05D5b44DC6Ca19b316dF54BE87FcF9D583",

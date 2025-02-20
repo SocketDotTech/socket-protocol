@@ -15,7 +15,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { overrides } from "../utils";
 import { VerifyArgs } from "../verify";
 
-export const deploymentsPath = path.join(__dirname, `/../../../deployments/`);
+export const deploymentsPath = path.join(__dirname, `/../../deployments/`);
 
 export const deployedAddressPath = (mode: DeploymentMode) =>
   deploymentsPath + `${mode}_addresses.json`;
