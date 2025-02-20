@@ -23,7 +23,6 @@ contract Forwarder is IForwarder, Initializable {
 
     /// @notice caches the latest async promise address for the last call
     address public latestAsyncPromise;
-    uint64 public version;
 
     constructor() {
         _disableInitializers(); // disable for implementation

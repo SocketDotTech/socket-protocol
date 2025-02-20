@@ -28,7 +28,6 @@ export const rpcKeys = (chainSlug: ChainSlug) => {
     return "EVMX_RPC";
   }
   let chainName = chainSlugToHardhatChainName[chainSlug].toString();
-  // console.log("chainName", chainName);
   chainName = chainName.replace("-", "_");
   return `${chainName.toUpperCase()}_RPC`;
 };

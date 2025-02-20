@@ -3,8 +3,8 @@ pragma solidity ^0.8.21;
 
 import "solmate/utils/SafeTransferLib.sol";
 import "solmate/tokens/ERC20.sol";
-import {ZeroAddress} from "../utils/common/Errors.sol";
-import {ETH_ADDRESS} from "../utils/common/Constants.sol";
+import {ZeroAddress, InvalidTokenAddress} from "./common/Errors.sol";
+import {ETH_ADDRESS} from "./common/Constants.sol";
 
 /**
  * @title RescueFundsLib
@@ -12,11 +12,6 @@ import {ETH_ADDRESS} from "../utils/common/Constants.sol";
  */
 
 library RescueFundsLib {
-    /**
-     * @dev thrown when the given token address don't have any code
-     */
-    error InvalidTokenAddress();
-
     /**
      * @dev Rescues funds from a contract.
      * @param token_ The address of the token contract.

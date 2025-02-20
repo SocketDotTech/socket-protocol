@@ -124,6 +124,7 @@ contract SetupTest is Test {
             watcherEOA,
             address(addressResolverProxy),
             defaultLimit,
+            expiryTime,
             vmChainSlug
         );
         vm.expectEmit(true, true, true, false);
@@ -177,6 +178,8 @@ contract SetupTest is Test {
         bytes32 transmitterDigest = keccak256(abi.encode(address(socketConfig.socket), payloadId));
         bytes memory transmitterSig = _createSignature(transmitterDigest, transmitterPrivateKey);
 
+        (, , , , , , uint256 deadline, , , ) = watcherPrecompile.asyncRequests(payloadId);
+
         vm.startPrank(transmitterEOA);
         AttestAndExecutePayloadParams memory params = AttestAndExecutePayloadParams({
             switchboard: address(socketConfig.switchboard),
@@ -188,7 +191,7 @@ contract SetupTest is Test {
             transmitterSignature: transmitterSig,
             payload: payloadDetails.payload,
             target: payloadDetails.target,
-            deadline: block.timestamp + expiryTime
+            deadline: deadline
         });
 
         bytes memory returnData = socketConfig.socketBatcher.attestAndExecute(params);

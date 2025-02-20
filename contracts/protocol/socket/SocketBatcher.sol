@@ -27,7 +27,7 @@ contract SocketBatcher is Ownable {
 
     function attestAndExecute(
         AttestAndExecutePayloadParams calldata params_
-    ) external returns (bytes memory) {
+    ) external payable returns (bytes memory) {
         ISwitchboard(params_.switchboard).attest(
             params_.payloadId,
             params_.root,
@@ -41,7 +41,12 @@ contract SocketBatcher is Ownable {
             deadline: params_.deadline,
             payload: params_.payload
         });
-        return socket__.execute(params_.appGateway, executeParams, params_.transmitterSignature);
+        return
+            socket__.execute{value: msg.value}(
+                params_.appGateway,
+                executeParams,
+                params_.transmitterSignature
+            );
     }
 
     function rescueFunds(address token_, address to_, uint256 amount_) external onlyOwner {

@@ -158,6 +158,7 @@ contract Socket is SocketUtils {
         bytes memory payload_
     ) internal returns (bytes memory) {
         if (gasleft() < executionGasLimit_) revert LowGasLimit();
+
         // NOTE: external un-trusted call
         (bool success, bytes memory returnData) = localPlug_.call{
             gas: executionGasLimit_,

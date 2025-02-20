@@ -28,3 +28,4 @@ error InvalidPromise();
 error InvalidIndex();
 error InvalidTransmitter();
 error FeesNotSet();
+error InvalidTokenAddress();

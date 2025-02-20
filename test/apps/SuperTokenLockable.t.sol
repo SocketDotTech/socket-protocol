@@ -277,6 +277,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         });
         uint32 srcChainSlug = IForwarder(userOrder.srcToken).getChainSlug();
         uint32 dstChainSlug = IForwarder(userOrder.dstToken).getChainSlug();
+        bytes32 bridgeAsyncId = getCurrentAsyncId();
 
         bytes32[] memory payloadIds = new bytes32[](4);
         payloadIds[0] = getWritePayloadId(
@@ -297,8 +298,6 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         );
         payloadIdCounter++;
 
-        bytes32 bridgeAsyncId = getCurrentAsyncId();
-
         bytes memory encodedOrder = abi.encode(userOrder);
         appContracts.superTokenLockableApp.bridge(encodedOrder);
         bidAndEndAuction(bridgeAsyncId);
@@ -312,7 +311,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             bridgeAsyncId,
             0
         );
-        finalizeAndExecute(payloadIds[0], false);
+        finalizeAndExecute(payloadIds[0]);
 
         payloadDetails = deliveryHelper.getPayloadIndexDetails(bridgeAsyncId, 2);
         vm.expectEmit(true, false, false, false);
@@ -333,20 +332,21 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             )
         );
         finalizeQuery(payloadIds[1], abi.encode(srcAmount));
-        finalizeAndExecute(payloadIds[2], false);
+        finalizeAndExecute(payloadIds[2]);
 
         payloadDetails = deliveryHelper.getPayloadIndexDetails(bridgeAsyncId, 3);
-        finalizeAndExecute(payloadIds[3], false);
+        finalizeAndExecute(payloadIds[3]);
     }
 
     function testCancel() public {
         (bytes32 bridgeAsyncId, bytes32[] memory payloadIds) = _bridge();
 
-        finalizeAndExecute(payloadIds[0], false);
+        finalizeAndExecute(payloadIds[0]);
 
         vm.expectEmit(true, true, false, true);
         emit BatchCancelled(bridgeAsyncId);
         finalizeQuery(payloadIds[1], abi.encode(0.001 ether));
+        bytes32 cancelAsyncId = getCurrentAsyncId();
 
         bytes32[] memory cancelPayloadIds = new bytes32[](1);
         uint32 srcChainSlug = IForwarder(userOrder.srcToken).getChainSlug();
@@ -356,8 +356,6 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             address(getSocketConfig(srcChainSlug).switchboard),
             payloadIdCounter++
         );
-
-        bytes32 cancelAsyncId = getCurrentAsyncId();
 
         // bidAndEndAuction(cancelAsyncId);
         // finalizeAndExecute(

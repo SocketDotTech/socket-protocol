@@ -5,7 +5,6 @@ import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {ISocket} from "../interfaces/ISocket.sol";
 import {IPlug} from "../interfaces/IPlug.sol";
 import {NotSocket} from "../protocol/utils/common/Errors.sol";
-
 /// @title PlugBase
 /// @notice Abstract contract for plugs
 abstract contract PlugBase is IPlug {
@@ -26,8 +25,8 @@ abstract contract PlugBase is IPlug {
     /// @notice Modifier to ensure the socket is initialized
     modifier socketInitializer() {
         if (isSocketInitialized == 1) revert SocketAlreadyInitialized();
-        _;
         isSocketInitialized = 1;
+        _;
     }
 
     /// @notice Connects the plug to the app gateway and switchboard

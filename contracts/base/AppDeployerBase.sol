@@ -26,7 +26,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     /// @param contractId_ The contract ID
     /// @param chainSlug_ The chain slug
     function _deploy(bytes32 contractId_, uint32 chainSlug_, IsPlug isPlug_) internal {
-        _deploy(contractId_, chainSlug_, isPlug_, bytes(""));
+        _deploy(contractId_, chainSlug_, isPlug_, new bytes(0));
     }
 
     /// @notice Deploys a contract
@@ -83,7 +83,8 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
+            .getOnChainAddress();
     }
 
     /// @notice Callback in pd promise to be called after all contracts are deployed

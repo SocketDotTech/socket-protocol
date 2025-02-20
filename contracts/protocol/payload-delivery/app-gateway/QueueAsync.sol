@@ -10,9 +10,10 @@ import {IAppDeployer} from "../../../interfaces/IAppDeployer.sol";
 import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
 import {IContractFactoryPlug} from "../../../interfaces/IContractFactoryPlug.sol";
 import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
-abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
+abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper, Ownable {
     uint256 public saltCounter;
     uint256 public asyncCounter;
 
@@ -30,7 +31,8 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
     // asyncId => PayloadBatch
     mapping(bytes32 => PayloadBatch) internal _payloadBatches;
 
-    event PayloadBatchCancelled(bytes32 asyncId_);
+    event PayloadBatchCancelled(bytes32 asyncId);
+    event BidTimeoutUpdated(uint256 newBidTimeout);
 
     function payloadBatches(bytes32 asyncId_) external view override returns (PayloadBatch memory) {
         return _payloadBatches[asyncId_];
@@ -158,6 +160,13 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
                 next: next,
                 isParallel: params_.isParallel
             });
+    }
+
+    /// @notice Updates the bid timeout
+    /// @param newBidTimeout_ The new bid timeout value
+    function updateBidTimeout(uint256 newBidTimeout_) external onlyOwner {
+        bidTimeout = newBidTimeout_;
+        emit BidTimeoutUpdated(newBidTimeout_);
     }
 
     function getPayloadIndexDetails(

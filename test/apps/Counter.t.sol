@@ -69,7 +69,7 @@ contract CounterTest is DeliveryHelperTest {
         );
     }
 
-    function testCounterIncrement() external {
+    function testCounterIncrement1() external {
         deploySetup();
         deployCounterApp(arbChainSlug);
 
@@ -117,12 +117,14 @@ contract CounterTest is DeliveryHelperTest {
         chains[0] = arbChainSlug;
         chains[1] = optChainSlug;
         _executeWriteBatchMultiChain(chains);
+
         assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
         assertEq(Counter(optCounter).counter(), optCounterBefore + 1);
     }
 
     function testCounterReadMultipleChains() external {
         testCounterIncrementMultipleChains();
+
         (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId,
@@ -137,6 +139,9 @@ contract CounterTest is DeliveryHelperTest {
         address[] memory instances = new address[](2);
         instances[0] = arbCounterForwarder;
         instances[1] = optCounterForwarder;
+
+        bytes32 bridgeAsyncId = getCurrentAsyncId();
+
         bytes32[] memory payloadIds = new bytes32[](3);
         payloadIds[0] = _encodeId(vmChainSlug, address(watcherPrecompile), payloadIdCounter++);
         payloadIds[1] = _encodeId(vmChainSlug, address(watcherPrecompile), payloadIdCounter++);
@@ -146,13 +151,12 @@ contract CounterTest is DeliveryHelperTest {
             address(getSocketConfig(arbChainSlug).switchboard),
             payloadIdCounter++
         );
-        bytes32 bridgeAsyncId = getCurrentAsyncId();
 
         counterGateway.readCounters(instances);
-        finalizeQuery(payloadIds[0], abi.encode(Counter(arbCounter).counter()));
-        finalizeQuery(payloadIds[1], abi.encode(Counter(optCounter).counter()));
 
         bidAndEndAuction(bridgeAsyncId);
-        finalizeAndExecute(payloadIds[2], false);
+        finalizeQuery(payloadIds[0], abi.encode(Counter(arbCounter).counter()));
+        finalizeQuery(payloadIds[1], abi.encode(Counter(optCounter).counter()));
+        finalizeAndExecute(payloadIds[2]);
     }
 }

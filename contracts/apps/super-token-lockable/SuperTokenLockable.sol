@@ -50,21 +50,11 @@ contract SuperTokenLockable is ERC20, Ownable, PlugBase {
         _mint(user_, amount_);
     }
 
-    function setSocket(address newSocket_) external onlyOwner {
+    function setSocket(address newSocket_) external onlySocket {
         _setSocket(newSocket_);
     }
 
-    function setLimitHook(address limitHook_) external onlyOwner {
+    function setLimitHook(address limitHook_) external onlySocket {
         limitHook__ = LimitHook(limitHook_);
-    }
-
-    // test for isSocketInitialized
-    function initSocket(
-        address appGateway_,
-        address socket_,
-        address switchboard_
-    ) external override {
-        this.initSocket(appGateway_, socket_, switchboard_);
-        _initializeOwner(socket_);
     }
 }
