@@ -42,14 +42,6 @@ contract DeliveryHelper is BatchAsync, Initializable {
         bool isRestarted = _payloadBatches[asyncId_].winningBid.transmitter != address(0);
         _payloadBatches[asyncId_].winningBid = winningBid_;
 
-        // update fees
-        // todo: revisit
-        IFeesManager(addressResolver__.feesManager()).updateTransmitterFees(
-            winningBid_,
-            asyncId_,
-            _payloadBatches[asyncId_].appGateway
-        );
-
         if (!isRestarted) return _process(asyncId_, false);
 
         // Refinalize all payloads in the batch if a new transmitter is assigned

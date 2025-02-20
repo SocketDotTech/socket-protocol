@@ -148,12 +148,12 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
 
     /// @notice Blocks fees for transmitter
     /// @param appGateway_ The app gateway address
-    /// @param fees_ The fees data struct
+    /// @param feesGivenByApp_ The fees data struct given by the app gateway
     /// @param asyncId_ The batch identifier
     /// @dev Only callable by delivery helper
     function blockFees(
         address appGateway_,
-        Fees memory fees_,
+        Fees memory feesGivenByApp_,
         Bid memory winningBid_,
         bytes32 asyncId_
     ) external {
@@ -161,38 +161,50 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
         address appGateway = _getCoreAppGateway(appGateway_);
         // Block fees
         uint256 availableFees = getAvailableFees(
-            fees_.feePoolChain,
+            feesGivenByApp_.feePoolChain,
             appGateway,
-            fees_.feePoolToken
+            feesGivenByApp_.feePoolToken
         );
-        if (availableFees < winningBid_.fee) revert InsufficientFeesAvailable();
 
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees_.feePoolChain][
-            fees_.feePoolToken
-        ];
-        tokenBalance.blocked += winningBid_.fee;
-        asyncIdBlockedFees[asyncId_] = fees_;
-        emit FeesBlocked(asyncId_, fees_.feePoolChain, fees_.feePoolToken, winningBid_.fee);
+        if (asyncIdBlockedFees[asyncId_].amount > 0)
+            availableFees += asyncIdBlockedFees[asyncId_].amount;
+
+        if (availableFees < winningBid_.fee) revert InsufficientFeesAvailable();
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][
+            feesGivenByApp_.feePoolChain
+        ][feesGivenByApp_.feePoolToken];
+
+        tokenBalance.blocked =
+            tokenBalance.blocked +
+            winningBid_.fee -
+            asyncIdBlockedFees[asyncId_].amount;
+
+        asyncIdBlockedFees[asyncId_] = Fees({
+            feePoolChain: feesGivenByApp_.feePoolChain,
+            feePoolToken: feesGivenByApp_.feePoolToken,
+            amount: winningBid_.fee
+        });
+
+        emit FeesBlocked(
+            asyncId_,
+            feesGivenByApp_.feePoolChain,
+            feesGivenByApp_.feePoolToken,
+            winningBid_.fee
+        );
     }
 
+    // todo: revisit
     function updateTransmitterFees(
         Bid memory winningBid_,
         bytes32 asyncId_,
         address appGateway_
-    ) external onlyDeliveryHelper {
+    ) external onlyWatcherPrecompile {
         address appGateway = _getCoreAppGateway(appGateway_);
 
         Fees storage fees = asyncIdBlockedFees[asyncId_];
         TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees.feePoolChain][
             fees.feePoolToken
         ];
-
-        // if no transmitter assigned after auction, unblock fees
-        if (winningBid_.transmitter == address(0)) {
-            tokenBalance.blocked -= fees.amount;
-            delete asyncIdBlockedFees[asyncId_];
-            return;
-        }
 
         // update new amount
         fees.amount = winningBid_.fee;
