@@ -90,10 +90,9 @@ contract CounterTest is DeliveryHelperTest {
     }
 
     function testCounterIncrementMultipleChains() public {
-        deploySetup();        
+        deploySetup();
         deployCounterApp(arbChainSlug);
         deployCounterApp(optChainSlug);
-
 
         (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
@@ -154,7 +153,7 @@ contract CounterTest is DeliveryHelperTest {
         );
 
         counterGateway.readCounters(instances);
-        
+
         bidAndEndAuction(bridgeAsyncId);
         finalizeQuery(payloadIds[0], abi.encode(Counter(arbCounter).counter()));
         finalizeQuery(payloadIds[1], abi.encode(Counter(optCounter).counter()));
