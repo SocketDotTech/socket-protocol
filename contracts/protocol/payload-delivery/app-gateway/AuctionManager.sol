@@ -152,8 +152,8 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
     function expireBid(bytes32 asyncId_) external onlyWatcherPrecompile {
         PayloadBatch memory batch = IDeliveryHelper(addressResolver__.deliveryHelper())
             .payloadBatches(asyncId_);
+        
         // if executed, bid is not expired
-        // todo: should be less than total payloads in batch or zero?
         if (batch.totalPayloadsRemaining == 0 || batch.isBatchCancelled) return;
 
         IFeesManager(addressResolver__.feesManager()).unblockFees(asyncId_, batch.appGateway);

@@ -110,10 +110,8 @@ contract DeliveryHelper is BatchAsync, Initializable {
         PayloadDetails[] storage payloads = payloadBatchDetails[asyncId_];
 
         // Check for empty payloads or index out of bounds
-        // todo: should revert
         if (payloads.length == 0 || currentIndex >= payloads.length) {
-            _finishBatch(asyncId_, payloadBatch_);
-            return;
+            revert InvalidIndex();
         }
 
         // Deploy single promise for the next batch of operations
