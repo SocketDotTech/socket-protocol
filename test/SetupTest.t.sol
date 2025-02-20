@@ -33,11 +33,9 @@ contract SetupTest is Test {
     uint32 arbChainSlug = 421614;
     uint32 optChainSlug = 11155420;
     uint32 vmChainSlug = 1;
+    uint256 expiryTime = 10000000;
 
-    uint256 public writePayloadIdCounter = 0;
-    uint256 public readPayloadIdCounter = 0;
-    uint256 public timeoutPayloadIdCounter = 0;
-
+    uint256 public payloadIdCounter = 0;
     uint256 public defaultLimit = 1000;
 
     bytes public asyncPromiseBytecode = type(AsyncPromise).creationCode;
@@ -82,7 +80,14 @@ contract SetupTest is Test {
         vm.stopPrank();
 
         hoax(watcherEOA);
-        watcherPrecompile.setSwitchboard(chainSlug_, FAST, address(switchboard));
+        watcherPrecompile.setOnChainContracts(
+            chainSlug_,
+            FAST,
+            address(switchboard),
+            address(socket),
+            address(contractFactoryPlug),
+            address(feesPlug)
+        );
 
         return
             SocketContracts({
@@ -118,7 +123,9 @@ contract SetupTest is Test {
             WatcherPrecompile.initialize.selector,
             watcherEOA,
             address(addressResolverProxy),
-            defaultLimit
+            defaultLimit,
+            expiryTime,
+            vmChainSlug
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(version);
@@ -171,8 +178,10 @@ contract SetupTest is Test {
         bytes32 transmitterDigest = keccak256(abi.encode(address(socketConfig.socket), payloadId));
         bytes memory transmitterSig = _createSignature(transmitterDigest, transmitterPrivateKey);
 
+        (, , , , , , uint256 deadline, , , ) = watcherPrecompile.asyncRequests(payloadId);
+
         vm.startPrank(transmitterEOA);
-        ExecutePayloadParams memory params = ExecutePayloadParams({
+        AttestAndExecutePayloadParams memory params = AttestAndExecutePayloadParams({
             switchboard: address(socketConfig.switchboard),
             root: root,
             watcherSignature: watcherSignature,
@@ -181,7 +190,8 @@ contract SetupTest is Test {
             executionGasLimit: payloadDetails.executionGasLimit,
             transmitterSignature: transmitterSig,
             payload: payloadDetails.payload,
-            target: payloadDetails.target
+            target: payloadDetails.target,
+            deadline: deadline
         });
 
         bytes memory returnData = socketConfig.socketBatcher.attestAndExecute(params);
@@ -211,10 +221,7 @@ contract SetupTest is Test {
         address switchboard_,
         uint256 counter_
     ) internal pure returns (bytes32) {
-        return
-            bytes32(
-                (uint256(chainSlug_) << 224) | (uint256(uint160(switchboard_)) << 64) | counter_
-            );
+        return _encodeId(chainSlug_, switchboard_, counter_);
     }
 
     function getWritePayloadIds(
@@ -224,15 +231,19 @@ contract SetupTest is Test {
     ) internal returns (bytes32[] memory) {
         bytes32[] memory payloadIds = new bytes32[](numPayloads);
         for (uint256 i = 0; i < numPayloads; i++) {
-            payloadIds[i] = getWritePayloadId(chainSlug_, switchboard_, i + writePayloadIdCounter);
+            payloadIds[i] = _encodeId(chainSlug_, switchboard_, payloadIdCounter++);
         }
-
-        writePayloadIdCounter += numPayloads;
         return payloadIds;
     }
 
-    function encodeTimeoutId(uint256 timeoutCounter_) internal view returns (bytes32) {
-        // watcher address (160 bits) | counter (64 bits)
-        return bytes32((uint256(uint160(address(watcherPrecompile))) << 64) | timeoutCounter_);
+    function _encodeId(
+        uint32 chainSlug_,
+        address sbOrWatcher_,
+        uint256 counter_
+    ) internal pure returns (bytes32) {
+        return
+            bytes32(
+                (uint256(chainSlug_) << 224) | (uint256(uint160(sbOrWatcher_)) << 64) | counter_
+            );
     }
 }

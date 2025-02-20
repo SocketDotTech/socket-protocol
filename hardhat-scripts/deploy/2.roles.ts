@@ -40,7 +40,8 @@ export const main = async () => {
       );
 
       for (const [contractName, roleHash] of Object.entries(REQUIRED_ROLES)) {
-        if (!chainAddresses[contractName as keyof ChainSocketAddresses]) continue;
+        if (!chainAddresses[contractName as keyof ChainSocketAddresses])
+          continue;
 
         let contract = await getInstance(
           contractName as CORE_CONTRACTS,
@@ -48,7 +49,10 @@ export const main = async () => {
         );
         contract = contract.connect(signer);
 
-        const targetAddress = contractName === CORE_CONTRACTS.FastSwitchboard ? watcher : signer.address;
+        const targetAddress =
+          contractName === CORE_CONTRACTS.FastSwitchboard
+            ? watcher
+            : signer.address;
 
         const hasRole = await contract.callStatic["hasRole(bytes32,address)"](
           getRoleHash(roleHash),
@@ -65,7 +69,11 @@ export const main = async () => {
           } else {
             tx = await contract.grantRole(getRoleHash(roleHash), targetAddress);
           }
-          console.log(`granting ${roleHash} role to ${targetAddress} for ${contractName}`, chain, tx.hash);
+          console.log(
+            `granting ${roleHash} role to ${targetAddress} for ${contractName}`,
+            chain,
+            tx.hash
+          );
           await tx.wait();
         }
       }

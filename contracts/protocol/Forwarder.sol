@@ -23,7 +23,6 @@ contract Forwarder is IForwarder, Initializable {
 
     /// @notice caches the latest async promise address for the last call
     address public latestAsyncPromise;
-    uint64 public version;
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -86,12 +85,15 @@ contract Forwarder is IForwarder, Initializable {
 
         // Queue the call in the auction house.
         IDeliveryHelper(deliveryHelper).queue(
+            IsPlug.NO,
             isParallelCall,
             chainSlug,
             onChainAddress,
             latestAsyncPromise,
+            0,
             isReadCall == Read.ON ? CallType.READ : CallType.WRITE,
-            msg.data
+            msg.data,
+            bytes("")
         );
     }
 

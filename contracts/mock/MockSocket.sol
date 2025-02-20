@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../interfaces/IPlug.sol";
 import {PlugDisconnected, InvalidAppGateway} from "../protocol/utils/common/Errors.sol";
 import "../interfaces/ISwitchboard.sol";
 import "../interfaces/ISocket.sol";
 
 /**
  * @title SocketDst
- * @dev SocketDst is an abstract contract that inherits from SocketBase and
+ * @dev SocketDst is an abstract contract that inherits from SocketUtils and
  * provides functionality for payload execution, verification.
  * It manages the mapping of payload execution status
  * timestamps
@@ -108,15 +107,13 @@ contract MockSocket is ISocket {
      * @notice Executes a payload that has been delivered by transmitters and authenticated by switchboards
      */
     function execute(
-        bytes32 payloadId_,
         address,
-        address target_,
-        uint256 executionGasLimit_,
-        bytes memory,
-        bytes memory payload_
+        ExecuteParams memory params_,
+        bytes memory
     ) external payable returns (bytes memory) {
         // execute payload
-        return _execute(target_, payloadId_, executionGasLimit_, payload_);
+        return
+            _execute(params_.target, params_.payloadId, params_.executionGasLimit, params_.payload);
     }
 
     ////////////////////////////////////////////////////////

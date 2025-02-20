@@ -14,13 +14,13 @@ abstract contract WatcherPrecompileLimits is
     Ownable,
     IWatcherPrecompile
 {
+    /// @notice Number of decimals used in limit calculations
+    uint256 public constant LIMIT_DECIMALS = 18;
+
     /// @notice Default limit value for any app gateway
     uint256 public defaultLimit;
     /// @notice Rate at which limit replenishes per second
     uint256 public defaultRatePerSecond;
-    /// @notice Number of decimals used in limit calculations
-    uint256 public LIMIT_DECIMALS;
-
     // appGateway => limitType => receivingLimitParams
     mapping(address => mapping(bytes32 => LimitParams)) internal _limitParams;
 

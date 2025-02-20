@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 
 import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
 import {Bid, PayloadBatch, Fees, PayloadDetails, FinalizeParams} from "../../../protocol/utils/common/Structs.sol";
 import {DISTRIBUTE_FEE, DEPLOY} from "../../../protocol/utils/common/Constants.sol";
-import {PromisesNotResolved} from "../../../protocol/utils/common/Errors.sol";
+import {PromisesNotResolved, InvalidTransmitter} from "../../../protocol/utils/common/Errors.sol";
 import "./BatchAsync.sol";
 
-contract DeliveryHelper is BatchAsync, Ownable, Initializable {
+contract DeliveryHelper is BatchAsync, Initializable {
     event CallBackReverted(bytes32 asyncId_, bytes32 payloadId_);
     uint64 public version;
+
+    bytes32[] public tempPayloadIds;
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -36,32 +37,33 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
         bytes32 asyncId_,
         Bid memory winningBid_
     ) external onlyAuctionManager(asyncId_) {
+        if (winningBid_.transmitter == address(0)) revert InvalidTransmitter();
+
+        bool isRestarted = _payloadBatches[asyncId_].winningBid.transmitter != address(0);
         _payloadBatches[asyncId_].winningBid = winningBid_;
 
-        // update fees
-        IFeesManager(addressResolver__.feesManager()).updateTransmitterFees(
-            winningBid_,
-            asyncId_,
-            _payloadBatches[asyncId_].appGateway
-        );
+        if (!isRestarted) return _process(asyncId_, false);
 
-        if (winningBid_.transmitter != address(0)) {
-            // process batch
-            _process(asyncId_);
-        } else {
-            // todo: check if this is correct?
-            // cancel batch
-            _payloadBatches[asyncId_].isBatchCancelled = true;
-            emit BatchCancelled(asyncId_);
+        // Refinalize all payloads in the batch if a new transmitter is assigned
+        bytes32[] memory payloadIds = _payloadBatches[asyncId_].lastBatchOfPayloads;
+        for (uint256 i = 0; i < payloadIds.length; i++) {
+            watcherPrecompile__().refinalize(
+                payloadIds[i],
+                FinalizeParams({
+                    payloadDetails: payloadIdToPayloadDetails[payloadIds[i]],
+                    asyncId: asyncId_,
+                    transmitter: winningBid_.transmitter
+                })
+            );
         }
     }
 
     function callback(bytes memory asyncId_, bytes memory) external override onlyPromises {
         bytes32 asyncId = abi.decode(asyncId_, (bytes32));
-        _process(asyncId);
+        _process(asyncId, true);
     }
 
-    function _process(bytes32 asyncId_) internal {
+    function _process(bytes32 asyncId_, bool isCallback_) internal {
         PayloadBatch storage payloadBatch = _payloadBatches[asyncId_];
         if (payloadBatch.isBatchCancelled) return;
 
@@ -71,16 +73,21 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
             // Check if all promises are resolved
             for (uint256 i = 0; i < payloadBatch.lastBatchPromises.length; i++) {
                 if (!IPromise(payloadBatch.lastBatchPromises[i]).resolved()) {
-                    revert PromisesNotResolved();
+                    if (isCallback_) revert PromisesNotResolved();
                 }
             }
             // Clear promises array after all are resolved
-            delete payloadBatch.lastBatchPromises;
+            if (isCallback_) {
+                delete payloadBatch.lastBatchPromises;
+            }
         }
 
         if (payloadBatch.totalPayloadsRemaining > 0) {
+            delete tempPayloadIds;
+
             // Proceed with next payload only if all promises are resolved
             _finalizeNextPayload(asyncId_);
+            payloadBatch.lastBatchOfPayloads = tempPayloadIds;
         } else {
             _finishBatch(asyncId_, payloadBatch);
         }
@@ -103,10 +110,8 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
         PayloadDetails[] storage payloads = payloadBatchDetails[asyncId_];
 
         // Check for empty payloads or index out of bounds
-        // todo: should revert
         if (payloads.length == 0 || currentIndex >= payloads.length) {
-            _finishBatch(asyncId_, payloadBatch_);
-            return;
+            revert InvalidIndex();
         }
 
         // Deploy single promise for the next batch of operations
@@ -156,11 +161,12 @@ contract DeliveryHelper is BatchAsync, Ownable, Initializable {
                 transmitter: payloadBatch_.winningBid.transmitter
             });
             (payloadId, root) = watcherPrecompile__().finalize(
-                finalizeParams,
-                payloadBatch_.appGateway
+                payloadBatch_.appGateway,
+                finalizeParams
             );
         }
 
+        tempPayloadIds.push(payloadId);
         payloadIdToBatchHash[payloadId] = asyncId_;
         payloadIdToPayloadDetails[payloadId] = payloadDetails_;
 

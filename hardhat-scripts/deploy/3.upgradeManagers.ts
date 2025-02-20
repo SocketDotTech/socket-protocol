@@ -48,11 +48,7 @@ export const main = async () => {
         socketContract
       );
 
-      await setSwitchboard(
-        chainAddresses[CORE_CONTRACTS.FastSwitchboard],
-        chain,
-        addresses
-      );
+      await setOnchainContracts(chain, addresses);
 
       await storeAddresses(chainAddresses, chain, DeploymentMode.DEV);
     }
@@ -61,7 +57,7 @@ export const main = async () => {
   }
 };
 
-async function setSwitchboard(sbAddress, chain, addresses) {
+async function setOnchainContracts(chain, addresses) {
   const providerInstance = getProviderFromChainSlug(EVMX_CHAIN_ID as ChainSlug);
   const signer: Wallet = new ethers.Wallet(
     process.env.WATCHER_PRIVATE_KEY as string,
@@ -76,15 +72,37 @@ async function setSwitchboard(sbAddress, chain, addresses) {
   ).connect(signer);
 
   const fastSBtype = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("FAST"));
-  const currentValue = await watcherPrecompile.switchboards(chain, fastSBtype);
-  console.log({ current: currentValue, required: sbAddress });
+  const sbAddress = addresses[chain][CORE_CONTRACTS.FastSwitchboard];
+  const socketAddress = addresses[chain][CORE_CONTRACTS.Socket];
+  const contractFactoryPlugAddress =
+    addresses[chain][EVMxCoreContracts.ContractFactoryPlug];
+  const feesPlugAddress = addresses[chain][EVMxCoreContracts.FeesPlug];
 
-  if (currentValue.toLowerCase() !== sbAddress.toLowerCase()) {
+  const currentValue = await watcherPrecompile.switchboards(chain, fastSBtype);
+  const currentSocket = await watcherPrecompile.sockets(chain);
+  const currentContractFactoryPlug =
+    await watcherPrecompile.contractFactoryPlug(chain);
+  const currentFeesPlug = await watcherPrecompile.feesPlug(chain);
+
+  if (
+    currentValue.toLowerCase() !== sbAddress.toLowerCase() ||
+    currentSocket.toLowerCase() !== socketAddress.toLowerCase() ||
+    currentContractFactoryPlug.toLowerCase() !==
+      contractFactoryPlugAddress.toLowerCase() ||
+    currentFeesPlug.toLowerCase() !== feesPlugAddress.toLowerCase()
+  ) {
     const tx = await watcherPrecompile
       .connect(signer)
-      .setSwitchboard(chain, fastSBtype, sbAddress);
+      .setOnChainContracts(
+        chain,
+        fastSBtype,
+        sbAddress,
+        socketAddress,
+        contractFactoryPlugAddress,
+        feesPlugAddress
+      );
 
-    console.log(`Setting sb for ${chain} to`, tx.hash);
+    console.log(`Setting onchain contracts for ${chain} to`, tx.hash);
     await tx.wait();
   }
 }
@@ -106,7 +124,7 @@ const registerSb = async (sbAddress, signer, socket) => {
       from: signer.address,
     });
 
-    if (!sb) {
+    if (Number(sb) == 0) {
       const registerTx = await switchboard.registerSwitchboard();
       console.log(`Registering Switchboard ${sbAddress}: ${registerTx.hash}`);
       await registerTx.wait();

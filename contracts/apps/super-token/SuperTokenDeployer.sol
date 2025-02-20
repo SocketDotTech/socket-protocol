@@ -38,7 +38,7 @@ contract SuperTokenDeployer is AppDeployerBase, Ownable {
     }
 
     function deployContracts(uint32 chainSlug_) external async {
-        _deploy(superToken, chainSlug_);
+        _deploy(superToken, chainSlug_, IsPlug.YES);
     }
 
     // no need to call this directly, will be called automatically after all contracts are deployed.

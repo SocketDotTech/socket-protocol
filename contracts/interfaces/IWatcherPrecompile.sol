@@ -12,6 +12,17 @@ interface IWatcherPrecompile {
     /// @dev Only callable by authorized addresses
     function setAppGateways(AppGatewayConfig[] calldata configs_) external;
 
+    /// @notice Sets up on-chain contract configurations
+    /// @dev Only callable by authorized addresses
+    function setOnChainContracts(
+        uint32 chainSlug_,
+        bytes32 sbType_,
+        address switchboard_,
+        address socket_,
+        address contractFactoryPlug_,
+        address feesPlug_
+    ) external;
+
     /// @notice Retrieves plug configuration for a specific network and plug
     /// @param chainSlug_ The identifier of the network
     /// @param plug_ The address of the plug
@@ -27,8 +38,8 @@ interface IWatcherPrecompile {
     /// @return payloadId The unique identifier for the request
     /// @return root The merkle root of the payload parameters
     function finalize(
-        FinalizeParams memory params_,
-        address originAppGateway_
+        address originAppGateway_,
+        FinalizeParams memory params_
     ) external returns (bytes32 payloadId, bytes32 root);
 
     /// @notice Creates a new query request
@@ -49,6 +60,11 @@ interface IWatcherPrecompile {
     /// @param payloadId_ The unique identifier of the request
     /// @param signature_ The watcher's signature
     function finalized(bytes32 payloadId_, bytes calldata signature_) external;
+
+    /// @notice Finalizes multiple payload execution requests with a new transmitter
+    /// @param payloadId_ The unique identifier of the request
+    /// @param params_ The parameters for finalization
+    function refinalize(bytes32 payloadId_, FinalizeParams memory params_) external;
 
     /// @notice Resolves multiple promises with their return data
     /// @param resolvedPromises_ Array of resolved promises and their return data
@@ -72,18 +88,15 @@ interface IWatcherPrecompile {
     /// @return root The calculated merkle root hash
     function getRoot(PayloadRootParams memory params_) external pure returns (bytes32 root);
 
-    /// @notice Gets the plug address for a given app gateway and chain
-    /// @param appGateway_ The address of the app gateway contract
-    /// @param chainSlug_ The identifier of the destination chain
-    /// @return The plug address for the given app gateway and chain
-    function appGatewayPlugs(
-        address appGateway_,
-        uint32 chainSlug_
-    ) external view returns (address);
-
     function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external;
 
     function switchboards(uint32 chainSlug_, bytes32 sbType_) external view returns (address);
+
+    function sockets(uint32 chainSlug_) external view returns (address);
+
+    function contractFactoryPlug(uint32 chainSlug_) external view returns (address);
+
+    function feesPlug(uint32 chainSlug_) external view returns (address);
 
     function setIsValidInboxCaller(uint32 chainSlug_, address plug_, bool isValid_) external;
 

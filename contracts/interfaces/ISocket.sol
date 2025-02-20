@@ -43,6 +43,22 @@ interface ISocket {
     );
 
     /**
+     * @notice params for executing a payload
+     * @param payloadId the id of the payload
+     * @param target the address of the contract to call
+     * @param executionGasLimit the gas limit for the execution
+     * @param deadline the deadline for the execution
+     * @param payload the data to be executed
+     */
+    struct ExecuteParams {
+        bytes32 payloadId;
+        address target;
+        uint256 executionGasLimit;
+        uint256 deadline;
+        bytes payload;
+    }
+
+    /**
      * @notice To call the appGateway on offChainVM. Should only be called by a plug.
      * @param payload_ bytes to be delivered to the Plug on offChainVM
      * @param params_ a 32 bytes param to add details for execution.
@@ -56,12 +72,9 @@ interface ISocket {
      * @notice executes a payload
      */
     function execute(
-        bytes32 payloadId_,
         address appGateway_,
-        address target_,
-        uint256 executionGasLimit_,
-        bytes memory transmitterSignature_,
-        bytes memory payload_
+        ExecuteParams memory params_,
+        bytes memory transmitterSignature_
     ) external payable returns (bytes memory);
 
     /**

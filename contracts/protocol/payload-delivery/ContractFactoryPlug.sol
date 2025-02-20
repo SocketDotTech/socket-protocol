@@ -6,25 +6,30 @@ import {RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
 import "../utils/RescueFundsLib.sol";
 import {NotSocket} from "../utils/common/Errors.sol";
 import "../../base/PlugBase.sol";
+import "../../interfaces/IContractFactoryPlug.sol";
 
 /// @title ContractFactory
 /// @notice Abstract contract for deploying contracts
-contract ContractFactoryPlug is PlugBase, AccessControl {
-    event Deployed(address addr, bytes32 salt);
+contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
+    event Deployed(address addr, bytes32 salt, bytes returnData);
 
     /// @notice Error thrown if it failed to deploy the create2 contract
     error DeploymentFailed();
+    error ExecutionFailed();
 
-    constructor(address socket_, address owner_) PlugBase(socket_) {
+    constructor(address socket_, address owner_) {
         _initializeOwner(owner_);
+        _setSocket(socket_);
     }
 
     function deployContract(
-        bytes memory creationCode_,
+        IsPlug isPlug_,
         bytes32 salt_,
         address appGateway_,
-        address switchboard_
-    ) public returns (address) {
+        address switchboard_,
+        bytes memory creationCode_,
+        bytes memory initCallData_
+    ) public override returns (address) {
         if (msg.sender != address(socket__)) {
             revert NotSocket();
         }
@@ -38,8 +43,27 @@ contract ContractFactoryPlug is PlugBase, AccessControl {
             }
         }
 
-        IPlug(addr).connectSocket(appGateway_, msg.sender, switchboard_);
-        emit Deployed(addr, salt_);
+        if (isPlug_ == IsPlug.YES) IPlug(addr).initSocket(appGateway_, msg.sender, switchboard_);
+
+        bytes memory returnData;
+        if (initCallData_.length > 0) {
+            // Capture more detailed error information
+            (bool success, bytes memory returnData_) = addr.call(initCallData_);
+
+            if (!success) {
+                // Additional error logging
+                assembly {
+                    let ptr := mload(0x40)
+                    returndatacopy(ptr, 0, returndatasize())
+                    log0(ptr, returndatasize())
+                }
+
+                revert ExecutionFailed();
+            }
+            returnData = returnData_;
+        }
+
+        emit Deployed(addr, salt_, returnData);
         return addr;
     }
 

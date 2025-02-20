@@ -18,9 +18,8 @@ contract SuperToken is ERC20, Ownable, PlugBase {
         uint8 decimals_,
         address initialSupplyHolder_,
         uint256 initialSupply_
-    ) ERC20(name_, symbol_, decimals_) PlugBase(msg.sender) {
+    ) ERC20(name_, symbol_, decimals_) {
         _mint(initialSupplyHolder_, initialSupply_);
-        _initializeOwner(msg.sender);
     }
 
     function mint(address receiver_, uint256 amount_) external onlySocket {
@@ -33,14 +32,5 @@ contract SuperToken is ERC20, Ownable, PlugBase {
 
     function setSocket(address newSocket_) external onlyOwner {
         _setSocket(newSocket_);
-    }
-
-    function connectSocket(
-        address appGateway_,
-        address socket_,
-        address switchboard_
-    ) external onlyOwner {
-        _initializeOwner(socket_);
-        _connectSocket(appGateway_, socket_, switchboard_);
     }
 }

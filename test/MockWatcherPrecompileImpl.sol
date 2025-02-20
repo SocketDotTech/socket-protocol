@@ -14,8 +14,6 @@ contract MockWatcherPrecompileImpl is WatcherPrecompile {
         _initializeOwner(owner_);
         maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
 
-        LIMIT_DECIMALS = 18;
-
         // limit per day
         defaultLimit = defaultLimit_ * 10 ** LIMIT_DECIMALS;
         // limit per second

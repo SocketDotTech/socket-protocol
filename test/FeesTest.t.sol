@@ -68,9 +68,9 @@ contract FeesTest is DeliveryHelperTest {
         hoax(transmitterEOA);
         (bytes32 payloadId, , PayloadDetails memory payloadDetails) = feesManager
             .withdrawTransmitterFees(feesChainSlug, ETH_ADDRESS, address(receiver));
-        writePayloadIdCounter++;
+        payloadIdCounter++;
+        finalizeAndRelay(payloadId, payloadDetails);
 
-        finalizeAndExecute(payloadId, true, payloadDetails);
         assertEq(
             transmitterReceiverBalanceBefore + bidAmount,
             address(receiver).balance,
@@ -92,6 +92,7 @@ contract FeesTest is DeliveryHelperTest {
 
         uint256 receiverBalanceBefore = receiver.balance;
         uint256 withdrawAmount = 0.5 ether;
+
         counterGateway.withdrawFeeTokens(feesChainSlug, ETH_ADDRESS, withdrawAmount, receiver);
 
         asyncId = getCurrentAsyncId();
@@ -101,7 +102,9 @@ contract FeesTest is DeliveryHelperTest {
             1
         );
         bidAndEndAuction(asyncId);
-        finalizeAndExecute(payloadIds[0], true);
+
+        PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(payloadIds[0]);
+        finalizeAndRelay(payloadIds[0], payloadDetails);
         assertEq(
             depositAmount - withdrawAmount,
             address(feesConfig.feesPlug).balance,

@@ -13,13 +13,12 @@ import { getProviderFromChainSlug } from "../constants";
 import { ethers } from "hardhat";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { auctionEndDelaySeconds, chains } from "./config";
-import {
-  MAX_LIMIT,
-  EVMX_CHAIN_ID,
-  BID_TIMEOUT
-} from "../constants/constants";
+import { MAX_LIMIT, EVMX_CHAIN_ID, BID_TIMEOUT } from "../constants/constants";
 import { getImplementationAddress } from "./migration/migrate-proxies";
-import { CORE_CONTRACTS, EVMxCoreContracts } from "../constants/protocolConstants";
+import {
+  CORE_CONTRACTS,
+  EVMxCoreContracts,
+} from "../constants/protocolConstants";
 
 let offChainVMOwner: string;
 const main = async () => {
@@ -212,11 +211,7 @@ const deployWatcherVMContracts = async () => {
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.DeliveryHelper,
         `contracts/apps/payload-delivery/app-gateway/DeliveryHelper.sol`,
-        [
-          addressResolver.address,
-          offChainVMOwner,
-          BID_TIMEOUT,
-        ],
+        [addressResolver.address, offChainVMOwner, BID_TIMEOUT],
         proxyFactory,
         deployUtils
       );

@@ -12,10 +12,9 @@ contract LimitHook is Ownable, PlugBase {
     error BurnLimitExceeded();
     error MintLimitExceeded();
 
-    constructor(uint256 _burnLimit_, uint256 _mintLimit_) PlugBase(msg.sender) {
+    constructor(uint256 _burnLimit_, uint256 _mintLimit_) {
         burnLimit = _burnLimit_;
         mintLimit = _mintLimit_;
-        _initializeOwner(msg.sender);
     }
 
     function setLimits(uint256 _burnLimit_, uint256 _mintLimit_) external onlyOwner {

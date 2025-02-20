@@ -6,11 +6,11 @@ import "./SocketConfig.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
 
 /**
- * @title SocketBase
+ * @title SocketUtils
  * @notice A contract that is responsible for common storage for src and dest contracts, governance
  * setters and inherits SocketConfig
  */
-abstract contract SocketBase is SocketConfig {
+abstract contract SocketUtils is SocketConfig {
     // Version string for this socket instance
     bytes32 public immutable version;
     // ChainSlug for this deployed socket instance
@@ -52,6 +52,8 @@ abstract contract SocketBase is SocketConfig {
         address appGateway_,
         address transmitter_,
         address target_,
+        uint256 value_,
+        uint256 deadline_,
         uint256 executionGasLimit_,
         bytes memory payload_
     ) internal pure returns (bytes32) {
@@ -62,6 +64,8 @@ abstract contract SocketBase is SocketConfig {
                     appGateway_,
                     transmitter_,
                     target_,
+                    value_,
+                    deadline_,
                     executionGasLimit_,
                     payload_
                 )

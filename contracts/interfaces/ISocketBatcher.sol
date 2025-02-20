@@ -5,6 +5,6 @@ import "../protocol/utils/common/Structs.sol";
 
 interface ISocketBatcher {
     function attestAndExecute(
-        ExecutePayloadParams calldata params_
+        AttestAndExecutePayloadParams calldata params_
     ) external returns (bytes memory);
 }

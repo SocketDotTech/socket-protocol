@@ -6,7 +6,10 @@
     "esModuleInterop": true,
     "declaration": true,
     "resolveJsonModule": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+    "allowJs": true
   },
-  "include": ["./src", "./deployments"]
+  "include": ["src/**/*.ts", "lib/**/*.ts", "deployments/"],
+  "exclude": ["node_modules", "dist"]
 }

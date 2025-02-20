@@ -29,9 +29,6 @@ contract MockWatcherPrecompile {
 
     mapping(uint32 => mapping(address => PlugConfig)) internal _plugConfigs;
 
-    /// @notice Maps app gateway to their associated plugs per network
-    /// @dev appGateway => chainSlug => plug
-    mapping(address => mapping(uint32 => address)) public appGatewayPlugs;
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
     error InvalidTransmitter();
@@ -141,11 +138,13 @@ contract MockWatcherPrecompile {
         emit FinalizeRequested(
             payloadId,
             AsyncRequest(
+                msg.sender,
                 address(0),
                 address(0),
                 params_.payloadDetails.target,
                 address(0),
                 0,
+                block.timestamp + 1000,
                 params_.asyncId,
                 bytes32(0),
                 bytes(""),
@@ -227,19 +226,6 @@ contract MockWatcherPrecompile {
     function _encodeTimeoutId(uint256 timeoutCounter_) internal view returns (bytes32) {
         // watcher address (160 bits) | counter (64 bits)
         return bytes32((uint256(uint160(address(this))) << 64) | timeoutCounter_);
-    }
-
-    function setAppGateways(AppGatewayConfig[] calldata configs) external {
-        for (uint256 i = 0; i < configs.length; i++) {
-            // Store the plug configuration for this network and plug
-            _plugConfigs[configs[i].chainSlug][configs[i].plug] = PlugConfig({
-                appGateway: configs[i].appGateway,
-                switchboard: configs[i].switchboard
-            });
-
-            // Create reverse mapping from app gateway to plug for easy lookup
-            appGatewayPlugs[configs[i].appGateway][configs[i].chainSlug] = configs[i].plug;
-        }
     }
 
     /// @notice Retrieves the configuration for a specific plug on a network

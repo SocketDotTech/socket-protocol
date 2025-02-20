@@ -6,7 +6,6 @@ import "../../interfaces/IAppGateway.sol";
 import "../../interfaces/IPromise.sol";
 import "../../interfaces/IFeesManager.sol";
 import "solady/utils/Initializable.sol";
-
 import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../utils/common/Structs.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../utils/common/Errors.sol";
 
@@ -14,14 +13,13 @@ import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, Resolv
 /// @notice Contract that handles payload verification, execution and app configurations
 contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     uint256 public maxTimeoutDelayInSeconds;
-    /// @notice Counter for tracking query requests
-    uint256 public queryCounter;
-    /// @notice Counter for tracking payload execution requests
+    /// @notice Counter for tracking payload requests
     uint256 public payloadCounter;
-    /// @notice Counter for tracking timeout requests
-    uint256 public timeoutCounter;
     /// @notice The expiry time for the payload
     uint256 public expiryTime;
+
+    /// @notice The chain slug of the watcher precompile
+    uint32 public vmChainSlug;
 
     /// @notice Mapping to store async requests
     /// @dev payloadId => AsyncRequest struct
@@ -37,14 +35,18 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @dev callId => bool
     mapping(bytes32 => bool) public appGatewayCalled;
 
-    uint64 public version;
-
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
     /// @notice Error thrown when an invalid app gateway reaches a plug
     error InvalidConnection();
     /// @notice Error thrown if winning bid is assigned to an invalid transmitter
     error InvalidTransmitter();
+    /// @notice Error thrown when a timeout request is invalid
+    error InvalidTimeoutRequest();
+    /// @notice Error thrown when a payload id is invalid
+    error InvalidPayloadId();
+    /// @notice Error thrown when a caller is invalid
+    error InvalidCaller();
 
     event CalledAppGateway(
         bytes32 callId,
@@ -99,19 +101,21 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     function initialize(
         address owner_,
         address addressResolver_,
-        uint256 defaultLimit_
+        uint256 defaultLimit_,
+        uint256 expiryTime_,
+        uint32 vmChainSlug_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
-        version = 1;
         maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
-
-        LIMIT_DECIMALS = 18;
+        expiryTime = expiryTime_;
 
         // limit per day
         defaultLimit = defaultLimit_ * 10 ** LIMIT_DECIMALS;
         // limit per second
         defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
+
+        vmChainSlug = vmChainSlug_;
     }
 
     // ================== Timeout functions ==================
@@ -129,7 +133,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         // from auction manager
         _consumeLimit(appGateway_, SCHEDULE, 1);
         uint256 executeAt = block.timestamp + delayInSeconds_;
-        bytes32 timeoutId = _encodeTimeoutId(timeoutCounter++);
+        bytes32 timeoutId = _encodeId(vmChainSlug, address(this));
         timeoutRequests[timeoutId] = TimeoutRequest(
             timeoutId,
             msg.sender,
@@ -147,12 +151,17 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @dev Only callable by the contract owner
     function resolveTimeout(bytes32 timeoutId_) external onlyOwner {
         TimeoutRequest storage timeoutRequest_ = timeoutRequests[timeoutId_];
+
+        if (timeoutRequest_.target == address(0)) revert InvalidTimeoutRequest();
         if (timeoutRequest_.isResolved) revert TimeoutAlreadyResolved();
         if (block.timestamp < timeoutRequest_.executeAt) revert ResolvingTimeoutTooEarly();
+
         (bool success, ) = address(timeoutRequest_.target).call(timeoutRequest_.payload);
         if (!success) revert CallFailed();
+
         timeoutRequest_.isResolved = true;
         timeoutRequest_.executedAt = block.timestamp;
+
         emit TimeoutResolved(
             timeoutId_,
             timeoutRequest_.target,
@@ -168,9 +177,30 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @return payloadId The unique identifier for the finalized request
     /// @return root The merkle root of the payload parameters
     function finalize(
-        FinalizeParams memory params_,
-        address originAppGateway_
+        address originAppGateway_,
+        FinalizeParams memory params_
     ) external returns (bytes32 payloadId, bytes32 root) {
+        // Generate a unique payload ID by combining chain, target, and counter
+        payloadId = _encodeWritePayloadId(
+            params_.payloadDetails.chainSlug,
+            params_.payloadDetails.target
+        );
+
+        root = _finalize(payloadId, originAppGateway_, params_);
+    }
+
+    function refinalize(bytes32 payloadId_, FinalizeParams memory params_) external {
+        if (asyncRequests[payloadId_].appGateway == address(0)) revert InvalidPayloadId();
+        if (asyncRequests[payloadId_].finalizedBy != msg.sender) revert InvalidCaller();
+
+        _finalize(payloadId_, asyncRequests[payloadId_].appGateway, params_);
+    }
+
+    function _finalize(
+        bytes32 payloadId_,
+        address originAppGateway_,
+        FinalizeParams memory params_
+    ) internal returns (bytes32 root) {
         if (params_.transmitter == address(0)) revert InvalidTransmitter();
 
         // The app gateway is the caller of this function
@@ -183,11 +213,10 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
             params_.payloadDetails.appGateway
         );
 
-        // Generate a unique payload ID by combining chain, target, and counter
-        payloadId = _encodePayloadId(
+        // Get the switchboard address from plug configurations
+        (, address switchboard) = getPlugConfigs(
             params_.payloadDetails.chainSlug,
-            params_.payloadDetails.target,
-            payloadCounter++
+            params_.payloadDetails.target
         );
 
         // Construct parameters for root calculation
@@ -195,35 +224,32 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
             params_.payloadDetails.appGateway,
             params_.transmitter,
             params_.payloadDetails.target,
-            payloadId,
+            payloadId_,
+            params_.payloadDetails.value,
             params_.payloadDetails.executionGasLimit,
-            expiryTime,
+            block.timestamp + expiryTime,
             params_.payloadDetails.payload
         );
 
         // Calculate merkle root from payload parameters
         root = getRoot(rootParams_);
 
-        // Get the switchboard address from plug configurations
-        (, address switchboard) = getPlugConfigs(
-            params_.payloadDetails.chainSlug,
-            params_.payloadDetails.target
-        );
-
         // Create and store the async request with all necessary details
         AsyncRequest memory asyncRequest = AsyncRequest(
+            msg.sender,
             params_.payloadDetails.appGateway,
             params_.transmitter,
             params_.payloadDetails.target,
             switchboard,
             params_.payloadDetails.executionGasLimit,
+            block.timestamp + expiryTime,
             params_.asyncId,
             root,
             params_.payloadDetails.payload,
             params_.payloadDetails.next
         );
-        asyncRequests[payloadId] = asyncRequest;
-        emit FinalizeRequested(payloadId, asyncRequest);
+        asyncRequests[payloadId_] = asyncRequest;
+        emit FinalizeRequested(payloadId_, asyncRequest);
     }
 
     // ================== Query functions ==================
@@ -243,16 +269,18 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         // from payload delivery
         _consumeLimit(appGateway_, QUERY, 1);
         // Generate unique payload ID from query counter
-        payloadId = bytes32(queryCounter++);
+        payloadId = _encodeId(vmChainSlug, address(this));
 
         // Create async request with minimal information for queries
         // Note: addresses set to 0 as they're not needed for queries
         AsyncRequest memory asyncRequest_ = AsyncRequest(
+            msg.sender,
             address(0),
             address(0),
             targetAddress_,
             address(0),
             0,
+            block.timestamp + expiryTime,
             bytes32(0),
             bytes32(0),
             payload_,
@@ -266,6 +294,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @param payloadId_ The unique identifier of the request
     /// @param signature_ The watcher's signature
     /// @dev Only callable by the contract owner
+    /// @dev Watcher signs on following digest for validation on switchboard:
+    /// @dev keccak256(abi.encode(switchboard, root))
     function finalized(bytes32 payloadId_, bytes calldata signature_) external onlyOwner {
         watcherSignatures[payloadId_] = signature_;
         emit Finalized(payloadId_, asyncRequests[payloadId_], signature_);
@@ -283,6 +313,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
             // Resolve each promise with its corresponding return data
             bool success;
             for (uint256 j = 0; j < next.length; j++) {
+                if (next[j] == address(0)) continue;
                 success = IPromise(next[j]).markResolved(
                     asyncRequest_.asyncId,
                     resolvedPromises_[i].payloadId,
@@ -310,6 +341,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
                 asyncRequest_.transmitter,
                 asyncRequest_.appGateway
             );
+
+            // batch.isBatchCancelled
         }
     }
 
@@ -323,6 +356,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
                 params_.appGateway,
                 params_.transmitter,
                 params_.target,
+                params_.value,
+                params_.deadline,
                 params_.executionGasLimit,
                 params_.payload
             )
@@ -377,28 +412,26 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @notice Encodes a unique payload ID from chain slug, plug address, and counter
     /// @param chainSlug_ The identifier of the chain
     /// @param plug_ The plug address
-    /// @param counter_ The current counter value
     /// @return The encoded payload ID as bytes32
     /// @dev Reverts if chainSlug is 0
-    function _encodePayloadId(
-        uint32 chainSlug_,
-        address plug_,
-        uint256 counter_
-    ) internal view returns (bytes32) {
+    function _encodeWritePayloadId(uint32 chainSlug_, address plug_) internal returns (bytes32) {
         if (chainSlug_ == 0) revert InvalidChainSlug();
         (, address switchboard) = getPlugConfigs(chainSlug_, plug_);
-        // Encode payload ID by bit-shifting and combining:
-        // chainSlug (32 bits) | switchboard address (160 bits) | counter (64 bits)
-
-        return
-            bytes32(
-                (uint256(chainSlug_) << 224) | (uint256(uint160(switchboard)) << 64) | counter_
-            );
+        return _encodeId(chainSlug_, switchboard);
     }
 
-    function _encodeTimeoutId(uint256 timeoutCounter_) internal view returns (bytes32) {
-        // watcher address (160 bits) | counter (64 bits)
-        return bytes32((uint256(uint160(address(this))) << 64) | timeoutCounter_);
+    function _encodeId(
+        uint32 chainSlug_,
+        address switchboardOrWatcher_
+    ) internal returns (bytes32) {
+        // Encode payload ID by bit-shifting and combining:
+        // chainSlug (32 bits) | switchboard or watcher precompile address (160 bits) | counter (64 bits)
+        return
+            bytes32(
+                (uint256(chainSlug_) << 224) |
+                    (uint256(uint160(switchboardOrWatcher_)) << 64) |
+                    payloadCounter++
+            );
     }
 
     function setExpiryTime(uint256 expiryTime_) external onlyOwner {

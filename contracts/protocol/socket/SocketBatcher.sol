@@ -5,7 +5,7 @@ import "solady/auth/Ownable.sol";
 import "../../interfaces/ISocket.sol";
 import "../../interfaces/ISwitchboard.sol";
 import "../utils/RescueFundsLib.sol";
-import {ExecutePayloadParams} from "../../protocol/utils/common/Structs.sol";
+import {AttestAndExecutePayloadParams} from "../../protocol/utils/common/Structs.sol";
 
 /**
  * @title SocketBatcher
@@ -26,21 +26,26 @@ contract SocketBatcher is Ownable {
     }
 
     function attestAndExecute(
-        ExecutePayloadParams calldata params_
-    ) external returns (bytes memory) {
+        AttestAndExecutePayloadParams calldata params_
+    ) external payable returns (bytes memory) {
         ISwitchboard(params_.switchboard).attest(
             params_.payloadId,
             params_.root,
             params_.watcherSignature
         );
+
+        ISocket.ExecuteParams memory executeParams = ISocket.ExecuteParams({
+            payloadId: params_.payloadId,
+            target: params_.target,
+            executionGasLimit: params_.executionGasLimit,
+            deadline: params_.deadline,
+            payload: params_.payload
+        });
         return
-            socket__.execute(
-                params_.payloadId,
+            socket__.execute{value: msg.value}(
                 params_.appGateway,
-                params_.target,
-                params_.executionGasLimit,
-                params_.transmitterSignature,
-                params_.payload
+                executeParams,
+                params_.transmitterSignature
             );
     }
 
