@@ -2,8 +2,8 @@ import { ethers } from "hardhat";
 import { Contract, utils, Wallet } from "ethers";
 import * as fs from "fs";
 import * as path from "path";
-import { EVMX_CHAIN_ID, VERSION } from "../../constants/constants";
-import { getProviderFromChainSlug } from "../../constants";
+import { EVMX_CHAIN_ID, UPGRADE_VERSION } from "../config/config";
+import { getProviderFromChainSlug } from "../utils";
 import { ChainSlug } from "@socket.tech/dl-core";
 
 // Implementation slot from ERC1967
@@ -143,7 +143,7 @@ async function performUpgrade(
   console.log("Upgrading proxy...");
   const initializeFn = contract.interface.getFunction("initialize");
   const initData = contract.interface.encodeFunctionData(initializeFn, [
-    VERSION,
+    UPGRADE_VERSION,
   ]);
 
   const tx = await proxyFactory.upgradeAndCall(

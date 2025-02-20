@@ -12,7 +12,7 @@ import {
   DeploymentMode,
 } from "@socket.tech/dl-core";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { overrides } from "../config";
+import { overrides } from "../utils";
 import { VerifyArgs } from "../verify";
 
 export const deploymentsPath = path.join(__dirname, `/../../../deployments/`);

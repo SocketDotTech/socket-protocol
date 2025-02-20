@@ -15,7 +15,7 @@ import { resolve } from "path";
 import fs from "fs";
 
 import "./hardhat-scripts/utils/accounts";
-import { getJsonRpcUrl } from "./hardhat-scripts/constants/networks";
+import { getJsonRpcUrl } from "./hardhat-scripts/utils/networks";
 import {
   ChainId,
   ChainSlug,
@@ -23,10 +23,8 @@ import {
   HardhatChainName,
   hardhatChainNameToSlug,
 } from "@socket.tech/dl-core";
-import {
-  BASE_SEPOLIA_CHAIN_ID,
-  EVMX_CHAIN_ID,
-} from "./hardhat-scripts/constants/constants";
+import { EVMX_CHAIN_ID } from "./hardhat-scripts/config/config";
+import { BASE_SEPOLIA_CHAIN_ID } from "./hardhat-scripts/constants";
 
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || "./.env";
 dotenvConfig({ path: resolve(__dirname, dotenvConfigPath) });
@@ -102,7 +100,7 @@ const config: HardhatUserConfig = {
       sepolia: process.env.ETHERSCAN_API_KEY || "",
       optimisticEthereum: process.env.OPTIMISM_API_KEY || "",
       optimisticTestnet: process.env.OPTIMISM_API_KEY || "",
-      offChainVM: "none",
+      evmx: "none",
     },
     customChains: [
       {
@@ -130,7 +128,7 @@ const config: HardhatUserConfig = {
         },
       },
       {
-        network: "EVMx",
+        network: "evmx",
         chainId: EVMX_CHAIN_ID,
         urls: {
           apiURL: "",

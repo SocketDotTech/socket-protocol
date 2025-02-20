@@ -6,7 +6,7 @@ export enum CORE_CONTRACTS {
   ContractFactoryPlug = "ContractFactoryPlug",
 }
 
-export enum OffChainVMCoreContracts {
+export enum EVMxCoreContracts {
   WatcherPrecompile = "WatcherPrecompile",
   AuctionManager = "AuctionManager",
   FeesManager = "FeesManager",
