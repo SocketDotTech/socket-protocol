@@ -5,7 +5,6 @@ import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {ISocket} from "../interfaces/ISocket.sol";
 import {IPlug} from "../interfaces/IPlug.sol";
 import {NotSocket} from "../protocol/utils/common/Errors.sol";
-
 /// @title PlugBase
 /// @notice Abstract contract for plugs
 abstract contract PlugBase is IPlug {

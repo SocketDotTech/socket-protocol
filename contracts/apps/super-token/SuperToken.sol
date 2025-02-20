@@ -33,13 +33,4 @@ contract SuperToken is ERC20, Ownable, PlugBase {
     function setSocket(address newSocket_) external onlyOwner {
         _setSocket(newSocket_);
     }
-
-    function initSocket(
-        address appGateway_,
-        address socket_,
-        address switchboard_
-    ) external override {
-        this.initSocket(appGateway_, socket_, switchboard_);
-        _initializeOwner(socket_);
-    }
 }

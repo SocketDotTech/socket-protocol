@@ -3,7 +3,6 @@ pragma solidity ^0.8.21;
 
 import "./SocketUtils.sol";
 import {PlugDisconnected, InvalidAppGateway} from "../utils/common/Errors.sol";
-import "forge-std/console.sol";
 
 /**
  * @title SocketDst
@@ -159,11 +158,6 @@ contract Socket is SocketUtils {
         bytes memory payload_
     ) internal returns (bytes memory) {
         if (gasleft() < executionGasLimit_) revert LowGasLimit();
-
-        console.log("Executing payload");
-        console.log(payload_.length);
-
-        
 
         // NOTE: external un-trusted call
         (bool success, bytes memory returnData) = localPlug_.call{

@@ -124,6 +124,7 @@ contract SetupTest is Test {
             watcherEOA,
             address(addressResolverProxy),
             defaultLimit,
+            expiryTime,
             vmChainSlug
         );
         vm.expectEmit(true, true, true, false);

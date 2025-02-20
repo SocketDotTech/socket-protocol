@@ -105,12 +105,14 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         address owner_,
         address addressResolver_,
         uint256 defaultLimit_,
+        uint256 expiryTime_,
         uint32 vmChainSlug_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
         version = 1;
         maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
+        expiryTime = expiryTime_;
 
         // limit per day
         defaultLimit = defaultLimit_ * 10 ** LIMIT_DECIMALS;
