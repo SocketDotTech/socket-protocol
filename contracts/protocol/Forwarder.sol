@@ -86,12 +86,15 @@ contract Forwarder is IForwarder, Initializable {
 
         // Queue the call in the auction house.
         IDeliveryHelper(deliveryHelper).queue(
+            IsPlug.NO,
             isParallelCall,
             chainSlug,
             onChainAddress,
             latestAsyncPromise,
+            0,
             isReadCall == Read.ON ? CallType.READ : CallType.WRITE,
-            msg.data
+            msg.data,
+            bytes("")
         );
     }
 

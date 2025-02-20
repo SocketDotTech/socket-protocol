@@ -112,23 +112,23 @@ contract DeliveryHelperTest is SetupTest {
 
     function connectDeliveryHelper() internal {
         vm.startPrank(owner);
-        arbConfig.contractFactoryPlug.connectSocket(
+        arbConfig.contractFactoryPlug.initSocket(
             address(deliveryHelper),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
-        optConfig.contractFactoryPlug.connectSocket(
+        optConfig.contractFactoryPlug.initSocket(
             address(deliveryHelper),
             address(optConfig.socket),
             address(optConfig.switchboard)
         );
 
-        arbConfig.feesPlug.connectSocket(
+        arbConfig.feesPlug.initSocket(
             address(feesManager),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
-        optConfig.feesPlug.connectSocket(
+        optConfig.feesPlug.initSocket(
             address(feesManager),
             address(optConfig.socket),
             address(optConfig.switchboard)
@@ -414,8 +414,12 @@ contract DeliveryHelperTest is SetupTest {
         bytes32 salt = keccak256(abi.encode(appDeployer_, chainSlug_, deployCounter++));
         bytes memory payload = abi.encodeWithSelector(
             IContractFactoryPlug.deployContract.selector,
+            true,
+            salt,
+            address(appDeployer_),
+            address(0),
             bytecode_,
-            salt
+            ""
         );
 
         address asyncPromise = predictAsyncPromiseAddress(
@@ -457,6 +461,7 @@ contract DeliveryHelperTest is SetupTest {
                 payload: payload_,
                 callType: callType_,
                 executionGasLimit: executionGasLimit_,
+                value: 0,
                 next: next_,
                 isParallel: Parallel.ON
             });
@@ -506,6 +511,7 @@ contract DeliveryHelperTest is SetupTest {
             transmitterEOA,
             payloadDetails.target,
             payloadId,
+            payloadDetails.value,
             payloadDetails.executionGasLimit,
             block.timestamp + 1000,
             payloadDetails.payload

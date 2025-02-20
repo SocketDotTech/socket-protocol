@@ -20,7 +20,6 @@ contract Increment is Script {
         address counterInbox = vm.envAddress("COUNTER_INBOX");
 
         CounterInbox inbox = CounterInbox(counterInbox);
-        inbox.connectSocket(address(gateway), socket, switchboard);
         inbox.increaseOnGateway(100);
 
         vm.stopBroadcast();

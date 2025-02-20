@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {MockWatcherPrecompile} from "../../contracts/mock/MockWatcherPrecompile.sol";
-import {MockSocket} from "../../contracts/mock/MockSocket.sol";
+import "../../contracts/mock/MockSocket.sol";
 import {CallType, FinalizeParams, PayloadDetails, Parallel} from "../../contracts/protocol/utils/common/Structs.sol";
 contract InboxTest is Script {
     function run() external {
@@ -28,6 +28,7 @@ contract InboxTest is Script {
             ),
             callType: CallType.WRITE,
             executionGasLimit: 1000000,
+            value: 0,
             next: new address[](0),
             isParallel: Parallel.OFF
         });
@@ -44,7 +45,15 @@ contract InboxTest is Script {
         vm.startBroadcast(arbDeployerPrivateKey);
         address socket = vm.envAddress("SOCKET");
         MockSocket socketInstance = MockSocket(socket);
-        socketInstance.execute(payloadId, address(0), address(0), 10000000, bytes(""), bytes(""));
+
+        ISocket.ExecuteParams memory executeParams = ISocket.ExecuteParams({
+            payloadId: payloadId,
+            target: address(0),
+            executionGasLimit: 10000000,
+            deadline: 10000000,
+            payload: bytes("")
+        });
+        socketInstance.execute(address(0), executeParams, bytes(""));
         vm.stopBroadcast();
     }
 }

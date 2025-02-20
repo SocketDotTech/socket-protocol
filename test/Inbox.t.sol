@@ -27,7 +27,7 @@ contract InboxTest is DeliveryHelperTest {
         );
 
         // Connect the inbox to the gateway and socket
-        inbox.connectSocket(
+        inbox.initSocket(
             address(gateway),
             address(arbConfig.socket),
             address(arbConfig.switchboard)

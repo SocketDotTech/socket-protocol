@@ -4,7 +4,7 @@ pragma solidity ^0.8.21;
 import "../../interfaces/ISocket.sol";
 import "../../interfaces/ISwitchboard.sol";
 import "../utils/AccessControl.sol";
-import {RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
+import {GOVERNANCE_ROLE, RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
 
 /**
  * @title SocketConfig
@@ -23,8 +23,14 @@ abstract contract SocketConfig is ISocket, AccessControl {
         ISwitchboard switchboard__;
     }
 
+    enum SwitchboardStatus {
+        NOT_REGISTERED,
+        REGISTERED,
+        DISABLED
+    }
+
     // Error triggered when a switchboard already exists
-    mapping(address => bool) public isValidSwitchboard;
+    mapping(address => SwitchboardStatus) public isValidSwitchboard;
 
     // plug => (appGateway, switchboard__)
     mapping(address => PlugConfig) internal _plugConfigs;
@@ -33,21 +39,32 @@ abstract contract SocketConfig is ISocket, AccessControl {
     // Error triggered when a connection is invalid
     error InvalidConnection();
     error InvalidSwitchboard();
+    error SwitchboardExistsOrDisabled();
 
     // Event triggered when a new switchboard is added
     event SwitchboardAdded(address switchboard);
+    event SwitchboardDisabled(address switchboard);
 
     function registerSwitchboard() external {
-        if (isValidSwitchboard[msg.sender]) revert SwitchboardExists();
-        isValidSwitchboard[msg.sender] = true;
+        if (isValidSwitchboard[msg.sender] != SwitchboardStatus.NOT_REGISTERED)
+            revert SwitchboardExistsOrDisabled();
+
+        isValidSwitchboard[msg.sender] = SwitchboardStatus.REGISTERED;
         emit SwitchboardAdded(msg.sender);
+    }
+
+    function disableSwitchboard() external onlyRole(GOVERNANCE_ROLE) {
+        isValidSwitchboard[msg.sender] = SwitchboardStatus.DISABLED;
+        emit SwitchboardDisabled(msg.sender);
     }
 
     /**
      * @notice connects Plug to Socket and sets the config for given `siblingChainSlug_`
      */
     function connect(address appGateway_, address switchboard_) external override {
-        if (!isValidSwitchboard[switchboard_]) revert InvalidSwitchboard();
+        if (isValidSwitchboard[switchboard_] != SwitchboardStatus.REGISTERED)
+            revert InvalidSwitchboard();
+
         PlugConfig storage _plugConfig = _plugConfigs[msg.sender];
 
         _plugConfig.appGateway = appGateway_;

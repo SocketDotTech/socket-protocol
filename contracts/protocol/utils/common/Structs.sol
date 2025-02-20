@@ -18,6 +18,11 @@ enum Parallel {
     ON
 }
 
+enum IsPlug {
+    YES,
+    NO
+}
+
 struct AppGatewayConfig {
     address plug;
     address appGateway;
@@ -32,7 +37,7 @@ struct AsyncRequest {
     address target;
     address switchboard;
     uint256 executionGasLimit;
-    uint256 expiryTime;
+    uint256 deadline;
     bytes32 asyncId;
     bytes32 root;
     bytes payload;
@@ -55,13 +60,16 @@ struct CallFromInboxParams {
 }
 
 struct CallParams {
+    IsPlug isPlug;
     address asyncPromise;
     address target;
     uint32 chainSlug;
     CallType callType;
     Parallel isParallel;
     uint256 gasLimit;
+    uint256 value;
     bytes payload;
+    bytes initCallData;
 }
 
 struct DeployParams {
@@ -69,13 +77,14 @@ struct DeployParams {
     bytes bytecode;
 }
 
-struct ExecutePayloadParams {
+struct AttestAndExecutePayloadParams {
     bytes32 payloadId;
     bytes32 root;
     address switchboard;
     address appGateway;
     address target;
     uint256 executionGasLimit;
+    uint256 deadline;
     bytes watcherSignature;
     bytes transmitterSignature;
     bytes payload;
@@ -119,6 +128,7 @@ struct PayloadDetails {
     uint32 chainSlug;
     Parallel isParallel;
     CallType callType;
+    uint256 value;
     uint256 executionGasLimit;
     bytes payload;
     address[] next;
@@ -129,8 +139,9 @@ struct PayloadRootParams {
     address transmitter;
     address target;
     bytes32 payloadId;
+    uint256 value;
     uint256 executionGasLimit;
-    uint256 expiryTime;
+    uint256 deadline;
     bytes payload;
 }
 

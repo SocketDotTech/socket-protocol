@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../../interfaces/IPlug.sol";
-import "./SocketBase.sol";
+import "./SocketUtils.sol";
 import {PlugDisconnected, InvalidAppGateway} from "../utils/common/Errors.sol";
 
 /**
  * @title SocketDst
- * @dev SocketDst is an abstract contract that inherits from SocketBase and
+ * @dev SocketDst is an abstract contract that inherits from SocketUtils and
  * provides functionality for payload execution, verification.
  * It manages the mapping of payload execution status
  * timestamps
  * It also includes functions for payload execution and verification
  */
-contract Socket is SocketBase {
+contract Socket is SocketUtils {
     ////////////////////////////////////////////////////////
     ////////////////////// ERRORS //////////////////////////
     ////////////////////////////////////////////////////////
@@ -41,6 +40,7 @@ contract Socket is SocketBase {
     error LowGasLimit();
     error InvalidSlug();
     error ExecutionFailed();
+    error DeadlinePassed();
 
     ////////////////////////////////////////////////////////////
     ////////////////////// State Vars //////////////////////////
@@ -56,12 +56,11 @@ contract Socket is SocketBase {
         uint32 chainSlug_,
         address owner_,
         string memory version_
-    ) SocketBase(chainSlug_, owner_, version_) {}
+    ) SocketUtils(chainSlug_, owner_, version_) {}
 
     ////////////////////////////////////////////////////////
     ////////////////////// OPERATIONS //////////////////////////
     ////////////////////////////////////////////////////////
-
     /**
      * @notice To send message to a connected remote chain. Should only be called by a plug.
      * @param payload bytes to be delivered to the Plug on the siblingChainSlug_
@@ -92,49 +91,50 @@ contract Socket is SocketBase {
      * @notice Executes a payload that has been delivered by transmitters and authenticated by switchboards
      */
     function execute(
-        bytes32 payloadId_,
         address appGateway_,
-        address target_,
-        uint256 executionGasLimit_,
-        bytes memory transmitterSignature_,
-        bytes memory payload_
+        ExecuteParams memory params_,
+        bytes memory transmitterSignature_
     ) external payable returns (bytes memory) {
         // make sure payload is not executed already
-        if (payloadExecuted[payloadId_]) revert PayloadAlreadyExecuted();
+        if (payloadExecuted[params_.payloadId]) revert PayloadAlreadyExecuted();
         // update state to make sure no reentrancy
-        payloadExecuted[payloadId_] = true;
+        payloadExecuted[params_.payloadId] = true;
+
+        if (params_.deadline < block.timestamp) revert DeadlinePassed();
 
         // extract plug address from msgID
-        address switchboard = _decodeSwitchboard(payloadId_);
-        uint32 localSlug = _decodeChainSlug(payloadId_);
+        address switchboard = _decodeSwitchboard(params_.payloadId);
+        uint32 localSlug = _decodeChainSlug(params_.payloadId);
 
-        PlugConfig memory plugConfig = _plugConfigs[target_];
+        PlugConfig memory plugConfig = _plugConfigs[params_.target];
 
         if (switchboard != address(plugConfig.switchboard__)) revert InvalidSwitchboard();
-
         if (localSlug != chainSlug) revert InvalidSlug();
 
         address transmitter = _recoverSigner(
-            keccak256(abi.encode(address(this), payloadId_)),
+            keccak256(abi.encode(address(this), params_.payloadId)),
             transmitterSignature_
         );
 
         // create packed payload
         bytes32 root = _packPayload(
-            payloadId_,
+            params_.payloadId,
             appGateway_,
             transmitter,
-            target_,
-            executionGasLimit_,
-            payload_
+            params_.target,
+            msg.value,
+            params_.deadline,
+            params_.executionGasLimit,
+            params_.payload
         );
 
         // verify payload was part of the packet and
         // authenticated by respective switchboard
-        _verify(root, payloadId_, ISwitchboard(switchboard));
+        _verify(root, params_.payloadId, ISwitchboard(switchboard));
 
         // execute payload
-        return _execute(target_, payloadId_, executionGasLimit_, payload_);
+        return
+            _execute(params_.target, params_.payloadId, params_.executionGasLimit, params_.payload);
     }
 
     ////////////////////////////////////////////////////////

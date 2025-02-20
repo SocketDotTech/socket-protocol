@@ -13,6 +13,7 @@ import {ETH_ADDRESS} from "../utils/common/Constants.sol";
 contract FeesPlug is PlugBase, AccessControl {
     mapping(address => uint256) public balanceOf;
     mapping(bytes32 => bool) public feesRedeemed;
+    mapping(address => bool) public whitelistedTokens;
 
     /// @notice Error thrown when attempting to pay fees again
     error FeesAlreadyPaid();
@@ -21,19 +22,26 @@ contract FeesPlug is PlugBase, AccessControl {
     /// @notice Error thrown when deposit amount does not match msg.value
     error InvalidDepositAmount();
     error InvalidTokenAddress();
+    error TokenNotWhitelisted(address token_);
 
     /// @notice Event emitted when fees are deposited
     event FeesDeposited(address appGateway, address token, uint256 amount);
     /// @notice Event emitted when fees are withdrawn
     event FeesWithdrawn(address token, uint256 amount, address receiver);
+    /// @notice Event emitted when a token is whitelisted
+    event TokenWhitelisted(address token);
+    /// @notice Event emitted when a token is removed from whitelist
+    event TokenRemovedFromWhitelist(address token);
 
     modifier isFeesEnough(uint256 fee_, address feeToken_) {
         if (balanceOf[feeToken_] < fee_) revert InsufficientTokenBalance(feeToken_);
         _;
     }
 
-    constructor(address socket_, address owner_) PlugBase(socket_) {
+    constructor(address socket_, address owner_) {
+        _setSocket(socket_);
         _initializeOwner(owner_);
+        whitelistedTokens[ETH_ADDRESS] = true; // ETH is whitelisted by default
     }
 
     function distributeFee(
@@ -65,6 +73,8 @@ contract FeesPlug is PlugBase, AccessControl {
     /// @param amount_ The amount
     /// @param appGateway_ The app gateway address
     function deposit(address token_, address appGateway_, uint256 amount_) external payable {
+        if (!whitelistedTokens[token_]) revert TokenNotWhitelisted(token_);
+
         if (token_ == ETH_ADDRESS) {
             if (msg.value != amount_) revert InvalidDepositAmount();
         } else {
@@ -98,6 +108,21 @@ contract FeesPlug is PlugBase, AccessControl {
         address switchboard_
     ) external onlyOwner {
         _connectSocket(appGateway_, socket_, switchboard_);
+    }
+
+    /// @notice Adds a token to the whitelist
+    /// @param token_ The token address to whitelist
+    function whitelistToken(address token_) external onlyOwner {
+        whitelistedTokens[token_] = true;
+        emit TokenWhitelisted(token_);
+    }
+
+    /// @notice Removes a token from the whitelist
+    /// @param token_ The token address to remove
+    function removeTokenFromWhitelist(address token_) external onlyOwner {
+        if (token_ == ETH_ADDRESS) revert(); // Cannot remove ETH from whitelist
+        whitelistedTokens[token_] = false;
+        emit TokenRemovedFromWhitelist(token_);
     }
 
     /**

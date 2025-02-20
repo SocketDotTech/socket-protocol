@@ -121,8 +121,6 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
 
         emit BidPlaced(asyncId_, newBid);
         auctionClosed[asyncId_] = true;
-
-        emit AuctionEnded(asyncId_, newBid);
     }
 
     /// @notice Ends an auction

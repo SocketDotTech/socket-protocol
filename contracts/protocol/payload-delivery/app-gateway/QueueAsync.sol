@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 import {AddressResolverUtil} from "../../../protocol/utils/AddressResolverUtil.sol";
-import {CallParams, Fees, PayloadDetails, CallType, Bid, PayloadBatch, Parallel} from "../../../protocol/utils/common/Structs.sol";
+import {CallParams, Fees, PayloadDetails, CallType, Bid, PayloadBatch, Parallel, IsPlug} from "../../../protocol/utils/common/Structs.sol";
 import {NotAuctionManager, InvalidPromise, InvalidIndex} from "../../../protocol/utils/common/Errors.sol";
 import {AsyncPromise} from "../../AsyncPromise.sol";
 import {IPromise} from "../../../interfaces/IPromise.sol";
@@ -65,23 +65,29 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
     /// @param callType_ The call type
     /// @param payload_ The payload
     function queue(
+        IsPlug isPlug_,
         Parallel isParallel_,
         uint32 chainSlug_,
         address target_,
         address asyncPromise_,
+        uint256 value_,
         CallType callType_,
-        bytes memory payload_
+        bytes memory payload_,
+        bytes memory initCallData_
     ) external {
         // todo: sb related details
         callParamsArray.push(
             CallParams({
+                isPlug: isPlug_,
                 callType: callType_,
                 asyncPromise: asyncPromise_,
                 chainSlug: chainSlug_,
                 target: target_,
                 payload: payload_,
+                value: value_,
                 gasLimit: 10000000,
-                isParallel: isParallel_
+                isParallel: isParallel_,
+                initCallData: initCallData_
             })
         );
     }
@@ -128,10 +134,12 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
             // app gateway is set in the plug deployed on chain
             payload_ = abi.encodeWithSelector(
                 IContractFactoryPlug.deployContract.selector,
-                payload_,
+                params_.isPlug,
                 salt_,
                 appGatewayForPlug_,
-                switchboard_
+                switchboard_,
+                payload_,
+                params_.initCallData
             );
 
             // for deploy, we set delivery helper as app gateway of contract factory plug
@@ -143,6 +151,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
                 appGateway: appGateway_,
                 chainSlug: params_.chainSlug,
                 target: params_.target,
+                value: params_.value,
                 payload: payload_,
                 callType: params_.callType,
                 executionGasLimit: params_.gasLimit == 0 ? 1_000_000 : params_.gasLimit,

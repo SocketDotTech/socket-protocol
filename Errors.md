@@ -145,7 +145,7 @@
 | `InvalidSlug()`            | `0x290a8315` |
 | `ExecutionFailed()`        | `0xacfdb444` |
 
-## socket/SocketBase.sol
+## socket/SocketUtils.sol
 
 | Error                  | Signature    |
 | ---------------------- | ------------ |

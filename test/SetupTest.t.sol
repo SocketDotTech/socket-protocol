@@ -33,6 +33,7 @@ contract SetupTest is Test {
     uint32 arbChainSlug = 421614;
     uint32 optChainSlug = 11155420;
     uint32 vmChainSlug = 1;
+    uint256 expiryTime = 10000000;
 
     uint256 public payloadIdCounter = 0;
     uint256 public defaultLimit = 1000;
@@ -177,7 +178,7 @@ contract SetupTest is Test {
         bytes memory transmitterSig = _createSignature(transmitterDigest, transmitterPrivateKey);
 
         vm.startPrank(transmitterEOA);
-        ExecutePayloadParams memory params = ExecutePayloadParams({
+        AttestAndExecutePayloadParams memory params = AttestAndExecutePayloadParams({
             switchboard: address(socketConfig.switchboard),
             root: root,
             watcherSignature: watcherSignature,
@@ -186,7 +187,8 @@ contract SetupTest is Test {
             executionGasLimit: payloadDetails.executionGasLimit,
             transmitterSignature: transmitterSig,
             payload: payloadDetails.payload,
-            target: payloadDetails.target
+            target: payloadDetails.target,
+            deadline: block.timestamp + expiryTime
         });
 
         bytes memory returnData = socketConfig.socketBatcher.attestAndExecute(params);
