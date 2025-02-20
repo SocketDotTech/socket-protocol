@@ -1,6 +1,7 @@
 import { ChainSlug } from "@socket.tech/dl-core";
-import { BigNumber, providers } from "ethers";
-import { EVMX_CHAIN_ID } from "./constants";
+import { BigNumber, BigNumberish, providers } from "ethers";
+import { EVMX_CHAIN_ID } from "../config/config";
+import { getProviderFromChainSlug } from "./networks";
 
 const defaultType = 0;
 
@@ -31,6 +32,16 @@ export const chainOverrides: {
     gasLimit: 1_000_000_000,
     // gasPrice: 0,
   },
+};
+
+export const overrides = async (
+  chain: ChainSlug | number
+): Promise<{
+  type?: number | undefined;
+  gasLimit?: BigNumberish | undefined;
+  gasPrice?: BigNumberish | undefined;
+}> => {
+  return await getOverrides(chain, getProviderFromChainSlug(chain));
 };
 
 export const getOverrides = async (

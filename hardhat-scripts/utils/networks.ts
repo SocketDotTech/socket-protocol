@@ -7,7 +7,8 @@ import {
   HardhatChainName,
   chainSlugToHardhatChainName,
 } from "@socket.tech/dl-core";
-import { BASE_SEPOLIA_CHAIN_ID, EVMX_CHAIN_ID } from "./constants";
+import { EVMX_CHAIN_ID } from "../config/config";
+import { BASE_SEPOLIA_CHAIN_ID } from "../constants";
 
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || "./.env";
 dotenvConfig({ path: resolve(__dirname, dotenvConfigPath) });

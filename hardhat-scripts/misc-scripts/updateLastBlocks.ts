@@ -1,9 +1,8 @@
-import fs from "fs";
 import dotenv from "dotenv";
-dotenv.config();
-import { getProviderFromChainSlug } from "../constants/networks";
+import fs from "fs";
 import path from "path";
-import { ethers } from "ethers";
+import { getProviderFromChainSlug } from "../utils";
+dotenv.config();
 const DEPLOYMENT_FILE = path.join(
   __dirname,
   "../../deployments/dev_addresses.json"

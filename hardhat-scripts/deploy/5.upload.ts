@@ -1,33 +1,14 @@
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { ChainSlug } from "@socket.tech/dl-core";
+import { config as dotenvConfig } from "dotenv";
 import fs from "fs";
 import path from "path";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { config as dotenvConfig } from "dotenv";
-import { BASE_SEPOLIA_CHAIN_ID, EVMX_CHAIN_ID } from "../constants/constants";
-import { ChainSlug } from "@socket.tech/dl-core";
-
-// import applicationGateway from "../../artifacts/abi/SuperTokenApp.json";
-// import socketBatcher from "../../artifacts/abi/SocketBatcher.json";
-// import deliveryHelperPlug from "../../artifacts/abi/PayloadDeliveryPlug.json";
-// import socket from "../../artifacts/abi/Socket.json";
-// import watcherVM from "../../artifacts/abi/WatcherPrecompile.json";
-
-// export const applicationGatewayABI = applicationGateway;
-// export const socketBatcherABI = socketBatcher;
-// export const ERC20ABI = ERC20;
-// export const deliveryHelperABI = deliveryHelper;
-// export const socketABI = socket;
-// export const watcherVMABI = watcherVM;
-// export const deliveryHelperPlugABI = deliveryHelperPlug;
-
-// const abis = {
-//   applicationGatewayABI,
-//   socketBatcherABI,
-//   ERC20ABI,
-//   deliveryHelperABI,
-//   socketABI,
-//   watcherVMABI,
-//   deliveryHelperPlugABI,
-// };
+import { EVMX_CHAIN_ID } from "../config/config";
+import {
+  BASE_SEPOLIA_CHAIN_ID,
+  ChainAddressesObj,
+  CloudAddressesObj,
+} from "../constants";
 
 dotenvConfig();
 
@@ -37,14 +18,7 @@ type ConfigEntry = {
   wssRpc: string | undefined;
   confirmations: number;
   eventBlockRange: number;
-  addresses?: {
-    Socket: string;
-    FastSwitchboard: string;
-    SocketBatcher: string;
-    ContractFactoryPlug: string;
-    FeesPlug: string;
-    startBlock: number;
-  };
+  addresses?: ChainAddressesObj | CloudAddressesObj;
 };
 
 type S3Config = {
@@ -133,4 +107,3 @@ async function uploadToS3(data: any, fileName: string) {
 
 // Upload config to S3
 uploadToS3(config, "pocConfig.json");
-// uploadToS3(abis, "pocABIs.json");

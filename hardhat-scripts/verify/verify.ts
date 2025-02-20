@@ -1,5 +1,5 @@
 import hre from "hardhat";
-import { storeUnVerifiedParams, verify } from "./utils/utils";
+import { storeUnVerifiedParams, verify } from "../utils";
 import {
   HardhatChainName,
   ChainSlugToKey,
@@ -8,8 +8,8 @@ import {
 } from "@socket.tech/dl-core";
 import path from "path";
 import fs from "fs";
-import { BASE_SEPOLIA_CHAIN_ID, EVMX_CHAIN_ID } from "../constants/constants";
-
+import { EVMX_CHAIN_ID } from "../config/config";
+import { BASE_SEPOLIA_CHAIN_ID } from "../constants";
 export type VerifyParams = {
   [chain in HardhatChainName]?: VerifyArgs[];
 };

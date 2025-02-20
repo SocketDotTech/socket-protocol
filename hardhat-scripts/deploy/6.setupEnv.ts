@@ -1,8 +1,8 @@
-import fs from "fs";
-import dev_addresses from "../../deployments/dev_addresses.json";
-import { EVMX_CHAIN_ID } from "../constants/constants";
-import path from "path";
 import { ChainSlug } from "@socket.tech/dl-core";
+import fs from "fs";
+import path from "path";
+import dev_addresses from "../../deployments/dev_addresses.json";
+import { EVMX_CHAIN_ID } from "../config/config";
 
 const envFilePath = path.join(__dirname, "../../.env");
 const encoding = "utf8";

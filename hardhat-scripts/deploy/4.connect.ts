@@ -2,16 +2,11 @@ import {
   ChainSocketAddresses,
   DeploymentAddresses,
 } from "@socket.tech/dl-core";
-import { getProviderFromChainSlug } from "../constants";
 import { Contract, ethers, providers, Wallet } from "ethers";
-import { getInstance } from "./utils";
-import { chains } from "./config";
 import dev_addresses from "../../deployments/dev_addresses.json";
-import { EVMX_CHAIN_ID } from "../constants/constants";
-import {
-  CORE_CONTRACTS,
-  EVMxCoreContracts,
-} from "../constants/protocolConstants";
+import { chains, EVMX_CHAIN_ID } from "../config";
+import { CORE_CONTRACTS, EVMxCoreContracts } from "../constants";
+import { getInstance, getProviderFromChainSlug } from "../utils";
 
 const plugs = [CORE_CONTRACTS.ContractFactoryPlug, CORE_CONTRACTS.FeesPlug];
 export type AppGatewayConfig = {
@@ -89,7 +84,7 @@ async function connectPlug(
   }
 
   // Connect the plug
-  const tx = await plug.functions["connectSocket"](
+  const tx = await plug.functions["initSocket"](
     appGateway,
     socket.address,
     switchboard

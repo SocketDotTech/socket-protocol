@@ -1,5 +1,4 @@
 import {
-  ChainSocketAddresses,
   CORE_CONTRACTS,
   DeploymentAddresses,
   ROLES,
@@ -8,12 +7,12 @@ import {
 import { config as dotenvConfig } from "dotenv";
 dotenvConfig();
 
+import { Wallet } from "ethers";
 import { ethers } from "hardhat";
 import dev_addresses from "../../deployments/dev_addresses.json";
-import { chains, watcher } from "./config";
-import { getProviderFromChainSlug } from "../constants";
-import { Wallet } from "ethers";
-import { getInstance, getRoleHash } from "./utils";
+import { chains, watcher } from "../config";
+import { ChainAddressesObj } from "../constants";
+import { getInstance, getProviderFromChainSlug, getRoleHash } from "../utils";
 
 export const REQUIRED_ROLES = {
   FastSwitchboard: [ROLES.WATCHER_ROLE, ROLES.RESCUE_ROLE],
@@ -29,23 +28,22 @@ export const main = async () => {
     addresses = dev_addresses as unknown as DeploymentAddresses;
 
     for (const chain of chains) {
-      let chainAddresses: ChainSocketAddresses = addresses[chain]
-        ? (addresses[chain] as ChainSocketAddresses)
-        : ({} as ChainSocketAddresses);
-
+      let chainAddresses: ChainAddressesObj = (addresses[chain] ??
+        {}) as ChainAddressesObj;
       const providerInstance = getProviderFromChainSlug(chain);
       const signer: Wallet = new ethers.Wallet(
         process.env.SOCKET_SIGNER_KEY as string,
         providerInstance
       );
 
-      for (const [contractName, roleHash] of Object.entries(REQUIRED_ROLES)) {
-        if (!chainAddresses[contractName as keyof ChainSocketAddresses])
-          continue;
+      for (const [contractName, roles] of Object.entries(REQUIRED_ROLES)) {
+        const contractAddress =
+          chainAddresses[contractName as keyof ChainAddressesObj];
+        if (!contractAddress) continue;
 
         let contract = await getInstance(
           contractName as CORE_CONTRACTS,
-          chainAddresses[contractName as keyof ChainSocketAddresses]!
+          String(contractAddress)
         );
         contract = contract.connect(signer);
 
@@ -54,27 +52,31 @@ export const main = async () => {
             ? watcher
             : signer.address;
 
-        const hasRole = await contract.callStatic["hasRole(bytes32,address)"](
-          getRoleHash(roleHash),
-          targetAddress,
-          {
-            from: signer.address,
-          }
-        );
-
-        if (!hasRole) {
-          let tx;
-          if (contractName === CORE_CONTRACTS.FastSwitchboard) {
-            tx = await contract.grantWatcherRole(targetAddress);
-          } else {
-            tx = await contract.grantRole(getRoleHash(roleHash), targetAddress);
-          }
-          console.log(
-            `granting ${roleHash} role to ${targetAddress} for ${contractName}`,
-            chain,
-            tx.hash
+        for (const roleName of roles) {
+          const roleHash = getRoleHash(roleName);
+          const hasRole = await contract.callStatic["hasRole(bytes32,address)"](
+            roleHash,
+            targetAddress,
+            {
+              from: signer.address,
+            }
           );
-          await tx.wait();
+
+          if (!hasRole) {
+            let tx;
+            if (contractName === CORE_CONTRACTS.FastSwitchboard) {
+              tx = await contract.grantWatcherRole(targetAddress);
+            } else {
+              tx = await contract.grantRole(roleHash, targetAddress);
+            }
+            console.log(
+              `granting ${roleName} role to ${targetAddress} for ${contractName}`,
+              chain,
+              "txHash: ",
+              tx.hash
+            );
+            await tx.wait();
+          }
         }
       }
     }
