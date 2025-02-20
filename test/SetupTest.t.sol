@@ -178,7 +178,7 @@ contract SetupTest is Test {
         bytes memory transmitterSig = _createSignature(transmitterDigest, transmitterPrivateKey);
 
         vm.startPrank(transmitterEOA);
-        ExecutePayloadParams memory params = ExecutePayloadParams({
+        AttestAndExecutePayloadParams memory params = AttestAndExecutePayloadParams({
             switchboard: address(socketConfig.switchboard),
             root: root,
             watcherSignature: watcherSignature,

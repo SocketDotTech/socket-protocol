@@ -72,7 +72,7 @@ struct DeployParams {
     bytes bytecode;
 }
 
-struct ExecutePayloadParams {
+struct AttestAndExecutePayloadParams {
     bytes32 payloadId;
     bytes32 root;
     address switchboard;

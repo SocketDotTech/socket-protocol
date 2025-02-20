@@ -5,7 +5,7 @@ import "solady/auth/Ownable.sol";
 import "../../interfaces/ISocket.sol";
 import "../../interfaces/ISwitchboard.sol";
 import "../utils/RescueFundsLib.sol";
-import {ExecutePayloadParams} from "../../protocol/utils/common/Structs.sol";
+import {AttestAndExecutePayloadParams} from "../../protocol/utils/common/Structs.sol";
 
 /**
  * @title SocketBatcher
@@ -26,7 +26,7 @@ contract SocketBatcher is Ownable {
     }
 
     function attestAndExecute(
-        ExecutePayloadParams calldata params_
+        AttestAndExecutePayloadParams calldata params_
     ) external returns (bytes memory) {
         ISwitchboard(params_.switchboard).attest(
             params_.payloadId,
@@ -41,12 +41,7 @@ contract SocketBatcher is Ownable {
             deadline: params_.deadline,
             payload: params_.payload
         });
-        return
-            socket__.execute(
-                params_.appGateway,
-                executeParams,
-                params_.transmitterSignature
-            );
+        return socket__.execute(params_.appGateway, executeParams, params_.transmitterSignature);
     }
 
     function rescueFunds(address token_, address to_, uint256 amount_) external onlyOwner {
