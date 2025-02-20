@@ -18,6 +18,11 @@ enum Parallel {
     ON
 }
 
+enum IsPlug {
+    YES,
+    NO
+}
+
 struct AppGatewayConfig {
     address plug;
     address appGateway;
@@ -55,7 +60,7 @@ struct CallFromInboxParams {
 }
 
 struct CallParams {
-    bool isPlug;
+    IsPlug isPlug;
     address asyncPromise;
     address target;
     uint32 chainSlug;

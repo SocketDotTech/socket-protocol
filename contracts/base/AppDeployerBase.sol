@@ -25,7 +25,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     /// @notice Deploys a contract
     /// @param contractId_ The contract ID
     /// @param chainSlug_ The chain slug
-    function _deploy(bytes32 contractId_, uint32 chainSlug_, bool isPlug_) internal {
+    function _deploy(bytes32 contractId_, uint32 chainSlug_, IsPlug isPlug_) internal {
         _deploy(contractId_, chainSlug_, isPlug_, bytes(""));
     }
 
@@ -35,7 +35,7 @@ abstract contract AppDeployerBase is AppGatewayBase, IAppDeployer {
     function _deploy(
         bytes32 contractId_,
         uint32 chainSlug_,
-        bool isPlug_,
+        IsPlug isPlug_,
         bytes memory initCallData_
     ) internal {
         address asyncPromise = addressResolver__.deployAsyncPromiseContract(address(this));

@@ -20,7 +20,7 @@ contract CounterDeployer is AppDeployerBase, Ownable {
     }
 
     function deployContracts(uint32 chainSlug_) external async {
-        _deploy(counter, chainSlug_, true);
+        _deploy(counter, chainSlug_, IsPlug.YES);
     }
 
     function initialize(uint32) public pure override {

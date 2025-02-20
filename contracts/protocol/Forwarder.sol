@@ -86,7 +86,7 @@ contract Forwarder is IForwarder, Initializable {
 
         // Queue the call in the auction house.
         IDeliveryHelper(deliveryHelper).queue(
-            false,
+            IsPlug.NO,
             isParallelCall,
             chainSlug,
             onChainAddress,

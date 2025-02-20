@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 import {AddressResolverUtil} from "../../../protocol/utils/AddressResolverUtil.sol";
-import {CallParams, Fees, PayloadDetails, CallType, Bid, PayloadBatch, Parallel} from "../../../protocol/utils/common/Structs.sol";
+import {CallParams, Fees, PayloadDetails, CallType, Bid, PayloadBatch, Parallel, IsPlug} from "../../../protocol/utils/common/Structs.sol";
 import {NotAuctionManager, InvalidPromise, InvalidIndex} from "../../../protocol/utils/common/Errors.sol";
 import {AsyncPromise} from "../../AsyncPromise.sol";
 import {IPromise} from "../../../interfaces/IPromise.sol";
@@ -65,7 +65,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper {
     /// @param callType_ The call type
     /// @param payload_ The payload
     function queue(
-        bool isPlug_,
+        IsPlug isPlug_,
         Parallel isParallel_,
         uint32 chainSlug_,
         address target_,
