@@ -6,7 +6,6 @@ import "../../interfaces/IAppGateway.sol";
 import "../../interfaces/IPromise.sol";
 import "../../interfaces/IFeesManager.sol";
 import "solady/utils/Initializable.sol";
-import "forge-std/console.sol";
 import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../utils/common/Structs.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../utils/common/Errors.sol";
 
@@ -314,6 +313,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
             // Resolve each promise with its corresponding return data
             bool success;
             for (uint256 j = 0; j < next.length; j++) {
+                if (next[j] == address(0)) continue;
                 success = IPromise(next[j]).markResolved(
                     asyncRequest_.asyncId,
                     resolvedPromises_[i].payloadId,
