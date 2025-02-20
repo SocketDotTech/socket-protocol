@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 
 import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
@@ -10,7 +9,7 @@ import {DISTRIBUTE_FEE, DEPLOY} from "../../../protocol/utils/common/Constants.s
 import {PromisesNotResolved, InvalidTransmitter} from "../../../protocol/utils/common/Errors.sol";
 import "./BatchAsync.sol";
 
-contract DeliveryHelper is BatchAsync, Ownable, Initializable {
+contract DeliveryHelper is BatchAsync, Initializable {
     event CallBackReverted(bytes32 asyncId_, bytes32 payloadId_);
     uint64 public version;
 
