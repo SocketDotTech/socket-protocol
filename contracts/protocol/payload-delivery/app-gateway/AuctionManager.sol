@@ -20,7 +20,6 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
     mapping(bytes32 => bool) public override auctionStarted;
 
     uint256 public auctionEndDelaySeconds;
-    uint64 public version;
 
     /// @notice Error thrown when trying to start or bid a closed auction
     error AuctionClosed();
@@ -52,7 +51,6 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
-        version = 1;
         vmChainSlug = vmChainSlug_;
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
     }

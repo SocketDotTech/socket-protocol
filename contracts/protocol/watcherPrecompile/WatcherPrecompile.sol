@@ -36,8 +36,6 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @dev callId => bool
     mapping(bytes32 => bool) public appGatewayCalled;
 
-    uint64 public version;
-
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
     /// @notice Error thrown when an invalid app gateway reaches a plug
@@ -110,7 +108,6 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
-        version = 1;
         maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
         expiryTime = expiryTime_;
 

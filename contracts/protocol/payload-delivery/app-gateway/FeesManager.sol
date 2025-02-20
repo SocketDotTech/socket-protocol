@@ -15,8 +15,6 @@ import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 /// @notice Contract for managing fees
 contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializable {
     uint256 public feesCounter;
-    mapping(uint32 => uint256) public feeCollectionGasLimit;
-    uint64 public version;
 
     /// @notice Struct containing fee amounts and status
     struct TokenBalance {
@@ -101,7 +99,6 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the owner
     function initialize(address addressResolver_, address owner_) public reinitializer(1) {
-        version = 1;
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
     }
@@ -174,7 +171,6 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
             fees_.feePoolToken
         ];
         tokenBalance.blocked += winningBid_.fee;
-
         asyncIdBlockedFees[asyncId_] = fees_;
         emit FeesBlocked(asyncId_, fees_.feePoolChain, fees_.feePoolToken, winningBid_.fee);
     }
