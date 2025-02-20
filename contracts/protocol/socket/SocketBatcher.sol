@@ -33,14 +33,19 @@ contract SocketBatcher is Ownable {
             params_.root,
             params_.watcherSignature
         );
+
+        ISocket.ExecuteParams memory executeParams = ISocket.ExecuteParams({
+            payloadId: params_.payloadId,
+            target: params_.target,
+            executionGasLimit: params_.executionGasLimit,
+            deadline: params_.deadline,
+            payload: params_.payload
+        });
         return
             socket__.execute(
-                params_.payloadId,
                 params_.appGateway,
-                params_.target,
-                params_.executionGasLimit,
-                params_.transmitterSignature,
-                params_.payload
+                executeParams,
+                params_.transmitterSignature
             );
     }
 

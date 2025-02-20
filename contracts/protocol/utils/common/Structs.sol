@@ -32,7 +32,7 @@ struct AsyncRequest {
     address target;
     address switchboard;
     uint256 executionGasLimit;
-    uint256 expiryTime;
+    uint256 deadline;
     bytes32 asyncId;
     bytes32 root;
     bytes payload;
@@ -79,6 +79,7 @@ struct ExecutePayloadParams {
     address appGateway;
     address target;
     uint256 executionGasLimit;
+    uint256 deadline;
     bytes watcherSignature;
     bytes transmitterSignature;
     bytes payload;
@@ -135,7 +136,7 @@ struct PayloadRootParams {
     bytes32 payloadId;
     uint256 value;
     uint256 executionGasLimit;
-    uint256 expiryTime;
+    uint256 deadline;
     bytes payload;
 }
 

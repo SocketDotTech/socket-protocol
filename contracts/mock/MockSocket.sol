@@ -107,15 +107,13 @@ contract MockSocket is ISocket {
      * @notice Executes a payload that has been delivered by transmitters and authenticated by switchboards
      */
     function execute(
-        bytes32 payloadId_,
         address,
-        address target_,
-        uint256 executionGasLimit_,
-        bytes memory,
-        bytes memory payload_
+        ExecuteParams memory params_,
+        bytes memory
     ) external payable returns (bytes memory) {
         // execute payload
-        return _execute(target_, payloadId_, executionGasLimit_, payload_);
+        return
+            _execute(params_.target, params_.payloadId, params_.executionGasLimit, params_.payload);
     }
 
     ////////////////////////////////////////////////////////

@@ -358,6 +358,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
                 params_.transmitter,
                 params_.target,
                 params_.value,
+                params_.deadline,
                 params_.executionGasLimit,
                 params_.payload
             )

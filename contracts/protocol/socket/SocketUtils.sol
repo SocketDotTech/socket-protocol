@@ -52,9 +52,10 @@ abstract contract SocketUtils is SocketConfig {
         address appGateway_,
         address transmitter_,
         address target_,
+        uint256 value_,
+        uint256 deadline_,
         uint256 executionGasLimit_,
-        bytes memory payload_,
-        uint256 value_
+        bytes memory payload_
     ) internal pure returns (bytes32) {
         return
             keccak256(
@@ -64,6 +65,7 @@ abstract contract SocketUtils is SocketConfig {
                     transmitter_,
                     target_,
                     value_,
+                    deadline_,
                     executionGasLimit_,
                     payload_
                 )
