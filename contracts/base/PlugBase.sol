@@ -11,9 +11,9 @@ import {NotSocket} from "../protocol/utils/common/Errors.sol";
 abstract contract PlugBase is IPlug {
     ISocket public socket__;
     address public appGateway;
-    uint256 public socketInitializer;
+    uint256 public isSocketInitialized;
 
-    error SocketNotInitialized();
+    error SocketAlreadyInitialized();
     event ConnectorPlugDisconnected();
 
     /// @notice Modifier to ensure only the socket can call the function
@@ -24,10 +24,10 @@ abstract contract PlugBase is IPlug {
     }
 
     /// @notice Modifier to ensure the socket is initialized
-    modifier isSocketInitialized() {
-        if (socketInitializer == 1) revert SocketNotInitialized();
+    modifier socketInitializer() {
+        if (isSocketInitialized == 1) revert SocketAlreadyInitialized();
         _;
-        socketInitializer = 1;
+        isSocketInitialized = 1;
     }
 
     /// @notice Connects the plug to the app gateway and switchboard
@@ -61,7 +61,7 @@ abstract contract PlugBase is IPlug {
         address appGateway_,
         address socket_,
         address switchboard_
-    ) external virtual isSocketInitialized {
+    ) external virtual socketInitializer {
         _connectSocket(appGateway_, socket_, switchboard_);
     }
 }
