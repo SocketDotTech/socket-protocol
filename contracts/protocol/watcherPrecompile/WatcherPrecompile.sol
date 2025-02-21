@@ -27,9 +27,9 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @notice Mapping to store timeout requests
     /// @dev timeoutId => TimeoutRequest struct
     mapping(bytes32 => TimeoutRequest) public timeoutRequests;
-    /// @notice Mapping to store watcher signatures
-    /// @dev payloadId => signature bytes
-    mapping(bytes32 => bytes) public watcherSignatures;
+    /// @notice Mapping to store watcher proofs
+    /// @dev payloadId => proof bytes
+    mapping(bytes32 => bytes) public watcherProofs;
 
     /// @notice Mapping to store if appGateway has been called with trigger from on-chain Inbox
     /// @dev callId => bool
@@ -72,8 +72,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @notice Emitted when a request is finalized
     /// @param payloadId The unique identifier for the request
     /// @param asyncRequest The async request details
-    /// @param watcherSignature The signature from the watcher
-    event Finalized(bytes32 indexed payloadId, AsyncRequest asyncRequest, bytes watcherSignature);
+    /// @param proof The proof from the watcher
+    event Finalized(bytes32 indexed payloadId, AsyncRequest asyncRequest, bytes proof);
 
     /// @notice Emitted when a promise is resolved
     /// @param payloadId The unique identifier for the resolved promise
@@ -172,7 +172,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
 
     // ================== Finalize functions ==================
 
-    /// @notice Finalizes a payload request, requests the watcher to release the signatures to execute on chain
+    /// @notice Finalizes a payload request, requests the watcher to release the proofs to execute on chain
     /// @param params_ The finalization parameters
     /// @return payloadId The unique identifier for the finalized request
     /// @return digest The merkle digest of the payload parameters
@@ -290,18 +290,15 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         emit QueryRequested(chainSlug_, targetAddress_, payloadId, payload_);
     }
 
-    /// @notice Marks a request as finalized with a signature on digest
+    /// @notice Marks a request as finalized with a proof on digest
     /// @param payloadId_ The unique identifier of the request
-    /// @param signature_ The watcher's signature
+    /// @param proof_ The watcher's proof
     /// @dev Only callable by the contract owner
     /// @dev Watcher signs on following digest for validation on switchboard:
     /// @dev keccak256(abi.encode(switchboard, digest))
-    function finalized(
-        bytes32 payloadId_,
-        bytes calldata signature_
-    ) external onlyRole(WATCHER_ROLE) {
-        watcherSignatures[payloadId_] = signature_;
-        emit Finalized(payloadId_, asyncRequests[payloadId_], signature_);
+    function finalized(bytes32 payloadId_, bytes calldata proof_) external onlyRole(WATCHER_ROLE) {
+        watcherProofs[payloadId_] = proof_;
+        emit Finalized(payloadId_, asyncRequests[payloadId_], proof_);
     }
 
     /// @notice Resolves multiple promises with their return data

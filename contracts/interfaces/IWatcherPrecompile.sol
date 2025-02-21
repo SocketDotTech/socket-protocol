@@ -56,10 +56,10 @@ interface IWatcherPrecompile {
         bytes memory payload_
     ) external returns (bytes32 payloadId);
 
-    /// @notice Marks a request as finalized with a signature
+    /// @notice Marks a request as finalized with a proof
     /// @param payloadId_ The unique identifier of the request
-    /// @param signature_ The watcher's signature
-    function finalized(bytes32 payloadId_, bytes calldata signature_) external;
+    /// @param proof_ The watcher's proof
+    function finalized(bytes32 payloadId_, bytes calldata proof_) external;
 
     /// @notice Finalizes multiple payload execution requests with a new transmitter
     /// @param payloadId_ The unique identifier of the request

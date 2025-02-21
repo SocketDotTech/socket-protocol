@@ -175,7 +175,7 @@ contract SetupTest is Test {
         bytes32 payloadId,
         bytes32 digest,
         PayloadDetails memory payloadDetails,
-        bytes memory watcherSignature
+        bytes memory watcherProof
     ) internal returns (bytes memory) {
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
         bytes32 transmitterDigest = keccak256(abi.encode(address(socketConfig.socket), payloadId));
@@ -187,7 +187,7 @@ contract SetupTest is Test {
         AttestAndExecutePayloadParams memory params = AttestAndExecutePayloadParams({
             switchboard: address(socketConfig.switchboard),
             digest: digest,
-            watcherSignature: watcherSignature,
+            proof: watcherProof,
             payloadId: payloadId,
             appGateway: payloadDetails.appGateway,
             executionGasLimit: payloadDetails.executionGasLimit,

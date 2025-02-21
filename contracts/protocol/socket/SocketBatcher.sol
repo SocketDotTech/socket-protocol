@@ -28,11 +28,7 @@ contract SocketBatcher is Ownable {
     function attestAndExecute(
         AttestAndExecutePayloadParams calldata params_
     ) external payable returns (bytes memory) {
-        ISwitchboard(params_.switchboard).attest(
-            params_.payloadId,
-            params_.digest,
-            params_.watcherSignature
-        );
+        ISwitchboard(params_.switchboard).attest(params_.payloadId, params_.digest, params_.proof);
 
         ISocket.ExecuteParams memory executeParams = ISocket.ExecuteParams({
             payloadId: params_.payloadId,

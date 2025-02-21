@@ -33,13 +33,13 @@ contract FastSwitchboard is SwitchboardBase {
      * @dev Function to attest a packet
      * @param payloadId_ Packet ID
      * @param digest_ Digest of the packet
-     * @param signature_ Signature of the watcher
+     * @param proof_ Proof of the watcher
      * @notice we are attesting a digest uniquely identified with packetId and proposalCount. However,
      * there can be multiple proposals for same digest. To avoid need to re-attest for different proposals
      *  with same digest, we are storing attestations against digest instead of packetId and proposalCount.
      */
-    function attest(bytes32 payloadId_, bytes32 digest_, bytes calldata signature_) external {
-        address watcher = _recoverSigner(keccak256(abi.encode(address(this), digest_)), signature_);
+    function attest(bytes32 payloadId_, bytes32 digest_, bytes calldata proof_) external {
+        address watcher = _recoverSigner(keccak256(abi.encode(address(this), digest_)), proof_);
 
         if (isAttested[digest_]) revert AlreadyAttested();
         if (!_hasRole(WATCHER_ROLE, watcher)) revert WatcherNotFound();

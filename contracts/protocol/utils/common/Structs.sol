@@ -85,7 +85,7 @@ struct AttestAndExecutePayloadParams {
     address target;
     uint256 executionGasLimit;
     uint256 deadline;
-    bytes watcherSignature;
+    bytes proof;
     bytes transmitterSignature;
     bytes payload;
 }

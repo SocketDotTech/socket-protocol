@@ -509,7 +509,7 @@ contract DeliveryHelperTest is SetupTest {
             payloadDetails.payload
         );
         bytes32 digest = watcherPrecompile.getDigest(digestParams_);
-        
+
         bytes32 sigDigest = keccak256(abi.encode(address(socketConfig.switchboard), digest));
         bytes memory watcherSig = _createSignature(sigDigest, watcherPrivateKey);
         return (watcherSig, digest);

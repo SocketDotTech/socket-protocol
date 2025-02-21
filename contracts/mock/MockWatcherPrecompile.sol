@@ -57,8 +57,8 @@ contract MockWatcherPrecompile {
     /// @notice Emitted when a request is finalized
     /// @param payloadId The unique identifier for the request
     /// @param asyncRequest The async request details
-    /// @param watcherSignature The signature from the watcher
-    event Finalized(bytes32 indexed payloadId, AsyncRequest asyncRequest, bytes watcherSignature);
+    /// @param proof The proof from the watcher
+    event Finalized(bytes32 indexed payloadId, AsyncRequest asyncRequest, bytes proof);
 
     /// @notice Emitted when a promise is resolved
     /// @param payloadId The unique identifier for the resolved promise
@@ -120,7 +120,7 @@ contract MockWatcherPrecompile {
 
     // ================== Finalize functions ==================
 
-    /// @notice Finalizes a payload request, requests the watcher to release the signatures to execute on chain
+    /// @notice Finalizes a payload request, requests the watcher to release the proofs to execute on chain
     /// @param params_ The finalization parameters
     /// @return payloadId The unique identifier for the finalized request
     /// @return digest The merkle digest of the payload parameters
@@ -169,12 +169,12 @@ contract MockWatcherPrecompile {
         emit QueryRequested(chainSlug, targetAddress, payloadId, payload);
     }
 
-    /// @notice Marks a request as finalized with a signature
+    /// @notice Marks a request as finalized with a proof
     /// @param payloadId_ The unique identifier of the request
-    /// @param signature_ The watcher's signature
+    /// @param proof_ The watcher's proof
     /// @dev Only callable by the contract owner
-    function finalized(bytes32 payloadId_, bytes calldata signature_) external {
-        emit Finalized(payloadId_, asyncRequests[payloadId_], signature_);
+    function finalized(bytes32 payloadId_, bytes calldata proof_) external {
+        emit Finalized(payloadId_, asyncRequests[payloadId_], proof_);
     }
 
     /// @notice Resolves multiple promises with their return data

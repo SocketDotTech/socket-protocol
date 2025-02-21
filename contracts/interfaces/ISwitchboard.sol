@@ -15,5 +15,5 @@ interface ISwitchboard {
      */
     function allowPacket(bytes32 digest_, bytes32 packetId_) external view returns (bool);
 
-    function attest(bytes32 payloadId_, bytes32 digest_, bytes calldata signature_) external;
+    function attest(bytes32 payloadId_, bytes32 digest_, bytes calldata proof_) external;
 }
