@@ -44,7 +44,9 @@ async function setRoleForContract(
   );
 
   if (!hasRole) {
-    let tx = await contract.grantRole(roleHash, targetAddress);
+    let tx = await contract.grantRole(roleHash, targetAddress, {
+      ...getOverrides(chain),
+    });
     console.log(
       `granting ${roleName} role to ${targetAddress} for ${contractName}`,
       chain,
@@ -55,10 +57,10 @@ async function setRoleForContract(
   }
 }
 
-async function getSigner(chain: number) {
+async function getSigner(chain: number, isWatcher: boolean = false) {
   const providerInstance = getProviderFromChainSlug(chain);
   const signer: Wallet = new ethers.Wallet(
-    process.env.SOCKET_SIGNER_KEY as string,
+    isWatcher ? process.env.WATCHER_PRIVATE_KEY as string : process.env.SOCKET_SIGNER_KEY as string,
     providerInstance
   );
   return signer;
@@ -94,7 +96,7 @@ async function setRolesForOnChain(chain: number, addresses: DeploymentAddresses)
 
 async function setRolesForEVMx(addresses: DeploymentAddresses) {
   const chainAddresses: ChainAddressesObj = (addresses[EVMX_CHAIN_ID] ?? {}) as ChainAddressesObj;
-  const signer = await getSigner(EVMX_CHAIN_ID);
+  const signer = await getSigner(EVMX_CHAIN_ID, true);
 
   const contractAddress = chainAddresses[EVMxCoreContracts.WatcherPrecompile];
   if (!contractAddress) return;
