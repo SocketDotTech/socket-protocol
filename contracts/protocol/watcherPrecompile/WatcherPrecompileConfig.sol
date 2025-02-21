@@ -62,7 +62,7 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
     /// @param configs_ Array of configurations containing app gateway, network, plug, and switchboard details
     /// @dev Only callable by the contract owner
     /// @dev This helps in verifying that plugs are called by respective app gateways
-    function setAppGateways(AppGatewayConfig[] calldata configs_) external onlyOwner {
+    function setAppGateways(AppGatewayConfig[] calldata configs_) external onlyRole(WATCHER_ROLE) {
         for (uint256 i = 0; i < configs_.length; i++) {
             // Store the plug configuration for this network and plug
             _plugConfigs[configs_[i].chainSlug][configs_[i].plug] = PlugConfig({
