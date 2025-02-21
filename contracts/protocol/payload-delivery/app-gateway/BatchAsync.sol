@@ -105,6 +105,13 @@ abstract contract BatchAsync is QueueAsync {
 
         // If only reads, return early
         if (readEndIndex == payloadDetails_.length) {
+            emit PayloadSubmitted(
+                asyncId,
+                _getCoreAppGateway(msg.sender),
+                payloadDetails_,
+                fees_,
+                auctionManager_
+            );
             return asyncId;
         }
 
