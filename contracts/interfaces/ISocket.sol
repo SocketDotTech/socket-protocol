@@ -17,6 +17,12 @@ interface ISocket {
     event ExecutionSuccess(bytes32 payloadId, bytes returnData);
 
     /**
+     * @notice emits the status of payload after external call
+     * @param payloadId msg id which is executed
+     */
+    event ExecutionFailed(bytes32 payloadId, bytes returnData);
+
+    /**
      * @notice emits the config set by a plug for a remoteChainSlug
      * @param plug address of plug on current chain
      * @param appGateway address of plug on sibling chain

@@ -23,7 +23,7 @@ contract Socket is SocketUtils {
     /**
      * @dev Error emitted when a payload has already been executed
      */
-    error PayloadAlreadyExecuted();
+    error PayloadAlreadyExecuted(ExecutionStatus status);
     /**
      * @dev Error emitted when the executor is not valid
      */
@@ -39,7 +39,6 @@ contract Socket is SocketUtils {
      */
     error LowGasLimit();
     error InvalidSlug();
-    error ExecutionFailed();
     error DeadlinePassed();
 
     ////////////////////////////////////////////////////////////
@@ -47,10 +46,16 @@ contract Socket is SocketUtils {
     ////////////////////////////////////////////////////////////
     uint64 public callCounter;
 
+    enum ExecutionStatus {
+        NotExecuted,
+        Executed,
+        Reverted
+    }
+
     /**
      * @dev keeps track of whether a payload has been executed or not using payload id
      */
-    mapping(bytes32 => bool) public payloadExecuted;
+    mapping(bytes32 => ExecutionStatus) public payloadExecuted;
 
     constructor(
         uint32 chainSlug_,
@@ -96,9 +101,10 @@ contract Socket is SocketUtils {
         bytes memory transmitterSignature_
     ) external payable returns (bytes memory) {
         // make sure payload is not executed already
-        if (payloadExecuted[params_.payloadId]) revert PayloadAlreadyExecuted();
+        if (payloadExecuted[params_.payloadId] != ExecutionStatus.NotExecuted)
+            revert PayloadAlreadyExecuted(payloadExecuted[params_.payloadId]);
         // update state to make sure no reentrancy
-        payloadExecuted[params_.payloadId] = true;
+        payloadExecuted[params_.payloadId] = ExecutionStatus.Executed;
 
         if (params_.deadline < block.timestamp) revert DeadlinePassed();
 
@@ -165,8 +171,13 @@ contract Socket is SocketUtils {
             value: msg.value
         }(payload_);
 
-        if (!success) revert ExecutionFailed();
-        emit ExecutionSuccess(payloadId_, returnData);
+        if (!success) {
+            payloadExecuted[payloadId_] = ExecutionStatus.Reverted;
+            emit ExecutionFailed(payloadId_, returnData);
+        } else {
+            emit ExecutionSuccess(payloadId_, returnData);
+        }
+
         return returnData;
     }
 
