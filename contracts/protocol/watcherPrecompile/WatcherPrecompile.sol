@@ -149,7 +149,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @notice Ends the timeouts and calls the target address with the callback payload
     /// @param timeoutId_ The unique identifier for the timeout
     /// @dev Only callable by the contract owner
-    function resolveTimeout(bytes32 timeoutId_) external onlyOwner {
+    function resolveTimeout(bytes32 timeoutId_) external onlyRole(WATCHER_ROLE) {
         TimeoutRequest storage timeoutRequest_ = timeoutRequests[timeoutId_];
 
         if (timeoutRequest_.target == address(0)) revert InvalidTimeoutRequest();
@@ -296,7 +296,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @dev Only callable by the contract owner
     /// @dev Watcher signs on following digest for validation on switchboard:
     /// @dev keccak256(abi.encode(switchboard, root))
-    function finalized(bytes32 payloadId_, bytes calldata signature_) external onlyOwner {
+    function finalized(bytes32 payloadId_, bytes calldata signature_) external onlyRole(WATCHER_ROLE) {
         watcherSignatures[payloadId_] = signature_;
         emit Finalized(payloadId_, asyncRequests[payloadId_], signature_);
     }
@@ -304,7 +304,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @notice Resolves multiple promises with their return data
     /// @param resolvedPromises_ Array of resolved promises and their return data
     /// @dev Only callable by the contract owner
-    function resolvePromises(ResolvedPromises[] calldata resolvedPromises_) external onlyOwner {
+    function resolvePromises(ResolvedPromises[] calldata resolvedPromises_) external onlyRole(WATCHER_ROLE) {
         for (uint256 i = 0; i < resolvedPromises_.length; i++) {
             // Get the array of promise addresses for this payload
             AsyncRequest memory asyncRequest_ = asyncRequests[resolvedPromises_[i].payloadId];
@@ -327,7 +327,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     }
 
     // wait till expiry time to assign fees
-    function markRevert(bytes32 payloadId_, bool isRevertingOnchain_) external onlyOwner {
+    function markRevert(bytes32 payloadId_, bool isRevertingOnchain_) external onlyRole(WATCHER_ROLE) {
         AsyncRequest memory asyncRequest_ = asyncRequests[payloadId_];
         address[] memory next = asyncRequest_.next;
 
@@ -370,7 +370,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
 
     // ================== On-Chain Inbox ==================
 
-    function callAppGateways(CallFromInboxParams[] calldata params_) external onlyOwner {
+    function callAppGateways(CallFromInboxParams[] calldata params_) external onlyRole(WATCHER_ROLE) {
         for (uint256 i = 0; i < params_.length; i++) {
             if (appGatewayCalled[params_[i].callId]) revert AppGatewayAlreadyCalled();
             if (!isValidInboxCaller[params_[i].appGateway][params_[i].chainSlug][params_[i].plug])

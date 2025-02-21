@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-import {Ownable} from "solady/auth/Ownable.sol";
+import {AccessControl} from "../utils/AccessControl.sol";
 import {Gauge} from "../utils/Gauge.sol";
 import {LimitParams, UpdateLimitParams} from "../utils/common/Structs.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../utils/common/Constants.sol";
 import "../../interfaces/IWatcherPrecompile.sol";
+import {WATCHER_ROLE} from "../utils/common/AccessRoles.sol";
 
 abstract contract WatcherPrecompileLimits is
     Gauge,
     AddressResolverUtil,
-    Ownable,
+    AccessControl,
     IWatcherPrecompile
 {
     /// @notice Number of decimals used in limit calculations

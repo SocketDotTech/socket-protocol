@@ -140,6 +140,9 @@ contract SetupTest is Test {
         watcherPrecompile = WatcherPrecompile(address(watcherPrecompileProxy));
 
         hoax(watcherEOA);
+        watcherPrecompile.grantRole(WATCHER_ROLE, watcherEOA);
+
+        hoax(watcherEOA);
         addressResolver.setWatcherPrecompile(address(watcherPrecompile));
     }
 
