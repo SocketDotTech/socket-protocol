@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {PayloadDetails, AsyncRequest, FinalizeParams, PayloadRootParams, AppGatewayConfig, PlugConfig, ResolvedPromises} from "../protocol/utils/common/Structs.sol";
+import {PayloadDetails, AsyncRequest, FinalizeParams, PayloadDigestParams, AppGatewayConfig, PlugConfig, ResolvedPromises} from "../protocol/utils/common/Structs.sol";
 
 /// @title IWatcherPrecompile
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
@@ -36,11 +36,11 @@ interface IWatcherPrecompile {
     /// @notice Finalizes a payload execution request
     /// @param params_ Parameters needed for finalization
     /// @return payloadId The unique identifier for the request
-    /// @return root The merkle root of the payload parameters
+    /// @return digest The merkle digest of the payload parameters
     function finalize(
         address originAppGateway_,
         FinalizeParams memory params_
-    ) external returns (bytes32 payloadId, bytes32 root);
+    ) external returns (bytes32 payloadId, bytes32 digest);
 
     /// @notice Creates a new query request
     /// @param chainSlug_ The identifier of the destination network
@@ -83,10 +83,10 @@ interface IWatcherPrecompile {
     /// @param timeoutId_ The unique identifier for the timeout
     function resolveTimeout(bytes32 timeoutId_) external;
 
-    /// @notice Calculates the root hash for payload parameters
-    /// @param params_ The payload parameters used to calculate the root
-    /// @return root The calculated merkle root hash
-    function getRoot(PayloadRootParams memory params_) external pure returns (bytes32 root);
+    /// @notice Calculates the Digest hash for payload parameters
+    /// @param params_ The payload parameters used to calculate the digest
+    /// @return digest The calculated merkle digest hash
+    function getDigest(PayloadDigestParams memory params_) external pure returns (bytes32 digest);
 
     function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external;
 

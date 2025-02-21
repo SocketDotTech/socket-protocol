@@ -30,7 +30,7 @@ contract SocketBatcher is Ownable {
     ) external payable returns (bytes memory) {
         ISwitchboard(params_.switchboard).attest(
             params_.payloadId,
-            params_.root,
+            params_.digest,
             params_.watcherSignature
         );
 

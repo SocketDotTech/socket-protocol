@@ -5,7 +5,7 @@ import "../interfaces/IAppGateway.sol";
 import "../interfaces/IWatcherPrecompile.sol";
 import "../interfaces/IPromise.sol";
 
-import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams, PlugConfig, ResolvedPromises, AppGatewayConfig} from "../protocol/utils/common/Structs.sol";
+import {PayloadDigestParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams, PlugConfig, ResolvedPromises, AppGatewayConfig} from "../protocol/utils/common/Structs.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../protocol/utils/common/Constants.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../protocol/utils/common/Errors.sol";
 import "solady/utils/ERC1967Factory.sol";
@@ -123,11 +123,11 @@ contract MockWatcherPrecompile {
     /// @notice Finalizes a payload request, requests the watcher to release the signatures to execute on chain
     /// @param params_ The finalization parameters
     /// @return payloadId The unique identifier for the finalized request
-    /// @return root The merkle root of the payload parameters
+    /// @return digest The merkle digest of the payload parameters
     function finalize(
         FinalizeParams memory params_
-    ) external returns (bytes32 payloadId, bytes32 root) {
-        root = keccak256(abi.encode(block.timestamp));
+    ) external returns (bytes32 payloadId, bytes32 digest) {
+        digest = keccak256(abi.encode(block.timestamp));
         // Generate a unique payload ID by combining chain, target, and counter
         payloadId = encodePayloadId(
             params_.payloadDetails.chainSlug,

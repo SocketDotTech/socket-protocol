@@ -39,7 +39,7 @@ struct AsyncRequest {
     uint256 executionGasLimit;
     uint256 deadline;
     bytes32 asyncId;
-    bytes32 root;
+    bytes32 digest;
     bytes payload;
     address[] next;
 }
@@ -79,7 +79,7 @@ struct DeployParams {
 
 struct AttestAndExecutePayloadParams {
     bytes32 payloadId;
-    bytes32 root;
+    bytes32 digest;
     address switchboard;
     address appGateway;
     address target;
@@ -134,7 +134,7 @@ struct PayloadDetails {
     address[] next;
 }
 
-struct PayloadRootParams {
+struct PayloadDigestParams {
     address appGateway;
     address transmitter;
     address target;

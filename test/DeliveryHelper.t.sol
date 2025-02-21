@@ -498,7 +498,7 @@ contract DeliveryHelperTest is SetupTest {
         SocketContracts memory socketConfig = getSocketConfig(payloadDetails.chainSlug);
         (, , , , , , uint256 deadline, , , ) = watcherPrecompile.asyncRequests(payloadId);
 
-        PayloadRootParams memory rootParams_ = PayloadRootParams(
+        PayloadDigestParams memory digestParams_ = PayloadDigestParams(
             payloadDetails.appGateway,
             transmitterEOA,
             payloadDetails.target,
@@ -508,11 +508,11 @@ contract DeliveryHelperTest is SetupTest {
             deadline,
             payloadDetails.payload
         );
-        bytes32 root = watcherPrecompile.getRoot(rootParams_);
-
-        bytes32 digest = keccak256(abi.encode(address(socketConfig.switchboard), root));
-        bytes memory watcherSig = _createSignature(digest, watcherPrivateKey);
-        return (watcherSig, root);
+        bytes32 digest = watcherPrecompile.getDigest(digestParams_);
+        
+        bytes32 sigDigest = keccak256(abi.encode(address(socketConfig.switchboard), digest));
+        bytes memory watcherSig = _createSignature(sigDigest, watcherPrivateKey);
+        return (watcherSig, digest);
     }
 
     function createWithdrawPayloadDetail(
@@ -614,12 +614,12 @@ contract DeliveryHelperTest is SetupTest {
         bytes32 payloadId_,
         PayloadDetails memory payloadDetails
     ) internal returns (bytes memory returnData) {
-        (bytes memory watcherSig, bytes32 root) = finalize(payloadId_, payloadDetails);
+        (bytes memory watcherSig, bytes32 digest) = finalize(payloadId_, payloadDetails);
 
         returnData = relayTx(
             payloadDetails.chainSlug,
             payloadId_,
-            root,
+            digest,
             payloadDetails,
             watcherSig
         );

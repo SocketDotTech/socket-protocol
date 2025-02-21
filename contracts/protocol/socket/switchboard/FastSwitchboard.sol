@@ -9,15 +9,15 @@ import "./SwitchboardBase.sol";
  * that enables packet attestations and watchers registration.
  */
 contract FastSwitchboard is SwitchboardBase {
-    // used to track which watcher have attested a root
-    // watcher => root => isAttested
+    // used to track which watcher have attested a digest
+    // watcher => digest => isAttested
     mapping(bytes32 => bool) public isAttested;
 
-    // Error emitted when a root is already attested by a specific watcher.
-    // This is hit even if they are attesting a new proposalCount with same root.
+    // Error emitted when a digest is already attested by a specific watcher.
+    // This is hit even if they are attesting a new proposalCount with same digest.
     error AlreadyAttested();
     error WatcherNotFound();
-    event Attested(bytes32 payloadId, bytes32 root_, address watcher);
+    event Attested(bytes32 payloadId, bytes32 digest_, address watcher);
 
     /**
      * @dev Constructor function for the FastSwitchboard contract
@@ -32,28 +32,28 @@ contract FastSwitchboard is SwitchboardBase {
     /**
      * @dev Function to attest a packet
      * @param payloadId_ Packet ID
-     * @param root_ Root of the packet
+     * @param digest_ Digest of the packet
      * @param signature_ Signature of the watcher
-     * @notice we are attesting a root uniquely identified with packetId and proposalCount. However,
-     * there can be multiple proposals for same root. To avoid need to re-attest for different proposals
-     *  with same root, we are storing attestations against root instead of packetId and proposalCount.
+     * @notice we are attesting a digest uniquely identified with packetId and proposalCount. However,
+     * there can be multiple proposals for same digest. To avoid need to re-attest for different proposals
+     *  with same digest, we are storing attestations against digest instead of packetId and proposalCount.
      */
-    function attest(bytes32 payloadId_, bytes32 root_, bytes calldata signature_) external {
-        address watcher = _recoverSigner(keccak256(abi.encode(address(this), root_)), signature_);
+    function attest(bytes32 payloadId_, bytes32 digest_, bytes calldata signature_) external {
+        address watcher = _recoverSigner(keccak256(abi.encode(address(this), digest_)), signature_);
 
-        if (isAttested[root_]) revert AlreadyAttested();
+        if (isAttested[digest_]) revert AlreadyAttested();
         if (!_hasRole(WATCHER_ROLE, watcher)) revert WatcherNotFound();
 
-        isAttested[root_] = true;
-        emit Attested(payloadId_, root_, watcher);
+        isAttested[digest_] = true;
+        emit Attested(payloadId_, digest_, watcher);
     }
 
     /**
      * @inheritdoc ISwitchboard
      */
-    function allowPacket(bytes32 root_, bytes32) external view returns (bool) {
-        // root has enough attestations
-        if (isAttested[root_]) return true;
+    function allowPacket(bytes32 digest_, bytes32) external view returns (bool) {
+        // digest has enough attestations
+        if (isAttested[digest_]) return true;
 
         // not enough attestations and timeout not hit
         return false;

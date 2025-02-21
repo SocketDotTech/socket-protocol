@@ -173,7 +173,7 @@ contract SetupTest is Test {
     function relayTx(
         uint32 chainSlug_,
         bytes32 payloadId,
-        bytes32 root,
+        bytes32 digest,
         PayloadDetails memory payloadDetails,
         bytes memory watcherSignature
     ) internal returns (bytes memory) {
@@ -186,7 +186,7 @@ contract SetupTest is Test {
         vm.startPrank(transmitterEOA);
         AttestAndExecutePayloadParams memory params = AttestAndExecutePayloadParams({
             switchboard: address(socketConfig.switchboard),
-            root: root,
+            digest: digest,
             watcherSignature: watcherSignature,
             payloadId: payloadId,
             appGateway: payloadDetails.appGateway,

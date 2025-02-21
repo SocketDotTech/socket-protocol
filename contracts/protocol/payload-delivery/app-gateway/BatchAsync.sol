@@ -45,7 +45,7 @@ abstract contract BatchAsync is QueueAsync {
     event PayloadAsyncRequested(
         bytes32 indexed asyncId,
         bytes32 indexed payloadId,
-        bytes32 indexed root,
+        bytes32 indexed digest,
         PayloadDetails payloadDetails
     );
 

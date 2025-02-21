@@ -250,7 +250,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
         uint32 chainSlug_,
         address token_,
         address receiver_
-    ) external returns (bytes32 payloadId, bytes32 root, PayloadDetails memory payloadDetails) {
+    ) external returns (bytes32 payloadId, bytes32 digest, PayloadDetails memory payloadDetails) {
         address transmitter = msg.sender;
         // Get all asyncIds for the transmitter
         uint256 totalFees = transmitterFees[transmitter][chainSlug_][token_];
@@ -273,7 +273,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
             transmitter: transmitter
         });
 
-        (payloadId, root) = watcherPrecompile__().finalize(address(this), finalizeParams);
+        (payloadId, digest) = watcherPrecompile__().finalize(address(this), finalizeParams);
     }
 
     function _createPayloadDetails(
