@@ -9,7 +9,12 @@ import { Contract, Signer, Wallet, providers } from "ethers";
 import { ethers } from "hardhat";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { BID_TIMEOUT, EVMX_CHAIN_ID, EXPIRY_TIME, MAX_LIMIT } from "../config";
-import { auctionEndDelaySeconds, chains, mode, logConfig } from "../config/config";
+import {
+  auctionEndDelaySeconds,
+  chains,
+  mode,
+  logConfig,
+} from "../config/config";
 import { CORE_CONTRACTS, EVMxCoreContracts } from "../constants";
 import { getImplementationAddress } from "../migration/migrate-proxies";
 import {
@@ -23,9 +28,9 @@ config();
 let offChainVMOwner: string;
 
 const main = async () => {
-    logConfig();
-    await deployEVMxContracts();
-    await deploySocketContracts();
+  logConfig();
+  await deployEVMxContracts();
+  await deploySocketContracts();
 };
 
 const deployEVMxContracts = async () => {
@@ -160,24 +165,15 @@ const deployEVMxContracts = async () => {
         ? deployUtils.addresses.startBlock
         : await deployUtils.signer.provider?.getBlockNumber();
 
-      await storeAddresses(
-        deployUtils.addresses,
-        chain as ChainSlug,
-        mode
-      );
+      await storeAddresses(deployUtils.addresses, chain as ChainSlug, mode);
     } catch (error) {
-      await storeAddresses(
-        deployUtils.addresses,
-        chain as ChainSlug,
-        mode
-      );
+      await storeAddresses(deployUtils.addresses, chain as ChainSlug, mode);
       console.log("Error:", error);
     }
   } catch (error) {
     console.log("Error:", error);
   }
 };
-
 
 const deploySocketContracts = async () => {
   try {
@@ -265,25 +261,20 @@ const deploySocketContracts = async () => {
           ? deployUtils.addresses.startBlock
           : await deployUtils.signer.provider?.getBlockNumber();
 
-        await storeAddresses(
-          deployUtils.addresses,
-          chain,
-          mode
-        );
+        await storeAddresses(deployUtils.addresses, chain, mode);
       } catch (error) {
-        await storeAddresses(
-          deployUtils.addresses,
+        await storeAddresses(deployUtils.addresses, chain, mode);
+        console.log(
+          "Error while deploying socket contracts on chain",
           chain,
-          mode
+          error
         );
-        console.log("Error while deploying socket contracts on chain", chain, error);
       }
     }
   } catch (error) {
     console.error("Error in socket deployment:", error);
   }
-}
-
+};
 
 async function initializeSigVerifier(
   contract: Contract,

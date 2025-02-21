@@ -17,7 +17,7 @@ export type AppGatewayConfig = {
 };
 // Maps plug contracts to their corresponding app gateways
 export const getAppGateway = (plug: string, addresses: DeploymentAddresses) => {
-  let address: string = '';
+  let address: string = "";
   switch (plug) {
     case CORE_CONTRACTS.ContractFactoryPlug:
       address = addresses?.[EVMX_CHAIN_ID]?.[EVMxCoreContracts.DeliveryHelper];
@@ -89,7 +89,7 @@ async function connectPlug(
   }
 
   // Connect the plug
-  const tx = await plug.functions["initSocket"](
+  const tx = await plug.functions["connectSocket"](
     appGateway,
     socket.address,
     switchboard

@@ -27,7 +27,9 @@ const updatedLines = lines.map((line) => {
   } else if (line.startsWith("FEES_MANAGER=")) {
     return `FEES_MANAGER=${latestAddresses["FeesManager"]}`;
   } else if (line.startsWith("ARBITRUM_SOCKET=")) {
-    return `ARBITRUM_SOCKET=${dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["Socket"]}`;
+    return `ARBITRUM_SOCKET=${
+      dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["Socket"]
+    }`;
   } else if (line.startsWith("ARBITRUM_SWITCHBOARD=")) {
     return `ARBITRUM_SWITCHBOARD=${
       dev_addresses[ChainSlug.ARBITRUM_SEPOLIA]["FastSwitchboard"]
