@@ -29,10 +29,12 @@ contract WithdrawFees is Script {
             console.log("Sender address:", sender);
             console.log("Sender balance", sender.balance);
 
+            vm.createSelectFork(vm.envString("EVMX_RPC"));
             vm.startBroadcast(privateKey);
 
             appGateway.withdrawFeeTokens(421614, ETH_ADDRESS, availableFees, sender);
             console.log("Withdrew:", availableFees);
+            vm.createSelectFork(vm.envString("ARBITRUM_SEPOLIA_RPC"));
             console.log("Sender balance", sender.balance);
         }
     }
