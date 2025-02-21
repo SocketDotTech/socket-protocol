@@ -9,7 +9,12 @@ import { Contract, Signer, Wallet, providers } from "ethers";
 import { ethers } from "hardhat";
 import dev_addresses from "../../deployments/dev_addresses.json";
 import { BID_TIMEOUT, EVMX_CHAIN_ID, EXPIRY_TIME, MAX_LIMIT } from "../config";
-import { auctionEndDelaySeconds, chains, logConfig } from "../config/config";
+import {
+  auctionEndDelaySeconds,
+  chains,
+  mode,
+  logConfig,
+} from "../config/config";
 import { CORE_CONTRACTS, EVMxCoreContracts } from "../constants";
 import { getImplementationAddress } from "../migration/migrate-proxies";
 import {
@@ -21,123 +26,19 @@ import {
 config();
 
 let offChainVMOwner: string;
+
 const main = async () => {
-  try {
-    logConfig();
-    let addresses: DeploymentAddresses;
-    let deployUtils: DeployParams = {
-      addresses: {} as ChainSocketAddresses,
-      mode: DeploymentMode.DEV,
-      signer: new ethers.Wallet(process.env.SOCKET_SIGNER_KEY as string),
-      currentChainSlug: EVMX_CHAIN_ID as ChainSlug,
-    };
-    try {
-      await deployWatcherVMContracts();
-
-      console.log("Deploying Socket contracts");
-      addresses = dev_addresses as unknown as DeploymentAddresses;
-      for (const chain of chains) {
-        try {
-          let chainAddresses: ChainSocketAddresses = addresses[chain]
-            ? (addresses[chain] as ChainSocketAddresses)
-            : ({} as ChainSocketAddresses);
-
-          const providerInstance = getProviderFromChainSlug(chain);
-          const signer: Wallet = new ethers.Wallet(
-            process.env.SOCKET_SIGNER_KEY as string,
-            providerInstance
-          );
-          const socketOwner = signer.address;
-
-          deployUtils = {
-            addresses: chainAddresses,
-            mode: DeploymentMode.DEV,
-            signer: signer,
-            currentChainSlug: chain as ChainSlug,
-          };
-
-          let contractName = CORE_CONTRACTS.Socket;
-          const socket: Contract = await getOrDeploy(
-            contractName,
-            contractName,
-            `contracts/protocol/socket/${contractName}.sol`,
-            [chain as ChainSlug, socketOwner, "EVMX"],
-            deployUtils
-          );
-          deployUtils.addresses[contractName] = socket.address;
-
-          contractName = CORE_CONTRACTS.SocketBatcher;
-          const batcher: Contract = await getOrDeploy(
-            contractName,
-            contractName,
-            `contracts/protocol/socket/${contractName}.sol`,
-            [socketOwner, socket.address],
-            deployUtils
-          );
-          deployUtils.addresses[contractName] = batcher.address;
-
-          contractName = CORE_CONTRACTS.FastSwitchboard;
-          const sb: Contract = await getOrDeploy(
-            contractName,
-            contractName,
-            `contracts/protocol/socket/switchboard/${contractName}.sol`,
-            [chain as ChainSlug, socket.address, socketOwner],
-            deployUtils
-          );
-          deployUtils.addresses[contractName] = sb.address;
-
-          contractName = CORE_CONTRACTS.FeesPlug;
-          const feesPlug: Contract = await getOrDeploy(
-            contractName,
-            contractName,
-            `contracts/protocol/payload-delivery/${contractName}.sol`,
-            [socket.address, socketOwner],
-            deployUtils
-          );
-          deployUtils.addresses[contractName] = feesPlug.address;
-
-          contractName = CORE_CONTRACTS.ContractFactoryPlug;
-          const contractFactoryPlug: Contract = await getOrDeploy(
-            contractName,
-            contractName,
-            `contracts/protocol/payload-delivery/${contractName}.sol`,
-            [socket.address, socketOwner],
-            deployUtils
-          );
-          deployUtils.addresses[contractName] = contractFactoryPlug.address;
-
-          deployUtils.addresses.startBlock = deployUtils.addresses.startBlock
-            ? deployUtils.addresses.startBlock
-            : await deployUtils.signer.provider?.getBlockNumber();
-
-          await storeAddresses(
-            deployUtils.addresses,
-            chain,
-            DeploymentMode.DEV
-          );
-        } catch (error) {
-          await storeAddresses(
-            deployUtils.addresses,
-            chain,
-            DeploymentMode.DEV
-          );
-          console.log("Error:", error);
-        }
-      }
-    } catch (error) {
-      console.error("Error in main deployment:", error);
-    }
-  } catch (error) {
-    console.error("Error in overall deployment process:", error);
-  }
+  logConfig();
+  await deployEVMxContracts();
+  await deploySocketContracts();
 };
 
-const deployWatcherVMContracts = async () => {
+const deployEVMxContracts = async () => {
   try {
     let addresses: DeploymentAddresses;
     let deployUtils: DeployParams = {
       addresses: {} as ChainSocketAddresses,
-      mode: DeploymentMode.DEV,
+      mode,
       signer: new ethers.Wallet(process.env.WATCHER_PRIVATE_KEY as string),
       currentChainSlug: EVMX_CHAIN_ID as ChainSlug,
     };
@@ -160,7 +61,7 @@ const deployWatcherVMContracts = async () => {
 
       deployUtils = {
         addresses: chainAddresses,
-        mode: DeploymentMode.DEV,
+        mode,
         signer: signer,
         currentChainSlug: chain as ChainSlug,
       };
@@ -264,21 +165,114 @@ const deployWatcherVMContracts = async () => {
         ? deployUtils.addresses.startBlock
         : await deployUtils.signer.provider?.getBlockNumber();
 
-      await storeAddresses(
-        deployUtils.addresses,
-        chain as ChainSlug,
-        DeploymentMode.DEV
-      );
+      await storeAddresses(deployUtils.addresses, chain as ChainSlug, mode);
     } catch (error) {
-      await storeAddresses(
-        deployUtils.addresses,
-        chain as ChainSlug,
-        DeploymentMode.DEV
-      );
+      await storeAddresses(deployUtils.addresses, chain as ChainSlug, mode);
       console.log("Error:", error);
     }
   } catch (error) {
     console.log("Error:", error);
+  }
+};
+
+const deploySocketContracts = async () => {
+  try {
+    let addresses: DeploymentAddresses;
+    let deployUtils: DeployParams = {
+      addresses: {} as ChainSocketAddresses,
+      mode,
+      signer: new ethers.Wallet(process.env.SOCKET_SIGNER_KEY as string),
+      currentChainSlug: EVMX_CHAIN_ID as ChainSlug,
+    };
+    console.log("Deploying Socket contracts");
+    addresses = dev_addresses as unknown as DeploymentAddresses;
+
+    for (const chain of chains) {
+      try {
+        let chainAddresses: ChainSocketAddresses = addresses[chain]
+          ? (addresses[chain] as ChainSocketAddresses)
+          : ({} as ChainSocketAddresses);
+
+        const providerInstance = getProviderFromChainSlug(chain);
+        const signer: Wallet = new ethers.Wallet(
+          process.env.SOCKET_SIGNER_KEY as string,
+          providerInstance
+        );
+        const socketOwner = signer.address;
+
+        deployUtils = {
+          addresses: chainAddresses,
+          mode,
+          signer: signer,
+          currentChainSlug: chain as ChainSlug,
+        };
+
+        let contractName = CORE_CONTRACTS.Socket;
+        const socket: Contract = await getOrDeploy(
+          contractName,
+          contractName,
+          `contracts/protocol/socket/${contractName}.sol`,
+          [chain as ChainSlug, socketOwner, "EVMX"],
+          deployUtils
+        );
+        deployUtils.addresses[contractName] = socket.address;
+
+        contractName = CORE_CONTRACTS.SocketBatcher;
+        const batcher: Contract = await getOrDeploy(
+          contractName,
+          contractName,
+          `contracts/protocol/socket/${contractName}.sol`,
+          [socketOwner, socket.address],
+          deployUtils
+        );
+        deployUtils.addresses[contractName] = batcher.address;
+
+        contractName = CORE_CONTRACTS.FastSwitchboard;
+        const sb: Contract = await getOrDeploy(
+          contractName,
+          contractName,
+          `contracts/protocol/socket/switchboard/${contractName}.sol`,
+          [chain as ChainSlug, socket.address, socketOwner],
+          deployUtils
+        );
+        deployUtils.addresses[contractName] = sb.address;
+
+        contractName = CORE_CONTRACTS.FeesPlug;
+        const feesPlug: Contract = await getOrDeploy(
+          contractName,
+          contractName,
+          `contracts/protocol/payload-delivery/${contractName}.sol`,
+          [socket.address, socketOwner],
+          deployUtils
+        );
+        deployUtils.addresses[contractName] = feesPlug.address;
+
+        contractName = CORE_CONTRACTS.ContractFactoryPlug;
+        const contractFactoryPlug: Contract = await getOrDeploy(
+          contractName,
+          contractName,
+          `contracts/protocol/payload-delivery/${contractName}.sol`,
+          [socket.address, socketOwner],
+          deployUtils
+        );
+        deployUtils.addresses[contractName] = contractFactoryPlug.address;
+
+        deployUtils.addresses.startBlock = deployUtils.addresses.startBlock
+          ? deployUtils.addresses.startBlock
+          : await deployUtils.signer.provider?.getBlockNumber();
+
+        await storeAddresses(deployUtils.addresses, chain, mode);
+      } catch (error) {
+        await storeAddresses(deployUtils.addresses, chain, mode);
+        console.log(
+          "Error while deploying socket contracts on chain",
+          chain,
+          error
+        );
+      }
+    }
+  } catch (error) {
+    console.error("Error in socket deployment:", error);
   }
 };
 
