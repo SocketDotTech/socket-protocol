@@ -320,7 +320,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
                     resolvedPromises_[i].returnData[j]
                 );
 
-                if (!success) continue;
+                if (!success) break;
                 emit PromiseResolved(resolvedPromises_[i].payloadId, success, next[j]);
             }
         }

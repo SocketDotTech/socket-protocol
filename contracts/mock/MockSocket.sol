@@ -61,17 +61,23 @@ contract MockSocket is ISocket {
      */
     error LowGasLimit();
     error InvalidSlug();
-    error ExecutionFailed();
 
     ////////////////////////////////////////////////////////////
     ////////////////////// State Vars //////////////////////////
     ////////////////////////////////////////////////////////////
     uint64 public callCounter;
     uint32 public chainSlug;
+
+    enum ExecutionStatus {
+        NotExecuted,
+        Executed,
+        Reverted
+    }
+
     /**
      * @dev keeps track of whether a payload has been executed or not using payload id
      */
-    mapping(bytes32 => bool) public payloadExecuted;
+    mapping(bytes32 => ExecutionStatus) public payloadExecuted;
 
     constructor(uint32 chainSlug_, address, address, address, string memory) {
         chainSlug = chainSlug_;
