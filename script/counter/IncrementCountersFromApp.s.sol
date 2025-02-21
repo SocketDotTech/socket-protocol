@@ -13,8 +13,8 @@ contract IncrementCounters is Script {
 
         vm.createSelectFork(socketRPC);
 
-        CounterDeployer deployer = CounterDeployer(vm.envAddress("COUNTER_DEPLOYER"));
-        CounterAppGateway gateway = CounterAppGateway(vm.envAddress("COUNTER_APP_GATEWAY"));
+        CounterDeployer deployer = CounterDeployer(vm.envAddress("DEPLOYER"));
+        CounterAppGateway gateway = CounterAppGateway(vm.envAddress("APP_GATEWAY"));
 
         address counterForwarderArbitrumSepolia = deployer.forwarderAddresses(
             deployer.counter(),
@@ -67,15 +67,7 @@ contract IncrementCounters is Script {
         //    console.log("Ethereum Sepolia forwarder not yet deployed");
         //}
 
-        // vm.startBroadcast(deployerPrivateKey);
-        bytes memory data = abi.encodeWithSelector(
-            CounterAppGateway.incrementCounters.selector,
-            instances
-        );
-        console.log("to");
-        console.log(address(gateway));
-        console.log("data");
-        console.logBytes(data);
-        // gateway.incrementCounters(instances);
+        vm.startBroadcast(deployerPrivateKey);
+        gateway.incrementCounters(instances);
     }
 }
