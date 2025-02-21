@@ -11,7 +11,7 @@ contract CheckDepositedFees is Script {
     function run() external {
         vm.createSelectFork(vm.envString("EVMX_RPC"));
         FeesManager feesManager = FeesManager(payable(vm.envAddress("FEES_MANAGER")));
-        address appGateway = address(0x31000ca8d07a26640cA16f1af1276C179A4F4741);
+        address appGateway = vm.envAddress("APP_GATEWAY");
 
         (uint256 deposited, uint256 blocked) = feesManager.appGatewayFeeBalances(
             appGateway,
