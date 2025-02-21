@@ -1,19 +1,18 @@
 import {
   ChainSlug,
-  ChainSocketAddresses,
-  DeploymentAddresses,
+  ChainAddressesObj,
   DeploymentMode,
-} from "@socket.tech/dl-core";
+} from "@socket.tech/socket-protocol-common";
 
 import { config as dotenvConfig } from "dotenv";
 dotenvConfig();
 
 import { Wallet } from "ethers";
 import { ethers } from "hardhat";
-import dev_addresses from "../../deployments/dev_addresses.json";
-import { chains, EVMX_CHAIN_ID } from "../config";
-import { CORE_CONTRACTS, EVMxCoreContracts } from "../constants";
+import { chains, EVMX_CHAIN_ID, mode } from "../config";
+import { CORE_CONTRACTS, DeploymentAddresses, EVMxCoreContracts } from "../constants";
 import {
+  getAddresses,
   getInstance,
   getProviderFromChainSlug,
   storeAddresses,
@@ -23,12 +22,12 @@ export const main = async () => {
   let addresses: DeploymentAddresses;
   try {
     console.log("Upgrading Managers");
-    addresses = dev_addresses as unknown as DeploymentAddresses;
+    addresses = getAddresses(mode) as unknown as DeploymentAddresses;
 
     for (const chain of chains) {
-      let chainAddresses: ChainSocketAddresses = addresses[chain]
-        ? (addresses[chain] as ChainSocketAddresses)
-        : ({} as ChainSocketAddresses);
+      let chainAddresses: ChainAddressesObj = addresses[chain]
+        ? (addresses[chain] as ChainAddressesObj)
+        : ({} as ChainAddressesObj);
 
       const providerInstance = getProviderFromChainSlug(chain);
       const signer: Wallet = new ethers.Wallet(
@@ -51,7 +50,7 @@ export const main = async () => {
 
       await setOnchainContracts(chain, addresses);
 
-      await storeAddresses(chainAddresses, chain, DeploymentMode.DEV);
+      await storeAddresses(chainAddresses, chain, mode);
     }
   } catch (error) {
     console.log("Error:", error);

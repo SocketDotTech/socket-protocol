@@ -1,7 +1,7 @@
 {
   "421614": {
     "ContractFactoryPlug": "0x146dd9Fc049501675533a455835989684a2f79C1",
-    "FastSwitchboard": "0xB16475054Dc6D8bfbd80daE964bbE416a4B7a791",
+    "FastSwitchboard": "0x64f929Ad5ce17cF440Ad2a33Db56F9a9ce386723",
     "FeesPlug": "0xa08Dac27E27c49A2535b36064c370e6e8B3A0B9a",
     "Socket": "0x963eC83119862cD518826DA9177B348cFdfebaA4",
     "SocketBatcher": "0x2db8cb4f841aa944869ECD5002e8153642A30971",
@@ -18,12 +18,12 @@
     "FeesManager": "0x80bEc58A00993dc874Ab2fAe56621af24eF06bA5",
     "FeesManagerImpl": "0x187058842C78675eA08572E0edc9598271dEF278",
     "startBlock": 168,
-    "WatcherPrecompile": "0x102A1F3546754B21D6a6BA90B54b59Da30bcb3B4",
-    "WatcherPrecompileImpl": "0x0429DB4f0a97F8c6E3D84399bBdA3e03B62b03A3"
+    "WatcherPrecompile": "0x298A3F9351ec982393f6f6CEAF35C7A61154Fb65",
+    "WatcherPrecompileImpl": "0x966Fe0e61d6f0384A1F3b5Dc4165385FC58be93d"
   },
   "11155420": {
     "ContractFactoryPlug": "0xDF769F323560b54F1370a407d3aE6fC99AaAeF75",
-    "FastSwitchboard": "0xA448B8CD7325AA38d4E533cE209471B7ce01901F",
+    "FastSwitchboard": "0x87cC19AedD434ebD3B74FfdC073CAeC7dC1E92EA",
     "FeesPlug": "0x5e5CF700c97BC8B3F6215D98E65f85D4A44d7D06",
     "Socket": "0xaF57894A5244711a7bEBE582E9e121980f1aa95e",
     "SocketBatcher": "0x977e2f721f8958b2F776d2dc693D04A1256ed426",

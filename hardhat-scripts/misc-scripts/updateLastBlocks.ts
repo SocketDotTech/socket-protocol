@@ -2,15 +2,12 @@ import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 import { getProviderFromChainSlug } from "../utils";
+import { getAddresses } from "../utils";
+import { mode } from "../config/config";
 dotenv.config();
-const DEPLOYMENT_FILE = path.join(
-  __dirname,
-  "../../deployments/dev_addresses.json"
-);
-
 async function updateLastBlocks() {
   // Read deployment addresses
-  const addresses = JSON.parse(fs.readFileSync(DEPLOYMENT_FILE, "utf8"));
+  const addresses = getAddresses(mode);
 
   const chains = Object.keys(addresses).map((chainSlug) => Number(chainSlug));
   // Update each chain's start block
@@ -35,7 +32,10 @@ async function updateLastBlocks() {
   }
 
   // Write updated data back to file
-  fs.writeFileSync(DEPLOYMENT_FILE, JSON.stringify(addresses, null, 2));
+  fs.writeFileSync(
+    path.join(__dirname, `../../deployments/${mode}_addresses.json`),
+    JSON.stringify(addresses, null, 2)
+  );
   console.log("Successfully updated start blocks in deployment file");
 }
 

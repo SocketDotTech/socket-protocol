@@ -2,6 +2,24 @@
   "421614": [],
   "7625382": [
     [
+      "0x966Fe0e61d6f0384A1F3b5Dc4165385FC58be93d",
+      "WatcherPrecompile",
+      "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",
+      []
+    ],
+    [
+      "0x00cc4eff9719F3AB0271866a75b45C0ba66890D0",
+      "WatcherPrecompile",
+      "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",
+      []
+    ],
+    [
+      "0xFdFfB47C774A804e00205BA95B4308f533Ba219D",
+      "WatcherPrecompile",
+      "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",
+      []
+    ],
+    [
       "0xd6F9087DaBe64649c33B20B444eCcE19cca97436",
       "AuctionManager",
       "contracts/protocol/payload-delivery/app-gateway/AuctionManager.sol",

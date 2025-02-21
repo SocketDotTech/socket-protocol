@@ -6,7 +6,7 @@ import {
   hardhatChainNameToSlug,
   HardhatChainName,
   chainSlugToHardhatChainName,
-} from "@socket.tech/dl-core";
+} from "@socket.tech/socket-protocol-common";
 import { EVMX_CHAIN_ID } from "../config/config";
 import { BASE_SEPOLIA_CHAIN_ID } from "../constants";
 

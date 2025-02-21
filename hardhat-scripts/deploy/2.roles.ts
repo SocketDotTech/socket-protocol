@@ -1,19 +1,14 @@
-import {
-  CORE_CONTRACTS,
-  DeploymentAddresses,
-  ROLES,
-} from "@socket.tech/dl-core";
-
 import { config as dotenvConfig } from "dotenv";
 dotenvConfig();
 
 import { Wallet } from "ethers";
 import { ethers } from "hardhat";
-import dev_addresses from "../../deployments/dev_addresses.json";
-import { chains, EVMX_CHAIN_ID, watcher } from "../config";
-import { ChainAddressesObj, EVMxCoreContracts } from "../constants";
-import { getInstance, getProviderFromChainSlug, getRoleHash } from "../utils";
+import { chains, EVMX_CHAIN_ID, mode, watcher } from "../config";
+import { CORE_CONTRACTS, DeploymentAddresses, EVMxCoreContracts } from "../constants";
+import { getAddresses, getInstance, getProviderFromChainSlug, getRoleHash, overrides } from "../utils";
 import { relayerAddressList } from "../constants/relayers";
+import { ChainAddressesObj } from "@socket.tech/socket-protocol-common";
+import { ROLES } from "../constants/roles";
 
 export const REQUIRED_ROLES = {
   FastSwitchboard: [ROLES.WATCHER_ROLE, ROLES.RESCUE_ROLE],
@@ -45,7 +40,7 @@ async function setRoleForContract(
 
   if (!hasRole) {
     let tx = await contract.grantRole(roleHash, targetAddress, {
-      ...getOverrides(chain),
+      ...overrides(chain),
     });
     console.log(
       `granting ${roleName} role to ${targetAddress} for ${contractName}`,
@@ -101,7 +96,7 @@ async function setRolesForEVMx(addresses: DeploymentAddresses) {
   const contractAddress = chainAddresses[EVMxCoreContracts.WatcherPrecompile];
   if (!contractAddress) return;
 
-  for (const relayerAddress of relayerAddressList) {
+  for (const relayerAddress of [...relayerAddressList, signer.address]) {
     console.log(`setting WATCHER_ROLE for ${relayerAddress} on EVMX`);
     await setRoleForContract(
       EVMxCoreContracts.WatcherPrecompile,
@@ -117,7 +112,7 @@ async function setRolesForEVMx(addresses: DeploymentAddresses) {
 export const main = async () => {
   try {
     console.log("Setting Roles");
-    const addresses = dev_addresses as unknown as DeploymentAddresses;
+    const addresses = getAddresses(mode) as unknown as DeploymentAddresses;
 
     console.log("Setting Roles for EVMx");
     await setRolesForEVMx(addresses);

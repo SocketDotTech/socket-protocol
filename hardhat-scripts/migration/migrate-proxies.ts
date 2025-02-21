@@ -1,11 +1,10 @@
 import { ethers } from "hardhat";
 import { Contract, utils, Wallet } from "ethers";
-import * as fs from "fs";
-import * as path from "path";
 import { EVMX_CHAIN_ID, UPGRADE_VERSION } from "../config/config";
 import { getProviderFromChainSlug } from "../utils";
-import { ChainSlug } from "@socket.tech/dl-core";
-
+import { ChainSlug } from "@socket.tech/socket-protocol-common";
+import { getAddresses } from "../utils";
+import { mode } from "../config/config";
 // Implementation slot from ERC1967
 const IMPLEMENTATION_SLOT =
   "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
@@ -32,20 +31,6 @@ export async function getImplementationAddress(
   );
 
   return utils.getAddress("0x" + implHex.slice(-40));
-}
-
-async function loadAddresses() {
-  const addressesPath = path.join(
-    __dirname,
-    "../../../deployments/dev_addresses.json"
-  );
-  const addresses = JSON.parse(fs.readFileSync(addressesPath, "utf8"));
-
-  if (!addresses[EVMX_CHAIN_ID]) {
-    throw new Error(`No addresses found for chain ID ${EVMX_CHAIN_ID}`);
-  }
-
-  return addresses;
 }
 
 async function setupSigner() {
@@ -225,7 +210,7 @@ async function verifyBeaconImplementation(contract: Contract, signer: Wallet) {
 
 async function main() {
   // @ts-ignore - Hardhat Runtime Environment will be injected by hardhat
-  const addresses = await loadAddresses();
+  const addresses = getAddresses(mode);
   const signer = await setupSigner();
   const proxyFactory = await setupProxyFactory(addresses, signer);
 

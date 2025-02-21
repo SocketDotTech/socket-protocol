@@ -1,13 +1,11 @@
 import {
   ChainSlug,
-  ChainSocketAddresses,
-  DeploymentAddresses,
   DeploymentMode,
-} from "@socket.tech/dl-core";
+  ChainAddressesObj
+} from "@socket.tech/socket-protocol-common";
 import { config } from "dotenv";
 import { Contract, Signer, Wallet, providers } from "ethers";
 import { ethers } from "hardhat";
-import dev_addresses from "../../deployments/dev_addresses.json";
 import { BID_TIMEOUT, EVMX_CHAIN_ID, EXPIRY_TIME, MAX_LIMIT } from "../config";
 import {
   auctionEndDelaySeconds,
@@ -15,10 +13,11 @@ import {
   mode,
   logConfig,
 } from "../config/config";
-import { CORE_CONTRACTS, EVMxCoreContracts } from "../constants";
+import { CORE_CONTRACTS, DeploymentAddresses, EVMxCoreContracts } from "../constants";
 import { getImplementationAddress } from "../migration/migrate-proxies";
 import {
   DeployParams,
+  getAddresses,
   getOrDeploy,
   getProviderFromChainSlug,
   storeAddresses,
@@ -37,7 +36,7 @@ const deployEVMxContracts = async () => {
   try {
     let addresses: DeploymentAddresses;
     let deployUtils: DeployParams = {
-      addresses: {} as ChainSocketAddresses,
+      addresses: {} as ChainAddressesObj,
       mode,
       signer: new ethers.Wallet(process.env.WATCHER_PRIVATE_KEY as string),
       currentChainSlug: EVMX_CHAIN_ID as ChainSlug,
@@ -45,10 +44,10 @@ const deployEVMxContracts = async () => {
     const chain = EVMX_CHAIN_ID;
     try {
       console.log("Deploying EVMx contracts");
-      addresses = dev_addresses as unknown as DeploymentAddresses;
-      let chainAddresses: ChainSocketAddresses = addresses[chain]
-        ? (addresses[chain] as ChainSocketAddresses)
-        : ({} as ChainSocketAddresses);
+      addresses = getAddresses(mode) as unknown as DeploymentAddresses;
+      let chainAddresses: ChainAddressesObj = addresses[chain]
+        ? (addresses[chain] as ChainAddressesObj)
+        : ({} as ChainAddressesObj);
 
       const providerInstance = new providers.StaticJsonRpcProvider(
         process.env.EVMX_RPC as string
@@ -179,19 +178,19 @@ const deploySocketContracts = async () => {
   try {
     let addresses: DeploymentAddresses;
     let deployUtils: DeployParams = {
-      addresses: {} as ChainSocketAddresses,
+      addresses: {} as ChainAddressesObj,
       mode,
       signer: new ethers.Wallet(process.env.SOCKET_SIGNER_KEY as string),
       currentChainSlug: EVMX_CHAIN_ID as ChainSlug,
     };
     console.log("Deploying Socket contracts");
-    addresses = dev_addresses as unknown as DeploymentAddresses;
+    addresses = getAddresses(mode) as unknown as DeploymentAddresses;
 
     for (const chain of chains) {
       try {
-        let chainAddresses: ChainSocketAddresses = addresses[chain]
-          ? (addresses[chain] as ChainSocketAddresses)
-          : ({} as ChainSocketAddresses);
+        let chainAddresses: ChainAddressesObj = addresses[chain]
+          ? (addresses[chain] as ChainAddressesObj)
+          : ({} as ChainAddressesObj);
 
         const providerInstance = getProviderFromChainSlug(chain);
         const signer: Wallet = new ethers.Wallet(
