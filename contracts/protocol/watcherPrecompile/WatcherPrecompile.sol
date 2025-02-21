@@ -79,6 +79,10 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @param payloadId The unique identifier for the resolved promise
     event PromiseResolved(bytes32 indexed payloadId, bool success, address asyncPromise);
 
+    /// @notice Emitted when a promise is not resolved
+    /// @param payloadId The unique identifier for the not resolved promise
+    event PromiseNotResolved(bytes32 indexed payloadId, bool success, address asyncPromise);
+
     event TimeoutRequested(
         bytes32 timeoutId,
         address target,
@@ -322,8 +326,12 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
                     resolvedPromises_[i].returnData[j]
                 );
 
-                if (!success) break;
-                emit PromiseResolved(resolvedPromises_[i].payloadId, success, next[j]);
+                if (!success) {
+                    emit PromiseNotResolved(resolvedPromises_[i].payloadId, success, next[j]);
+                    break;
+                } else {
+                    emit PromiseResolved(resolvedPromises_[i].payloadId, success, next[j]);
+                }
             }
         }
     }
