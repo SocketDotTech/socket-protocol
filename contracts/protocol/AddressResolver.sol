@@ -36,7 +36,7 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
     mapping(address => address) public override gatewaysToContracts;
 
     /// @notice Error thrown if AppGateway contract was already set by a different address
-    error AppGatewayContractAlreadySetByDifferentSender(address contractAddress_);
+    error InvalidCaller(address contractAddress_);
 
     event PlugAdded(address appGateway, uint32 chainSlug, address plug);
     event ForwarderDeployed(address newForwarder, bytes32 salt);
@@ -166,7 +166,7 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
             contractsToGateways[contractAddress_] != address(0) &&
             contractsToGateways[contractAddress_] != msg.sender
         ) {
-            revert AppGatewayContractAlreadySetByDifferentSender(contractAddress_);
+            revert InvalidCaller(contractAddress_);
         }
         contractsToGateways[contractAddress_] = msg.sender;
     }

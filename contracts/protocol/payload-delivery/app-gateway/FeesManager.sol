@@ -127,19 +127,19 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
     /// @param amount_ The amount deposited
     function incrementFeesDeposited(
         uint32 chainSlug_,
-        address appGateway_,
+        address originAppGateway_,
         address token_,
         uint256 amount_
     ) external onlyOwner {
-        address appGateway = _getCoreAppGateway(appGateway_);
+        address appGateway = _getCoreAppGateway(originAppGateway_);
 
         TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][chainSlug_][token_];
         tokenBalance.deposited += amount_;
         emit FeesDepositedUpdated(chainSlug_, appGateway, token_, amount_);
     }
 
-    function isFeesEnough(address appGateway_, Fees memory fees_) external view returns (bool) {
-        address appGateway = _getCoreAppGateway(appGateway_);
+    function isFeesEnough(address originAppGateway_, Fees memory fees_) external view returns (bool) {
+        address appGateway = _getCoreAppGateway(originAppGateway_);
         uint256 availableFees = getAvailableFees(
             fees_.feePoolChain,
             appGateway,
@@ -154,7 +154,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
     /// @param asyncId_ The batch identifier
     /// @dev Only callable by delivery helper
     function blockFees(
-        address appGateway_,
+        address originAppGateway_,
         Fees memory feesGivenByApp_,
         Bid memory winningBid_,
         bytes32 asyncId_
@@ -162,7 +162,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
         if (msg.sender != deliveryHelper().getAsyncBatchDetails(asyncId_).auctionManager)
             revert NotAuctionManager();
 
-        address appGateway = _getCoreAppGateway(appGateway_);
+        address appGateway = _getCoreAppGateway(originAppGateway_);
         // Block fees
         uint256 availableFees = getAvailableFees(
             feesGivenByApp_.feePoolChain,
@@ -203,12 +203,12 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
     function unblockAndAssignFees(
         bytes32 asyncId_,
         address transmitter_,
-        address appGateway_
+        address originAppGateway_
     ) external override onlyDeliveryHelper {
         Fees memory fees = asyncIdBlockedFees[asyncId_];
         if (fees.amount == 0) revert NoFeesBlocked();
 
-        address appGateway = _getCoreAppGateway(appGateway_);
+        address appGateway = _getCoreAppGateway(originAppGateway_);
         TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees.feePoolChain][
             fees.feePoolToken
         ];
@@ -225,11 +225,11 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
         emit FeesUnblockedAndAssigned(asyncId_, transmitter_, fees.amount);
     }
 
-    function unblockFees(bytes32 asyncId_, address appGateway_) external onlyDeliveryHelper {
+    function unblockFees(bytes32 asyncId_, address originAppGateway_) external onlyDeliveryHelper {
         Fees memory fees = asyncIdBlockedFees[asyncId_];
         if (fees.amount == 0) revert NoFeesBlocked();
 
-        address appGateway = _getCoreAppGateway(appGateway_);
+        address appGateway = _getCoreAppGateway(originAppGateway_);
         TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees.feePoolChain][
             fees.feePoolToken
         ];
@@ -297,19 +297,19 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
 
     /// @notice Withdraws funds to a specified receiver
     /// @dev This function is used to withdraw fees from the fees plug
-    /// @param appGateway_ The address of the app gateway
+    /// @param originAppGateway_ The address of the app gateway
     /// @param chainSlug_ The chain identifier
     /// @param token_ The address of the token
     /// @param amount_ The amount of tokens to withdraw
     /// @param receiver_ The address of the receiver
     function getWithdrawToPayload(
-        address appGateway_,
+        address originAppGateway_,
         uint32 chainSlug_,
         address token_,
         uint256 amount_,
         address receiver_
     ) public returns (PayloadDetails memory) {
-        address appGateway = _getCoreAppGateway(appGateway_);
+        address appGateway = _getCoreAppGateway(originAppGateway_);
 
         // Check if amount is available in fees plug
         uint256 availableAmount = getAvailableFees(chainSlug_, appGateway, token_);

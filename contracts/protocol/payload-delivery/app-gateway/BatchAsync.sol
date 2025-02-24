@@ -182,6 +182,7 @@ abstract contract BatchAsync is QueueAsync {
         uint256 readEndIndex,
         bytes32 asyncId
     ) internal returns (address) {
+        // later changed to main app gateway if its a write call
         address appGateway = msg.sender;
 
         uint256 writes = 0;
