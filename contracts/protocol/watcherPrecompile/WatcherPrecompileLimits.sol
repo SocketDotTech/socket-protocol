@@ -78,7 +78,7 @@ abstract contract WatcherPrecompileLimits is
      * @param limitType_ The type of limit to check
      * @param consumeLimit_ The amount of limit to consume
      */
-    function checkAndUpdateLimit(
+    function checkAndConsumeLimit(
         address appGateway_,
         bytes32 limitType_,
         uint256 consumeLimit_

@@ -97,7 +97,7 @@ abstract contract BatchAsync is QueueAsync {
         // Handle initial read operations first
         uint256 readEndIndex = _processReadOperations(payloadDetails_, asyncId);
 
-        watcherPrecompile__().checkAndUpdateLimit(
+        watcherPrecompile__().checkAndConsumeLimit(
             payloadDetails_[0].appGateway,
             QUERY,
             readEndIndex
@@ -204,13 +204,13 @@ abstract contract BatchAsync is QueueAsync {
             payloadBatchDetails[asyncId].push(payloadDetails_[i]);
         }
 
-        watcherPrecompile__().checkAndUpdateLimit(
+        watcherPrecompile__().checkAndConsumeLimit(
             appGateway,
             QUERY,
             // remaining reads
             payloadDetails_.length - writes - readEndIndex
         );
-        watcherPrecompile__().checkAndUpdateLimit(appGateway, FINALIZE, writes);
+        watcherPrecompile__().checkAndConsumeLimit(appGateway, FINALIZE, writes);
 
         return appGateway;
     }
