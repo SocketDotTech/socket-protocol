@@ -8,6 +8,7 @@ import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../utils/common/Constants.sol";
 import "../../interfaces/IWatcherPrecompile.sol";
 import {WATCHER_ROLE} from "../utils/common/AccessRoles.sol";
+import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
 
 abstract contract WatcherPrecompileLimits is
     Gauge,
@@ -22,6 +23,10 @@ abstract contract WatcherPrecompileLimits is
     uint256 public defaultLimit;
     /// @notice Rate at which limit replenishes per second
     uint256 public defaultRatePerSecond;
+
+    /// @notice The chain slug of the watcher precompile
+    uint32 public evmxChainSlug;
+
     // appGateway => limitType => receivingLimitParams
     mapping(address => mapping(bytes32 => LimitParams)) internal _limitParams;
 

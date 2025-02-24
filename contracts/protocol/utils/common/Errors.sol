@@ -29,3 +29,5 @@ error InvalidIndex();
 error InvalidTransmitter();
 error FeesNotSet();
 error InvalidTokenAddress();
+error InvalidWatcherSignature();
+error NonceUsed();

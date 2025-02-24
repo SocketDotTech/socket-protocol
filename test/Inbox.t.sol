@@ -68,7 +68,8 @@ contract InboxTest is DeliveryHelperTest {
             payload: abi.encode(incrementValue),
             params: bytes32(0)
         });
-        watcherPrecompile.callAppGateways(params);
+        //signhereeee
+        watcherPrecompile.callAppGateways(params, 0, bytes(""));
         // Check counter was incremented
         assertEq(gateway.counter(), incrementValue, "Gateway counter should be incremented");
     }

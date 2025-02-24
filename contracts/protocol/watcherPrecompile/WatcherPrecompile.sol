@@ -7,7 +7,6 @@ import "../../interfaces/IPromise.sol";
 import "../../interfaces/IFeesManager.sol";
 import "solady/utils/Initializable.sol";
 import {PayloadDigestParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromChainParams} from "../utils/common/Structs.sol";
-import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../utils/common/Errors.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
@@ -17,9 +16,6 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     uint256 public payloadCounter;
     /// @notice The expiry time for the payload
     uint256 public expiryTime;
-
-    /// @notice The chain slug of the watcher precompile
-    uint32 public evmxChainSlug;
 
     /// @notice Mapping to store async requests
     /// @dev payloadId => AsyncRequest struct
@@ -153,9 +149,18 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @notice Ends the timeouts and calls the target address with the callback payload
     /// @param timeoutId_ The unique identifier for the timeout
     /// @dev Only callable by the contract owner
-    function resolveTimeout(bytes32 timeoutId_) external onlyRole(WATCHER_ROLE) {
-        TimeoutRequest storage timeoutRequest_ = timeoutRequests[timeoutId_];
+    function resolveTimeout(
+        bytes32 timeoutId_,
+        uint256 signatureNonce_,
+        bytes calldata signature_
+    ) external {
+        _isWatcherSignatureValid(
+            signatureNonce_,
+            keccak256(abi.encode(address(this), evmxChainSlug, signatureNonce_, timeoutId_)),
+            signature_
+        );
 
+        TimeoutRequest storage timeoutRequest_ = timeoutRequests[timeoutId_];
         if (timeoutRequest_.target == address(0)) revert InvalidTimeoutRequest();
         if (timeoutRequest_.isResolved) revert TimeoutAlreadyResolved();
         if (block.timestamp < timeoutRequest_.executeAt) revert ResolvingTimeoutTooEarly();
@@ -300,7 +305,20 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @dev Only callable by the contract owner
     /// @dev Watcher signs on following digest for validation on switchboard:
     /// @dev keccak256(abi.encode(switchboard, digest))
-    function finalized(bytes32 payloadId_, bytes calldata proof_) external onlyRole(WATCHER_ROLE) {
+    function finalized(
+        bytes32 payloadId_,
+        uint256 signatureNonce_,
+        bytes calldata proof_,
+        bytes calldata signature_
+    ) external {
+        _isWatcherSignatureValid(
+            signatureNonce_,
+            keccak256(
+                abi.encode(address(this), evmxChainSlug, signatureNonce_, payloadId_, proof_)
+            ),
+            signature_
+        );
+
         watcherProofs[payloadId_] = proof_;
         emit Finalized(payloadId_, asyncRequests[payloadId_], proof_);
     }
@@ -309,8 +327,16 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @param resolvedPromises_ Array of resolved promises and their return data
     /// @dev Only callable by the contract owner
     function resolvePromises(
-        ResolvedPromises[] calldata resolvedPromises_
-    ) external onlyRole(WATCHER_ROLE) {
+        uint256 signatureNonce_,
+        ResolvedPromises[] calldata resolvedPromises_,
+        bytes calldata signature_
+    ) external {
+        _isWatcherSignatureValid(
+            signatureNonce_,
+            keccak256(abi.encode(address(this), evmxChainSlug, signatureNonce_, resolvedPromises_)),
+            signature_
+        );
+
         for (uint256 i = 0; i < resolvedPromises_.length; i++) {
             // Get the array of promise addresses for this payload
             AsyncRequest memory asyncRequest_ = asyncRequests[resolvedPromises_[i].payloadId];
@@ -338,9 +364,25 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
 
     // wait till expiry time to assign fees
     function markRevert(
+        bool isRevertingOnchain_,
         bytes32 payloadId_,
-        bool isRevertingOnchain_
-    ) external onlyRole(WATCHER_ROLE) {
+        uint256 signatureNonce_,
+        bytes calldata signature_
+    ) external {
+        _isWatcherSignatureValid(
+            signatureNonce_,
+            keccak256(
+                abi.encode(
+                    address(this),
+                    evmxChainSlug,
+                    signatureNonce_,
+                    payloadId_,
+                    isRevertingOnchain_
+                )
+            ),
+            signature_
+        );
+
         AsyncRequest memory asyncRequest_ = asyncRequests[payloadId_];
         address[] memory next = asyncRequest_.next;
 
@@ -384,8 +426,16 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     // ================== On-Chain Inbox ==================
 
     function callAppGateways(
-        CallFromChainParams[] calldata params_
-    ) external onlyRole(WATCHER_ROLE) {
+        CallFromChainParams[] calldata params_,
+        uint256 signatureNonce_,
+        bytes calldata signature_
+    ) external {
+        _isWatcherSignatureValid(
+            signatureNonce_,
+            keccak256(abi.encode(address(this), evmxChainSlug, signatureNonce_, params_)),
+            signature_
+        );
+
         for (uint256 i = 0; i < params_.length; i++) {
             if (appGatewayCalled[params_[i].callId]) revert AppGatewayAlreadyCalled();
             if (!isValidPlug[params_[i].appGateway][params_[i].chainSlug][params_[i].plug])
