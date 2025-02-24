@@ -7,3 +7,13 @@ SOCKET Protocol is the first chain-abstraction protocol, enabling developers to 
 SOCKET is a chain-abstraction protocol, not a network(chain/rollup). Using a combination of offchain agents(watchers, transmitters) and onchain contracts(switchboards) it enables application-builders to build truly chain-abstracted protocols.
 
 Find more information at [docs](https://docs.socket.tech)
+
+# Code Guidelines:
+
+- always inherit at the end
+- always add storage to Storage contracts
+- Storage contracts should have gaps before and after
+- update gaps after every change
+- update version after every change
+- never remove code
+- inherited contracts should have gaps at the end to avoid storage collision
