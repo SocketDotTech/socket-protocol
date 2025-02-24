@@ -39,7 +39,7 @@ contract DeliveryHelperTest is SetupTest {
 
     function setUpDeliveryHelper() internal {
         // core
-        deployOffChainVMCore();
+        deployEVMxCore();
         // Deploy implementations
         FeesManager feesManagerImpl = new FeesManager();
         DeliveryHelper deliveryHelperImpl = new DeliveryHelper();
@@ -78,7 +78,7 @@ contract DeliveryHelperTest is SetupTest {
 
         bytes memory auctionManagerData = abi.encodeWithSelector(
             AuctionManager.initialize.selector,
-            vmChainSlug,
+            evmxChainSlug,
             auctionEndDelaySeconds,
             address(addressResolver),
             owner,
@@ -469,7 +469,7 @@ contract DeliveryHelperTest is SetupTest {
 
         vm.prank(transmitterEOA);
         bytes memory transmitterSignature = _createSignature(
-            keccak256(abi.encode(address(auctionManager), vmChainSlug, asyncId, bidAmount, "")),
+            keccak256(abi.encode(address(auctionManager), evmxChainSlug, asyncId, bidAmount, "")),
             transmitterPrivateKey
         );
 
@@ -485,7 +485,11 @@ contract DeliveryHelperTest is SetupTest {
         // );
 
         if (auctionEndDelaySeconds == 0) return;
-        bytes32 timeoutId = _encodeId(vmChainSlug, address(watcherPrecompile), payloadIdCounter++);
+        bytes32 timeoutId = _encodeId(
+            evmxChainSlug,
+            address(watcherPrecompile),
+            payloadIdCounter++
+        );
 
         hoax(watcherEOA);
         watcherPrecompile.resolveTimeout(timeoutId);

@@ -65,8 +65,8 @@ interface ISocket {
     }
 
     /**
-     * @notice To call the appGateway on offChainVM. Should only be called by a plug.
-     * @param payload_ bytes to be delivered to the Plug on offChainVM
+     * @notice To call the appGateway on EVMx. Should only be called by a plug.
+     * @param payload_ bytes to be delivered to the Plug on EVMx
      * @param params_ a 32 bytes param to add details for execution.
      */
     function callAppGateway(

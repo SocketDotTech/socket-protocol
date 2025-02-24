@@ -84,7 +84,7 @@ contract SuperTokenTest is DeliveryHelperTest {
             createFees(maxFees),
             address(auctionManager)
         );
-        // Enable app gateways to do all operations in the Watcher: Read, Write and Schedule on VM
+        // Enable app gateways to do all operations in the Watcher: Read, Write and Schedule on EVMx
         // Watcher sets the limits for apps in this SOCKET protocol version
         depositFees(address(superTokenApp), createFees(1 ether));
 

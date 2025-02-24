@@ -19,7 +19,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     uint256 public expiryTime;
 
     /// @notice The chain slug of the watcher precompile
-    uint32 public vmChainSlug;
+    uint32 public evmxChainSlug;
 
     /// @notice Mapping to store async requests
     /// @dev payloadId => AsyncRequest struct
@@ -107,7 +107,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         address addressResolver_,
         uint256 defaultLimit_,
         uint256 expiryTime_,
-        uint32 vmChainSlug_
+        uint32 evmxChainSlug_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
@@ -119,7 +119,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         // limit per second
         defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
 
-        vmChainSlug = vmChainSlug_;
+        evmxChainSlug = evmxChainSlug_;
     }
 
     // ================== Timeout functions ==================
@@ -137,7 +137,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         // from auction manager
         _consumeLimit(appGateway_, SCHEDULE, 1);
         uint256 executeAt = block.timestamp + delayInSeconds_;
-        bytes32 timeoutId = _encodeId(vmChainSlug, address(this));
+        bytes32 timeoutId = _encodeId(evmxChainSlug, address(this));
         timeoutRequests[timeoutId] = TimeoutRequest(
             timeoutId,
             msg.sender,
@@ -273,7 +273,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         // from payload delivery
         _consumeLimit(appGateway_, QUERY, 1);
         // Generate unique payload ID from query counter
-        payloadId = _encodeId(vmChainSlug, address(this));
+        payloadId = _encodeId(evmxChainSlug, address(this));
 
         // Create async request with minimal information for queries
         // Note: addresses set to 0 as they're not needed for queries

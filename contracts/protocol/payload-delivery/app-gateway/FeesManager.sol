@@ -122,7 +122,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
 
     /// @notice Adds the fees deposited for an app gateway on a chain
     /// @param chainSlug_ The chain identifier
-    /// @param appGateway_ The app gateway address
+    /// @param originAppGateway_ The app gateway address
     /// @param token_ The token address
     /// @param amount_ The amount deposited
     function incrementFeesDeposited(
@@ -138,7 +138,10 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
         emit FeesDepositedUpdated(chainSlug_, appGateway, token_, amount_);
     }
 
-    function isFeesEnough(address originAppGateway_, Fees memory fees_) external view returns (bool) {
+    function isFeesEnough(
+        address originAppGateway_,
+        Fees memory fees_
+    ) external view returns (bool) {
         address appGateway = _getCoreAppGateway(originAppGateway_);
         uint256 availableFees = getAvailableFees(
             fees_.feePoolChain,
@@ -149,7 +152,7 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
     }
 
     /// @notice Blocks fees for transmitter
-    /// @param appGateway_ The app gateway address
+    /// @param originAppGateway_ The app gateway address
     /// @param feesGivenByApp_ The fees data struct given by the app gateway
     /// @param asyncId_ The batch identifier
     /// @dev Only callable by delivery helper

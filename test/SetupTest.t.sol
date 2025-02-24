@@ -32,7 +32,7 @@ contract SetupTest is Test {
 
     uint32 arbChainSlug = 421614;
     uint32 optChainSlug = 11155420;
-    uint32 vmChainSlug = 1;
+    uint32 evmxChainSlug = 1;
     uint256 expiryTime = 10000000;
 
     uint256 public payloadIdCounter = 0;
@@ -100,7 +100,7 @@ contract SetupTest is Test {
             });
     }
 
-    function deployOffChainVMCore() internal {
+    function deployEVMxCore() internal {
         // Deploy implementations
         addressResolverImpl = new AddressResolver();
         watcherPrecompileImpl = new WatcherPrecompile();
@@ -125,7 +125,7 @@ contract SetupTest is Test {
             address(addressResolverProxy),
             defaultLimit,
             expiryTime,
-            vmChainSlug
+            evmxChainSlug
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(version);

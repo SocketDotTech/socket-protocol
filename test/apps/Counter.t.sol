@@ -143,8 +143,8 @@ contract CounterTest is DeliveryHelperTest {
         bytes32 bridgeAsyncId = getCurrentAsyncId();
 
         bytes32[] memory payloadIds = new bytes32[](3);
-        payloadIds[0] = _encodeId(vmChainSlug, address(watcherPrecompile), payloadIdCounter++);
-        payloadIds[1] = _encodeId(vmChainSlug, address(watcherPrecompile), payloadIdCounter++);
+        payloadIds[0] = _encodeId(evmxChainSlug, address(watcherPrecompile), payloadIdCounter++);
+        payloadIds[1] = _encodeId(evmxChainSlug, address(watcherPrecompile), payloadIdCounter++);
 
         payloadIds[2] = getWritePayloadId(
             arbChainSlug,
