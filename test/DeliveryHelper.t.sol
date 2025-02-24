@@ -292,7 +292,7 @@ contract DeliveryHelperTest is SetupTest {
     ) internal returns (bytes32 asyncId) {
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
 
-        asyncId = getCurrentAsyncId();
+        asyncId = getNextAsyncId();
         bytes32[] memory payloadIds = getWritePayloadIds(
             chainSlug_,
             address(socketConfig.switchboard),
@@ -310,7 +310,7 @@ contract DeliveryHelperTest is SetupTest {
         IMultiChainAppDeployer appDeployer_,
         address appGateway_
     ) internal returns (bytes32 asyncId) {
-        asyncId = getCurrentAsyncId();
+        asyncId = getNextAsyncId();
         bytes32[] memory payloadIds = new bytes32[](contractIds.length * chainSlugs_.length);
         for (uint32 i = 0; i < chainSlugs_.length; i++) {
             for (uint j = 0; j < contractIds.length; j++) {
@@ -359,20 +359,20 @@ contract DeliveryHelperTest is SetupTest {
         uint32 chainSlug_,
         uint256 totalPayloads
     ) internal returns (bytes32 asyncId) {
-        asyncId = getCurrentAsyncId();
+        asyncId = getNextAsyncId();
     }
 
     function _executeReadBatchMultiChain(
         uint32[] memory chainSlugs_
     ) internal returns (bytes32 asyncId) {
-        asyncId = getCurrentAsyncId();
+        asyncId = getNextAsyncId();
     }
 
     function _executeWriteBatchSingleChain(
         uint32 chainSlug_,
         uint256 totalPayloads
     ) internal returns (bytes32 asyncId) {
-        asyncId = getCurrentAsyncId();
+        asyncId = getNextAsyncId();
 
         bytes32[] memory payloadIds = getWritePayloadIds(
             chainSlug_,
@@ -385,7 +385,7 @@ contract DeliveryHelperTest is SetupTest {
     function _executeWriteBatchMultiChain(
         uint32[] memory chainSlugs_
     ) internal returns (bytes32 asyncId) {
-        asyncId = getCurrentAsyncId();
+        asyncId = getNextAsyncId();
         bidAndEndAuction(asyncId);
         for (uint i = 0; i < chainSlugs_.length; i++) {
             bytes32 payloadId = getWritePayloadId(
@@ -650,7 +650,7 @@ contract DeliveryHelperTest is SetupTest {
         return address(uint160(uint256(hash)));
     }
 
-    function getCurrentAsyncId() public returns (bytes32) {
+    function getNextAsyncId() public returns (bytes32) {
         payloadIdCounter++;
         return bytes32((uint256(uint160(address(deliveryHelper))) << 64) | asyncCounterTest++);
     }

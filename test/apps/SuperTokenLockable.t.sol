@@ -280,7 +280,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         });
         uint32 srcChainSlug = IForwarder(userOrder.srcToken).getChainSlug();
         uint32 dstChainSlug = IForwarder(userOrder.dstToken).getChainSlug();
-        bytes32 bridgeAsyncId = getCurrentAsyncId();
+        bytes32 bridgeAsyncId = getNextAsyncId();
 
         bytes32[] memory payloadIds = new bytes32[](4);
         payloadIds[0] = getWritePayloadId(
@@ -349,7 +349,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         vm.expectEmit(true, true, false, true);
         emit BatchCancelled(bridgeAsyncId);
         finalizeQuery(payloadIds[1], abi.encode(0.001 ether));
-        bytes32 cancelAsyncId = getCurrentAsyncId();
+        bytes32 cancelAsyncId = getNextAsyncId();
 
         bytes32[] memory cancelPayloadIds = new bytes32[](1);
         uint32 srcChainSlug = IForwarder(userOrder.srcToken).getChainSlug();
@@ -561,7 +561,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //             srcChainSlug,
     //             dstChainSlug
     //         );
-    //     bytes32 bridgeAsyncId = getCurrentAsyncId();
+    //     bytes32 bridgeAsyncId = getNextAsyncId();
     //     asyncCounterTest++;
 
     //     bytes memory encodedOrder = abi.encode(userOrder);
@@ -646,7 +646,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //             srcChainSlug
     //         );
 
-    //     bytes32 cancelAsyncId = getCurrentAsyncId();
+    //     bytes32 cancelAsyncId = getNextAsyncId();
     //     asyncCounterTest++;
 
     //     bidAndValidate(
