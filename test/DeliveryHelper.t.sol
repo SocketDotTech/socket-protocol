@@ -515,8 +515,8 @@ contract DeliveryHelperTest is SetupTest {
         bytes32 digest = watcherPrecompile.getDigest(digestParams_);
 
         bytes32 sigDigest = keccak256(abi.encode(address(socketConfig.switchboard), digest));
-        bytes memory watcherSig = _createSignature(sigDigest, watcherPrivateKey);
-        return (watcherSig, digest);
+        bytes memory proof = _createSignature(sigDigest, watcherPrivateKey);
+        return (proof, digest);
     }
 
     function createWithdrawPayloadDetail(
