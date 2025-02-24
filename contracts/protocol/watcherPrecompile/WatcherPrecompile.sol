@@ -6,7 +6,7 @@ import "../../interfaces/IAppGateway.sol";
 import "../../interfaces/IPromise.sol";
 import "../../interfaces/IFeesManager.sol";
 import "solady/utils/Initializable.sol";
-import {PayloadDigestParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../utils/common/Structs.sol";
+import {PayloadDigestParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromChainParams} from "../utils/common/Structs.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../utils/common/Errors.sol";
 
 /// @title WatcherPrecompile
@@ -179,7 +179,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @notice Finalizes a payload request, requests the watcher to release the proofs to execute on chain
     /// @param params_ The finalization parameters
     /// @return payloadId The unique identifier for the finalized request
-    /// @return digest The merkle digest of the payload parameters
+    /// @return digest The digest of the payload parameters
     function finalize(
         address originAppGateway_,
         FinalizeParams memory params_
@@ -235,7 +235,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
             params_.payloadDetails.payload
         );
 
-        // Calculate merkle digest from payload parameters
+        // Calculate digest from payload parameters
         digest = getDigest(digestParams_);
 
         // Create and store the async request with all necessary details
@@ -361,7 +361,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
 
     /// @notice Calculates the digest hash of payload parameters
     /// @param params_ The payload parameters
-    /// @return digest The calculated merkle digest
+    /// @return digest The calculated digest
     function getDigest(PayloadDigestParams memory params_) public pure returns (bytes32 digest) {
         digest = keccak256(
             abi.encode(
@@ -384,14 +384,14 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     // ================== On-Chain Inbox ==================
 
     function callAppGateways(
-        CallFromInboxParams[] calldata params_
+        CallFromChainParams[] calldata params_
     ) external onlyRole(WATCHER_ROLE) {
         for (uint256 i = 0; i < params_.length; i++) {
             if (appGatewayCalled[params_[i].callId]) revert AppGatewayAlreadyCalled();
-            if (!isValidInboxCaller[params_[i].appGateway][params_[i].chainSlug][params_[i].plug])
+            if (!isValidPlug[params_[i].appGateway][params_[i].chainSlug][params_[i].plug])
                 revert InvalidInboxCaller();
             appGatewayCalled[params_[i].callId] = true;
-            IAppGateway(params_[i].appGateway).callFromInbox(
+            IAppGateway(params_[i].appGateway).callFromChain(
                 params_[i].chainSlug,
                 params_[i].plug,
                 params_[i].payload,
