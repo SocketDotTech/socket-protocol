@@ -50,7 +50,7 @@ struct Bid {
     bytes extraData;
 }
 
-struct CallFromInboxParams {
+struct CallFromChainParams {
     bytes32 callId;
     bytes32 params;
     address plug;

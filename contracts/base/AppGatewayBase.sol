@@ -180,7 +180,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         PayloadBatch memory payloadBatch_
     ) external virtual onlyDeliveryHelper {}
 
-    function callFromInbox(
+    function callFromChain(
         uint32 chainSlug_,
         address plug_,
         bytes calldata payload_,

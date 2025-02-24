@@ -36,7 +36,7 @@ interface IWatcherPrecompile {
     /// @notice Finalizes a payload execution request
     /// @param params_ Parameters needed for finalization
     /// @return payloadId The unique identifier for the request
-    /// @return digest The merkle digest of the payload parameters
+    /// @return digest The digest of the payload parameters
     function finalize(
         address originAppGateway_,
         FinalizeParams memory params_
@@ -85,7 +85,7 @@ interface IWatcherPrecompile {
 
     /// @notice Calculates the Digest hash for payload parameters
     /// @param params_ The payload parameters used to calculate the digest
-    /// @return digest The calculated merkle digest hash
+    /// @return digest The calculated digest hash
     function getDigest(PayloadDigestParams memory params_) external pure returns (bytes32 digest);
 
     function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external;
@@ -98,7 +98,7 @@ interface IWatcherPrecompile {
 
     function feesPlug(uint32 chainSlug_) external view returns (address);
 
-    function setIsValidInboxCaller(uint32 chainSlug_, address plug_, bool isValid_) external;
+    function setIsValidPlug(uint32 chainSlug_, address plug_, bool isValid_) external;
 
     function checkAndConsumeLimit(
         address appGateway_,
