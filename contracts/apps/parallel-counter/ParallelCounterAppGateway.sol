@@ -23,6 +23,13 @@ contract ParallelCounterAppGateway is AppGatewayBase {
         }
     }
 
+    function incrementCountersWithoutAsync(address[] memory instances_) public {
+        // the increase function is called on given list of instances
+        for (uint256 i = 0; i < instances_.length; i++) {
+            Counter(instances_[i]).increase();
+        }
+    }
+
     function setFees(Fees memory fees_) public {
         fees = fees_;
     }

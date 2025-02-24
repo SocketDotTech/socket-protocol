@@ -3,7 +3,6 @@ pragma solidity ^0.8.21;
 
 import {ParallelCounterAppGateway} from "../../contracts/apps/parallel-counter/ParallelCounterAppGateway.sol";
 import {ParallelCounterDeployer} from "../../contracts/apps/parallel-counter/ParallelCounterDeployer.sol";
-import {Counter} from "../../contracts/apps/counter/Counter.sol";
 import "../DeliveryHelper.t.sol";
 
 contract ParallelCounterTest is DeliveryHelperTest {
@@ -117,6 +116,26 @@ contract ParallelCounterTest is DeliveryHelperTest {
             onChainOpt2,
             "Forwarder onChainAddress should be correct"
         );
+    }
+
+    function testAsyncModifierNotSet() external {
+        deploySetup();
+        uint32[] memory chainSlugs = new uint32[](1);
+        chainSlugs[0] = arbChainSlug;
+        deployCounterApps(chainSlugs);
+
+        (, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
+            arbChainSlug,
+            counterId1,
+            parallelCounterDeployer
+        );
+
+        address[] memory instances = new address[](1);
+        instances[0] = arbCounterForwarder;
+
+        // Should revert with AsyncModifierNotUsed error
+        vm.expectRevert(abi.encodeWithSignature("AsyncModifierNotUsed()"));
+        parallelCounterGateway.incrementCountersWithoutAsync(instances);
     }
 
     // function testCounterIncrement() external {

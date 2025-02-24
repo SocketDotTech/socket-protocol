@@ -69,7 +69,7 @@ contract CounterTest is DeliveryHelperTest {
         );
     }
 
-    function testCounterIncrement1() external {
+    function testCounterIncrement() external {
         deploySetup();
         deployCounterApp(arbChainSlug);
 
