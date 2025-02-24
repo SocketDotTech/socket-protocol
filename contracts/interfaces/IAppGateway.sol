@@ -10,6 +10,8 @@ interface IAppGateway {
 
     function gasLimit() external view returns (uint256);
 
+    function isAsyncModifierSet() external view returns (bool);
+
     function onBatchComplete(bytes32 asyncId_, PayloadBatch memory payloadBatch_) external;
 
     function callFromChain(

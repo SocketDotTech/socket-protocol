@@ -20,14 +20,18 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     bytes public onCompleteData;
     bytes32 public sbType;
 
+    bool public isAsyncModifierSet;
+
     mapping(address => bool) public isValidPromise;
 
     /// @notice Modifier to treat functions async
     modifier async() {
         if (fees.feePoolChain == 0) revert FeesNotSet();
+        isAsyncModifierSet = true;
         deliveryHelper().clearQueue();
         addressResolver__.clearPromises();
         _;
+        isAsyncModifierSet = false;
         deliveryHelper().batch(fees, auctionManager, onCompleteData, sbType);
         _markValidPromises();
     }
