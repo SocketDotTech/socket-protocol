@@ -13,7 +13,7 @@ import "solady/utils/Initializable.sol";
 /// @title AuctionManager
 /// @notice Contract for managing auctions and placing bids
 contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initializable {
-    uint32 public evmxChainSlug;
+    uint32 public evmxSlug;
     mapping(bytes32 => Bid) public winningBids;
     // asyncId => auction status
     mapping(bytes32 => bool) public override auctionClosed;
@@ -39,19 +39,19 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
     }
 
     /// @notice Initializer function to replace constructor
-    /// @param evmxChainSlug_ The chain slug for the VM
+    /// @param evmxSlug_ The chain slug for the VM
     /// @param auctionEndDelaySeconds_ The delay in seconds before an auction can end
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the contract owner
     function initialize(
-        uint32 evmxChainSlug_,
+        uint32 evmxSlug_,
         uint256 auctionEndDelaySeconds_,
         address addressResolver_,
         address owner_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
-        evmxChainSlug = evmxChainSlug_;
+        evmxSlug = evmxSlug_;
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
     }
 
@@ -84,7 +84,7 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
         if (auctionClosed[asyncId_]) revert AuctionClosed();
 
         address transmitter = _recoverSigner(
-            keccak256(abi.encode(address(this), evmxChainSlug, asyncId_, fee, extraData)),
+            keccak256(abi.encode(address(this), evmxSlug, asyncId_, fee, extraData)),
             transmitterSignature
         );
 
