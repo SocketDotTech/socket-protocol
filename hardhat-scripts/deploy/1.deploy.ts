@@ -25,7 +25,7 @@ import {
 } from "../utils";
 config();
 
-let offChainVMOwner: string;
+let EVMxOwner: string;
 
 const main = async () => {
   logConfig();
@@ -57,7 +57,7 @@ const deployEVMxContracts = async () => {
         process.env.WATCHER_PRIVATE_KEY as string,
         providerInstance
       );
-      offChainVMOwner = signer.address;
+      EVMxOwner = signer.address;
 
       deployUtils = {
         addresses: chainAddresses,
@@ -80,7 +80,7 @@ const deployEVMxContracts = async () => {
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.AddressResolver,
         `contracts/protocol/AddressResolver.sol`,
-        [offChainVMOwner],
+        [EVMxOwner],
         proxyFactory,
         deployUtils
       );
@@ -94,7 +94,7 @@ const deployEVMxContracts = async () => {
         EVMxCoreContracts.WatcherPrecompile,
         `contracts/protocol/watcherPrecompile/WatcherPrecompile.sol`,
         [
-          offChainVMOwner,
+          EVMxOwner,
           addressResolver.address,
           MAX_LIMIT,
           EXPIRY_TIME,
@@ -107,7 +107,7 @@ const deployEVMxContracts = async () => {
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.FeesManager,
         `contracts/protocol/payload-delivery/app-gateway/FeesManager.sol`,
-        [addressResolver.address, offChainVMOwner],
+        [addressResolver.address, EVMxOwner],
         proxyFactory,
         deployUtils
       );
@@ -119,7 +119,7 @@ const deployEVMxContracts = async () => {
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.DeliveryHelper,
         `contracts/protocol/payload-delivery/app-gateway/DeliveryHelper.sol`,
-        [addressResolver.address, offChainVMOwner, BID_TIMEOUT],
+        [addressResolver.address, EVMxOwner, BID_TIMEOUT],
         proxyFactory,
         deployUtils
       );
@@ -131,7 +131,7 @@ const deployEVMxContracts = async () => {
           EVMX_CHAIN_ID,
           auctionEndDelaySeconds,
           addressResolver.address,
-          offChainVMOwner,
+          EVMxOwner,
         ],
         proxyFactory,
         deployUtils
@@ -380,7 +380,7 @@ const deployContractWithProxy = async (
   // Deploy transparent proxy
   const tx = await proxyFactory
     .connect(deployUtils.signer)
-    .deployAndCall(implementation.address, offChainVMOwner, initData);
+    .deployAndCall(implementation.address, EVMxOwner, initData);
   const receipt = await tx.wait();
   const proxyAddress = receipt.events?.find((e) => e.event === "Deployed")?.args
     ?.proxy;

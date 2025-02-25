@@ -28,7 +28,7 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
     mapping(uint32 => address) public feesPlug;
 
     // appGateway => chainSlug => plug => isValid
-    mapping(address => mapping(uint32 => mapping(address => bool))) public isValidInboxCaller;
+    mapping(address => mapping(uint32 => mapping(address => bool))) public isValidPlug;
 
     /// @notice Emitted when a new plug is configured for an app gateway
     /// @param appGateway The address of the app gateway
@@ -101,8 +101,8 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
     }
 
     // @dev app gateway can set the valid plugs for each chain slug
-    function setIsValidInboxCaller(uint32 chainSlug_, address plug_, bool isValid_) external {
-        isValidInboxCaller[msg.sender][chainSlug_][plug_] = isValid_;
+    function setIsValidPlug(uint32 chainSlug_, address plug_, bool isValid_) external {
+        isValidPlug[msg.sender][chainSlug_][plug_] = isValid_;
     }
 
     /// @notice Retrieves the configuration for a specific plug on a network

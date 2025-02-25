@@ -6,7 +6,7 @@ import "../../interfaces/IAppGateway.sol";
 import "../../interfaces/IPromise.sol";
 import "../../interfaces/IFeesManager.sol";
 import "solady/utils/Initializable.sol";
-import {PayloadRootParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromInboxParams} from "../utils/common/Structs.sol";
+import {PayloadDigestParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromChainParams} from "../utils/common/Structs.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../utils/common/Errors.sol";
 
 /// @title WatcherPrecompile
@@ -19,7 +19,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     uint256 public expiryTime;
 
     /// @notice The chain slug of the watcher precompile
-    uint32 public vmChainSlug;
+    uint32 public evmxSlug;
 
     /// @notice Mapping to store async requests
     /// @dev payloadId => AsyncRequest struct
@@ -27,9 +27,9 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @notice Mapping to store timeout requests
     /// @dev timeoutId => TimeoutRequest struct
     mapping(bytes32 => TimeoutRequest) public timeoutRequests;
-    /// @notice Mapping to store watcher signatures
-    /// @dev payloadId => signature bytes
-    mapping(bytes32 => bytes) public watcherSignatures;
+    /// @notice Mapping to store watcher proofs
+    /// @dev payloadId => proof bytes
+    mapping(bytes32 => bytes) public watcherProofs;
 
     /// @notice Mapping to store if appGateway has been called with trigger from on-chain Inbox
     /// @dev callId => bool
@@ -72,8 +72,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @notice Emitted when a request is finalized
     /// @param payloadId The unique identifier for the request
     /// @param asyncRequest The async request details
-    /// @param watcherSignature The signature from the watcher
-    event Finalized(bytes32 indexed payloadId, AsyncRequest asyncRequest, bytes watcherSignature);
+    /// @param proof The proof from the watcher
+    event Finalized(bytes32 indexed payloadId, AsyncRequest asyncRequest, bytes proof);
 
     /// @notice Emitted when a promise is resolved
     /// @param payloadId The unique identifier for the resolved promise
@@ -107,7 +107,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         address addressResolver_,
         uint256 defaultLimit_,
         uint256 expiryTime_,
-        uint32 vmChainSlug_
+        uint32 evmxSlug_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
@@ -119,7 +119,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         // limit per second
         defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
 
-        vmChainSlug = vmChainSlug_;
+        evmxSlug = evmxSlug_;
     }
 
     // ================== Timeout functions ==================
@@ -137,7 +137,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         // from auction manager
         _consumeLimit(appGateway_, SCHEDULE, 1);
         uint256 executeAt = block.timestamp + delayInSeconds_;
-        bytes32 timeoutId = _encodeId(vmChainSlug, address(this));
+        bytes32 timeoutId = _encodeId(evmxSlug, address(this));
         timeoutRequests[timeoutId] = TimeoutRequest(
             timeoutId,
             msg.sender,
@@ -176,21 +176,21 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
 
     // ================== Finalize functions ==================
 
-    /// @notice Finalizes a payload request, requests the watcher to release the signatures to execute on chain
+    /// @notice Finalizes a payload request, requests the watcher to release the proofs to execute on chain
     /// @param params_ The finalization parameters
     /// @return payloadId The unique identifier for the finalized request
-    /// @return root The merkle root of the payload parameters
+    /// @return digest The digest of the payload parameters
     function finalize(
         address originAppGateway_,
         FinalizeParams memory params_
-    ) external returns (bytes32 payloadId, bytes32 root) {
+    ) external returns (bytes32 payloadId, bytes32 digest) {
         // Generate a unique payload ID by combining chain, target, and counter
         payloadId = _encodeWritePayloadId(
             params_.payloadDetails.chainSlug,
             params_.payloadDetails.target
         );
 
-        root = _finalize(payloadId, originAppGateway_, params_);
+        digest = _finalize(payloadId, originAppGateway_, params_);
     }
 
     function refinalize(bytes32 payloadId_, FinalizeParams memory params_) external {
@@ -204,7 +204,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         bytes32 payloadId_,
         address originAppGateway_,
         FinalizeParams memory params_
-    ) internal returns (bytes32 root) {
+    ) internal returns (bytes32 digest) {
         if (params_.transmitter == address(0)) revert InvalidTransmitter();
 
         // The app gateway is the caller of this function
@@ -223,8 +223,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
             params_.payloadDetails.target
         );
 
-        // Construct parameters for root calculation
-        PayloadRootParams memory rootParams_ = PayloadRootParams(
+        // Construct parameters for digest calculation
+        PayloadDigestParams memory digestParams_ = PayloadDigestParams(
             params_.payloadDetails.appGateway,
             params_.transmitter,
             params_.payloadDetails.target,
@@ -235,8 +235,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
             params_.payloadDetails.payload
         );
 
-        // Calculate merkle root from payload parameters
-        root = getRoot(rootParams_);
+        // Calculate digest from payload parameters
+        digest = getDigest(digestParams_);
 
         // Create and store the async request with all necessary details
         AsyncRequest memory asyncRequest = AsyncRequest(
@@ -248,7 +248,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
             params_.payloadDetails.executionGasLimit,
             block.timestamp + expiryTime,
             params_.asyncId,
-            root,
+            digest,
             params_.payloadDetails.payload,
             params_.payloadDetails.next
         );
@@ -273,7 +273,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         // from payload delivery
         _consumeLimit(appGateway_, QUERY, 1);
         // Generate unique payload ID from query counter
-        payloadId = _encodeId(vmChainSlug, address(this));
+        payloadId = _encodeId(evmxSlug, address(this));
 
         // Create async request with minimal information for queries
         // Note: addresses set to 0 as they're not needed for queries
@@ -294,18 +294,15 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         emit QueryRequested(chainSlug_, targetAddress_, payloadId, payload_);
     }
 
-    /// @notice Marks a request as finalized with a signature on root
+    /// @notice Marks a request as finalized with a proof on digest
     /// @param payloadId_ The unique identifier of the request
-    /// @param signature_ The watcher's signature
+    /// @param proof_ The watcher's proof
     /// @dev Only callable by the contract owner
     /// @dev Watcher signs on following digest for validation on switchboard:
-    /// @dev keccak256(abi.encode(switchboard, root))
-    function finalized(
-        bytes32 payloadId_,
-        bytes calldata signature_
-    ) external onlyRole(WATCHER_ROLE) {
-        watcherSignatures[payloadId_] = signature_;
-        emit Finalized(payloadId_, asyncRequests[payloadId_], signature_);
+    /// @dev keccak256(abi.encode(switchboard, digest))
+    function finalized(bytes32 payloadId_, bytes calldata proof_) external onlyRole(WATCHER_ROLE) {
+        watcherProofs[payloadId_] = proof_;
+        emit Finalized(payloadId_, asyncRequests[payloadId_], proof_);
     }
 
     /// @notice Resolves multiple promises with their return data
@@ -362,11 +359,11 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         }
     }
 
-    /// @notice Calculates the root hash of payload parameters
+    /// @notice Calculates the digest hash of payload parameters
     /// @param params_ The payload parameters
-    /// @return root The calculated merkle root
-    function getRoot(PayloadRootParams memory params_) public pure returns (bytes32 root) {
-        root = keccak256(
+    /// @return digest The calculated digest
+    function getDigest(PayloadDigestParams memory params_) public pure returns (bytes32 digest) {
+        digest = keccak256(
             abi.encode(
                 params_.payloadId,
                 params_.appGateway,
@@ -387,14 +384,14 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     // ================== On-Chain Inbox ==================
 
     function callAppGateways(
-        CallFromInboxParams[] calldata params_
+        CallFromChainParams[] calldata params_
     ) external onlyRole(WATCHER_ROLE) {
         for (uint256 i = 0; i < params_.length; i++) {
             if (appGatewayCalled[params_[i].callId]) revert AppGatewayAlreadyCalled();
-            if (!isValidInboxCaller[params_[i].appGateway][params_[i].chainSlug][params_[i].plug])
+            if (!isValidPlug[params_[i].appGateway][params_[i].chainSlug][params_[i].plug])
                 revert InvalidInboxCaller();
             appGatewayCalled[params_[i].callId] = true;
-            IAppGateway(params_[i].appGateway).callFromInbox(
+            IAppGateway(params_[i].appGateway).callFromChain(
                 params_[i].chainSlug,
                 params_[i].plug,
                 params_[i].payload,

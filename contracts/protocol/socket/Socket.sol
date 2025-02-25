@@ -123,7 +123,7 @@ contract Socket is SocketUtils {
         );
 
         // create packed payload
-        bytes32 root = _packPayload(
+        bytes32 digest = _packPayload(
             params_.payloadId,
             appGateway_,
             transmitter,
@@ -136,7 +136,7 @@ contract Socket is SocketUtils {
 
         // verify payload was part of the packet and
         // authenticated by respective switchboard
-        _verify(root, params_.payloadId, ISwitchboard(switchboard));
+        _verify(digest, params_.payloadId, ISwitchboard(switchboard));
 
         // execute payload
         return
@@ -147,9 +147,13 @@ contract Socket is SocketUtils {
     ////////////////// INTERNAL FUNCS //////////////////////
     ////////////////////////////////////////////////////////
 
-    function _verify(bytes32 root_, bytes32 payloadId_, ISwitchboard switchboard__) internal view {
+    function _verify(
+        bytes32 digest_,
+        bytes32 payloadId_,
+        ISwitchboard switchboard__
+    ) internal view {
         // NOTE: is the the first un-trusted call in the system, another one is Plug.call
-        if (!switchboard__.allowPacket(root_, payloadId_)) revert VerificationFailed();
+        if (!switchboard__.allowPacket(digest_, payloadId_)) revert VerificationFailed();
     }
 
     /**

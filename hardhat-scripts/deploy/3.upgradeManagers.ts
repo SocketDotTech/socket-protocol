@@ -64,11 +64,11 @@ async function setOnchainContracts(chain, addresses) {
     process.env.WATCHER_PRIVATE_KEY as string,
     providerInstance
   );
-  const watcherVMaddr = addresses[EVMX_CHAIN_ID]!;
+  const EVMxAddresses = addresses[EVMX_CHAIN_ID]!;
   const watcherPrecompile = (
     await getInstance(
       EVMxCoreContracts.WatcherPrecompile,
-      watcherVMaddr[EVMxCoreContracts.WatcherPrecompile]
+      EVMxAddresses[EVMxCoreContracts.WatcherPrecompile]
     )
   ).connect(signer);
 

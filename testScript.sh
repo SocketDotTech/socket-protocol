@@ -1,7 +1,7 @@
 
 
 ## Parallel Counter 
-source .env && forge script script/parallel-counter/deployOffchain.s.sol --broadcast --skip-simulation
+source .env && forge script script/parallel-counter/deployOnEVMx.s.sol --broadcast --skip-simulation
 ## set limits for the app gateway using API
 source .env && cast send $DEPLOYER "deployMultiChainContracts(uint32[])" '[421614, 11155420]' --private-key $PRIVATE_KEY
 source .env && forge script script/parallel-counter/checkCounters.s.sol --broadcast --skip-simulation
@@ -38,7 +38,7 @@ source .env && forge script script/counter-inbox/CheckGatewayCounter.s.sol --bro
 
 
 ## Mock Testing 
-source .env && forge script script/mock/DeployVM.s.sol --broadcast --skip-simulation 
+source .env && forge script script/mock/DeployEVMx.s.sol --broadcast --skip-simulation 
 source .env && forge script script/mock/DeploySocket.s.sol --broadcast --skip-simulation 
 source .env && forge script script/mock/Timeout.s.sol --broadcast --skip-simulation 
 source .env && forge script script/mock/Query.s.sol --broadcast --skip-simulation 

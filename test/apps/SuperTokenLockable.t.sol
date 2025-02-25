@@ -116,11 +116,11 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         address appDeployer = address(uint160(c++));
         address chainContractAddress = address(uint160(c++));
 
-        address predicted = addressResolver.getForwarderAddress(chainContractAddress, vmChainSlug);
+        address predicted = addressResolver.getForwarderAddress(chainContractAddress, evmxSlug);
         address forwarder = addressResolver.getOrDeployForwarderContract(
             appDeployer,
             chainContractAddress,
-            vmChainSlug
+            evmxSlug
         );
 
         assertEq(forwarder, predicted);
@@ -277,7 +277,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         });
         uint32 srcChainSlug = IForwarder(userOrder.srcToken).getChainSlug();
         uint32 dstChainSlug = IForwarder(userOrder.dstToken).getChainSlug();
-        bytes32 bridgeAsyncId = getCurrentAsyncId();
+        bytes32 bridgeAsyncId = getNextAsyncId();
 
         bytes32[] memory payloadIds = new bytes32[](4);
         payloadIds[0] = getWritePayloadId(
@@ -285,7 +285,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             address(getSocketConfig(srcChainSlug).switchboard),
             payloadIdCounter++
         );
-        payloadIds[1] = _encodeId(vmChainSlug, address(watcherPrecompile), payloadIdCounter++);
+        payloadIds[1] = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
         payloadIds[2] = getWritePayloadId(
             dstChainSlug,
             address(getSocketConfig(dstChainSlug).switchboard),
@@ -346,7 +346,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         vm.expectEmit(true, true, false, true);
         emit BatchCancelled(bridgeAsyncId);
         finalizeQuery(payloadIds[1], abi.encode(0.001 ether));
-        bytes32 cancelAsyncId = getCurrentAsyncId();
+        bytes32 cancelAsyncId = getNextAsyncId();
 
         bytes32[] memory cancelPayloadIds = new bytes32[](1);
         uint32 srcChainSlug = IForwarder(userOrder.srcToken).getChainSlug();
@@ -540,7 +540,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //         address(getSocketConfig(srcChainSlug).contractFactoryPlug),
     //         payloadIdCounter++
     //     );
-    //     payloadIds[1] = _encodeId(vmChainSlug, address(watcherPrecompile), payloadIdCounter++);
+    //     payloadIds[1] = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
     //     payloadIds[2] = getWritePayloadId(
     //         dstChainSlug,
     //         address(getSocketConfig(dstChainSlug).contractFactoryPlug),
@@ -558,7 +558,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //             srcChainSlug,
     //             dstChainSlug
     //         );
-    //     bytes32 bridgeAsyncId = getCurrentAsyncId();
+    //     bytes32 bridgeAsyncId = getNextAsyncId();
     //     asyncCounterTest++;
 
     //     bytes memory encodedOrder = abi.encode(userOrder);
@@ -643,7 +643,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //             srcChainSlug
     //         );
 
-    //     bytes32 cancelAsyncId = getCurrentAsyncId();
+    //     bytes32 cancelAsyncId = getNextAsyncId();
     //     asyncCounterTest++;
 
     //     bidAndValidate(

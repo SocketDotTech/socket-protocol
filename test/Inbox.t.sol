@@ -46,7 +46,7 @@ contract InboxTest is DeliveryHelperTest {
         watcherPrecompile.setAppGateways(gateways);
 
         hoax(watcherEOA);
-        watcherPrecompile.setIsValidInboxCaller(arbChainSlug, address(inbox), true);
+        watcherPrecompile.setIsValidPlug(arbChainSlug, address(inbox), true);
     }
 
     function testInboxIncrement() public {
@@ -59,8 +59,8 @@ contract InboxTest is DeliveryHelperTest {
         bytes32 callId = inbox.increaseOnGateway(incrementValue);
 
         hoax(watcherEOA);
-        CallFromInboxParams[] memory params = new CallFromInboxParams[](1);
-        params[0] = CallFromInboxParams({
+        CallFromChainParams[] memory params = new CallFromChainParams[](1);
+        params[0] = CallFromChainParams({
             callId: callId,
             chainSlug: arbChainSlug,
             appGateway: address(gateway),
