@@ -41,4 +41,6 @@ abstract contract Gauge {
             revert LimitReached();
         }
     }
+
+    uint256[50] _gap_gauge;
 }

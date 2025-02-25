@@ -2,13 +2,14 @@
 pragma solidity ^0.8.21;
 
 import {Ownable} from "solady/auth/Ownable.sol";
+import "solady/utils/Initializable.sol";
 
 import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
 
 import "./DeliveryHelperStorage.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
-abstract contract QueueAsync is DeliveryHelperStorage, Ownable, AddressResolverUtil {
+abstract contract QueueAsync is DeliveryHelperStorage, Initializable, Ownable, AddressResolverUtil {
     event PayloadBatchCancelled(bytes32 asyncId);
     event BidTimeoutUpdated(uint256 newBidTimeout);
 
@@ -159,4 +160,6 @@ abstract contract QueueAsync is DeliveryHelperStorage, Ownable, AddressResolverU
     function getAsyncBatchDetails(bytes32 asyncId_) external view returns (PayloadBatch memory) {
         return _payloadBatches[asyncId_];
     }
+
+    uint256[50] _gap_queue_async;
 }

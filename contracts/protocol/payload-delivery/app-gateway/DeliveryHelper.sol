@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "solady/utils/Initializable.sol";
 import "./BatchAsync.sol";
 
-contract DeliveryHelper is BatchAsync, Initializable {
+contract DeliveryHelper is BatchAsync {
     event CallBackReverted(bytes32 asyncId_, bytes32 payloadId_);
 
     constructor() {

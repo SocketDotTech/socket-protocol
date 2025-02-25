@@ -122,5 +122,5 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
         if (signer != owner()) revert InvalidWatcherSignature();
     }
 
-    uint256[49] __gap_config;
+    uint256[50] _gap_watcher_precompile_config;
 }

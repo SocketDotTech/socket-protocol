@@ -105,4 +105,6 @@ abstract contract AccessControl is Ownable {
     function _hasRole(bytes32 role_, address address_) internal view returns (bool) {
         return _permits[role_][address_];
     }
+
+    uint256[50] _gap_access_control;
 }

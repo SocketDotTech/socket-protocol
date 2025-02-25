@@ -310,4 +310,6 @@ abstract contract BatchAsync is QueueAsync {
         );
         _deliverPayload(payloadDetailsArray, fees_, auctionManager_, new bytes(0));
     }
+
+    uint256[50] _gap_batch_async;
 }

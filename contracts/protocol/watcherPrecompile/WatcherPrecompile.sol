@@ -2,11 +2,10 @@
 pragma solidity ^0.8.21;
 
 import "./WatcherPrecompileConfig.sol";
-import "solady/utils/Initializable.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
-contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
+contract WatcherPrecompile is WatcherPrecompileConfig {
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
     /// @notice Error thrown when an invalid app gateway reaches a plug

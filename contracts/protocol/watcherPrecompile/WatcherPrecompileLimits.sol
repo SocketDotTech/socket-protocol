@@ -6,12 +6,14 @@ import {Gauge} from "../utils/Gauge.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {WATCHER_ROLE} from "../utils/common/AccessRoles.sol";
 import "./WatcherPrecompileStorage.sol";
+import "solady/utils/Initializable.sol";
 
 abstract contract WatcherPrecompileLimits is
     WatcherPrecompileStorage,
+    Initializable,
+    AccessControl,
     Gauge,
-    AddressResolverUtil,
-    AccessControl
+    AddressResolverUtil
 {
     ////////////////////////////////////////////////////////
     ////////////////////// EVENTS //////////////////////////
@@ -164,5 +166,5 @@ abstract contract WatcherPrecompileLimits is
         defaultRatePerSecond = defaultRatePerSecond_;
     }
 
-    uint256[49] __gap;
+    uint256[50] _gap_watcher_precompile_limits;
 }
