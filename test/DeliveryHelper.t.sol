@@ -162,9 +162,7 @@ contract DeliveryHelperTest is SetupTest {
         });
 
         bytes memory watcherSignature = _createWatcherSignature(
-            keccak256(
-                abi.encode(address(watcherPrecompile), evmxChainSlug, signatureNonce, gateways)
-            )
+            keccak256(abi.encode(address(watcherPrecompile), evmxSlug, signatureNonce, gateways))
         );
 
         watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
@@ -357,9 +355,7 @@ contract DeliveryHelperTest is SetupTest {
         }
 
         bytes memory watcherSignature = _createWatcherSignature(
-            keccak256(
-                abi.encode(address(watcherPrecompile), evmxChainSlug, signatureNonce, gateways)
-            )
+            keccak256(abi.encode(address(watcherPrecompile), evmxSlug, signatureNonce, gateways))
         );
         watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
     }
@@ -497,9 +493,7 @@ contract DeliveryHelperTest is SetupTest {
         bytes32 timeoutId = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
 
         bytes memory watcherSignature = _createWatcherSignature(
-            keccak256(
-                abi.encode(address(watcherPrecompile), evmxChainSlug, signatureNonce, timeoutId)
-            )
+            keccak256(abi.encode(address(watcherPrecompile), evmxSlug, signatureNonce, timeoutId))
         );
         watcherPrecompile.resolveTimeout(timeoutId, signatureNonce++, watcherSignature);
     }

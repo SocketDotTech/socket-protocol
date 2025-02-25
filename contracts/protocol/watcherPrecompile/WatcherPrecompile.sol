@@ -17,9 +17,6 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @notice The expiry time for the payload
     uint256 public expiryTime;
 
-    /// @notice The chain slug of the watcher precompile
-    uint32 public evmxSlug;
-
     /// @notice Mapping to store async requests
     /// @dev payloadId => AsyncRequest struct
     mapping(bytes32 => AsyncRequest) public asyncRequests;
@@ -159,7 +156,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     ) external {
         _isWatcherSignatureValid(
             signatureNonce_,
-            keccak256(abi.encode(address(this), evmxChainSlug, signatureNonce_, timeoutId_)),
+            abi.encode(this.resolveTimeout.selector, timeoutId_),
             signature_
         );
 
@@ -316,9 +313,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     ) external {
         _isWatcherSignatureValid(
             signatureNonce_,
-            keccak256(
-                abi.encode(address(this), evmxChainSlug, signatureNonce_, payloadId_, proof_)
-            ),
+            abi.encode(this.finalized.selector, payloadId_, proof_),
             signature_
         );
 
@@ -336,7 +331,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     ) external {
         _isWatcherSignatureValid(
             signatureNonce_,
-            keccak256(abi.encode(address(this), evmxChainSlug, signatureNonce_, resolvedPromises_)),
+            abi.encode(this.resolvePromises.selector, resolvedPromises_),
             signature_
         );
 
@@ -374,15 +369,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     ) external {
         _isWatcherSignatureValid(
             signatureNonce_,
-            keccak256(
-                abi.encode(
-                    address(this),
-                    evmxChainSlug,
-                    signatureNonce_,
-                    payloadId_,
-                    isRevertingOnchain_
-                )
-            ),
+            abi.encode(this.markRevert.selector, isRevertingOnchain_, payloadId_),
             signature_
         );
 
@@ -435,7 +422,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     ) external {
         _isWatcherSignatureValid(
             signatureNonce_,
-            keccak256(abi.encode(address(this), evmxChainSlug, signatureNonce_, params_)),
+            abi.encode(this.callAppGateways.selector, params_),
             signature_
         );
 

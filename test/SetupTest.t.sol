@@ -219,12 +219,7 @@ contract SetupTest is Test {
 
         bytes memory watcherSignature = _createWatcherSignature(
             keccak256(
-                abi.encode(
-                    address(watcherPrecompile),
-                    evmxChainSlug,
-                    signatureNonce,
-                    resolvedPromises
-                )
+                abi.encode(address(watcherPrecompile), evmxSlug, signatureNonce, resolvedPromises)
             )
         );
         watcherPrecompile.resolvePromises(signatureNonce++, resolvedPromises, watcherSignature);

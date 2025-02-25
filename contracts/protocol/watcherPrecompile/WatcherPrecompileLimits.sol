@@ -25,7 +25,7 @@ abstract contract WatcherPrecompileLimits is
     uint256 public defaultRatePerSecond;
 
     /// @notice The chain slug of the watcher precompile
-    uint32 public evmxChainSlug;
+    uint32 public evmxSlug;
 
     // appGateway => limitType => receivingLimitParams
     mapping(address => mapping(bytes32 => LimitParams)) internal _limitParams;
