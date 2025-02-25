@@ -218,15 +218,18 @@ contract SetupTest is Test {
         resolvedPromises[0] = ResolvedPromises({payloadId: payloadId, returnData: returnDatas});
 
         bytes memory watcherSignature = _createWatcherSignature(
-            keccak256(
-                abi.encode(address(watcherPrecompile), evmxSlug, signatureNonce, resolvedPromises)
-            )
+            abi.encode(WatcherPrecompile.resolvePromises.selector, resolvedPromises)
         );
         watcherPrecompile.resolvePromises(signatureNonce++, resolvedPromises, watcherSignature);
     }
 
-    function _createWatcherSignature(bytes32 digest_) internal view returns (bytes memory sig) {
-        bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
+    function _createWatcherSignature(
+        bytes memory params_
+    ) internal view returns (bytes memory sig) {
+        bytes32 digest = keccak256(
+            abi.encode(address(watcherPrecompile), evmxSlug, signatureNonce, params_)
+        );
+        digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
         (uint8 sigV, bytes32 sigR, bytes32 sigS) = vm.sign(watcherPrivateKey, digest);
         sig = new bytes(65);
         bytes1 v32 = bytes1(sigV);

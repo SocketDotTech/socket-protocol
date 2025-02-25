@@ -43,7 +43,7 @@ contract InboxTest is DeliveryHelperTest {
         });
 
         bytes memory watcherSignature = _createWatcherSignature(
-            keccak256(abi.encode(address(watcherPrecompile), evmxSlug, signatureNonce, gateways))
+            abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
         );
         watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
 
@@ -71,7 +71,7 @@ contract InboxTest is DeliveryHelperTest {
         });
 
         bytes memory watcherSignature = _createWatcherSignature(
-            keccak256(abi.encode(address(watcherPrecompile), evmxSlug, signatureNonce, params))
+            abi.encode(WatcherPrecompile.callAppGateways.selector, params)
         );
         watcherPrecompile.callAppGateways(params, signatureNonce++, watcherSignature);
         // Check counter was incremented
