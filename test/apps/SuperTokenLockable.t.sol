@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {SuperTokenLockableDeployer} from "../../contracts/apps/super-token-lockable/SuperTokenLockableDeployer.sol";
 import {SuperTokenLockableAppGateway} from "../../contracts/apps/super-token-lockable/SuperTokenLockableAppGateway.sol";
 import {SuperTokenLockable} from "../../contracts/apps/super-token-lockable/SuperTokenLockable.sol";
+import {LimitHook} from "../../contracts/apps/super-token-lockable/LimitHook.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/protocol/utils/common/Constants.sol";
 
 import "../DeliveryHelper.t.sol";
@@ -196,6 +197,12 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             onChainLimitHook,
             "Forwarder onChainAddress should be correct"
         );
+        assertEq(
+            SuperTokenLockable(onChainSuperToken).owner(),
+            owner,
+            "SuperToken owner should be correct"
+        );
+        assertEq(LimitHook(onChainLimitHook).owner(), owner, "LimitHook owner should be correct");
 
         PayloadDetails[] memory payloadDetails = createDeployPayloadDetailsArray(arbChainSlug);
         checkPayloadBatchAndDetails(
