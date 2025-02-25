@@ -18,6 +18,8 @@ import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW, QUERY, FINALIZE} from ".
 /// @title DeliveryHelperStorage
 /// @notice Storage contract for DeliveryHelper
 abstract contract DeliveryHelperStorage is IDeliveryHelper {
+    uint256[50] _gap_before;
+
     uint256 public saltCounter;
     uint256 public asyncCounter;
     uint256 public bidTimeout;
@@ -36,4 +38,6 @@ abstract contract DeliveryHelperStorage is IDeliveryHelper {
     mapping(bytes32 => PayloadDetails[]) public payloadBatchDetails;
     // asyncId => PayloadBatch
     mapping(bytes32 => PayloadBatch) internal _payloadBatches;
+
+    uint256[50] _gap_after;
 }

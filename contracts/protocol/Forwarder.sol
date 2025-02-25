@@ -9,6 +9,8 @@ import "../interfaces/IForwarder.sol";
 import "solady/utils/Initializable.sol";
 
 abstract contract ForwarderStorage is IForwarder {
+    uint256[50] _gap_before;
+
     /// @notice chain id
     uint32 public chainSlug;
 
@@ -20,6 +22,8 @@ abstract contract ForwarderStorage is IForwarder {
 
     /// @notice caches the latest async promise address for the last call
     address public latestAsyncPromise;
+
+    uint256[50] _gap_after;
 }
 
 /// @title Forwarder Contract

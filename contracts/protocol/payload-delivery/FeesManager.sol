@@ -12,7 +12,9 @@ import {WITHDRAW} from "../utils/common/Constants.sol";
 import {NotAuctionManager} from "../utils/common/Errors.sol";
 import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, Parallel} from "../utils/common/Structs.sol";
 
-contract FeesManagerStorage {
+abstract contract FeesManagerStorage is IFeesManager {
+    uint256[50] _gap_before;
+
     uint256 public feesCounter;
     /// @notice Struct containing fee amounts and status
     struct TokenBalance {
@@ -32,17 +34,13 @@ contract FeesManagerStorage {
     /// @notice Mapping to track fees to be distributed to transmitters
     /// @dev transmitter => chainSlug => token => amount
     mapping(address => mapping(uint32 => mapping(address => uint256))) public transmitterFees;
+
+    uint256[50] _gap_after;
 }
 
 /// @title FeesManager
 /// @notice Contract for managing fees
-contract FeesManager is
-    IFeesManager,
-    FeesManagerStorage,
-    AddressResolverUtil,
-    Ownable,
-    Initializable
-{
+contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResolverUtil {
     /// @notice Emitted when fees are blocked for a batch
     /// @param asyncId The batch identifier
     /// @param chainSlug The chain identifier

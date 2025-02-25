@@ -14,6 +14,8 @@ import {Fees, Bid, PayloadBatch} from "../utils/common/Structs.sol";
 import {AuctionClosed, AuctionAlreadyStarted, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter} from "../utils/common/Errors.sol";
 
 abstract contract AuctionManagerStorage is IAuctionManager {
+    uint256[50] _gap_before;
+
     uint32 public evmxChainSlug;
     mapping(bytes32 => Bid) public winningBids;
     // asyncId => auction status
@@ -21,11 +23,13 @@ abstract contract AuctionManagerStorage is IAuctionManager {
     mapping(bytes32 => bool) public override auctionStarted;
 
     uint256 public auctionEndDelaySeconds;
+
+    uint256[50] _gap_after;
 }
 
 /// @title AuctionManager
 /// @notice Contract for managing auctions and placing bids
-contract AuctionManager is AuctionManagerStorage, AddressResolverUtil, Ownable, Initializable {
+contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, AddressResolverUtil {
     event AuctionRestarted(bytes32 asyncId);
     event AuctionStarted(bytes32 asyncId);
     event AuctionEnded(bytes32 asyncId, Bid winningBid);

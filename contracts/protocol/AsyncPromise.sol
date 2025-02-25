@@ -16,6 +16,7 @@ enum AsyncPromiseState {
 }
 
 abstract contract AsyncPromiseStorage is IPromise {
+    uint256[50] _gap_before;
     /// @notice The callback selector to be called on the invoker.
     bytes4 public callbackSelector;
 
@@ -34,6 +35,8 @@ abstract contract AsyncPromiseStorage is IPromise {
 
     /// @notice The callback data to be used when the promise is resolved.
     bytes public callbackData;
+
+    uint256[50] _gap_after;
 }
 
 /// @title AsyncPromise

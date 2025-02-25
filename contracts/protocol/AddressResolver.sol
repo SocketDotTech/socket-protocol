@@ -10,6 +10,7 @@ import {Forwarder} from "./Forwarder.sol";
 import {AsyncPromise} from "./AsyncPromise.sol";
 
 abstract contract AddressResolverStorage is IAddressResolver {
+    uint256[50] _gap_before;
     IWatcherPrecompile public override watcherPrecompile__;
     address public override deliveryHelper;
     address public override feesManager;
@@ -31,12 +32,14 @@ abstract contract AddressResolverStorage is IAddressResolver {
     mapping(address => address) public override contractsToGateways;
     // gateway to contract map
     mapping(address => address) public override gatewaysToContracts;
+
+    uint256[50] _gap_after;
 }
 
 /// @title AddressResolver Contract
 /// @notice This contract is responsible for fetching latest core addresses and deploying Forwarder and AsyncPromise contracts.
 /// @dev Inherits the Ownable contract and implements the IAddressResolver interface.
-contract AddressResolver is AddressResolverStorage, Ownable, Initializable {
+contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
     /// @notice Error thrown if AppGateway contract was already set by a different address
     error InvalidCaller(address contractAddress_);
 

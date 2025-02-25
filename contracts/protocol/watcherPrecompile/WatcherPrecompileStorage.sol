@@ -11,6 +11,8 @@ import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, Resolv
 import {ResolvedPromises, AppGatewayConfig, LimitParams, UpdateLimitParams, PlugConfig, PayloadDigestParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromChainParams} from "../utils/common/Structs.sol";
 
 abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
+    uint256[50] _gap_before;
+
     /// @notice Number of decimals used in limit calculations
     uint256 public constant LIMIT_DECIMALS = 18;
 
@@ -74,4 +76,6 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     /// @notice Mapping to store if appGateway has been called with trigger from on-chain Inbox
     /// @dev callId => bool
     mapping(bytes32 => bool) public appGatewayCalled;
+
+    uint256[50] _gap_after;
 }

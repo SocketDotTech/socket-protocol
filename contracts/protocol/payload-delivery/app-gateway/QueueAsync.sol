@@ -8,7 +8,7 @@ import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
 import "./DeliveryHelperStorage.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
-abstract contract QueueAsync is DeliveryHelperStorage, AddressResolverUtil, Ownable {
+abstract contract QueueAsync is DeliveryHelperStorage, Ownable, AddressResolverUtil {
     event PayloadBatchCancelled(bytes32 asyncId);
     event BidTimeoutUpdated(uint256 newBidTimeout);
 
@@ -159,6 +159,4 @@ abstract contract QueueAsync is DeliveryHelperStorage, AddressResolverUtil, Owna
     function getAsyncBatchDetails(bytes32 asyncId_) external view returns (PayloadBatch memory) {
         return _payloadBatches[asyncId_];
     }
-
-    uint256[49] __gap;
 }
