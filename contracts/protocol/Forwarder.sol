@@ -5,7 +5,6 @@ import "../interfaces/IAddressResolver.sol";
 import "../interfaces/IDeliveryHelper.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
-import "./AsyncPromise.sol";
 import "../interfaces/IForwarder.sol";
 import "solady/utils/Initializable.sol";
 

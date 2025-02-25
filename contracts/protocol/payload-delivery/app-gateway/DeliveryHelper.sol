@@ -2,11 +2,6 @@
 pragma solidity ^0.8.0;
 
 import "solady/utils/Initializable.sol";
-
-import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
-import {Bid, PayloadBatch, Fees, PayloadDetails, FinalizeParams} from "../../../protocol/utils/common/Structs.sol";
-import {DISTRIBUTE_FEE, DEPLOY} from "../../../protocol/utils/common/Constants.sol";
-import {PromisesNotResolved, InvalidTransmitter} from "../../../protocol/utils/common/Errors.sol";
 import "./BatchAsync.sol";
 
 contract DeliveryHelper is BatchAsync, Initializable {

@@ -1,23 +1,14 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {AddressResolverUtil} from "../../../protocol/utils/AddressResolverUtil.sol";
-import {CallParams, Fees, PayloadDetails, CallType, Bid, PayloadBatch, Parallel, IsPlug} from "../../../protocol/utils/common/Structs.sol";
-import {NotAuctionManager, InvalidPromise, InvalidIndex} from "../../../protocol/utils/common/Errors.sol";
-import {AsyncPromise} from "../../AsyncPromise.sol";
-import {IPromise} from "../../../interfaces/IPromise.sol";
-import {IAppDeployer} from "../../../interfaces/IAppDeployer.sol";
-import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
-import {IContractFactoryPlug} from "../../../interfaces/IContractFactoryPlug.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
-import {DeliveryHelperStorage} from "./DeliveryHelperStorage.sol";
+
+import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
+
+import "./DeliveryHelperStorage.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
-abstract contract QueueAsync is
-    DeliveryHelperStorage,
-    AddressResolverUtil,
-    Ownable
-{
+abstract contract QueueAsync is DeliveryHelperStorage, AddressResolverUtil, Ownable {
     event PayloadBatchCancelled(bytes32 asyncId);
     event BidTimeoutUpdated(uint256 newBidTimeout);
 

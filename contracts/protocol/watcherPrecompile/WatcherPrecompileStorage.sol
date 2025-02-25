@@ -2,6 +2,12 @@
 pragma solidity ^0.8.0;
 
 import {IWatcherPrecompile} from "../../interfaces/IWatcherPrecompile.sol";
+import {IAppGateway} from "../../interfaces/IAppGateway.sol";
+import {IFeesManager} from "../../interfaces/IFeesManager.sol";
+import {IPromise} from "../../interfaces/IPromise.sol";
+
+import {QUERY, FINALIZE, SCHEDULE} from "../utils/common/Constants.sol";
+import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
 import {ResolvedPromises, AppGatewayConfig, LimitParams, UpdateLimitParams, PlugConfig, PayloadDigestParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromChainParams} from "../utils/common/Structs.sol";
 
 abstract contract WatcherPrecompileStorage is IWatcherPrecompile {

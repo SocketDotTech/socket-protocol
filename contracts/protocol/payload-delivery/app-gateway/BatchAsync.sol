@@ -3,15 +3,6 @@ pragma solidity ^0.8.21;
 
 import "./QueueAsync.sol";
 
-import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
-import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
-import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
-import {IAuctionManager} from "../../../interfaces/IAuctionManager.sol";
-import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
-
-import {Bid, PayloadBatch, Fees, PayloadDetails} from "../../../protocol/utils/common/Structs.sol";
-import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW, QUERY, FINALIZE} from "../../../protocol/utils/common/Constants.sol";
-
 /// @title BatchAsync
 /// @notice Abstract contract for managing asynchronous payload batches
 abstract contract BatchAsync is QueueAsync {

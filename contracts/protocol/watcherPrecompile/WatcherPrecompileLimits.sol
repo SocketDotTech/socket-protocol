@@ -4,9 +4,7 @@ pragma solidity ^0.8.21;
 import {AccessControl} from "../utils/AccessControl.sol";
 import {Gauge} from "../utils/Gauge.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
-import {QUERY, FINALIZE, SCHEDULE} from "../utils/common/Constants.sol";
 import {WATCHER_ROLE} from "../utils/common/AccessRoles.sol";
-import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
 import "./WatcherPrecompileStorage.sol";
 
 abstract contract WatcherPrecompileLimits is

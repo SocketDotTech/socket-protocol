@@ -1,8 +1,19 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {CallParams, PayloadDetails, PayloadBatch} from "../../../protocol/utils/common/Structs.sol";
 import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
+import {IPromise} from "../../../interfaces/IPromise.sol";
+import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
+import {IContractFactoryPlug} from "../../../interfaces/IContractFactoryPlug.sol";
+import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
+import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
+import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
+import {IAuctionManager} from "../../../interfaces/IAuctionManager.sol";
+import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
+
+import {CallParams, Fees, PayloadDetails, CallType, Bid, PayloadBatch, Parallel, IsPlug, FinalizeParams} from "../../utils/common/Structs.sol";
+import {NotAuctionManager, InvalidPromise, InvalidIndex, PromisesNotResolved, InvalidTransmitter} from "../../utils/common/Errors.sol";
+import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW, QUERY, FINALIZE} from "../../utils/common/Constants.sol";
 
 /// @title DeliveryHelperStorage
 /// @notice Storage contract for DeliveryHelper

@@ -2,9 +2,6 @@
 pragma solidity ^0.8.21;
 
 import "./WatcherPrecompileConfig.sol";
-import "../../interfaces/IAppGateway.sol";
-import "../../interfaces/IPromise.sol";
-import "../../interfaces/IFeesManager.sol";
 import "solady/utils/Initializable.sol";
 
 /// @title WatcherPrecompile
