@@ -60,27 +60,33 @@ async function setRoleForContract(
 async function getSigner(chain: number, isWatcher: boolean = false) {
   const providerInstance = getProviderFromChainSlug(chain);
   const signer: Wallet = new ethers.Wallet(
-    isWatcher ? process.env.WATCHER_PRIVATE_KEY as string : process.env.SOCKET_SIGNER_KEY as string,
+    isWatcher
+      ? (process.env.WATCHER_PRIVATE_KEY as string)
+      : (process.env.SOCKET_SIGNER_KEY as string),
     providerInstance
   );
   return signer;
 }
 
-
-async function setRolesForOnChain(chain: number, addresses: DeploymentAddresses) {
-  const chainAddresses: ChainAddressesObj = (addresses[chain] ?? {}) as ChainAddressesObj;
+async function setRolesForOnChain(
+  chain: number,
+  addresses: DeploymentAddresses
+) {
+  const chainAddresses: ChainAddressesObj = (addresses[chain] ??
+    {}) as ChainAddressesObj;
   const signer = await getSigner(chain);
 
   for (const [contractName, roles] of Object.entries(REQUIRED_ROLES)) {
-    const contractAddress = chainAddresses[contractName as keyof ChainAddressesObj];
+    const contractAddress =
+      chainAddresses[contractName as keyof ChainAddressesObj];
     if (!contractAddress) continue;
 
     for (const roleName of roles) {
       const targetAddress =
-        contractName === CORE_CONTRACTS.FastSwitchboard && roleName === ROLES.WATCHER_ROLE
+        contractName === CORE_CONTRACTS.FastSwitchboard &&
+        roleName === ROLES.WATCHER_ROLE
           ? watcher
           : signer.address;
-
 
       await setRoleForContract(
         contractName as CORE_CONTRACTS,
@@ -95,7 +101,8 @@ async function setRolesForOnChain(chain: number, addresses: DeploymentAddresses)
 }
 
 async function setRolesForEVMx(addresses: DeploymentAddresses) {
-  const chainAddresses: ChainAddressesObj = (addresses[EVMX_CHAIN_ID] ?? {}) as ChainAddressesObj;
+  const chainAddresses: ChainAddressesObj = (addresses[EVMX_CHAIN_ID] ??
+    {}) as ChainAddressesObj;
   const signer = await getSigner(EVMX_CHAIN_ID, true);
 
   const contractAddress = chainAddresses[EVMxCoreContracts.WatcherPrecompile];
