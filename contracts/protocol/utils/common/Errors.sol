@@ -31,3 +31,11 @@ error FeesNotSet();
 error InvalidTokenAddress();
 error InvalidWatcherSignature();
 error NonceUsed();
+/// @notice Error thrown when trying to start or bid a closed auction
+error AuctionClosed();
+/// @notice Error thrown when trying to start an ongoing auction
+error AuctionAlreadyStarted();
+/// @notice Error thrown if fees exceed the maximum set fees
+error BidExceedsMaxFees();
+/// @notice Error thrown if a lower bid already exists
+error LowerBidAlreadyExists();

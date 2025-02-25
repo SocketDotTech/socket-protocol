@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "../contracts/protocol/payload-delivery/app-gateway/DeliveryHelper.sol";
-import "../contracts/protocol/payload-delivery/app-gateway/FeesManager.sol";
-import "../contracts/protocol/payload-delivery/app-gateway/AuctionManager.sol";
+import "../contracts/protocol/payload-delivery/FeesManager.sol";
+import "../contracts/protocol/payload-delivery/AuctionManager.sol";
 
 import "../contracts/protocol/Forwarder.sol";
 import "../contracts/interfaces/IAppDeployer.sol";

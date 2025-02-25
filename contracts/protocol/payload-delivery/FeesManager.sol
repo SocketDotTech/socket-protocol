@@ -4,20 +4,17 @@ pragma solidity ^0.8.0;
 import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 
-import {AddressResolverUtil} from "../../../protocol/utils/AddressResolverUtil.sol";
-import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, PayloadBatch, Parallel} from "../../../protocol/utils/common/Structs.sol";
-import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
-import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../protocol/utils/common/Constants.sol";
-import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
-import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
+import {IDeliveryHelper} from "../../interfaces/IDeliveryHelper.sol";
+import {IFeesPlug} from "../../interfaces/IFeesPlug.sol";
+import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 
-import {NotAuctionManager} from "../../../protocol/utils/common/Errors.sol";
+import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
+import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../utils/common/Constants.sol";
+import {NotAuctionManager} from "../utils/common/Errors.sol";
+import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, Parallel} from "../utils/common/Structs.sol";
 
-/// @title FeesManager
-/// @notice Contract for managing fees
-contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializable {
+contract FeesManagerStorage {
     uint256 public feesCounter;
-
     /// @notice Struct containing fee amounts and status
     struct TokenBalance {
         uint256 deposited; // Amount deposited
@@ -36,7 +33,17 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
     /// @notice Mapping to track fees to be distributed to transmitters
     /// @dev transmitter => chainSlug => token => amount
     mapping(address => mapping(uint32 => mapping(address => uint256))) public transmitterFees;
+}
 
+/// @title FeesManager
+/// @notice Contract for managing fees
+contract FeesManager is
+    IFeesManager,
+    FeesManagerStorage,
+    AddressResolverUtil,
+    Ownable,
+    Initializable
+{
     /// @notice Emitted when fees are blocked for a batch
     /// @param asyncId The batch identifier
     /// @param chainSlug The chain identifier

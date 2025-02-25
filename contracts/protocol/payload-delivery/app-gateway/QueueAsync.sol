@@ -9,41 +9,17 @@ import {IPromise} from "../../../interfaces/IPromise.sol";
 import {IAppDeployer} from "../../../interfaces/IAppDeployer.sol";
 import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
 import {IContractFactoryPlug} from "../../../interfaces/IContractFactoryPlug.sol";
-import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
+import {DeliveryHelperStorage} from "./DeliveryHelperStorage.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
-abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper, Ownable {
-    uint256 public saltCounter;
-    uint256 public asyncCounter;
-
-    uint256 public bidTimeout;
-
-    /// @notice The call parameters array
-    CallParams[] public callParamsArray;
-    /// @notice The mapping of valid promises
-    mapping(address => bool) public isValidPromise;
-
-    // payloadId => asyncId
-    mapping(bytes32 => bytes32) public payloadIdToBatchHash;
-    mapping(bytes32 => PayloadDetails) public payloadIdToPayloadDetails;
-
-    // asyncId => PayloadBatch
-    mapping(bytes32 => PayloadBatch) internal _payloadBatches;
-
+abstract contract QueueAsync is
+    DeliveryHelperStorage,
+    AddressResolverUtil,
+    Ownable
+{
     event PayloadBatchCancelled(bytes32 asyncId);
     event BidTimeoutUpdated(uint256 newBidTimeout);
-
-    function payloadBatches(bytes32 asyncId_) external view override returns (PayloadBatch memory) {
-        return _payloadBatches[asyncId_];
-    }
-
-    function getPayloadDetails(bytes32 payloadId_) external view returns (PayloadDetails memory) {
-        return payloadIdToPayloadDetails[payloadId_];
-    }
-
-    // asyncId => PayloadDetails[]
-    mapping(bytes32 => PayloadDetails[]) public payloadBatchDetails;
 
     modifier onlyPromises() {
         if (!isValidPromise[msg.sender]) revert InvalidPromise();
@@ -53,6 +29,14 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper, Ownable {
     modifier onlyAuctionManager(bytes32 asyncId_) {
         if (msg.sender != _payloadBatches[asyncId_].auctionManager) revert NotAuctionManager();
         _;
+    }
+
+    function payloadBatches(bytes32 asyncId_) external view override returns (PayloadBatch memory) {
+        return _payloadBatches[asyncId_];
+    }
+
+    function getPayloadDetails(bytes32 payloadId_) external view returns (PayloadDetails memory) {
+        return payloadIdToPayloadDetails[payloadId_];
     }
 
     /// @notice Clears the call parameters array

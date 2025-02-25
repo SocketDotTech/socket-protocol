@@ -9,9 +9,7 @@ import "./AsyncPromise.sol";
 import "../interfaces/IForwarder.sol";
 import "solady/utils/Initializable.sol";
 
-/// @title Forwarder Contract
-/// @notice This contract acts as a forwarder for async calls to the on-chain contracts.
-contract Forwarder is IForwarder, Initializable {
+abstract contract ForwarderStorage is IForwarder {
     /// @notice chain id
     uint32 public chainSlug;
 
@@ -23,7 +21,11 @@ contract Forwarder is IForwarder, Initializable {
 
     /// @notice caches the latest async promise address for the last call
     address public latestAsyncPromise;
+}
 
+/// @title Forwarder Contract
+/// @notice This contract acts as a forwarder for async calls to the on-chain contracts.
+contract Forwarder is ForwarderStorage, Initializable {
     error AsyncModifierNotUsed();
 
     constructor() {

@@ -15,10 +15,7 @@ enum AsyncPromiseState {
     RESOLVED
 }
 
-/// @title AsyncPromise
-/// @notice this contract stores the callback address and data to be executed once the previous call is executed
-/// This promise expires once the callback is executed
-contract AsyncPromise is IPromise, Initializable, AddressResolverUtil {
+abstract contract AsyncPromiseStorage is IPromise {
     /// @notice The callback selector to be called on the invoker.
     bytes4 public callbackSelector;
 
@@ -37,7 +34,12 @@ contract AsyncPromise is IPromise, Initializable, AddressResolverUtil {
 
     /// @notice The callback data to be used when the promise is resolved.
     bytes public callbackData;
+}
 
+/// @title AsyncPromise
+/// @notice this contract stores the callback address and data to be executed once the previous call is executed
+/// This promise expires once the callback is executed
+contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil {
     /// @notice Error thrown when attempting to resolve an already resolved promise.
     error PromiseAlreadyResolved();
     /// @notice Only the forwarder or local invoker can set then's promise callback
