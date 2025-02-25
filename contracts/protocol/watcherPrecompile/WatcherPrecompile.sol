@@ -17,6 +17,9 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @notice The expiry time for the payload
     uint256 public expiryTime;
 
+    /// @notice The chain slug of the watcher precompile
+    uint32 public evmxSlug;
+
     /// @notice Mapping to store async requests
     /// @dev payloadId => AsyncRequest struct
     mapping(bytes32 => AsyncRequest) public asyncRequests;
@@ -103,7 +106,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         address addressResolver_,
         uint256 defaultLimit_,
         uint256 expiryTime_,
-        uint32 evmxChainSlug_
+        uint32 evmxSlug_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
@@ -115,7 +118,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         // limit per second
         defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
 
-        evmxChainSlug = evmxChainSlug_;
+        evmxSlug = evmxSlug_;
     }
 
     // ================== Timeout functions ==================
@@ -133,7 +136,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         // from auction manager
         _consumeLimit(appGateway_, SCHEDULE, 1);
         uint256 executeAt = block.timestamp + delayInSeconds_;
-        bytes32 timeoutId = _encodeId(evmxChainSlug, address(this));
+        bytes32 timeoutId = _encodeId(evmxSlug, address(this));
         timeoutRequests[timeoutId] = TimeoutRequest(
             timeoutId,
             msg.sender,
@@ -278,7 +281,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         // from payload delivery
         _consumeLimit(appGateway_, QUERY, 1);
         // Generate unique payload ID from query counter
-        payloadId = _encodeId(evmxChainSlug, address(this));
+        payloadId = _encodeId(evmxSlug, address(this));
 
         // Create async request with minimal information for queries
         // Note: addresses set to 0 as they're not needed for queries

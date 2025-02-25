@@ -116,14 +116,11 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         address appDeployer = address(uint160(c++));
         address chainContractAddress = address(uint160(c++));
 
-        address predicted = addressResolver.getForwarderAddress(
-            chainContractAddress,
-            evmxChainSlug
-        );
+        address predicted = addressResolver.getForwarderAddress(chainContractAddress, evmxSlug);
         address forwarder = addressResolver.getOrDeployForwarderContract(
             appDeployer,
             chainContractAddress,
-            evmxChainSlug
+            evmxSlug
         );
 
         assertEq(forwarder, predicted);
@@ -288,7 +285,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             address(getSocketConfig(srcChainSlug).switchboard),
             payloadIdCounter++
         );
-        payloadIds[1] = _encodeId(evmxChainSlug, address(watcherPrecompile), payloadIdCounter++);
+        payloadIds[1] = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
         payloadIds[2] = getWritePayloadId(
             dstChainSlug,
             address(getSocketConfig(dstChainSlug).switchboard),
@@ -543,7 +540,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //         address(getSocketConfig(srcChainSlug).contractFactoryPlug),
     //         payloadIdCounter++
     //     );
-    //     payloadIds[1] = _encodeId(evmxChainSlug, address(watcherPrecompile), payloadIdCounter++);
+    //     payloadIds[1] = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
     //     payloadIds[2] = getWritePayloadId(
     //         dstChainSlug,
     //         address(getSocketConfig(dstChainSlug).contractFactoryPlug),

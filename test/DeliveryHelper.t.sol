@@ -78,7 +78,7 @@ contract DeliveryHelperTest is SetupTest {
 
         bytes memory auctionManagerData = abi.encodeWithSelector(
             AuctionManager.initialize.selector,
-            evmxChainSlug,
+            evmxSlug,
             auctionEndDelaySeconds,
             address(addressResolver),
             owner,
@@ -478,7 +478,7 @@ contract DeliveryHelperTest is SetupTest {
 
         vm.prank(transmitterEOA);
         bytes memory transmitterSignature = _createSignature(
-            keccak256(abi.encode(address(auctionManager), evmxChainSlug, asyncId, bidAmount, "")),
+            keccak256(abi.encode(address(auctionManager), evmxSlug, asyncId, bidAmount, "")),
             transmitterPrivateKey
         );
 
@@ -494,11 +494,7 @@ contract DeliveryHelperTest is SetupTest {
         // );
 
         if (auctionEndDelaySeconds == 0) return;
-        bytes32 timeoutId = _encodeId(
-            evmxChainSlug,
-            address(watcherPrecompile),
-            payloadIdCounter++
-        );
+        bytes32 timeoutId = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
 
         bytes memory watcherSignature = _createWatcherSignature(
             keccak256(

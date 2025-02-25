@@ -32,7 +32,7 @@ contract SetupTest is Test {
 
     uint32 arbChainSlug = 421614;
     uint32 optChainSlug = 11155420;
-    uint32 evmxChainSlug = 1;
+    uint32 evmxSlug = 1;
     uint256 expiryTime = 10000000;
 
     uint256 public signatureNonce = 0;
@@ -126,7 +126,7 @@ contract SetupTest is Test {
             address(addressResolverProxy),
             defaultLimit,
             expiryTime,
-            evmxChainSlug
+            evmxSlug
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(version);
