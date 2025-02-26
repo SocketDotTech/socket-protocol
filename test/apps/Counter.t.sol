@@ -140,11 +140,11 @@ contract CounterTest is DeliveryHelperTest {
         instances[0] = arbCounterForwarder;
         instances[1] = optCounterForwarder;
 
-        bytes32 bridgeAsyncId = getCurrentAsyncId();
+        bytes32 bridgeAsyncId = getNextAsyncId();
 
         bytes32[] memory payloadIds = new bytes32[](3);
-        payloadIds[0] = _encodeId(vmChainSlug, address(watcherPrecompile), payloadIdCounter++);
-        payloadIds[1] = _encodeId(vmChainSlug, address(watcherPrecompile), payloadIdCounter++);
+        payloadIds[0] = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
+        payloadIds[1] = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
 
         payloadIds[2] = getWritePayloadId(
             arbChainSlug,

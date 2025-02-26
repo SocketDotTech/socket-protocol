@@ -78,7 +78,7 @@ abstract contract WatcherPrecompileLimits is
      * @param limitType_ The type of limit to check
      * @param consumeLimit_ The amount of limit to consume
      */
-    function checkAndUpdateLimit(
+    function checkAndConsumeLimit(
         address appGateway_,
         bytes32 limitType_,
         uint256 consumeLimit_
@@ -152,15 +152,15 @@ abstract contract WatcherPrecompileLimits is
 
     /**
      * @notice Internal function to get the core app gateway address
-     * @param appGateway_ The input app gateway address
+     * @param originAppGateway_ The input app gateway address
      * @return appGateway The resolved core app gateway address
      */
-    function _getAppGateway(address appGateway_) internal view returns (address appGateway) {
-        address resolverAddress = msg.sender == addressResolver__.deliveryHelper()
-            ? appGateway_
+    function _getAppGateway(address originAppGateway_) internal view returns (address appGateway) {
+        address originAppGateway = msg.sender == addressResolver__.deliveryHelper()
+            ? originAppGateway_
             : msg.sender;
 
-        appGateway = _getCoreAppGateway(resolverAddress);
+        appGateway = _getCoreAppGateway(originAppGateway);
     }
 
     /**

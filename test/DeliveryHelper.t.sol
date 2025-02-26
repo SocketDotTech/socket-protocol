@@ -39,7 +39,7 @@ contract DeliveryHelperTest is SetupTest {
 
     function setUpDeliveryHelper() internal {
         // core
-        deployOffChainVMCore();
+        deployEVMxCore();
         // Deploy implementations
         FeesManager feesManagerImpl = new FeesManager();
         DeliveryHelper deliveryHelperImpl = new DeliveryHelper();
@@ -78,7 +78,7 @@ contract DeliveryHelperTest is SetupTest {
 
         bytes memory auctionManagerData = abi.encodeWithSelector(
             AuctionManager.initialize.selector,
-            vmChainSlug,
+            evmxSlug,
             auctionEndDelaySeconds,
             address(addressResolver),
             owner,
@@ -292,7 +292,7 @@ contract DeliveryHelperTest is SetupTest {
     ) internal returns (bytes32 asyncId) {
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
 
-        asyncId = getCurrentAsyncId();
+        asyncId = getNextAsyncId();
         bytes32[] memory payloadIds = getWritePayloadIds(
             chainSlug_,
             address(socketConfig.switchboard),
@@ -310,7 +310,7 @@ contract DeliveryHelperTest is SetupTest {
         IMultiChainAppDeployer appDeployer_,
         address appGateway_
     ) internal returns (bytes32 asyncId) {
-        asyncId = getCurrentAsyncId();
+        asyncId = getNextAsyncId();
         bytes32[] memory payloadIds = new bytes32[](contractIds.length * chainSlugs_.length);
         for (uint32 i = 0; i < chainSlugs_.length; i++) {
             for (uint j = 0; j < contractIds.length; j++) {
@@ -359,20 +359,20 @@ contract DeliveryHelperTest is SetupTest {
         uint32 chainSlug_,
         uint256 totalPayloads
     ) internal returns (bytes32 asyncId) {
-        asyncId = getCurrentAsyncId();
+        asyncId = getNextAsyncId();
     }
 
     function _executeReadBatchMultiChain(
         uint32[] memory chainSlugs_
     ) internal returns (bytes32 asyncId) {
-        asyncId = getCurrentAsyncId();
+        asyncId = getNextAsyncId();
     }
 
     function _executeWriteBatchSingleChain(
         uint32 chainSlug_,
         uint256 totalPayloads
     ) internal returns (bytes32 asyncId) {
-        asyncId = getCurrentAsyncId();
+        asyncId = getNextAsyncId();
 
         bytes32[] memory payloadIds = getWritePayloadIds(
             chainSlug_,
@@ -385,7 +385,7 @@ contract DeliveryHelperTest is SetupTest {
     function _executeWriteBatchMultiChain(
         uint32[] memory chainSlugs_
     ) internal returns (bytes32 asyncId) {
-        asyncId = getCurrentAsyncId();
+        asyncId = getNextAsyncId();
         bidAndEndAuction(asyncId);
         for (uint i = 0; i < chainSlugs_.length; i++) {
             bytes32 payloadId = getWritePayloadId(
@@ -469,7 +469,7 @@ contract DeliveryHelperTest is SetupTest {
 
         vm.prank(transmitterEOA);
         bytes memory transmitterSignature = _createSignature(
-            keccak256(abi.encode(address(auctionManager), vmChainSlug, asyncId, bidAmount, "")),
+            keccak256(abi.encode(address(auctionManager), evmxSlug, asyncId, bidAmount, "")),
             transmitterPrivateKey
         );
 
@@ -485,7 +485,7 @@ contract DeliveryHelperTest is SetupTest {
         // );
 
         if (auctionEndDelaySeconds == 0) return;
-        bytes32 timeoutId = _encodeId(vmChainSlug, address(watcherPrecompile), payloadIdCounter++);
+        bytes32 timeoutId = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
 
         hoax(watcherEOA);
         watcherPrecompile.resolveTimeout(timeoutId);
@@ -498,7 +498,7 @@ contract DeliveryHelperTest is SetupTest {
         SocketContracts memory socketConfig = getSocketConfig(payloadDetails.chainSlug);
         (, , , , , , uint256 deadline, , , ) = watcherPrecompile.asyncRequests(payloadId);
 
-        PayloadRootParams memory rootParams_ = PayloadRootParams(
+        PayloadDigestParams memory digestParams_ = PayloadDigestParams(
             payloadDetails.appGateway,
             transmitterEOA,
             payloadDetails.target,
@@ -508,11 +508,11 @@ contract DeliveryHelperTest is SetupTest {
             deadline,
             payloadDetails.payload
         );
-        bytes32 root = watcherPrecompile.getRoot(rootParams_);
+        bytes32 digest = watcherPrecompile.getDigest(digestParams_);
 
-        bytes32 digest = keccak256(abi.encode(address(socketConfig.switchboard), root));
-        bytes memory watcherSig = _createSignature(digest, watcherPrivateKey);
-        return (watcherSig, root);
+        bytes32 sigDigest = keccak256(abi.encode(address(socketConfig.switchboard), digest));
+        bytes memory proof = _createSignature(sigDigest, watcherPrivateKey);
+        return (proof, digest);
     }
 
     function createWithdrawPayloadDetail(
@@ -614,12 +614,12 @@ contract DeliveryHelperTest is SetupTest {
         bytes32 payloadId_,
         PayloadDetails memory payloadDetails
     ) internal returns (bytes memory returnData) {
-        (bytes memory watcherSig, bytes32 root) = finalize(payloadId_, payloadDetails);
+        (bytes memory watcherSig, bytes32 digest) = finalize(payloadId_, payloadDetails);
 
         returnData = relayTx(
             payloadDetails.chainSlug,
             payloadId_,
-            root,
+            digest,
             payloadDetails,
             watcherSig
         );
@@ -646,7 +646,7 @@ contract DeliveryHelperTest is SetupTest {
         return address(uint160(uint256(hash)));
     }
 
-    function getCurrentAsyncId() public returns (bytes32) {
+    function getNextAsyncId() public returns (bytes32) {
         payloadIdCounter++;
         return bytes32((uint256(uint160(address(deliveryHelper))) << 64) | asyncCounterTest++);
     }

@@ -120,7 +120,7 @@ export const connectPlugsOnSocket = async () => {
   );
 };
 
-export const isConfigSetOnWatcherVM = async (
+export const isConfigSetOnEVMx = async (
   watcher: Contract,
   chain: number,
   plug: string,
@@ -135,7 +135,7 @@ export const isConfigSetOnWatcherVM = async (
 };
 
 // Configure plugs on the Watcher VM
-export const updateConfigWatcherVM = async () => {
+export const updateConfigEVMx = async () => {
   try {
     console.log("Connecting plugs on EVMx");
     const addresses = getAddresses(mode) as unknown as DeploymentAddresses;
@@ -149,11 +149,11 @@ export const updateConfigWatcherVM = async () => {
       process.env.WATCHER_PRIVATE_KEY as string,
       providerInstance
     );
-    const watcherVMaddr = addresses[EVMX_CHAIN_ID]!;
+    const EVMxAddresses = addresses[EVMX_CHAIN_ID]!;
     const watcher = (
       await getInstance(
         EVMxCoreContracts.WatcherPrecompile,
-        watcherVMaddr[EVMxCoreContracts.WatcherPrecompile]
+        EVMxAddresses[EVMxCoreContracts.WatcherPrecompile]
       )
     ).connect(signer);
 
@@ -170,7 +170,7 @@ export const updateConfigWatcherVM = async () => {
           checkIfAddressExists(appGateway, "AppGateway");
 
           if (
-            await isConfigSetOnWatcherVM(
+            await isConfigSetOnEVMx(
               watcher,
               chain,
               addr[plugContract],
@@ -209,7 +209,7 @@ export const updateConfigWatcherVM = async () => {
 export const main = async () => {
   try {
     await connectPlugsOnSocket();
-    await updateConfigWatcherVM();
+    await updateConfigEVMx();
   } catch (error) {
     console.log("Error while sending transaction", error);
   }

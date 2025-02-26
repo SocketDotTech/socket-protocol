@@ -45,7 +45,7 @@ abstract contract BatchAsync is QueueAsync {
     event PayloadAsyncRequested(
         bytes32 indexed asyncId,
         bytes32 indexed payloadId,
-        bytes32 indexed root,
+        bytes32 indexed digest,
         PayloadDetails payloadDetails
     );
 
@@ -97,7 +97,7 @@ abstract contract BatchAsync is QueueAsync {
         // Handle initial read operations first
         uint256 readEndIndex = _processReadOperations(payloadDetails_, asyncId);
 
-        watcherPrecompile__().checkAndUpdateLimit(
+        watcherPrecompile__().checkAndConsumeLimit(
             payloadDetails_[0].appGateway,
             QUERY,
             readEndIndex
@@ -182,6 +182,7 @@ abstract contract BatchAsync is QueueAsync {
         uint256 readEndIndex,
         bytes32 asyncId
     ) internal returns (address) {
+        // later changed to main app gateway if its a write call
         address appGateway = msg.sender;
 
         uint256 writes = 0;
@@ -203,13 +204,13 @@ abstract contract BatchAsync is QueueAsync {
             payloadBatchDetails[asyncId].push(payloadDetails_[i]);
         }
 
-        watcherPrecompile__().checkAndUpdateLimit(
+        watcherPrecompile__().checkAndConsumeLimit(
             appGateway,
             QUERY,
             // remaining reads
             payloadDetails_.length - writes - readEndIndex
         );
-        watcherPrecompile__().checkAndUpdateLimit(appGateway, FINALIZE, writes);
+        watcherPrecompile__().checkAndConsumeLimit(appGateway, FINALIZE, writes);
 
         return appGateway;
     }

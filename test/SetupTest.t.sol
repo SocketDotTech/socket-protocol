@@ -32,7 +32,7 @@ contract SetupTest is Test {
 
     uint32 arbChainSlug = 421614;
     uint32 optChainSlug = 11155420;
-    uint32 vmChainSlug = 1;
+    uint32 evmxSlug = 1;
     uint256 expiryTime = 10000000;
 
     uint256 public payloadIdCounter = 0;
@@ -100,7 +100,7 @@ contract SetupTest is Test {
             });
     }
 
-    function deployOffChainVMCore() internal {
+    function deployEVMxCore() internal {
         // Deploy implementations
         addressResolverImpl = new AddressResolver();
         watcherPrecompileImpl = new WatcherPrecompile();
@@ -125,7 +125,7 @@ contract SetupTest is Test {
             address(addressResolverProxy),
             defaultLimit,
             expiryTime,
-            vmChainSlug
+            evmxSlug
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(version);
@@ -173,9 +173,9 @@ contract SetupTest is Test {
     function relayTx(
         uint32 chainSlug_,
         bytes32 payloadId,
-        bytes32 root,
+        bytes32 digest,
         PayloadDetails memory payloadDetails,
-        bytes memory watcherSignature
+        bytes memory watcherProof
     ) internal returns (bytes memory) {
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
         bytes32 transmitterDigest = keccak256(abi.encode(address(socketConfig.socket), payloadId));
@@ -186,8 +186,8 @@ contract SetupTest is Test {
         vm.startPrank(transmitterEOA);
         AttestAndExecutePayloadParams memory params = AttestAndExecutePayloadParams({
             switchboard: address(socketConfig.switchboard),
-            root: root,
-            watcherSignature: watcherSignature,
+            digest: digest,
+            proof: watcherProof,
             payloadId: payloadId,
             appGateway: payloadDetails.appGateway,
             executionGasLimit: payloadDetails.executionGasLimit,

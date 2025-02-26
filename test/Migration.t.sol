@@ -28,7 +28,7 @@ contract MigrationTest is SetupTest {
     bytes4 internal constant UNAUTHORIZED_SELECTOR = 0x82b42900; // bytes4(keccak256("Unauthorized()"))
 
     function setUp() public {
-        deployOffChainVMCore();
+        deployEVMxCore();
     }
 
     function getImplementation(address proxy) internal view returns (address) {

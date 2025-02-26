@@ -143,7 +143,7 @@ contract DeliveryHelper is BatchAsync, Initializable {
         PayloadBatch storage payloadBatch_,
         address batchPromise_,
         bool isRead_
-    ) internal returns (bytes32 payloadId, bytes32 root) {
+    ) internal returns (bytes32 payloadId, bytes32 digest) {
         payloadDetails_.next[1] = batchPromise_;
         if (isRead_) {
             payloadId = watcherPrecompile__().query(
@@ -153,14 +153,14 @@ contract DeliveryHelper is BatchAsync, Initializable {
                 payloadDetails_.next,
                 payloadDetails_.payload
             );
-            root = bytes32(0);
+            digest = bytes32(0);
         } else {
             FinalizeParams memory finalizeParams = FinalizeParams({
                 payloadDetails: payloadDetails_,
                 asyncId: asyncId_,
                 transmitter: payloadBatch_.winningBid.transmitter
             });
-            (payloadId, root) = watcherPrecompile__().finalize(
+            (payloadId, digest) = watcherPrecompile__().finalize(
                 payloadBatch_.appGateway,
                 finalizeParams
             );
@@ -170,7 +170,7 @@ contract DeliveryHelper is BatchAsync, Initializable {
         payloadIdToBatchHash[payloadId] = asyncId_;
         payloadIdToPayloadDetails[payloadId] = payloadDetails_;
 
-        emit PayloadAsyncRequested(asyncId_, payloadId, root, payloadDetails_);
+        emit PayloadAsyncRequested(asyncId_, payloadId, digest, payloadDetails_);
     }
 
     function _processParallelCalls(

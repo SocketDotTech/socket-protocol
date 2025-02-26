@@ -12,7 +12,7 @@ interface IAppGateway {
 
     function onBatchComplete(bytes32 asyncId_, PayloadBatch memory payloadBatch_) external;
 
-    function callFromInbox(
+    function callFromChain(
         uint32 chainSlug_,
         address plug_,
         bytes calldata payload_,
