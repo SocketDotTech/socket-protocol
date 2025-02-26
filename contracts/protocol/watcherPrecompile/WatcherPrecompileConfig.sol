@@ -2,6 +2,7 @@
 pragma solidity ^0.8.21;
 
 import "./WatcherPrecompileLimits.sol";
+import {ECDSA} from "solady/utils/ECDSA.sol";
 
 /// @title WatcherPrecompileConfig
 /// @notice Configuration contract for the Watcher Precompile system
@@ -26,6 +27,10 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
     /// @notice Maps chain slug to their associated fees plug
     /// @dev chainSlug => fees plug address
     mapping(uint32 => address) public feesPlug;
+
+    /// @notice Maps nonce to whether it has been used
+    /// @dev signatureNonce => isValid
+    mapping(uint256 => bool) public isNonceUsed;
 
     // appGateway => chainSlug => plug => isValid
     mapping(address => mapping(uint32 => mapping(address => bool))) public isValidPlug;
@@ -62,7 +67,17 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
     /// @param configs_ Array of configurations containing app gateway, network, plug, and switchboard details
     /// @dev Only callable by the contract owner
     /// @dev This helps in verifying that plugs are called by respective app gateways
-    function setAppGateways(AppGatewayConfig[] calldata configs_) external onlyRole(WATCHER_ROLE) {
+    function setAppGateways(
+        AppGatewayConfig[] calldata configs_,
+        uint256 signatureNonce_,
+        bytes calldata signature_
+    ) external {
+        _isWatcherSignatureValid(
+            signatureNonce_,
+            abi.encode(this.setAppGateways.selector, configs_),
+            signature_
+        );
+
         for (uint256 i = 0; i < configs_.length; i++) {
             // Store the plug configuration for this network and plug
             _plugConfigs[configs_[i].chainSlug][configs_[i].plug] = PlugConfig({
@@ -118,6 +133,22 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
             _plugConfigs[chainSlug_][plug_].appGateway,
             _plugConfigs[chainSlug_][plug_].switchboard
         );
+    }
+
+    function _isWatcherSignatureValid(
+        uint256 signatureNonce_,
+        bytes memory digest_,
+        bytes memory signature_
+    ) internal {
+        if (isNonceUsed[signatureNonce_]) revert NonceUsed();
+        isNonceUsed[signatureNonce_] = true;
+
+        bytes32 digest = keccak256(abi.encode(address(this), evmxSlug, signatureNonce_, digest_));
+        digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
+
+        // recovered signer is checked for the valid roles later
+        address signer = ECDSA.recover(digest, signature_);
+        if (signer != owner()) revert InvalidWatcherSignature();
     }
 
     uint256[49] __gap_config;

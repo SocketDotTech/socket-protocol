@@ -9,8 +9,14 @@ import {PayloadDetails, AsyncRequest, FinalizeParams, PayloadDigestParams, AppGa
 interface IWatcherPrecompile {
     /// @notice Sets up app gateway configurations
     /// @param configs_ Array of app gateway configurations
+    /// @param signatureNonce_ The nonce of the signature
+    /// @param signature_ The signature of the watcher
     /// @dev Only callable by authorized addresses
-    function setAppGateways(AppGatewayConfig[] calldata configs_) external;
+    function setAppGateways(
+        AppGatewayConfig[] calldata configs_,
+        uint256 signatureNonce_,
+        bytes calldata signature_
+    ) external;
 
     /// @notice Sets up on-chain contract configurations
     /// @dev Only callable by authorized addresses
@@ -59,7 +65,12 @@ interface IWatcherPrecompile {
     /// @notice Marks a request as finalized with a proof
     /// @param payloadId_ The unique identifier of the request
     /// @param proof_ The watcher's proof
-    function finalized(bytes32 payloadId_, bytes calldata proof_) external;
+    function finalized(
+        bytes32 payloadId_,
+        uint256 signatureNonce_,
+        bytes calldata proof_,
+        bytes calldata signature_
+    ) external;
 
     /// @notice Finalizes multiple payload execution requests with a new transmitter
     /// @param payloadId_ The unique identifier of the request
@@ -68,7 +79,11 @@ interface IWatcherPrecompile {
 
     /// @notice Resolves multiple promises with their return data
     /// @param resolvedPromises_ Array of resolved promises and their return data
-    function resolvePromises(ResolvedPromises[] calldata resolvedPromises_) external;
+    function resolvePromises(
+        uint256 signatureNonce_,
+        ResolvedPromises[] calldata resolvedPromises_,
+        bytes calldata signature_
+    ) external;
 
     /// @notice Sets a timeout for payload execution
     /// @param payload_ The payload data
@@ -81,7 +96,11 @@ interface IWatcherPrecompile {
 
     /// @notice Resolves a timeout by executing the payload
     /// @param timeoutId_ The unique identifier for the timeout
-    function resolveTimeout(bytes32 timeoutId_) external;
+    function resolveTimeout(
+        bytes32 timeoutId_,
+        uint256 signatureNonce_,
+        bytes calldata signature_
+    ) external;
 
     /// @notice Calculates the Digest hash for payload parameters
     /// @param params_ The payload parameters used to calculate the digest

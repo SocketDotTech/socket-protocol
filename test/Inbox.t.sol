@@ -42,8 +42,10 @@ contract InboxTest is DeliveryHelperTest {
             switchboard: address(arbConfig.switchboard)
         });
 
-        hoax(watcherEOA);
-        watcherPrecompile.setAppGateways(gateways);
+        bytes memory watcherSignature = _createWatcherSignature(
+            abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
+        );
+        watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
 
         hoax(watcherEOA);
         watcherPrecompile.setIsValidPlug(arbChainSlug, address(inbox), true);
@@ -58,7 +60,6 @@ contract InboxTest is DeliveryHelperTest {
 
         bytes32 callId = inbox.increaseOnGateway(incrementValue);
 
-        hoax(watcherEOA);
         CallFromChainParams[] memory params = new CallFromChainParams[](1);
         params[0] = CallFromChainParams({
             callId: callId,
@@ -68,7 +69,11 @@ contract InboxTest is DeliveryHelperTest {
             payload: abi.encode(incrementValue),
             params: bytes32(0)
         });
-        watcherPrecompile.callAppGateways(params);
+
+        bytes memory watcherSignature = _createWatcherSignature(
+            abi.encode(WatcherPrecompile.callAppGateways.selector, params)
+        );
+        watcherPrecompile.callAppGateways(params, signatureNonce++, watcherSignature);
         // Check counter was incremented
         assertEq(gateway.counter(), incrementValue, "Gateway counter should be incremented");
     }
