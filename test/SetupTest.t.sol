@@ -220,7 +220,7 @@ contract SetupTest is Test {
         bytes memory watcherSignature = _createWatcherSignature(
             abi.encode(WatcherPrecompile.resolvePromises.selector, resolvedPromises)
         );
-        watcherPrecompile.resolvePromises(signatureNonce++, resolvedPromises, watcherSignature);
+        watcherPrecompile.resolvePromises(resolvedPromises, signatureNonce++, watcherSignature);
     }
 
     function _createWatcherSignature(

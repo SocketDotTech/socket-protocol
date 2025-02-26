@@ -73,8 +73,8 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
         bytes calldata signature_
     ) external {
         _isWatcherSignatureValid(
-            signatureNonce_,
             abi.encode(this.setAppGateways.selector, configs_),
+            signatureNonce_,
             signature_
         );
 
@@ -136,8 +136,8 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
     }
 
     function _isWatcherSignatureValid(
-        uint256 signatureNonce_,
         bytes memory digest_,
+        uint256 signatureNonce_,
         bytes memory signature_
     ) internal {
         if (isNonceUsed[signatureNonce_]) revert NonceUsed();

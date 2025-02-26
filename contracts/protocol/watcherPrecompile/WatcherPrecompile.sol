@@ -155,8 +155,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         bytes calldata signature_
     ) external {
         _isWatcherSignatureValid(
-            signatureNonce_,
             abi.encode(this.resolveTimeout.selector, timeoutId_),
+            signatureNonce_,
             signature_
         );
 
@@ -307,13 +307,13 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @dev keccak256(abi.encode(switchboard, digest))
     function finalized(
         bytes32 payloadId_,
-        uint256 signatureNonce_,
         bytes calldata proof_,
+        uint256 signatureNonce_,
         bytes calldata signature_
     ) external {
         _isWatcherSignatureValid(
-            signatureNonce_,
             abi.encode(this.finalized.selector, payloadId_, proof_),
+            signatureNonce_,
             signature_
         );
 
@@ -325,13 +325,13 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
     /// @param resolvedPromises_ Array of resolved promises and their return data
     /// @dev Only callable by the contract owner
     function resolvePromises(
-        uint256 signatureNonce_,
         ResolvedPromises[] calldata resolvedPromises_,
+        uint256 signatureNonce_,
         bytes calldata signature_
     ) external {
         _isWatcherSignatureValid(
-            signatureNonce_,
             abi.encode(this.resolvePromises.selector, resolvedPromises_),
+            signatureNonce_,
             signature_
         );
 
@@ -368,8 +368,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         bytes calldata signature_
     ) external {
         _isWatcherSignatureValid(
-            signatureNonce_,
             abi.encode(this.markRevert.selector, isRevertingOnchain_, payloadId_),
+            signatureNonce_,
             signature_
         );
 
@@ -421,8 +421,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
         bytes calldata signature_
     ) external {
         _isWatcherSignatureValid(
-            signatureNonce_,
             abi.encode(this.callAppGateways.selector, params_),
+            signatureNonce_,
             signature_
         );
 
