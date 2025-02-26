@@ -106,7 +106,7 @@ const deployEVMxContracts = async () => {
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.FeesManager,
         `contracts/protocol/payload-delivery/app-gateway/FeesManager.sol`,
-        [addressResolver.address, EVMxOwner],
+        [addressResolver.address, EVMxOwner, EVMX_CHAIN_ID],
         proxyFactory,
         deployUtils
       );
