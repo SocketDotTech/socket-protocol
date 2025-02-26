@@ -20,22 +20,34 @@ import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW, QUERY, FINALIZE} from ".
 abstract contract DeliveryHelperStorage is IDeliveryHelper {
     uint256[50] _gap_before;
 
+    // slot 50
     uint256 public saltCounter;
-    uint256 public asyncCounter;
-    uint256 public bidTimeout;
 
+    // slot 51
+    uint128 public asyncCounter;
+    uint128 public bidTimeout;
+
+    // slot 52
+    bytes32[] public tempPayloadIds;
+
+    // slot 53
     /// @notice The call parameters array
     CallParams[] public callParamsArray;
 
-    bytes32[] public tempPayloadIds;
-
+    // slot 54
     /// @notice The mapping of valid promises
     mapping(address => bool) public isValidPromise;
-    // payloadId => asyncId
+
+    // slot 55 - payloadIdToBatchHash
     mapping(bytes32 => bytes32) public payloadIdToBatchHash;
+    // slot 56 - payloadIdToPayloadDetails 
     mapping(bytes32 => PayloadDetails) public payloadIdToPayloadDetails;
+
+    // slot 57
     // asyncId => PayloadDetails[]
     mapping(bytes32 => PayloadDetails[]) public payloadBatchDetails;
+    
+    // slot 58
     // asyncId => PayloadBatch
     mapping(bytes32 => PayloadBatch) internal _payloadBatches;
 

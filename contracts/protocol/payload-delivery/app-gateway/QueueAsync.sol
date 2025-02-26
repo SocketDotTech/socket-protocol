@@ -75,6 +75,8 @@ abstract contract QueueAsync is DeliveryHelperStorage, Initializable, Ownable, A
     function _createPayloadDetailsArray(
         bytes32 sbType_
     ) internal returns (PayloadDetails[] memory payloadDetailsArray) {
+        if (callParamsArray.length == 0) return payloadDetailsArray;
+
         payloadDetailsArray = new PayloadDetails[](callParamsArray.length);
         for (uint256 i = 0; i < callParamsArray.length; i++) {
             CallParams memory params = callParamsArray[i];
@@ -140,7 +142,7 @@ abstract contract QueueAsync is DeliveryHelperStorage, Initializable, Ownable, A
 
     /// @notice Updates the bid timeout
     /// @param newBidTimeout_ The new bid timeout value
-    function updateBidTimeout(uint256 newBidTimeout_) external onlyOwner {
+    function updateBidTimeout(uint128 newBidTimeout_) external onlyOwner {
         bidTimeout = newBidTimeout_;
         emit BidTimeoutUpdated(newBidTimeout_);
     }
