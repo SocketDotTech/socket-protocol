@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
-
+import "solady/utils/ECDSA.sol";
 import {AddressResolverUtil} from "../../../protocol/utils/AddressResolverUtil.sol";
 import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, PayloadBatch, Parallel} from "../../../protocol/utils/common/Structs.sol";
 import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
@@ -17,6 +17,7 @@ import {NotAuctionManager} from "../../../protocol/utils/common/Errors.sol";
 /// @notice Contract for managing fees
 contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializable {
     uint256 public feesCounter;
+    uint32 public evmxSlug;
 
     /// @notice Struct containing fee amounts and status
     struct TokenBalance {
@@ -36,6 +37,10 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
     /// @notice Mapping to track fees to be distributed to transmitters
     /// @dev transmitter => chainSlug => token => amount
     mapping(address => mapping(uint32 => mapping(address => uint256))) public transmitterFees;
+
+    /// @notice Mapping to track nonce to whether it has been used
+    /// @dev signatureNonce => isValid
+    mapping(uint256 => bool) public isNonceUsed;
 
     /// @notice Emitted when fees are blocked for a batch
     /// @param asyncId The batch identifier
@@ -92,6 +97,10 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
     error NoFeesForTransmitter();
     /// @notice Error thrown when no fees was blocked
     error NoFeesBlocked();
+    /// @notice Error thrown when watcher signature is invalid
+    error InvalidWatcherSignature();
+    /// @notice Error thrown when nonce is used
+    error NonceUsed();
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -100,7 +109,13 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
     /// @notice Initializer function to replace constructor
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the owner
-    function initialize(address addressResolver_, address owner_) public reinitializer(1) {
+    /// @param evmxSlug_ The evmx chain slug
+    function initialize(
+        address addressResolver_,
+        address owner_,
+        uint32 evmxSlug_
+    ) public reinitializer(1) {
+        evmxSlug = evmxSlug_;
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
     }
@@ -129,8 +144,16 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
         uint32 chainSlug_,
         address originAppGateway_,
         address token_,
-        uint256 amount_
-    ) external onlyOwner {
+        uint256 amount_,
+        uint256 signatureNonce_,
+        bytes memory signature_
+    ) external {
+        _isWatcherSignatureValid(
+            signatureNonce_,
+            abi.encode(chainSlug_, originAppGateway_, token_, amount_),
+            signature_
+        );
+
         address appGateway = _getCoreAppGateway(originAppGateway_);
 
         TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][chainSlug_][token_];
@@ -337,5 +360,20 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
 
     function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (address) {
         return watcherPrecompile__().feesPlug(chainSlug_);
+    }
+
+    function _isWatcherSignatureValid(
+        uint256 signatureNonce_,
+        bytes memory digest_,
+        bytes memory signature_
+    ) internal {
+        if (isNonceUsed[signatureNonce_]) revert NonceUsed();
+        isNonceUsed[signatureNonce_] = true;
+
+        bytes32 digest = keccak256(abi.encode(address(this), evmxSlug, signatureNonce_, digest_));
+        digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
+        // recovered signer is checked for the valid roles later
+        address signer = ECDSA.recover(digest, signature_);
+        if (signer != owner()) revert InvalidWatcherSignature();
     }
 }
