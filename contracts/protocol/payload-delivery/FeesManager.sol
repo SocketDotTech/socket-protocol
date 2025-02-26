@@ -13,30 +13,39 @@ import {NotAuctionManager} from "../utils/common/Errors.sol";
 import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, Parallel} from "../utils/common/Structs.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
+    // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
+    // slot 50
     uint256 public feesCounter;
+
     /// @notice Struct containing fee amounts and status
     struct TokenBalance {
         uint256 deposited; // Amount deposited
         uint256 blocked; // Amount blocked
     }
 
+    // slot 51
     /// @notice Master mapping tracking all fee information
     /// @dev appGateway => chainSlug => token => TokenBalance
     mapping(address => mapping(uint32 => mapping(address => TokenBalance)))
         public appGatewayFeeBalances;
 
+    // slot 52
     /// @notice Mapping to track blocked fees for each async id
     /// @dev asyncId => Fees
     mapping(bytes32 => Fees) public asyncIdBlockedFees;
 
+    // slot 53
     /// @notice Mapping to track fees to be distributed to transmitters
     /// @dev transmitter => chainSlug => token => amount
     mapping(address => mapping(uint32 => mapping(address => uint256))) public transmitterFees;
 
+    // slots [54-103] reserved for gap
     uint256[50] _gap_after;
-}
+
+    // slots 104-153 reserved for addr resolver util
+    }
 
 /// @title FeesManager
 /// @notice Contract for managing fees

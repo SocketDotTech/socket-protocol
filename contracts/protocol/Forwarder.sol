@@ -9,20 +9,26 @@ import "../interfaces/IForwarder.sol";
 import "solady/utils/Initializable.sol";
 
 abstract contract ForwarderStorage is IForwarder {
+    // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
+    // slot 50
     /// @notice chain id
     uint32 public chainSlug;
 
+    // slot 51
     /// @notice on-chain address associated with this forwarder
     address public onChainAddress;
 
+    // slot 52
     /// @notice address resolver contract address for imp addresses
     address public addressResolver;
 
+    // slot 53
     /// @notice caches the latest async promise address for the last call
     address public latestAsyncPromise;
 
+    // slots [54-103] reserved for gap
     uint256[50] _gap_after;
 }
 

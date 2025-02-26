@@ -10,29 +10,46 @@ import {Forwarder} from "./Forwarder.sol";
 import {AsyncPromise} from "./AsyncPromise.sol";
 
 abstract contract AddressResolverStorage is IAddressResolver {
+    // slots [0-49] reserved for gap
     uint256[50] _gap_before;
+
+    // slot 50
     IWatcherPrecompile public override watcherPrecompile__;
+
+    // slot 51
     address public override deliveryHelper;
+
+    // slot 52
     address public override feesManager;
 
-    // Beacons for managing upgrades
+    // slot 53
     UpgradeableBeacon public forwarderBeacon;
+
+    // slot 54
     UpgradeableBeacon public asyncPromiseBeacon;
 
+    // slot 55
     address public forwarderImplementation;
+
+    // slot 56
     address public asyncPromiseImplementation;
 
-    // Array to store promises
+    // slot 57
     address[] internal _promises;
 
+    // slot 58
     uint256 public asyncPromiseCounter;
+
+    // slot 59
     uint64 public version;
 
-    // contracts to gateway map
+    // slot 60
     mapping(address => address) public override contractsToGateways;
-    // gateway to contract map
+
+    // slot 61
     mapping(address => address) public override gatewaysToContracts;
 
+    // slots [62-111] reserved for gap
     uint256[50] _gap_after;
 }
 

@@ -42,5 +42,6 @@ abstract contract Gauge {
         }
     }
 
+    // slot 0-49: gap for future storage variables
     uint256[50] _gap_gauge;
 }

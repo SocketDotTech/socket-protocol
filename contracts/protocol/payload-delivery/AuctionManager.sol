@@ -14,17 +14,29 @@ import {Fees, Bid, PayloadBatch} from "../utils/common/Structs.sol";
 import {AuctionClosed, AuctionAlreadyStarted, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter} from "../utils/common/Errors.sol";
 
 abstract contract AuctionManagerStorage is IAuctionManager {
+    // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
+    // slot 50
     uint32 public evmxChainSlug;
+
+    // slot 51
     mapping(bytes32 => Bid) public winningBids;
+
+    // slot 52
     // asyncId => auction status
     mapping(bytes32 => bool) public override auctionClosed;
+
+    // slot 53
     mapping(bytes32 => bool) public override auctionStarted;
 
+    // slot 54
     uint256 public auctionEndDelaySeconds;
 
+    // slots [55-104] reserved for gap
     uint256[50] _gap_after;
+
+    // slots 105-156 reserved for addr resolver util
 }
 
 /// @title AuctionManager

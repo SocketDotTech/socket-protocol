@@ -15,6 +15,13 @@ abstract contract WatcherPrecompileLimits is
     Gauge,
     AddressResolverUtil
 {
+    // Slots from parent contracts:
+    // slot 0-119: watcher precompile storage
+    // 0 slots for initializable and ownable
+    // slots 120-170: access control
+    // slots 171-221: gauge
+    // slots 222-272: address resolver util
+
     ////////////////////////////////////////////////////////
     ////////////////////// EVENTS //////////////////////////
     ////////////////////////////////////////////////////////
@@ -166,5 +173,6 @@ abstract contract WatcherPrecompileLimits is
         defaultRatePerSecond = defaultRatePerSecond_;
     }
 
+    // slots 273-323: gap for future storage variables
     uint256[50] _gap_watcher_precompile_limits;
 }

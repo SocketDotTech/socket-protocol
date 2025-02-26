@@ -122,5 +122,6 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
         if (signer != owner()) revert InvalidWatcherSignature();
     }
 
+    // slot 324-374: gap for future storage variables
     uint256[50] _gap_watcher_precompile_config;
 }

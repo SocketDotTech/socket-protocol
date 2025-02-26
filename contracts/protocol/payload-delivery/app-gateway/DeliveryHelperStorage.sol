@@ -18,6 +18,7 @@ import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW, QUERY, FINALIZE} from ".
 /// @title DeliveryHelperStorage
 /// @notice Storage contract for DeliveryHelper
 abstract contract DeliveryHelperStorage is IDeliveryHelper {
+    // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
     // slot 50
@@ -40,16 +41,17 @@ abstract contract DeliveryHelperStorage is IDeliveryHelper {
 
     // slot 55 - payloadIdToBatchHash
     mapping(bytes32 => bytes32) public payloadIdToBatchHash;
-    // slot 56 - payloadIdToPayloadDetails 
+    // slot 56 - payloadIdToPayloadDetails
     mapping(bytes32 => PayloadDetails) public payloadIdToPayloadDetails;
 
     // slot 57
     // asyncId => PayloadDetails[]
     mapping(bytes32 => PayloadDetails[]) public payloadBatchDetails;
-    
+
     // slot 58
     // asyncId => PayloadBatch
     mapping(bytes32 => PayloadBatch) internal _payloadBatches;
 
+    // slots [59-108] reserved for gap
     uint256[50] _gap_after;
 }
