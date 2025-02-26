@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {CounterAppGateway} from "../../contracts/apps/counter/CounterAppGateway.sol";
-import {Counter} from "../../contracts/apps/counter/Counter.sol";
+import {CounterAppGateway} from "../../test/apps/app-gateways/counter/CounterAppGateway.sol";
+import {Counter} from "../../test/apps/app-gateways/counter/Counter.sol";
 
 contract CheckCounters is Script {
     function run() external {

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
-import {SuperTokenAppGateway} from "../../contracts/apps/super-token/SuperTokenAppGateway.sol";
+import {SuperTokenAppGateway} from "../../test/apps/app-gateways/super-token/SuperTokenAppGateway.sol";
 
 contract Bridge is Script {
     struct UserOrder {

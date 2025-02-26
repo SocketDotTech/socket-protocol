@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {SuperTokenLockableAppGateway} from "../../contracts/apps/super-token-lockable/SuperTokenLockableAppGateway.sol";
-import {SuperTokenLockable} from "../../contracts/apps/super-token-lockable/SuperTokenLockable.sol";
+import {SuperTokenLockableAppGateway} from "../../test/apps/app-gateways/super-token-lockable/SuperTokenLockableAppGateway.sol";
+import {SuperTokenLockable} from "../../test/apps/app-gateways/super-token-lockable/SuperTokenLockable.sol";
 import {Fees} from "../../contracts/protocol/utils/common/Structs.sol";
 import {ETH_ADDRESS} from "../../contracts/protocol/utils/common/Constants.sol";
 

@@ -2,8 +2,8 @@
 pragma solidity ^0.8.3;
 
 import "./DeliveryHelper.t.sol";
-import {Counter} from "../contracts/apps/counter/Counter.sol";
-import {CounterAppGateway} from "../contracts/apps/counter/CounterAppGateway.sol";
+import {Counter} from "./apps/app-gateways/counter/Counter.sol";
+import {CounterAppGateway} from "./apps/app-gateways/counter/CounterAppGateway.sol";
 
 contract FeesTest is DeliveryHelperTest {
     uint256 constant depositAmount = 1 ether;

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {ETH_ADDRESS} from "../../contracts/protocol/utils/common/Constants.sol";
-import {CounterAppGateway} from "../../contracts/apps/counter/CounterAppGateway.sol";
+import {CounterAppGateway} from "../../test/apps/app-gateways/counter/CounterAppGateway.sol";
 
 contract CounterDeployOnchain is Script {
     function run() external {

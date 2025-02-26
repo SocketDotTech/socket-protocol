@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 
-import {SuperTokenLockableAppGateway} from "../../contracts/apps/super-token-lockable/SuperTokenLockableAppGateway.sol";
+import {SuperTokenLockableAppGateway} from "../../test/apps/app-gateways/super-token-lockable/SuperTokenLockableAppGateway.sol";
 
 contract Bridge is Script {
     function run() external {

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {SuperTokenLockableAppGateway} from "../../contracts/apps/super-token-lockable/SuperTokenLockableAppGateway.sol";
-import {SuperTokenLockable} from "../../contracts/apps/super-token-lockable/SuperTokenLockable.sol";
-import {LimitHook} from "../../contracts/apps/super-token-lockable/LimitHook.sol";
+import {SuperTokenLockableAppGateway} from "./app-gateways/super-token-lockable/SuperTokenLockableAppGateway.sol";
+import {SuperTokenLockable} from "./app-gateways/super-token-lockable/SuperTokenLockable.sol";
+import {LimitHook} from "./app-gateways/super-token-lockable/LimitHook.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/protocol/utils/common/Constants.sol";
 
 import "../DeliveryHelper.t.sol";

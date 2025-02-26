@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {CounterAppGateway} from "../contracts/apps/counter/CounterAppGateway.sol";
-import {Counter} from "../contracts/apps/counter/Counter.sol";
+import {CounterAppGateway} from "./apps/app-gateways/counter/CounterAppGateway.sol";
+import {Counter} from "./apps/app-gateways/counter/Counter.sol";
 import "./DeliveryHelper.t.sol";
 
 contract InboxTest is DeliveryHelperTest {

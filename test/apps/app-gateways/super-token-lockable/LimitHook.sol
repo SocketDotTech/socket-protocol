@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Ownable} from "solady/auth/Ownable.sol";
-import "../../base/PlugBase.sol";
+import "../../../../contracts/base/PlugBase.sol";
 
 contract LimitHook is Ownable, PlugBase {
     // Define any state variables or functions for the LimitHook contract here

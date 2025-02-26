@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.7.0 <0.9.0;
 
-import "../../base/AppGatewayBase.sol";
+import "../../../../contracts/base/AppGatewayBase.sol";
+import "../../../../contracts/interfaces/IForwarder.sol";
+import "../../../../contracts/interfaces/IPromise.sol";
 import "./Counter.sol";
 import "./ICounter.sol";
-import "../../interfaces/IForwarder.sol";
-import "../../interfaces/IPromise.sol";
 
 contract CounterAppGateway is AppGatewayBase, Ownable {
     bytes32 public counter = _createContractId("counter");

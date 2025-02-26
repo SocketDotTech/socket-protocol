@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {SuperTokenAppGateway} from "../../contracts/apps/super-token/SuperTokenAppGateway.sol";
-import {SuperToken} from "../../contracts/apps/super-token/SuperToken.sol";
+import {SuperTokenAppGateway} from "./app-gateways/super-token/SuperTokenAppGateway.sol";
+import {SuperToken} from "./app-gateways/super-token/SuperToken.sol";
 import "../DeliveryHelper.t.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/protocol/utils/common/Constants.sol";
 

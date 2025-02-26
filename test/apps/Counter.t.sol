@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.21;
 
-import {CounterAppGateway} from "../../contracts/apps/counter/CounterAppGateway.sol";
-import {Counter} from "../../contracts/apps/counter/Counter.sol";
+import {CounterAppGateway} from "./app-gateways/counter/CounterAppGateway.sol";
+import {Counter} from "./app-gateways/counter/Counter.sol";
 import "../DeliveryHelper.t.sol";
 
 contract CounterTest is DeliveryHelperTest {
