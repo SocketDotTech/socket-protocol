@@ -27,6 +27,7 @@ contract DeployGateway is Script {
         SuperTokenLockableAppGateway gateway = new SuperTokenLockableAppGateway(
             addressResolver,
             address(auctionManager),
+            owner,
             FAST,
             fees,
             SuperTokenLockableAppGateway.ConstructorParams({

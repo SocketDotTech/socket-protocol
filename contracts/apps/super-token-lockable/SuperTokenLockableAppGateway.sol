@@ -34,6 +34,7 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
     constructor(
         address addressResolver_,
         address auctionManager_,
+        address owner_,
         bytes32 sbType_,
         Fees memory fees_,
         ConstructorParams memory params
@@ -55,7 +56,7 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
         );
 
         _setOverrides(fees_);
-        _initializeOwner(msg.sender);
+        _initializeOwner(owner_);
     }
 
     function deployContracts(uint32 chainSlug_) external async {

@@ -1,30 +1,30 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {CounterInboxAppGateway} from "../contracts/apps/counter-inbox/CounterInboxAppGateway.sol";
-import {CounterInbox} from "../contracts/apps/counter-inbox/CounterInbox.sol";
+import {CounterAppGateway} from "../contracts/apps/counter/CounterAppGateway.sol";
+import {Counter} from "../contracts/apps/counter/Counter.sol";
 import "./DeliveryHelper.t.sol";
 
 contract InboxTest is DeliveryHelperTest {
     uint256 constant feesAmount = 0.01 ether;
-    CounterInboxAppGateway public gateway;
-    CounterInbox public inbox;
+    CounterAppGateway public gateway;
+    Counter public inbox;
 
     function setUp() public {
         // Setup core test infrastructure
         setUpDeliveryHelper();
 
         // Deploy the inbox contract
-        inbox = new CounterInbox();
+        inbox = new Counter();
 
         // Deploy the gateway with fees
-        gateway = new CounterInboxAppGateway(
+        gateway = new CounterAppGateway(
             address(addressResolver),
             address(auctionManager),
-            address(inbox),
-            arbChainSlug,
+            FAST,
             createFees(feesAmount)
         );
+        gateway.setIsValidPlug(arbChainSlug, address(inbox));
 
         // Connect the inbox to the gateway and socket
         inbox.initSocket(
@@ -55,13 +55,12 @@ contract InboxTest is DeliveryHelperTest {
 
     function testInboxIncrement() public {
         // Initial counter value should be 0
-        assertEq(gateway.counter(), 0, "Initial gateway counter should be 0");
+        assertEq(gateway.counterVal(), 0, "Initial gateway counter should be 0");
 
         // Simulate a message from another chain through the watcher
         uint256 incrementValue = 5;
 
         bytes32 callId = inbox.increaseOnGateway(incrementValue);
-
         CallFromChainParams[] memory params = new CallFromChainParams[](1);
         params[0] = CallFromChainParams({
             callId: callId,
@@ -77,6 +76,6 @@ contract InboxTest is DeliveryHelperTest {
         );
         watcherPrecompile.callAppGateways(params, signatureNonce++, watcherSignature);
         // Check counter was incremented
-        assertEq(gateway.counter(), incrementValue, "Gateway counter should be incremented");
+        assertEq(gateway.counterVal(), incrementValue, "Gateway counter should be incremented");
     }
 }

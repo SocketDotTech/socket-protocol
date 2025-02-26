@@ -37,6 +37,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         isAsyncModifierSet = false;
         deliveryHelper().batch(fees, auctionManager, onCompleteData, sbType);
         _markValidPromises();
+        onCompleteData = bytes("");
     }
 
     /// @notice Modifier to ensure only valid promises can call the function
@@ -126,8 +127,6 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             creationCodeWithArgs[contractId_],
             initCallData_
         );
-
-        onCompleteData = abi.encode(chainSlug_, false);
     }
 
     /// @notice Sets the address for a deployed contract
@@ -157,7 +156,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
+            .getOnChainAddress();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -265,6 +265,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         bytes32,
         PayloadBatch memory payloadBatch_
     ) external override onlyDeliveryHelper {
+        if (payloadBatch_.onCompleteData.length == 0) return;
+
         (uint32 chainSlug, bool isDeploy) = abi.decode(
             payloadBatch_.onCompleteData,
             (uint32, bool)

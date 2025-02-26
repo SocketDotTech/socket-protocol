@@ -46,10 +46,7 @@ abstract contract AddressResolverStorage is IAddressResolver {
     // slot 60
     mapping(address => address) public override contractsToGateways;
 
-    // slot 61
-    mapping(address => address) public override gatewaysToContracts;
-
-    // slots [62-111] reserved for gap
+    // slots [61-110] reserved for gap
     uint256[50] _gap_after;
 }
 
@@ -224,7 +221,6 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
 
     function _setConfig(address appGateway_, address newForwarder_) internal {
         address gateway = contractsToGateways[appGateway_];
-        gatewaysToContracts[gateway] = newForwarder_;
         contractsToGateways[newForwarder_] = gateway;
     }
 

@@ -304,33 +304,7 @@ contract DeliveryHelperTest is SetupTest {
 
         appGateway_.deployContracts(chainSlug_);
         bidAndExecute(payloadIds, asyncId);
-        setupGatewayAndPlugs(chainSlug_, appGateway_, appGateway_, contractIds);
-    }
-
-    function _deployParallel(
-        bytes32[] memory contractIds,
-        uint32[] memory chainSlugs_,
-        IAppGateway appGateway_
-    ) internal returns (bytes32 asyncId) {
-        asyncId = getNextAsyncId();
-        bytes32[] memory payloadIds = new bytes32[](contractIds.length * chainSlugs_.length);
-        for (uint32 i = 0; i < chainSlugs_.length; i++) {
-            for (uint j = 0; j < contractIds.length; j++) {
-                payloadIds[i * contractIds.length + j] = getWritePayloadId(
-                    chainSlugs_[i],
-                    address(getSocketConfig(chainSlugs_[i]).switchboard),
-                    i * contractIds.length + j + payloadIdCounter
-                );
-            }
-        }
-        // for fees
-        payloadIdCounter += chainSlugs_.length * contractIds.length + 1;
-
-        appGateway_.deployMultiChainContracts(chainSlugs_);
-        bidAndExecute(payloadIds, asyncId);
-        for (uint i = 0; i < chainSlugs_.length; i++) {
-            setupGatewayAndPlugs(chainSlugs_[i], appGateway_, appGateway_, contractIds);
-        }
+        setupGatewayAndPlugs(chainSlug_, appGateway_, contractIds);
     }
 
     function setupGatewayAndPlugs(
@@ -347,7 +321,7 @@ contract DeliveryHelperTest is SetupTest {
             gateways[i] = AppGatewayConfig({
                 plug: plug,
                 chainSlug: chainSlug_,
-                appGateway: appGateway_,
+                appGateway: address(appGateway_),
                 switchboard: address(socketConfig.switchboard)
             });
         }

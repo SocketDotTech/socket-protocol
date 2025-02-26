@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {SuperTokenDeployer} from "../../contracts/apps/super-token/SuperTokenDeployer.sol";
 import {SuperTokenAppGateway} from "../../contracts/apps/super-token/SuperTokenAppGateway.sol";
 import {SuperToken} from "../../contracts/apps/super-token/SuperToken.sol";
 import "../DeliveryHelper.t.sol";
@@ -28,7 +27,6 @@ contract SuperTokenTest is DeliveryHelperTest {
      */
     struct AppContracts {
         SuperTokenAppGateway superTokenApp;
-        SuperTokenDeployer superTokenDeployer;
         bytes32 superToken;
     }
 
@@ -64,25 +62,19 @@ contract SuperTokenTest is DeliveryHelperTest {
      * - Sets up fee structure and auction manager integration
      */
     function deploySuperTokenApp() internal {
-        SuperTokenDeployer superTokenDeployer = new SuperTokenDeployer(
+        SuperTokenAppGateway superTokenApp = new SuperTokenAppGateway(
             address(addressResolver),
-            owner,
             address(auctionManager),
+            owner,
             FAST,
-            SuperTokenDeployer.ConstructorParams({
+            createFees(maxFees),
+            SuperTokenAppGateway.ConstructorParams({
                 name_: "SUPER TOKEN",
                 symbol_: "SUPER",
                 decimals_: 18,
                 initialSupplyHolder_: owner,
                 initialSupply_: 1000000000 ether
-            }),
-            createFees(maxFees)
-        );
-        SuperTokenAppGateway superTokenApp = new SuperTokenAppGateway(
-            address(addressResolver),
-            address(superTokenDeployer),
-            createFees(maxFees),
-            address(auctionManager)
+            })
         );
         // Enable app gateways to do all operations in the Watcher: Read, Write and Schedule on EVMx
         // Watcher sets the limits for apps in this SOCKET protocol version
@@ -90,8 +82,7 @@ contract SuperTokenTest is DeliveryHelperTest {
 
         appContracts = AppContracts({
             superTokenApp: superTokenApp,
-            superTokenDeployer: superTokenDeployer,
-            superToken: superTokenDeployer.superToken()
+            superToken: superTokenApp.superToken()
         });
     }
 
@@ -103,18 +94,12 @@ contract SuperTokenTest is DeliveryHelperTest {
      * - Correct setup of forwarder contracts for multi-chain communication
      */
     function testContractDeployment() public {
-        _deploy(
-            contractIds,
-            arbChainSlug,
-            1,
-            appContracts.superTokenDeployer,
-            address(appContracts.superTokenApp)
-        );
+        _deploy(contractIds, arbChainSlug, 1, IAppGateway(appContracts.superTokenApp));
 
         (address onChain, address forwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             appContracts.superToken,
-            appContracts.superTokenDeployer
+            IAppGateway(appContracts.superTokenApp)
         );
 
         assertEq(
@@ -140,21 +125,8 @@ contract SuperTokenTest is DeliveryHelperTest {
      * @dev Deploys necessary contracts on both Arbitrum and Optimism chains
      */
     function beforeTransfer() internal {
-        _deploy(
-            contractIds,
-            arbChainSlug,
-            1,
-            appContracts.superTokenDeployer,
-            address(appContracts.superTokenApp)
-        );
-
-        _deploy(
-            contractIds,
-            optChainSlug,
-            1,
-            appContracts.superTokenDeployer,
-            address(appContracts.superTokenApp)
-        );
+        _deploy(contractIds, arbChainSlug, 1, IAppGateway(appContracts.superTokenApp));
+        _deploy(contractIds, optChainSlug, 1, IAppGateway(appContracts.superTokenApp));
     }
 
     /**
@@ -171,13 +143,13 @@ contract SuperTokenTest is DeliveryHelperTest {
         (address onChainArb, address forwarderArb) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             appContracts.superToken,
-            appContracts.superTokenDeployer
+            IAppGateway(appContracts.superTokenApp)
         );
 
         (address onChainOpt, address forwarderOpt) = getOnChainAndForwarderAddresses(
             optChainSlug,
             appContracts.superToken,
-            appContracts.superTokenDeployer
+            IAppGateway(appContracts.superTokenApp)
         );
 
         uint256 arbBalanceBefore = SuperToken(onChainArb).balanceOf(owner);

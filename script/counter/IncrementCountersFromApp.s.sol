@@ -22,10 +22,7 @@ contract IncrementCounters is Script {
             gateway.counter(),
             11155420
         );
-        address counterForwarderBaseSepolia = gateway.forwarderAddresses(
-            gateway.counter(),
-            84532
-        );
+        address counterForwarderBaseSepolia = gateway.forwarderAddresses(gateway.counter(), 84532);
         //address counterForwarderSepolia = deployer.forwarderAddresses(
         //    deployer.counter(),
         //    11155111

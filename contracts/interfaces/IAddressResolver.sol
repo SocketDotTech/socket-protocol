@@ -32,11 +32,6 @@ interface IAddressResolver {
     /// @return The gateway address associated with the contract
     function contractsToGateways(address contractAddress_) external view returns (address);
 
-    /// @notice Maps gateway addresses to their corresponding contract addresses
-    /// @param gatewayAddress_ The address of the gateway to lookup
-    /// @return The contract address associated with the gateway
-    function gatewaysToContracts(address gatewayAddress_) external view returns (address);
-
     /// @notice Gets the list of all deployed async promise contracts
     /// @return Array of async promise contract addresses
     function getPromises() external view returns (address[] memory);

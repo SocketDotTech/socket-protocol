@@ -30,6 +30,7 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
     constructor(
         address addressResolver_,
         address auctionManager_,
+        address owner_,
         bytes32 sbType_,
         Fees memory fees_,
         ConstructorParams memory params_
@@ -48,7 +49,7 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         // sets the fees data like max fees, chain and token for all transfers
         // they can be updated for each transfer as well
         _setOverrides(fees_);
-        _initializeOwner(msg.sender);
+        _initializeOwner(owner_);
     }
 
     function deployContracts(uint32 chainSlug_) external async {
