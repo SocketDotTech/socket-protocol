@@ -149,8 +149,8 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
         bytes memory signature_
     ) external {
         _isWatcherSignatureValid(
-            signatureNonce_,
             abi.encode(chainSlug_, originAppGateway_, token_, amount_),
+            signatureNonce_,
             signature_
         );
 
@@ -363,8 +363,8 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
     }
 
     function _isWatcherSignatureValid(
-        uint256 signatureNonce_,
         bytes memory digest_,
+        uint256 signatureNonce_,
         bytes memory signature_
     ) internal {
         if (isNonceUsed[signatureNonce_]) revert NonceUsed();
