@@ -49,7 +49,8 @@ contract DeliveryHelperTest is SetupTest {
         bytes memory feesManagerData = abi.encodeWithSelector(
             FeesManager.initialize.selector,
             address(addressResolver),
-            owner
+            watcherEOA,
+            evmxSlug
         );
 
         vm.expectEmit(true, true, true, false);
@@ -203,12 +204,33 @@ contract DeliveryHelperTest is SetupTest {
             fees_.amount
         );
 
-        hoax(owner);
-        feesManager.incrementFeesDeposited(
+        bytes memory bytesInput = abi.encode(
             fees_.feePoolChain,
             appGateway_,
             fees_.feePoolToken,
             fees_.amount
+        );
+        bytes32 digest = keccak256(
+            abi.encode(address(feesManager), evmxSlug, signatureNonce, bytesInput)
+        );
+
+        digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
+        (uint8 sigV, bytes32 sigR, bytes32 sigS) = vm.sign(watcherPrivateKey, digest);
+        bytes memory sig = new bytes(65);
+        bytes1 v32 = bytes1(sigV);
+
+        assembly {
+            mstore(add(sig, 96), v32)
+            mstore(add(sig, 32), sigR)
+            mstore(add(sig, 64), sigS)
+        }
+        feesManager.incrementFeesDeposited(
+            fees_.feePoolChain,
+            appGateway_,
+            fees_.feePoolToken,
+            fees_.amount,
+            signatureNonce++,
+            sig
         );
     }
 
