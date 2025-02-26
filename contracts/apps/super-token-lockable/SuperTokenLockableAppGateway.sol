@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import "../../base/AppGatewayBase.sol";
-import {ISuperToken} from "../../interfaces/ISuperToken.sol";
 import "solady/auth/Ownable.sol";
+import {ISuperToken} from "../../interfaces/ISuperToken.sol";
+import "../../base/AppGatewayBase.sol";
+import "./SuperTokenLockable.sol";
+import "./LimitHook.sol";
 
 contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
-    uint256 public idCounter;
+    bytes32 public superTokenLockable = _createContractId("superTokenLockable");
+    bytes32 public limitHook = _createContractId("limitHook");
 
     event Bridged(bytes32 asyncId);
 
@@ -18,15 +21,59 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
         uint256 deadline;
     }
 
+    struct ConstructorParams {
+        uint256 _burnLimit;
+        uint256 _mintLimit;
+        string name_;
+        string symbol_;
+        uint8 decimals_;
+        address initialSupplyHolder_;
+        uint256 initialSupply_;
+    }
+
     constructor(
         address addressResolver_,
-        address deployerContract_,
         address auctionManager_,
-        Fees memory fees_
-    ) AppGatewayBase(addressResolver_, auctionManager_) {
-        addressResolver__.setContractsToGateways(deployerContract_);
+        bytes32 sbType_,
+        Fees memory fees_,
+        ConstructorParams memory params
+    ) AppGatewayBase(addressResolver_, auctionManager_, sbType_) {
+        creationCodeWithArgs[superTokenLockable] = abi.encodePacked(
+            type(SuperTokenLockable).creationCode,
+            abi.encode(
+                params.name_,
+                params.symbol_,
+                params.decimals_,
+                params.initialSupplyHolder_,
+                params.initialSupply_
+            )
+        );
+
+        creationCodeWithArgs[limitHook] = abi.encodePacked(
+            type(LimitHook).creationCode,
+            abi.encode(params._burnLimit, params._mintLimit)
+        );
+
         _setOverrides(fees_);
         _initializeOwner(msg.sender);
+    }
+
+    function deployContracts(uint32 chainSlug_) external async {
+        bytes memory initData = abi.encodeWithSelector(
+            SuperTokenLockable.setOwner.selector,
+            owner()
+        );
+        _deploy(superTokenLockable, chainSlug_, IsPlug.YES, initData);
+        _deploy(limitHook, chainSlug_, IsPlug.YES, initData);
+    }
+
+    // don't need to call this directly, will be called automatically after all contracts are deployed.
+    // check AppGatewayBase.onBatchComplete
+    function initialize(uint32 chainSlug_) public override async {
+        address limitHookContract = getOnChainAddress(limitHook, chainSlug_);
+        SuperTokenLockable(forwarderAddresses[superTokenLockable][chainSlug_]).setLimitHook(
+            limitHookContract
+        );
     }
 
     function checkBalance(bytes memory data_, bytes memory returnData_) external onlyPromises {

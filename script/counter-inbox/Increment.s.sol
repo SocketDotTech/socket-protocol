@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {CounterInbox} from "../../contracts/apps/counter-inbox/CounterInbox.sol";
-import {CounterInboxAppGateway} from "../../contracts/apps/counter-inbox/CounterInboxAppGateway.sol";
+import {CounterAppGateway} from "../../contracts/apps/counter/CounterAppGateway.sol";
+import {Counter} from "../../contracts/apps/counter/Counter.sol";
 import {Fees} from "../../contracts/protocol/utils/common/Structs.sol";
 import {ETH_ADDRESS, FAST} from "../../contracts/protocol/utils/common/Constants.sol";
 
@@ -17,7 +17,7 @@ contract Increment is Script {
         vm.startBroadcast(arbDeployerPrivateKey);
         address counterInbox = vm.envAddress("COUNTER_INBOX");
 
-        CounterInbox inbox = CounterInbox(counterInbox);
+        Counter inbox = Counter(counterInbox);
         inbox.increaseOnGateway(100);
 
         vm.stopBroadcast();

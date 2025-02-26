@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {CounterDeployer} from "../../contracts/apps//counter/CounterDeployer.sol";
 import {ETH_ADDRESS} from "../../contracts/protocol/utils/common/Constants.sol";
+import {CounterAppGateway} from "../../contracts/apps/counter/CounterAppGateway.sol";
 
 contract CounterDeployOnchain is Script {
     function run() external {
@@ -15,17 +15,17 @@ contract CounterDeployOnchain is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        CounterDeployer deployer = CounterDeployer(vm.envAddress("DEPLOYER"));
+        CounterAppGateway appGateway = CounterAppGateway(vm.envAddress("APP_GATEWAY"));
 
-        console.log("Counter Deployer:", address(deployer));
+        console.log("Counter Gateway:", address(appGateway));
 
         console.log("Deploying contracts on Arbitrum Sepolia...");
-        deployer.deployContracts(421614);
+        appGateway.deployContracts(421614);
         // console.log("Deploying contracts on Optimism Sepolia...");
-        // deployer.deployContracts(11155420);
+        // appGateway.deployContracts(11155420);
         // console.log("Deploying contracts on Base Sepolia...");
-        // deployer.deployContracts(84532);
+        // appGateway.deployContracts(84532);
         // console.log("Deploying contracts on Ethereum Sepolia...");
-        // deployer.deployContracts(11155111);
+        // appGateway.deployContracts(11155111);
     }
 }

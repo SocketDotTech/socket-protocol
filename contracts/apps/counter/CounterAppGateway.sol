@@ -7,18 +7,51 @@ import "./ICounter.sol";
 import "../../interfaces/IForwarder.sol";
 import "../../interfaces/IPromise.sol";
 
-contract CounterAppGateway is AppGatewayBase {
+contract CounterAppGateway is AppGatewayBase, Ownable {
+    bytes32 public counter = _createContractId("counter");
+    bytes32 public counter1 = _createContractId("counter1");
+
+    uint256 public counterVal;
+
     uint256 arbCounter;
     uint256 optCounter;
+    event TimeoutResolved(uint256 creationTimestamp, uint256 executionTimestamp);
 
     constructor(
         address addressResolver_,
-        address deployerContract_,
         address auctionManager_,
+        bytes32 sbType_,
         Fees memory fees_
-    ) AppGatewayBase(addressResolver_, auctionManager_) {
-        addressResolver__.setContractsToGateways(deployerContract_);
+    ) AppGatewayBase(addressResolver_, auctionManager_, sbType_) {
+        creationCodeWithArgs[counter] = abi.encodePacked(type(Counter).creationCode);
+        creationCodeWithArgs[counter1] = abi.encodePacked(type(Counter).creationCode);
         _setOverrides(fees_);
+        _initializeOwner(msg.sender);
+    }
+
+    // deploy contracts
+    function deployContracts(uint32 chainSlug_) external async {
+        _deploy(counter, chainSlug_, IsPlug.YES);
+    }
+
+    function deployParallelContracts(uint32 chainSlug_) external async {
+        _setOverrides(Parallel.ON);
+        _deploy(counter, chainSlug_, IsPlug.YES);
+        _deploy(counter1, chainSlug_, IsPlug.YES);
+        _setOverrides(Parallel.OFF);
+    }
+
+    function deployMultiChainContracts(uint32[] memory chainSlugs_) external async {
+        _setOverrides(Parallel.ON);
+        for (uint32 i = 0; i < chainSlugs_.length; i++) {
+            _deploy(counter, chainSlugs_[i], IsPlug.YES);
+            _deploy(counter1, chainSlugs_[i], IsPlug.YES);
+        }
+        _setOverrides(Parallel.OFF);
+    }
+
+    function initialize(uint32) public pure override {
+        return;
     }
 
     function incrementCounters(address[] memory instances_) public async {
@@ -26,6 +59,14 @@ contract CounterAppGateway is AppGatewayBase {
         // this
         for (uint256 i = 0; i < instances_.length; i++) {
             ICounter(instances_[i]).increase();
+        }
+    }
+
+    // for testing purposes
+    function incrementCountersWithoutAsync(address[] memory instances_) public {
+        // the increase function is called on given list of instances
+        for (uint256 i = 0; i < instances_.length; i++) {
+            Counter(instances_[i]).increase();
         }
     }
 
@@ -50,6 +91,36 @@ contract CounterAppGateway is AppGatewayBase {
             optCounter = counterValue;
         }
     }
+
+    // INBOX
+    function setIsValidPlug(uint32 chainSlug_, address plug_) public {
+        watcherPrecompile__().setIsValidPlug(chainSlug_, plug_, true);
+    }
+
+    function callFromChain(
+        uint32,
+        address,
+        bytes calldata payload_,
+        bytes32
+    ) external override onlyWatcherPrecompile {
+        uint256 value = abi.decode(payload_, (uint256));
+        counterVal += value;
+    }
+
+    // TIMEOUT
+    function setTimeout(uint256 delayInSeconds_) public {
+        bytes memory payload = abi.encodeWithSelector(
+            this.resolveTimeout.selector,
+            block.timestamp
+        );
+        watcherPrecompile__().setTimeout(address(this), payload, delayInSeconds_);
+    }
+
+    function resolveTimeout(uint256 creationTimestamp_) external onlyWatcherPrecompile {
+        emit TimeoutResolved(creationTimestamp_, block.timestamp);
+    }
+
+    // UTILS
 
     function setFees(Fees memory fees_) public {
         fees = fees_;

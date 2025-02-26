@@ -88,7 +88,7 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
     /// @param chainSlug_ The chain slug
     /// @return newForwarder The address of the deployed Forwarder proxy contract
     function getOrDeployForwarderContract(
-        address appDeployer_,
+        address appGateway_,
         address chainContractAddress_,
         uint32 chainSlug_
     ) public returns (address newForwarder) {
@@ -105,7 +105,7 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
         );
 
         newForwarder = _deployProxy(salt, address(forwarderBeacon), initData);
-        _setConfig(appDeployer_, newForwarder);
+        _setConfig(appGateway_, newForwarder);
         emit ForwarderDeployed(newForwarder, salt);
     }
 
@@ -222,8 +222,8 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
             LibClone.predictDeterministicAddressERC1967BeaconProxy(beacon_, salt_, address(this));
     }
 
-    function _setConfig(address appDeployer_, address newForwarder_) internal {
-        address gateway = contractsToGateways[appDeployer_];
+    function _setConfig(address appGateway_, address newForwarder_) internal {
+        address gateway = contractsToGateways[appGateway_];
         gatewaysToContracts[gateway] = newForwarder_;
         contractsToGateways[newForwarder_] = gateway;
     }

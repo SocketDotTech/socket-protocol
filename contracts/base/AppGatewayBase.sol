@@ -114,7 +114,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         isValidPromise[asyncPromise] = true;
         IPromise(asyncPromise).then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
 
-        onCompleteData = abi.encode(chainSlug_);
+        onCompleteData = abi.encode(chainSlug_, true);
         IDeliveryHelper(deliveryHelper()).queue(
             isPlug_,
             isParallelCall,
@@ -126,6 +126,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             creationCodeWithArgs[contractId_],
             initCallData_
         );
+
+        onCompleteData = abi.encode(chainSlug_, false);
     }
 
     /// @notice Sets the address for a deployed contract
@@ -155,20 +157,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
-            .getOnChainAddress();
-    }
-
-    /// @notice Callback in pd promise to be called after all contracts are deployed
-    /// @param payloadBatch_ The payload batch
-    /// @dev only payload delivery can call this
-    /// @dev callback in pd promise to be called after all contracts are deployed
-    function onBatchComplete(
-        bytes32,
-        PayloadBatch memory payloadBatch_
-    ) external override onlyDeliveryHelper {
-        uint32 chainSlug = abi.decode(payloadBatch_.onCompleteData, (uint32));
-        initialize(chainSlug);
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -269,12 +258,21 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// @notice Callback in pd promise to be called after all contracts are deployed
-    /// @param asyncId_ The async ID
     /// @param payloadBatch_ The payload batch
+    /// @dev only payload delivery can call this
+    /// @dev callback in pd promise to be called after all contracts are deployed
     function onBatchComplete(
-        bytes32 asyncId_,
+        bytes32,
         PayloadBatch memory payloadBatch_
-    ) external virtual onlyDeliveryHelper {}
+    ) external override onlyDeliveryHelper {
+        (uint32 chainSlug, bool isDeploy) = abi.decode(
+            payloadBatch_.onCompleteData,
+            (uint32, bool)
+        );
+        if (isDeploy) {
+            initialize(chainSlug);
+        }
+    }
 
     function callFromChain(
         uint32 chainSlug_,

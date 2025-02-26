@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {SuperTokenLockableAppGateway} from "../../contracts/apps/super-token-lockable/SuperTokenLockableAppGateway.sol";
-import {SuperTokenLockableDeployer} from "../../contracts/apps/super-token-lockable/SuperTokenLockableDeployer.sol";
 import {SuperTokenLockable} from "../../contracts/apps/super-token-lockable/SuperTokenLockable.sol";
 import {Fees} from "../../contracts/protocol/utils/common/Structs.sol";
 import {ETH_ADDRESS, FAST} from "../../contracts/protocol/utils/common/Constants.sol";
@@ -25,12 +24,12 @@ contract DeployGateway is Script {
             amount: 0.001 ether
         });
 
-        SuperTokenLockableDeployer deployer = new SuperTokenLockableDeployer(
+        SuperTokenLockableAppGateway gateway = new SuperTokenLockableAppGateway(
             addressResolver,
-            owner,
             address(auctionManager),
             FAST,
-            SuperTokenLockableDeployer.ConstructorParams({
+            fees,
+            SuperTokenLockableAppGateway.ConstructorParams({
                 _burnLimit: 1000000000 ether,
                 _mintLimit: 1000000000 ether,
                 name_: "SUPER TOKEN",
@@ -38,23 +37,14 @@ contract DeployGateway is Script {
                 decimals_: 18,
                 initialSupplyHolder_: owner,
                 initialSupply_: 1000000000 ether
-            }),
-            fees
+            })
         );
 
-        SuperTokenLockableAppGateway gateway = new SuperTokenLockableAppGateway(
-            addressResolver,
-            address(deployer),
-            address(auctionManager),
-            fees
-        );
-
-        bytes32 superToken = deployer.superTokenLockable();
-        bytes32 limitHook = deployer.limitHook();
+        bytes32 superToken = gateway.superTokenLockable();
+        bytes32 limitHook = gateway.limitHook();
 
         console.log("Contracts deployed:");
         console.log("SuperTokenLockableAppGateway:", address(gateway));
-        console.log("SuperTokenLockableDeployer:", address(deployer));
         console.log("SuperTokenLockableId:");
         console.logBytes32(superToken);
         console.log("LimitHookId:");

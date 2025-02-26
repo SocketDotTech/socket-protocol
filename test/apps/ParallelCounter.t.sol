@@ -5,6 +5,9 @@ import {ParallelCounterAppGateway} from "../../contracts/apps/parallel-counter/P
 import {ParallelCounterDeployer} from "../../contracts/apps/parallel-counter/ParallelCounterDeployer.sol";
 import "../DeliveryHelper.t.sol";
 
+
+
+
 contract ParallelCounterTest is DeliveryHelperTest {
     uint256 feesAmount = 0.01 ether;
 
@@ -42,8 +45,7 @@ contract ParallelCounterTest is DeliveryHelperTest {
         asyncId = _deployParallel(
             contractIds,
             chainSlugs,
-            IMultiChainAppDeployer(address(parallelCounterDeployer)),
-            address(parallelCounterGateway)
+            IAppGateway(address(parallelCounterGateway))
         );
     }
 

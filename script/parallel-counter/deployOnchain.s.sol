@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {ParallelCounterDeployer} from "../../contracts/apps/parallel-counter/ParallelCounterDeployer.sol";
+import {CounterAppGateway} from "../../contracts/apps/counter/CounterAppGateway.sol";
 import {ETH_ADDRESS} from "../../contracts/protocol/utils/common/Constants.sol";
 
 contract CounterDeployOnchain is Script {
@@ -15,15 +15,14 @@ contract CounterDeployOnchain is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        ParallelCounterDeployer deployer = ParallelCounterDeployer(vm.envAddress("DEPLOYER"));
+        CounterAppGateway gateway = CounterAppGateway(vm.envAddress("APP_GATEWAY"));
 
-        console.log("Counter Deployer:", address(deployer));
-
+        console.log("Counter Gateway:", address(gateway));
         console.log("Deploying contracts on Arbitrum Sepolia...");
 
         uint32[] memory chainSlugs = new uint32[](2);
         chainSlugs[0] = 421614;
         chainSlugs[1] = 11155420;
-        deployer.deployMultiChainContracts(chainSlugs);
+        gateway.deployMultiChainContracts(chainSlugs);
     }
 }

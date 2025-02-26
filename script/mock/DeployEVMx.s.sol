@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {MockWatcherPrecompile} from "../../contracts/mock/MockWatcherPrecompile.sol";
-import {MockSocket} from "../../contracts/mock/MockSocket.sol";
+import {MockWatcherPrecompile} from "../../test/mock/MockWatcherPrecompile.sol";
+import {MockSocket} from "../../test/mock/MockSocket.sol";
 
 contract DeployEVMx is Script {
     function run() external {

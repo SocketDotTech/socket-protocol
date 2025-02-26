@@ -6,8 +6,7 @@ import "../contracts/protocol/payload-delivery/FeesManager.sol";
 import "../contracts/protocol/payload-delivery/AuctionManager.sol";
 
 import "../contracts/protocol/Forwarder.sol";
-import "../contracts/interfaces/IAppDeployer.sol";
-import "../contracts/interfaces/IMultiChainAppDeployer.sol";
+import "../contracts/interfaces/IAppGateway.sol";
 
 import "./SetupTest.t.sol";
 
@@ -292,8 +291,7 @@ contract DeliveryHelperTest is SetupTest {
         bytes32[] memory contractIds,
         uint32 chainSlug_,
         uint256 totalPayloads,
-        IAppDeployer appDeployer_,
-        address appGateway_
+        IAppGateway appGateway_
     ) internal returns (bytes32 asyncId) {
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
 
@@ -304,16 +302,15 @@ contract DeliveryHelperTest is SetupTest {
             totalPayloads
         );
 
-        appDeployer_.deployContracts(chainSlug_);
+        appGateway_.deployContracts(chainSlug_);
         bidAndExecute(payloadIds, asyncId);
-        setupGatewayAndPlugs(chainSlug_, appDeployer_, appGateway_, contractIds);
+        setupGatewayAndPlugs(chainSlug_, appGateway_, appGateway_, contractIds);
     }
 
     function _deployParallel(
         bytes32[] memory contractIds,
         uint32[] memory chainSlugs_,
-        IMultiChainAppDeployer appDeployer_,
-        address appGateway_
+        IAppGateway appGateway_
     ) internal returns (bytes32 asyncId) {
         asyncId = getNextAsyncId();
         bytes32[] memory payloadIds = new bytes32[](contractIds.length * chainSlugs_.length);
@@ -329,24 +326,23 @@ contract DeliveryHelperTest is SetupTest {
         // for fees
         payloadIdCounter += chainSlugs_.length * contractIds.length + 1;
 
-        appDeployer_.deployMultiChainContracts(chainSlugs_);
+        appGateway_.deployMultiChainContracts(chainSlugs_);
         bidAndExecute(payloadIds, asyncId);
         for (uint i = 0; i < chainSlugs_.length; i++) {
-            setupGatewayAndPlugs(chainSlugs_[i], appDeployer_, appGateway_, contractIds);
+            setupGatewayAndPlugs(chainSlugs_[i], appGateway_, appGateway_, contractIds);
         }
     }
 
     function setupGatewayAndPlugs(
         uint32 chainSlug_,
-        IAppDeployer appDeployer_,
-        address appGateway_,
+        IAppGateway appGateway_,
         bytes32[] memory contractIds
     ) internal {
         AppGatewayConfig[] memory gateways = new AppGatewayConfig[](contractIds.length);
 
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
         for (uint i = 0; i < contractIds.length; i++) {
-            address plug = appDeployer_.getOnChainAddress(contractIds[i], chainSlug_);
+            address plug = appGateway_.getOnChainAddress(contractIds[i], chainSlug_);
 
             gateways[i] = AppGatewayConfig({
                 plug: plug,
@@ -671,10 +667,10 @@ contract DeliveryHelperTest is SetupTest {
     function getOnChainAndForwarderAddresses(
         uint32 chainSlug_,
         bytes32 contractId_,
-        IAppDeployer deployer_
+        IAppGateway appGateway_
     ) internal view returns (address, address) {
-        address app = deployer_.getOnChainAddress(contractId_, chainSlug_);
-        address forwarder = deployer_.forwarderAddresses(contractId_, chainSlug_);
+        address app = appGateway_.getOnChainAddress(contractId_, chainSlug_);
+        address forwarder = appGateway_.forwarderAddresses(contractId_, chainSlug_);
         return (app, forwarder);
     }
 }

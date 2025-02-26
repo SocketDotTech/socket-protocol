@@ -14,4 +14,8 @@ contract Counter is Ownable, PlugBase {
     function getCounter() external view returns (uint256) {
         return counter;
     }
+
+    function increaseOnGateway(uint256 value_) external returns (bytes32) {
+        return _callAppGateway(abi.encode(value_), bytes32(0));
+    }
 }
