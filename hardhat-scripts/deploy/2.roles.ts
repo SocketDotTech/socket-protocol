@@ -120,10 +120,6 @@ export const main = async () => {
   try {
     console.log("Setting Roles");
     const addresses = getAddresses(mode) as unknown as DeploymentAddresses;
-
-    console.log("Setting Roles for EVMx");
-    await setRolesForEVMx(addresses);
-
     console.log("Setting Roles for On Chain");
     for (const chain of chains) {
       await setRolesForOnChain(chain, addresses);

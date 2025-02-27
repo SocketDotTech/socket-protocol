@@ -105,7 +105,7 @@ const deployEVMxContracts = async () => {
 
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.FeesManager,
-        `contracts/protocol/payload-delivery/app-gateway/FeesManager.sol`,
+        `contracts/protocol/payload-delivery/FeesManager.sol`,
         [addressResolver.address, EVMxOwner, EVMX_CHAIN_ID],
         proxyFactory,
         deployUtils
@@ -125,7 +125,7 @@ const deployEVMxContracts = async () => {
 
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.AuctionManager,
-        `contracts/protocol/payload-delivery/app-gateway/AuctionManager.sol`,
+        `contracts/protocol/payload-delivery/AuctionManager.sol`,
         [
           EVMX_CHAIN_ID,
           auctionEndDelaySeconds,
