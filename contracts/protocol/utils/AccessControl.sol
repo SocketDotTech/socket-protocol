@@ -15,6 +15,9 @@ abstract contract AccessControl is Ownable {
      */
     mapping(bytes32 => mapping(address => bool)) private _permits;
 
+    // slots 0-49: gap for future storage variables
+    uint256[50] _gap_access_control;
+
     /**
      * @dev Emitted when a role is granted to an address.
      */
@@ -105,6 +108,4 @@ abstract contract AccessControl is Ownable {
     function _hasRole(bytes32 role_, address address_) internal view returns (bool) {
         return _permits[role_][address_];
     }
-
-    uint256[50] _gap_access_control;
 }

@@ -4,6 +4,9 @@ import {LimitParams} from "../utils/common/Structs.sol";
 import {LimitReached} from "../utils/common/Errors.sol";
 
 abstract contract Gauge {
+    // slot 0-49: gap for future storage variables
+    uint256[50] _gap_gauge;
+
     function _getCurrentLimit(LimitParams storage params_) internal view returns (uint256 _limit) {
         uint256 timeElapsed = block.timestamp - params_.lastUpdateTimestamp;
         uint256 limitIncrease = timeElapsed * params_.ratePerSecond;
@@ -41,7 +44,4 @@ abstract contract Gauge {
             revert LimitReached();
         }
     }
-
-    // slot 0-49: gap for future storage variables
-    uint256[50] _gap_gauge;
 }

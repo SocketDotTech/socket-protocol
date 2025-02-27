@@ -21,6 +21,8 @@ abstract contract WatcherPrecompileLimits is
     // slots 120-170: access control
     // slots 171-221: gauge
     // slots 222-272: address resolver util
+    // slots 273-323: gap for future storage variables
+    uint256[50] _gap_watcher_precompile_limits;
 
     ////////////////////////////////////////////////////////
     ////////////////////// EVENTS //////////////////////////
@@ -172,7 +174,4 @@ abstract contract WatcherPrecompileLimits is
     function setDefaultRatePerSecond(uint256 defaultRatePerSecond_) external onlyOwner {
         defaultRatePerSecond = defaultRatePerSecond_;
     }
-
-    // slots 273-323: gap for future storage variables
-    uint256[50] _gap_watcher_precompile_limits;
 }
