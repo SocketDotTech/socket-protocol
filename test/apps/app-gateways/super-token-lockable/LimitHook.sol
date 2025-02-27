@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Ownable} from "solady/auth/Ownable.sol";
-import "../../base/PlugBase.sol";
+import "../../../../contracts/base/PlugBase.sol";
 
 contract LimitHook is Ownable, PlugBase {
     // Define any state variables or functions for the LimitHook contract here
@@ -11,6 +11,7 @@ contract LimitHook is Ownable, PlugBase {
 
     error BurnLimitExceeded();
     error MintLimitExceeded();
+    error InvalidSender();
 
     constructor(uint256 _burnLimit_, uint256 _mintLimit_) {
         burnLimit = _burnLimit_;
@@ -30,12 +31,16 @@ contract LimitHook is Ownable, PlugBase {
         if (amount_ > mintLimit) revert MintLimitExceeded();
     }
 
+    function setOwner(address owner_) external {
+        if (owner() != address(0) && owner() != msg.sender) revert InvalidSender();
+        _initializeOwner(owner_);
+    }
+
     function connectSocket(
         address appGateway_,
         address socket_,
         address switchboard_
     ) external onlyOwner {
-        _initializeOwner(socket_);
         _connectSocket(appGateway_, socket_, switchboard_);
     }
 }

@@ -13,7 +13,7 @@ interface IDeliveryHelper {
         Bid winningBid // Replaced winningTransmitter and winningBid with Bid struct
     );
 
-    function bidTimeout() external view returns (uint256);
+    function bidTimeout() external view returns (uint128);
 
     function payloadBatches(bytes32) external view returns (PayloadBatch memory);
 

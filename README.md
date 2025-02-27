@@ -17,3 +17,5 @@ Find more information at [docs](https://docs.socket.tech)
 - update version after every change
 - never remove code
 - inherited contracts should have gaps at the end to avoid storage collision
+- write tests for migration checking slots after the change
+-

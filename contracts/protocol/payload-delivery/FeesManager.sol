@@ -4,19 +4,23 @@ pragma solidity ^0.8.0;
 import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 import "solady/utils/ECDSA.sol";
-import {AddressResolverUtil} from "../../../protocol/utils/AddressResolverUtil.sol";
-import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, PayloadBatch, Parallel} from "../../../protocol/utils/common/Structs.sol";
-import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
-import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW} from "../../../protocol/utils/common/Constants.sol";
-import {IFeesPlug} from "../../../interfaces/IFeesPlug.sol";
-import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 
-import {NotAuctionManager} from "../../../protocol/utils/common/Errors.sol";
+import {IFeesPlug} from "../../interfaces/IFeesPlug.sol";
+import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 
-/// @title FeesManager
-/// @notice Contract for managing fees
-contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializable {
+import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
+import {WITHDRAW} from "../utils/common/Constants.sol";
+import {NotAuctionManager} from "../utils/common/Errors.sol";
+import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, Parallel} from "../utils/common/Structs.sol";
+
+abstract contract FeesManagerStorage is IFeesManager {
+    // slots [0-49] reserved for gap
+    uint256[50] _gap_before;
+
+    // slot 50
     uint256 public feesCounter;
+
+    // slot 51
     uint32 public evmxSlug;
 
     /// @notice Struct containing fee amounts and status
@@ -25,23 +29,36 @@ contract FeesManager is IFeesManager, AddressResolverUtil, Ownable, Initializabl
         uint256 blocked; // Amount blocked
     }
 
+    // slot 52
     /// @notice Master mapping tracking all fee information
     /// @dev appGateway => chainSlug => token => TokenBalance
     mapping(address => mapping(uint32 => mapping(address => TokenBalance)))
         public appGatewayFeeBalances;
 
+    // slot 53
     /// @notice Mapping to track blocked fees for each async id
     /// @dev asyncId => Fees
     mapping(bytes32 => Fees) public asyncIdBlockedFees;
 
+    // slot 54
     /// @notice Mapping to track fees to be distributed to transmitters
     /// @dev transmitter => chainSlug => token => amount
     mapping(address => mapping(uint32 => mapping(address => uint256))) public transmitterFees;
 
+    // slot 55
     /// @notice Mapping to track nonce to whether it has been used
-    /// @dev signatureNonce => isValid
+    /// @dev signatureNonce => isNonceUsed
     mapping(uint256 => bool) public isNonceUsed;
 
+    // slots [56-105] reserved for gap
+    uint256[50] _gap_after;
+
+    // slots 106-156 reserved for addr resolver util
+}
+
+/// @title FeesManager
+/// @notice Contract for managing fees
+contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResolverUtil {
     /// @notice Emitted when fees are blocked for a batch
     /// @param asyncId The batch identifier
     /// @param chainSlug The chain identifier

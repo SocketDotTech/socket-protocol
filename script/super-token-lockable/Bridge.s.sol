@@ -4,43 +4,41 @@ pragma solidity ^0.8.0;
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 
-import {SuperTokenLockableAppGateway} from "../../contracts/apps/super-token-lockable/SuperTokenLockableAppGateway.sol";
-import {SuperTokenLockableDeployer} from "../../contracts/apps/super-token-lockable/SuperTokenLockableDeployer.sol";
+import {SuperTokenLockableAppGateway} from "../../test/apps/app-gateways/super-token-lockable/SuperTokenLockableAppGateway.sol";
 
 contract Bridge is Script {
     function run() external {
-        address owner = vm.envAddress("SUPERTOKEN_OWNER");
-        address deployer = vm.envAddress("SUPERTOKEN_DEPLOYER");
-        address gateway = vm.envAddress("SUPERTOKEN_APP_GATEWAY");
+        address owner = vm.envAddress("OWNER");
+        address gateway = vm.envAddress("APP_GATEWAY");
         SuperTokenLockableAppGateway gatewayContract = SuperTokenLockableAppGateway(gateway);
-        SuperTokenLockableDeployer deployerContract = SuperTokenLockableDeployer(deployer);
+
         string memory rpc = vm.envString("EVMX_RPC");
         vm.createSelectFork(rpc);
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        address arbTokenForwarder = deployerContract.forwarderAddresses(
-            deployerContract.superTokenLockable(),
+        address arbTokenForwarder = gatewayContract.forwarderAddresses(
+            gatewayContract.superTokenLockable(),
             421614
         );
-        address arbHookForwarder = deployerContract.forwarderAddresses(
-            deployerContract.limitHook(),
+        address arbHookForwarder = gatewayContract.forwarderAddresses(
+            gatewayContract.limitHook(),
             421614
         );
-        address optTokenForwarder = deployerContract.forwarderAddresses(
-            deployerContract.superTokenLockable(),
+        address optTokenForwarder = gatewayContract.forwarderAddresses(
+            gatewayContract.superTokenLockable(),
             11155420
         );
-        address optHookForwarder = deployerContract.forwarderAddresses(
-            deployerContract.limitHook(),
+        address optHookForwarder = gatewayContract.forwarderAddresses(
+            gatewayContract.limitHook(),
             11155420
         );
-        address arbOnChainToken = deployerContract.getOnChainAddress(
-            deployerContract.superTokenLockable(),
+        address arbOnChainToken = gatewayContract.getOnChainAddress(
+            gatewayContract.superTokenLockable(),
             421614
         );
-        address optOnChainToken = deployerContract.getOnChainAddress(
-            deployerContract.superTokenLockable(),
+        address optOnChainToken = gatewayContract.getOnChainAddress(
+            gatewayContract.superTokenLockable(),
             11155420
         );
         console.log("arbTokenForwarder");

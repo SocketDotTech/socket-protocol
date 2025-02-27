@@ -9,32 +9,51 @@ import "../interfaces/IAddressResolver.sol";
 import {Forwarder} from "./Forwarder.sol";
 import {AsyncPromise} from "./AsyncPromise.sol";
 
+abstract contract AddressResolverStorage is IAddressResolver {
+    // slots [0-49] reserved for gap
+    uint256[50] _gap_before;
+
+    // slot 50
+    IWatcherPrecompile public override watcherPrecompile__;
+
+    // slot 51
+    address public override deliveryHelper;
+
+    // slot 52
+    address public override feesManager;
+
+    // slot 53
+    UpgradeableBeacon public forwarderBeacon;
+
+    // slot 54
+    UpgradeableBeacon public asyncPromiseBeacon;
+
+    // slot 55
+    address public forwarderImplementation;
+
+    // slot 56
+    address public asyncPromiseImplementation;
+
+    // slot 57
+    address[] internal _promises;
+
+    // slot 58
+    uint256 public asyncPromiseCounter;
+
+    // slot 59
+    uint64 public version;
+
+    // slot 60
+    mapping(address => address) public override contractsToGateways;
+
+    // slots [61-110] reserved for gap
+    uint256[50] _gap_after;
+}
+
 /// @title AddressResolver Contract
 /// @notice This contract is responsible for fetching latest core addresses and deploying Forwarder and AsyncPromise contracts.
 /// @dev Inherits the Ownable contract and implements the IAddressResolver interface.
-contract AddressResolver is Ownable, IAddressResolver, Initializable {
-    IWatcherPrecompile public override watcherPrecompile__;
-    address public override deliveryHelper;
-    address public override feesManager;
-
-    // Beacons for managing upgrades
-    UpgradeableBeacon public forwarderBeacon;
-    UpgradeableBeacon public asyncPromiseBeacon;
-
-    address public forwarderImplementation;
-    address public asyncPromiseImplementation;
-
-    // Array to store promises
-    address[] internal _promises;
-
-    uint256 public asyncPromiseCounter;
-    uint64 public version;
-
-    // contracts to gateway map
-    mapping(address => address) public override contractsToGateways;
-    // gateway to contract map
-    mapping(address => address) public override gatewaysToContracts;
-
+contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
     /// @notice Error thrown if AppGateway contract was already set by a different address
     error InvalidAppGateway(address contractAddress_);
 
@@ -66,7 +85,7 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
     /// @param chainSlug_ The chain slug
     /// @return newForwarder The address of the deployed Forwarder proxy contract
     function getOrDeployForwarderContract(
-        address appDeployer_,
+        address appGateway_,
         address chainContractAddress_,
         uint32 chainSlug_
     ) public returns (address newForwarder) {
@@ -83,7 +102,7 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
         );
 
         newForwarder = _deployProxy(salt, address(forwarderBeacon), initData);
-        _setConfig(appDeployer_, newForwarder);
+        _setConfig(appGateway_, newForwarder);
         emit ForwarderDeployed(newForwarder, salt);
     }
 
@@ -200,9 +219,8 @@ contract AddressResolver is Ownable, IAddressResolver, Initializable {
             LibClone.predictDeterministicAddressERC1967BeaconProxy(beacon_, salt_, address(this));
     }
 
-    function _setConfig(address appDeployer_, address newForwarder_) internal {
-        address gateway = contractsToGateways[appDeployer_];
-        gatewaysToContracts[gateway] = newForwarder_;
+    function _setConfig(address appGateway_, address newForwarder_) internal {
+        address gateway = contractsToGateways[appGateway_];
         contractsToGateways[newForwarder_] = gateway;
     }
 

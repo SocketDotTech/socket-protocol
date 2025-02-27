@@ -5,24 +5,37 @@ import "../interfaces/IAddressResolver.sol";
 import "../interfaces/IDeliveryHelper.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
-import "./AsyncPromise.sol";
 import "../interfaces/IForwarder.sol";
 import "solady/utils/Initializable.sol";
 
-/// @title Forwarder Contract
-/// @notice This contract acts as a forwarder for async calls to the on-chain contracts.
-contract Forwarder is IForwarder, Initializable {
+abstract contract ForwarderStorage is IForwarder {
+    // slots [0-49] reserved for gap
+    uint256[50] _gap_before;
+
+    // slot 50
     /// @notice chain id
     uint32 public chainSlug;
 
+    // slot 51
     /// @notice on-chain address associated with this forwarder
     address public onChainAddress;
 
+    // slot 52
     /// @notice address resolver contract address for imp addresses
     address public addressResolver;
 
+    // slot 53
     /// @notice caches the latest async promise address for the last call
     address public latestAsyncPromise;
+
+    // slots [54-103] reserved for gap
+    uint256[50] _gap_after;
+}
+
+/// @title Forwarder Contract
+/// @notice This contract acts as a forwarder for async calls to the on-chain contracts.
+contract Forwarder is ForwarderStorage, Initializable {
+    error AsyncModifierNotUsed();
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -73,6 +86,9 @@ contract Forwarder is IForwarder, Initializable {
         if (deliveryHelper == address(0)) {
             revert("Forwarder: deliveryHelper not found");
         }
+
+        bool isAsyncModifierSet = IAppGateway(msg.sender).isAsyncModifierSet();
+        if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
 
         // Deploy a new async promise contract.
         latestAsyncPromise = IAddressResolver(addressResolver).deployAsyncPromiseContract(

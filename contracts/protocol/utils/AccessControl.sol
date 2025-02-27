@@ -12,8 +12,12 @@ import "solady/auth/Ownable.sol";
 abstract contract AccessControl is Ownable {
     /**
      * @dev A mapping of roles to a mapping of addresses to boolean values indicating whether or not they have the role.
+     * @dev slot 0
      */
     mapping(bytes32 => mapping(address => bool)) private _permits;
+
+    // slots 1-50: gap for future storage variables
+    uint256[50] _gap_access_control;
 
     /**
      * @dev Emitted when a role is granted to an address.

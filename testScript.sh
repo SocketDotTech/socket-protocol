@@ -3,7 +3,7 @@
 ## Parallel Counter 
 source .env && forge script script/parallel-counter/deployOnEVMx.s.sol --broadcast --skip-simulation
 ## set limits for the app gateway using API
-source .env && cast send $DEPLOYER "deployMultiChainContracts(uint32[])" '[421614, 11155420]' --private-key $PRIVATE_KEY
+source .env && cast send $APP_GATEWAY "deployMultiChainContracts(uint32[])" '[421614, 11155420]' --private-key $PRIVATE_KEY
 source .env && forge script script/parallel-counter/checkCounters.s.sol --broadcast --skip-simulation
 
 
@@ -25,8 +25,8 @@ source .env && cast send $APP_GATEWAY "setTimeout(uint256)" 0 --private-key $PRI
 
 ## Super Token Lockable
 forge script script/super-token-lockable/DeployGateway.s.sol --broadcast --skip-simulation
-source .env && cast send $DEPLOYER "deployContracts(uint32)" 421614 --private-key $PRIVATE_KEY
-source .env && cast send $DEPLOYER "deployContracts(uint32)" 11155420 --private-key $PRIVATE_KEY
+source .env && cast send $APP_GATEWAY "deployContracts(uint32)" 421614 --private-key $PRIVATE_KEY
+source .env && cast send $APP_GATEWAY "deployContracts(uint32)" 11155420 --private-key $PRIVATE_KEY
 forge script script/super-token-lockable/Bridge.s.sol --broadcast --skip-simulation
 source .env && cast send $APP_GATEWAY  $data --private-key $PRIVATE_KEY
 

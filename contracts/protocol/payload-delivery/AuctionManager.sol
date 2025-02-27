@@ -1,38 +1,51 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Ownable} from "solady/auth/Ownable.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
-import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
-import {Fees, Bid, PayloadBatch} from "../../utils/common/Structs.sol";
-import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
-import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
-import {IAuctionManager} from "../../../interfaces/IAuctionManager.sol";
 import "solady/utils/Initializable.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
+
+import {IDeliveryHelper} from "../../interfaces/IDeliveryHelper.sol";
+import {IFeesManager} from "../../interfaces/IFeesManager.sol";
+import {IAuctionManager} from "../../interfaces/IAuctionManager.sol";
+
+import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
+import {Fees, Bid, PayloadBatch} from "../utils/common/Structs.sol";
+import {AuctionClosed, AuctionAlreadyStarted, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter} from "../utils/common/Errors.sol";
+
+abstract contract AuctionManagerStorage is IAuctionManager {
+    // slots [0-49] reserved for gap
+    uint256[50] _gap_before;
+
+    // slot 50
+    uint32 public evmxSlug;
+
+    // slot 51
+    mapping(bytes32 => Bid) public winningBids;
+
+    // slot 52
+    // asyncId => auction status
+    mapping(bytes32 => bool) public override auctionClosed;
+
+    // slot 53
+    mapping(bytes32 => bool) public override auctionStarted;
+
+    // slot 54
+    uint256 public auctionEndDelaySeconds;
+
+    // slots [55-104] reserved for gap
+    uint256[50] _gap_after;
+
+    // slots 105-155 reserved for addr resolver util
+}
 
 /// @title AuctionManager
 /// @notice Contract for managing auctions and placing bids
-contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initializable {
-    uint32 public evmxSlug;
-    mapping(bytes32 => Bid) public winningBids;
-    // asyncId => auction status
-    mapping(bytes32 => bool) public override auctionClosed;
-    mapping(bytes32 => bool) public override auctionStarted;
-
-    uint256 public auctionEndDelaySeconds;
-
-    /// @notice Error thrown when trying to start or bid a closed auction
-    error AuctionClosed();
-    /// @notice Error thrown when trying to start an ongoing auction
-    error AuctionAlreadyStarted();
-    /// @notice Error thrown if fees exceed the maximum set fees
-    error BidExceedsMaxFees();
-    /// @notice Error thrown if winning bid is assigned to an invalid transmitter
-    error InvalidTransmitter();
-    /// @notice Error thrown if a lower bid already exists
-    error LowerBidAlreadyExists();
-
+contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, AddressResolverUtil {
     event AuctionRestarted(bytes32 asyncId);
+    event AuctionStarted(bytes32 asyncId);
+    event AuctionEnded(bytes32 asyncId, Bid winningBid);
+    event BidPlaced(bytes32 asyncId, Bid bid);
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -54,10 +67,6 @@ contract AuctionManager is AddressResolverUtil, Ownable, IAuctionManager, Initia
         evmxSlug = evmxSlug_;
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
     }
-
-    event AuctionStarted(bytes32 asyncId);
-    event AuctionEnded(bytes32 asyncId, Bid winningBid);
-    event BidPlaced(bytes32 asyncId, Bid bid);
 
     function setAuctionEndDelaySeconds(uint256 auctionEndDelaySeconds_) external onlyOwner {
         auctionEndDelaySeconds = auctionEndDelaySeconds_;

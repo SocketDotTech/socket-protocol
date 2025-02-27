@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import "../interfaces/IAppGateway.sol";
-import "../interfaces/IWatcherPrecompile.sol";
-import "../interfaces/IPromise.sol";
+import "../../contracts/interfaces/IAppGateway.sol";
+import "../../contracts/interfaces/IWatcherPrecompile.sol";
+import "../../contracts/interfaces/IPromise.sol";
 
-import {PayloadDigestParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromChainParams, PlugConfig, ResolvedPromises, AppGatewayConfig} from "../protocol/utils/common/Structs.sol";
-import {QUERY, FINALIZE, SCHEDULE} from "../protocol/utils/common/Constants.sol";
-import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../protocol/utils/common/Errors.sol";
+import {PayloadDigestParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromChainParams, PlugConfig, ResolvedPromises, AppGatewayConfig} from "../../contracts/protocol/utils/common/Structs.sol";
+import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/protocol/utils/common/Constants.sol";
+import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../../contracts/protocol/utils/common/Errors.sol";
 import "solady/utils/ERC1967Factory.sol";
 
 /// @title WatcherPrecompile

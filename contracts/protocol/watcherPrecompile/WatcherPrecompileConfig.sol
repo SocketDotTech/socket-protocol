@@ -8,32 +8,8 @@ import {ECDSA} from "solady/utils/ECDSA.sol";
 /// @notice Configuration contract for the Watcher Precompile system
 /// @dev Handles the mapping between networks, plugs, and app gateways for payload execution
 abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
-    /// @notice Maps network and plug to their configuration
-    /// @dev chainSlug => plug => PlugConfig
-    mapping(uint32 => mapping(address => PlugConfig)) internal _plugConfigs;
-
-    /// @notice Maps chain slug to their associated switchboard
-    /// @dev chainSlug => sb type => switchboard address
-    mapping(uint32 => mapping(bytes32 => address)) public switchboards;
-
-    /// @notice Maps chain slug to their associated socket
-    /// @dev chainSlug => socket address
-    mapping(uint32 => address) public sockets;
-
-    /// @notice Maps chain slug to their associated contract factory plug
-    /// @dev chainSlug => contract factory plug address
-    mapping(uint32 => address) public contractFactoryPlug;
-
-    /// @notice Maps chain slug to their associated fees plug
-    /// @dev chainSlug => fees plug address
-    mapping(uint32 => address) public feesPlug;
-
-    /// @notice Maps nonce to whether it has been used
-    /// @dev signatureNonce => isValid
-    mapping(uint256 => bool) public isNonceUsed;
-
-    // appGateway => chainSlug => plug => isValid
-    mapping(address => mapping(uint32 => mapping(address => bool))) public isValidPlug;
+    // slot 322-371: gap for future storage variables
+    uint256[50] _gap_watcher_precompile_config;
 
     /// @notice Emitted when a new plug is configured for an app gateway
     /// @param appGateway The address of the app gateway
@@ -150,6 +126,4 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
         address signer = ECDSA.recover(digest, signature_);
         if (signer != owner()) revert InvalidWatcherSignature();
     }
-
-    uint256[49] __gap_config;
 }

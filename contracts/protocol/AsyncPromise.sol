@@ -15,29 +15,43 @@ enum AsyncPromiseState {
     RESOLVED
 }
 
-/// @title AsyncPromise
-/// @notice this contract stores the callback address and data to be executed once the previous call is executed
-/// This promise expires once the callback is executed
-contract AsyncPromise is IPromise, Initializable, AddressResolverUtil {
+abstract contract AsyncPromiseStorage is IPromise {
+    // slots [0-49] reserved for gap
+    uint256[50] _gap_before;
+
+    // slot 50
+    // bytes1
     /// @notice The callback selector to be called on the invoker.
     bytes4 public callbackSelector;
-
+    // bytes4
     /// @notice Indicates whether the promise has been resolved.
     bool public override resolved;
-
+    // bytes8
     /// @notice The current state of the async promise.
     AsyncPromiseState public state;
-
+    // bytes20
     /// @notice The local contract which initiated the async call.
     /// @dev The callback will be executed on this address
     address public localInvoker;
 
+    // slot 51
     /// @notice The forwarder address which can call the callback
     address public forwarder;
 
+    // slot 52
     /// @notice The callback data to be used when the promise is resolved.
     bytes public callbackData;
 
+    // slots [53-102] reserved for gap
+    uint256[50] _gap_after;
+
+    // slots 103-154 reserved for addr resolver util
+}
+
+/// @title AsyncPromise
+/// @notice this contract stores the callback address and data to be executed once the previous call is executed
+/// This promise expires once the callback is executed
+contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil {
     /// @notice Error thrown when attempting to resolve an already resolved promise.
     error PromiseAlreadyResolved();
     /// @notice Only the forwarder or local invoker can set then's promise callback

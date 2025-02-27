@@ -2,10 +2,11 @@
 pragma solidity ^0.8.3;
 
 import "../protocol/utils/AddressResolverUtil.sol";
-import "../interfaces/IDeliveryHelper.sol";
 import "../interfaces/IAppGateway.sol";
+import "../interfaces/IForwarder.sol";
+import "../interfaces/IDeliveryHelper.sol";
 import "../interfaces/IPromise.sol";
-import {Fees, Read, Parallel} from "../protocol/utils/common/Structs.sol";
+
 import {FeesPlugin} from "../protocol/utils/FeesPlugin.sol";
 import {InvalidPromise, FeesNotSet} from "../protocol/utils/common/Errors.sol";
 
@@ -20,16 +21,23 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     bytes public onCompleteData;
     bytes32 public sbType;
 
+    bool public isAsyncModifierSet;
+
     mapping(address => bool) public isValidPromise;
+    mapping(bytes32 => mapping(uint32 => address)) public override forwarderAddresses;
+    mapping(bytes32 => bytes) public creationCodeWithArgs;
 
     /// @notice Modifier to treat functions async
     modifier async() {
         if (fees.feePoolChain == 0) revert FeesNotSet();
+        isAsyncModifierSet = true;
         deliveryHelper().clearQueue();
         addressResolver__.clearPromises();
         _;
+        isAsyncModifierSet = false;
         deliveryHelper().batch(fees, auctionManager, onCompleteData, sbType);
         _markValidPromises();
+        onCompleteData = bytes("");
     }
 
     /// @notice Modifier to ensure only valid promises can call the function
@@ -43,9 +51,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
 
     /// @notice Constructor for AppGatewayBase
     /// @param addressResolver_ The address resolver address
-    constructor(address addressResolver_, address auctionManager_) {
+    constructor(address addressResolver_, address auctionManager_, bytes32 sbType_) {
         _setAddressResolver(addressResolver_);
         auctionManager = auctionManager_;
+        sbType = sbType_;
     }
 
     /// @notice Creates a contract ID
@@ -73,6 +82,82 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         for (uint256 i = 0; i < promises.length; i++) {
             isValidPromise[promises[i]] = true;
         }
+    }
+
+    /// @notice Gets the socket address
+    /// @param chainSlug_ The chain slug
+    /// @return socketAddress_ The socket address
+    function getSocketAddress(uint32 chainSlug_) public view returns (address) {
+        return watcherPrecompile__().sockets(chainSlug_);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////   DEPLOY HELPERS ///////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Deploys a contract
+    /// @param contractId_ The contract ID
+    /// @param chainSlug_ The chain slug
+    function _deploy(bytes32 contractId_, uint32 chainSlug_, IsPlug isPlug_) internal {
+        _deploy(contractId_, chainSlug_, isPlug_, new bytes(0));
+    }
+
+    /// @notice Deploys a contract
+    /// @param contractId_ The contract ID
+    /// @param chainSlug_ The chain slug
+    function _deploy(
+        bytes32 contractId_,
+        uint32 chainSlug_,
+        IsPlug isPlug_,
+        bytes memory initCallData_
+    ) internal {
+        address asyncPromise = addressResolver__.deployAsyncPromiseContract(address(this));
+        isValidPromise[asyncPromise] = true;
+        IPromise(asyncPromise).then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
+
+        onCompleteData = abi.encode(chainSlug_, true);
+        IDeliveryHelper(deliveryHelper()).queue(
+            isPlug_,
+            isParallelCall,
+            chainSlug_,
+            address(0),
+            asyncPromise,
+            0,
+            CallType.DEPLOY,
+            creationCodeWithArgs[contractId_],
+            initCallData_
+        );
+    }
+
+    /// @notice Sets the address for a deployed contract
+    /// @param data_ The data
+    /// @param returnData_ The return data
+    function setAddress(bytes memory data_, bytes memory returnData_) external onlyPromises {
+        (uint32 chainSlug, bytes32 contractId) = abi.decode(data_, (uint32, bytes32));
+
+        address forwarderContractAddress = addressResolver__.getOrDeployForwarderContract(
+            address(this),
+            abi.decode(returnData_, (address)),
+            chainSlug
+        );
+
+        forwarderAddresses[contractId][chainSlug] = forwarderContractAddress;
+    }
+
+    /// @notice Gets the on-chain address
+    /// @param contractId_ The contract ID
+    /// @param chainSlug_ The chain slug
+    /// @return onChainAddress The on-chain address
+    function getOnChainAddress(
+        bytes32 contractId_,
+        uint32 chainSlug_
+    ) public view returns (address onChainAddress) {
+        if (forwarderAddresses[contractId_][chainSlug_] == address(0)) {
+            return address(0);
+        }
+
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
+            .getOnChainAddress();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -173,12 +258,23 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// @notice Callback in pd promise to be called after all contracts are deployed
-    /// @param asyncId_ The async ID
     /// @param payloadBatch_ The payload batch
+    /// @dev only payload delivery can call this
+    /// @dev callback in pd promise to be called after all contracts are deployed
     function onBatchComplete(
-        bytes32 asyncId_,
+        bytes32,
         PayloadBatch memory payloadBatch_
-    ) external virtual onlyDeliveryHelper {}
+    ) external override onlyDeliveryHelper {
+        if (payloadBatch_.onCompleteData.length == 0) return;
+
+        (uint32 chainSlug, bool isDeploy) = abi.decode(
+            payloadBatch_.onCompleteData,
+            (uint32, bool)
+        );
+        if (isDeploy) {
+            initialize(chainSlug);
+        }
+    }
 
     function callFromChain(
         uint32 chainSlug_,
@@ -186,6 +282,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         bytes calldata payload_,
         bytes32 params_
     ) external virtual onlyWatcherPrecompile {}
+
+    /// @notice Initializes the contract
+    /// @param chainSlug_ The chain slug
+    function initialize(uint32 chainSlug_) public virtual {}
 
     /// @notice hook to handle the revert in callbacks or onchain executions
     /// @dev can be overridden by the app gateway to add custom logic
