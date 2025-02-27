@@ -11,8 +11,10 @@ source .env && forge script script/parallel-counter/checkCounters.s.sol --broadc
 source .env && forge script script/counter/deployEVMxCounterApp.s.sol --broadcast --skip-simulation --legacy --gas-price 0
 source .env && forge script script/counter/DeployCounterOnchain.s.sol --broadcast --skip-simulation
 ## set limits for the app gateway using API
-source .env && cast send $APP_GATEWAY "deployContracts(uint32)" 421614 --private-key $PRIVATE_KEY --legacy --gas-price 0
-source .env && cast send $APP_GATEWAY "incrementCounters(address[])" '[0x9Bd3efbd1dA4f58Bd4A11421102FE4B08fAb0121]' --private-key $PRIVATE_KEY --legacy --gas-price 0
+source .env && cast send $DEPLOYER "deployContracts(uint32)" 421614 --private-key $PRIVATE_KEY --legacy --gas-price 0
+source .env && cast send $APP_GATEWAY "incrementCounters(address[])" '[0x18a93d520879524e0c215b64f05914da5883540f]' --private-key $PRIVATE_KEY --legacy --gas-price 0
+source .env && cast send $APP_GATEWAY "readCounters(address[])" '[0x18a93d520879524e0c215b64f05914da5883540f]' --private-key $PRIVATE_KEY --legacy --gas-price 0
+
 forge script script/counter/incrementCounters.s.sol --broadcast --skip-simulation
 forge script script/counter/checkCounters.s.sol --broadcast --skip-simulation
 
@@ -53,4 +55,4 @@ source .env && forge script script/admin/UpdateLimits.s.sol --broadcast --skip-s
 
 # add fees
 source .env && forge script script/PayFeesInArbitrumETH.s.sol --broadcast --skip-simulation 
-source .env && forge script script/CheckDepositedFees.s.sol 
+source .env && forge script script/AppGatewayFeeBalance.s.sol 

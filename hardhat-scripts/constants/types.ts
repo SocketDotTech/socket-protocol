@@ -1,18 +1,5 @@
-export type ChainAddressesObj = {
-  Socket: string;
-  SocketBatcher: string;
-  FastSwitchboard: string;
-  FeesPlug: string;
-  ContractFactoryPlug: string;
-  startBlock: number;
-};
+import { ChainAddressesObj, ChainSlug } from "@socket.tech/socket-protocol-common";
 
-export type CloudAddressesObj = {
-  SignatureVerifier: string;
-  AddressResolver: string;
-  WatcherPrecompile: string;
-  AuctionManager: string;
-  FeesManager: string;
-  DeliveryHelper: string;
-  startBlock: number;
+export type DeploymentAddresses = {
+    [chainSlug in ChainSlug]?: ChainAddressesObj;
 };

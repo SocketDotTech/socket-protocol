@@ -9,7 +9,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.0.12",
+  "version": "1.0.14",
   "description": "socket protocol",
   "scripts": {
     "build": "hardhat export-abi && tsc --project lib.tsconfig.json",
@@ -23,18 +23,21 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "2.2.3",
+    "@aws-sdk/client-s3": "^3.670.0",
     "@nomicfoundation/hardhat-verify": "^2.0.12",
-    "@socket.tech/dl-core": "^2.35.0",
+    "@nomiclabs/hardhat-ethers": "2.2.3",
+    "@socket.tech/socket-protocol-common": "1.1.27",
     "@typechain/ethers-v5": "^10.0.0",
     "@typechain/hardhat": "6.0.0",
     "dotenv": "^16.0.3",
     "ethers": "5.6.6",
+    "forge-std": "^1.1.2",
     "hardhat": "2.12.2",
     "hardhat-abi-exporter": "2.10.1",
     "hardhat-change-network": "^0.0.7",
     "hardhat-deploy": "0.11.20",
     "hardhat-preprocessor": "0.1.4",
+    "http-server": "^14.1.1",
     "pre-commit": "^1.2.2",
     "prettier": "^2.3.1",
     "prettier-plugin-solidity": "^1.4.1",
@@ -42,9 +45,5 @@
     "typechain": "^8.0.0",
     "typescript": "^4.6.4"
   },
-  "dependencies": {
-    "@aws-sdk/client-s3": "^3.670.0",
-    "forge-std": "^1.1.2",
-    "http-server": "^14.1.1"
-  }
+  "dependencies": {}
 }

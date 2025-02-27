@@ -6,14 +6,14 @@ import { Address } from "hardhat-deploy/dist/types";
 import path from "path";
 import fs from "fs";
 import {
+  ChainAddressesObj,
   ChainSlug,
-  ChainSocketAddresses,
-  DeploymentAddresses,
-  DeploymentMode,
-} from "@socket.tech/dl-core";
+  DeploymentMode
+} from "@socket.tech/socket-protocol-common";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { overrides } from "../utils";
 import { VerifyArgs } from "../verify";
+import { DeploymentAddresses } from "../constants";
 
 export const deploymentsPath = path.join(__dirname, `/../../deployments/`);
 
@@ -32,7 +32,7 @@ export const getChainRoleHash = (role: string, chainSlug: number) =>
   );
 
 export interface DeployParams {
-  addresses: ChainSocketAddresses;
+  addresses: ChainAddressesObj;
   mode: DeploymentMode;
   signer: SignerWithAddress | Wallet;
   currentChainSlug: number;
@@ -140,7 +140,7 @@ export const integrationType = (integrationName: string) =>
   );
 
 export const storeAddresses = async (
-  addresses: ChainSocketAddresses,
+  addresses: ChainAddressesObj,
   chainSlug: ChainSlug,
   mode: DeploymentMode
 ) => {
@@ -159,7 +159,7 @@ export const storeAddresses = async (
   // Sort addresses object by key name for readability
   const sortedAddresses = Object.fromEntries(
     Object.entries(addresses).sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
-  ) as ChainSocketAddresses;
+  ) as ChainAddressesObj;
 
   deploymentAddresses[chainSlug] = sortedAddresses;
   fs.writeFileSync(
@@ -239,7 +239,7 @@ export const storeVerificationParams = async (
 };
 
 export const getChainSlugsFromDeployedAddresses = async (
-  mode = DeploymentMode.DEV
+  mode: DeploymentMode
 ) => {
   if (!fs.existsSync(deploymentsPath)) {
     await fs.promises.mkdir(deploymentsPath);
@@ -258,8 +258,8 @@ export const getChainSlugsFromDeployedAddresses = async (
 
 export const getRelayUrl = async (mode: DeploymentMode) => {
   switch (mode) {
-    case DeploymentMode.SURGE:
-      return process.env.RELAYER_URL_SURGE;
+    case DeploymentMode.STAGE:
+      return process.env.RELAYER_URL_STAGE;
     case DeploymentMode.PROD:
       return process.env.RELAYER_URL_PROD;
     default:
@@ -269,8 +269,8 @@ export const getRelayUrl = async (mode: DeploymentMode) => {
 
 export const getRelayAPIKEY = (mode: DeploymentMode) => {
   switch (mode) {
-    case DeploymentMode.SURGE:
-      return process.env.RELAYER_API_KEY_SURGE;
+    case DeploymentMode.STAGE:
+      return process.env.RELAYER_API_KEY_STAGE;
     case DeploymentMode.PROD:
       return process.env.RELAYER_API_KEY_PROD;
     default:
@@ -287,30 +287,11 @@ export const getAPIBaseURL = (mode: DeploymentMode) => {
   }
 };
 
-export const getAddresses = async (
-  chainSlug: ChainSlug,
-  mode = DeploymentMode.DEV
-) => {
-  if (!fs.existsSync(deploymentsPath)) {
-    await fs.promises.mkdir(deploymentsPath);
-  }
-
-  const addressesPath = deploymentsPath + `${mode}_addresses.json`;
-  const outputExists = fs.existsSync(addressesPath);
-  let deploymentAddresses: DeploymentAddresses = {};
-  if (outputExists) {
-    const deploymentAddressesString = fs.readFileSync(addressesPath, "utf-8");
-    deploymentAddresses = JSON.parse(deploymentAddressesString);
-  }
-
-  return deploymentAddresses[chainSlug];
-};
-
 export const createObj = function (
-  obj: ChainSocketAddresses,
+  obj: ChainAddressesObj,
   keys: string[],
   value: any
-): ChainSocketAddresses {
+): ChainAddressesObj {
   if (keys.length === 1) {
     obj[keys[0]] = value;
   } else {

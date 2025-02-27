@@ -1,13 +1,11 @@
 import {
-  ChainSocketAddresses,
-  DeploymentAddresses,
-} from "@socket.tech/dl-core";
+  ChainAddressesObj,
+} from "@socket.tech/socket-protocol-common";
 import { Contract, ethers, providers, Wallet } from "ethers";
-import dev_addresses from "../../deployments/dev_addresses.json";
-import { chains, EVMX_CHAIN_ID } from "../config";
-import { CORE_CONTRACTS, EVMxCoreContracts } from "../constants";
-import { getInstance, getProviderFromChainSlug } from "../utils";
-
+import { chains, EVMX_CHAIN_ID, mode } from "../config";
+import { CORE_CONTRACTS, DeploymentAddresses, EVMxCoreContracts } from "../constants";
+import { getAddresses, getInstance, getProviderFromChainSlug, overrides } from "../utils";
+import { signWatcherMessage } from "../utils/sign";
 const plugs = [CORE_CONTRACTS.ContractFactoryPlug, CORE_CONTRACTS.FeesPlug];
 export type AppGatewayConfig = {
   plug: string;
@@ -65,7 +63,7 @@ async function connectPlug(
   plugContract: string,
   socketSigner: Wallet,
   addresses: DeploymentAddresses,
-  addr: ChainSocketAddresses
+  addr: ChainAddressesObj
 ) {
   console.log(`Connecting ${plugContract} on ${chain}`);
 
@@ -102,7 +100,7 @@ async function connectPlug(
 
 export const connectPlugsOnSocket = async () => {
   console.log("Connecting plugs");
-  const addresses = dev_addresses as unknown as DeploymentAddresses;
+  const addresses = getAddresses(mode) as unknown as DeploymentAddresses;
   // Connect plugs on each chain
   await Promise.all(
     chains.map(async (chain) => {
@@ -140,7 +138,7 @@ export const isConfigSetOnEVMx = async (
 export const updateConfigEVMx = async () => {
   try {
     console.log("Connecting plugs on EVMx");
-    const addresses = dev_addresses as unknown as DeploymentAddresses;
+    const addresses = getAddresses(mode) as unknown as DeploymentAddresses;
     const appConfigs: AppGatewayConfig[] = [];
 
     // Set up Watcher contract
@@ -196,7 +194,17 @@ export const updateConfigEVMx = async () => {
     // Update configs if any changes needed
     if (appConfigs.length > 0) {
       console.log({ appConfigs });
-      const tx = await watcher.setAppGateways(appConfigs);
+      const encodedMessage = ethers.utils.defaultAbiCoder.encode(
+        ['bytes4', 'tuple(address plug,address appGateway,address switchboard,uint32 chainSlug)[]'],
+        [
+          watcher.interface.getSighash('setAppGateways'),
+          appConfigs,
+        ],
+        ); 
+      const { nonce, signature } = await signWatcherMessage(encodedMessage);
+      const tx = await watcher.setAppGateways(appConfigs, nonce, signature, {
+        ...overrides(EVMX_CHAIN_ID),
+      });
       console.log(`Updating EVMx Config tx hash: ${tx.hash}`);
       await tx.wait();
     }

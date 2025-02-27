@@ -1,40 +1,19 @@
-import { ChainSlug, IntegrationTypes } from "@socket.tech/dl-core";
 
-function getSwitchboardAddress(
-  chainSlug: ChainSlug | string,
-  integrationType: IntegrationTypes,
-  config: any
-) {
-  if (integrationType === IntegrationTypes.fast) {
-    return config?.["FastSwitchboard"];
-  } else if (integrationType === IntegrationTypes.fast2) {
-    return config?.["FastSwitchboard2"];
-  } else if (integrationType === IntegrationTypes.optimistic) {
-    return config?.["OptimisticSwitchboard"];
-  } else
-    return config?.["integrations"]?.[chainSlug]?.[integrationType]?.[
-      "switchboard"
-    ];
-}
 
-function getCapacitorAddress(
-  chainSlug: ChainSlug,
-  integrationType: IntegrationTypes,
-  config: any
-) {
-  return config?.["integrations"]?.[chainSlug]?.[integrationType]?.[
-    "capacitor"
-  ];
-}
+import dev_addresses from "../../deployments/dev_addresses.json";
+import stage_addresses from "../../deployments/stage_addresses.json";
+import prod_addresses from "../../deployments/prod_addresses.json";
+import { DeploymentMode } from "@socket.tech/socket-protocol-common";
 
-function getDecapacitorAddress(
-  chainSlug: ChainSlug,
-  integrationType: IntegrationTypes,
-  config: any
-) {
-  return config?.["integrations"]?.[chainSlug]?.[integrationType]?.[
-    "decapacitor"
-  ];
-}
-
-export { getSwitchboardAddress, getCapacitorAddress, getDecapacitorAddress };
+export const getAddresses = (mode: DeploymentMode) => {
+  switch (mode) {
+    case DeploymentMode.DEV:
+      return dev_addresses;
+    case DeploymentMode.STAGE:
+      return stage_addresses;
+    case DeploymentMode.PROD:
+      return prod_addresses;
+    default:
+      throw new Error(`Invalid deployment mode: ${mode}`);
+  }
+};

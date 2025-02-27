@@ -1,24 +1,58 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { ChainSlug } from "@socket.tech/dl-core";
+import { ChainAddressesObj, EVMxAddressesObj, ChainSlug, DeploymentMode } from "@socket.tech/socket-protocol-common";
 import { config as dotenvConfig } from "dotenv";
 import fs from "fs";
 import path from "path";
-import { EVMX_CHAIN_ID } from "../config/config";
-import {
-  BASE_SEPOLIA_CHAIN_ID,
-  ChainAddressesObj,
-  CloudAddressesObj,
-} from "../constants";
+import { EVMX_CHAIN_ID, mode } from "../config/config";
 
 dotenvConfig();
 
+const getBucketName = () => {
+  switch (mode) {
+    case DeploymentMode.DEV:
+      return "socketpoc";
+    case DeploymentMode.STAGE:
+      return "socket-stage";
+    case DeploymentMode.PROD:
+      return "socket-prod";
+    default:
+      throw new Error(`Invalid deployment mode: ${mode}`);
+  }
+};
+
+const getFileName = () => {
+  switch (mode) {
+    case DeploymentMode.DEV:
+      return "devConfig.json";
+    case DeploymentMode.STAGE:
+      return "stageConfig.json";
+    case DeploymentMode.PROD: 
+      return "prodConfig.json";
+    default:
+      throw new Error(`Invalid deployment mode: ${mode}`);
+  }
+};
+
+
+const getAddressesPath = () => {
+  switch (mode) {
+    case DeploymentMode.DEV:
+      return "../../deployments/dev_addresses.json";
+    case DeploymentMode.STAGE:
+      return "../../deployments/stage_addresses.json";
+    case DeploymentMode.PROD:
+      return "../../deployments/prod_addresses.json";
+    default:
+      throw new Error(`Invalid deployment mode: ${mode}`);
+  }
+};
 type ConfigEntry = {
   eventBlockRangePerCron: number;
   rpc: string | undefined;
   wssRpc: string | undefined;
   confirmations: number;
   eventBlockRange: number;
-  addresses?: ChainAddressesObj | CloudAddressesObj;
+  addresses?: ChainAddressesObj | EVMxAddressesObj;
 };
 
 type S3Config = {
@@ -53,7 +87,7 @@ export let config: S3Config = {
     confirmations: 0,
     eventBlockRange: 5000,
   },
-  [BASE_SEPOLIA_CHAIN_ID]: {
+  [ChainSlug.BASE_SEPOLIA]: {
     eventBlockRangePerCron: 5000,
     rpc: process.env.BASE_SEPOLIA_RPC,
     wssRpc: process.env.BASE_SEPOLIA_WSS_RPC,
@@ -64,23 +98,23 @@ export let config: S3Config = {
   supportedChainSlugs: [
     ChainSlug.ARBITRUM_SEPOLIA,
     ChainSlug.OPTIMISM_SEPOLIA,
-    // ChainSlug.SEPOLIA,
+    ChainSlug.SEPOLIA,
     EVMX_CHAIN_ID,
-    // BASE_SEPOLIA_CHAIN_ID,
+    ChainSlug.BASE_SEPOLIA,
   ],
 };
-// Read the dev_addresses.json file
-const devAddressesPath = path.join(
+// Read the addresses.json file
+const addressesPath = path.join(
   __dirname,
-  "../../deployments/dev_addresses.json"
+  getAddressesPath()
 );
-const devAddresses = JSON.parse(fs.readFileSync(devAddressesPath, "utf8"));
+const addresses = JSON.parse(fs.readFileSync(addressesPath, "utf8"));
 
 // Update config with addresses
 for (const chainId in config) {
-  if (devAddresses[chainId]) {
+  if (addresses[chainId]) {
     console.log(`Updating addresses for chainId ${chainId}`);
-    config[chainId].addresses = devAddresses[chainId];
+    config[chainId].addresses = addresses[chainId];
   }
 }
 console.log(JSON.stringify(config, null, 2));
@@ -88,9 +122,9 @@ console.log(JSON.stringify(config, null, 2));
 const s3Client = new S3Client({ region: "us-east-1" }); // Replace with your preferred region
 
 // Function to upload to S3
-async function uploadToS3(data: any, fileName: string) {
+async function uploadToS3(data: any, fileName: string = getFileName()) {
   const params = {
-    Bucket: "socketpoc",
+    Bucket: getBucketName(),
     Key: fileName,
     Body: JSON.stringify(data, null, 2),
     ContentType: "application/json",
@@ -107,3 +141,4 @@ async function uploadToS3(data: any, fileName: string) {
 
 // Upload config to S3
 uploadToS3(config, "pocConfig.json");
+// uploadToS3(config);

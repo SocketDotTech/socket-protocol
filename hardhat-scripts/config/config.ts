@@ -1,7 +1,7 @@
 import { config as dotenvConfig } from "dotenv";
 dotenvConfig();
-import { ChainSlug, DeploymentMode, version } from "@socket.tech/dl-core";
 import { ethers } from "ethers";
+import { ChainSlug, DeploymentMode } from "@socket.tech/socket-protocol-common";
 
 export const mode = process.env.DEPLOYMENT_MODE as
   | DeploymentMode
@@ -13,7 +13,6 @@ export const logConfig = () => {
   );
   console.log("");
   console.log(`Mode: ${mode}`);
-  console.log(`Version: ${version[mode]}`);
   console.log("");
   console.log(
     `Make sure ${mode}_addresses.json and ${mode}_verification.json is cleared for given networks if redeploying!!`
@@ -27,8 +26,8 @@ export const logConfig = () => {
 export const chains: Array<ChainSlug> = [
   ChainSlug.ARBITRUM_SEPOLIA,
   ChainSlug.OPTIMISM_SEPOLIA,
-  // ChainSlug.SEPOLIA,
-  // BASE_SEPOLIA_CHAIN_ID as ChainSlug,
+  ChainSlug.SEPOLIA,
+  ChainSlug.BASE_SEPOLIA,
 ];
 
 export const auctionEndDelaySeconds = 0;

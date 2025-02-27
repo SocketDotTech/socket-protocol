@@ -1,34 +1,41 @@
-import hre from "hardhat";
-import { storeUnVerifiedParams, verify } from "../utils";
 import {
-  HardhatChainName,
-  ChainSlugToKey,
   ChainSlug,
+  ChainSlugToKey,
   DeploymentMode,
-} from "@socket.tech/dl-core";
-import path from "path";
-import fs from "fs";
-import { EVMX_CHAIN_ID } from "../config/config";
-import { BASE_SEPOLIA_CHAIN_ID } from "../constants";
+  HardhatChainName,
+} from "@socket.tech/socket-protocol-common";
+import hre from "hardhat";
+import { EVMX_CHAIN_ID, mode } from "../config/config";
+import { storeUnVerifiedParams, verify } from "../utils";
+
+import dev_verification from "../../deployments/dev_verification.json";
+import prod_verification from "../../deployments/prod_verification.json";
+import stage_verification from "../../deployments/stage_verification.json";
+
+const getVerificationParams = (mode: DeploymentMode) => {
+  switch (mode) {
+    case DeploymentMode.DEV:
+      return dev_verification;
+    case DeploymentMode.STAGE:
+      return stage_verification;
+    case DeploymentMode.PROD:
+      return prod_verification;
+    default:
+      throw new Error(`Invalid deployment mode: ${mode}`);
+  }
+};
+
 export type VerifyParams = {
   [chain in HardhatChainName]?: VerifyArgs[];
 };
 export type VerifyArgs = [string, string, string, any[]];
-const deploymentsPath = path.join(__dirname, `/../../deployments/`);
 
 /**
  * Deploys network-independent socket contracts
  */
 export const main = async () => {
   try {
-    const path = deploymentsPath + `dev_verification.json`;
-    if (!fs.existsSync(path)) {
-      throw new Error("addresses.json not found");
-    }
-    let verificationParams: VerifyParams = JSON.parse(
-      fs.readFileSync(path, "utf-8")
-    );
-
+    const verificationParams = getVerificationParams(mode);
     const chains = Object.keys(verificationParams);
     if (!chains) return;
 
@@ -36,9 +43,7 @@ export const main = async () => {
       const chain = parseInt(chains[chainIndex]) as ChainSlug;
       let chainName: string;
       console.log({ chain });
-      if (chain == (BASE_SEPOLIA_CHAIN_ID as ChainSlug)) {
-        chainName = "base_sepolia";
-      } else if (chain == (EVMX_CHAIN_ID as ChainSlug)) {
+      if (chain == (EVMX_CHAIN_ID as ChainSlug)) {
         chainName = "EVMX";
       } else {
         chainName = ChainSlugToKey[chain];
@@ -62,7 +67,7 @@ export const main = async () => {
       await storeUnVerifiedParams(
         unverifiedChainParams,
         chain,
-        DeploymentMode.DEV
+        mode
       );
     }
   } catch (error) {
