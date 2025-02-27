@@ -7,14 +7,16 @@ import {FeesManager} from "../../contracts/protocol/payload-delivery/FeesManager
 import {ETH_ADDRESS} from "../../contracts/protocol/utils/common/Constants.sol";
 import {CounterAppGateway} from "../../test/apps/app-gateways/counter/CounterAppGateway.sol";
 
+// @notice This script is used to withdraw fees from EVMX to Arbitrum Sepolia
+// @dev Make sure your app has withdrawFeeTokens() function implemented. You can check its implementation in CounterAppGateway.sol
 contract WithdrawFees is Script {
     function run() external {
         // EVMX Check available fees
         vm.createSelectFork(vm.envString("EVMX_RPC"));
         FeesManager feesManager = FeesManager(payable(vm.envAddress("FEES_MANAGER")));
         address appGatewayAddress = vm.envAddress("APP_GATEWAY");
-        CounterAppGateway appGateway = CounterAppGateway(appGatewayAddress);
 
+        CounterAppGateway appGateway = CounterAppGateway(appGatewayAddress);
         uint256 availableFees = feesManager.getAvailableFees(
             421614,
             appGatewayAddress,

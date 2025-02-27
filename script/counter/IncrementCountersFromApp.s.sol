@@ -23,17 +23,12 @@ contract IncrementCounters is Script {
             11155420
         );
         address counterForwarderBaseSepolia = gateway.forwarderAddresses(gateway.counter(), 84532);
-        //address counterForwarderSepolia = deployer.forwarderAddresses(
-        //    deployer.counter(),
-        //    11155111
-        //);
 
         // Count non-zero addresses
         uint256 nonZeroCount = 0;
         if (counterForwarderArbitrumSepolia != address(0)) nonZeroCount++;
         if (counterForwarderOptimismSepolia != address(0)) nonZeroCount++;
         if (counterForwarderBaseSepolia != address(0)) nonZeroCount++;
-        //if (counterForwarderSepolia != address(0)) nonZeroCount++;
 
         address[] memory instances = new address[](nonZeroCount);
         uint256 index = 0;
@@ -55,12 +50,6 @@ contract IncrementCounters is Script {
         } else {
             console.log("Base Sepolia forwarder not yet deployed");
         }
-        //if (counterForwarderSepolia != address(0)) {
-        //    instances[index] = counterForwarderSepolia;
-        //    index++;
-        //} else {
-        //    console.log("Ethereum Sepolia forwarder not yet deployed");
-        //}
 
         vm.startBroadcast(deployerPrivateKey);
         gateway.incrementCounters(instances);
