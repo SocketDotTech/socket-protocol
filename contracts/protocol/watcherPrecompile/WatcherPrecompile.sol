@@ -2,35 +2,10 @@
 pragma solidity ^0.8.21;
 
 import "./WatcherPrecompileConfig.sol";
-import "../../interfaces/IAppGateway.sol";
-import "../../interfaces/IPromise.sol";
-import "../../interfaces/IFeesManager.sol";
-import "solady/utils/Initializable.sol";
-import {PayloadDigestParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromChainParams} from "../utils/common/Structs.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
-contract WatcherPrecompile is WatcherPrecompileConfig, Initializable {
-    uint256 public maxTimeoutDelayInSeconds;
-    /// @notice Counter for tracking payload requests
-    uint256 public payloadCounter;
-    /// @notice The expiry time for the payload
-    uint256 public expiryTime;
-
-    /// @notice Mapping to store async requests
-    /// @dev payloadId => AsyncRequest struct
-    mapping(bytes32 => AsyncRequest) public asyncRequests;
-    /// @notice Mapping to store timeout requests
-    /// @dev timeoutId => TimeoutRequest struct
-    mapping(bytes32 => TimeoutRequest) public timeoutRequests;
-    /// @notice Mapping to store watcher proofs
-    /// @dev payloadId => proof bytes
-    mapping(bytes32 => bytes) public watcherProofs;
-
-    /// @notice Mapping to store if appGateway has been called with trigger from on-chain Inbox
-    /// @dev callId => bool
-    mapping(bytes32 => bool) public appGatewayCalled;
-
+contract WatcherPrecompile is WatcherPrecompileConfig {
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
     /// @notice Error thrown when an invalid app gateway reaches a plug

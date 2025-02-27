@@ -1,19 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "solady/utils/Initializable.sol";
-
-import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
-import {Bid, PayloadBatch, Fees, PayloadDetails, FinalizeParams} from "../../../protocol/utils/common/Structs.sol";
-import {DISTRIBUTE_FEE, DEPLOY} from "../../../protocol/utils/common/Constants.sol";
-import {PromisesNotResolved, InvalidTransmitter} from "../../../protocol/utils/common/Errors.sol";
 import "./BatchAsync.sol";
 
-contract DeliveryHelper is BatchAsync, Initializable {
+contract DeliveryHelper is BatchAsync {
     event CallBackReverted(bytes32 asyncId_, bytes32 payloadId_);
-    uint64 public version;
-
-    bytes32[] public tempPayloadIds;
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -25,10 +16,9 @@ contract DeliveryHelper is BatchAsync, Initializable {
     function initialize(
         address addressResolver_,
         address owner_,
-        uint256 bidTimeout_
+        uint128 bidTimeout_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
-        version = 1;
         bidTimeout = bidTimeout_;
         _initializeOwner(owner_);
     }
@@ -44,7 +34,7 @@ contract DeliveryHelper is BatchAsync, Initializable {
 
         if (!isRestarted) return _process(asyncId_, false);
 
-        // Refinalize all payloads in the batch if a new transmitter is assigned
+        // Re-finalize all payloads in the batch if a new transmitter is assigned
         bytes32[] memory payloadIds = _payloadBatches[asyncId_].lastBatchOfPayloads;
         for (uint256 i = 0; i < payloadIds.length; i++) {
             watcherPrecompile__().refinalize(

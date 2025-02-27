@@ -1,49 +1,21 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {AddressResolverUtil} from "../../../protocol/utils/AddressResolverUtil.sol";
-import {CallParams, Fees, PayloadDetails, CallType, Bid, PayloadBatch, Parallel, IsPlug} from "../../../protocol/utils/common/Structs.sol";
-import {NotAuctionManager, InvalidPromise, InvalidIndex} from "../../../protocol/utils/common/Errors.sol";
-import {AsyncPromise} from "../../AsyncPromise.sol";
-import {IPromise} from "../../../interfaces/IPromise.sol";
-import {IAppDeployer} from "../../../interfaces/IAppDeployer.sol";
-import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
-import {IContractFactoryPlug} from "../../../interfaces/IContractFactoryPlug.sol";
-import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
+import "solady/utils/Initializable.sol";
+
+import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
+
+import "./DeliveryHelperStorage.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
-abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper, Ownable {
-    uint256 public saltCounter;
-    uint256 public asyncCounter;
-
-    uint256 public bidTimeout;
-
-    /// @notice The call parameters array
-    CallParams[] public callParamsArray;
-    /// @notice The mapping of valid promises
-    mapping(address => bool) public isValidPromise;
-
-    // payloadId => asyncId
-    mapping(bytes32 => bytes32) public payloadIdToBatchHash;
-    mapping(bytes32 => PayloadDetails) public payloadIdToPayloadDetails;
-
-    // asyncId => PayloadBatch
-    mapping(bytes32 => PayloadBatch) internal _payloadBatches;
+abstract contract QueueAsync is DeliveryHelperStorage, Initializable, Ownable, AddressResolverUtil {
+    // slots [0-108] reserved for delivery helper storage and [109-159] reserved for addr resolver util
+    // slots [160-209] reserved for gap
+    uint256[50] _gap_queue_async;
 
     event PayloadBatchCancelled(bytes32 asyncId);
     event BidTimeoutUpdated(uint256 newBidTimeout);
-
-    function payloadBatches(bytes32 asyncId_) external view override returns (PayloadBatch memory) {
-        return _payloadBatches[asyncId_];
-    }
-
-    function getPayloadDetails(bytes32 payloadId_) external view returns (PayloadDetails memory) {
-        return payloadIdToPayloadDetails[payloadId_];
-    }
-
-    // asyncId => PayloadDetails[]
-    mapping(bytes32 => PayloadDetails[]) public payloadBatchDetails;
 
     modifier onlyPromises() {
         if (!isValidPromise[msg.sender]) revert InvalidPromise();
@@ -53,6 +25,14 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper, Ownable {
     modifier onlyAuctionManager(bytes32 asyncId_) {
         if (msg.sender != _payloadBatches[asyncId_].auctionManager) revert NotAuctionManager();
         _;
+    }
+
+    function payloadBatches(bytes32 asyncId_) external view override returns (PayloadBatch memory) {
+        return _payloadBatches[asyncId_];
+    }
+
+    function getPayloadDetails(bytes32 payloadId_) external view returns (PayloadDetails memory) {
+        return payloadIdToPayloadDetails[payloadId_];
     }
 
     /// @notice Clears the call parameters array
@@ -99,6 +79,8 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper, Ownable {
     function _createPayloadDetailsArray(
         bytes32 sbType_
     ) internal returns (PayloadDetails[] memory payloadDetailsArray) {
+        if (callParamsArray.length == 0) return payloadDetailsArray;
+
         payloadDetailsArray = new PayloadDetails[](callParamsArray.length);
         for (uint256 i = 0; i < callParamsArray.length; i++) {
             CallParams memory params = callParamsArray[i];
@@ -164,7 +146,7 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper, Ownable {
 
     /// @notice Updates the bid timeout
     /// @param newBidTimeout_ The new bid timeout value
-    function updateBidTimeout(uint256 newBidTimeout_) external onlyOwner {
+    function updateBidTimeout(uint128 newBidTimeout_) external onlyOwner {
         bidTimeout = newBidTimeout_;
         emit BidTimeoutUpdated(newBidTimeout_);
     }
@@ -184,6 +166,4 @@ abstract contract QueueAsync is AddressResolverUtil, IDeliveryHelper, Ownable {
     function getAsyncBatchDetails(bytes32 asyncId_) external view returns (PayloadBatch memory) {
         return _payloadBatches[asyncId_];
     }
-
-    uint256[49] __gap;
 }

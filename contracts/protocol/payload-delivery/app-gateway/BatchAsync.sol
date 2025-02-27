@@ -3,18 +3,12 @@ pragma solidity ^0.8.21;
 
 import "./QueueAsync.sol";
 
-import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
-import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
-import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
-import {IAuctionManager} from "../../../interfaces/IAuctionManager.sol";
-import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
-
-import {Bid, PayloadBatch, Fees, PayloadDetails} from "../../../protocol/utils/common/Structs.sol";
-import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW, QUERY, FINALIZE} from "../../../protocol/utils/common/Constants.sol";
-
 /// @title BatchAsync
 /// @notice Abstract contract for managing asynchronous payload batches
 abstract contract BatchAsync is QueueAsync {
+    // slots [210-259] reserved for gap
+    uint256[50] _gap_batch_async;
+
     /// @notice Error thrown when attempting to executed payloads after all have been executed
     error AllPayloadsExecuted();
     /// @notice Error thrown request did not come from Forwarder address

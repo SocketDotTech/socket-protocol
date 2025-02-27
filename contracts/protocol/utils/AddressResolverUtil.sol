@@ -11,7 +11,11 @@ import "../../interfaces/IWatcherPrecompile.sol";
 abstract contract AddressResolverUtil {
     /// @notice The address resolver contract reference
     /// @dev Used to look up system contract addresses
+    // slot 0
     IAddressResolver public addressResolver__;
+
+    // slots 1-50 reserved for future use
+    uint256[50] __gap_resolver_util;
 
     /// @notice Error thrown when an invalid address attempts to call the Payload Delivery only function
     error OnlyPayloadDelivery();
@@ -65,7 +69,4 @@ abstract contract AddressResolverUtil {
         appGateway = addressResolver__.contractsToGateways(originAppGateway_);
         if (appGateway == address(0)) appGateway = originAppGateway_;
     }
-
-    // for proxy contracts
-    uint256[49] __gap_resolver_util;
 }

@@ -3,35 +3,26 @@ pragma solidity ^0.8.21;
 
 import {AccessControl} from "../utils/AccessControl.sol";
 import {Gauge} from "../utils/Gauge.sol";
-import {LimitParams, UpdateLimitParams} from "../utils/common/Structs.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
-import {QUERY, FINALIZE, SCHEDULE} from "../utils/common/Constants.sol";
-import "../../interfaces/IWatcherPrecompile.sol";
 import {WATCHER_ROLE} from "../utils/common/AccessRoles.sol";
-import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
+import "./WatcherPrecompileStorage.sol";
+import "solady/utils/Initializable.sol";
 
 abstract contract WatcherPrecompileLimits is
-    Gauge,
-    AddressResolverUtil,
+    WatcherPrecompileStorage,
+    Initializable,
     AccessControl,
-    IWatcherPrecompile
+    Gauge,
+    AddressResolverUtil
 {
-    /// @notice Number of decimals used in limit calculations
-    uint256 public constant LIMIT_DECIMALS = 18;
-
-    /// @notice Default limit value for any app gateway
-    uint256 public defaultLimit;
-    /// @notice Rate at which limit replenishes per second
-    uint256 public defaultRatePerSecond;
-
-    /// @notice The chain slug of the watcher precompile
-    uint32 public evmxSlug;
-
-    // appGateway => limitType => receivingLimitParams
-    mapping(address => mapping(bytes32 => LimitParams)) internal _limitParams;
-
-    // Mapping to track active app gateways
-    mapping(address => bool) private _activeAppGateways;
+    // Slots from parent contracts:
+    // slot 0-118: watcher precompile storage
+    // 0 slots for initializable and ownable
+    // slots 119-169: access control (gap + 1)
+    // slots 170-219: gauge (gap)
+    // slots 220-270: address resolver util (gap + 1)
+    // slots 271-320: gap for future storage variables
+    uint256[50] _gap_watcher_precompile_limits;
 
     ////////////////////////////////////////////////////////
     ////////////////////// EVENTS //////////////////////////
@@ -183,6 +174,4 @@ abstract contract WatcherPrecompileLimits is
     function setDefaultRatePerSecond(uint256 defaultRatePerSecond_) external onlyOwner {
         defaultRatePerSecond = defaultRatePerSecond_;
     }
-
-    uint256[49] __gap;
 }
