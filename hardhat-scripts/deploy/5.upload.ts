@@ -1,5 +1,10 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { ChainAddressesObj, EVMxAddressesObj, ChainSlug, DeploymentMode } from "@socket.tech/socket-protocol-common";
+import {
+  ChainAddressesObj,
+  EVMxAddressesObj,
+  ChainSlug,
+  DeploymentMode,
+} from "@socket.tech/socket-protocol-common";
 import { config as dotenvConfig } from "dotenv";
 import fs from "fs";
 import path from "path";
@@ -26,13 +31,12 @@ const getFileName = () => {
       return "devConfig.json";
     case DeploymentMode.STAGE:
       return "stageConfig.json";
-    case DeploymentMode.PROD: 
+    case DeploymentMode.PROD:
       return "prodConfig.json";
     default:
       throw new Error(`Invalid deployment mode: ${mode}`);
   }
 };
-
 
 const getAddressesPath = () => {
   switch (mode) {
@@ -104,10 +108,7 @@ export let config: S3Config = {
   ],
 };
 // Read the addresses.json file
-const addressesPath = path.join(
-  __dirname,
-  getAddressesPath()
-);
+const addressesPath = path.join(__dirname, getAddressesPath());
 const addresses = JSON.parse(fs.readFileSync(addressesPath, "utf8"));
 
 // Update config with addresses

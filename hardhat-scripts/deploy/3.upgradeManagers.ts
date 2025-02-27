@@ -10,7 +10,11 @@ dotenvConfig();
 import { Wallet } from "ethers";
 import { ethers } from "hardhat";
 import { chains, EVMX_CHAIN_ID, mode } from "../config";
-import { CORE_CONTRACTS, DeploymentAddresses, EVMxCoreContracts } from "../constants";
+import {
+  CORE_CONTRACTS,
+  DeploymentAddresses,
+  EVMxCoreContracts,
+} from "../constants";
 import {
   getAddresses,
   getInstance,

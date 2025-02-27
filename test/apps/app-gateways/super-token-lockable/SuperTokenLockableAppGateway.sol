@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 import "solady/auth/Ownable.sol";
-import {ISuperToken} from "../../../../contracts/interfaces/ISuperToken.sol";
+import {ISuperToken} from "../super-token/ISuperToken.sol";
 import "../../../../contracts/base/AppGatewayBase.sol";
 import "./SuperTokenLockable.sol";
 import "./LimitHook.sol";

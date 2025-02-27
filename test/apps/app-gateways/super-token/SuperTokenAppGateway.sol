@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 
 import "solady/auth/Ownable.sol";
 import "../../../../contracts/base/AppGatewayBase.sol";
-import "../../../../contracts/interfaces/ISuperToken.sol";
+import "./ISuperToken.sol";
 import "./SuperToken.sol";
 
 contract SuperTokenAppGateway is AppGatewayBase, Ownable {

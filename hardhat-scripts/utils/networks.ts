@@ -22,7 +22,7 @@ function createReverseEnumMap(enumObj: any) {
 }
 
 export const rpcKeys = (chainSlug: ChainSlug) => {
-  if (chainSlug == EVMX_CHAIN_ID as ChainSlug) {
+  if (chainSlug == (EVMX_CHAIN_ID as ChainSlug)) {
     return "EVMX_RPC";
   }
   let chainName = chainSlugToHardhatChainName[chainSlug].toString();

@@ -4,8 +4,18 @@ dotenvConfig();
 import { Wallet } from "ethers";
 import { ethers } from "hardhat";
 import { chains, EVMX_CHAIN_ID, mode, watcher } from "../config";
-import { CORE_CONTRACTS, DeploymentAddresses, EVMxCoreContracts } from "../constants";
-import { getAddresses, getInstance, getProviderFromChainSlug, getRoleHash, overrides } from "../utils";
+import {
+  CORE_CONTRACTS,
+  DeploymentAddresses,
+  EVMxCoreContracts,
+} from "../constants";
+import {
+  getAddresses,
+  getInstance,
+  getProviderFromChainSlug,
+  getRoleHash,
+  overrides,
+} from "../utils";
 import { relayerAddressList } from "../constants/relayers";
 import { ChainAddressesObj } from "@socket.tech/socket-protocol-common";
 import { ROLES } from "../constants/roles";

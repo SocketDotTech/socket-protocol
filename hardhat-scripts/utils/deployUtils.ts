@@ -8,7 +8,7 @@ import fs from "fs";
 import {
   ChainAddressesObj,
   ChainSlug,
-  DeploymentMode
+  DeploymentMode,
 } from "@socket.tech/socket-protocol-common";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { overrides } from "../utils";

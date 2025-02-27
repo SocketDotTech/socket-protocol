@@ -1,7 +1,7 @@
 import {
   ChainSlug,
   DeploymentMode,
-  ChainAddressesObj
+  ChainAddressesObj,
 } from "@socket.tech/socket-protocol-common";
 import { config } from "dotenv";
 import { Contract, Signer, Wallet, providers } from "ethers";
@@ -13,7 +13,11 @@ import {
   mode,
   logConfig,
 } from "../config/config";
-import { CORE_CONTRACTS, DeploymentAddresses, EVMxCoreContracts } from "../constants";
+import {
+  CORE_CONTRACTS,
+  DeploymentAddresses,
+  EVMxCoreContracts,
+} from "../constants";
 import { getImplementationAddress } from "../migration/migrate-proxies";
 import {
   DeployParams,
@@ -160,9 +164,10 @@ const deployEVMxContracts = async () => {
         deployUtils.signer
       );
 
-      deployUtils.addresses.startBlock = (deployUtils.addresses.startBlock
-        ? deployUtils.addresses.startBlock
-        : await deployUtils.signer.provider?.getBlockNumber()) || 0;
+      deployUtils.addresses.startBlock =
+        (deployUtils.addresses.startBlock
+          ? deployUtils.addresses.startBlock
+          : await deployUtils.signer.provider?.getBlockNumber()) || 0;
 
       await storeAddresses(deployUtils.addresses, chain as ChainSlug, mode);
     } catch (error) {
@@ -256,9 +261,10 @@ const deploySocketContracts = async () => {
         );
         deployUtils.addresses[contractName] = contractFactoryPlug.address;
 
-        deployUtils.addresses.startBlock = (deployUtils.addresses.startBlock
-          ? deployUtils.addresses.startBlock
-          : await deployUtils.signer.provider?.getBlockNumber()) || 0;
+        deployUtils.addresses.startBlock =
+          (deployUtils.addresses.startBlock
+            ? deployUtils.addresses.startBlock
+            : await deployUtils.signer.provider?.getBlockNumber()) || 0;
 
         await storeAddresses(deployUtils.addresses, chain, mode);
       } catch (error) {
