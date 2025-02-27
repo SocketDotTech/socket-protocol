@@ -16,6 +16,7 @@ contract SuperTokenLockable is ERC20, Ownable, PlugBase {
 
     error InsufficientBalance();
     error InsufficientLockedTokens();
+    error InvalidSender();
 
     constructor(
         string memory name_,
@@ -50,11 +51,16 @@ contract SuperTokenLockable is ERC20, Ownable, PlugBase {
         _mint(user_, amount_);
     }
 
-    function setSocket(address newSocket_) external onlySocket {
+    function setSocket(address newSocket_) external onlyOwner {
         _setSocket(newSocket_);
     }
 
     function setLimitHook(address limitHook_) external onlySocket {
         limitHook__ = LimitHook(limitHook_);
+    }
+
+    function setOwner(address owner_) external {
+        if (owner() != address(0) && owner() != msg.sender) revert InvalidSender();
+        _initializeOwner(owner_);
     }
 }

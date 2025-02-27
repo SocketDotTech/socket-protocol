@@ -49,8 +49,12 @@ contract SuperTokenLockableDeployer is AppDeployerBase, Ownable {
     }
 
     function deployContracts(uint32 chainSlug_) external async {
-        _deploy(superTokenLockable, chainSlug_, IsPlug.YES);
-        _deploy(limitHook, chainSlug_, IsPlug.YES);
+        bytes memory initData = abi.encodeWithSelector(
+            SuperTokenLockable.setOwner.selector,
+            owner()
+        );
+        _deploy(superTokenLockable, chainSlug_, IsPlug.YES, initData);
+        _deploy(limitHook, chainSlug_, IsPlug.YES, initData);
     }
 
     // don't need to call this directly, will be called automatically after all contracts are deployed.

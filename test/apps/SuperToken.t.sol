@@ -132,6 +132,7 @@ contract SuperTokenTest is DeliveryHelperTest {
             onChain,
             "Forwarder SuperToken onChainAddress should be correct"
         );
+        assertEq(SuperToken(onChain).owner(), owner, "SuperToken owner should be correct");
     }
 
     /**

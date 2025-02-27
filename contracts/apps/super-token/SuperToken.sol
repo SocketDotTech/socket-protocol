@@ -12,6 +12,7 @@ import "../../base/PlugBase.sol";
 contract SuperToken is ERC20, Ownable, PlugBase {
     mapping(address => uint256) public lockedTokens;
 
+    error InvalidSender();
     constructor(
         string memory name_,
         string memory symbol_,
@@ -32,5 +33,10 @@ contract SuperToken is ERC20, Ownable, PlugBase {
 
     function setSocket(address newSocket_) external onlyOwner {
         _setSocket(newSocket_);
+    }
+
+    function setOwner(address owner_) external {
+        if (owner() != address(0) && owner() != msg.sender) revert InvalidSender();
+        _initializeOwner(owner_);
     }
 }
