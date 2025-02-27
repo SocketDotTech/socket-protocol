@@ -18,10 +18,10 @@ abstract contract WatcherPrecompileLimits is
     // Slots from parent contracts:
     // slot 0-119: watcher precompile storage
     // 0 slots for initializable and ownable
-    // slots 120-170: access control
-    // slots 171-221: gauge
-    // slots 222-272: address resolver util
-    // slots 273-323: gap for future storage variables
+    // slots 120-170: access control (gap + 1)
+    // slots 171-220: gauge (gap)
+    // slots 221-271: address resolver util (gap + 1)
+    // slots 272-321: gap for future storage variables
     uint256[50] _gap_watcher_precompile_limits;
 
     ////////////////////////////////////////////////////////

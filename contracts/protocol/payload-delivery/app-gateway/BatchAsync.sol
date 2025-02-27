@@ -6,7 +6,7 @@ import "./QueueAsync.sol";
 /// @title BatchAsync
 /// @notice Abstract contract for managing asynchronous payload batches
 abstract contract BatchAsync is QueueAsync {
-    // slots [211-260] reserved for gap
+    // slots [210-259] reserved for gap
     uint256[50] _gap_batch_async;
 
     /// @notice Error thrown when attempting to executed payloads after all have been executed

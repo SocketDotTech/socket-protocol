@@ -36,7 +36,7 @@ abstract contract AuctionManagerStorage is IAuctionManager {
     // slots [55-104] reserved for gap
     uint256[50] _gap_after;
 
-    // slots 105-156 reserved for addr resolver util
+    // slots 105-155 reserved for addr resolver util
 }
 
 /// @title AuctionManager

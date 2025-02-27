@@ -8,7 +8,7 @@ import {ECDSA} from "solady/utils/ECDSA.sol";
 /// @notice Configuration contract for the Watcher Precompile system
 /// @dev Handles the mapping between networks, plugs, and app gateways for payload execution
 abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
-    // slot 324-374: gap for future storage variables
+    // slot 322-371: gap for future storage variables
     uint256[50] _gap_watcher_precompile_config;
 
     /// @notice Emitted when a new plug is configured for an app gateway

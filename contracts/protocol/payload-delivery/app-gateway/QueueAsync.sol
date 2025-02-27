@@ -10,8 +10,8 @@ import "./DeliveryHelperStorage.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
 abstract contract QueueAsync is DeliveryHelperStorage, Initializable, Ownable, AddressResolverUtil {
-    // slots [0-108] reserved for delivery helper storage and [109-160] reserved for addr resolver util
-    // slots [161-210] reserved for gap
+    // slots [0-108] reserved for delivery helper storage and [109-159] reserved for addr resolver util
+    // slots [160-209] reserved for gap
     uint256[50] _gap_queue_async;
 
     event PayloadBatchCancelled(bytes32 asyncId);

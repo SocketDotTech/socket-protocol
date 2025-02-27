@@ -19,6 +19,8 @@ abstract contract FeesManagerStorage is IFeesManager {
 
     // slot 50
     uint256 public feesCounter;
+
+    // slot 51
     uint32 public evmxSlug;
 
     /// @notice Struct containing fee amounts and status
@@ -27,31 +29,31 @@ abstract contract FeesManagerStorage is IFeesManager {
         uint256 blocked; // Amount blocked
     }
 
-    // slot 51
+    // slot 52
     /// @notice Master mapping tracking all fee information
     /// @dev appGateway => chainSlug => token => TokenBalance
     mapping(address => mapping(uint32 => mapping(address => TokenBalance)))
         public appGatewayFeeBalances;
 
-    // slot 52
+    // slot 53
     /// @notice Mapping to track blocked fees for each async id
     /// @dev asyncId => Fees
     mapping(bytes32 => Fees) public asyncIdBlockedFees;
 
-    // slot 53
+    // slot 54
     /// @notice Mapping to track fees to be distributed to transmitters
     /// @dev transmitter => chainSlug => token => amount
     mapping(address => mapping(uint32 => mapping(address => uint256))) public transmitterFees;
 
-    // slot 54
+    // slot 55
     /// @notice Mapping to track nonce to whether it has been used
     /// @dev signatureNonce => isNonceUsed
     mapping(uint256 => bool) public isNonceUsed;
 
-    // slots [55-104] reserved for gap
+    // slots [56-105] reserved for gap
     uint256[50] _gap_after;
 
-    // slots 105-154 reserved for addr resolver util
+    // slots 106-156 reserved for addr resolver util
 }
 
 /// @title FeesManager
