@@ -41,11 +41,7 @@
       "0x6c40Fb39B03e32EC4D23e31DdE6D10283F2C7b4F",
       "Socket",
       "contracts/protocol/socket/Socket.sol",
-      [
-        84532,
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "EVMX"
-      ]
+      [84532, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
     ]
   ],
   "421614": [
@@ -217,11 +213,7 @@
       "0x79Ac996De9333956f4980397ED5Bd91f77f10b01",
       "Socket",
       "contracts/protocol/socket/Socket.sol",
-      [
-        11155420,
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "EVMX"
-      ]
+      [11155420, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
     ]
   ]
 }

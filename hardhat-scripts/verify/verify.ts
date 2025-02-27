@@ -64,11 +64,7 @@ export const main = async () => {
         }
       }
 
-      await storeUnVerifiedParams(
-        unverifiedChainParams,
-        chain,
-        mode
-      );
+      await storeUnVerifiedParams(unverifiedChainParams, chain, mode);
     }
   } catch (error) {
     console.log("Error in verifying contracts", error);
