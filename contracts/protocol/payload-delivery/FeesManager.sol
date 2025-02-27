@@ -45,7 +45,7 @@ abstract contract FeesManagerStorage is IFeesManager {
 
     // slot 54
     /// @notice Mapping to track nonce to whether it has been used
-    /// @dev signatureNonce => isValid
+    /// @dev signatureNonce => isNonceUsed
     mapping(uint256 => bool) public isNonceUsed;
 
     // slots [55-104] reserved for gap
