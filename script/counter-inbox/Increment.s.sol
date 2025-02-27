@@ -10,10 +10,8 @@ import {ETH_ADDRESS, FAST} from "../../contracts/protocol/utils/common/Constants
 
 contract Increment is Script {
     function run() external {
-        address gateway = vm.envAddress("APP_GATEWAY");
-        address socket = vm.envAddress("SOCKET");
-        address switchboard = vm.envAddress("SWITCHBOARD");
         string memory arbRpc = vm.envString("ARBITRUM_SEPOLIA_RPC");
+
         vm.createSelectFork(arbRpc);
         uint256 arbDeployerPrivateKey = vm.envUint("SPONSOR_KEY");
         vm.startBroadcast(arbDeployerPrivateKey);

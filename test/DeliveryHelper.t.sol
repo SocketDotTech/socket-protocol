@@ -161,8 +161,11 @@ contract DeliveryHelperTest is SetupTest {
             switchboard: address(optConfig.switchboard)
         });
 
-        hoax(watcherEOA);
-        watcherPrecompile.setAppGateways(gateways);
+        bytes memory watcherSignature = _createWatcherSignature(
+            abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
+        );
+
+        watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
     }
 
     function setLimit(address appGateway_) internal {
@@ -351,8 +354,10 @@ contract DeliveryHelperTest is SetupTest {
             });
         }
 
-        hoax(watcherEOA);
-        watcherPrecompile.setAppGateways(gateways);
+        bytes memory watcherSignature = _createWatcherSignature(
+            abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
+        );
+        watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
     }
 
     function _executeReadBatchSingleChain(
@@ -487,8 +492,10 @@ contract DeliveryHelperTest is SetupTest {
         if (auctionEndDelaySeconds == 0) return;
         bytes32 timeoutId = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
 
-        hoax(watcherEOA);
-        watcherPrecompile.resolveTimeout(timeoutId);
+        bytes memory watcherSignature = _createWatcherSignature(
+            abi.encode(IWatcherPrecompile.resolveTimeout.selector, timeoutId)
+        );
+        watcherPrecompile.resolveTimeout(timeoutId, signatureNonce++, watcherSignature);
     }
 
     function finalize(
