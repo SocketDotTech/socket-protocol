@@ -55,7 +55,7 @@ abstract contract AddressResolverStorage is IAddressResolver {
 /// @dev Inherits the Ownable contract and implements the IAddressResolver interface.
 contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
     /// @notice Error thrown if AppGateway contract was already set by a different address
-    error InvalidCaller(address contractAddress_);
+    error InvalidAppGateway(address contractAddress_);
 
     event PlugAdded(address appGateway, uint32 chainSlug, address plug);
     event ForwarderDeployed(address newForwarder, bytes32 salt);
@@ -185,7 +185,7 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
             contractsToGateways[contractAddress_] != address(0) &&
             contractsToGateways[contractAddress_] != msg.sender
         ) {
-            revert InvalidCaller(contractAddress_);
+            revert InvalidAppGateway(contractAddress_);
         }
         contractsToGateways[contractAddress_] = msg.sender;
     }

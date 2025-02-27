@@ -67,8 +67,8 @@ interface IWatcherPrecompile {
     /// @param proof_ The watcher's proof
     function finalized(
         bytes32 payloadId_,
-        uint256 signatureNonce_,
         bytes calldata proof_,
+        uint256 signatureNonce_,
         bytes calldata signature_
     ) external;
 
@@ -80,8 +80,8 @@ interface IWatcherPrecompile {
     /// @notice Resolves multiple promises with their return data
     /// @param resolvedPromises_ Array of resolved promises and their return data
     function resolvePromises(
-        uint256 signatureNonce_,
         ResolvedPromises[] calldata resolvedPromises_,
+        uint256 signatureNonce_,
         bytes calldata signature_
     ) external;
 

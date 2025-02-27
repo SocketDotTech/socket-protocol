@@ -20,34 +20,32 @@ abstract contract AsyncPromiseStorage is IPromise {
     uint256[50] _gap_before;
 
     // slot 50
+    // bytes1
     /// @notice The callback selector to be called on the invoker.
     bytes4 public callbackSelector;
-
-    // slot 51
+    // bytes4
     /// @notice Indicates whether the promise has been resolved.
     bool public override resolved;
-
-    // slot 52
+    // bytes8
     /// @notice The current state of the async promise.
     AsyncPromiseState public state;
-
-    // slot 53
+    // bytes20
     /// @notice The local contract which initiated the async call.
     /// @dev The callback will be executed on this address
     address public localInvoker;
 
-    // slot 54
+    // slot 51
     /// @notice The forwarder address which can call the callback
     address public forwarder;
 
-    // slot 55
+    // slot 52
     /// @notice The callback data to be used when the promise is resolved.
     bytes public callbackData;
 
-    // slots [56-105] reserved for gap
+    // slots [53-102] reserved for gap
     uint256[50] _gap_after;
 
-    // slots 106-157 reserved for addr resolver util
+    // slots 103-154 reserved for addr resolver util
 }
 
 /// @title AsyncPromise

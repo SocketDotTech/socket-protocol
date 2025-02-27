@@ -48,7 +48,8 @@ contract DeliveryHelperTest is SetupTest {
         bytes memory feesManagerData = abi.encodeWithSelector(
             FeesManager.initialize.selector,
             address(addressResolver),
-            owner
+            watcherEOA,
+            evmxSlug
         );
 
         vm.expectEmit(true, true, true, false);
@@ -77,7 +78,7 @@ contract DeliveryHelperTest is SetupTest {
 
         bytes memory auctionManagerData = abi.encodeWithSelector(
             AuctionManager.initialize.selector,
-            evmxChainSlug,
+            evmxSlug,
             auctionEndDelaySeconds,
             address(addressResolver),
             owner,
@@ -161,9 +162,7 @@ contract DeliveryHelperTest is SetupTest {
         });
 
         bytes memory watcherSignature = _createWatcherSignature(
-            keccak256(
-                abi.encode(address(watcherPrecompile), evmxChainSlug, signatureNonce, gateways)
-            )
+            abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
         );
 
         watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
@@ -204,12 +203,33 @@ contract DeliveryHelperTest is SetupTest {
             fees_.amount
         );
 
-        hoax(owner);
-        feesManager.incrementFeesDeposited(
+        bytes memory bytesInput = abi.encode(
             fees_.feePoolChain,
             appGateway_,
             fees_.feePoolToken,
             fees_.amount
+        );
+        bytes32 digest = keccak256(
+            abi.encode(address(feesManager), evmxSlug, signatureNonce, bytesInput)
+        );
+
+        digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
+        (uint8 sigV, bytes32 sigR, bytes32 sigS) = vm.sign(watcherPrivateKey, digest);
+        bytes memory sig = new bytes(65);
+        bytes1 v32 = bytes1(sigV);
+
+        assembly {
+            mstore(add(sig, 96), v32)
+            mstore(add(sig, 32), sigR)
+            mstore(add(sig, 64), sigS)
+        }
+        feesManager.incrementFeesDeposited(
+            fees_.feePoolChain,
+            appGateway_,
+            fees_.feePoolToken,
+            fees_.amount,
+            signatureNonce++,
+            sig
         );
     }
 
@@ -327,9 +347,7 @@ contract DeliveryHelperTest is SetupTest {
         }
 
         bytes memory watcherSignature = _createWatcherSignature(
-            keccak256(
-                abi.encode(address(watcherPrecompile), evmxChainSlug, signatureNonce, gateways)
-            )
+            abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
         );
         watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
     }
@@ -448,7 +466,7 @@ contract DeliveryHelperTest is SetupTest {
 
         vm.prank(transmitterEOA);
         bytes memory transmitterSignature = _createSignature(
-            keccak256(abi.encode(address(auctionManager), evmxChainSlug, asyncId, bidAmount, "")),
+            keccak256(abi.encode(address(auctionManager), evmxSlug, asyncId, bidAmount, "")),
             transmitterPrivateKey
         );
 
@@ -464,16 +482,10 @@ contract DeliveryHelperTest is SetupTest {
         // );
 
         if (auctionEndDelaySeconds == 0) return;
-        bytes32 timeoutId = _encodeId(
-            evmxChainSlug,
-            address(watcherPrecompile),
-            payloadIdCounter++
-        );
+        bytes32 timeoutId = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
 
         bytes memory watcherSignature = _createWatcherSignature(
-            keccak256(
-                abi.encode(address(watcherPrecompile), evmxChainSlug, signatureNonce, timeoutId)
-            )
+            abi.encode(IWatcherPrecompile.resolveTimeout.selector, timeoutId)
         );
         watcherPrecompile.resolveTimeout(timeoutId, signatureNonce++, watcherSignature);
     }

@@ -18,7 +18,7 @@ abstract contract AuctionManagerStorage is IAuctionManager {
     uint256[50] _gap_before;
 
     // slot 50
-    uint32 public evmxChainSlug;
+    uint32 public evmxSlug;
 
     // slot 51
     mapping(bytes32 => Bid) public winningBids;
@@ -36,7 +36,7 @@ abstract contract AuctionManagerStorage is IAuctionManager {
     // slots [55-104] reserved for gap
     uint256[50] _gap_after;
 
-    // slots 105-156 reserved for addr resolver util
+    // slots 105-155 reserved for addr resolver util
 }
 
 /// @title AuctionManager
@@ -52,19 +52,19 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
     }
 
     /// @notice Initializer function to replace constructor
-    /// @param evmxChainSlug_ The chain slug for the VM
+    /// @param evmxSlug_ The chain slug for the VM
     /// @param auctionEndDelaySeconds_ The delay in seconds before an auction can end
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the contract owner
     function initialize(
-        uint32 evmxChainSlug_,
+        uint32 evmxSlug_,
         uint256 auctionEndDelaySeconds_,
         address addressResolver_,
         address owner_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
-        evmxChainSlug = evmxChainSlug_;
+        evmxSlug = evmxSlug_;
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
     }
 
@@ -93,7 +93,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
         if (auctionClosed[asyncId_]) revert AuctionClosed();
 
         address transmitter = _recoverSigner(
-            keccak256(abi.encode(address(this), evmxChainSlug, asyncId_, fee, extraData)),
+            keccak256(abi.encode(address(this), evmxSlug, asyncId_, fee, extraData)),
             transmitterSignature
         );
 

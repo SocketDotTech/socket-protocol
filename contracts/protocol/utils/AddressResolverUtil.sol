@@ -14,6 +14,9 @@ abstract contract AddressResolverUtil {
     // slot 0
     IAddressResolver public addressResolver__;
 
+    // slots 1-50 reserved for future use
+    uint256[50] __gap_resolver_util;
+
     /// @notice Error thrown when an invalid address attempts to call the Payload Delivery only function
     error OnlyPayloadDelivery();
     /// @notice Error thrown when an invalid address attempts to call the Watcher only function
@@ -66,7 +69,4 @@ abstract contract AddressResolverUtil {
         appGateway = addressResolver__.contractsToGateways(originAppGateway_);
         if (appGateway == address(0)) appGateway = originAppGateway_;
     }
-
-    // slots 1-50 reserved for future use
-    uint256[50] __gap_resolver_util;
 }
