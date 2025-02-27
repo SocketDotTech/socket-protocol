@@ -10,6 +10,6 @@ evm_version = 'paris'
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
 [etherscan]
-7625382 = { key = "empty", url = "https://evms.cloud.blockscout.com/api?" }
+43 = { key = "empty", url = "https://evmx.cloud.blockscout.com/api?" }
 421614 = { key = "${ARBISCAN_API_KEY}", url = "https://api-sepolia.arbiscan.io/api?" }
 11155420 = { key = "${OPTIMISM_API_KEY}", url = "https://optimism-sepolia.blockscout.com/api?" }
