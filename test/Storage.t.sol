@@ -10,13 +10,13 @@ contract StorageTest is DeliveryHelperTest {
         setUpDeliveryHelper();
     }
 
-    function testAddressResolverSlot() public {
+    function testAddressResolverSlot() public view {
         // Test AddressResolver version at slot 59
         bytes32 versionSlot = vm.load(address(addressResolver), bytes32(uint256(59)));
         assertEq(uint64(uint256(versionSlot)), 1);
     }
 
-    function testWatcherPrecompileSlot() public {
+    function testWatcherPrecompileSlot() public view {
         // Test AddressResolver address at slot 109 in WatcherPrecompile
         bytes32 slotValue = vm.load(address(watcherPrecompile), bytes32(uint256(52)));
         assertEq(uint256(slotValue), evmxSlug);
@@ -25,7 +25,7 @@ contract StorageTest is DeliveryHelperTest {
         assertEq(address(uint160(uint256(slotValue))), address(addressResolver));
     }
 
-    function testFeesManagerSlot() public {
+    function testFeesManagerSlot() public view {
         bytes32 slotValue = vm.load(address(feesManager), bytes32(uint256(51)));
         assertEq(uint32(uint256(slotValue)), evmxSlug);
 
@@ -33,7 +33,7 @@ contract StorageTest is DeliveryHelperTest {
         assertEq(address(uint160(uint256(slotValue))), address(addressResolver));
     }
 
-    function testAuctionManagerSlot() public {
+    function testAuctionManagerSlot() public view {
         bytes32 slotValue = vm.load(address(auctionManager), bytes32(uint256(50)));
         assertEq(uint32(uint256(slotValue)), evmxSlug);
 
@@ -65,7 +65,7 @@ contract StorageTest is DeliveryHelperTest {
         assertEq(address(uint160(uint256(slotValue))), address(addressResolver));
     }
 
-    function testDeliveryHelperSlot() public {
+    function testDeliveryHelperSlot() public view {
         bytes32 slotValue = vm.load(address(deliveryHelper), bytes32(uint256(50)));
         assertEq(uint256(uint256(slotValue)), 0);
 
