@@ -11,7 +11,7 @@ source .env && forge script script/parallel-counter/checkCounters.s.sol --broadc
 source .env && forge script script/counter/deployEVMxCounterApp.s.sol --broadcast --skip-simulation --legacy --gas-price 0
 source .env && forge script script/counter/DeployCounterOnchain.s.sol --broadcast --skip-simulation
 ## set limits for the app gateway using API
-source .env && cast send $DEPLOYER "deployContracts(uint32)" 421614 --private-key $PRIVATE_KEY --legacy --gas-price 0
+source .env && cast send $APP_GATEWAY "deployContracts(uint32)" 421614 --private-key $PRIVATE_KEY --legacy --gas-price 0
 source .env && cast send $APP_GATEWAY "incrementCounters(address[])" '[0x18a93d520879524e0c215b64f05914da5883540f]' --private-key $PRIVATE_KEY --legacy --gas-price 0
 source .env && cast send $APP_GATEWAY "readCounters(address[])" '[0x18a93d520879524e0c215b64f05914da5883540f]' --private-key $PRIVATE_KEY --legacy --gas-price 0
 

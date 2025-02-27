@@ -62,6 +62,42 @@
   ],
   "7625382": [
     [
+      "0xa07e38cAB46eAA358C3653C63219f1009e8F7789",
+      "AuctionManager",
+      "contracts/protocol/payload-delivery/AuctionManager.sol",
+      []
+    ],
+    [
+      "0x9F10A0c71178dbD4d049f2C04fD0e34966134b9e",
+      "DeliveryHelper",
+      "contracts/protocol/payload-delivery/app-gateway/DeliveryHelper.sol",
+      []
+    ],
+    [
+      "0xB423eE3bffc3604F96B59cF419C48AE05b8E9d0b",
+      "FeesManager",
+      "contracts/protocol/payload-delivery/FeesManager.sol",
+      []
+    ],
+    [
+      "0x71956F006Ec5434581D3Fd5E7224BB3bae231907",
+      "WatcherPrecompile",
+      "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",
+      []
+    ],
+    [
+      "0xbAeF84edEae864Ff22Bd9c9912AdfF84aD490d82",
+      "AddressResolver",
+      "contracts/protocol/AddressResolver.sol",
+      []
+    ],
+    [
+      "0x945e9ab4c08c225C10F178a0bd600BcC2bA7Cc78",
+      "ERC1967Factory",
+      "lib/solady/src/utils/ERC1967Factory.sol",
+      []
+    ],
+    [
       "0x09B503e744DCB2cA2827ce5AF08Fd49Ba06D17e4",
       "WatcherPrecompile",
       "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",
@@ -177,24 +213,6 @@
       ]
     ],
     [
-      "0xB0694bF9332ec67825B9Ad6E677941aeAF50995F",
-      "ContractFactoryPlug",
-      "contracts/protocol/payload-delivery/ContractFactoryPlug.sol",
-      [
-        "0x79Ac996De9333956f4980397ED5Bd91f77f10b01",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0xa8176BE60350AA44Dd10d46f42720cD604EE85Ff",
-      "FeesPlug",
-      "contracts/protocol/payload-delivery/FeesPlug.sol",
-      [
-        "0x79Ac996De9333956f4980397ED5Bd91f77f10b01",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
       "0xBf9Ec2b0441eeEA9bEb89C6638921c37c15A13E4",
       "FastSwitchboard",
       "contracts/protocol/socket/switchboard/FastSwitchboard.sol",
@@ -202,15 +220,6 @@
         11155420,
         "0x79Ac996De9333956f4980397ED5Bd91f77f10b01",
         "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0x4afd974a84F224ea25dd43be91C6fbaff8DcEcfa",
-      "SocketBatcher",
-      "contracts/protocol/socket/SocketBatcher.sol",
-      [
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "0x79Ac996De9333956f4980397ED5Bd91f77f10b01"
       ]
     ],
     [
