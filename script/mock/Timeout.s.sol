@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {MockWatcherPrecompile} from "../../contracts/mock/MockWatcherPrecompile.sol";
+import {MockWatcherPrecompile} from "../../test/mock/MockWatcherPrecompile.sol";
 
 contract TimeoutTest is Script {
     function run() external {

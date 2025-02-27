@@ -5,7 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {FeesManager} from "../../contracts/protocol/payload-delivery/FeesManager.sol";
 import {ETH_ADDRESS} from "../../contracts/protocol/utils/common/Constants.sol";
-import {CounterAppGateway} from "../../contracts/apps/counter/CounterAppGateway.sol";
+import {CounterAppGateway} from "../../test/apps/app-gateways/counter/CounterAppGateway.sol";
 
 contract WithdrawFees is Script {
     function run() external {

@@ -4,7 +4,7 @@ pragma solidity ^0.8.21;
 import "solmate/tokens/ERC20.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
 import {LimitHook} from "./LimitHook.sol";
-import "../../base/PlugBase.sol";
+import "../../../../contracts/base/PlugBase.sol";
 
 /**
  * @title SuperToken

@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import "./SuperToken.sol";
-import "../../base/AppDeployerBase.sol";
 import "solady/auth/Ownable.sol";
+import "../../../../contracts/base/AppGatewayBase.sol";
+import "../../../../contracts/interfaces/ISuperToken.sol";
+import "./SuperToken.sol";
 
-contract SuperTokenDeployer is AppDeployerBase, Ownable {
+contract SuperTokenAppGateway is AppGatewayBase, Ownable {
     bytes32 public superToken = _createContractId("superToken");
+
+    event Transferred(bytes32 asyncId);
+
     struct ConstructorParams {
         string name_;
         string symbol_;
@@ -15,15 +19,22 @@ contract SuperTokenDeployer is AppDeployerBase, Ownable {
         uint256 initialSupply_;
     }
 
+    struct TransferOrder {
+        address srcToken;
+        address dstToken;
+        address user;
+        uint256 srcAmount;
+        uint256 deadline;
+    }
+
     constructor(
         address addressResolver_,
-        address owner_,
         address auctionManager_,
+        address owner_,
         bytes32 sbType_,
-        ConstructorParams memory params_,
-        Fees memory fees_
-    ) AppDeployerBase(addressResolver_, auctionManager_, sbType_) {
-        _initializeOwner(owner_);
+        Fees memory fees_,
+        ConstructorParams memory params_
+    ) AppGatewayBase(addressResolver_, auctionManager_, sbType_) {
         creationCodeWithArgs[superToken] = abi.encodePacked(
             type(SuperToken).creationCode,
             abi.encode(
@@ -34,7 +45,11 @@ contract SuperTokenDeployer is AppDeployerBase, Ownable {
                 params_.initialSupply_
             )
         );
+
+        // sets the fees data like max fees, chain and token for all transfers
+        // they can be updated for each transfer as well
         _setOverrides(fees_);
+        _initializeOwner(owner_);
     }
 
     function deployContracts(uint32 chainSlug_) external async {
@@ -43,8 +58,16 @@ contract SuperTokenDeployer is AppDeployerBase, Ownable {
     }
 
     // no need to call this directly, will be called automatically after all contracts are deployed.
-    // check AppDeployerBase._deploy and AppDeployerBase.onBatchComplete
+    // check AppGatewayBase._deploy and AppGatewayBase.onBatchComplete
     function initialize(uint32) public pure override {
         return;
+    }
+
+    function transfer(bytes memory order_) external async {
+        TransferOrder memory order = abi.decode(order_, (TransferOrder));
+        ISuperToken(order.srcToken).burn(order.user, order.srcAmount);
+        ISuperToken(order.dstToken).mint(order.user, order.srcAmount);
+
+        emit Transferred(_getCurrentAsyncId());
     }
 }

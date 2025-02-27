@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.21;
 
-import {ParallelCounterAppGateway} from "../../contracts/apps/parallel-counter/ParallelCounterAppGateway.sol";
-import {ParallelCounterDeployer} from "../../contracts/apps/parallel-counter/ParallelCounterDeployer.sol";
+import {CounterAppGateway} from "./app-gateways/counter/CounterAppGateway.sol";
 import "../DeliveryHelper.t.sol";
 
 contract ParallelCounterTest is DeliveryHelperTest {
@@ -12,39 +11,48 @@ contract ParallelCounterTest is DeliveryHelperTest {
     bytes32 counterId2;
     bytes32[] contractIds = new bytes32[](2);
 
-    ParallelCounterAppGateway parallelCounterGateway;
-    ParallelCounterDeployer parallelCounterDeployer;
+    CounterAppGateway parallelCounterGateway;
 
     function deploySetup() internal {
         setUpDeliveryHelper();
 
-        parallelCounterDeployer = new ParallelCounterDeployer(
+        parallelCounterGateway = new CounterAppGateway(
             address(addressResolver),
             address(auctionManager),
             FAST,
             createFees(feesAmount)
         );
-
-        parallelCounterGateway = new ParallelCounterAppGateway(
-            address(addressResolver),
-            address(parallelCounterDeployer),
-            address(auctionManager),
-            createFees(feesAmount)
-        );
         depositFees(address(parallelCounterGateway), createFees(1 ether));
-        counterId1 = parallelCounterDeployer.counter1();
-        counterId2 = parallelCounterDeployer.counter2();
+        counterId1 = parallelCounterGateway.counter1();
+        counterId2 = parallelCounterGateway.counter();
         contractIds[0] = counterId1;
         contractIds[1] = counterId2;
     }
 
+    function _deployParallel(uint32[] memory chainSlugs_) internal returns (bytes32 asyncId) {
+        asyncId = getNextAsyncId();
+        bytes32[] memory payloadIds = new bytes32[](contractIds.length * chainSlugs_.length);
+        for (uint32 i = 0; i < chainSlugs_.length; i++) {
+            for (uint j = 0; j < contractIds.length; j++) {
+                payloadIds[i * contractIds.length + j] = getWritePayloadId(
+                    chainSlugs_[i],
+                    address(getSocketConfig(chainSlugs_[i]).switchboard),
+                    i * contractIds.length + j + payloadIdCounter
+                );
+            }
+        }
+        // for fees
+        payloadIdCounter += chainSlugs_.length * contractIds.length + 1;
+
+        parallelCounterGateway.deployMultiChainContracts(chainSlugs_);
+        bidAndExecute(payloadIds, asyncId);
+        for (uint i = 0; i < chainSlugs_.length; i++) {
+            setupGatewayAndPlugs(chainSlugs_[i], parallelCounterGateway, contractIds);
+        }
+    }
+
     function deployCounterApps(uint32[] memory chainSlugs) internal returns (bytes32 asyncId) {
-        asyncId = _deployParallel(
-            contractIds,
-            chainSlugs,
-            IMultiChainAppDeployer(address(parallelCounterDeployer)),
-            address(parallelCounterGateway)
-        );
+        asyncId = _deployParallel(chainSlugs);
     }
 
     function testParallelCounterDeployment() external {
@@ -57,23 +65,23 @@ contract ParallelCounterTest is DeliveryHelperTest {
         (address onChainArb1, address forwarderArb1) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId1,
-            parallelCounterDeployer
+            parallelCounterGateway
         );
         (address onChainArb2, address forwarderArb2) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId2,
-            parallelCounterDeployer
+            parallelCounterGateway
         );
 
         (address onChainOpt1, address forwarderOpt1) = getOnChainAndForwarderAddresses(
             optChainSlug,
             counterId1,
-            parallelCounterDeployer
+            parallelCounterGateway
         );
         (address onChainOpt2, address forwarderOpt2) = getOnChainAndForwarderAddresses(
             optChainSlug,
             counterId2,
-            parallelCounterDeployer
+            parallelCounterGateway
         );
 
         assertEq(
@@ -127,7 +135,7 @@ contract ParallelCounterTest is DeliveryHelperTest {
         (, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId1,
-            parallelCounterDeployer
+            parallelCounterGateway
         );
 
         address[] memory instances = new address[](1);

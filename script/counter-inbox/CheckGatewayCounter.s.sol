@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {CounterInboxAppGateway} from "../../contracts/apps/counter-inbox/CounterInboxAppGateway.sol";
+import {CounterAppGateway} from "../../test/apps/app-gateways/counter/CounterAppGateway.sol";
 
 contract CheckGatewayCounter is Script {
     function run() external {
@@ -11,11 +11,11 @@ contract CheckGatewayCounter is Script {
         vm.createSelectFork(rpc);
 
         address gatewayAddress = vm.envAddress("APP_GATEWAY");
-        CounterInboxAppGateway gateway = CounterInboxAppGateway(gatewayAddress);
+        CounterAppGateway gateway = CounterAppGateway(gatewayAddress);
 
-        // Log the value of the counter variable on CounterInboxAppGateway
-        uint256 counterValue = gateway.counter();
-        console.log("Counter value on CounterInboxAppGateway:");
+        // Log the value of the counter variable on CounterAppGateway
+        uint256 counterValue = gateway.counterVal();
+        console.log("Counter value on CounterAppGateway:");
         console.log(counterValue);
     }
 }
