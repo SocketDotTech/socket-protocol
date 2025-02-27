@@ -323,7 +323,6 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         vm.expectEmit(true, true, false, true);
         emit BatchCancelled(bridgeAsyncId);
         finalizeQuery(payloadIds[1], abi.encode(0.001 ether));
-        bytes32 cancelAsyncId = getNextAsyncId();
 
         bytes32[] memory cancelPayloadIds = new bytes32[](1);
         uint32 srcChainSlug = IForwarder(userOrder.srcToken).getChainSlug();
@@ -334,6 +333,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             payloadIdCounter++
         );
 
+        // bytes32 cancelAsyncId = getNextAsyncId();
         // bidAndEndAuction(cancelAsyncId);
         // finalizeAndExecute(
         //     cancelPayloadIds[0],
