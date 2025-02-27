@@ -24,6 +24,8 @@ contract Forwarder is IForwarder, Initializable {
     /// @notice caches the latest async promise address for the last call
     address public latestAsyncPromise;
 
+    error AsyncModifierNotUsed();
+
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -73,6 +75,9 @@ contract Forwarder is IForwarder, Initializable {
         if (deliveryHelper == address(0)) {
             revert("Forwarder: deliveryHelper not found");
         }
+
+        bool isAsyncModifierSet = IAppGateway(msg.sender).isAsyncModifierSet();
+        if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
 
         // Deploy a new async promise contract.
         latestAsyncPromise = IAddressResolver(addressResolver).deployAsyncPromiseContract(
