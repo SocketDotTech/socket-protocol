@@ -32,7 +32,7 @@ contract SetupTest is Test {
 
     uint32 arbChainSlug = 421614;
     uint32 optChainSlug = 11155420;
-    uint32 evmxChainSlug = 1;
+    uint32 evmxSlug = 1;
     uint256 expiryTime = 10000000;
 
     uint256 public signatureNonce = 0;
@@ -126,7 +126,7 @@ contract SetupTest is Test {
             address(addressResolverProxy),
             defaultLimit,
             expiryTime,
-            evmxChainSlug
+            evmxSlug
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(version);
@@ -218,20 +218,18 @@ contract SetupTest is Test {
         resolvedPromises[0] = ResolvedPromises({payloadId: payloadId, returnData: returnDatas});
 
         bytes memory watcherSignature = _createWatcherSignature(
-            keccak256(
-                abi.encode(
-                    address(watcherPrecompile),
-                    evmxChainSlug,
-                    signatureNonce,
-                    resolvedPromises
-                )
-            )
+            abi.encode(WatcherPrecompile.resolvePromises.selector, resolvedPromises)
         );
-        watcherPrecompile.resolvePromises(signatureNonce++, resolvedPromises, watcherSignature);
+        watcherPrecompile.resolvePromises(resolvedPromises, signatureNonce++, watcherSignature);
     }
 
-    function _createWatcherSignature(bytes32 digest_) internal view returns (bytes memory sig) {
-        bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
+    function _createWatcherSignature(
+        bytes memory params_
+    ) internal view returns (bytes memory sig) {
+        bytes32 digest = keccak256(
+            abi.encode(address(watcherPrecompile), evmxSlug, signatureNonce, params_)
+        );
+        digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
         (uint8 sigV, bytes32 sigR, bytes32 sigS) = vm.sign(watcherPrivateKey, digest);
         sig = new bytes(65);
         bytes1 v32 = bytes1(sigV);

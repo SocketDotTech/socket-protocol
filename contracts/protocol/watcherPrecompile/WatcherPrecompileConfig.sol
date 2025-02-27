@@ -46,8 +46,8 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
         bytes calldata signature_
     ) external {
         _isWatcherSignatureValid(
+            abi.encode(this.setAppGateways.selector, configs_),
             signatureNonce_,
-            keccak256(abi.encode(address(this), evmxChainSlug, signatureNonce_, configs_)),
             signature_
         );
 
@@ -109,14 +109,16 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
     }
 
     function _isWatcherSignatureValid(
+        bytes memory digest_,
         uint256 signatureNonce_,
-        bytes32 digest_,
         bytes memory signature_
     ) internal {
         if (isNonceUsed[signatureNonce_]) revert NonceUsed();
         isNonceUsed[signatureNonce_] = true;
 
-        bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
+        bytes32 digest = keccak256(abi.encode(address(this), evmxSlug, signatureNonce_, digest_));
+        digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
+
         // recovered signer is checked for the valid roles later
         address signer = ECDSA.recover(digest, signature_);
         if (signer != owner()) revert InvalidWatcherSignature();

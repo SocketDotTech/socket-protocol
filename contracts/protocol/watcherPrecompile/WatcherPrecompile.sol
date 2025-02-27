@@ -78,7 +78,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         address addressResolver_,
         uint256 defaultLimit_,
         uint256 expiryTime_,
-        uint32 evmxChainSlug_
+        uint32 evmxSlug_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
@@ -90,7 +90,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         // limit per second
         defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
 
-        evmxChainSlug = evmxChainSlug_;
+        evmxSlug = evmxSlug_;
     }
 
     // ================== Timeout functions ==================
@@ -108,7 +108,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         // from auction manager
         _consumeLimit(appGateway_, SCHEDULE, 1);
         uint256 executeAt = block.timestamp + delayInSeconds_;
-        bytes32 timeoutId = _encodeId(evmxChainSlug, address(this));
+        bytes32 timeoutId = _encodeId(evmxSlug, address(this));
         timeoutRequests[timeoutId] = TimeoutRequest(
             timeoutId,
             msg.sender,
@@ -130,8 +130,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         bytes calldata signature_
     ) external {
         _isWatcherSignatureValid(
+            abi.encode(this.resolveTimeout.selector, timeoutId_),
             signatureNonce_,
-            keccak256(abi.encode(address(this), evmxChainSlug, signatureNonce_, timeoutId_)),
             signature_
         );
 
@@ -253,7 +253,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         // from payload delivery
         _consumeLimit(appGateway_, QUERY, 1);
         // Generate unique payload ID from query counter
-        payloadId = _encodeId(evmxChainSlug, address(this));
+        payloadId = _encodeId(evmxSlug, address(this));
 
         // Create async request with minimal information for queries
         // Note: addresses set to 0 as they're not needed for queries
@@ -282,15 +282,13 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
     /// @dev keccak256(abi.encode(switchboard, digest))
     function finalized(
         bytes32 payloadId_,
-        uint256 signatureNonce_,
         bytes calldata proof_,
+        uint256 signatureNonce_,
         bytes calldata signature_
     ) external {
         _isWatcherSignatureValid(
+            abi.encode(this.finalized.selector, payloadId_, proof_),
             signatureNonce_,
-            keccak256(
-                abi.encode(address(this), evmxChainSlug, signatureNonce_, payloadId_, proof_)
-            ),
             signature_
         );
 
@@ -302,13 +300,13 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
     /// @param resolvedPromises_ Array of resolved promises and their return data
     /// @dev Only callable by the contract owner
     function resolvePromises(
-        uint256 signatureNonce_,
         ResolvedPromises[] calldata resolvedPromises_,
+        uint256 signatureNonce_,
         bytes calldata signature_
     ) external {
         _isWatcherSignatureValid(
+            abi.encode(this.resolvePromises.selector, resolvedPromises_),
             signatureNonce_,
-            keccak256(abi.encode(address(this), evmxChainSlug, signatureNonce_, resolvedPromises_)),
             signature_
         );
 
@@ -345,16 +343,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         bytes calldata signature_
     ) external {
         _isWatcherSignatureValid(
+            abi.encode(this.markRevert.selector, isRevertingOnchain_, payloadId_),
             signatureNonce_,
-            keccak256(
-                abi.encode(
-                    address(this),
-                    evmxChainSlug,
-                    signatureNonce_,
-                    payloadId_,
-                    isRevertingOnchain_
-                )
-            ),
             signature_
         );
 
@@ -406,8 +396,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         bytes calldata signature_
     ) external {
         _isWatcherSignatureValid(
+            abi.encode(this.callAppGateways.selector, params_),
             signatureNonce_,
-            keccak256(abi.encode(address(this), evmxChainSlug, signatureNonce_, params_)),
             signature_
         );
 
