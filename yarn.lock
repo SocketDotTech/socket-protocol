@@ -2124,10 +2124,10 @@
     prompts "^2.4.2"
     yargs "^17.7.1"
 
-"@socket.tech/socket-protocol-common@1.1.24":
-  version "1.1.24"
-  resolved "https://registry.yarnpkg.com/@socket.tech/socket-protocol-common/-/socket-protocol-common-1.1.24.tgz#acc4617a20d997a6940f018458904983501f2882"
-  integrity sha512-1lmxechJL2ultwnhFecp/AWxmy7//eNCrlo7DG6+phzxiTz0VY4Iv2e3xfTjil5IM/8LJ8/NSU51uCgIcezMuw==
+"@socket.tech/socket-protocol-common@1.1.27":
+  version "1.1.27"
+  resolved "https://registry.yarnpkg.com/@socket.tech/socket-protocol-common/-/socket-protocol-common-1.1.27.tgz#62f1ecee76f9496e98095545a05a03b93bcb3423"
+  integrity sha512-6zZYNoU0N9dS1UMR0AXBYIqFO84HPopTTxOfM5WTJvOKTiAl/OODza499tOS6o6va/eyaiOaICYW27GoIBJXYw==
   dependencies:
     axios "^1.7.9"
     ethers "^5.6.5"
@@ -2285,11 +2285,6 @@ acorn@^8.11.0, acorn@^8.4.1:
   version "8.12.1"
   resolved "https://registry.npmjs.org/acorn/-/acorn-8.12.1.tgz"
   integrity sha512-tcpGyI9zbizT9JbV6oYE477V6mTlXvvi0T0G3SNIYE2apm/G5huBa1+K89VGeovbg+jycCrfhl3ADxErOuO6Jg==
-
-add@^2.0.6:
-  version "2.0.6"
-  resolved "https://registry.yarnpkg.com/add/-/add-2.0.6.tgz#248f0a9f6e5a528ef2295dbeec30532130ae2235"
-  integrity sha512-j5QzrmsokwWWp6kUcJQySpbG+xfOBqqKnup3OIk1pz+kB/80SLorZ9V8zHFLO92Lcd+hbvq8bT+zOGoPkmBV0Q==
 
 adm-zip@^0.4.16:
   version "0.4.16"
@@ -4979,11 +4974,6 @@ yargs@^17.7.1:
     string-width "^4.2.3"
     y18n "^5.0.5"
     yargs-parser "^21.1.1"
-
-yarn@^1.22.22:
-  version "1.22.22"
-  resolved "https://registry.yarnpkg.com/yarn/-/yarn-1.22.22.tgz#ac34549e6aa8e7ead463a7407e1c7390f61a6610"
-  integrity sha512-prL3kGtyG7o9Z9Sv8IPfBNrWTDmXB4Qbes8A9rEzt6wkJV8mUvoirjU0Mp3GGAU06Y0XQyA3/2/RQFVuK7MTfg==
 
 yn@3.1.1:
   version "3.1.1"

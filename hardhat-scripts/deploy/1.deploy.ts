@@ -160,9 +160,9 @@ const deployEVMxContracts = async () => {
         deployUtils.signer
       );
 
-      deployUtils.addresses.startBlock = deployUtils.addresses.startBlock
+      deployUtils.addresses.startBlock = (deployUtils.addresses.startBlock
         ? deployUtils.addresses.startBlock
-        : await deployUtils.signer.provider?.getBlockNumber();
+        : await deployUtils.signer.provider?.getBlockNumber()) || 0;
 
       await storeAddresses(deployUtils.addresses, chain as ChainSlug, mode);
     } catch (error) {
@@ -256,9 +256,9 @@ const deploySocketContracts = async () => {
         );
         deployUtils.addresses[contractName] = contractFactoryPlug.address;
 
-        deployUtils.addresses.startBlock = deployUtils.addresses.startBlock
+        deployUtils.addresses.startBlock = (deployUtils.addresses.startBlock
           ? deployUtils.addresses.startBlock
-          : await deployUtils.signer.provider?.getBlockNumber();
+          : await deployUtils.signer.provider?.getBlockNumber()) || 0;
 
         await storeAddresses(deployUtils.addresses, chain, mode);
       } catch (error) {

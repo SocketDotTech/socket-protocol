@@ -1,5 +1,5 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { ChainAddressesObj, CloudAddressesObj, ChainSlug, DeploymentMode } from "@socket.tech/socket-protocol-common";
+import { ChainAddressesObj, EVMxAddressesObj, ChainSlug, DeploymentMode } from "@socket.tech/socket-protocol-common";
 import { config as dotenvConfig } from "dotenv";
 import fs from "fs";
 import path from "path";
@@ -23,10 +23,10 @@ const getBucketName = () => {
 const getFileName = () => {
   switch (mode) {
     case DeploymentMode.DEV:
-      return "pocConfig.json";
+      return "devConfig.json";
     case DeploymentMode.STAGE:
       return "stageConfig.json";
-    case DeploymentMode.PROD:
+    case DeploymentMode.PROD: 
       return "prodConfig.json";
     default:
       throw new Error(`Invalid deployment mode: ${mode}`);
@@ -52,7 +52,7 @@ type ConfigEntry = {
   wssRpc: string | undefined;
   confirmations: number;
   eventBlockRange: number;
-  addresses?: ChainAddressesObj | CloudAddressesObj;
+  addresses?: ChainAddressesObj | EVMxAddressesObj;
 };
 
 type S3Config = {
@@ -98,9 +98,9 @@ export let config: S3Config = {
   supportedChainSlugs: [
     ChainSlug.ARBITRUM_SEPOLIA,
     ChainSlug.OPTIMISM_SEPOLIA,
-    // ChainSlug.SEPOLIA,
+    ChainSlug.SEPOLIA,
     EVMX_CHAIN_ID,
-    // BASE_SEPOLIA_CHAIN_ID,
+    ChainSlug.BASE_SEPOLIA,
   ],
 };
 // Read the addresses.json file
@@ -122,9 +122,9 @@ console.log(JSON.stringify(config, null, 2));
 const s3Client = new S3Client({ region: "us-east-1" }); // Replace with your preferred region
 
 // Function to upload to S3
-async function uploadToS3(data: any, bucketName: string, fileName: string) {
+async function uploadToS3(data: any, fileName: string = getFileName()) {
   const params = {
-    Bucket: bucketName,
+    Bucket: getBucketName(),
     Key: fileName,
     Body: JSON.stringify(data, null, 2),
     ContentType: "application/json",
@@ -140,4 +140,5 @@ async function uploadToS3(data: any, bucketName: string, fileName: string) {
 }
 
 // Upload config to S3
-uploadToS3(config, getBucketName(), getFileName());
+uploadToS3(config, "pocConfig.json");
+// uploadToS3(config);

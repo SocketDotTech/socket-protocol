@@ -8,7 +8,6 @@ import {
   chainSlugToHardhatChainName,
 } from "@socket.tech/socket-protocol-common";
 import { EVMX_CHAIN_ID } from "../config/config";
-import { BASE_SEPOLIA_CHAIN_ID } from "../constants";
 
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || "./.env";
 dotenvConfig({ path: resolve(__dirname, dotenvConfigPath) });
@@ -23,9 +22,7 @@ function createReverseEnumMap(enumObj: any) {
 }
 
 export const rpcKeys = (chainSlug: ChainSlug) => {
-  if (chainSlug == (BASE_SEPOLIA_CHAIN_ID as ChainSlug)) {
-    return "BASE_SEPOLIA_RPC";
-  } else if (chainSlug == (EVMX_CHAIN_ID as ChainSlug)) {
+  if (chainSlug == EVMX_CHAIN_ID as ChainSlug) {
     return "EVMX_RPC";
   }
   let chainName = chainSlugToHardhatChainName[chainSlug].toString();

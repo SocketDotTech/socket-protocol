@@ -1,96 +1,227 @@
 {
-  "421614": [],
+  "84532": [
+    [
+      "0xA557EBE094F939ae6eE8F18c8F88D06182168786",
+      "ContractFactoryPlug",
+      "contracts/protocol/payload-delivery/ContractFactoryPlug.sol",
+      [
+        "0x6c40Fb39B03e32EC4D23e31DdE6D10283F2C7b4F",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
+      ]
+    ],
+    [
+      "0xD78f99D62BeaF0918bB0601C68EB537b6703Ce63",
+      "FeesPlug",
+      "contracts/protocol/payload-delivery/FeesPlug.sol",
+      [
+        "0x6c40Fb39B03e32EC4D23e31DdE6D10283F2C7b4F",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
+      ]
+    ],
+    [
+      "0x06234dB2D69Ac158793a3ce59c3764422028E964",
+      "FastSwitchboard",
+      "contracts/protocol/socket/switchboard/FastSwitchboard.sol",
+      [
+        84532,
+        "0x6c40Fb39B03e32EC4D23e31DdE6D10283F2C7b4F",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
+      ]
+    ],
+    [
+      "0xA944BBe5D4F67a242C9e92d539fF2d55616283a7",
+      "SocketBatcher",
+      "contracts/protocol/socket/SocketBatcher.sol",
+      [
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
+        "0x6c40Fb39B03e32EC4D23e31DdE6D10283F2C7b4F"
+      ]
+    ],
+    [
+      "0x6c40Fb39B03e32EC4D23e31DdE6D10283F2C7b4F",
+      "Socket",
+      "contracts/protocol/socket/Socket.sol",
+      [
+        84532,
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
+        "EVMX"
+      ]
+    ]
+  ],
+  "421614": [
+    [
+      "0x29E632aE79107A82C637016CA21030d922De5375",
+      "FastSwitchboard",
+      "contracts/protocol/socket/switchboard/FastSwitchboard.sol",
+      [
+        421614,
+        "0xa0E1738a9Fc0698789866e09d7A335d30128C5C5",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
+      ]
+    ]
+  ],
   "7625382": [
     [
-      "0x966Fe0e61d6f0384A1F3b5Dc4165385FC58be93d",
+      "0x09B503e744DCB2cA2827ce5AF08Fd49Ba06D17e4",
       "WatcherPrecompile",
       "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",
       []
     ],
     [
-      "0x00cc4eff9719F3AB0271866a75b45C0ba66890D0",
+      "0x6c73961Bfaa2c9c1d0D7F4C213aa85af15b7CB54",
       "WatcherPrecompile",
       "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",
       []
     ],
     [
-      "0xFdFfB47C774A804e00205BA95B4308f533Ba219D",
+      "0xd151bD217704F72f717C2111207e6Bb33B609f61",
       "WatcherPrecompile",
       "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",
       []
     ],
     [
-      "0xd6F9087DaBe64649c33B20B444eCcE19cca97436",
-      "AuctionManager",
-      "contracts/protocol/payload-delivery/app-gateway/AuctionManager.sol",
-      []
-    ],
-    [
-      "0xD4f1AE0d51F61dda1476BD43953EF1878556B74c",
-      "DeliveryHelper",
-      "contracts/protocol/payload-delivery/app-gateway/DeliveryHelper.sol",
-      []
-    ],
-    [
-      "0x187058842C78675eA08572E0edc9598271dEF278",
+      "0x8dcEE196AFECe27545687426914d2830ff2dbc35",
       "FeesManager",
       "contracts/protocol/payload-delivery/app-gateway/FeesManager.sol",
       []
     ],
     [
-      "0x0429DB4f0a97F8c6E3D84399bBdA3e03B62b03A3",
+      "0xb1F4CbFCE786aA8B553796Fb06c04Dd461967A16",
       "WatcherPrecompile",
       "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",
       []
     ],
     [
-      "0xcc9486bce931041d1393921b32f7b4C60F6eAA99",
+      "0x23EF7Af3bC1009EA6f95c3389921d5cB19950182",
+      "AuctionManager",
+      "contracts/protocol/payload-delivery/app-gateway/AuctionManager.sol",
+      []
+    ],
+    [
+      "0x4CCF8F511A364827E5e6749b196BB26Ea00bF512",
+      "DeliveryHelper",
+      "contracts/protocol/payload-delivery/app-gateway/DeliveryHelper.sol",
+      []
+    ],
+    [
+      "0x39f9b492695375F703450c5653c9D80CFa38e6eD",
+      "FeesManager",
+      "contracts/protocol/payload-delivery/app-gateway/FeesManager.sol",
+      []
+    ],
+    [
+      "0x234cA13f5dC4a2467c81E515F57238BF9f53156E",
+      "WatcherPrecompile",
+      "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",
+      []
+    ],
+    [
+      "0xbBfb525ADc6eC38Ef0D4b807d327c2Dd1C286de1",
       "AddressResolver",
       "contracts/protocol/AddressResolver.sol",
       []
     ],
     [
-      "0x157FEE5a69B538AD189AbB863eeAfD24552DED23",
+      "0x208dC31cd6042a09bbFDdB31614A337a51b870ba",
       "ERC1967Factory",
       "lib/solady/src/utils/ERC1967Factory.sol",
       []
     ],
     [
-      "0x48228f8ebdCA92B7F7fdC9C545372123f5Bcc4C4",
+      "0x4C68058509d754Cc0dE474eBC20aE94e4787E704",
       "AuctionManager",
       "contracts/protocol/payload-delivery/app-gateway/AuctionManager.sol",
       []
     ],
     [
-      "0xc67BEa5A43cb0D908866F3577D1f967f901Dbc75",
+      "0x3c9f5172feb0dDfC06176cE67B566EFbb01CCe98",
       "DeliveryHelper",
       "contracts/protocol/payload-delivery/app-gateway/DeliveryHelper.sol",
       []
     ],
     [
-      "0xaF369f1fc1523dc8086c2ACDD7e7A73aA8732FE6",
+      "0xF4D3BDe438416938217d4624c82AEbEb46CeD371",
       "FeesManager",
       "contracts/protocol/payload-delivery/app-gateway/FeesManager.sol",
       []
     ],
     [
-      "0xCF9728Dc37da5c5B08780F818B6fB65c64d6a402",
+      "0x8F18fC10a8b40b548C6F04Fb252481c783A9ace0",
       "WatcherPrecompile",
       "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",
       []
     ],
     [
-      "0x3d981a431c38B9b781178279AecFb91509BDa645",
+      "0x8662FC08dEC7c61Dd3432fAF45a5bC024BB60B00",
       "AddressResolver",
       "contracts/protocol/AddressResolver.sol",
       []
     ],
     [
-      "0xC36e58c0c505435179417a318333e4a7C1867247",
+      "0x234cA13f5dC4a2467c81E515F57238BF9f53156E",
       "ERC1967Factory",
       "lib/solady/src/utils/ERC1967Factory.sol",
       []
     ]
   ],
-  "11155420": []
+  "11155111": [],
+  "11155420": [
+    [
+      "0x245C0DCF8eF6e52b4d03c96b563C83a5f78A1E14",
+      "FastSwitchboard",
+      "contracts/protocol/socket/switchboard/FastSwitchboard.sol",
+      [
+        11155420,
+        "0x79Ac996De9333956f4980397ED5Bd91f77f10b01",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
+      ]
+    ],
+    [
+      "0xB0694bF9332ec67825B9Ad6E677941aeAF50995F",
+      "ContractFactoryPlug",
+      "contracts/protocol/payload-delivery/ContractFactoryPlug.sol",
+      [
+        "0x79Ac996De9333956f4980397ED5Bd91f77f10b01",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
+      ]
+    ],
+    [
+      "0xa8176BE60350AA44Dd10d46f42720cD604EE85Ff",
+      "FeesPlug",
+      "contracts/protocol/payload-delivery/FeesPlug.sol",
+      [
+        "0x79Ac996De9333956f4980397ED5Bd91f77f10b01",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
+      ]
+    ],
+    [
+      "0xBf9Ec2b0441eeEA9bEb89C6638921c37c15A13E4",
+      "FastSwitchboard",
+      "contracts/protocol/socket/switchboard/FastSwitchboard.sol",
+      [
+        11155420,
+        "0x79Ac996De9333956f4980397ED5Bd91f77f10b01",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
+      ]
+    ],
+    [
+      "0x4afd974a84F224ea25dd43be91C6fbaff8DcEcfa",
+      "SocketBatcher",
+      "contracts/protocol/socket/SocketBatcher.sol",
+      [
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
+        "0x79Ac996De9333956f4980397ED5Bd91f77f10b01"
+      ]
+    ],
+    [
+      "0x79Ac996De9333956f4980397ED5Bd91f77f10b01",
+      "Socket",
+      "contracts/protocol/socket/Socket.sol",
+      [
+        11155420,
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
+        "EVMX"
+      ]
+    ]
+  ]
 }

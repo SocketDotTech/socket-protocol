@@ -5,7 +5,6 @@ import {
   HardhatChainName,
 } from "@socket.tech/socket-protocol-common";
 import hre from "hardhat";
-import path from "path";
 import { EVMX_CHAIN_ID, mode } from "../config/config";
 import { storeUnVerifiedParams, verify } from "../utils";
 
@@ -44,9 +43,7 @@ export const main = async () => {
       const chain = parseInt(chains[chainIndex]) as ChainSlug;
       let chainName: string;
       console.log({ chain });
-      if (chain == (ChainSlug.BASE_SEPOLIA as ChainSlug)) {
-        chainName = "base_sepolia";
-      } else if (chain == (EVMX_CHAIN_ID as ChainSlug)) {
+      if (chain == (EVMX_CHAIN_ID as ChainSlug)) {
         chainName = "EVMX";
       } else {
         chainName = ChainSlugToKey[chain];
