@@ -64,7 +64,7 @@ abstract contract BatchAsync is QueueAsync {
 
         // Default flow for other cases (including mixed read/write)
         if (auctionManager_ == address(0)) {
-            auctionManager_ = defaultAuctionManager;
+            auctionManager_ = IAddressResolver(addressResolver__).defaultAuctionManager();
         }
         return _deliverPayload(payloadDetailsArray, fees_, auctionManager_, onCompleteData_);
     }
