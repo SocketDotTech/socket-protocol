@@ -38,7 +38,7 @@ contract FastSwitchboard is SwitchboardBase {
      * there can be multiple proposals for same digest. To avoid need to re-attest for different proposals
      *  with same digest, we are storing attestations against digest instead of packetId and proposalCount.
      */
-    function attest(bytes32 payloadId_, bytes32 digest_, bytes calldata proof_) external {
+    function attest(bytes32 payloadId_, bytes32 digest_, bytes calldata proof_) external virtual {
         address watcher = _recoverSigner(keccak256(abi.encode(address(this), digest_)), proof_);
 
         if (isAttested[digest_]) revert AlreadyAttested();
