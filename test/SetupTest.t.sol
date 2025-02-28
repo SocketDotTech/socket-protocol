@@ -140,11 +140,10 @@ contract SetupTest is Test {
         addressResolver = AddressResolver(address(addressResolverProxy));
         watcherPrecompile = WatcherPrecompile(address(watcherPrecompileProxy));
 
-        hoax(watcherEOA);
+        vm.startPrank(watcherEOA);
         watcherPrecompile.grantRole(WATCHER_ROLE, watcherEOA);
-
-        hoax(watcherEOA);
         addressResolver.setWatcherPrecompile(address(watcherPrecompile));
+        vm.stopPrank();
     }
 
     function _createSignature(

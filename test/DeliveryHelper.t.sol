@@ -98,11 +98,11 @@ contract DeliveryHelperTest is SetupTest {
         deliveryHelper = DeliveryHelper(address(deliveryHelperProxy));
         auctionManager = AuctionManager(address(auctionManagerProxy));
 
-        hoax(watcherEOA);
+        vm.startPrank(watcherEOA);
         addressResolver.setDeliveryHelper(address(deliveryHelper));
-
-        hoax(watcherEOA);
+        addressResolver.setDefaultAuctionManager(address(auctionManager));
         addressResolver.setFeesManager(address(feesManager));
+        vm.stopPrank();
 
         // chain core contracts
         arbConfig = deploySocket(arbChainSlug);
