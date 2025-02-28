@@ -142,27 +142,27 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     /// @notice Marks the promise as onchain reverting.
     /// @dev Only callable by the watcher precompile.
     function markOnchainRevert(
-        bytes32 asyncId,
-        bytes32 payloadId
+        bytes32 asyncId_,
+        bytes32 payloadId_
     ) external override onlyWatcherPrecompile {
         if (payloadId_ != payloadId) revert PayloadIdMismatch();
-        _handleRevert(asyncId, payloadId, AsyncPromiseState.ONCHAIN_REVERTING);
+        _handleRevert(asyncId_, payloadId_, AsyncPromiseState.ONCHAIN_REVERTING);
     }
 
-    function _handleRevert(bytes32 asyncId, bytes32 payloadId, AsyncPromiseState state_) internal {
+    function _handleRevert(bytes32 asyncId_, bytes32 payloadId_, AsyncPromiseState state_) internal {
         // to update the state in case selector is bytes(0) but reverting onchain
         resolved = false;
         state = state_;
 
         (bool success, ) = localInvoker.call(
-            abi.encodeWithSelector(IAppGateway.handleRevert.selector, asyncId, payloadId)
+            abi.encodeWithSelector(IAppGateway.handleRevert.selector, asyncId_, payloadId_)
         );
         if (!success) revert PromiseRevertFailed();
     }
 
     // Add a setter function for payloadId
-    function setPayloadId(bytes32 newPayloadId) external {
+    function setPayloadId(bytes32 newPayloadId_) external {
         if (msg.sender != localInvoker) revert OnlyForwarder();
-        payloadId = newPayloadId;
+        payloadId = newPayloadId_;
     }
 }
