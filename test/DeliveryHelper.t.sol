@@ -60,22 +60,6 @@ contract DeliveryHelperTest is SetupTest {
             feesManagerData
         );
 
-        bytes memory deliveryHelperData = abi.encodeWithSelector(
-            DeliveryHelper.initialize.selector,
-            address(addressResolver),
-            address(feesManagerProxy),
-            owner,
-            bidTimeout
-        );
-
-        vm.expectEmit(true, true, true, false);
-        emit Initialized(version);
-        address deliveryHelperProxy = proxyFactory.deployAndCall(
-            address(deliveryHelperImpl),
-            watcherEOA,
-            deliveryHelperData
-        );
-
         bytes memory auctionManagerData = abi.encodeWithSelector(
             AuctionManager.initialize.selector,
             evmxSlug,
@@ -90,6 +74,23 @@ contract DeliveryHelperTest is SetupTest {
             address(auctionManagerImpl),
             watcherEOA,
             auctionManagerData
+        );
+
+        bytes memory deliveryHelperData = abi.encodeWithSelector(
+            DeliveryHelper.initialize.selector,
+            address(addressResolver),
+            address(feesManagerProxy),
+            owner,
+            bidTimeout,
+            address(auctionManagerProxy)
+        );
+
+        vm.expectEmit(true, true, true, false);
+        emit Initialized(version);
+        address deliveryHelperProxy = proxyFactory.deployAndCall(
+            address(deliveryHelperImpl),
+            watcherEOA,
+            deliveryHelperData
         );
 
         // Assign proxy addresses to contract variables

@@ -16,11 +16,13 @@ contract DeliveryHelper is BatchAsync {
     function initialize(
         address addressResolver_,
         address owner_,
-        uint128 bidTimeout_
+        uint128 bidTimeout_,
+        address defaultAuctionManager_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         bidTimeout = bidTimeout_;
         _initializeOwner(owner_);
+        defaultAuctionManager = defaultAuctionManager_;
     }
 
     function startBatchProcessing(
@@ -62,6 +64,7 @@ contract DeliveryHelper is BatchAsync {
         if (payloadBatch.lastBatchPromises.length > 0) {
             // Check if all promises are resolved
             for (uint256 i = 0; i < payloadBatch.lastBatchPromises.length; i++) {
+                if (payloadBatch.lastBatchPromises[i] == address(0)) continue;
                 if (!IPromise(payloadBatch.lastBatchPromises[i]).resolved()) {
                     if (isCallback_) revert PromisesNotResolved();
                 }
