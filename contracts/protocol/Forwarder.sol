@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-import "../interfaces/IAddressResolver.sol";
-import "../interfaces/IDeliveryHelper.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
 import "../interfaces/IForwarder.sol";
 import "solady/utils/Initializable.sol";
+import "./utils/AddressResolverUtil.sol";
 
 abstract contract ForwarderStorage is IForwarder {
     // slots [0-49] reserved for gap
@@ -22,7 +21,8 @@ abstract contract ForwarderStorage is IForwarder {
 
     // slot 52
     /// @notice address resolver contract address for imp addresses
-    address public addressResolver;
+    /// @dev deprecated this variable as already there in AddressResolverUtil
+    address private addressResolverOld;
 
     // slot 53
     /// @notice caches the latest async promise address for the last call
@@ -30,11 +30,13 @@ abstract contract ForwarderStorage is IForwarder {
 
     // slots [54-103] reserved for gap
     uint256[50] _gap_after;
+
+    // slots 104-154 reserved for addr resolver util
 }
 
 /// @title Forwarder Contract
 /// @notice This contract acts as a forwarder for async calls to the on-chain contracts.
-contract Forwarder is ForwarderStorage, Initializable {
+contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
     error AsyncModifierNotUsed();
 
     constructor() {
@@ -52,7 +54,7 @@ contract Forwarder is ForwarderStorage, Initializable {
     ) public initializer {
         chainSlug = chainSlug_;
         onChainAddress = onChainAddress_;
-        addressResolver = addressResolver_;
+        _setAddressResolver(addressResolver_);
     }
 
     /// @notice Stores the callback address and data to be executed once the promise is resolved.
@@ -64,6 +66,10 @@ contract Forwarder is ForwarderStorage, Initializable {
         if (latestAsyncPromise == address(0)) revert("Forwarder: no async promise found");
         promise_ = IPromise(latestAsyncPromise).then(selector_, data_);
         latestAsyncPromise = address(0);
+    }
+
+    function setPayloadId(bytes32 payloadId_, address asyncPromise_) external onlyDeliveryHelper {
+        IPromise(asyncPromise_).setPayloadId(payloadId_);
     }
 
     /// @notice Returns the on-chain address associated with this forwarder.
@@ -82,8 +88,8 @@ contract Forwarder is ForwarderStorage, Initializable {
     /// @dev It queues the calls in the auction house and deploys the promise contract
     fallback() external payable {
         // Retrieve the auction house address from the address resolver.
-        address deliveryHelper = IAddressResolver(addressResolver).deliveryHelper();
-        if (deliveryHelper == address(0)) {
+        IDeliveryHelper deliveryHelper = deliveryHelper();
+        if (address(deliveryHelper) == address(0)) {
             revert("Forwarder: deliveryHelper not found");
         }
 
@@ -91,9 +97,7 @@ contract Forwarder is ForwarderStorage, Initializable {
         if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
 
         // Deploy a new async promise contract.
-        latestAsyncPromise = IAddressResolver(addressResolver).deployAsyncPromiseContract(
-            msg.sender
-        );
+        latestAsyncPromise = addressResolver__.deployAsyncPromiseContract(msg.sender);
 
         // Determine if the call is a read or write operation.
         Read isReadCall = IAppGateway(msg.sender).isReadCall();
