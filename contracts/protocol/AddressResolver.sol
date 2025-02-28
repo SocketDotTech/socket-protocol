@@ -46,8 +46,11 @@ abstract contract AddressResolverStorage is IAddressResolver {
     // slot 60
     mapping(address => address) public override contractsToGateways;
 
-    // slots [61-110] reserved for gap
-    uint256[50] _gap_after;
+    // slot 61
+    address public override defaultAuctionManager;
+
+    // slots [62-110] reserved for gap
+    uint256[49] _gap_after;
 }
 
 /// @title AddressResolver Contract
@@ -248,6 +251,12 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
     /// @param feesManager_ The address of the fees manager
     function setFeesManager(address feesManager_) external onlyOwner {
         feesManager = feesManager_;
+    }
+
+    /// @notice Updates the address of the default auction manager
+    /// @param defaultAuctionManager_ The address of the default auction manager
+    function setDefaultAuctionManager(address defaultAuctionManager_) external onlyOwner {
+        defaultAuctionManager = defaultAuctionManager_;
     }
 
     /// @notice Updates the address of the watcher precompile contract

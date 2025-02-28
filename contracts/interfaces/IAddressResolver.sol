@@ -22,6 +22,11 @@ interface IAddressResolver {
     /// @dev Returns interface pointing to zero address if not configured
     function feesManager() external view returns (address);
 
+    /// @notice Gets the address of the default auction manager contract
+    /// @return IAuctionManager The auction manager interface
+    /// @dev Returns interface pointing to zero address if not configured
+    function defaultAuctionManager() external view returns (address);
+
     /// @notice Gets the watcher precompile contract interface
     /// @return IWatcherPrecompile The watcher precompile interface
     /// @dev Returns interface pointing to zero address if not configured
