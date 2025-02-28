@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
+//// ENUMS ////
+
 enum CallType {
     READ,
     WRITE,
@@ -8,9 +10,9 @@ enum CallType {
     WITHDRAW
 }
 
-enum Read {
-    OFF,
-    ON
+enum IsPlug {
+    YES,
+    NO
 }
 
 enum Parallel {
@@ -18,10 +20,12 @@ enum Parallel {
     ON
 }
 
-enum IsPlug {
-    YES,
-    NO
+enum Read {
+    OFF,
+    ON
 }
+
+//// STRUCTS ////
 
 struct AppGatewayConfig {
     address plug;
@@ -44,19 +48,23 @@ struct AsyncRequest {
     address[] next;
 }
 
+struct AttestAndExecutePayloadParams {
+    bytes32 payloadId;
+    bytes32 digest;
+    address switchboard;
+    address appGateway;
+    address target;
+    uint256 executionGasLimit;
+    uint256 deadline;
+    bytes proof;
+    bytes transmitterSignature;
+    bytes payload;
+}
+
 struct Bid {
     address transmitter;
     uint256 fee;
     bytes extraData;
-}
-
-struct CallFromChainParams {
-    bytes32 callId;
-    bytes32 params;
-    address plug;
-    address appGateway;
-    uint32 chainSlug;
-    bytes payload;
 }
 
 struct CallParams {
@@ -72,22 +80,18 @@ struct CallParams {
     bytes initCallData;
 }
 
+struct CallFromChainParams {
+    bytes32 callId;
+    bytes32 params;
+    address plug;
+    address appGateway;
+    uint32 chainSlug;
+    bytes payload;
+}
+
 struct DeployParams {
     address contractAddr;
     bytes bytecode;
-}
-
-struct AttestAndExecutePayloadParams {
-    bytes32 payloadId;
-    bytes32 digest;
-    address switchboard;
-    address appGateway;
-    address target;
-    uint256 executionGasLimit;
-    uint256 deadline;
-    bytes proof;
-    bytes transmitterSignature;
-    bytes payload;
 }
 
 struct Fees {
