@@ -8,7 +8,7 @@ import {
 import { config as dotenvConfig } from "dotenv";
 import fs from "fs";
 import path from "path";
-import { EVMX_CHAIN_ID, mode } from "../config/config";
+import { EVMX_CHAIN_ID, mode, chains } from "../config/config";
 
 dotenvConfig();
 
@@ -100,11 +100,8 @@ export let config: S3Config = {
   },
   //@ts-ignore
   supportedChainSlugs: [
-    ChainSlug.ARBITRUM_SEPOLIA,
-    ChainSlug.OPTIMISM_SEPOLIA,
-    ChainSlug.SEPOLIA,
+    ...chains,
     EVMX_CHAIN_ID,
-    ChainSlug.BASE_SEPOLIA,
   ],
 };
 // Read the addresses.json file
@@ -141,5 +138,5 @@ async function uploadToS3(data: any, fileName: string = getFileName()) {
 }
 
 // Upload config to S3
-uploadToS3(config, "pocConfig.json");
-// uploadToS3(config);
+// uploadToS3(config, "pocConfig.json");
+uploadToS3(config);
