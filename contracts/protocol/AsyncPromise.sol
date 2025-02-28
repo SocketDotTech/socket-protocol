@@ -42,8 +42,11 @@ abstract contract AsyncPromiseStorage is IPromise {
     /// @notice The callback data to be used when the promise is resolved.
     bytes public callbackData;
 
-    // slots [53-102] reserved for gap
-    uint256[50] _gap_after;
+    // slot 53
+    bytes32 public payloadId;
+
+    // slots [54-102] reserved for gap
+    uint256[49] _gap_after;
 
     // slots 103-154 reserved for addr resolver util
 }
@@ -60,6 +63,10 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     error PromiseAlreadySetUp();
     /// @notice Error thrown when the promise reverts
     error PromiseRevertFailed();
+    /// @notice Error thrown when the promise is set by a non-forwarder or non-local invoker
+    error OnlyForwarder();
+    /// @notice Error thrown when the payload ID does not match
+    error PayloadIdMismatch();
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -79,51 +86,6 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         forwarder = forwarder_;
         state = AsyncPromiseState.WAITING_FOR_SET_CALLBACK_SELECTOR;
         resolved = false;
-    }
-
-    /// @notice Marks the promise as resolved and executes the callback if set.
-    /// @param returnData_ The data returned from the async payload execution.
-    /// @dev Only callable by the watcher precompile.
-    function markResolved(
-        bytes32 asyncId,
-        bytes32 payloadId,
-        bytes memory returnData_
-    ) external override onlyWatcherPrecompile returns (bool success) {
-        if (resolved) return true;
-
-        resolved = true;
-        state = AsyncPromiseState.RESOLVED;
-
-        // Call callback to app gateway
-        if (callbackSelector == bytes4(0)) return true;
-        bytes memory combinedCalldata = abi.encodePacked(
-            callbackSelector,
-            abi.encode(callbackData, returnData_)
-        );
-        (success, ) = localInvoker.call(combinedCalldata);
-        if (success) return success;
-
-        _handleRevert(asyncId, payloadId, AsyncPromiseState.CALLBACK_REVERTING);
-    }
-
-    /// @notice Marks the promise as onchain reverting.
-    /// @dev Only callable by the watcher precompile.
-    function markOnchainRevert(
-        bytes32 asyncId,
-        bytes32 payloadId
-    ) external override onlyWatcherPrecompile {
-        _handleRevert(asyncId, payloadId, AsyncPromiseState.ONCHAIN_REVERTING);
-    }
-
-    function _handleRevert(bytes32 asyncId, bytes32 payloadId, AsyncPromiseState state_) internal {
-        // to update the state in case selector is bytes(0) but reverting onchain
-        resolved = false;
-        state = state_;
-
-        (bool success, ) = localInvoker.call(
-            abi.encodeWithSelector(IAppGateway.handleRevert.selector, asyncId, payloadId)
-        );
-        if (!success) revert PromiseRevertFailed();
     }
 
     /// @notice Sets the callback selector and data for the promise.
@@ -149,5 +111,58 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         }
 
         promise_ = address(this);
+    }
+
+    /// @notice Marks the promise as resolved and executes the callback if set.
+    /// @param returnData_ The data returned from the async payload execution.
+    /// @dev Only callable by the watcher precompile.
+    function markResolved(
+        bytes32 asyncId_,
+        bytes32 payloadId_,
+        bytes memory returnData_
+    ) external override onlyWatcherPrecompile returns (bool success) {
+        if (payloadId_ != payloadId) revert PayloadIdMismatch();
+        if (resolved) return true;
+
+        resolved = true;
+        state = AsyncPromiseState.RESOLVED;
+
+        // Call callback to app gateway
+        if (callbackSelector == bytes4(0)) return true;
+        bytes memory combinedCalldata = abi.encodePacked(
+            callbackSelector,
+            abi.encode(callbackData, returnData_)
+        );
+        (success, ) = localInvoker.call(combinedCalldata);
+        if (success) return success;
+
+        _handleRevert(asyncId_, payloadId_, AsyncPromiseState.CALLBACK_REVERTING);
+    }
+
+    /// @notice Marks the promise as onchain reverting.
+    /// @dev Only callable by the watcher precompile.
+    function markOnchainRevert(
+        bytes32 asyncId,
+        bytes32 payloadId
+    ) external override onlyWatcherPrecompile {
+        if (payloadId_ != payloadId) revert PayloadIdMismatch();
+        _handleRevert(asyncId, payloadId, AsyncPromiseState.ONCHAIN_REVERTING);
+    }
+
+    function _handleRevert(bytes32 asyncId, bytes32 payloadId, AsyncPromiseState state_) internal {
+        // to update the state in case selector is bytes(0) but reverting onchain
+        resolved = false;
+        state = state_;
+
+        (bool success, ) = localInvoker.call(
+            abi.encodeWithSelector(IAppGateway.handleRevert.selector, asyncId, payloadId)
+        );
+        if (!success) revert PromiseRevertFailed();
+    }
+
+    // Add a setter function for payloadId
+    function setPayloadId(bytes32 newPayloadId) external {
+        if (msg.sender != localInvoker) revert OnlyForwarder();
+        payloadId = newPayloadId;
     }
 }
