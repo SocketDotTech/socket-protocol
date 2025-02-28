@@ -16,11 +16,13 @@ contract DeliveryHelper is BatchAsync {
     function initialize(
         address addressResolver_,
         address owner_,
-        uint128 bidTimeout_
+        uint128 bidTimeout_,
+        address defaultAuctionManager_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         bidTimeout = bidTimeout_;
         _initializeOwner(owner_);
+        defaultAuctionManager = defaultAuctionManager_;
     }
 
     function startBatchProcessing(

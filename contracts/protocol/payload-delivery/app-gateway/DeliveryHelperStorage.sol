@@ -52,6 +52,9 @@ abstract contract DeliveryHelperStorage is IDeliveryHelper {
     // asyncId => PayloadBatch
     mapping(bytes32 => PayloadBatch) internal _payloadBatches;
 
-    // slots [59-108] reserved for gap
-    uint256[50] _gap_after;
+    // slot 59
+    address public defaultAuctionManager;
+
+    // slots [60-108] reserved for gap
+    uint256[49] _gap_after;
 }
