@@ -70,25 +70,24 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
     /// @param switchboard_ The address of the switchboard
     function setOnChainContracts(
         uint32 chainSlug_,
-        bytes32 sbType_,
-        address switchboard_,
         address socket_,
         address contractFactoryPlug_,
         address feesPlug_
     ) external override onlyOwner {
-        switchboards[chainSlug_][sbType_] = switchboard_;
         sockets[chainSlug_] = socket_;
         contractFactoryPlug[chainSlug_] = contractFactoryPlug_;
         feesPlug[chainSlug_] = feesPlug_;
 
-        emit OnChainContractSet(
-            chainSlug_,
-            sbType_,
-            switchboard_,
-            socket_,
-            contractFactoryPlug_,
-            feesPlug_
-        );
+        emit OnChainContractSet(chainSlug_, socket_, contractFactoryPlug_, feesPlug_);
+    }
+
+    function setSwitchboard(
+        uint32 chainSlug_,
+        bytes32 sbType_,
+        address switchboard_
+    ) external override onlyOwner {
+        switchboards[chainSlug_][sbType_] = switchboard_;
+        emit SwitchboardSet(chainSlug_, sbType_, switchboard_);
     }
 
     // @dev app gateway can set the valid plugs for each chain slug

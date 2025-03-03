@@ -52,8 +52,29 @@ export const main = async () => {
         socketContract
       );
 
-      await setOnchainContracts(chain, addresses);
+      await setSwitchboard(
+        chain,
+        addresses,
+        "FAST",
+        CORE_CONTRACTS.FastSwitchboard
+      );
 
+      if (chainAddresses[CORE_CONTRACTS.OpInteropSwitchboard]) {
+        await setSwitchboard(
+          chain,
+          addresses,
+          "OP_INTEROP",
+          CORE_CONTRACTS.OpInteropSwitchboard
+        );
+
+        await registerSb(
+          chainAddresses[CORE_CONTRACTS.OpInteropSwitchboard],
+          signer,
+          socketContract
+        );
+      }
+
+      await setOnchainContracts(chain, addresses);
       await storeAddresses(chainAddresses, chain, mode);
     }
   } catch (error) {
@@ -75,24 +96,16 @@ async function setOnchainContracts(chain, addresses) {
     )
   ).connect(signer);
 
-  const fastSBtype = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("FAST"));
-  const sbAddress = addresses[chain][CORE_CONTRACTS.FastSwitchboard];
   const socketAddress = addresses[chain][CORE_CONTRACTS.Socket];
   const contractFactoryPlugAddress =
     addresses[chain][CORE_CONTRACTS.ContractFactoryPlug];
   const feesPlugAddress = addresses[chain][CORE_CONTRACTS.FeesPlug];
-
-  const currentSbAddress = await watcherPrecompile.switchboards(
-    chain,
-    fastSBtype
-  );
   const currentSocket = await watcherPrecompile.sockets(chain);
   const currentContractFactoryPlug =
     await watcherPrecompile.contractFactoryPlug(chain);
   const currentFeesPlug = await watcherPrecompile.feesPlug(chain);
 
   if (
-    currentSbAddress.toLowerCase() !== sbAddress.toLowerCase() ||
     currentSocket.toLowerCase() !== socketAddress.toLowerCase() ||
     currentContractFactoryPlug.toLowerCase() !==
       contractFactoryPlugAddress.toLowerCase() ||
@@ -102,14 +115,43 @@ async function setOnchainContracts(chain, addresses) {
       .connect(signer)
       .setOnChainContracts(
         chain,
-        fastSBtype,
-        sbAddress,
         socketAddress,
         contractFactoryPlugAddress,
         feesPlugAddress
       );
 
     console.log(`Setting onchain contracts for ${chain}, txHash: `, tx.hash);
+    await tx.wait();
+  }
+}
+
+async function setSwitchboard(chain, addresses, sbType, contractName) {
+  const providerInstance = getProviderFromChainSlug(EVMX_CHAIN_ID as ChainSlug);
+  const signer: Wallet = new ethers.Wallet(
+    process.env.WATCHER_PRIVATE_KEY as string,
+    providerInstance
+  );
+  const EVMxAddresses = addresses[EVMX_CHAIN_ID]!;
+  const watcherPrecompile = (
+    await getInstance(
+      EVMxCoreContracts.WatcherPrecompile,
+      EVMxAddresses[EVMxCoreContracts.WatcherPrecompile]
+    )
+  ).connect(signer);
+
+  const sbTypeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(sbType));
+  const sbAddress = addresses[chain][contractName];
+  const currentSbAddress = await watcherPrecompile.switchboards(
+    chain,
+    sbTypeHash
+  );
+
+  if (currentSbAddress.toLowerCase() !== sbAddress.toLowerCase()) {
+    const tx = await watcherPrecompile
+      .connect(signer)
+      .setSwitchboard(chain, sbTypeHash, sbAddress);
+
+    console.log(`Setting switchboard for ${chain}, txHash: `, tx.hash);
     await tx.wait();
   }
 }

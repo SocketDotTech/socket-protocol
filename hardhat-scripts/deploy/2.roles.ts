@@ -22,6 +22,7 @@ import { ROLES } from "../constants/roles";
 
 export const REQUIRED_ROLES = {
   FastSwitchboard: [ROLES.WATCHER_ROLE, ROLES.RESCUE_ROLE],
+  // OpInteropSwitchboard: [ROLES.WATCHER_ROLE, ROLES.RESCUE_ROLE],
   Socket: [ROLES.GOVERNANCE_ROLE, ROLES.RESCUE_ROLE],
   FeesPlug: [ROLES.RESCUE_ROLE],
   ContractFactoryPlug: [ROLES.RESCUE_ROLE],
@@ -88,7 +89,8 @@ async function setRolesForOnChain(
 
     for (const roleName of roles) {
       const targetAddress =
-        contractName === CORE_CONTRACTS.FastSwitchboard &&
+        (contractName === CORE_CONTRACTS.FastSwitchboard ||
+          contractName === CORE_CONTRACTS.OpInteropSwitchboard) &&
         roleName === ROLES.WATCHER_ROLE
           ? watcher
           : signer.address;
