@@ -21,23 +21,23 @@ abstract contract SuperchainEnabled {
         address destAddress,
         bytes memory data
     ) internal {
-        IL2ToL2CrossDomainMessenger(Predeploys.L2_TO_L2_CROSS_DOMAIN_MESSENGER)
-            .sendMessage(destChainId, destAddress, data);
+        IL2ToL2CrossDomainMessenger(Predeploys.L2_TO_L2_CROSS_DOMAIN_MESSENGER).sendMessage(
+            destChainId,
+            destAddress,
+            data
+        );
     }
 
     /// @notice Checks if the cross-domain message is from the expected source
     /// @param expectedSource The expected source address
     /// @return bool True if the message is from the expected source, false otherwise
-    function _isValidCrossDomainSender(
-        address expectedSource
-    ) internal view returns (bool) {
+    function _isValidCrossDomainSender(address expectedSource) internal view returns (bool) {
         if (msg.sender != Predeploys.L2_TO_L2_CROSS_DOMAIN_MESSENGER) {
             return false;
         }
         return
-            IL2ToL2CrossDomainMessenger(
-                Predeploys.L2_TO_L2_CROSS_DOMAIN_MESSENGER
-            ).crossDomainMessageSender() == expectedSource;
+            IL2ToL2CrossDomainMessenger(Predeploys.L2_TO_L2_CROSS_DOMAIN_MESSENGER)
+                .crossDomainMessageSender() == expectedSource;
     }
 
     /// @notice Modifier to validate messages from a specific address
@@ -52,24 +52,19 @@ abstract contract SuperchainEnabled {
     /// @notice Modifier to validate messages from a specific address on a specific chain
     /// @param expectedSource The expected source address
     /// @param expectedChainId The expected source chain ID
-    modifier xOnlyFromContract(
-        address expectedSource,
-        uint256 expectedChainId
-    ) {
+    modifier xOnlyFromContract(address expectedSource, uint256 expectedChainId) {
         if (msg.sender != Predeploys.L2_TO_L2_CROSS_DOMAIN_MESSENGER) {
             revert CallerNotL2ToL2CrossDomainMessenger();
         }
         if (
-            IL2ToL2CrossDomainMessenger(
-                Predeploys.L2_TO_L2_CROSS_DOMAIN_MESSENGER
-            ).crossDomainMessageSender() != expectedSource
+            IL2ToL2CrossDomainMessenger(Predeploys.L2_TO_L2_CROSS_DOMAIN_MESSENGER)
+                .crossDomainMessageSender() != expectedSource
         ) {
             revert InvalidCrossDomainSender();
         }
         if (
-            IL2ToL2CrossDomainMessenger(
-                Predeploys.L2_TO_L2_CROSS_DOMAIN_MESSENGER
-            ).crossDomainMessageSource() != expectedChainId
+            IL2ToL2CrossDomainMessenger(Predeploys.L2_TO_L2_CROSS_DOMAIN_MESSENGER)
+                .crossDomainMessageSource() != expectedChainId
         ) {
             revert InvalidSourceChain();
         }
