@@ -8,7 +8,6 @@ import {ISocket} from "../../../interfaces/ISocket.sol";
 contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
     mapping(bytes32 => bool) public isSyncedOut;
     mapping(bytes32 => bytes32) public payloadIdToDigest;
-    mapping(bytes32 => bool) public unopenedDigests;
     mapping(address => uint256) public unminted;
     address public token;
     address public remoteAddress;
@@ -49,7 +48,11 @@ contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
         emit Attested(payloadId_, digest_, watcher);
     }
 
-    function syncOut(bytes32 digest_, bytes32 payloadId_) external {
+    function syncOut(
+        bytes32 digest_,
+        bytes32 payloadId_,
+        PayloadParams calldata payloadParams_
+    ) external {
         if (isSyncedOut[digest_]) return;
         isSyncedOut[digest_] = true;
 
@@ -58,35 +61,36 @@ contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
         bytes32 digest = payloadIdToDigest[payloadId_];
         if (digest != digest_) return;
 
+        bytes32 expectedDigest = _packPayload(payloadParams_);
+        if (expectedDigest != digest_) return;
+
         ISocket.ExecutionStatus isExecuted = socket__.payloadExecuted(payloadId_);
         if (isExecuted != ISocket.ExecutionStatus.Executed) return;
+
+        (address user, uint256 amount) = _decodeMint(payloadParams_.payload);
 
         _xMessageContract(
             remoteChainId,
             remoteAddress,
-            abi.encodeWithSelector(this.syncIn.selector, digest_)
+            abi.encodeWithSelector(this.syncIn.selector, user, amount)
         );
     }
 
-    function syncIn(bytes32 digest_) external xOnlyFromContract(remoteAddress, remoteChainId) {
-        unopenedDigests[digest_] = true;
-    }
-
-    function openDigest(bytes32 digest_, PayloadParams calldata payloadParams_) external {
-        bytes32 expectedDigest = _packPayload(payloadParams_);
-        if (expectedDigest != digest_) return;
-
-        if (!unopenedDigests[digest_]) return;
-        unopenedDigests[digest_] = false;
-
-        (address user, uint256 amount) = _decodeMint(payloadParams_.payload);
-        unminted[user] += amount;
+    function syncIn(
+        address user_,
+        uint256 amount_
+    ) external xOnlyFromContract(remoteAddress, remoteChainId) {
+        unminted[user_] += amount_;
     }
 
     function _decodeMint(
         bytes memory payload
     ) internal pure returns (address user, uint256 amount) {
-        return abi.decode(payload, (address, uint256));
+        (, , uint256 amount, address user) = abi.decode(
+            payload,
+            (bytes4, address, uint256, address)
+        );
+        return (user, amount);
     }
 
     function _packPayload(PayloadParams memory payloadParams_) internal pure returns (bytes32) {
