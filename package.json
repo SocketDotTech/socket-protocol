@@ -27,7 +27,7 @@
     "@aws-sdk/client-s3": "^3.670.0",
     "@nomicfoundation/hardhat-verify": "^2.0.12",
     "@nomiclabs/hardhat-ethers": "2.2.3",
-    "@socket.tech/socket-protocol-common": "1.1.27",
+    "@socket.tech/socket-protocol-common": "1.1.31",
     "@typechain/ethers-v5": "^10.0.0",
     "@typechain/hardhat": "6.0.0",
     "dotenv": "^16.0.3",
