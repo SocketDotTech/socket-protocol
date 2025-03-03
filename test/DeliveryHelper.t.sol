@@ -79,10 +79,8 @@ contract DeliveryHelperTest is SetupTest {
         bytes memory deliveryHelperData = abi.encodeWithSelector(
             DeliveryHelper.initialize.selector,
             address(addressResolver),
-            address(feesManagerProxy),
             owner,
-            bidTimeout,
-            address(auctionManagerProxy)
+            bidTimeout
         );
 
         vm.expectEmit(true, true, true, false);

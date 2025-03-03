@@ -158,6 +158,14 @@ const deployEVMxContracts = async () => {
 
       await updateContractSettings(
         addressResolver,
+        "defaultAuctionManager",
+        "setDefaultAuctionManager",
+        deployUtils.addresses[EVMxCoreContracts.AuctionManager],
+        deployUtils.signer
+      );
+
+      await updateContractSettings(
+        addressResolver,
         "watcherPrecompile__",
         "setWatcherPrecompile",
         deployUtils.addresses[EVMxCoreContracts.WatcherPrecompile],
