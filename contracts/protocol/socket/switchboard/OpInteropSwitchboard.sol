@@ -86,11 +86,7 @@ contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
     function _decodeMint(
         bytes memory payload
     ) internal pure returns (address user, uint256 amount) {
-        (, , uint256 amount, address user) = abi.decode(
-            payload,
-            (bytes4, address, uint256, address)
-        );
-        return (user, amount);
+        (, , amount, user) = abi.decode(payload, (bytes4, address, uint256, address));
     }
 
     function _packPayload(PayloadParams memory payloadParams_) internal pure returns (bytes32) {
