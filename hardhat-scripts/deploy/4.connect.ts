@@ -1,15 +1,18 @@
-import {
-  ChainSocketAddresses,
-  DeploymentAddresses,
-} from "@socket.tech/dl-core";
-import { getProviderFromChainSlug } from "../constants";
+import { ChainAddressesObj } from "@socket.tech/socket-protocol-common";
 import { Contract, ethers, providers, Wallet } from "ethers";
-import { getInstance } from "./utils";
-import { chains } from "./config";
-import dev_addresses from "../../deployments/dev_addresses.json";
-import { EVMX_CHAIN_ID } from "../constants/constants";
-import { CORE_CONTRACTS, OffChainVMCoreContracts } from "../../src";
-
+import { chains, EVMX_CHAIN_ID, mode } from "../config";
+import {
+  CORE_CONTRACTS,
+  DeploymentAddresses,
+  EVMxCoreContracts,
+} from "../constants";
+import {
+  getAddresses,
+  getInstance,
+  getProviderFromChainSlug,
+  overrides,
+} from "../utils";
+import { signWatcherMessage } from "../utils/sign";
 const plugs = [CORE_CONTRACTS.ContractFactoryPlug, CORE_CONTRACTS.FeesPlug];
 export type AppGatewayConfig = {
   plug: string;
@@ -19,15 +22,16 @@ export type AppGatewayConfig = {
 };
 // Maps plug contracts to their corresponding app gateways
 export const getAppGateway = (plug: string, addresses: DeploymentAddresses) => {
+  let address: string = "";
   switch (plug) {
     case CORE_CONTRACTS.ContractFactoryPlug:
-      return addresses?.[EVMX_CHAIN_ID]?.[
-        OffChainVMCoreContracts.DeliveryHelper
-      ];
+      address = addresses?.[EVMX_CHAIN_ID]?.[EVMxCoreContracts.DeliveryHelper];
+      if (!address) throw new Error(`DeliveryHelper not found on EVMX`);
+      return address;
     case CORE_CONTRACTS.FeesPlug:
-      return addresses?.[EVMX_CHAIN_ID]?.[
-        OffChainVMCoreContracts.FeesManager
-      ];
+      address = addresses?.[EVMX_CHAIN_ID]?.[EVMxCoreContracts.FeesManager];
+      if (!address) throw new Error(`FeesManager not found on EVMX`);
+      return address;
     default:
       throw new Error(`Unknown plug: ${plug}`);
   }
@@ -66,7 +70,7 @@ async function connectPlug(
   plugContract: string,
   socketSigner: Wallet,
   addresses: DeploymentAddresses,
-  addr: ChainSocketAddresses
+  addr: ChainAddressesObj
 ) {
   console.log(`Connecting ${plugContract} on ${chain}`);
 
@@ -103,7 +107,7 @@ async function connectPlug(
 
 export const connectPlugsOnSocket = async () => {
   console.log("Connecting plugs");
-  const addresses = dev_addresses as unknown as DeploymentAddresses;
+  const addresses = getAddresses(mode) as unknown as DeploymentAddresses;
   // Connect plugs on each chain
   await Promise.all(
     chains.map(async (chain) => {
@@ -123,7 +127,7 @@ export const connectPlugsOnSocket = async () => {
   );
 };
 
-export const isConfigSetOnWatcherVM = async (
+export const isConfigSetOnEVMx = async (
   watcher: Contract,
   chain: number,
   plug: string,
@@ -138,10 +142,10 @@ export const isConfigSetOnWatcherVM = async (
 };
 
 // Configure plugs on the Watcher VM
-export const updateConfigWatcherVM = async () => {
+export const updateConfigEVMx = async () => {
   try {
-    console.log("Connecting plugs on OffChainVM");
-    const addresses = dev_addresses as unknown as DeploymentAddresses;
+    console.log("Connecting plugs on EVMx");
+    const addresses = getAddresses(mode) as unknown as DeploymentAddresses;
     const appConfigs: AppGatewayConfig[] = [];
 
     // Set up Watcher contract
@@ -152,11 +156,11 @@ export const updateConfigWatcherVM = async () => {
       process.env.WATCHER_PRIVATE_KEY as string,
       providerInstance
     );
-    const watcherVMaddr = addresses[EVMX_CHAIN_ID]!;
+    const EVMxAddresses = addresses[EVMX_CHAIN_ID]!;
     const watcher = (
       await getInstance(
-        OffChainVMCoreContracts.WatcherPrecompile,
-        watcherVMaddr[OffChainVMCoreContracts.WatcherPrecompile]
+        EVMxCoreContracts.WatcherPrecompile,
+        EVMxAddresses[EVMxCoreContracts.WatcherPrecompile]
       )
     ).connect(signer);
 
@@ -173,7 +177,7 @@ export const updateConfigWatcherVM = async () => {
           checkIfAddressExists(appGateway, "AppGateway");
 
           if (
-            await isConfigSetOnWatcherVM(
+            await isConfigSetOnEVMx(
               watcher,
               chain,
               addr[plugContract],
@@ -197,8 +201,18 @@ export const updateConfigWatcherVM = async () => {
     // Update configs if any changes needed
     if (appConfigs.length > 0) {
       console.log({ appConfigs });
-      const tx = await watcher.setAppGateways(appConfigs);
-      console.log(`Updating OffChainVM Config tx hash: ${tx.hash}`);
+      const encodedMessage = ethers.utils.defaultAbiCoder.encode(
+        [
+          "bytes4",
+          "tuple(address plug,address appGateway,address switchboard,uint32 chainSlug)[]",
+        ],
+        [watcher.interface.getSighash("setAppGateways"), appConfigs]
+      );
+      const { nonce, signature } = await signWatcherMessage(encodedMessage);
+      const tx = await watcher.setAppGateways(appConfigs, nonce, signature, {
+        ...overrides(EVMX_CHAIN_ID),
+      });
+      console.log(`Updating EVMx Config tx hash: ${tx.hash}`);
       await tx.wait();
     }
   } catch (error) {
@@ -210,7 +224,7 @@ export const updateConfigWatcherVM = async () => {
 export const main = async () => {
   try {
     await connectPlugsOnSocket();
-    await updateConfigWatcherVM();
+    await updateConfigEVMx();
   } catch (error) {
     console.log("Error while sending transaction", error);
   }

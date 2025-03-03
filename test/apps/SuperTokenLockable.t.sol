@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {SuperTokenLockableDeployer} from "../../contracts/apps/super-token-lockable/SuperTokenLockableDeployer.sol";
-import {SuperTokenLockableAppGateway} from "../../contracts/apps/super-token-lockable/SuperTokenLockableAppGateway.sol";
-import {SuperTokenLockable} from "../../contracts/apps/super-token-lockable/SuperTokenLockable.sol";
-import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/common/Constants.sol";
+import {SuperTokenLockableAppGateway} from "./app-gateways/super-token-lockable/SuperTokenLockableAppGateway.sol";
+import {SuperTokenLockable} from "./app-gateways/super-token-lockable/SuperTokenLockable.sol";
+import {LimitHook} from "./app-gateways/super-token-lockable/LimitHook.sol";
+import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/protocol/utils/common/Constants.sol";
 
 import "../DeliveryHelper.t.sol";
 
 contract SuperTokenLockableTest is DeliveryHelperTest {
     struct AppContracts {
         SuperTokenLockableAppGateway superTokenLockableApp;
-        SuperTokenLockableDeployer superTokenLockableDeployer;
         bytes32 superTokenLockable;
         bytes32 limitHook;
     }
@@ -33,12 +32,11 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     }
 
     function deploySuperTokenApp() internal {
-        SuperTokenLockableDeployer superTokenLockableDeployer = new SuperTokenLockableDeployer(
+        SuperTokenLockableAppGateway superTokenLockableApp = new SuperTokenLockableAppGateway(
             address(addressResolver),
             owner,
-            address(auctionManager),
-            FAST,
-            SuperTokenLockableDeployer.ConstructorParams({
+            createFees(maxFees),
+            SuperTokenLockableAppGateway.ConstructorParams({
                 _burnLimit: 10000000000000000000000,
                 _mintLimit: 10000000000000000000000,
                 name_: "SUPER TOKEN",
@@ -46,22 +44,14 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
                 decimals_: 18,
                 initialSupplyHolder_: owner,
                 initialSupply_: 1000000000 ether
-            }),
-            createFees(maxFees)
-        );
-        SuperTokenLockableAppGateway superTokenLockableApp = new SuperTokenLockableAppGateway(
-            address(addressResolver),
-            address(superTokenLockableDeployer),
-            address(auctionManager),
-            createFees(maxFees)
+            })
         );
         depositFees(address(superTokenLockableApp), createFees(1 ether));
 
         appContracts = AppContracts({
             superTokenLockableApp: superTokenLockableApp,
-            superTokenLockableDeployer: superTokenLockableDeployer,
-            superTokenLockable: superTokenLockableDeployer.superTokenLockable(),
-            limitHook: superTokenLockableDeployer.limitHook()
+            superTokenLockable: superTokenLockableApp.superTokenLockable(),
+            limitHook: superTokenLockableApp.limitHook()
         });
     }
 
@@ -71,15 +61,13 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         PayloadDetails[] memory payloadDetails = new PayloadDetails[](2);
         payloadDetails[0] = createDeployPayloadDetail(
             chainSlug_,
-            address(appContracts.superTokenLockableDeployer),
-            appContracts.superTokenLockableDeployer.creationCodeWithArgs(
-                appContracts.superTokenLockable
-            )
+            address(appContracts.superTokenLockableApp),
+            appContracts.superTokenLockableApp.creationCodeWithArgs(appContracts.superTokenLockable)
         );
         payloadDetails[1] = createDeployPayloadDetail(
             chainSlug_,
-            address(appContracts.superTokenLockableDeployer),
-            appContracts.superTokenLockableDeployer.creationCodeWithArgs(appContracts.limitHook)
+            address(appContracts.superTokenLockableApp),
+            appContracts.superTokenLockableApp.creationCodeWithArgs(appContracts.limitHook)
         );
 
         return payloadDetails;
@@ -88,11 +76,11 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     function createConfigurePayloadDetailsArray(
         uint32 chainSlug_
     ) internal returns (PayloadDetails[] memory) {
-        address superTokenForwarder = appContracts.superTokenLockableDeployer.forwarderAddresses(
+        address superTokenForwarder = appContracts.superTokenLockableApp.forwarderAddresses(
             appContracts.superTokenLockable,
             chainSlug_
         );
-        address limitHookForwarder = appContracts.superTokenLockableDeployer.forwarderAddresses(
+        address limitHookForwarder = appContracts.superTokenLockableApp.forwarderAddresses(
             appContracts.limitHook,
             chainSlug_
         );
@@ -104,7 +92,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         payloadDetails[0] = createExecutePayloadDetail(
             chainSlug_,
             deployedToken,
-            address(appContracts.superTokenLockableDeployer),
+            address(appContracts.superTokenLockableApp),
             superTokenForwarder,
             abi.encodeWithSignature("setLimitHook(address)", deployedLimitHook)
         );
@@ -116,11 +104,11 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         address appDeployer = address(uint160(c++));
         address chainContractAddress = address(uint160(c++));
 
-        address predicted = addressResolver.getForwarderAddress(chainContractAddress, vmChainSlug);
+        address predicted = addressResolver.getForwarderAddress(chainContractAddress, evmxSlug);
         address forwarder = addressResolver.getOrDeployForwarderContract(
             appDeployer,
             chainContractAddress,
-            vmChainSlug
+            evmxSlug
         );
 
         assertEq(forwarder, predicted);
@@ -140,20 +128,19 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             contractIds,
             arbChainSlug,
             2,
-            appContracts.superTokenLockableDeployer,
-            address(appContracts.superTokenLockableApp)
+            IAppGateway(appContracts.superTokenLockableApp)
         );
 
         (address onChainSuperToken, address forwarderSuperToken) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             appContracts.superTokenLockable,
-            appContracts.superTokenLockableDeployer
+            IAppGateway(appContracts.superTokenLockableApp)
         );
 
         (address onChainLimitHook, address forwarderLimitHook) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             appContracts.limitHook,
-            appContracts.superTokenLockableDeployer
+            IAppGateway(appContracts.superTokenLockableApp)
         );
 
         assertEq(
@@ -193,35 +180,35 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             onChainLimitHook,
             "Forwarder onChainAddress should be correct"
         );
+        assertEq(
+            SuperTokenLockable(onChainSuperToken).owner(),
+            owner,
+            "SuperToken owner should be correct"
+        );
+        assertEq(LimitHook(onChainLimitHook).owner(), owner, "LimitHook owner should be correct");
 
         PayloadDetails[] memory payloadDetails = createDeployPayloadDetailsArray(arbChainSlug);
         checkPayloadBatchAndDetails(
             payloadDetails,
             asyncId,
-            address(appContracts.superTokenLockableDeployer)
+            address(appContracts.superTokenLockableApp)
         );
     }
 
     function testConfigure() public {
-        _deploy(
-            contractIds,
-            arbChainSlug,
-            2,
-            appContracts.superTokenLockableDeployer,
-            address(appContracts.superTokenLockableApp)
-        );
+        _deploy(contractIds, arbChainSlug, 2, IAppGateway(appContracts.superTokenLockableApp));
 
         bytes32 asyncId = _executeWriteBatchSingleChain(arbChainSlug, 1);
 
         (address onChainSuperToken, ) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             appContracts.superTokenLockable,
-            appContracts.superTokenLockableDeployer
+            IAppGateway(appContracts.superTokenLockableApp)
         );
         (address onChainLimitHook, ) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             appContracts.limitHook,
-            appContracts.superTokenLockableDeployer
+            IAppGateway(appContracts.superTokenLockableApp)
         );
         assertEq(
             address(SuperTokenLockable(onChainSuperToken).limitHook__()),
@@ -238,23 +225,11 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     }
 
     function _deployBridge() internal {
-        _deploy(
-            contractIds,
-            arbChainSlug,
-            2,
-            appContracts.superTokenLockableDeployer,
-            address(appContracts.superTokenLockableApp)
-        );
+        _deploy(contractIds, arbChainSlug, 2, IAppGateway(appContracts.superTokenLockableApp));
 
         _executeWriteBatchSingleChain(arbChainSlug, 1);
 
-        _deploy(
-            contractIds,
-            optChainSlug,
-            2,
-            appContracts.superTokenLockableDeployer,
-            address(appContracts.superTokenLockableApp)
-        );
+        _deploy(contractIds, optChainSlug, 2, IAppGateway(appContracts.superTokenLockableApp));
 
         _executeWriteBatchSingleChain(optChainSlug, 1);
     }
@@ -263,11 +238,11 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         _deployBridge();
 
         userOrder = SuperTokenLockableAppGateway.UserOrder({
-            srcToken: appContracts.superTokenLockableDeployer.forwarderAddresses(
+            srcToken: appContracts.superTokenLockableApp.forwarderAddresses(
                 appContracts.superTokenLockable,
                 arbChainSlug
             ),
-            dstToken: appContracts.superTokenLockableDeployer.forwarderAddresses(
+            dstToken: appContracts.superTokenLockableApp.forwarderAddresses(
                 appContracts.superTokenLockable,
                 optChainSlug
             ),
@@ -277,27 +252,26 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         });
         uint32 srcChainSlug = IForwarder(userOrder.srcToken).getChainSlug();
         uint32 dstChainSlug = IForwarder(userOrder.dstToken).getChainSlug();
+        bytes32 bridgeAsyncId = getNextAsyncId();
 
         bytes32[] memory payloadIds = new bytes32[](4);
         payloadIds[0] = getWritePayloadId(
             srcChainSlug,
             address(getSocketConfig(srcChainSlug).switchboard),
-            writePayloadIdCounter++
+            payloadIdCounter++
         );
-        payloadIds[1] = bytes32(readPayloadIdCounter++);
+        payloadIds[1] = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
         payloadIds[2] = getWritePayloadId(
             dstChainSlug,
             address(getSocketConfig(dstChainSlug).switchboard),
-            writePayloadIdCounter++
+            payloadIdCounter++
         );
         payloadIds[3] = getWritePayloadId(
             srcChainSlug,
             address(getSocketConfig(srcChainSlug).switchboard),
-            writePayloadIdCounter++
+            payloadIdCounter++
         );
-        writePayloadIdCounter++;
-
-        bytes32 bridgeAsyncId = getCurrentAsyncId();
+        payloadIdCounter++;
 
         bytes memory encodedOrder = abi.encode(userOrder);
         appContracts.superTokenLockableApp.bridge(encodedOrder);
@@ -312,18 +286,20 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             bridgeAsyncId,
             0
         );
-        finalizeAndExecute(payloadIds[0], false);
+        finalizeAndExecute(payloadIds[0]);
 
         payloadDetails = deliveryHelper.getPayloadIndexDetails(bridgeAsyncId, 2);
         vm.expectEmit(true, false, false, false);
         emit FinalizeRequested(
             payloadIds[2],
             AsyncRequest(
+                address(deliveryHelper),
                 address(0),
                 transmitterEOA,
                 payloadDetails.target,
                 address(0),
                 payloadDetails.executionGasLimit,
+                0,
                 bridgeAsyncId,
                 bytes32(0),
                 payloadDetails.payload,
@@ -331,16 +307,16 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
             )
         );
         finalizeQuery(payloadIds[1], abi.encode(srcAmount));
-        finalizeAndExecute(payloadIds[2], false);
+        finalizeAndExecute(payloadIds[2]);
 
         payloadDetails = deliveryHelper.getPayloadIndexDetails(bridgeAsyncId, 3);
-        finalizeAndExecute(payloadIds[3], false);
+        finalizeAndExecute(payloadIds[3]);
     }
 
     function testCancel() public {
         (bytes32 bridgeAsyncId, bytes32[] memory payloadIds) = _bridge();
 
-        finalizeAndExecute(payloadIds[0], false);
+        finalizeAndExecute(payloadIds[0]);
 
         vm.expectEmit(true, true, false, true);
         emit BatchCancelled(bridgeAsyncId);
@@ -352,11 +328,10 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         cancelPayloadIds[0] = getWritePayloadId(
             srcChainSlug,
             address(getSocketConfig(srcChainSlug).switchboard),
-            writePayloadIdCounter++
+            payloadIdCounter++
         );
 
-        bytes32 cancelAsyncId = getCurrentAsyncId();
-
+        // bytes32 cancelAsyncId = getNextAsyncId();
         // bidAndEndAuction(cancelAsyncId);
         // finalizeAndExecute(
         //     cancelPayloadIds[0],
@@ -538,27 +513,27 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //     payloadIds[0] = getWritePayloadId(
     //         srcChainSlug,
     //         address(getSocketConfig(srcChainSlug).contractFactoryPlug),
-    //         writePayloadIdCounter++
+    //         payloadIdCounter++
     //     );
-    //     payloadIds[1] = bytes32(readPayloadIdCounter++);
+    //     payloadIds[1] = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
     //     payloadIds[2] = getWritePayloadId(
     //         dstChainSlug,
     //         address(getSocketConfig(dstChainSlug).contractFactoryPlug),
-    //         writePayloadIdCounter++
+    //         payloadIdCounter++
     //     );
     //     payloadIds[3] = getWritePayloadId(
     //         srcChainSlug,
     //         address(getSocketConfig(srcChainSlug).contractFactoryPlug),
-    //         writePayloadIdCounter++
+    //         payloadIdCounter++
     //     );
-    //     writePayloadIdCounter++;
+    //     payloadIdCounter++;
 
     //     PayloadDetails[]
     //         memory payloadDetails = createBridgePayloadDetailsArray(
     //             srcChainSlug,
     //             dstChainSlug
     //         );
-    //     bytes32 bridgeAsyncId = getCurrentAsyncId();
+    //     bytes32 bridgeAsyncId = getNextAsyncId();
     //     asyncCounterTest++;
 
     //     bytes memory encodedOrder = abi.encode(userOrder);
@@ -635,7 +610,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //     cancelPayloadIds[0] = getWritePayloadId(
     //         srcChainSlug,
     //         address(getSocketConfig(srcChainSlug).contractFactoryPlug),
-    //         writePayloadIdCounter++
+    //         payloadIdCounter++
     //     );
 
     //     PayloadDetails[]
@@ -643,7 +618,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //             srcChainSlug
     //         );
 
-    //     bytes32 cancelAsyncId = getCurrentAsyncId();
+    //     bytes32 cancelAsyncId = getNextAsyncId();
     //     asyncCounterTest++;
 
     //     bidAndValidate(

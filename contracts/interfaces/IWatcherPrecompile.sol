@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {PayloadDetails, AsyncRequest, FinalizeParams, PayloadRootParams, AppGatewayConfig, PlugConfig, ResolvedPromises} from "../common/Structs.sol";
+import {PayloadDetails, AsyncRequest, FinalizeParams, PayloadDigestParams, AppGatewayConfig, PlugConfig, ResolvedPromises} from "../protocol/utils/common/Structs.sol";
 
 /// @title IWatcherPrecompile
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
@@ -9,8 +9,25 @@ import {PayloadDetails, AsyncRequest, FinalizeParams, PayloadRootParams, AppGate
 interface IWatcherPrecompile {
     /// @notice Sets up app gateway configurations
     /// @param configs_ Array of app gateway configurations
+    /// @param signatureNonce_ The nonce of the signature
+    /// @param signature_ The signature of the watcher
     /// @dev Only callable by authorized addresses
-    function setAppGateways(AppGatewayConfig[] calldata configs_) external;
+    function setAppGateways(
+        AppGatewayConfig[] calldata configs_,
+        uint256 signatureNonce_,
+        bytes calldata signature_
+    ) external;
+
+    /// @notice Sets up on-chain contract configurations
+    /// @dev Only callable by authorized addresses
+    function setOnChainContracts(
+        uint32 chainSlug_,
+        bytes32 sbType_,
+        address switchboard_,
+        address socket_,
+        address contractFactoryPlug_,
+        address feesPlug_
+    ) external;
 
     /// @notice Retrieves plug configuration for a specific network and plug
     /// @param chainSlug_ The identifier of the network
@@ -25,11 +42,11 @@ interface IWatcherPrecompile {
     /// @notice Finalizes a payload execution request
     /// @param params_ Parameters needed for finalization
     /// @return payloadId The unique identifier for the request
-    /// @return root The merkle root of the payload parameters
+    /// @return digest The digest of the payload parameters
     function finalize(
-        FinalizeParams memory params_,
-        address originAppGateway_
-    ) external returns (bytes32 payloadId, bytes32 root);
+        address originAppGateway_,
+        FinalizeParams memory params_
+    ) external returns (bytes32 payloadId, bytes32 digest);
 
     /// @notice Creates a new query request
     /// @param chainSlug_ The identifier of the destination network
@@ -45,14 +62,28 @@ interface IWatcherPrecompile {
         bytes memory payload_
     ) external returns (bytes32 payloadId);
 
-    /// @notice Marks a request as finalized with a signature
+    /// @notice Marks a request as finalized with a proof
     /// @param payloadId_ The unique identifier of the request
-    /// @param signature_ The watcher's signature
-    function finalized(bytes32 payloadId_, bytes calldata signature_) external;
+    /// @param proof_ The watcher's proof
+    function finalized(
+        bytes32 payloadId_,
+        bytes calldata proof_,
+        uint256 signatureNonce_,
+        bytes calldata signature_
+    ) external;
+
+    /// @notice Finalizes multiple payload execution requests with a new transmitter
+    /// @param payloadId_ The unique identifier of the request
+    /// @param params_ The parameters for finalization
+    function refinalize(bytes32 payloadId_, FinalizeParams memory params_) external;
 
     /// @notice Resolves multiple promises with their return data
     /// @param resolvedPromises_ Array of resolved promises and their return data
-    function resolvePromises(ResolvedPromises[] calldata resolvedPromises_) external;
+    function resolvePromises(
+        ResolvedPromises[] calldata resolvedPromises_,
+        uint256 signatureNonce_,
+        bytes calldata signature_
+    ) external;
 
     /// @notice Sets a timeout for payload execution
     /// @param payload_ The payload data
@@ -65,29 +96,30 @@ interface IWatcherPrecompile {
 
     /// @notice Resolves a timeout by executing the payload
     /// @param timeoutId_ The unique identifier for the timeout
-    function resolveTimeout(bytes32 timeoutId_) external;
+    function resolveTimeout(
+        bytes32 timeoutId_,
+        uint256 signatureNonce_,
+        bytes calldata signature_
+    ) external;
 
-    /// @notice Calculates the root hash for payload parameters
-    /// @param params_ The payload parameters used to calculate the root
-    /// @return root The calculated merkle root hash
-    function getRoot(PayloadRootParams memory params_) external pure returns (bytes32 root);
-
-    /// @notice Gets the plug address for a given app gateway and chain
-    /// @param appGateway_ The address of the app gateway contract
-    /// @param chainSlug_ The identifier of the destination chain
-    /// @return The plug address for the given app gateway and chain
-    function appGatewayPlugs(
-        address appGateway_,
-        uint32 chainSlug_
-    ) external view returns (address);
+    /// @notice Calculates the Digest hash for payload parameters
+    /// @param params_ The payload parameters used to calculate the digest
+    /// @return digest The calculated digest hash
+    function getDigest(PayloadDigestParams memory params_) external pure returns (bytes32 digest);
 
     function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external;
 
     function switchboards(uint32 chainSlug_, bytes32 sbType_) external view returns (address);
 
-    function setIsValidInboxCaller(uint32 chainSlug_, address plug_, bool isValid_) external;
+    function sockets(uint32 chainSlug_) external view returns (address);
 
-    function checkAndUpdateLimit(
+    function contractFactoryPlug(uint32 chainSlug_) external view returns (address);
+
+    function feesPlug(uint32 chainSlug_) external view returns (address);
+
+    function setIsValidPlug(uint32 chainSlug_, address plug_, bool isValid_) external;
+
+    function checkAndConsumeLimit(
         address appGateway_,
         bytes32 limitType_,
         uint256 consumeLimit_

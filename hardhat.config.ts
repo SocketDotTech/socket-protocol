@@ -14,19 +14,17 @@ import type {
 import { resolve } from "path";
 import fs from "fs";
 
-import "./tasks/accounts";
-import { getJsonRpcUrl } from "./hardhat-scripts/constants/networks";
+import "./hardhat-scripts/utils/accounts";
+import { getJsonRpcUrl } from "./hardhat-scripts/utils/networks";
 import {
   ChainId,
   ChainSlug,
   ChainSlugToId,
   HardhatChainName,
   hardhatChainNameToSlug,
-} from "@socket.tech/dl-core";
-import {
-  BASE_SEPOLIA_CHAIN_ID,
-  EVMX_CHAIN_ID,
-} from "./hardhat-scripts/constants/constants";
+} from "@socket.tech/socket-protocol-common";
+import { EVMX_CHAIN_ID } from "./hardhat-scripts/config/config";
+import { BASE_SEPOLIA_CHAIN_ID } from "./hardhat-scripts/constants";
 
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || "./.env";
 dotenvConfig({ path: resolve(__dirname, dotenvConfigPath) });
@@ -102,7 +100,7 @@ const config: HardhatUserConfig = {
       sepolia: process.env.ETHERSCAN_API_KEY || "",
       optimisticEthereum: process.env.OPTIMISM_API_KEY || "",
       optimisticTestnet: process.env.OPTIMISM_API_KEY || "",
-      offChainVM: "none",
+      evmx: "none",
     },
     customChains: [
       {
@@ -130,11 +128,11 @@ const config: HardhatUserConfig = {
         },
       },
       {
-        network: "offChainVM",
+        network: "evmx",
         chainId: EVMX_CHAIN_ID,
         urls: {
-          apiURL: "https://explorer-socket-composer-testnet.t.conduit.xyz/api",
-          browserURL: "https://explorer-socket-composer-testnet.t.conduit.xyz",
+          apiURL: "",
+          browserURL: "",
         },
       },
     ],
@@ -162,9 +160,10 @@ const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.22",
     settings: {
+      evmVersion: "paris",
       optimizer: {
         enabled: true,
-        runs: 999999,
+        runs: 999,
         details: {
           yul: true,
           yulDetails: {

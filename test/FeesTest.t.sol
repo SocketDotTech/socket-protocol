@@ -2,9 +2,8 @@
 pragma solidity ^0.8.3;
 
 import "./DeliveryHelper.t.sol";
-import {CounterDeployer} from "../contracts/apps/counter/CounterDeployer.sol";
-import {Counter} from "../contracts/apps/counter/Counter.sol";
-import {CounterAppGateway} from "../contracts/apps/counter/CounterAppGateway.sol";
+import {Counter} from "./apps/app-gateways/counter/Counter.sol";
+import {CounterAppGateway} from "./apps/app-gateways/counter/CounterAppGateway.sol";
 
 contract FeesTest is DeliveryHelperTest {
     uint256 constant depositAmount = 1 ether;
@@ -16,36 +15,20 @@ contract FeesTest is DeliveryHelperTest {
 
     bytes32 asyncId;
     CounterAppGateway counterGateway;
-    CounterDeployer counterDeployer;
 
     function setUp() public {
         setUpDeliveryHelper();
         feesConfig = getSocketConfig(feesChainSlug);
 
-        counterDeployer = new CounterDeployer(
-            address(addressResolver),
-            address(auctionManager),
-            FAST,
-            createFees(feesAmount)
-        );
-
         counterGateway = new CounterAppGateway(
             address(addressResolver),
-            address(counterDeployer),
-            address(auctionManager),
             createFees(feesAmount)
         );
         depositFees(address(counterGateway), createFees(depositAmount));
 
         bytes32[] memory contractIds = new bytes32[](1);
-        contractIds[0] = counterDeployer.counter();
-        asyncId = _deploy(
-            contractIds,
-            feesChainSlug,
-            1,
-            IAppDeployer(counterDeployer),
-            address(counterGateway)
-        );
+        contractIds[0] = counterGateway.counter();
+        asyncId = _deploy(contractIds, feesChainSlug, 1, IAppGateway(counterGateway));
     }
 
     function testDistributeFee() public {
@@ -68,9 +51,9 @@ contract FeesTest is DeliveryHelperTest {
         hoax(transmitterEOA);
         (bytes32 payloadId, , PayloadDetails memory payloadDetails) = feesManager
             .withdrawTransmitterFees(feesChainSlug, ETH_ADDRESS, address(receiver));
-        writePayloadIdCounter++;
+        payloadIdCounter++;
+        finalizeAndRelay(payloadId, payloadDetails);
 
-        finalizeAndExecute(payloadId, true, payloadDetails);
         assertEq(
             transmitterReceiverBalanceBefore + bidAmount,
             address(receiver).balance,
@@ -92,16 +75,19 @@ contract FeesTest is DeliveryHelperTest {
 
         uint256 receiverBalanceBefore = receiver.balance;
         uint256 withdrawAmount = 0.5 ether;
+
         counterGateway.withdrawFeeTokens(feesChainSlug, ETH_ADDRESS, withdrawAmount, receiver);
 
-        asyncId = getCurrentAsyncId();
+        asyncId = getNextAsyncId();
         bytes32[] memory payloadIds = getWritePayloadIds(
             feesChainSlug,
             address(getSocketConfig(feesChainSlug).switchboard),
             1
         );
         bidAndEndAuction(asyncId);
-        finalizeAndExecute(payloadIds[0], true);
+
+        PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(payloadIds[0]);
+        finalizeAndRelay(payloadIds[0], payloadDetails);
         assertEq(
             depositAmount - withdrawAmount,
             address(feesConfig.feesPlug).balance,

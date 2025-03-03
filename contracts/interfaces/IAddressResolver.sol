@@ -22,6 +22,11 @@ interface IAddressResolver {
     /// @dev Returns interface pointing to zero address if not configured
     function feesManager() external view returns (address);
 
+    /// @notice Gets the address of the default auction manager contract
+    /// @return IAuctionManager The auction manager interface
+    /// @dev Returns interface pointing to zero address if not configured
+    function defaultAuctionManager() external view returns (address);
+
     /// @notice Gets the watcher precompile contract interface
     /// @return IWatcherPrecompile The watcher precompile interface
     /// @dev Returns interface pointing to zero address if not configured
@@ -31,11 +36,6 @@ interface IAddressResolver {
     /// @param contractAddress_ The address of the contract to lookup
     /// @return The gateway address associated with the contract
     function contractsToGateways(address contractAddress_) external view returns (address);
-
-    /// @notice Maps gateway addresses to their corresponding contract addresses
-    /// @param gatewayAddress_ The address of the gateway to lookup
-    /// @return The contract address associated with the gateway
-    function gatewaysToContracts(address gatewayAddress_) external view returns (address);
 
     /// @notice Gets the list of all deployed async promise contracts
     /// @return Array of async promise contract addresses
@@ -66,7 +66,7 @@ interface IAddressResolver {
     /// @param chainSlug_ The identifier of the destination chain
     /// @return The address of the newly deployed forwarder contract
     function getOrDeployForwarderContract(
-        address appDeployer_,
+        address appGateway_,
         address chainContractAddress_,
         uint32 chainSlug_
     ) external returns (address);

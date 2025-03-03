@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../contracts/apps/payload-delivery/app-gateway/DeliveryHelper.sol";
-import "../contracts/apps/payload-delivery/app-gateway/FeesManager.sol";
-import "../contracts/apps/payload-delivery/app-gateway/AuctionManager.sol";
+import "../contracts/protocol/payload-delivery/app-gateway/DeliveryHelper.sol";
+import "../contracts/protocol/payload-delivery/FeesManager.sol";
+import "../contracts/protocol/payload-delivery/AuctionManager.sol";
 
-import "../contracts/Forwarder.sol";
-import "../contracts/interfaces/IAppDeployer.sol";
-import "../contracts/interfaces/IMultiChainAppDeployer.sol";
+import "../contracts/protocol/Forwarder.sol";
+import "../contracts/interfaces/IAppGateway.sol";
 
 import "./SetupTest.t.sol";
 
@@ -39,7 +38,7 @@ contract DeliveryHelperTest is SetupTest {
 
     function setUpDeliveryHelper() internal {
         // core
-        deployOffChainVMCore();
+        deployEVMxCore();
         // Deploy implementations
         FeesManager feesManagerImpl = new FeesManager();
         DeliveryHelper deliveryHelperImpl = new DeliveryHelper();
@@ -49,47 +48,47 @@ contract DeliveryHelperTest is SetupTest {
         bytes memory feesManagerData = abi.encodeWithSelector(
             FeesManager.initialize.selector,
             address(addressResolver),
-            owner
+            watcherEOA,
+            evmxSlug
         );
 
         vm.expectEmit(true, true, true, false);
-        emit Initialized(1);
+        emit Initialized(version);
         address feesManagerProxy = proxyFactory.deployAndCall(
             address(feesManagerImpl),
             watcherEOA,
             feesManagerData
         );
 
+        bytes memory auctionManagerData = abi.encodeWithSelector(
+            AuctionManager.initialize.selector,
+            evmxSlug,
+            auctionEndDelaySeconds,
+            address(addressResolver),
+            owner,
+            version
+        );
+        vm.expectEmit(true, true, true, false);
+        emit Initialized(version);
+        address auctionManagerProxy = proxyFactory.deployAndCall(
+            address(auctionManagerImpl),
+            watcherEOA,
+            auctionManagerData
+        );
+
         bytes memory deliveryHelperData = abi.encodeWithSelector(
             DeliveryHelper.initialize.selector,
             address(addressResolver),
-            address(feesManagerProxy),
             owner,
             bidTimeout
         );
 
         vm.expectEmit(true, true, true, false);
-        emit Initialized(1);
+        emit Initialized(version);
         address deliveryHelperProxy = proxyFactory.deployAndCall(
             address(deliveryHelperImpl),
             watcherEOA,
             deliveryHelperData
-        );
-
-        bytes memory auctionManagerData = abi.encodeWithSelector(
-            AuctionManager.initialize.selector,
-            vmChainSlug,
-            auctionEndDelaySeconds,
-            address(addressResolver),
-            signatureVerifier,
-            owner
-        );
-        vm.expectEmit(true, true, true, false);
-        emit Initialized(1);
-        address auctionManagerProxy = proxyFactory.deployAndCall(
-            address(auctionManagerImpl),
-            watcherEOA,
-            auctionManagerData
         );
 
         // Assign proxy addresses to contract variables
@@ -97,11 +96,11 @@ contract DeliveryHelperTest is SetupTest {
         deliveryHelper = DeliveryHelper(address(deliveryHelperProxy));
         auctionManager = AuctionManager(address(auctionManagerProxy));
 
-        hoax(watcherEOA);
+        vm.startPrank(watcherEOA);
         addressResolver.setDeliveryHelper(address(deliveryHelper));
-
-        hoax(watcherEOA);
+        addressResolver.setDefaultAuctionManager(address(auctionManager));
         addressResolver.setFeesManager(address(feesManager));
+        vm.stopPrank();
 
         // chain core contracts
         arbConfig = deploySocket(arbChainSlug);
@@ -112,23 +111,23 @@ contract DeliveryHelperTest is SetupTest {
 
     function connectDeliveryHelper() internal {
         vm.startPrank(owner);
-        arbConfig.contractFactoryPlug.connectSocket(
+        arbConfig.contractFactoryPlug.initSocket(
             address(deliveryHelper),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
-        optConfig.contractFactoryPlug.connectSocket(
+        optConfig.contractFactoryPlug.initSocket(
             address(deliveryHelper),
             address(optConfig.socket),
             address(optConfig.switchboard)
         );
 
-        arbConfig.feesPlug.connectSocket(
+        arbConfig.feesPlug.initSocket(
             address(feesManager),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
-        optConfig.feesPlug.connectSocket(
+        optConfig.feesPlug.initSocket(
             address(feesManager),
             address(optConfig.socket),
             address(optConfig.switchboard)
@@ -161,8 +160,11 @@ contract DeliveryHelperTest is SetupTest {
             switchboard: address(optConfig.switchboard)
         });
 
-        hoax(watcherEOA);
-        watcherPrecompile.setAppGateways(gateways);
+        bytes memory watcherSignature = _createWatcherSignature(
+            abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
+        );
+
+        watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
     }
 
     function setLimit(address appGateway_) internal {
@@ -200,12 +202,33 @@ contract DeliveryHelperTest is SetupTest {
             fees_.amount
         );
 
-        hoax(owner);
-        feesManager.incrementFeesDeposited(
+        bytes memory bytesInput = abi.encode(
             fees_.feePoolChain,
             appGateway_,
             fees_.feePoolToken,
             fees_.amount
+        );
+        bytes32 digest = keccak256(
+            abi.encode(address(feesManager), evmxSlug, signatureNonce, bytesInput)
+        );
+
+        digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
+        (uint8 sigV, bytes32 sigR, bytes32 sigS) = vm.sign(watcherPrivateKey, digest);
+        bytes memory sig = new bytes(65);
+        bytes1 v32 = bytes1(sigV);
+
+        assembly {
+            mstore(add(sig, 96), v32)
+            mstore(add(sig, 32), sigR)
+            mstore(add(sig, 64), sigS)
+        }
+        feesManager.incrementFeesDeposited(
+            fees_.feePoolChain,
+            appGateway_,
+            fees_.feePoolToken,
+            fees_.amount,
+            signatureNonce++,
+            sig
         );
     }
 
@@ -261,15 +284,13 @@ contract DeliveryHelperTest is SetupTest {
 
     function bidAndEndAuction(bytes32 asyncId) internal {
         placeBid(asyncId);
-
-        bytes32 timeoutId = encodeTimeoutId(timeoutPayloadIdCounter++);
-        endAuction(timeoutId);
+        endAuction();
     }
 
     function bidAndExecute(bytes32[] memory payloadIds, bytes32 asyncId_) internal {
         bidAndEndAuction(asyncId_);
         for (uint i = 0; i < payloadIds.length; i++) {
-            finalizeAndExecute(payloadIds[i], false);
+            finalizeAndExecute(payloadIds[i]);
         }
     }
 
@@ -289,91 +310,60 @@ contract DeliveryHelperTest is SetupTest {
         bytes32[] memory contractIds,
         uint32 chainSlug_,
         uint256 totalPayloads,
-        IAppDeployer appDeployer_,
-        address appGateway_
+        IAppGateway appGateway_
     ) internal returns (bytes32 asyncId) {
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
+
+        asyncId = getNextAsyncId();
         bytes32[] memory payloadIds = getWritePayloadIds(
             chainSlug_,
             address(socketConfig.switchboard),
             totalPayloads
         );
-        asyncId = getCurrentAsyncId();
 
-        appDeployer_.deployContracts(chainSlug_);
+        appGateway_.deployContracts(chainSlug_);
         bidAndExecute(payloadIds, asyncId);
-        setupGatewayAndPlugs(chainSlug_, appDeployer_, appGateway_, contractIds);
-    }
-
-    function _deployParallel(
-        bytes32[] memory contractIds,
-        uint32[] memory chainSlugs_,
-        IMultiChainAppDeployer appDeployer_,
-        address appGateway_
-    ) internal returns (bytes32 asyncId) {
-        asyncId = getCurrentAsyncId();
-        bytes32[] memory payloadIds = new bytes32[](contractIds.length * chainSlugs_.length);
-        for (uint32 i = 0; i < chainSlugs_.length; i++) {
-            for (uint j = 0; j < contractIds.length; j++) {
-                payloadIds[i * contractIds.length + j] = getWritePayloadId(
-                    chainSlugs_[i],
-                    address(getSocketConfig(chainSlugs_[i]).switchboard),
-                    i * contractIds.length + j + writePayloadIdCounter
-                );
-            }
-        }
-        // for fees
-        writePayloadIdCounter += chainSlugs_.length * contractIds.length + 1;
-
-        appDeployer_.deployMultiChainContracts(chainSlugs_);
-        bidAndExecute(payloadIds, asyncId);
-        for (uint i = 0; i < chainSlugs_.length; i++) {
-            setupGatewayAndPlugs(chainSlugs_[i], appDeployer_, appGateway_, contractIds);
-        }
+        setupGatewayAndPlugs(chainSlug_, appGateway_, contractIds);
     }
 
     function setupGatewayAndPlugs(
         uint32 chainSlug_,
-        IAppDeployer appDeployer_,
-        address appGateway_,
+        IAppGateway appGateway_,
         bytes32[] memory contractIds
     ) internal {
         AppGatewayConfig[] memory gateways = new AppGatewayConfig[](contractIds.length);
 
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
         for (uint i = 0; i < contractIds.length; i++) {
-            address plug = appDeployer_.getOnChainAddress(contractIds[i], chainSlug_);
+            address plug = appGateway_.getOnChainAddress(contractIds[i], chainSlug_);
 
             gateways[i] = AppGatewayConfig({
                 plug: plug,
                 chainSlug: chainSlug_,
-                appGateway: appGateway_,
+                appGateway: address(appGateway_),
                 switchboard: address(socketConfig.switchboard)
             });
         }
 
-        hoax(watcherEOA);
-        watcherPrecompile.setAppGateways(gateways);
+        bytes memory watcherSignature = _createWatcherSignature(
+            abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
+        );
+        watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
     }
 
-    function _executeReadBatchSingleChain(
-        uint32 chainSlug_,
-        uint256 totalPayloads
-    ) internal returns (bytes32 asyncId) {
-        asyncId = getCurrentAsyncId();
+    function _executeReadBatchSingleChain() internal returns (bytes32 asyncId) {
+        asyncId = getNextAsyncId();
     }
 
-    function _executeReadBatchMultiChain(
-        uint32[] memory chainSlugs_
-    ) internal returns (bytes32 asyncId) {
-        asyncId = getCurrentAsyncId();
+    function _executeReadBatchMultiChain() internal returns (bytes32 asyncId) {
+        asyncId = getNextAsyncId();
     }
 
     function _executeWriteBatchSingleChain(
         uint32 chainSlug_,
         uint256 totalPayloads
     ) internal returns (bytes32 asyncId) {
-        asyncId = getCurrentAsyncId();
+        asyncId = getNextAsyncId();
 
         bytes32[] memory payloadIds = getWritePayloadIds(
             chainSlug_,
@@ -386,19 +376,16 @@ contract DeliveryHelperTest is SetupTest {
     function _executeWriteBatchMultiChain(
         uint32[] memory chainSlugs_
     ) internal returns (bytes32 asyncId) {
-        asyncId = getCurrentAsyncId();
-
+        asyncId = getNextAsyncId();
         bidAndEndAuction(asyncId);
         for (uint i = 0; i < chainSlugs_.length; i++) {
             bytes32 payloadId = getWritePayloadId(
                 chainSlugs_[i],
                 address(getSocketConfig(chainSlugs_[i]).switchboard),
-                i + writePayloadIdCounter
+                payloadIdCounter++
             );
-            finalizeAndExecute(payloadId, false);
+            finalizeAndExecute(payloadId);
         }
-
-        writePayloadIdCounter += chainSlugs_.length;
     }
 
     function createDeployPayloadDetail(
@@ -409,8 +396,12 @@ contract DeliveryHelperTest is SetupTest {
         bytes32 salt = keccak256(abi.encode(appDeployer_, chainSlug_, deployCounter++));
         bytes memory payload = abi.encodeWithSelector(
             IContractFactoryPlug.deployContract.selector,
+            true,
+            salt,
+            address(appDeployer_),
+            address(0),
             bytecode_,
-            salt
+            ""
         );
 
         address asyncPromise = predictAsyncPromiseAddress(
@@ -452,8 +443,9 @@ contract DeliveryHelperTest is SetupTest {
                 payload: payload_,
                 callType: callType_,
                 executionGasLimit: executionGasLimit_,
+                value: 0,
                 next: next_,
-                isSequential: false
+                isParallel: Parallel.ON
             });
     }
 
@@ -468,13 +460,14 @@ contract DeliveryHelperTest is SetupTest {
 
         vm.prank(transmitterEOA);
         bytes memory transmitterSignature = _createSignature(
-            keccak256(abi.encode(address(auctionManager), vmChainSlug, asyncId, bidAmount, "")),
+            keccak256(abi.encode(address(auctionManager), evmxSlug, asyncId, bidAmount, "")),
             transmitterPrivateKey
         );
+
         auctionManager.bid(asyncId, bidAmount, transmitterSignature, "");
     }
 
-    function endAuction(bytes32 timeoutId) internal {
+    function endAuction() internal {
         // todo:
         // vm.expectEmit(true, false, false, true);
         // emit AuctionEnded(
@@ -483,8 +476,12 @@ contract DeliveryHelperTest is SetupTest {
         // );
 
         if (auctionEndDelaySeconds == 0) return;
-        hoax(watcherEOA);
-        watcherPrecompile.resolveTimeout(timeoutId);
+        bytes32 timeoutId = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
+
+        bytes memory watcherSignature = _createWatcherSignature(
+            abi.encode(IWatcherPrecompile.resolveTimeout.selector, timeoutId)
+        );
+        watcherPrecompile.resolveTimeout(timeoutId, signatureNonce++, watcherSignature);
     }
 
     function finalize(
@@ -492,21 +489,23 @@ contract DeliveryHelperTest is SetupTest {
         PayloadDetails memory payloadDetails
     ) internal view returns (bytes memory, bytes32) {
         SocketContracts memory socketConfig = getSocketConfig(payloadDetails.chainSlug);
+        (, , , , , , uint256 deadline, , , ) = watcherPrecompile.asyncRequests(payloadId);
 
-        PayloadRootParams memory rootParams_ = PayloadRootParams(
+        PayloadDigestParams memory digestParams_ = PayloadDigestParams(
             payloadDetails.appGateway,
             transmitterEOA,
             payloadDetails.target,
             payloadId,
+            payloadDetails.value,
             payloadDetails.executionGasLimit,
-            block.timestamp + 1000,
+            deadline,
             payloadDetails.payload
         );
-        bytes32 root = watcherPrecompile.getRoot(rootParams_);
+        bytes32 digest = watcherPrecompile.getDigest(digestParams_);
 
-        bytes32 digest = keccak256(abi.encode(address(socketConfig.switchboard), root));
-        bytes memory watcherSig = _createSignature(digest, watcherPrivateKey);
-        return (watcherSig, root);
+        bytes32 sigDigest = keccak256(abi.encode(address(socketConfig.switchboard), digest));
+        bytes memory proof = _createSignature(sigDigest, watcherPrivateKey);
+        return (proof, digest);
     }
 
     function createWithdrawPayloadDetail(
@@ -598,32 +597,22 @@ contract DeliveryHelperTest is SetupTest {
         resolvePromise(payloadId, returnData_);
     }
 
-    function finalizeAndExecute(bytes32 payloadId, bool isWithdraw) internal {
+    function finalizeAndExecute(bytes32 payloadId) internal {
         PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(payloadId);
-        finalizeAndExecute(payloadId, isWithdraw, payloadDetails);
-    }
-
-    function finalizeAndExecute(
-        bytes32 payloadId,
-        bool isWithdraw,
-        PayloadDetails memory payloadDetails
-    ) internal {
         bytes memory returnData = finalizeAndRelay(payloadId, payloadDetails);
-        if (!isWithdraw) {
-            resolvePromise(payloadId, returnData);
-        }
+        resolvePromise(payloadId, returnData);
     }
 
     function finalizeAndRelay(
         bytes32 payloadId_,
         PayloadDetails memory payloadDetails
     ) internal returns (bytes memory returnData) {
-        (bytes memory watcherSig, bytes32 root) = finalize(payloadId_, payloadDetails);
+        (bytes memory watcherSig, bytes32 digest) = finalize(payloadId_, payloadDetails);
 
         returnData = relayTx(
             payloadDetails.chainSlug,
             payloadId_,
-            root,
+            digest,
             payloadDetails,
             watcherSig
         );
@@ -650,25 +639,18 @@ contract DeliveryHelperTest is SetupTest {
         return address(uint160(uint256(hash)));
     }
 
-    function getCurrentAsyncId() public returns (bytes32) {
+    function getNextAsyncId() public returns (bytes32) {
+        payloadIdCounter++;
         return bytes32((uint256(uint160(address(deliveryHelper))) << 64) | asyncCounterTest++);
-    }
-
-    function getLatestAsyncId() public view returns (bytes32) {
-        return bytes32((uint256(uint160(address(deliveryHelper))) << 64) | asyncCounterTest);
-    }
-
-    function getTimeoutPayloadId(uint256 counter_) internal view returns (bytes32) {
-        return bytes32((uint256(uint160(address(deliveryHelper))) << 64) | counter_);
     }
 
     function getOnChainAndForwarderAddresses(
         uint32 chainSlug_,
         bytes32 contractId_,
-        IAppDeployer deployer_
+        IAppGateway appGateway_
     ) internal view returns (address, address) {
-        address app = deployer_.getOnChainAddress(contractId_, chainSlug_);
-        address forwarder = deployer_.forwarderAddresses(contractId_, chainSlug_);
+        address app = appGateway_.getOnChainAddress(contractId_, chainSlug_);
+        address forwarder = appGateway_.forwarderAddresses(contractId_, chainSlug_);
         return (app, forwarder);
     }
 }

@@ -3,27 +3,23 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {CounterDeployer} from "../../contracts/apps/counter/CounterDeployer.sol";
-import {Counter} from "../../contracts/apps//counter/Counter.sol";
+import {Counter} from "../../test/apps/app-gateways/counter/Counter.sol";
+import {CounterAppGateway} from "../../test/apps/app-gateways/counter/CounterAppGateway.sol";
 
 contract CheckCounters is Script {
     function run() external {
-        CounterDeployer deployer = CounterDeployer(vm.envAddress("DEPLOYER"));
+        CounterAppGateway gateway = CounterAppGateway(vm.envAddress("APP_GATEWAY"));
 
         vm.createSelectFork(vm.envString("EVMX_RPC"));
-        address counterInstanceArbitrumSepolia = deployer.getOnChainAddress(
-            deployer.counter(),
+        address counterInstanceArbitrumSepolia = gateway.getOnChainAddress(
+            gateway.counter(),
             421614
         );
-        address counterInstanceOptimismSepolia = deployer.getOnChainAddress(
-            deployer.counter(),
+        address counterInstanceOptimismSepolia = gateway.getOnChainAddress(
+            gateway.counter(),
             11155420
         );
-        address counterInstanceBaseSepolia = deployer.getOnChainAddress(deployer.counter(), 84532);
-        //address counterInstanceSepolia = deployer.getOnChainAddress(
-        //    deployer.counter(),
-        //    11155111
-        //);
+        address counterInstanceBaseSepolia = gateway.getOnChainAddress(gateway.counter(), 84532);
 
         if (counterInstanceArbitrumSepolia != address(0)) {
             vm.createSelectFork(vm.envString("ARBITRUM_SEPOLIA_RPC"));
@@ -48,18 +44,5 @@ contract CheckCounters is Script {
         } else {
             console.log("Counter not yet deployed on Base Sepolia");
         }
-
-        //if (counterInstanceSepolia != address(0)) {
-        //    vm.createSelectFork(vm.envString("SEPOLIA_RPC"));
-        //    uint256 counterValueOptimismSepolia = Counter(
-        //        counterInstanceOptimismSepolia
-        //    ).counter();
-        //    console.log(
-        //        "Counter value on Ethereum Sepolia: ",
-        //        counterValueOptimismSepolia
-        //    );
-        //} else {
-        //    console.log("Counter not yet deployed on Ethereum Sepolia");
-        //}
     }
 }

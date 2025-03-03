@@ -1,33 +1,31 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {CounterInboxAppGateway} from "../contracts/apps/counter-inbox/CounterInboxAppGateway.sol";
-import {CounterInbox} from "../contracts/apps/counter-inbox/CounterInbox.sol";
+import {CounterAppGateway} from "./apps/app-gateways/counter/CounterAppGateway.sol";
+import {Counter} from "./apps/app-gateways/counter/Counter.sol";
 import "./DeliveryHelper.t.sol";
 
 contract InboxTest is DeliveryHelperTest {
     uint256 constant feesAmount = 0.01 ether;
-    CounterInboxAppGateway public gateway;
-    CounterInbox public inbox;
+    CounterAppGateway public gateway;
+    Counter public inbox;
 
     function setUp() public {
         // Setup core test infrastructure
         setUpDeliveryHelper();
 
         // Deploy the inbox contract
-        inbox = new CounterInbox();
+        inbox = new Counter();
 
         // Deploy the gateway with fees
-        gateway = new CounterInboxAppGateway(
+        gateway = new CounterAppGateway(
             address(addressResolver),
-            address(auctionManager),
-            address(inbox),
-            arbChainSlug,
             createFees(feesAmount)
         );
+        gateway.setIsValidPlug(arbChainSlug, address(inbox));
 
         // Connect the inbox to the gateway and socket
-        inbox.connectSocket(
+        inbox.initSocket(
             address(gateway),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
@@ -42,25 +40,25 @@ contract InboxTest is DeliveryHelperTest {
             switchboard: address(arbConfig.switchboard)
         });
 
-        hoax(watcherEOA);
-        watcherPrecompile.setAppGateways(gateways);
+        bytes memory watcherSignature = _createWatcherSignature(
+            abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
+        );
+        watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
 
         hoax(watcherEOA);
-        watcherPrecompile.setIsValidInboxCaller(arbChainSlug, address(inbox), true);
+        watcherPrecompile.setIsValidPlug(arbChainSlug, address(inbox), true);
     }
 
     function testInboxIncrement() public {
         // Initial counter value should be 0
-        assertEq(gateway.counter(), 0, "Initial gateway counter should be 0");
+        assertEq(gateway.counterVal(), 0, "Initial gateway counter should be 0");
 
         // Simulate a message from another chain through the watcher
         uint256 incrementValue = 5;
 
         bytes32 callId = inbox.increaseOnGateway(incrementValue);
-
-        hoax(watcherEOA);
-        CallFromInboxParams[] memory params = new CallFromInboxParams[](1);
-        params[0] = CallFromInboxParams({
+        CallFromChainParams[] memory params = new CallFromChainParams[](1);
+        params[0] = CallFromChainParams({
             callId: callId,
             chainSlug: arbChainSlug,
             appGateway: address(gateway),
@@ -68,8 +66,12 @@ contract InboxTest is DeliveryHelperTest {
             payload: abi.encode(incrementValue),
             params: bytes32(0)
         });
-        watcherPrecompile.callAppGateways(params);
+
+        bytes memory watcherSignature = _createWatcherSignature(
+            abi.encode(WatcherPrecompile.callAppGateways.selector, params)
+        );
+        watcherPrecompile.callAppGateways(params, signatureNonce++, watcherSignature);
         // Check counter was incremented
-        assertEq(gateway.counter(), incrementValue, "Gateway counter should be incremented");
+        assertEq(gateway.counterVal(), incrementValue, "Gateway counter should be incremented");
     }
 }

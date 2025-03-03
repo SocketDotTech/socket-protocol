@@ -1,33 +1,37 @@
 import {
   ChainSlug,
-  ChainSocketAddresses,
-  CORE_CONTRACTS,
-  DeploymentAddresses,
+  ChainAddressesObj,
   DeploymentMode,
-} from "@socket.tech/dl-core";
+} from "@socket.tech/socket-protocol-common";
 
 import { config as dotenvConfig } from "dotenv";
 dotenvConfig();
 
-import { ethers } from "hardhat";
-import dev_addresses from "../../deployments/dev_addresses.json";
-import { chains } from "./config";
-import { getProviderFromChainSlug } from "../constants";
 import { Wallet } from "ethers";
-import { getInstance, storeAddresses } from "./utils";
-import { OffChainVMCoreContracts } from "../../src";
-import { EVMX_CHAIN_ID } from "../constants/constants";
+import { ethers } from "hardhat";
+import { chains, EVMX_CHAIN_ID, mode } from "../config";
+import {
+  CORE_CONTRACTS,
+  DeploymentAddresses,
+  EVMxCoreContracts,
+} from "../constants";
+import {
+  getAddresses,
+  getInstance,
+  getProviderFromChainSlug,
+  storeAddresses,
+} from "../utils";
 
 export const main = async () => {
   let addresses: DeploymentAddresses;
   try {
     console.log("Upgrading Managers");
-    addresses = dev_addresses as unknown as DeploymentAddresses;
+    addresses = getAddresses(mode) as unknown as DeploymentAddresses;
 
     for (const chain of chains) {
-      let chainAddresses: ChainSocketAddresses = addresses[chain]
-        ? (addresses[chain] as ChainSocketAddresses)
-        : ({} as ChainSocketAddresses);
+      let chainAddresses: ChainAddressesObj = addresses[chain]
+        ? (addresses[chain] as ChainAddressesObj)
+        : ({} as ChainAddressesObj);
 
       const providerInstance = getProviderFromChainSlug(chain);
       const signer: Wallet = new ethers.Wallet(
@@ -37,7 +41,7 @@ export const main = async () => {
 
       const socketContract = (
         await getInstance(
-          "contracts/socket/Socket.sol:Socket",
+          CORE_CONTRACTS.Socket,
           chainAddresses[CORE_CONTRACTS.Socket]
         )
       ).connect(signer);
@@ -48,45 +52,64 @@ export const main = async () => {
         socketContract
       );
 
-      await setSwitchboard(
-        chainAddresses[CORE_CONTRACTS.FastSwitchboard],
-        chain,
-        addresses
-      );
+      await setOnchainContracts(chain, addresses);
 
-      await storeAddresses(chainAddresses, chain, DeploymentMode.DEV);
+      await storeAddresses(chainAddresses, chain, mode);
     }
   } catch (error) {
     console.log("Error:", error);
   }
 };
 
-async function setSwitchboard(sbAddress, chain, addresses) {
-  const providerInstance = getProviderFromChainSlug(
-    EVMX_CHAIN_ID as ChainSlug
-  );
+async function setOnchainContracts(chain, addresses) {
+  const providerInstance = getProviderFromChainSlug(EVMX_CHAIN_ID as ChainSlug);
   const signer: Wallet = new ethers.Wallet(
     process.env.WATCHER_PRIVATE_KEY as string,
     providerInstance
   );
-  const watcherVMaddr = addresses[EVMX_CHAIN_ID]!;
+  const EVMxAddresses = addresses[EVMX_CHAIN_ID]!;
   const watcherPrecompile = (
     await getInstance(
-      "contracts/watcherPrecompile/WatcherPrecompile.sol:WatcherPrecompile",
-      watcherVMaddr[OffChainVMCoreContracts.WatcherPrecompile]
+      EVMxCoreContracts.WatcherPrecompile,
+      EVMxAddresses[EVMxCoreContracts.WatcherPrecompile]
     )
   ).connect(signer);
 
   const fastSBtype = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("FAST"));
-  const currentValue = await watcherPrecompile.switchboards(chain, fastSBtype);
-  console.log({ current: currentValue, required: sbAddress });
+  const sbAddress = addresses[chain][CORE_CONTRACTS.FastSwitchboard];
+  const socketAddress = addresses[chain][CORE_CONTRACTS.Socket];
+  const contractFactoryPlugAddress =
+    addresses[chain][CORE_CONTRACTS.ContractFactoryPlug];
+  const feesPlugAddress = addresses[chain][CORE_CONTRACTS.FeesPlug];
 
-  if (currentValue.toLowerCase() !== sbAddress.toLowerCase()) {
+  const currentSbAddress = await watcherPrecompile.switchboards(
+    chain,
+    fastSBtype
+  );
+  const currentSocket = await watcherPrecompile.sockets(chain);
+  const currentContractFactoryPlug =
+    await watcherPrecompile.contractFactoryPlug(chain);
+  const currentFeesPlug = await watcherPrecompile.feesPlug(chain);
+
+  if (
+    currentSbAddress.toLowerCase() !== sbAddress.toLowerCase() ||
+    currentSocket.toLowerCase() !== socketAddress.toLowerCase() ||
+    currentContractFactoryPlug.toLowerCase() !==
+      contractFactoryPlugAddress.toLowerCase() ||
+    currentFeesPlug.toLowerCase() !== feesPlugAddress.toLowerCase()
+  ) {
     const tx = await watcherPrecompile
       .connect(signer)
-      .setSwitchboard(chain, fastSBtype, sbAddress);
+      .setOnChainContracts(
+        chain,
+        fastSBtype,
+        sbAddress,
+        socketAddress,
+        contractFactoryPlugAddress,
+        feesPlugAddress
+      );
 
-    console.log(`Setting sb for ${chain} to`, tx.hash);
+    console.log(`Setting onchain contracts for ${chain}, txHash: `, tx.hash);
     await tx.wait();
   }
 }
@@ -95,10 +118,7 @@ const registerSb = async (sbAddress, signer, socket) => {
   try {
     // used fast switchboard here as all have same function signature
     const switchboard = (
-      await getInstance(
-        "contracts/socket/switchboard/FastSwitchboard.sol:FastSwitchboard",
-        sbAddress
-      )
+      await getInstance(CORE_CONTRACTS.FastSwitchboard, sbAddress)
     ).connect(signer);
 
     // send overrides while reading capacitor to avoid errors on mantle chain
@@ -108,7 +128,7 @@ const registerSb = async (sbAddress, signer, socket) => {
       from: signer.address,
     });
 
-    if (!sb) {
+    if (Number(sb) == 0) {
       const registerTx = await switchboard.registerSwitchboard();
       console.log(`Registering Switchboard ${sbAddress}: ${registerTx.hash}`);
       await registerTx.wait();
