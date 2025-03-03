@@ -80,15 +80,20 @@ contract SetupTest is Test {
         switchboard.grantWatcherRole(watcherEOA);
         vm.stopPrank();
 
-        hoax(watcherEOA);
+        vm.startPrank(watcherEOA);
         watcherPrecompile.setOnChainContracts(
             chainSlug_,
-            FAST,
-            address(switchboard),
             address(socket),
             address(contractFactoryPlug),
             address(feesPlug)
         );
+
+        watcherPrecompile.setSwitchboard(
+            chainSlug_,
+            keccak256("FAST"),
+            address(switchboard)
+        );
+        vm.stopPrank();
 
         return
             SocketContracts({

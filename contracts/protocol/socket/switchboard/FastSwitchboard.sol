@@ -78,4 +78,10 @@ contract FastSwitchboard is SwitchboardBase {
     function registerSwitchboard() external onlyOwner {
         socket__.registerSwitchboard();
     }
+
+    function syncOut(
+        bytes32 digest_,
+        bytes32 payloadId_,
+        PayloadParams calldata payloadParams_
+    ) external virtual {}
 }

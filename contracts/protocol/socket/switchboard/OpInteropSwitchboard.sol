@@ -13,17 +13,6 @@ contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
     address public remoteAddress;
     uint256 public remoteChainId;
 
-    struct PayloadParams {
-        bytes32 payloadId;
-        address appGateway;
-        address transmitter;
-        address target;
-        uint256 value;
-        uint256 deadline;
-        uint256 executionGasLimit;
-        bytes payload;
-    }
-
     modifier onlyToken() {
         if (msg.sender != token) revert OnlyTokenAllowed();
         _;
@@ -52,7 +41,7 @@ contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
         bytes32 digest_,
         bytes32 payloadId_,
         PayloadParams calldata payloadParams_
-    ) external {
+    ) external override {
         if (isSyncedOut[digest_]) return;
         isSyncedOut[digest_] = true;
 

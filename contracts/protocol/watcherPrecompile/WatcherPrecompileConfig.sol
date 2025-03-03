@@ -25,15 +25,11 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
 
     /// @notice Emitted when contracts are set for a network
     /// @param chainSlug The identifier of the network
-    /// @param sbType The type of switchboard
-    /// @param switchboard The address of the switchboard
     /// @param socket The address of the socket
     /// @param contractFactoryPlug The address of the contract factory plug
     /// @param feesPlug The address of the fees plug
     event OnChainContractSet(
         uint32 chainSlug,
-        bytes32 sbType,
-        address switchboard,
         address socket,
         address contractFactoryPlug,
         address feesPlug
@@ -67,7 +63,6 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
 
     /// @notice Sets the switchboard for a network
     /// @param chainSlug_ The identifier of the network
-    /// @param switchboard_ The address of the switchboard
     function setOnChainContracts(
         uint32 chainSlug_,
         address socket_,

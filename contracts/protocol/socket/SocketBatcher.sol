@@ -5,6 +5,7 @@ import "solady/auth/Ownable.sol";
 import "../../interfaces/ISocket.sol";
 import "../../interfaces/ISwitchboard.sol";
 import "../utils/RescueFundsLib.sol";
+import {ECDSA} from "solady/utils/ECDSA.sol";
 import {AttestAndExecutePayloadParams} from "../../protocol/utils/common/Structs.sol";
 
 /**
@@ -14,6 +15,9 @@ import {AttestAndExecutePayloadParams} from "../../protocol/utils/common/Structs
 contract SocketBatcher is Ownable {
     // socket contract
     ISocket public immutable socket__;
+
+    uint256 public constant OP_DEVNET_0_CHAIN_ID = 420120000;
+    uint256 public constant OP_DEVNET_1_CHAIN_ID = 420120001;
 
     /**
      * @notice Initializes the TransmitManager contract
@@ -27,7 +31,7 @@ contract SocketBatcher is Ownable {
 
     function attestAndExecute(
         AttestAndExecutePayloadParams calldata params_
-    ) external payable returns (bytes memory) {
+    ) external payable returns (bytes memory returnData) {
         ISwitchboard(params_.switchboard).attest(params_.payloadId, params_.digest, params_.proof);
 
         ISocket.ExecuteParams memory executeParams = ISocket.ExecuteParams({
@@ -37,12 +41,43 @@ contract SocketBatcher is Ownable {
             deadline: params_.deadline,
             payload: params_.payload
         });
-        return
-            socket__.execute{value: msg.value}(
-                params_.appGateway,
-                executeParams,
+
+        returnData = socket__.execute{value: msg.value}(
+            params_.appGateway,
+            executeParams,
+            params_.transmitterSignature
+        );
+
+        if (block.chainid == OP_DEVNET_0_CHAIN_ID || block.chainid == OP_DEVNET_1_CHAIN_ID) {
+            address transmitter = _recoverSigner(
+                keccak256(abi.encode(address(socket__), params_.payloadId)),
                 params_.transmitterSignature
             );
+            ISwitchboard.PayloadParams memory payloadParams = ISwitchboard.PayloadParams({
+                payloadId: params_.payloadId,
+                appGateway: params_.appGateway,
+                transmitter: transmitter,
+                target: params_.target,
+                value: 0,
+                deadline: params_.deadline,
+                executionGasLimit: params_.executionGasLimit,
+                payload: params_.payload
+            });
+            ISwitchboard(params_.switchboard).syncOut(
+                params_.digest,
+                params_.payloadId,
+                payloadParams
+            );
+        }
+    }
+
+    function _recoverSigner(
+        bytes32 digest_,
+        bytes memory signature_
+    ) internal view returns (address signer) {
+        bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
+        // recovered signer is checked for the valid roles later
+        signer = ECDSA.recover(digest, signature_);
     }
 
     function rescueFunds(address token_, address to_, uint256 amount_) external onlyOwner {
