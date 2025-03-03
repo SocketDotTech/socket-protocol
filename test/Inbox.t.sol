@@ -20,8 +20,6 @@ contract InboxTest is DeliveryHelperTest {
         // Deploy the gateway with fees
         gateway = new CounterAppGateway(
             address(addressResolver),
-            address(auctionManager),
-            FAST,
             createFees(feesAmount)
         );
         gateway.setIsValidPlug(arbChainSlug, address(inbox));

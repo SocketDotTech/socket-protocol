@@ -57,5 +57,5 @@ source .env && forge script script/admin/UpdateLimits.s.sol --broadcast --skip-s
 
 
 # add fees
-source .env && forge script script/PayFeesInArbitrumETH.s.sol --broadcast --skip-simulation 
-source .env && forge script script/AppGatewayFeeBalance.s.sol 
+source .env && forge script script/helpers/PayFeesInArbitrumETH.s.sol --broadcast --skip-simulation 
+source .env && forge script script/helpers/AppGatewayFeeBalance.s.sol 

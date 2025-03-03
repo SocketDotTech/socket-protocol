@@ -33,12 +33,10 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
 
     constructor(
         address addressResolver_,
-        address auctionManager_,
         address owner_,
-        bytes32 sbType_,
         Fees memory fees_,
         ConstructorParams memory params
-    ) AppGatewayBase(addressResolver_, auctionManager_, sbType_) {
+    ) AppGatewayBase(addressResolver_) {
         creationCodeWithArgs[superTokenLockable] = abi.encodePacked(
             type(SuperTokenLockable).creationCode,
             abi.encode(

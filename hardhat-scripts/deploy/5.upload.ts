@@ -1,9 +1,10 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import {
   ChainAddressesObj,
-  EVMxAddressesObj,
-  ChainSlug,
   DeploymentMode,
+  EVMxAddressesObj,
+  chainSlugToHardhatChainName,
+  ChainSlug
 } from "@socket.tech/socket-protocol-common";
 import { config as dotenvConfig } from "dotenv";
 import fs from "fs";
@@ -58,52 +59,35 @@ type ConfigEntry = {
   eventBlockRange: number;
   addresses?: ChainAddressesObj | EVMxAddressesObj;
 };
-
 type S3Config = {
   [chainId: string]: ConfigEntry;
 };
+
+const supportedChainSlugs = [EVMX_CHAIN_ID as ChainSlug, ...chains];
+
 export let config: S3Config = {
-  [ChainSlug.ARBITRUM_SEPOLIA]: {
-    eventBlockRangePerCron: 5000,
-    rpc: process.env.ARBITRUM_SEPOLIA_RPC,
-    wssRpc: process.env.ARBITRUM_SEPOLIA_WSS_RPC,
-    confirmations: 0,
-    eventBlockRange: 5000,
-  },
-  [ChainSlug.OPTIMISM_SEPOLIA]: {
-    eventBlockRangePerCron: 5000,
-    rpc: process.env.OPTIMISM_SEPOLIA_RPC,
-    wssRpc: process.env.OPTIMISM_SEPOLIA_WSS_RPC,
-    confirmations: 0,
-    eventBlockRange: 5000,
-  },
-  [ChainSlug.SEPOLIA]: {
-    eventBlockRangePerCron: 5000,
-    rpc: process.env.SEPOLIA_RPC,
-    wssRpc: process.env.SEPOLIA_WSS_RPC,
-    confirmations: 0,
-    eventBlockRange: 5000,
-  },
-  [EVMX_CHAIN_ID]: {
-    eventBlockRangePerCron: 5000,
-    rpc: process.env.EVMX_RPC,
-    wssRpc: process.env.EVMX_WSS_RPC,
-    confirmations: 0,
-    eventBlockRange: 5000,
-  },
-  [ChainSlug.BASE_SEPOLIA]: {
-    eventBlockRangePerCron: 5000,
-    rpc: process.env.BASE_SEPOLIA_RPC,
-    wssRpc: process.env.BASE_SEPOLIA_WSS_RPC,
-    confirmations: 0,
-    eventBlockRange: 5000,
-  },
   //@ts-ignore
-  supportedChainSlugs: [
-    ...chains,
-    EVMX_CHAIN_ID,
-  ],
+  supportedChainSlugs,
 };
+
+// Add config for each supported chain
+supportedChainSlugs.forEach(chainSlug => {
+  let chainName =
+    chainSlug === EVMX_CHAIN_ID ? "EVMX" : chainSlugToHardhatChainName[chainSlug].toString().replace("-", "_");
+  let rpcKey = `${chainName.toUpperCase()}_RPC`;
+  let wssRpcKey = `${chainName.toUpperCase()}_WSS_RPC`;
+  if (!process.env[rpcKey] || !process.env[wssRpcKey]) {
+    console.log(`Missing RPC or WSS RPC for chain ${chainName}`);
+    return;
+  }
+  config[chainSlug] = {
+    eventBlockRangePerCron: 5000,
+    rpc: process.env[rpcKey],
+    wssRpc: process.env[wssRpcKey],
+    confirmations: 0,
+    eventBlockRange: 5000,
+  };
+});
 // Read the addresses.json file
 const addressesPath = path.join(__dirname, getAddressesPath());
 const addresses = JSON.parse(fs.readFileSync(addressesPath, "utf8"));

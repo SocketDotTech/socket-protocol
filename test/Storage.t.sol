@@ -14,6 +14,10 @@ contract StorageTest is DeliveryHelperTest {
         // Test AddressResolver version at slot 59
         bytes32 versionSlot = vm.load(address(addressResolver), bytes32(uint256(59)));
         assertEq(uint64(uint256(versionSlot)), 1);
+
+        // Test auction manager address at slot 61 in AddressResolver
+        bytes32 slotValue = vm.load(address(addressResolver), bytes32(uint256(61)));
+        assertEq(address(uint160(uint256(slotValue))), address(auctionManager));
     }
 
     function testWatcherPrecompileSlot() public view {

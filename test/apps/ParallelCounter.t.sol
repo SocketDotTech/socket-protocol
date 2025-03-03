@@ -18,8 +18,6 @@ contract ParallelCounterTest is DeliveryHelperTest {
 
         parallelCounterGateway = new CounterAppGateway(
             address(addressResolver),
-            address(auctionManager),
-            FAST,
             createFees(feesAmount)
         );
         depositFees(address(parallelCounterGateway), createFees(1 ether));

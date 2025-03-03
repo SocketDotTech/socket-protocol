@@ -5,12 +5,11 @@ import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {CounterAppGateway} from "../../test/apps/app-gateways/counter/CounterAppGateway.sol";
 import {Fees} from "../../contracts/protocol/utils/common/Structs.sol";
-import {ETH_ADDRESS, FAST} from "../../contracts/protocol/utils/common/Constants.sol";
+import {ETH_ADDRESS} from "../../contracts/protocol/utils/common/Constants.sol";
 
 contract CounterDeploy is Script {
     function run() external {
         address addressResolver = vm.envAddress("ADDRESS_RESOLVER");
-        address auctionManager = vm.envAddress("AUCTION_MANAGER");
         string memory rpc = vm.envString("EVMX_RPC");
         vm.createSelectFork(rpc);
 
@@ -26,8 +25,6 @@ contract CounterDeploy is Script {
 
         CounterAppGateway gateway = new CounterAppGateway(
             addressResolver,
-            auctionManager,
-            FAST,
             fees
         );
 
