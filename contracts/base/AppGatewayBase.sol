@@ -9,6 +9,7 @@ import "../interfaces/IPromise.sol";
 
 import {FeesPlugin} from "../protocol/utils/FeesPlugin.sol";
 import {InvalidPromise, FeesNotSet} from "../protocol/utils/common/Errors.sol";
+import {FAST} from "../protocol/utils/common/Constants.sol";
 
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway
@@ -51,12 +52,15 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
 
     /// @notice Constructor for AppGatewayBase
     /// @param addressResolver_ The address resolver address
-    constructor(address addressResolver_, address auctionManager_, bytes32 sbType_) {
+    constructor(address addressResolver_) {
         _setAddressResolver(addressResolver_);
-        auctionManager = auctionManager_;
+        sbType = FAST;
+    }
+    /// @notice Sets the switchboard type
+    /// @param sbType_ The switchboard type
+    function _setSbType(bytes32 sbType_) internal {
         sbType = sbType_;
     }
-
     /// @notice Creates a contract ID
     /// @param contractName_ The contract name
     /// @return bytes32 The contract ID

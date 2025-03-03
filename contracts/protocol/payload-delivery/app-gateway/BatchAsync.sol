@@ -314,6 +314,9 @@ abstract contract BatchAsync is QueueAsync {
             amount_,
             receiver_
         );
+        if (auctionManager_ == address(0)) {
+            auctionManager_ = IAddressResolver(addressResolver__).defaultAuctionManager();
+        }
         _deliverPayload(payloadDetailsArray, fees_, auctionManager_, new bytes(0));
     }
 }
