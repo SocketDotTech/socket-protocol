@@ -231,31 +231,26 @@ const deploySocketContracts = async () => {
         );
         deployUtils.addresses[contractName] = batcher.address;
 
-        contractName = CORE_CONTRACTS.FastSwitchboard;
-        const sb: Contract = await getOrDeploy(
+        // contractName = CORE_CONTRACTS.FastSwitchboard;
+        // const sb: Contract = await getOrDeploy(
+        //   contractName,
+        //   contractName,
+        //   `contracts/protocol/socket/switchboard/${contractName}.sol`,
+        //   [chain as ChainSlug, socket.address, socketOwner],
+        //   deployUtils
+        // );
+        // deployUtils.addresses[contractName] = sb.address;
+
+        contractName = CORE_CONTRACTS.OpInteropSwitchboard;
+        const opSwitchboard: Contract = await getOrDeploy(
           contractName,
           contractName,
           `contracts/protocol/socket/switchboard/${contractName}.sol`,
           [chain as ChainSlug, socket.address, socketOwner],
           deployUtils
         );
-        deployUtils.addresses[contractName] = sb.address;
-
-        if (
-          chain.toString() == "420120000" ||
-          chain.toString() == "420120001"
-        ) {
-          contractName = CORE_CONTRACTS.OpInteropSwitchboard;
-          const opSwitchboard: Contract = await getOrDeploy(
-            contractName,
-            contractName,
-            `contracts/protocol/socket/switchboard/${contractName}.sol`,
-            [chain as ChainSlug, socket.address, socketOwner],
-            deployUtils
-          );
-          deployUtils.addresses[CORE_CONTRACTS.FastSwitchboard] =
-            opSwitchboard.address;
-        }
+        deployUtils.addresses[CORE_CONTRACTS.FastSwitchboard] =
+          opSwitchboard.address;
 
         contractName = CORE_CONTRACTS.FeesPlug;
         const feesPlug: Contract = await getOrDeploy(

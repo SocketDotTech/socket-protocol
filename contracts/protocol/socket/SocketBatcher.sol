@@ -16,9 +16,6 @@ contract SocketBatcher is Ownable {
     // socket contract
     ISocket public immutable socket__;
 
-    uint256 public constant OP_DEVNET_0_CHAIN_ID = 420120000;
-    uint256 public constant OP_DEVNET_1_CHAIN_ID = 420120001;
-
     /**
      * @notice Initializes the TransmitManager contract
      * @param socket_ The address of socket contract
@@ -48,27 +45,21 @@ contract SocketBatcher is Ownable {
             params_.transmitterSignature
         );
 
-        if (block.chainid == OP_DEVNET_0_CHAIN_ID || block.chainid == OP_DEVNET_1_CHAIN_ID) {
-            address transmitter = _recoverSigner(
-                keccak256(abi.encode(address(socket__), params_.payloadId)),
-                params_.transmitterSignature
-            );
-            ISwitchboard.PayloadParams memory payloadParams = ISwitchboard.PayloadParams({
-                payloadId: params_.payloadId,
-                appGateway: params_.appGateway,
-                transmitter: transmitter,
-                target: params_.target,
-                value: 0,
-                deadline: params_.deadline,
-                executionGasLimit: params_.executionGasLimit,
-                payload: params_.payload
-            });
-            ISwitchboard(params_.switchboard).syncOut(
-                params_.digest,
-                params_.payloadId,
-                payloadParams
-            );
-        }
+        address transmitter = _recoverSigner(
+            keccak256(abi.encode(address(socket__), params_.payloadId)),
+            params_.transmitterSignature
+        );
+        ISwitchboard.PayloadParams memory payloadParams = ISwitchboard.PayloadParams({
+            payloadId: params_.payloadId,
+            appGateway: params_.appGateway,
+            transmitter: transmitter,
+            target: params_.target,
+            value: 0,
+            deadline: params_.deadline,
+            executionGasLimit: params_.executionGasLimit,
+            payload: params_.payload
+        });
+        ISwitchboard(params_.switchboard).syncOut(params_.digest, params_.payloadId, payloadParams);
     }
 
     function _recoverSigner(
