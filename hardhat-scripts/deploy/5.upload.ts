@@ -9,7 +9,7 @@ import {
 import { config as dotenvConfig } from "dotenv";
 import fs from "fs";
 import path from "path";
-import { EVMX_CHAIN_ID, chains, mode } from "../config/config";
+import { EVMX_CHAIN_ID, mode, chains } from "../config/config";
 
 dotenvConfig();
 
@@ -67,7 +67,7 @@ const supportedChainSlugs = [EVMX_CHAIN_ID as ChainSlug, ...chains];
 
 export let config: S3Config = {
   //@ts-ignore
-  supportedChainSlugs: supportedChainSlugs,
+  supportedChainSlugs,
 };
 
 // Add config for each supported chain
@@ -122,5 +122,5 @@ async function uploadToS3(data: any, fileName: string = getFileName()) {
 }
 
 // Upload config to S3
-uploadToS3(config, "pocConfig.json");
-// uploadToS3(config);
+// uploadToS3(config, "pocConfig.json");
+uploadToS3(config);
