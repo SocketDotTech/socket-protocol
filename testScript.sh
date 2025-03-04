@@ -59,3 +59,20 @@ source .env && forge script script/admin/UpdateLimits.s.sol --broadcast --skip-s
 # add fees
 source .env && forge script script/helpers/PayFeesInArbitrumETH.s.sol --broadcast --skip-simulation 
 source .env && forge script script/helpers/AppGatewayFeeBalance.s.sol 
+
+
+
+source .env && forge script script/super-token/DeployGateway.s.sol --broadcast --skip-simulation --private-key $PRIVATE_KEY --legacy --with-gas-price 0
+source .env && forge script script/helpers/PayFeesInArbitrumETH.s.sol --broadcast --skip-simulation --private-key $PRIVATE_KEY
+
+source .env && cast send $APP_GATEWAY "deployContracts(uint32)" 420120000 --private-key $PRIVATE_KEY --legacy --gas-price 0
+source .env && cast send $APP_GATEWAY "deployContracts(uint32)" 420120001 --private-key $PRIVATE_KEY --legacy --gas-price 0
+
+source .env && forge script script/super-token/GetToken.s.sol --broadcast --skip-simulation
+source .env && forge script script/super-token/SetToken.s.sol --broadcast --skip-simulation --private-key $PRIVATE_KEY
+
+source .env && forge script script/super-token/Bridge.s.sol --broadcast --skip-simulation --private-key $PRIVATE_KEY --legacy --with-gas-price 0
+
+source .env && cast send $APP_GATEWAY "status()" --legacy --gas-price 0
+
+source .env && cast send $APP_GATEWAY "sbType()" --legacy --gas-price 0

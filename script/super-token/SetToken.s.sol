@@ -9,15 +9,15 @@ import {OpInteropSwitchboard} from "../../contracts/protocol/socket/switchboard/
 
 contract SetToken is Script {
     function run() external {
-        vm.createSelectFork(vm.envString("INTEROP_ALPHA_1_RPC"));
+        vm.createSelectFork(vm.envString("INTEROP_ALPHA_0_RPC"));
         uint256 privateKey = vm.envUint("SOCKET_SIGNER_KEY");
         vm.startBroadcast(privateKey);
 
         OpInteropSwitchboard switchboard = OpInteropSwitchboard(
             0x9EDfb162b725CF6d628D68af200cAe8b624111eD
         );
-        // 0: 0x425b451FE96F427Fd7FCD2a1B58fe70573CcdD56
-        // 1: 0xcBA03e3Fe32B41B0B90cf2b113Bc4990b22c4c5F
-        switchboard.setToken(0xcBA03e3Fe32B41B0B90cf2b113Bc4990b22c4c5F);
+        // Op 0 address: 0x46fc6C778E8F69fB97538530D1f4eCe674719604
+        // Op 1 address: 0x897f6507bFE6C365394377b86C158Df05e3DD12b
+        switchboard.setToken(0x46fc6C778E8F69fB97538530D1f4eCe674719604);
     }
 }
