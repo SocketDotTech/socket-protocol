@@ -13,4 +13,6 @@ interface IPromise {
     function markOnchainRevert(bytes32 asyncId_, bytes32 payloadId_) external;
 
     function resolved() external view returns (bool);
+
+    function setPayloadId(bytes32 payloadId_) external;
 }

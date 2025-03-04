@@ -155,6 +155,8 @@ contract DeliveryHelper is BatchAsync {
                 payloadBatch_.appGateway,
                 finalizeParams
             );
+
+            IForwarder(payloadDetails_.forwarder).setPayloadId(payloadId, batchPromise_);
         }
 
         tempPayloadIds.push(payloadId);
