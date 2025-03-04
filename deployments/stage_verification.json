@@ -1,6 +1,18 @@
 {
   "43": [
     [
+      "0x6dc109Ac040bC88F97B317bBb1a23236c5da1Cf6",
+      "DeliveryHelper",
+      "contracts/protocol/payload-delivery/app-gateway/DeliveryHelper.sol",
+      []
+    ],
+    [
+      "0x12103e799d8887034d4560A960C2410ceE751004",
+      "AddressResolver",
+      "contracts/protocol/AddressResolver.sol",
+      []
+    ],
+    [
       "0xF4D3BDe438416938217d4624c82AEbEb46CeD371",
       "AuctionManager",
       "contracts/protocol/payload-delivery/AuctionManager.sol",

@@ -20,7 +20,8 @@ contract DepositFees is Script {
         console.log("Sender address:", sender);
         uint256 balance = sender.balance;
         console.log("Sender balance in wei:", balance);
-
+        console.log("App Gateway:", appGateway);
+        console.log("Fees Plug:", address(feesPlug));
         uint feesAmount = 0.001 ether;
         feesPlug.deposit{value: feesAmount}(ETH_ADDRESS, appGateway, feesAmount);
     }

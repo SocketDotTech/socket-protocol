@@ -9,7 +9,6 @@ import { EVMX_CHAIN_ID, mode } from "../config/config";
 import { storeUnVerifiedParams, verify } from "../utils";
 
 import dev_verification from "../../deployments/dev_verification.json";
-import prod_verification from "../../deployments/prod_verification.json";
 import stage_verification from "../../deployments/stage_verification.json";
 
 const getVerificationParams = (mode: DeploymentMode) => {
@@ -18,8 +17,6 @@ const getVerificationParams = (mode: DeploymentMode) => {
       return dev_verification;
     case DeploymentMode.STAGE:
       return stage_verification;
-    case DeploymentMode.PROD:
-      return prod_verification;
     default:
       throw new Error(`Invalid deployment mode: ${mode}`);
   }
