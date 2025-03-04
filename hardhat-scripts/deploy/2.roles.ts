@@ -51,7 +51,7 @@ async function setRoleForContract(
 
   if (!hasRole) {
     let tx = await contract.grantRole(roleHash, targetAddress, {
-      ...overrides(chain),
+      ...await overrides(chain),
     });
     console.log(
       `granting ${roleName} role to ${targetAddress} for ${contractName}`,

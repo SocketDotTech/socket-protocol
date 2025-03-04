@@ -19,6 +19,7 @@ import {
   getAddresses,
   getInstance,
   getProviderFromChainSlug,
+  overrides,
   storeAddresses,
 } from "../utils";
 
@@ -48,6 +49,7 @@ export const main = async () => {
 
       await registerSb(
         chainAddresses[CORE_CONTRACTS.FastSwitchboard],
+        chain,
         signer,
         socketContract
       );
@@ -58,8 +60,8 @@ export const main = async () => {
           : (420120000 as ChainSlug);
 
       await addRemoteAddress(
-        chainAddresses[CORE_CONTRACTS.OpInteropSwitchboard],
-        addresses[remoteChain]?.[CORE_CONTRACTS.OpInteropSwitchboard],
+        chainAddresses[CORE_CONTRACTS.FastSwitchboard],
+        addresses[remoteChain]?.[CORE_CONTRACTS.FastSwitchboard],
         chain,
         signer,
         socketContract
@@ -82,6 +84,7 @@ export const main = async () => {
 
         await registerSb(
           chainAddresses[CORE_CONTRACTS.OpInteropSwitchboard],
+          chain,
           signer,
           socketContract
         );
@@ -130,7 +133,10 @@ async function setOnchainContracts(chain, addresses) {
         chain,
         socketAddress,
         contractFactoryPlugAddress,
-        feesPlugAddress
+        feesPlugAddress,
+        {
+          ...await overrides(chain),
+        }
       );
 
     console.log(`Setting onchain contracts for ${chain}, txHash: `, tx.hash);
@@ -162,14 +168,16 @@ async function setSwitchboard(chain, addresses, sbType, contractName) {
   if (currentSbAddress.toLowerCase() !== sbAddress.toLowerCase()) {
     const tx = await watcherPrecompile
       .connect(signer)
-      .setSwitchboard(chain, sbTypeHash, sbAddress);
+      .setSwitchboard(chain, sbTypeHash, sbAddress, {
+        ...await overrides(chain),
+      });
 
     console.log(`Setting switchboard for ${chain}, txHash: `, tx.hash);
     await tx.wait();
   }
 }
 
-const registerSb = async (sbAddress, signer, socket) => {
+const registerSb = async (sbAddress, chain, signer, socket) => {
   try {
     // used fast switchboard here as all have same function signature
     const switchboard = (
@@ -184,7 +192,9 @@ const registerSb = async (sbAddress, signer, socket) => {
     });
 
     if (Number(sb) == 0) {
-      const registerTx = await switchboard.registerSwitchboard();
+      const registerTx = await switchboard.registerSwitchboard({
+        ...await overrides(chain),
+      });
       console.log(`Registering Switchboard ${sbAddress}: ${registerTx.hash}`);
       await registerTx.wait();
     }
@@ -209,12 +219,17 @@ const addRemoteAddress = async (
     // send overrides while reading capacitor to avoid errors on mantle chain
     // some chains give balance error if gas price is used with from address as zero
     // therefore override from address as well
-    const remoteAddressContract = await socket.remoteAddress();
+    const remoteAddressContract = await switchboard.remoteAddress();
     if (remoteAddressContract == constants.AddressZero) {
       console.log(
         `Adding remote address ${remoteAddress} to Switchboard ${sbAddress} on ${chain}`
       );
-      const registerTx = await switchboard.setRemoteAddress(remoteAddress);
+      const registerTx = await switchboard.setRemoteAddress(
+        remoteAddress,
+        {
+          ...await overrides(chain),
+        }
+      );
 
       console.log(`Tx: ${registerTx.hash}`);
       await registerTx.wait();

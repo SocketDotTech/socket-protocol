@@ -97,7 +97,10 @@ async function connectPlug(
   const tx = await plug.functions["connectSocket"](
     appGateway,
     socket.address,
-    switchboard
+    switchboard,
+    {
+      ...await overrides(chain),
+    }
   );
   console.log(
     `Connecting ${plugContract} on ${chain} to ${appGateway} tx hash: ${tx.hash}`
@@ -210,7 +213,7 @@ export const updateConfigEVMx = async () => {
       );
       const { nonce, signature } = await signWatcherMessage(encodedMessage);
       const tx = await watcher.setAppGateways(appConfigs, nonce, signature, {
-        ...overrides(EVMX_CHAIN_ID),
+        ...await overrides(EVMX_CHAIN_ID),
       });
       console.log(`Updating EVMx Config tx hash: ${tx.hash}`);
       await tx.wait();
