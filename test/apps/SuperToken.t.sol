@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {SuperTokenAppGateway} from "./app-gateways/super-token/SuperTokenAppGateway.sol";
-import {SuperToken} from "./app-gateways/super-token/SuperToken.sol";
+import {SuperTokenAppGateway} from "./app-gateways/super-token-op/SuperTokenAppGateway.sol";
+import {SuperToken} from "./app-gateways/super-token-op/SuperToken.sol";
 import "../DeliveryHelper.t.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/protocol/utils/common/Constants.sol";
 
@@ -36,7 +36,7 @@ contract SuperTokenTest is DeliveryHelperTest {
     bytes32[] contractIds = new bytes32[](1);
 
     /// @dev Test amount for token transfers (0.01 ETH)
-    uint256 srcAmount = 0.01 ether;
+    uint256 amount = 0.01 ether;
     /// @dev Structure holding transfer order details
     SuperTokenAppGateway.TransferOrder transferOrder;
 
@@ -155,11 +155,15 @@ contract SuperTokenTest is DeliveryHelperTest {
         uint256 arbBalanceBefore = SuperToken(onChainArb).balanceOf(owner);
         uint256 optBalanceBefore = SuperToken(onChainOpt).balanceOf(owner);
 
+        hoax(owner);
+        getSocketConfig(optChainSlug).switchboard.setToken(onChainOpt);
+        getSocketConfig(optChainSlug).switchboard.syncIn(owner, amount);
+
         transferOrder = SuperTokenAppGateway.TransferOrder({
             srcToken: forwarderArb,
             dstToken: forwarderOpt,
             user: owner,
-            srcAmount: srcAmount,
+            amount: amount,
             deadline: block.timestamp + 1000000
         });
         bytes memory encodedOrder = abi.encode(transferOrder);
@@ -174,13 +178,13 @@ contract SuperTokenTest is DeliveryHelperTest {
 
         assertEq(
             SuperToken(onChainArb).balanceOf(owner),
-            arbBalanceBefore - srcAmount,
-            "Arb balance should be decreased by srcAmount"
+            arbBalanceBefore - amount,
+            "Arb balance should be decreased by amount"
         );
         assertEq(
             SuperToken(onChainOpt).balanceOf(owner),
-            optBalanceBefore + srcAmount,
-            "Opt balance should be increased by srcAmount"
+            optBalanceBefore + amount,
+            "Opt balance should be increased by amount"
         );
     }
 }

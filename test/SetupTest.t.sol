@@ -9,6 +9,7 @@ import "../contracts/interfaces/IForwarder.sol";
 import "../contracts/protocol/utils/common/AccessRoles.sol";
 import {Socket} from "../contracts/protocol/socket/Socket.sol";
 import "../contracts/protocol/socket/switchboard/FastSwitchboard.sol";
+import "../contracts/protocol/socket/switchboard/OpInteropSwitchboard.sol";
 import "../contracts/protocol/socket/SocketBatcher.sol";
 import "../contracts/protocol/AddressResolver.sol";
 import {ContractFactoryPlug} from "../contracts/protocol/payload-delivery/ContractFactoryPlug.sol";
@@ -30,8 +31,9 @@ contract SetupTest is Test {
     address watcherEOA = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     address transmitterEOA = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
 
-    uint32 arbChainSlug = 421614;
-    uint32 optChainSlug = 11155420;
+    uint32 arbChainSlug = 420120000;
+    uint32 optChainSlug = 420120001;
+
     uint32 evmxSlug = 1;
     uint256 expiryTime = 10000000;
 
@@ -45,7 +47,7 @@ contract SetupTest is Test {
     struct SocketContracts {
         uint32 chainSlug;
         Socket socket;
-        FastSwitchboard switchboard;
+        OpInteropSwitchboard switchboard;
         SocketBatcher socketBatcher;
         ContractFactoryPlug contractFactoryPlug;
         FeesPlug feesPlug;
@@ -66,7 +68,7 @@ contract SetupTest is Test {
     function deploySocket(uint32 chainSlug_) internal returns (SocketContracts memory) {
         Socket socket = new Socket(chainSlug_, owner, "test");
         SocketBatcher socketBatcher = new SocketBatcher(owner, socket);
-        FastSwitchboard switchboard = new FastSwitchboard(chainSlug_, socket, owner);
+        OpInteropSwitchboard switchboard = new OpInteropSwitchboard(chainSlug_, socket, owner);
 
         FeesPlug feesPlug = new FeesPlug(address(socket), owner);
         ContractFactoryPlug contractFactoryPlug = new ContractFactoryPlug(address(socket), owner);
@@ -88,11 +90,7 @@ contract SetupTest is Test {
             address(feesPlug)
         );
 
-        watcherPrecompile.setSwitchboard(
-            chainSlug_,
-            keccak256("FAST"),
-            address(switchboard)
-        );
+        watcherPrecompile.setSwitchboard(chainSlug_, keccak256("FAST"), address(switchboard));
         vm.stopPrank();
 
         return

@@ -30,11 +30,11 @@ contract SuperToken is ERC20, Ownable, PlugBase {
     }
 
     function mint(address user_, uint256 amount_) external onlySocket {
+        ISwitchboard(opSwitchboard).checkAndConsume(user_, amount_);
         _mint(user_, amount_);
     }
 
     function burn(address user_, uint256 amount_) external onlySocket {
-        ISwitchboard(opSwitchboard).checkAndConsume(user_, amount_);
         _burn(user_, amount_);
     }
 

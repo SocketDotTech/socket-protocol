@@ -23,7 +23,7 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         address srcToken;
         address dstToken;
         address user;
-        uint256 srcAmount;
+        uint256 amount;
         uint256 deadline;
     }
 
@@ -65,8 +65,8 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
 
     function transfer(bytes memory order_) external async {
         TransferOrder memory order = abi.decode(order_, (TransferOrder));
-        ISuperToken(order.srcToken).burn(order.user, order.srcAmount);
-        ISuperToken(order.dstToken).mint(order.user, order.srcAmount);
+        ISuperToken(order.srcToken).burn(order.user, order.amount);
+        ISuperToken(order.dstToken).mint(order.user, order.amount);
 
         emit Transferred(_getCurrentAsyncId());
     }
