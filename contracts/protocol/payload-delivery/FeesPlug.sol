@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-import "solmate/utils/SafeTransferLib.sol";
+import "solady/utils/SafeTransferLib.sol";
 import "../../base/PlugBase.sol";
 import "../utils/AccessControl.sol";
 import {RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
@@ -84,7 +84,7 @@ contract FeesPlug is PlugBase, AccessControl {
         balanceOf[token_] += amount_;
 
         if (token_ != ETH_ADDRESS) {
-            SafeTransferLib.safeTransferFrom(ERC20(token_), msg.sender, address(this), amount_);
+            SafeTransferLib.safeTransferFrom(token_, msg.sender, address(this), amount_);
         }
 
         emit FeesDeposited(appGateway_, token_, amount_);
@@ -96,9 +96,9 @@ contract FeesPlug is PlugBase, AccessControl {
     /// @param receiver_ The receiver address
     function _transferTokens(address token_, uint256 amount_, address receiver_) internal {
         if (token_ == ETH_ADDRESS) {
-            SafeTransferLib.safeTransferETH(payable(receiver_), amount_);
+            SafeTransferLib.forceSafeTransferETH(receiver_, amount_);
         } else {
-            SafeTransferLib.safeTransfer(ERC20(token_), receiver_, amount_);
+            SafeTransferLib.safeTransfer(token_, receiver_, amount_);
         }
     }
 

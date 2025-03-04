@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "solmate/utils/SafeTransferLib.sol";
-import "solmate/tokens/ERC20.sol";
+import "solady/utils/SafeTransferLib.sol";
 import {ZeroAddress, InvalidTokenAddress} from "./common/Errors.sol";
 import {ETH_ADDRESS} from "./common/Constants.sol";
 
@@ -22,10 +21,10 @@ library RescueFundsLib {
         if (rescueTo_ == address(0)) revert ZeroAddress();
 
         if (token_ == ETH_ADDRESS) {
-            SafeTransferLib.safeTransferETH(rescueTo_, amount_);
+            SafeTransferLib.forceSafeTransferETH(rescueTo_, amount_);
         } else {
             if (token_.code.length == 0) revert InvalidTokenAddress();
-            SafeTransferLib.safeTransfer(ERC20(token_), rescueTo_, amount_);
+            SafeTransferLib.safeTransfer(token_, rescueTo_, amount_);
         }
     }
 }
