@@ -62,6 +62,7 @@ contract DeliveryHelper is BatchAsync {
         if (payloadBatch.lastBatchPromises.length > 0) {
             // Check if all promises are resolved
             for (uint256 i = 0; i < payloadBatch.lastBatchPromises.length; i++) {
+                if (payloadBatch.lastBatchPromises[i] == address(0)) continue;
                 if (!IPromise(payloadBatch.lastBatchPromises[i]).resolved()) {
                     if (isCallback_) revert PromisesNotResolved();
                 }

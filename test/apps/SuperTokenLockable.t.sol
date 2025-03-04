@@ -34,9 +34,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     function deploySuperTokenApp() internal {
         SuperTokenLockableAppGateway superTokenLockableApp = new SuperTokenLockableAppGateway(
             address(addressResolver),
-            address(auctionManager),
             owner,
-            FAST,
             createFees(maxFees),
             SuperTokenLockableAppGateway.ConstructorParams({
                 _burnLimit: 10000000000000000000000,

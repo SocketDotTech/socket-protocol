@@ -18,8 +18,6 @@ contract CounterTest is DeliveryHelperTest {
 
         counterGateway = new CounterAppGateway(
             address(addressResolver),
-            address(auctionManager),
-            FAST,
             createFees(feesAmount)
         );
         depositFees(address(counterGateway), createFees(1 ether));

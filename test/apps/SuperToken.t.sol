@@ -64,9 +64,7 @@ contract SuperTokenTest is DeliveryHelperTest {
     function deploySuperTokenApp() internal {
         SuperTokenAppGateway superTokenApp = new SuperTokenAppGateway(
             address(addressResolver),
-            address(auctionManager),
             owner,
-            FAST,
             createFees(maxFees),
             SuperTokenAppGateway.ConstructorParams({
                 name_: "SUPER TOKEN",

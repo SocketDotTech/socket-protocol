@@ -60,22 +60,6 @@ contract DeliveryHelperTest is SetupTest {
             feesManagerData
         );
 
-        bytes memory deliveryHelperData = abi.encodeWithSelector(
-            DeliveryHelper.initialize.selector,
-            address(addressResolver),
-            address(feesManagerProxy),
-            owner,
-            bidTimeout
-        );
-
-        vm.expectEmit(true, true, true, false);
-        emit Initialized(version);
-        address deliveryHelperProxy = proxyFactory.deployAndCall(
-            address(deliveryHelperImpl),
-            watcherEOA,
-            deliveryHelperData
-        );
-
         bytes memory auctionManagerData = abi.encodeWithSelector(
             AuctionManager.initialize.selector,
             evmxSlug,
@@ -92,16 +76,31 @@ contract DeliveryHelperTest is SetupTest {
             auctionManagerData
         );
 
+        bytes memory deliveryHelperData = abi.encodeWithSelector(
+            DeliveryHelper.initialize.selector,
+            address(addressResolver),
+            owner,
+            bidTimeout
+        );
+
+        vm.expectEmit(true, true, true, false);
+        emit Initialized(version);
+        address deliveryHelperProxy = proxyFactory.deployAndCall(
+            address(deliveryHelperImpl),
+            watcherEOA,
+            deliveryHelperData
+        );
+
         // Assign proxy addresses to contract variables
         feesManager = FeesManager(address(feesManagerProxy));
         deliveryHelper = DeliveryHelper(address(deliveryHelperProxy));
         auctionManager = AuctionManager(address(auctionManagerProxy));
 
-        hoax(watcherEOA);
+        vm.startPrank(watcherEOA);
         addressResolver.setDeliveryHelper(address(deliveryHelper));
-
-        hoax(watcherEOA);
+        addressResolver.setDefaultAuctionManager(address(auctionManager));
         addressResolver.setFeesManager(address(feesManager));
+        vm.stopPrank();
 
         // chain core contracts
         arbConfig = deploySocket(arbChainSlug);

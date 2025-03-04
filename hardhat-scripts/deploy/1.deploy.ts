@@ -1,17 +1,17 @@
 import {
-  ChainSlug,
-  DeploymentMode,
   ChainAddressesObj,
+  ChainSlug
 } from "@socket.tech/socket-protocol-common";
 import { config } from "dotenv";
 import { Contract, Signer, Wallet, providers } from "ethers";
+import { formatEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { BID_TIMEOUT, EVMX_CHAIN_ID, EXPIRY_TIME, MAX_LIMIT } from "../config";
 import {
   auctionEndDelaySeconds,
   chains,
-  mode,
   logConfig,
+  mode,
 } from "../config/config";
 import {
   CORE_CONTRACTS,
@@ -32,9 +32,25 @@ let EVMxOwner: string;
 
 const main = async () => {
   logConfig();
+  await logBalances();
   await deployEVMxContracts();
   await deploySocketContracts();
 };
+
+const logBalances = async () => {
+  const evmxDeployer = new ethers.Wallet(process.env.WATCHER_PRIVATE_KEY as string);
+  const socketDeployer = new ethers.Wallet(process.env.SOCKET_SIGNER_KEY as string);
+  let provider = getProviderFromChainSlug(EVMX_CHAIN_ID as ChainSlug);  
+  const evmxBalance = await provider.getBalance(evmxDeployer.address);
+  console.log(`EVMx Deployer ${evmxDeployer.address} balance on ${EVMX_CHAIN_ID}:`,  formatEther(evmxBalance));
+  await Promise.all(chains.map(async (chain) => {
+    const provider = getProviderFromChainSlug(chain);
+    const socketBalance = await provider.getBalance(socketDeployer.address);
+    console.log(`Socket Deployer ${socketDeployer.address} balance on ${chain}:`,  formatEther(socketBalance));
+  }));
+};
+
+
 
 const deployEVMxContracts = async () => {
   try {
@@ -153,6 +169,14 @@ const deployEVMxContracts = async () => {
         "feesManager",
         "setFeesManager",
         feesManagerAddress,
+        deployUtils.signer
+      );
+
+      await updateContractSettings(
+        addressResolver,
+        "defaultAuctionManager",
+        "setDefaultAuctionManager",
+        deployUtils.addresses[EVMxCoreContracts.AuctionManager],
         deployUtils.signer
       );
 
