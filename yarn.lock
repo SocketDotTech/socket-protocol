@@ -2071,10 +2071,10 @@
     "@smithy/types" "^4.1.0"
     tslib "^2.6.2"
 
-"@socket.tech/socket-protocol-common@1.1.31":
-  version "1.1.31"
-  resolved "https://registry.yarnpkg.com/@socket.tech/socket-protocol-common/-/socket-protocol-common-1.1.31.tgz#d95b1b6caf69a11c6bd13b18b7871c57e7d283fb"
-  integrity sha512-Hp1er4kRqCfeuvQFFgxooT0XBbO4nBrpL8/SYB/BNMdWfR9hk6PVE8MUnoIqTUJJTvIePKk+GOajl8MVqPD3VQ==
+"@socket.tech/socket-protocol-common@1.1.32":
+  version "1.1.32"
+  resolved "https://registry.yarnpkg.com/@socket.tech/socket-protocol-common/-/socket-protocol-common-1.1.32.tgz#02779e83bed9b3cf51a9cdce655f6522aaa20ad4"
+  integrity sha512-1BUeqFbDrZBn56mBzSivtWWMMMhUqZzGuwmKEu6ZKjJfZhZInVYNs3ZUkhVaZSznpMZSYt6qypWkQHj3nTQZIA==
   dependencies:
     "@socket.tech/socket-protocol" "^1.0.15"
     axios "^1.7.9"

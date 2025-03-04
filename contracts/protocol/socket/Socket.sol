@@ -46,16 +46,10 @@ contract Socket is SocketUtils {
     ////////////////////////////////////////////////////////////
     uint64 public callCounter;
 
-    enum ExecutionStatus {
-        NotExecuted,
-        Executed,
-        Reverted
-    }
-
     /**
      * @dev keeps track of whether a payload has been executed or not using payload id
      */
-    mapping(bytes32 => ExecutionStatus) public payloadExecuted;
+    mapping(bytes32 => ExecutionStatus) public override payloadExecuted;
 
     constructor(
         uint32 chainSlug_,

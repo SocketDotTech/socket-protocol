@@ -64,6 +64,12 @@ interface ISocket {
         bytes payload;
     }
 
+    enum ExecutionStatus {
+        NotExecuted,
+        Executed,
+        Reverted
+    }
+
     /**
      * @notice To call the appGateway on EVMx. Should only be called by a plug.
      * @param payload_ bytes to be delivered to the Plug on EVMx
@@ -99,4 +105,6 @@ interface ISocket {
     function getPlugConfig(
         address plugAddress_
     ) external view returns (address appGateway, address switchboard);
+
+    function payloadExecuted(bytes32 payloadId_) external view returns (ExecutionStatus);
 }

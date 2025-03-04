@@ -32,6 +32,16 @@ export const chainOverrides: {
     // gasLimit: 1_000_000_000,
     gasPrice: 0,
   },
+  [ChainSlug.INTEROP_ALPHA_0]: {
+    // type: 0,
+    gasLimit: 1_000_000,
+    // gasPrice: 0,
+  },
+  [ChainSlug.INTEROP_ALPHA_1]: {
+    // type: 0,
+    gasLimit: 1_000_000,
+    // gasPrice: 0,
+  },
 };
 
 export const overrides = async (

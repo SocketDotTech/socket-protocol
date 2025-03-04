@@ -22,12 +22,12 @@ interface IWatcherPrecompile {
     /// @dev Only callable by authorized addresses
     function setOnChainContracts(
         uint32 chainSlug_,
-        bytes32 sbType_,
-        address switchboard_,
         address socket_,
         address contractFactoryPlug_,
         address feesPlug_
     ) external;
+
+    function setSwitchboard(uint32 chainSlug_, bytes32 sbType_, address switchboard_) external;
 
     /// @notice Retrieves plug configuration for a specific network and plug
     /// @param chainSlug_ The identifier of the network

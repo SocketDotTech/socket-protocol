@@ -2,6 +2,7 @@ export enum CORE_CONTRACTS {
   Socket = "Socket",
   SocketBatcher = "SocketBatcher",
   FastSwitchboard = "FastSwitchboard",
+  OpInteropSwitchboard = "OpInteropSwitchboard",
   FeesPlug = "FeesPlug",
   ContractFactoryPlug = "ContractFactoryPlug",
 }
