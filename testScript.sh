@@ -55,6 +55,7 @@ source .env && forge script script/mock/FinalizeAndExecution.s.sol --broadcast -
 source .env && forge script script/admin/checkLimits.s.sol --broadcast --skip-simulation
 source .env && forge script script/admin/UpdateLimits.s.sol --broadcast --skip-simulation
 
+source .env && forge script script/super-token/Bridge.s.sol --broadcast --skip-simulation --private-key $PRIVATE_KEY --legacy --with-gas-price 0
 
 # add fees
 source .env && forge script script/helpers/PayFeesInArbitrumETH.s.sol --broadcast --skip-simulation 
@@ -71,8 +72,10 @@ source .env && cast send $APP_GATEWAY "deployContracts(uint32)" 420120001 --priv
 source .env && forge script script/super-token/GetToken.s.sol --broadcast --skip-simulation
 source .env && forge script script/super-token/SetToken.s.sol --broadcast --skip-simulation --private-key $PRIVATE_KEY
 
-source .env && forge script script/super-token/Bridge.s.sol --broadcast --skip-simulation --private-key $PRIVATE_KEY --legacy --with-gas-price 0
 
-source .env && cast send $APP_GATEWAY "status()" --legacy --gas-price 0
 
-source .env && cast send $APP_GATEWAY "sbType()" --legacy --gas-price 0
+
+# // commands
+source .env && cast call $APP_GATEWAY "status()" --rpc-url $EVMX_RPC | cast to-ascii   
+
+source .env && cast send $APP_GATEWAY "transfer(bytes)" 0x0000000000000000000000009c79440ad7e70b895d88433d7b268ba4482e406f000000000000000000000000d6ce61b9be8c8ad07b043e61079d66fb10f2e405000000000000000000000000b62505feacc486e809392c65614ce4d7b051923b00000000000000000000000000000000000000000000000000000000000186a00000000000000000000000000000000000000000000000000000000067c88d59 --private-key $PRIVATE_KEY --legacy --gas-price 0
