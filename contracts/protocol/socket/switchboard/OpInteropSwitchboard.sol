@@ -6,19 +6,20 @@ import {SuperchainEnabled} from "./SuperchainEnabled.sol";
 import {ISocket} from "../../../interfaces/ISocket.sol";
 
 contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
-    mapping(bytes32 => bool) public isSyncedOut;
-    mapping(bytes32 => bytes32) public payloadIdToDigest;
-    mapping(address => uint256) public unminted;
     address public token;
     address public remoteAddress;
     uint256 public remoteChainId;
+
+    mapping(bytes32 => bool) public isSyncedOut;
+    mapping(bytes32 => bytes32) public payloadIdToDigest;
+    mapping(address => uint256) public unminted;
+
+    error OnlyTokenAllowed();
 
     modifier onlyToken() {
         if (msg.sender != token) revert OnlyTokenAllowed();
         _;
     }
-
-    error OnlyTokenAllowed();
 
     constructor(
         uint32 chainSlug_,

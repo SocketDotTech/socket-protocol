@@ -14,9 +14,7 @@ interface ISwitchboard {
  * @notice An ERC20 contract which enables bridging a token to its sibling chains.
  */
 contract SuperToken is ERC20, Ownable, PlugBase {
-    mapping(address => uint256) public lockedTokens;
     address public opSwitchboard;
-
     error InvalidSender();
 
     constructor(
@@ -38,13 +36,7 @@ contract SuperToken is ERC20, Ownable, PlugBase {
         _burn(user_, amount_);
     }
 
-    function setSocket(address newSocket_) external onlyOwner {
-        _setSocket(newSocket_);
-    }
-
-    function setOpSwitchboard(address newOpSwitchboard_) external onlyOwner {
-        opSwitchboard = newOpSwitchboard_;
-    }
+    //// INITIALIZATION ////
 
     function setupToken(address owner_, address opSwitchboard_) external {
         if (owner() != address(0) && owner() != msg.sender) revert InvalidSender();
