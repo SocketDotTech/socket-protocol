@@ -9,7 +9,6 @@ import {ETH_ADDRESS} from "../../contracts/protocol/utils/common/Constants.sol";
 
 contract GetToken is Script {
     function run() external {
-        address addressResolver = vm.envAddress("ADDRESS_RESOLVER");
         string memory rpc = vm.envString("EVMX_RPC");
         vm.createSelectFork(rpc);
         // Setting fee payment on Arbitrum Sepolia

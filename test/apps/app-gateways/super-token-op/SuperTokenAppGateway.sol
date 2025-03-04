@@ -8,12 +8,12 @@ import "./ISuperToken.sol";
 import "./SuperToken.sol";
 
 contract SuperTokenAppGateway is AppGatewayBase, Ownable {
-    bytes32 public superToken = _createContractId("superToken")
+    bytes32 public superToken = _createContractId("superToken");
     string public status;
 
     event Transferred(bytes32 asyncId);
 
-   struct TransferOrder {
+    struct TransferOrder {
         address srcToken;
         address dstToken;
         address user;
@@ -24,18 +24,11 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
     constructor(
         address addressResolver_,
         address owner_,
-        Fees memory fees_,
-        ConstructorParams memory params_
+        Fees memory fees_
     ) AppGatewayBase(addressResolver_) {
         creationCodeWithArgs[superToken] = abi.encodePacked(
             type(SuperToken).creationCode,
-            abi.encode(
-                params_.name_,
-                params_.symbol_,
-                params_.decimals_,
-                params_.initialSupplyHolder_,
-                params_.initialSupply_
-            )
+            abi.encode("SUPER TOKEN", "SUPER", 18, owner_, 1000000000 ether)
         );
 
         // sets the fees data like max fees, chain and token for all transfers
@@ -56,16 +49,16 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
 
     function transfer(bytes memory order_) external async {
         TransferOrder memory order = abi.decode(order_, (TransferOrder));
-        status = "bridging";
-        
+        status = "Bridging";
+
         ISuperToken(order.srcToken).burn(order.user, order.amount);
         ISuperToken(order.dstToken).mint(order.user, order.amount);
-        IPromise(order.dstToken).then(this.updateStatus.selector, abi.encode("bridged"));
+        IPromise(order.dstToken).then(this.updateStatus.selector, abi.encode("Bridged"));
 
         emit Transferred(_getCurrentAsyncId());
     }
 
-    function updateStatus(string memory status_, bytes memory ) external onlyPromises  {
+    function updateStatus(string memory status_, bytes memory) external onlyPromises {
         status = status_;
     }
 }

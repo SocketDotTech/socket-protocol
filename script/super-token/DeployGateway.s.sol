@@ -24,18 +24,7 @@ contract DeployTokenGateway is Script {
             amount: 0.00001 ether
         });
 
-        SuperTokenAppGateway gateway = new SuperTokenAppGateway(
-            addressResolver,
-            deployer,
-            fees,
-            SuperTokenAppGateway.ConstructorParams({
-                name_: "SUPER TOKEN",
-                symbol_: "SUPER",
-                decimals_: 18,
-                initialSupplyHolder_: deployer,
-                initialSupply_: 1000000000 ether
-            })
-        );
+        SuperTokenAppGateway gateway = new SuperTokenAppGateway(addressResolver, deployer, fees);
 
         console.log("Contracts deployed:");
         console.log("SuperTokenAppGateway:", address(gateway));
