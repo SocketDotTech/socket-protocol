@@ -24,7 +24,6 @@ import {
   hardhatChainNameToSlug,
 } from "@socket.tech/socket-protocol-common";
 import { EVMX_CHAIN_ID } from "./hardhat-scripts/config/config";
-import { BASE_SEPOLIA_CHAIN_ID } from "./hardhat-scripts/constants";
 
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || "./.env";
 dotenvConfig({ path: resolve(__dirname, dotenvConfigPath) });
@@ -66,8 +65,18 @@ let liveNetworks = {
   },
   ["base_sepolia"]: {
     accounts: [`0x${privateKey}`],
-    chainId: BASE_SEPOLIA_CHAIN_ID,
+    chainId: ChainId.BASE_SEPOLIA,
     url: process.env.BASE_SEPOLIA_RPC,
+  },
+  ["interop_alpha_0"]: {
+    accounts: [`0x${privateKey}`],
+    chainId: ChainId.INTEROP_ALPHA_0,
+    url: process.env.INTEROP_ALPHA_0_RPC,
+  },
+  ["interop_alpha_1"]: {
+    accounts: [`0x${privateKey}`],
+    chainId: ChainId.INTEROP_ALPHA_1,
+    url: process.env.INTEROP_ALPHA_1_RPC,
   },
 };
 
@@ -121,10 +130,26 @@ const config: HardhatUserConfig = {
       },
       {
         network: "baseTestnet",
-        chainId: BASE_SEPOLIA_CHAIN_ID,
+        chainId: ChainId.BASE_SEPOLIA,
         urls: {
           apiURL: "https://api-sepolia.basescan.org/api",
           browserURL: "https://sepolia.basescan.org/",
+        },
+      },
+      {
+        network: "interopAlpha0",
+        chainId: ChainId.INTEROP_ALPHA_0,
+        urls: {
+          apiURL: "https://optimism-interop-alpha-0.blockscout.com/api",
+          browserURL: "https://optimism-interop-alpha-0.blockscout.com/",
+        },
+      },
+      {
+        network: "interopAlpha1",
+        chainId: ChainId.INTEROP_ALPHA_1,
+        urls: {
+          apiURL: "https://optimism-interop-alpha-1.blockscout.com/api",
+          browserURL: "https://optimism-interop-alpha-1.blockscout.com/",
         },
       },
       {

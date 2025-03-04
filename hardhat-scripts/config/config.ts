@@ -24,10 +24,12 @@ export const logConfig = () => {
 };
 
 export const chains: Array<ChainSlug> = [
-  ChainSlug.ARBITRUM_SEPOLIA,
-  ChainSlug.OPTIMISM_SEPOLIA,
-  ChainSlug.SEPOLIA,
-  ChainSlug.BASE_SEPOLIA,
+  // ChainSlug.ARBITRUM_SEPOLIA,
+  // ChainSlug.OPTIMISM_SEPOLIA,
+  // ChainSlug.SEPOLIA,
+  // ChainSlug.BASE_SEPOLIA,
+  ChainSlug.INTEROP_ALPHA_0,
+  ChainSlug.INTEROP_ALPHA_1,
 ];
 
 export const auctionEndDelaySeconds = 0;
