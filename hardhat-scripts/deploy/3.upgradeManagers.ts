@@ -7,7 +7,7 @@ import {
 import { config as dotenvConfig } from "dotenv";
 dotenvConfig();
 
-import { Wallet } from "ethers";
+import { constants, Wallet } from "ethers";
 import { ethers } from "hardhat";
 import { chains, EVMX_CHAIN_ID, mode } from "../config";
 import {
@@ -48,6 +48,19 @@ export const main = async () => {
 
       await registerSb(
         chainAddresses[CORE_CONTRACTS.FastSwitchboard],
+        signer,
+        socketContract
+      );
+
+      const remoteChain =
+        chain.toString() == "420120000"
+          ? (420120001 as ChainSlug)
+          : (420120000 as ChainSlug);
+
+      await addRemoteAddress(
+        chainAddresses[CORE_CONTRACTS.OpInteropSwitchboard],
+        addresses[remoteChain]?.[CORE_CONTRACTS.OpInteropSwitchboard],
+        chain,
         signer,
         socketContract
       );
@@ -108,7 +121,7 @@ async function setOnchainContracts(chain, addresses) {
   if (
     currentSocket.toLowerCase() !== socketAddress.toLowerCase() ||
     currentContractFactoryPlug.toLowerCase() !==
-      contractFactoryPlugAddress.toLowerCase() ||
+    contractFactoryPlugAddress.toLowerCase() ||
     currentFeesPlug.toLowerCase() !== feesPlugAddress.toLowerCase()
   ) {
     const tx = await watcherPrecompile
@@ -173,6 +186,37 @@ const registerSb = async (sbAddress, signer, socket) => {
     if (Number(sb) == 0) {
       const registerTx = await switchboard.registerSwitchboard();
       console.log(`Registering Switchboard ${sbAddress}: ${registerTx.hash}`);
+      await registerTx.wait();
+    }
+  } catch (error) {
+    throw error;
+  }
+};
+
+const addRemoteAddress = async (
+  sbAddress,
+  remoteAddress,
+  chain,
+  signer,
+  socket
+) => {
+  try {
+    // used fast switchboard here as all have same function signature
+    const switchboard = (
+      await getInstance(CORE_CONTRACTS.OpInteropSwitchboard, sbAddress)
+    ).connect(signer);
+
+    // send overrides while reading capacitor to avoid errors on mantle chain
+    // some chains give balance error if gas price is used with from address as zero
+    // therefore override from address as well
+    const remoteAddressContract = await socket.remoteAddress();
+    if (remoteAddressContract == constants.AddressZero) {
+      console.log(
+        `Adding remote address ${remoteAddress} to Switchboard ${sbAddress} on ${chain}`
+      );
+      const registerTx = await switchboard.setRemoteAddress(remoteAddress);
+
+      console.log(`Tx: ${registerTx.hash}`);
       await registerTx.wait();
     }
   } catch (error) {
