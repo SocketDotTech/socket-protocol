@@ -9,7 +9,7 @@ import "./SuperToken.sol";
 
 contract SuperTokenAppGateway is AppGatewayBase, Ownable {
     bytes32 public superToken = _createContractId("superToken")
-    mapping(uint32 => uint256) public balanceOf;
+    string public status;
 
     event Transferred(bytes32 asyncId);
 
@@ -56,23 +56,16 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
 
     function transfer(bytes memory order_) external async {
         TransferOrder memory order = abi.decode(order_, (TransferOrder));
+        status = "bridging";
+        
         ISuperToken(order.srcToken).burn(order.user, order.amount);
         ISuperToken(order.dstToken).mint(order.user, order.amount);
-        IPromise(order.dstToken).then(this.readBalance.selector, abi.encode(order.dstToken, order.user));
+        IPromise(order.dstToken).then(this.updateStatus.selector, abi.encode("bridged"));
 
         emit Transferred(_getCurrentAsyncId());
     }
 
-    function updateBalance(uint32 chainSlug_, bytes memory returnData_) external onlyPromises  {
-        uint256 balance = abi.decode(returnData_, (uint256));
-        balanceOf[chainSlug_] += balance;
-    }
-
-    function readBalance(address token_, address user_, bytes memory returnData_) internal onlyPromises async {
-        _setOverrides(Read.ON);
-        ISuperToken(token_).balanceOf(user_);
-        IPromise(order.dstToken).then(this.updateBalance.selector, abi.encode(order.dstToken, order.user));
-        _setOverrides(Read.OFF);
-        return balance;
+    function updateStatus(string memory status_, bytes memory ) external onlyPromises  {
+        status = status_;
     }
 }
