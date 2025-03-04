@@ -14,8 +14,8 @@ contract Bridge is Script {
         vm.startBroadcast(privateKey);
 
         SuperTokenAppGateway.TransferOrder memory order = SuperTokenAppGateway.TransferOrder({
-            srcToken: 0x3b0FF0fe7c43f7105CE1E4cE01F51344ceA77Bc0,
-            dstToken: 0x512E61D0057c7a99b323A080018df5D9618852Aa,
+            srcToken: 0x9C79440aD7e70b895d88433D7B268BA4482E406F,
+            dstToken: 0xD6CE61B9BE8C8aD07b043e61079d66FB10f2E405,
             user: 0xb62505feacC486e809392c65614Ce4d7b051923b,
             amount: 100000,
             deadline: block.timestamp + 1 days
