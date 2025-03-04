@@ -24,7 +24,13 @@ contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
         uint32 chainSlug_,
         ISocket socket_,
         address owner_
-    ) FastSwitchboard(chainSlug_, socket_, owner_) {}
+    ) FastSwitchboard(chainSlug_, socket_, owner_) {
+        if (chainSlug_ == 420120000) {
+            remoteChainId = 420120001;
+        } else if (chainSlug_ == 420120001) {
+            remoteChainId = 420120000;
+        }
+    }
 
     function attest(bytes32 payloadId_, bytes32 digest_, bytes calldata proof_) external override {
         address watcher = _recoverSigner(keccak256(abi.encode(address(this), digest_)), proof_);
@@ -56,8 +62,9 @@ contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
         ISocket.ExecutionStatus isExecuted = socket__.payloadExecuted(payloadId_);
         if (isExecuted != ISocket.ExecutionStatus.Executed) return;
 
-        (address user, uint256 amount) = _decodeMint(payloadParams_.payload);
+        (address user, uint256 amount, bool isBurn) = _decodeBurn(payloadParams_.payload);
 
+        if (!isBurn) return;
         _xMessageContract(
             remoteChainId,
             remoteAddress,
@@ -72,10 +79,24 @@ contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
         unminted[user_] += amount_;
     }
 
-    function _decodeMint(
+    function _decodeBurn(
         bytes memory payload
-    ) internal pure returns (address user, uint256 amount) {
-        (, , amount, user) = abi.decode(payload, (bytes4, address, uint256, address));
+    ) internal pure returns (address user, uint256 amount, bool isBurn) {
+        // Extract function selector from payload
+        bytes4 selector;
+        assembly {
+            // Load first 4 bytes from payload data
+            selector := mload(add(payload, 32))
+        }
+        // Check if selector matches burn()
+        if (selector != bytes4(0x9dc29fac)) return (user, amount, false);
+
+        // Decode the payload after the selector (skip first 4 bytes)
+        assembly {
+            user := mload(add(add(payload, 36), 0)) // 32 + 4 bytes offset for first param
+            amount := mload(add(add(payload, 68), 0)) // 32 + 4 + 32 bytes offset for second param
+        }
+        isBurn = true;
     }
 
     function _packPayload(PayloadParams memory payloadParams_) internal pure returns (bytes32) {
