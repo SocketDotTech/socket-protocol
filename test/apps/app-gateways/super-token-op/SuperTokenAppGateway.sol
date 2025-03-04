@@ -8,19 +8,12 @@ import "./ISuperToken.sol";
 import "./SuperToken.sol";
 
 contract SuperTokenAppGateway is AppGatewayBase, Ownable {
-    bytes32 public superToken = _createContractId("superToken");
+    bytes32 public superToken = _createContractId("superToken")
+    mapping(uint32 => uint256) public balanceOf;
 
     event Transferred(bytes32 asyncId);
 
-    struct ConstructorParams {
-        string name_;
-        string symbol_;
-        uint8 decimals_;
-        address initialSupplyHolder_;
-        uint256 initialSupply_;
-    }
-
-    struct TransferOrder {
+   struct TransferOrder {
         address srcToken;
         address dstToken;
         address user;
@@ -30,12 +23,10 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
 
     constructor(
         address addressResolver_,
-        address auctionManager_,
         address owner_,
-        bytes32 sbType_,
         Fees memory fees_,
         ConstructorParams memory params_
-    ) AppGatewayBase(addressResolver_, auctionManager_, sbType_) {
+    ) AppGatewayBase(addressResolver_) {
         creationCodeWithArgs[superToken] = abi.encodePacked(
             type(SuperToken).creationCode,
             abi.encode(
@@ -54,26 +45,34 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
     }
 
     function deployContracts(uint32 chainSlug_) external async {
-        address switchboard = watcherPrecompile__().switchboards(chainSlug_, sbType);
+        address opInteropSwitchboard = watcherPrecompile__().switchboards(chainSlug_, sbType);
         bytes memory initData = abi.encodeWithSelector(
             SuperToken.setupToken.selector,
             owner(),
-            switchboard
+            opInteropSwitchboard
         );
         _deploy(superToken, chainSlug_, IsPlug.YES, initData);
-    }
-
-    // no need to call this directly, will be called automatically after all contracts are deployed.
-    // check AppGatewayBase._deploy and AppGatewayBase.onBatchComplete
-    function initialize(uint32) public pure override {
-        return;
     }
 
     function transfer(bytes memory order_) external async {
         TransferOrder memory order = abi.decode(order_, (TransferOrder));
         ISuperToken(order.srcToken).burn(order.user, order.amount);
         ISuperToken(order.dstToken).mint(order.user, order.amount);
+        IPromise(order.dstToken).then(this.readBalance.selector, abi.encode(order.dstToken, order.user));
 
         emit Transferred(_getCurrentAsyncId());
+    }
+
+    function updateBalance(uint32 chainSlug_, bytes memory returnData_) external onlyPromises  {
+        uint256 balance = abi.decode(returnData_, (uint256));
+        balanceOf[chainSlug_] += balance;
+    }
+
+    function readBalance(address token_, address user_, bytes memory returnData_) internal onlyPromises async {
+        _setOverrides(Read.ON);
+        ISuperToken(token_).balanceOf(user_);
+        IPromise(order.dstToken).then(this.updateBalance.selector, abi.encode(order.dstToken, order.user));
+        _setOverrides(Read.OFF);
+        return balance;
     }
 }

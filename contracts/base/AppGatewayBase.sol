@@ -56,11 +56,13 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         _setAddressResolver(addressResolver_);
         sbType = FAST;
     }
+
     /// @notice Sets the switchboard type
     /// @param sbType_ The switchboard type
     function _setSbType(bytes32 sbType_) internal {
         sbType = sbType_;
     }
+
     /// @notice Creates a contract ID
     /// @param contractName_ The contract name
     /// @return bytes32 The contract ID
