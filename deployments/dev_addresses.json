@@ -1,1 +1,32 @@
-{}
+{
+  "7625382": {
+    "AddressResolver": "0x26FDDCE85557c98C20C7C5077dF44e6f239eDdFD",
+    "AddressResolverImpl": "0x4106c821Cc5119cE276A58380FD3CD18469c976f",
+    "AuctionManager": "0xB16d95D5Fd6Ccf80895427455EC9AfEfD2729C99",
+    "AuctionManagerImpl": "0xcc9486bce931041d1393921b32f7b4C60F6eAA99",
+    "DeliveryHelper": "0x8be1C218D5e2572D1d324be4833Ee9B62fBFA2ee",
+    "DeliveryHelperImpl": "0x30b5Cf86f186354C3C82C6b987F1Acb43f420a65",
+    "ERC1967Factory": "0x311fA7550C52c59AB3Dc3c18Fb11aa566d4b35B9",
+    "FeesManager": "0x9a2CeEc756013b71C3604C17d7A0B1Ae62E26767",
+    "FeesManagerImpl": "0xe519FEa99893BFF9334EF0B5253ea330bB73A7Fd",
+    "startBlock": 497366,
+    "WatcherPrecompile": "0xB15E7B893E3Ef6819A3570154B75d3A5AeF0081B",
+    "WatcherPrecompileImpl": "0x5B7600B2D9B14a5Ff79dd20845A88370D3F1Bf74"
+  },
+  "420120000": {
+    "ContractFactoryPlug": "0xee1Aef0b06f63Aa1c881838794Dd0876462c2B0d",
+    "FastSwitchboard": "0x9EDfb162b725CF6d628D68af200cAe8b624111eD",
+    "FeesPlug": "0x5F77550E3072c913A20B2fbdAb14026fe0E8B450",
+    "Socket": "0x5e1641B190B71ECCc85b1ECe934F31cD9b3dcF7a",
+    "SocketBatcher": "0xaC61f5696e0E2636dA7bD69827380f2Ab41A3C38",
+    "startBlock": 1070887
+  },
+  "420120001": {
+    "ContractFactoryPlug": "0xee1Aef0b06f63Aa1c881838794Dd0876462c2B0d",
+    "FastSwitchboard": "0x9EDfb162b725CF6d628D68af200cAe8b624111eD",
+    "FeesPlug": "0x5F77550E3072c913A20B2fbdAb14026fe0E8B450",
+    "Socket": "0x5e1641B190B71ECCc85b1ECe934F31cD9b3dcF7a",
+    "SocketBatcher": "0xaC61f5696e0E2636dA7bD69827380f2Ab41A3C38",
+    "startBlock": 1070909
+  }
+}
