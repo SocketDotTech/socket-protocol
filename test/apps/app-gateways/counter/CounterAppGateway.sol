@@ -77,6 +77,13 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         ICounter(instances_[0]).increase();
     }
 
+    function readCounterAtBlock(address instance_, uint256 blockNumber_) public async {
+        uint32 chainSlug = IForwarder(instance_).getChainSlug();
+        _setOverrides(Read.ON, Parallel.ON, blockNumber_);
+        ICounter(instance_).getCounter();
+        IPromise(instance_).then(this.setCounterValues.selector, abi.encode(chainSlug));
+    }
+
     function setCounterValues(bytes memory data, bytes memory returnData) external onlyPromises {
         uint256 counterValue = abi.decode(returnData, (uint256));
         uint32 chainSlug = abi.decode(data, (uint32));

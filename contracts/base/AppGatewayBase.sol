@@ -29,6 +29,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         isAsyncModifierSet = true;
         deliveryHelper().clearQueue();
         addressResolver__.clearPromises();
+        _clearOverrides();
         _;
         isAsyncModifierSet = false;
         deliveryHelper().batch(fees, auctionManager, onCompleteData, sbType);
@@ -183,6 +184,14 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         overrideParams.isParallelCall = isParallelCall_;
         overrideParams.gasLimit = gasLimit_;
         fees = fees_;
+    }
+
+    function _clearOverrides() internal {
+        overrideParams.isReadCall = Read.OFF;
+        overrideParams.isParallelCall = Parallel.OFF;
+        overrideParams.gasLimit = 0;
+        overrideParams.readAnchorValue = 0;
+        overrideParams.writeFinality = WriteFinality.LOW;
     }
 
     /// @notice Sets isReadCall, fees and gasLimit overrides
