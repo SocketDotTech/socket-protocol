@@ -7,7 +7,6 @@ import "solady/utils/Initializable.sol";
 import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
 
 import "./DeliveryHelperStorage.sol";
-
 /// @notice Abstract contract for managing asynchronous payloads
 abstract contract QueueAsync is DeliveryHelperStorage, Initializable, Ownable, AddressResolverUtil {
     // slots [0-108] reserved for delivery helper storage and [109-159] reserved for addr resolver util
@@ -41,37 +40,10 @@ abstract contract QueueAsync is DeliveryHelperStorage, Initializable, Ownable, A
     }
 
     /// @notice Queues a new payload
-    /// @param chainSlug_ The chain identifier
-    /// @param target_ The target address
-    /// @param asyncPromise_ The async promise or ID
-    /// @param callType_ The call type
-    /// @param payload_ The payload
-    function queue(
-        IsPlug isPlug_,
-        Parallel isParallel_,
-        uint32 chainSlug_,
-        address target_,
-        address asyncPromise_,
-        uint256 value_,
-        CallType callType_,
-        bytes memory payload_,
-        bytes memory initCallData_
-    ) external {
-        // todo: sb related details
-        callParamsArray.push(
-            CallParams({
-                isPlug: isPlug_,
-                callType: callType_,
-                asyncPromise: asyncPromise_,
-                chainSlug: chainSlug_,
-                target: target_,
-                payload: payload_,
-                value: value_,
-                gasLimit: 10000000,
-                isParallel: isParallel_,
-                initCallData: initCallData_
-            })
-        );
+    /// @param callParams_ The call parameters
+    function queue(CallParams memory callParams_) external {
+        callParams_.gasLimit = callParams_.gasLimit == 0 ? 10_000_000 : callParams_.gasLimit;
+        callParamsArray.push(callParams_);
     }
 
     /// @notice Creates an array of payload details
@@ -138,6 +110,8 @@ abstract contract QueueAsync is DeliveryHelperStorage, Initializable, Ownable, A
                 value: params_.value,
                 payload: payload_,
                 callType: params_.callType,
+                writeFinality: params_.writeFinality,
+                readAnchorValue: params_.readAnchorValue,
                 executionGasLimit: params_.gasLimit == 0 ? 1_000_000 : params_.gasLimit,
                 next: next,
                 isParallel: params_.isParallel

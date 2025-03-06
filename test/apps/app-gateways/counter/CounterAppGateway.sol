@@ -17,10 +17,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     uint256 optCounter;
     event TimeoutResolved(uint256 creationTimestamp, uint256 executionTimestamp);
 
-    constructor(
-        address addressResolver_,
-        Fees memory fees_
-    ) AppGatewayBase(addressResolver_) {
+    constructor(address addressResolver_, Fees memory fees_) AppGatewayBase(addressResolver_) {
         creationCodeWithArgs[counter] = abi.encodePacked(type(Counter).creationCode);
         creationCodeWithArgs[counter1] = abi.encodePacked(type(Counter).creationCode);
         _setOverrides(fees_);
@@ -78,6 +75,13 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         }
         _setOverrides(Read.OFF, Parallel.OFF);
         ICounter(instances_[0]).increase();
+    }
+
+    function readCounterAtBlock(address instance_, uint256 blockNumber_) public async {
+        uint32 chainSlug = IForwarder(instance_).getChainSlug();
+        _setOverrides(Read.ON, Parallel.ON, blockNumber_);
+        ICounter(instance_).getCounter();
+        IPromise(instance_).then(this.setCounterValues.selector, abi.encode(chainSlug));
     }
 
     function setCounterValues(bytes memory data, bytes memory returnData) external onlyPromises {

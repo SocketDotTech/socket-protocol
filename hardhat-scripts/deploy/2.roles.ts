@@ -17,9 +17,12 @@ import {
   overrides,
 } from "../utils";
 import { relayerAddressList } from "../constants/relayers";
-import { ChainAddressesObj } from "@socket.tech/socket-protocol-common";
+import {
+  ChainAddressesObj,
+  ChainSlug,
+} from "@socket.tech/socket-protocol-common";
 import { ROLES } from "../constants/roles";
-
+import { getWatcherSigner, getSocketSigner } from "../utils/sign";
 export const REQUIRED_ROLES = {
   FastSwitchboard: [ROLES.WATCHER_ROLE, ROLES.RESCUE_ROLE],
   Socket: [ROLES.GOVERNANCE_ROLE, ROLES.RESCUE_ROLE],
@@ -63,13 +66,9 @@ async function setRoleForContract(
 }
 
 async function getSigner(chain: number, isWatcher: boolean = false) {
-  const providerInstance = getProviderFromChainSlug(chain);
-  const signer: Wallet = new ethers.Wallet(
-    isWatcher
-      ? (process.env.WATCHER_PRIVATE_KEY as string)
-      : (process.env.SOCKET_SIGNER_KEY as string),
-    providerInstance
-  );
+  const signer: Wallet = isWatcher
+    ? getWatcherSigner()
+    : getSocketSigner(chain as ChainSlug);
   return signer;
 }
 

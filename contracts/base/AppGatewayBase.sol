@@ -10,18 +10,13 @@ import "../interfaces/IPromise.sol";
 import {FeesPlugin} from "../protocol/utils/FeesPlugin.sol";
 import {InvalidPromise, FeesNotSet} from "../protocol/utils/common/Errors.sol";
 import {FAST} from "../protocol/utils/common/Constants.sol";
-
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway
 abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin {
-    Read public override isReadCall;
-    Parallel public override isParallelCall;
-    uint256 public override gasLimit;
-
+    OverrideParams public overrideParams;
     address public auctionManager;
     bytes public onCompleteData;
     bytes32 public sbType;
-
     bool public isAsyncModifierSet;
 
     mapping(address => bool) public isValidPromise;
@@ -34,6 +29,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         isAsyncModifierSet = true;
         deliveryHelper().clearQueue();
         addressResolver__.clearPromises();
+        _clearOverrides();
         _;
         isAsyncModifierSet = false;
         deliveryHelper().batch(fees, auctionManager, onCompleteData, sbType);
@@ -120,17 +116,22 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         IPromise(asyncPromise).then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
 
         onCompleteData = abi.encode(chainSlug_, true);
-        IDeliveryHelper(deliveryHelper()).queue(
-            isPlug_,
-            isParallelCall,
-            chainSlug_,
-            address(0),
-            asyncPromise,
-            0,
-            CallType.DEPLOY,
-            creationCodeWithArgs[contractId_],
-            initCallData_
-        );
+
+        CallParams memory callParams = CallParams({
+            isPlug: isPlug_,
+            isParallel: overrideParams.isParallelCall,
+            chainSlug: chainSlug_,
+            target: address(0),
+            asyncPromise: asyncPromise,
+            value: 0,
+            gasLimit: overrideParams.gasLimit,
+            callType: CallType.DEPLOY,
+            writeFinality: overrideParams.writeFinality,
+            readAnchorValue: overrideParams.readAnchorValue,
+            payload: creationCodeWithArgs[contractId_],
+            initCallData: initCallData_
+        });
+        IDeliveryHelper(deliveryHelper()).queue(callParams);
     }
 
     /// @notice Sets the address for a deployed contract
@@ -179,10 +180,18 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         uint256 gasLimit_,
         Fees memory fees_
     ) internal {
-        isReadCall = isReadCall_;
-        isParallelCall = isParallelCall_;
-        gasLimit = gasLimit_;
+        overrideParams.isReadCall = isReadCall_;
+        overrideParams.isParallelCall = isParallelCall_;
+        overrideParams.gasLimit = gasLimit_;
         fees = fees_;
+    }
+
+    function _clearOverrides() internal {
+        overrideParams.isReadCall = Read.OFF;
+        overrideParams.isParallelCall = Parallel.OFF;
+        overrideParams.gasLimit = 0;
+        overrideParams.readAnchorValue = 0;
+        overrideParams.writeFinality = WriteFinality.LOW;
     }
 
     /// @notice Sets isReadCall, fees and gasLimit overrides
@@ -190,41 +199,77 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @param isParallelCall_ The sequential call flag
     /// @param gasLimit_ The gas limit
     function _setOverrides(Read isReadCall_, Parallel isParallelCall_, uint256 gasLimit_) internal {
-        isReadCall = isReadCall_;
-        isParallelCall = isParallelCall_;
-        gasLimit = gasLimit_;
+        overrideParams.isReadCall = isReadCall_;
+        overrideParams.isParallelCall = isParallelCall_;
+        overrideParams.gasLimit = gasLimit_;
     }
 
     /// @notice Sets isReadCall and isParallelCall overrides
     /// @param isReadCall_ The read call flag
     /// @param isParallelCall_ The sequential call flag
     function _setOverrides(Read isReadCall_, Parallel isParallelCall_) internal {
-        isReadCall = isReadCall_;
-        isParallelCall = isParallelCall_;
+        overrideParams.isReadCall = isReadCall_;
+        overrideParams.isParallelCall = isParallelCall_;
+    }
+
+    /// @notice Sets isParallelCall overrides
+    /// @param writeFinality_ The write finality
+    function _setOverrides(WriteFinality writeFinality_) internal {
+        overrideParams.writeFinality = writeFinality_;
     }
 
     /// @notice Sets isParallelCall overrides
     /// @param isParallelCall_ The sequential call flag
     function _setOverrides(Parallel isParallelCall_) internal {
-        isParallelCall = isParallelCall_;
+        overrideParams.isParallelCall = isParallelCall_;
+    }
+
+    /// @notice Sets isParallelCall overrides
+    /// @param isParallelCall_ The sequential call flag
+    /// @param readAnchorValue_ The read anchor value. Currently block number.
+    function _setOverrides(Parallel isParallelCall_, uint256 readAnchorValue_) internal {
+        overrideParams.isParallelCall = isParallelCall_;
+        overrideParams.readAnchorValue = readAnchorValue_;
     }
 
     /// @notice Sets isReadCall overrides
     /// @param isReadCall_ The read call flag
     function _setOverrides(Read isReadCall_) internal {
-        isReadCall = isReadCall_;
+        overrideParams.isReadCall = isReadCall_;
+    }
+
+    /// @notice Sets isReadCall overrides
+    /// @param isReadCall_ The read call flag
+    /// @param readAnchorValue_ The read anchor value. Currently block number.
+    function _setOverrides(Read isReadCall_, uint256 readAnchorValue_) internal {
+        overrideParams.isReadCall = isReadCall_;
+        overrideParams.readAnchorValue = readAnchorValue_;
     }
 
     /// @notice Sets gasLimit overrides
     /// @param gasLimit_ The gas limit
     function _setOverrides(uint256 gasLimit_) internal {
-        gasLimit = gasLimit_;
+        overrideParams.gasLimit = gasLimit_;
     }
 
     /// @notice Sets fees overrides
     /// @param fees_ The fees configuration
     function _setOverrides(Fees memory fees_) internal {
         fees = fees_;
+    }
+
+    function getOverrideParams()
+        public
+        view
+        returns (Read, Parallel, WriteFinality, uint256, uint256)
+    {
+        return (
+            overrideParams.isReadCall,
+            overrideParams.isParallelCall,
+            overrideParams.writeFinality,
+            overrideParams.readAnchorValue,
+            overrideParams.gasLimit
+        );
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

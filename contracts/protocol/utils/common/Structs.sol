@@ -25,6 +25,12 @@ enum Read {
     ON
 }
 
+enum WriteFinality {
+    LOW,
+    MEDIUM,
+    HIGH
+}
+
 //// STRUCTS ////
 
 struct AppGatewayConfig {
@@ -40,12 +46,22 @@ struct AsyncRequest {
     address transmitter;
     address target;
     address switchboard;
+    WriteFinality writeFinality;
+    uint256 readAnchorValue;
     uint256 executionGasLimit;
     uint256 deadline;
     bytes32 asyncId;
     bytes32 digest;
     bytes payload;
     address[] next;
+}
+
+struct OverrideParams {
+    Read isReadCall;
+    Parallel isParallelCall;
+    WriteFinality writeFinality;
+    uint256 readAnchorValue;
+    uint256 gasLimit;
 }
 
 struct AttestAndExecutePayloadParams {
@@ -74,6 +90,8 @@ struct CallParams {
     uint32 chainSlug;
     CallType callType;
     Parallel isParallel;
+    WriteFinality writeFinality;
+    uint256 readAnchorValue;
     uint256 gasLimit;
     uint256 value;
     bytes payload;
@@ -132,6 +150,8 @@ struct PayloadDetails {
     uint32 chainSlug;
     Parallel isParallel;
     CallType callType;
+    WriteFinality writeFinality;
+    uint256 readAnchorValue;
     uint256 value;
     uint256 executionGasLimit;
     bytes payload;

@@ -142,7 +142,8 @@ contract DeliveryHelper is BatchAsync {
                 payloadDetails_.target,
                 payloadDetails_.appGateway,
                 payloadDetails_.next,
-                payloadDetails_.payload
+                payloadDetails_.payload,
+                payloadDetails_.readAnchorValue
             );
             digest = bytes32(0);
         } else {

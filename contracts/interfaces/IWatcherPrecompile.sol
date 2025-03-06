@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {PayloadDetails, AsyncRequest, FinalizeParams, PayloadDigestParams, AppGatewayConfig, PlugConfig, ResolvedPromises} from "../protocol/utils/common/Structs.sol";
+import {PayloadDetails, AsyncRequest, FinalizeParams, WriteFinality, PayloadDigestParams, AppGatewayConfig, PlugConfig, ResolvedPromises} from "../protocol/utils/common/Structs.sol";
 
 /// @title IWatcherPrecompile
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
@@ -59,7 +59,8 @@ interface IWatcherPrecompile {
         address targetAddress_,
         address appGateway_,
         address[] memory asyncPromises_,
-        bytes memory payload_
+        bytes memory payload_,
+        uint256 readAnchorValue_
     ) external returns (bytes32 payloadId);
 
     /// @notice Marks a request as finalized with a proof

@@ -1,4 +1,4 @@
-import { ChainSlug } from "@socket.tech/socket-protocol-common";
+import { ChainSlug } from "../../src";
 import { BigNumber, BigNumberish, providers } from "ethers";
 import { EVMX_CHAIN_ID } from "../config/config";
 import { getProviderFromChainSlug } from "./networks";

@@ -160,7 +160,8 @@ abstract contract BatchAsync is QueueAsync {
                     payloadDetails_[i].target,
                     payloadDetails_[i].appGateway,
                     payloadDetails_[i].next,
-                    payloadDetails_[i].payload
+                    payloadDetails_[i].payload,
+                    payloadDetails_[i].readAnchorValue
                 );
                 payloadIdToBatchHash[payloadId] = asyncId;
                 payloadBatchDetails[asyncId].push(payloadDetails_[i]);

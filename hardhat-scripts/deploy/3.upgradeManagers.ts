@@ -19,6 +19,8 @@ import {
   getAddresses,
   getInstance,
   getProviderFromChainSlug,
+  getSocketSigner,
+  getWatcherSigner,
   storeAddresses,
 } from "../utils";
 
@@ -33,11 +35,7 @@ export const main = async () => {
         ? (addresses[chain] as ChainAddressesObj)
         : ({} as ChainAddressesObj);
 
-      const providerInstance = getProviderFromChainSlug(chain);
-      const signer: Wallet = new ethers.Wallet(
-        process.env.SOCKET_SIGNER_KEY as string,
-        providerInstance
-      );
+      const signer: Wallet = getSocketSigner(chain as ChainSlug);
 
       const socketContract = (
         await getInstance(
@@ -62,11 +60,7 @@ export const main = async () => {
 };
 
 async function setOnchainContracts(chain, addresses) {
-  const providerInstance = getProviderFromChainSlug(EVMX_CHAIN_ID as ChainSlug);
-  const signer: Wallet = new ethers.Wallet(
-    process.env.WATCHER_PRIVATE_KEY as string,
-    providerInstance
-  );
+  const signer: Wallet = getWatcherSigner();
   const EVMxAddresses = addresses[EVMX_CHAIN_ID]!;
   const watcherPrecompile = (
     await getInstance(
