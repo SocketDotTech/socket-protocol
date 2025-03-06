@@ -443,7 +443,7 @@ contract DeliveryHelperTest is SetupTest {
                 payload: payload_,
                 callType: callType_,
                 writeFinality: WriteFinality.LOW,
-                readAnchorValue: 0,
+                readAt: 0,
                 executionGasLimit: executionGasLimit_,
                 value: 0,
                 next: next_,
@@ -491,7 +491,7 @@ contract DeliveryHelperTest is SetupTest {
         PayloadDetails memory payloadDetails
     ) internal view returns (bytes memory, bytes32) {
         SocketContracts memory socketConfig = getSocketConfig(payloadDetails.chainSlug);
-        (, , , , , , , , uint256 deadline, , , ) = watcherPrecompile.asyncRequests(payloadId);
+        (, , , , , , uint256 deadline, , , , , ) = watcherPrecompile.asyncRequests(payloadId);
 
         PayloadDigestParams memory digestParams_ = PayloadDigestParams(
             payloadDetails.appGateway,

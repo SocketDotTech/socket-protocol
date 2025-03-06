@@ -127,7 +127,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             gasLimit: overrideParams.gasLimit,
             callType: CallType.DEPLOY,
             writeFinality: overrideParams.writeFinality,
-            readAnchorValue: overrideParams.readAnchorValue,
+            readAt: overrideParams.readAt,
             payload: creationCodeWithArgs[contractId_],
             initCallData: initCallData_
         });
@@ -190,7 +190,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         overrideParams.isReadCall = Read.OFF;
         overrideParams.isParallelCall = Parallel.OFF;
         overrideParams.gasLimit = 0;
-        overrideParams.readAnchorValue = 0;
+        overrideParams.readAt = 0;
         overrideParams.writeFinality = WriteFinality.LOW;
     }
 
@@ -226,10 +226,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
 
     /// @notice Sets isParallelCall overrides
     /// @param isParallelCall_ The sequential call flag
-    /// @param readAnchorValue_ The read anchor value. Currently block number.
-    function _setOverrides(Parallel isParallelCall_, uint256 readAnchorValue_) internal {
+    /// @param readAt_ The read anchor value. Currently block number.
+    function _setOverrides(Parallel isParallelCall_, uint256 readAt_) internal {
         overrideParams.isParallelCall = isParallelCall_;
-        overrideParams.readAnchorValue = readAnchorValue_;
+        overrideParams.readAt = readAt_;
     }
 
     /// @notice Sets isReadCall overrides
@@ -240,10 +240,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
 
     /// @notice Sets isReadCall overrides
     /// @param isReadCall_ The read call flag
-    /// @param readAnchorValue_ The read anchor value. Currently block number.
-    function _setOverrides(Read isReadCall_, uint256 readAnchorValue_) internal {
+    /// @param readAt_ The read anchor value. Currently block number.
+    function _setOverrides(Read isReadCall_, uint256 readAt_) internal {
         overrideParams.isReadCall = isReadCall_;
-        overrideParams.readAnchorValue = readAnchorValue_;
+        overrideParams.readAt = readAt_;
     }
 
     /// @notice Sets gasLimit overrides
@@ -267,7 +267,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             overrideParams.isReadCall,
             overrideParams.isParallelCall,
             overrideParams.writeFinality,
-            overrideParams.readAnchorValue,
+            overrideParams.readAt,
             overrideParams.gasLimit
         );
     }

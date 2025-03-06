@@ -1,8 +1,4 @@
-import {
-  ChainSlug,
-  ChainAddressesObj,
-  DeploymentMode,
-} from "@socket.tech/socket-protocol-common";
+import { ChainAddressesObj, ChainSlug } from "../../src";
 
 import { config as dotenvConfig } from "dotenv";
 dotenvConfig();

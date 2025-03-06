@@ -9,7 +9,7 @@ import {
   ChainAddressesObj,
   ChainSlug,
   DeploymentMode,
-} from "@socket.tech/socket-protocol-common";
+} from "../../src";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { overrides } from "../utils";
 import { VerifyArgs } from "../verify";

@@ -1,17 +1,14 @@
-import {
-  ChainAddressesObj,
-  ChainSlug,
-} from "@socket.tech/socket-protocol-common";
+import { ChainAddressesObj, ChainSlug } from "../../src";
 import { config } from "dotenv";
-import { Contract, Signer, Wallet } from "ethers";
+import { Contract, Signer, utils, Wallet } from "ethers";
 import { formatEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import {
   CORE_CONTRACTS,
   DeploymentAddresses,
   EVMxCoreContracts,
+  IMPLEMENTATION_SLOT,
 } from "../constants";
-import { getImplementationAddress } from "../migration/migrate-proxies";
 import {
   DeployParams,
   getAddresses,
@@ -419,9 +416,29 @@ const deployContractWithProxy = async (
   return deployUtils;
 };
 
+
+export async function getImplementationAddress(
+  proxyAddress: string
+): Promise<string> {
+  const customProvider = new ethers.providers.JsonRpcProvider(
+    process.env.EVMX_RPC as string
+  );
+
+  // Fallback to standard storage slot for other proxy types
+  const implHex = await customProvider.getStorageAt(
+    proxyAddress,
+    IMPLEMENTATION_SLOT
+  );
+
+  return utils.getAddress("0x" + implHex.slice(-40));
+}
+
+
 main()
   .then(() => process.exit(0))
   .catch((error: Error) => {
     console.error(error);
     process.exit(1);
   });
+
+

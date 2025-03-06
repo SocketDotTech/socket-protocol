@@ -1,8 +1,5 @@
-import {
-  ChainAddressesObj,
-  ChainSlug,
-} from "@socket.tech/socket-protocol-common";
-import { Contract, ethers, providers, Wallet } from "ethers";
+import { Contract, ethers, Wallet } from "ethers";
+import { ChainAddressesObj, ChainSlug } from "../../src";
 import { chains, EVMX_CHAIN_ID, mode } from "../config";
 import {
   CORE_CONTRACTS,

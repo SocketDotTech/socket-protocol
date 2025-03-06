@@ -298,14 +298,14 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
                 transmitterEOA,
                 payloadDetails.target,
                 address(0),
-                WriteFinality.LOW,
-                0,
                 payloadDetails.executionGasLimit,
                 0,
                 bridgeAsyncId,
                 bytes32(0),
                 payloadDetails.payload,
-                payloadDetails.next
+                payloadDetails.next,
+                WriteFinality.LOW,
+                0
             )
         );
         finalizeQuery(payloadIds[1], abi.encode(srcAmount));
