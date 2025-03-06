@@ -1,10 +1,7 @@
-import { ethers } from "hardhat";
 import { Contract, utils, Wallet } from "ethers";
-import { EVMX_CHAIN_ID, UPGRADE_VERSION } from "../config/config";
-import { getProviderFromChainSlug } from "../utils";
-import { ChainSlug } from "@socket.tech/socket-protocol-common";
-import { getAddresses } from "../utils";
-import { mode } from "../config/config";
+import { ethers } from "hardhat";
+import { EVMX_CHAIN_ID, mode, UPGRADE_VERSION } from "../config/config";
+import { getAddresses, getWatcherSigner } from "../utils";
 // Implementation slot from ERC1967
 const IMPLEMENTATION_SLOT =
   "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
@@ -31,14 +28,6 @@ export async function getImplementationAddress(
   );
 
   return utils.getAddress("0x" + implHex.slice(-40));
-}
-
-async function setupSigner() {
-  const providerInstance = getProviderFromChainSlug(EVMX_CHAIN_ID as ChainSlug);
-  return new ethers.Wallet(
-    process.env.WATCHER_PRIVATE_KEY as string,
-    providerInstance
-  );
 }
 
 async function setupProxyFactory(addresses: any, signer: Wallet) {
@@ -211,7 +200,7 @@ async function verifyBeaconImplementation(contract: Contract, signer: Wallet) {
 async function main() {
   // @ts-ignore - Hardhat Runtime Environment will be injected by hardhat
   const addresses = getAddresses(mode);
-  const signer = await setupSigner();
+  const signer = getWatcherSigner();
   const proxyFactory = await setupProxyFactory(addresses, signer);
 
   for (const contractName of upgradeableContracts) {

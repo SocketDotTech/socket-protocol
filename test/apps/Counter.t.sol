@@ -16,10 +16,7 @@ contract CounterTest is DeliveryHelperTest {
     function deploySetup() internal {
         setUpDeliveryHelper();
 
-        counterGateway = new CounterAppGateway(
-            address(addressResolver),
-            createFees(feesAmount)
-        );
+        counterGateway = new CounterAppGateway(address(addressResolver), createFees(feesAmount));
         depositFees(address(counterGateway), createFees(1 ether));
 
         counterId = counterGateway.counter();

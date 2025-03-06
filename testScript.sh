@@ -14,8 +14,9 @@ source .env && forge script script/counter/DeployCounterOnchain.s.sol --broadcas
 source .env && cast send $APP_GATEWAY "deployContracts(uint32)" 421614 --private-key $PRIVATE_KEY --legacy --gas-price 0
 cast call $APP_GATEWAY "getOnChainAddress(bytes32,uint32)(address)" 0x5ab1536adcb0c297300e651c684f844c311727059d17eb2be15c313b5839b9eb 421614
 cast call $APP_GATEWAY "forwarderAddresses(bytes32,uint32)(address)" 0x5ab1536adcb0c297300e651c684f844c311727059d17eb2be15c313b5839b9eb 421614
-source .env && cast send $APP_GATEWAY "incrementCounters(address[])" '[0xB491b4b9343471d79d33A7c45Dc4d0a7EA818F93]' --private-key $PRIVATE_KEY --legacy --gas-price 0
+source .env && cast send $APP_GATEWAY "incrementCounters(address[])" '[0x22F67f3dDE491d4bF02A713BE1b20219E39FD553]' --private-key $PRIVATE_KEY --legacy --gas-price 0
 source .env && cast send $APP_GATEWAY "readCounters(address[])" '[0x18a93d520879524e0c215b64f05914da5883540f]' --private-key $PRIVATE_KEY --legacy --gas-price 0
+source .env && cast send $APP_GATEWAY "setTimeout(uint256)" 10 --private-key $PRIVATE_KEY --legacy --gas-price 0
 source .env && cast send $APP_GATEWAY "withdrawFeeTokens(uint32,address,uint256,address)" 421614 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE 987793576908782 0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18 --private-key $PRIVATE_KEY --legacy --gas-price 0
 
 forge script script/counter/incrementCounters.s.sol --broadcast --skip-simulation

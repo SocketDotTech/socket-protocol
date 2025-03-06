@@ -25,3 +25,6 @@ broadcast/
 .gas-snapshot
 
 .cursorrules
+
+deployments/local_addresses.json
+deployments/local_verification.json

@@ -1,18 +1,11 @@
 import {
   ChainAddressesObj,
-  ChainSlug
+  ChainSlug,
 } from "@socket.tech/socket-protocol-common";
 import { config } from "dotenv";
-import { Contract, Signer, Wallet, providers } from "ethers";
+import { Contract, Signer, Wallet } from "ethers";
 import { formatEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { BID_TIMEOUT, EVMX_CHAIN_ID, EXPIRY_TIME, MAX_LIMIT } from "../config";
-import {
-  auctionEndDelaySeconds,
-  chains,
-  logConfig,
-  mode,
-} from "../config/config";
 import {
   CORE_CONTRACTS,
   DeploymentAddresses,
@@ -23,9 +16,19 @@ import {
   DeployParams,
   getAddresses,
   getOrDeploy,
-  getProviderFromChainSlug,
   storeAddresses,
 } from "../utils";
+import { getSocketSigner, getWatcherSigner } from "../utils/sign";
+import {
+  auctionEndDelaySeconds,
+  BID_TIMEOUT,
+  chains,
+  EVMX_CHAIN_ID,
+  EXPIRY_TIME,
+  logConfig,
+  MAX_LIMIT,
+  mode,
+} from "../config/config";
 config();
 
 let EVMxOwner: string;
@@ -38,19 +41,27 @@ const main = async () => {
 };
 
 const logBalances = async () => {
-  const evmxDeployer = new ethers.Wallet(process.env.WATCHER_PRIVATE_KEY as string);
-  const socketDeployer = new ethers.Wallet(process.env.SOCKET_SIGNER_KEY as string);
-  let provider = getProviderFromChainSlug(EVMX_CHAIN_ID as ChainSlug);  
-  const evmxBalance = await provider.getBalance(evmxDeployer.address);
-  console.log(`EVMx Deployer ${evmxDeployer.address} balance on ${EVMX_CHAIN_ID}:`,  formatEther(evmxBalance));
-  await Promise.all(chains.map(async (chain) => {
-    const provider = getProviderFromChainSlug(chain);
-    const socketBalance = await provider.getBalance(socketDeployer.address);
-    console.log(`Socket Deployer ${socketDeployer.address} balance on ${chain}:`,  formatEther(socketBalance));
-  }));
+  const evmxDeployer = await getWatcherSigner();
+  const evmxBalance = await evmxDeployer.provider.getBalance(
+    evmxDeployer.address
+  );
+  console.log(
+    `EVMx Deployer ${evmxDeployer.address} balance on ${EVMX_CHAIN_ID}:`,
+    formatEther(evmxBalance)
+  );
+  await Promise.all(
+    chains.map(async (chain) => {
+      const socketDeployer = await getSocketSigner(chain as ChainSlug);
+      const socketBalance = await socketDeployer.provider.getBalance(
+        socketDeployer.address
+      );
+      console.log(
+        `Socket Deployer ${socketDeployer.address} balance on ${chain}:`,
+        formatEther(socketBalance)
+      );
+    })
+  );
 };
-
-
 
 const deployEVMxContracts = async () => {
   try {
@@ -58,7 +69,7 @@ const deployEVMxContracts = async () => {
     let deployUtils: DeployParams = {
       addresses: {} as ChainAddressesObj,
       mode,
-      signer: new ethers.Wallet(process.env.WATCHER_PRIVATE_KEY as string),
+      signer: getWatcherSigner(),
       currentChainSlug: EVMX_CHAIN_ID as ChainSlug,
     };
     const chain = EVMX_CHAIN_ID;
@@ -69,13 +80,7 @@ const deployEVMxContracts = async () => {
         ? (addresses[chain] as ChainAddressesObj)
         : ({} as ChainAddressesObj);
 
-      const providerInstance = new providers.StaticJsonRpcProvider(
-        process.env.EVMX_RPC as string
-      );
-      const signer: Wallet = new ethers.Wallet(
-        process.env.WATCHER_PRIVATE_KEY as string,
-        providerInstance
-      );
+      const signer: Wallet = getWatcherSigner();
       EVMxOwner = signer.address;
 
       deployUtils = {
@@ -209,7 +214,7 @@ const deploySocketContracts = async () => {
     let deployUtils: DeployParams = {
       addresses: {} as ChainAddressesObj,
       mode,
-      signer: new ethers.Wallet(process.env.SOCKET_SIGNER_KEY as string),
+      signer: getSocketSigner(EVMX_CHAIN_ID as ChainSlug),
       currentChainSlug: EVMX_CHAIN_ID as ChainSlug,
     };
     console.log("Deploying Socket contracts");
@@ -221,11 +226,7 @@ const deploySocketContracts = async () => {
           ? (addresses[chain] as ChainAddressesObj)
           : ({} as ChainAddressesObj);
 
-        const providerInstance = getProviderFromChainSlug(chain);
-        const signer: Wallet = new ethers.Wallet(
-          process.env.SOCKET_SIGNER_KEY as string,
-          providerInstance
-        );
+        const signer: Wallet = getSocketSigner(chain as ChainSlug);
         const socketOwner = signer.address;
 
         deployUtils = {

@@ -20,10 +20,7 @@ contract FeesTest is DeliveryHelperTest {
         setUpDeliveryHelper();
         feesConfig = getSocketConfig(feesChainSlug);
 
-        counterGateway = new CounterAppGateway(
-            address(addressResolver),
-            createFees(feesAmount)
-        );
+        counterGateway = new CounterAppGateway(address(addressResolver), createFees(feesAmount));
         depositFees(address(counterGateway), createFees(depositAmount));
 
         bytes32[] memory contractIds = new bytes32[](1);

@@ -17,10 +17,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     uint256 optCounter;
     event TimeoutResolved(uint256 creationTimestamp, uint256 executionTimestamp);
 
-    constructor(
-        address addressResolver_,
-        Fees memory fees_
-    ) AppGatewayBase(addressResolver_) {
+    constructor(address addressResolver_, Fees memory fees_) AppGatewayBase(addressResolver_) {
         creationCodeWithArgs[counter] = abi.encodePacked(type(Counter).creationCode);
         creationCodeWithArgs[counter1] = abi.encodePacked(type(Counter).creationCode);
         _setOverrides(fees_);

@@ -127,11 +127,7 @@
       "0x6D54668ba18B425a1DbFC0BD720145c0aeE97f65",
       "Socket",
       "contracts/protocol/socket/Socket.sol",
-      [
-        84532,
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "EVMX"
-      ]
+      [84532, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
     ]
   ],
   "421614": [],

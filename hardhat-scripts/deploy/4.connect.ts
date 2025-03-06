@@ -1,4 +1,7 @@
-import { ChainAddressesObj } from "@socket.tech/socket-protocol-common";
+import {
+  ChainAddressesObj,
+  ChainSlug,
+} from "@socket.tech/socket-protocol-common";
 import { Contract, ethers, providers, Wallet } from "ethers";
 import { chains, EVMX_CHAIN_ID, mode } from "../config";
 import {
@@ -9,10 +12,10 @@ import {
 import {
   getAddresses,
   getInstance,
-  getProviderFromChainSlug,
+  getSocketSigner,
   overrides,
 } from "../utils";
-import { signWatcherMessage } from "../utils/sign";
+import { getWatcherSigner, signWatcherMessage } from "../utils/sign";
 const plugs = [CORE_CONTRACTS.ContractFactoryPlug, CORE_CONTRACTS.FeesPlug];
 export type AppGatewayConfig = {
   plug: string;
@@ -113,11 +116,7 @@ export const connectPlugsOnSocket = async () => {
     chains.map(async (chain) => {
       if (!addresses[chain]) return;
 
-      const providerInstance = getProviderFromChainSlug(chain);
-      const socketSigner = new Wallet(
-        process.env.SOCKET_SIGNER_KEY as string,
-        providerInstance
-      );
+      const socketSigner = getSocketSigner(chain as ChainSlug);
       const addr = addresses[chain]!;
       // Connect each plug contract
       for (const plugContract of plugs) {
@@ -149,13 +148,7 @@ export const updateConfigEVMx = async () => {
     const appConfigs: AppGatewayConfig[] = [];
 
     // Set up Watcher contract
-    const providerInstance = new providers.StaticJsonRpcProvider(
-      process.env.EVMX_RPC as string
-    );
-    const signer = new ethers.Wallet(
-      process.env.WATCHER_PRIVATE_KEY as string,
-      providerInstance
-    );
+    const signer = getWatcherSigner();
     const EVMxAddresses = addresses[EVMX_CHAIN_ID]!;
     const watcher = (
       await getInstance(
