@@ -9,10 +9,10 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.0.17",
+  "version": "1.0.18",
   "description": "socket protocol",
   "scripts": {
-    "build": "hardhat export-abi && tsc --project lib.tsconfig.json",
+    "build": "yarn abi && tsc --project lib.tsconfig.json",
     "tsc": "tsc --project lib.tsconfig.json",
     "abi": "hardhat export-abi",
     "lint": "prettier \"./**\" --write",
