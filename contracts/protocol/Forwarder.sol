@@ -96,20 +96,30 @@ contract Forwarder is ForwarderStorage, Initializable {
         );
 
         // Determine if the call is a read or write operation.
-        Read isReadCall = IAppGateway(msg.sender).isReadCall();
-        Parallel isParallelCall = IAppGateway(msg.sender).isParallelCall();
+        (
+            Read isReadCall,
+            Parallel isParallelCall,
+            WriteFinality writeFinality,
+            uint256 readAnchorValue,
+            uint256 gasLimit
+        ) = IAppGateway(msg.sender).getOverrideParams();
 
         // Queue the call in the auction house.
         IDeliveryHelper(deliveryHelper).queue(
-            IsPlug.NO,
-            isParallelCall,
-            chainSlug,
-            onChainAddress,
-            latestAsyncPromise,
-            0,
-            isReadCall == Read.ON ? CallType.READ : CallType.WRITE,
-            msg.data,
-            bytes("")
+            CallParams({
+                isPlug: IsPlug.NO,
+                isParallel: isParallelCall,
+                chainSlug: chainSlug,
+                target: onChainAddress,
+                asyncPromise: latestAsyncPromise,
+                value: 0,
+                gasLimit: gasLimit,
+                callType: isReadCall == Read.ON ? CallType.READ : CallType.WRITE,
+                writeFinality: writeFinality,
+                readAnchorValue: readAnchorValue,
+                payload: msg.data,
+                initCallData: bytes("")
+            })
         );
     }
 

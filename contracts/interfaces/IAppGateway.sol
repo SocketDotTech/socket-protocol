@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {Fees, Read, Parallel, DeployParams, CallType, PayloadBatch} from "../protocol/utils/common/Structs.sol";
+import {Fees, Read, Parallel, CallParams, DeployParams, OverrideParams, CallType, WriteFinality, PayloadBatch} from "../protocol/utils/common/Structs.sol";
 
 interface IAppGateway {
-    function isReadCall() external view returns (Read);
-
-    function isParallelCall() external view returns (Parallel);
-
-    function gasLimit() external view returns (uint256);
-
     function isAsyncModifierSet() external view returns (bool);
+    function getOverrideParams()
+        external
+        view
+        returns (Read, Parallel, WriteFinality, uint256, uint256);
 
     function onBatchComplete(bytes32 asyncId_, PayloadBatch memory payloadBatch_) external;
 

@@ -33,7 +33,13 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
     /// @param targetAddress The address of the target contract
     /// @param payloadId The unique identifier for the query
     /// @param payload The query data
-    event QueryRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
+    event QueryRequested(
+        uint32 chainSlug,
+        address targetAddress,
+        bytes32 payloadId,
+        bytes payload,
+        uint256 readAnchorValue
+    );
 
     /// @notice Emitted when a finalize request is made
     /// @param payloadId The unique identifier for the request
@@ -225,6 +231,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
             params_.transmitter,
             params_.payloadDetails.target,
             switchboard,
+            params_.payloadDetails.writeFinality,
+            params_.payloadDetails.readAnchorValue,
             params_.payloadDetails.executionGasLimit,
             block.timestamp + expiryTime,
             params_.asyncId,
@@ -248,7 +256,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         address targetAddress_,
         address appGateway_,
         address[] memory asyncPromises_,
-        bytes memory payload_
+        bytes memory payload_,
+        uint256 readAnchorValue_
     ) public returns (bytes32 payloadId) {
         // from payload delivery
         _consumeLimit(appGateway_, QUERY, 1);
@@ -263,6 +272,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
             address(0),
             targetAddress_,
             address(0),
+            WriteFinality.LOW,
+            readAnchorValue_,
             0,
             block.timestamp + expiryTime,
             bytes32(0),
@@ -271,7 +282,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
             asyncPromises_
         );
         asyncRequests[payloadId] = asyncRequest_;
-        emit QueryRequested(chainSlug_, targetAddress_, payloadId, payload_);
+        emit QueryRequested(chainSlug_, targetAddress_, payloadId, payload_, readAnchorValue_);
     }
 
     /// @notice Marks a request as finalized with a proof on digest

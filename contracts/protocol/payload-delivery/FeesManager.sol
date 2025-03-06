@@ -11,7 +11,7 @@ import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {WITHDRAW} from "../utils/common/Constants.sol";
 import {NotAuctionManager} from "../utils/common/Errors.sol";
-import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, Parallel} from "../utils/common/Structs.sol";
+import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, Parallel, WriteFinality} from "../utils/common/Structs.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
     // slots [0-49] reserved for gap
@@ -331,6 +331,8 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
                 target: _getFeesPlugAddress(chainSlug_),
                 payload: payload_,
                 callType: callType_,
+                writeFinality: WriteFinality.LOW,
+                readAnchorValue: 0,
                 value: 0,
                 executionGasLimit: 1000000,
                 next: new address[](2),
