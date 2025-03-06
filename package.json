@@ -9,7 +9,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.0.18",
+  "version": "1.0.19",
   "description": "socket protocol",
   "scripts": {
     "build": "yarn abi && tsc --project lib.tsconfig.json",
