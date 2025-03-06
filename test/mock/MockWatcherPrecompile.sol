@@ -143,14 +143,14 @@ contract MockWatcherPrecompile {
                 address(0),
                 params_.payloadDetails.target,
                 address(0),
-                params_.payloadDetails.writeFinality,
-                params_.payloadDetails.readAnchorValue,
                 0,
                 block.timestamp + 1000,
                 params_.asyncId,
                 bytes32(0),
                 bytes(""),
-                next
+                next,
+                params_.payloadDetails.writeFinality,
+                params_.payloadDetails.readAt
             )
         );
     }

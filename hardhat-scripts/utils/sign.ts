@@ -3,7 +3,7 @@ import { EVMX_CHAIN_ID, mode } from "../config/config";
 import { EVMxCoreContracts } from "../constants";
 import { getAddresses } from "./address";
 import { getProviderFromChainSlug } from "./networks";
-import { ChainSlug } from "@socket.tech/socket-protocol-common";
+import { ChainSlug } from "../../src";
 export const signWatcherMessage = async (encodedMessage: string) => {
   const signatureNonce = Date.now();
   const signer = new Wallet(process.env.WATCHER_PRIVATE_KEY!);

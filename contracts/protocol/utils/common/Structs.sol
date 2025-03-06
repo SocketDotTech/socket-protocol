@@ -46,23 +46,17 @@ struct AsyncRequest {
     address transmitter;
     address target;
     address switchboard;
-    WriteFinality writeFinality;
-    uint256 readAnchorValue;
     uint256 executionGasLimit;
     uint256 deadline;
     bytes32 asyncId;
     bytes32 digest;
     bytes payload;
     address[] next;
+    WriteFinality writeFinality;
+    uint256 readAt;
 }
 
-struct OverrideParams {
-    Read isReadCall;
-    Parallel isParallelCall;
-    WriteFinality writeFinality;
-    uint256 readAnchorValue;
-    uint256 gasLimit;
-}
+
 
 struct AttestAndExecutePayloadParams {
     bytes32 payloadId;
@@ -90,12 +84,12 @@ struct CallParams {
     uint32 chainSlug;
     CallType callType;
     Parallel isParallel;
-    WriteFinality writeFinality;
-    uint256 readAnchorValue;
     uint256 gasLimit;
     uint256 value;
     bytes payload;
     bytes initCallData;
+    WriteFinality writeFinality;
+    uint256 readAt;
 }
 
 struct CallFromChainParams {
@@ -131,6 +125,14 @@ struct LimitParams {
     uint256 lastUpdateLimit;
 }
 
+struct OverrideParams {
+    Read isReadCall;
+    Parallel isParallelCall;
+    uint256 gasLimit;
+    WriteFinality writeFinality;
+    uint256 readAt;
+}
+
 struct PayloadBatch {
     address appGateway;
     address auctionManager;
@@ -150,12 +152,12 @@ struct PayloadDetails {
     uint32 chainSlug;
     Parallel isParallel;
     CallType callType;
-    WriteFinality writeFinality;
-    uint256 readAnchorValue;
     uint256 value;
     uint256 executionGasLimit;
     bytes payload;
     address[] next;
+    WriteFinality writeFinality;
+    uint256 readAt;
 }
 
 struct PayloadDigestParams {

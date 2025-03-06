@@ -28,3 +28,5 @@ broadcast/
 
 deployments/local_addresses.json
 deployments/local_verification.json
+
+testScript.sh

@@ -1,9 +1,4 @@
-import {
-  ChainSlug,
-  ChainSlugToKey,
-  DeploymentMode,
-  HardhatChainName,
-} from "@socket.tech/socket-protocol-common";
+import { ChainSlug, HardhatChainName, DeploymentMode, ChainSlugToKey } from "../../src";
 import hre from "hardhat";
 import { EVMX_CHAIN_ID, mode } from "../config/config";
 import { storeUnVerifiedParams, verify } from "../utils";

@@ -59,16 +59,6 @@ export async function addChainToSDK() {
         value: choice,
       })),
     },
-    // {
-    //   name: "explorer",
-    //   type: "text",
-    //   message: "Enter the block explorer url",
-    // },
-    // {
-    //   name: "icon",
-    //   type: "text",
-    //   message: "Enter the icon url",
-    // },
   ]);
 
   let isNewNative = false;
@@ -100,154 +90,10 @@ export async function addChainToSDK() {
   return { response, chainId, isAlreadyAdded: false };
 }
 
-export async function writeConfigs() {
-  const { response, chainId } = await addChainToSDK();
-
-  // const chainOptions = response.isMainnet ? MainnetIds : TestnetIds;
-  // const choices = chainOptions.map((chain) => ({
-  //   title: chain.toString(),
-  //   value: chain,
-  // }));
-
-  // const configResponse = await prompts([
-  //   // {
-  //   //   name: "siblings",
-  //   //   type: "multiselect",
-  //   //   message: "Select chains to connect",
-  //   //   choices,
-  //   // },
-  //   // {
-  //   //   name: "owner",
-  //   //   type: "text",
-  //   //   message:
-  //   //     "Enter deployer address (this will be owner initially to configure roles)",
-  //   //   validate: validateAddress,
-  //   // },
-  //   {
-  //     name: "transmitter",
-  //     type: "text",
-  //     message:
-  //       "Enter transmitter address (skip this for standard contract deployment)",
-  //     validate: validateAddress,
-  //   },
-  //   {
-  //     name: "executor",
-  //     type: "text",
-  //     message:
-  //       "Enter executor address (skip this for standard contract deployment)",
-  //     validate: validateAddress,
-  //   },
-  //   {
-  //     name: "watcher",
-  //     type: "text",
-  //     message:
-  //       "Enter watcher address (skip this for standard contract deployment)",
-  //     validate: validateAddress,
-  //   },
-  //   {
-  //     name: "feeUpdater",
-  //     type: "text",
-  //     message:
-  //       "Enter fee updater address (skip this for standard contract deployment)",
-  //     validate: validateAddress,
-  //   },
-  //   {
-  //     name: "pk",
-  //     type: "text",
-  //     message:
-  //       "Enter deployer private key (can be left blank and added to env as SOCKET_SIGNER_KEY)",
-  //   },
-  //   {
-  //     name: "timeout",
-  //     type: "text",
-  //     message: "Enter timeout, skip if you want to keep it default (2 hrs)",
-  //   },
-  //   {
-  //     name: "msgValueMaxThreshold",
-  //     type: "text",
-  //     message:
-  //       "Enter max msg value transfer limit, skip if you want to keep it default (0.01 ETH)",
-  //   },
-  //   {
-  //     name: "type",
-  //     type: "text",
-  //     message:
-  //       "Enter transaction type supported, skip if you want it to be picked from RPC",
-  //   },
-  //   {
-  //     name: "gasLimit",
-  //     type: "text",
-  //     message: "Enter max gas limit, skip if you want it to be picked from RPC",
-  //   },
-  //   {
-  //     name: "gasPrice",
-  //     type: "text",
-  //     message: "Enter gas price, skip if you want it to be picked from RPC",
-  //   },
-  // ]);
-
-  // // update env and config
-  // const roleOwners: RoleOwners = {
-  //   ownerAddress: "",
-  //   executorAddress: "",
-  //   transmitterAddress: "",
-  //   watcherAddress: "",
-  //   feeUpdaterAddress: "",
-  // };
-
-  // if (configResponse.owner) {
-  //   roleOwners.ownerAddress = configResponse.owner;
-  // } else roleOwners.ownerAddress = ownerAddresses[DeploymentMode.PROD];
-
-  // if (configResponse.transmitter) {
-  //   roleOwners.transmitterAddress = configResponse.transmitter;
-  // } else
-  //   roleOwners.transmitterAddress = transmitterAddresses[DeploymentMode.PROD];
-
-  // if (configResponse.executor) {
-  //   roleOwners.executorAddress = configResponse.executor;
-  // } else roleOwners.executorAddress = executorAddresses[DeploymentMode.PROD];
-
-  // if (configResponse.watcher) {
-  //   roleOwners.watcherAddress = configResponse.watcher;
-  // } else roleOwners.watcherAddress = watcherAddresses[DeploymentMode.PROD];
-
-  // if (configResponse.feeUpdater) {
-  //   roleOwners.feeUpdaterAddress = configResponse.feeUpdater;
-  // } else
-  //   roleOwners.feeUpdaterAddress = transmitterAddresses[DeploymentMode.PROD];
-
-  // // write chain config and env for NEW_RPC and SOCKET_SIGNER_KEY
-  // const config = {
-  //   roleOwners,
-  //   siblings: configResponse.siblings,
-  //   overrides: {},
-  // };
-
-  // if (configResponse.timeout) config["timeout"] = configResponse.timeout;
-  // if (configResponse.msgValueMaxThreshold)
-  //   config["msgValueMaxThreshold"] = configResponse.msgValueMaxThreshold;
-  // if (configResponse.type) config["overrides"]["type"] = configResponse.type;
-  // if (configResponse.gasLimit)
-  //   config["overrides"]["gasLimit"] = configResponse.gasLimit;
-  // if (configResponse.gasPrice)
-  //   config["overrides"]["gasPrice"] = configResponse.gasPrice;
-
-  // await updateConfig(chainId as ChainSlug, config);
-
-  // let pk = configResponse.pk ?? "";
-  // if (configResponse.pk && configResponse.pk.length > 64)
-  //   pk = configResponse.pk.substring(2);
-
-  // await buildEnvFile(response.rpc, roleOwners.ownerAddress, pk);
-}
-
 const validateCoingeckoId = async (coingeckoId: string) => {
   if (!coingeckoId) {
     return "Invalid coingecko Id";
   }
-
-  // todo use either public api key or a list cached somewhere in dl updated frequently
   return true;
 };
 

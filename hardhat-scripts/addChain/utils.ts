@@ -1,46 +1,12 @@
 import fs from "fs";
-// import { writeFile } from "fs/promises";
 import path from "path";
 
 import { ChainId, ChainType, NativeTokens } from "../../src";
 
-// const configFilePath = path.join(__dirname, `/../../../../`);
 const enumFolderPath = path.join(
   __dirname,
   `/../../src/constants/chain-enums/`
 );
-
-// export const buildEnvFile = async (
-//   rpc: string,
-//   ownerAddress: string,
-//   pk: string
-// ) => {
-//   const envPath = configFilePath + ".env";
-//   const envExists = fs.existsSync(envPath);
-
-//   let configsString = "";
-//   if (envExists) {
-//     configsString = fs.readFileSync(envPath, "utf-8");
-//   } else {
-//     const envPath = configFilePath + ".env.example";
-//     configsString = fs.readFileSync(envPath, "utf-8");
-//   }
-
-//   if (!configsString.includes("SOCKET_OWNER_ADDRESS") || !envExists) {
-//     configsString += `\nSOCKET_OWNER_ADDRESS="${ownerAddress}"`;
-//   }
-
-//   if (
-//     (!configsString.includes("SOCKET_SIGNER_KEY") || !envExists) &&
-//     pk &&
-//     pk.length
-//   ) {
-//     configsString += `\nSOCKET_SIGNER_KEY="${pk}"`;
-//   }
-
-//   configsString += `\nNEW_RPC="${rpc}"\n`;
-//   await writeFile(".env", configsString);
-// };
 
 export const updateSDK = async (
   chainName: string,

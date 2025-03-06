@@ -38,7 +38,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         address targetAddress,
         bytes32 payloadId,
         bytes payload,
-        uint256 readAnchorValue
+        uint256 readAt
     );
 
     /// @notice Emitted when a finalize request is made
@@ -231,14 +231,14 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
             params_.transmitter,
             params_.payloadDetails.target,
             switchboard,
-            params_.payloadDetails.writeFinality,
-            params_.payloadDetails.readAnchorValue,
             params_.payloadDetails.executionGasLimit,
             block.timestamp + expiryTime,
             params_.asyncId,
             digest,
             params_.payloadDetails.payload,
-            params_.payloadDetails.next
+            params_.payloadDetails.next,
+            params_.payloadDetails.writeFinality,
+            params_.payloadDetails.readAt
         );
         asyncRequests[payloadId_] = asyncRequest;
         emit FinalizeRequested(payloadId_, asyncRequest);
@@ -257,7 +257,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         address appGateway_,
         address[] memory asyncPromises_,
         bytes memory payload_,
-        uint256 readAnchorValue_
+        uint256 readAt_
     ) public returns (bytes32 payloadId) {
         // from payload delivery
         _consumeLimit(appGateway_, QUERY, 1);
@@ -272,17 +272,17 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
             address(0),
             targetAddress_,
             address(0),
-            WriteFinality.LOW,
-            readAnchorValue_,
             0,
             block.timestamp + expiryTime,
             bytes32(0),
             bytes32(0),
             payload_,
-            asyncPromises_
+            asyncPromises_,
+            WriteFinality.LOW,
+            readAt_
         );
         asyncRequests[payloadId] = asyncRequest_;
-        emit QueryRequested(chainSlug_, targetAddress_, payloadId, payload_, readAnchorValue_);
+        emit QueryRequested(chainSlug_, targetAddress_, payloadId, payload_, readAt_);
     }
 
     /// @notice Marks a request as finalized with a proof on digest

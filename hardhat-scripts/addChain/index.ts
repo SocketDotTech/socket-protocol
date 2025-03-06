@@ -1,6 +1,6 @@
 import prompts from "prompts";
 
-import { writeConfigs } from "./writeConfigs";
+import { addChainToSDK } from "./writeConfigs";
 
 async function main() {
   const response = await prompts([
@@ -23,7 +23,7 @@ async function main() {
 
   switch (response.option) {
     case "add":
-      await writeConfigs();
+      await addChainToSDK();
       break;
     case "exit":
       process.exit(0);

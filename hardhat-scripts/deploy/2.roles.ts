@@ -2,7 +2,6 @@ import { config as dotenvConfig } from "dotenv";
 dotenvConfig();
 
 import { Wallet } from "ethers";
-import { ethers } from "hardhat";
 import { chains, EVMX_CHAIN_ID, mode, watcher } from "../config";
 import {
   CORE_CONTRACTS,
@@ -16,11 +15,7 @@ import {
   getRoleHash,
   overrides,
 } from "../utils";
-import { relayerAddressList } from "../constants/relayers";
-import {
-  ChainAddressesObj,
-  ChainSlug,
-} from "@socket.tech/socket-protocol-common";
+import { ChainAddressesObj, ChainSlug } from "../../src";
 import { ROLES } from "../constants/roles";
 import { getWatcherSigner, getSocketSigner } from "../utils/sign";
 export const REQUIRED_ROLES = {
