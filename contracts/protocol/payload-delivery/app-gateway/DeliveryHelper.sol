@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import "./BatchAsync.sol";
 
 contract DeliveryHelper is BatchAsync {
-    event CallBackReverted(bytes32 asyncId_, bytes32 payloadId_);
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -82,8 +81,6 @@ contract DeliveryHelper is BatchAsync {
         } else {
             _finishBatch(asyncId_, payloadBatch);
         }
-
-        isValidPromise[msg.sender] = false;
     }
 
     function _finishBatch(bytes32 asyncId_, PayloadBatch storage payloadBatch_) internal {

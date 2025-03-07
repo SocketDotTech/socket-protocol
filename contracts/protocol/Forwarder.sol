@@ -107,15 +107,17 @@ contract Forwarder is ForwarderStorage, Initializable {
         // Queue the call in the auction house.
         IDeliveryHelper(deliveryHelper).queue(
             CallParams({
-                isPlug: IsPlug.NO,
-                isParallel: isParallelCall,
+                appGateway: msg.sender,
                 chainSlug: chainSlug,
-                target: onChainAddress,
-                asyncPromise: latestAsyncPromise,
-                value: 0,
-                gasLimit: gasLimit,
+                isPlug: IsPlug.NO,
                 callType: isReadCall == Read.ON ? CallType.READ : CallType.WRITE,
+                isParallel: isParallelCall,
                 writeFinality: writeFinality,
+                asyncPromise: latestAsyncPromise,
+                switchboard: address(0), // todo: add switchboard
+                target: onChainAddress,
+                gasLimit: gasLimit,
+                value: 0,
                 readAt: readAt,
                 payload: msg.data,
                 initCallData: bytes("")
