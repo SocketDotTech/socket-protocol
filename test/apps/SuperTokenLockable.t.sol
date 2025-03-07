@@ -188,7 +188,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         assertEq(LimitHook(onChainLimitHook).owner(), owner, "LimitHook owner should be correct");
 
         PayloadDetails[] memory payloadDetails = createDeployPayloadDetailsArray(arbChainSlug);
-        checkPayloadBatchAndDetails(
+        checkPayloadRequestAndDetails(
             payloadDetails,
             asyncId,
             address(appContracts.superTokenLockableApp)
@@ -198,7 +198,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     function testConfigure() public {
         _deploy(contractIds, arbChainSlug, 2, IAppGateway(appContracts.superTokenLockableApp));
 
-        bytes32 asyncId = _executeWriteBatchSingleChain(arbChainSlug, 1);
+        bytes32 asyncId = _executeWriteRequestSingleChain(arbChainSlug, 1);
 
         (address onChainSuperToken, ) = getOnChainAndForwarderAddresses(
             arbChainSlug,
@@ -217,7 +217,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         );
 
         PayloadDetails[] memory payloadDetails = createConfigurePayloadDetailsArray(arbChainSlug);
-        checkPayloadBatchAndDetails(
+        checkPayloadRequestAndDetails(
             payloadDetails,
             asyncId,
             address(appContracts.superTokenLockableApp)
@@ -227,11 +227,11 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     function _deployBridge() internal {
         _deploy(contractIds, arbChainSlug, 2, IAppGateway(appContracts.superTokenLockableApp));
 
-        _executeWriteBatchSingleChain(arbChainSlug, 1);
+        _executeWriteRequestSingleChain(arbChainSlug, 1);
 
         _deploy(contractIds, optChainSlug, 2, IAppGateway(appContracts.superTokenLockableApp));
 
-        _executeWriteBatchSingleChain(optChainSlug, 1);
+        _executeWriteRequestSingleChain(optChainSlug, 1);
     }
 
     function _bridge() internal returns (bytes32, bytes32[] memory) {
@@ -321,7 +321,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         finalizeAndExecute(payloadIds[0]);
 
         vm.expectEmit(true, true, false, true);
-        emit BatchCancelled(bridgeAsyncId);
+        emit RequestCancelled(bridgeAsyncId);
         finalizeQuery(payloadIds[1], abi.encode(0.001 ether));
 
         bytes32[] memory cancelPayloadIds = new bytes32[](1);
@@ -458,7 +458,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //         1
     //     );
     //     payloadDetails = createConfigurePayloadDetailsArray(optChainSlug);
-    //     _executeBatchSingleChain(
+    //     _executeRequestSingleChain(
     //         payloadIds
     //     );
 
@@ -484,7 +484,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //         1
     //     );
     //     payloadDetails = createConfigurePayloadDetailsArray(arbChainSlug);
-    //     _executeBatchSingleChain(
+    //     _executeRequestSingleChain(
     //         payloadIds
     //     );
     // }
@@ -603,7 +603,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     //     );
 
     //     vm.expectEmit(true, true, false, true);
-    //     emit BatchCancelled(bridgeAsyncId);
+    //     emit RequestCancelled(bridgeAsyncId);
     //     finalizeQuery(payloadIds[1], abi.encode(0.001 ether));
 
     //     bytes32[] memory cancelPayloadIds = new bytes32[](1);

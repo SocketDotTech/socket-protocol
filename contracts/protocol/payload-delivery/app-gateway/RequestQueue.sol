@@ -41,29 +41,29 @@ abstract contract RequestQueue is DeliveryUtils {
         (
             PayloadDetails[] memory payloadDetailsArray,
             uint256 levels,
-            bool isFirstBatchRead
+            bool isFirstRequestRead
         ) = _createPayloadDetailsArray(appGateway);
 
         if (auctionManager_ == address(0))
             auctionManager_ = IAddressResolver(addressResolver__).defaultAuctionManager();
 
-        PayloadBatch memory payloadBatch = PayloadBatch({
+        PayloadRequest memory payloadRequest = PayloadRequest({
             appGateway: appGateway,
             fees: fees_,
             auctionManager: auctionManager_,
             winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
-            isBatchCancelled: false,
-            lastBatchExecuting: 0,
+            isRequestCancelled: false,
+            lastRequestExecuting: 0,
             onCompleteData: onCompleteData_,
             payloadDetailsArray: payloadDetailsArray
         });
 
-        (bytes32 asyncId, bytes32[] memory payloadIds) = watcherPrecompile__().createBatch(
+        (bytes32 asyncId, bytes32[] memory payloadIds) = watcherPrecompile__().createRequest(
             payloadDetailsArray
         );
 
         // send query directly if first batch is all reads
-        if (isFirstBatchRead) watcherPrecompile__().execute(asyncId);
+        if (isFirstRequestRead) watcherPrecompile__().execute(asyncId);
         emit PayloadSubmitted(asyncId, appGateway, payloadDetailsArray, fees_, auctionManager_);
     }
 
@@ -73,15 +73,19 @@ abstract contract RequestQueue is DeliveryUtils {
         address appGateway_
     )
         internal
-        returns (PayloadDetails[] memory payloadDetailsArray, uint256 levels, bool isFirstBatchRead)
+        returns (
+            PayloadDetails[] memory payloadDetailsArray,
+            uint256 levels,
+            bool isFirstRequestRead
+        )
     {
-        if (callParamsArray.length == 0) return (payloadDetailsArray, isFirstBatchRead);
+        if (callParamsArray.length == 0) return (payloadDetailsArray, isFirstRequestRead);
         payloadDetailsArray = new PayloadDetails[](callParamsArray.length);
 
         uint256 reads = 0;
         uint256 writes = 0;
         levels = 0;
-        isFirstBatchRead = callParamsArray[0].callType == CallType.READ;
+        isFirstRequestRead = callParamsArray[0].callType == CallType.READ;
 
         for (uint256 i = 0; i < callParamsArray.length; i++) {
             // Check if first batch is all reads
@@ -90,7 +94,7 @@ abstract contract RequestQueue is DeliveryUtils {
                 callParamsArray[i].isParallel == Parallel.ON &&
                 callParamsArray[i].callType != CallType.READ
             ) {
-                isFirstBatchRead = false;
+                isFirstRequestRead = false;
             }
 
             // Track read/write counts

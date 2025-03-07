@@ -33,7 +33,7 @@ abstract contract DeliveryUtils is
     error InsufficientFees();
 
     event CallBackReverted(bytes32 asyncId_, bytes32 payloadId_);
-    event BatchCancelled(bytes32 indexed asyncId);
+    event RequestCancelled(bytes32 indexed asyncId);
     event BidTimeoutUpdated(uint256 newBidTimeout);
     event PayloadSubmitted(
         bytes32 indexed asyncId,
@@ -53,7 +53,7 @@ abstract contract DeliveryUtils is
     );
 
     modifier onlyAuctionManager(bytes32 asyncId_) {
-        if (msg.sender != _payloadBatches[asyncId_].auctionManager) revert NotAuctionManager();
+        if (msg.sender != _payloadRequestes[asyncId_].auctionManager) revert NotAuctionManager();
         _;
     }
 
@@ -72,6 +72,6 @@ abstract contract DeliveryUtils is
     }
 
     function endTimeout(bytes32 asyncId_) external onlyWatcherPrecompile {
-        IAuctionManager(_payloadBatches[asyncId_].auctionManager).endAuction(asyncId_);
+        IAuctionManager(_payloadRequestes[asyncId_].auctionManager).endAuction(asyncId_);
     }
 }

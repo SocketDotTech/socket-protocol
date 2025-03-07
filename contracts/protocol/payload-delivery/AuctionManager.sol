@@ -10,7 +10,7 @@ import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 import {IAuctionManager} from "../../interfaces/IAuctionManager.sol";
 
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
-import {Fees, Bid, PayloadBatch} from "../utils/common/Structs.sol";
+import {Fees, Bid, PayloadRequest} from "../utils/common/Structs.sol";
 import {AuctionClosed, AuctionAlreadyStarted, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter} from "../utils/common/Errors.sol";
 
 abstract contract AuctionManagerStorage is IAuctionManager {
@@ -99,9 +99,9 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
 
         Bid memory newBid = Bid({fee: fee, transmitter: transmitter, extraData: extraData});
 
-        PayloadBatch memory payloadBatch = IDeliveryHelper(addressResolver__.deliveryHelper())
-            .payloadBatches(asyncId_);
-        if (fee > payloadBatch.fees.amount) revert BidExceedsMaxFees();
+        PayloadRequest memory payloadRequest = IDeliveryHelper(addressResolver__.deliveryHelper())
+            .payloadRequestes(asyncId_);
+        if (fee > payloadRequest.fees.amount) revert BidExceedsMaxFees();
 
         if (winningBids[asyncId_].transmitter != address(0) && fee >= winningBids[asyncId_].fee)
             revert LowerBidAlreadyExists();
@@ -109,8 +109,8 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
         winningBids[asyncId_] = newBid;
 
         IFeesManager(addressResolver__.feesManager()).blockFees(
-            payloadBatch.appGateway,
-            payloadBatch.fees,
+            payloadRequest.appGateway,
+            payloadRequest.fees,
             newBid,
             asyncId_
         );
@@ -118,7 +118,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
         if (auctionEndDelaySeconds > 0) {
             startAuction(asyncId_);
             watcherPrecompile__().setTimeout(
-                payloadBatch.appGateway,
+                payloadRequest.appGateway,
                 abi.encodeWithSelector(this.endAuction.selector, asyncId_),
                 auctionEndDelaySeconds
             );
@@ -143,27 +143,27 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
 
         emit AuctionEnded(asyncId_, winningBid);
 
-        PayloadBatch memory payloadBatch = IDeliveryHelper(addressResolver__.deliveryHelper())
-            .payloadBatches(asyncId_);
+        PayloadRequest memory payloadRequest = IDeliveryHelper(addressResolver__.deliveryHelper())
+            .payloadRequestes(asyncId_);
 
         watcherPrecompile__().setTimeout(
-            payloadBatch.appGateway,
+            payloadRequest.appGateway,
             abi.encodeWithSelector(this.expireBid.selector, asyncId_),
             IDeliveryHelper(addressResolver__.deliveryHelper()).bidTimeout()
         );
 
-        IDeliveryHelper(addressResolver__.deliveryHelper()).startBatchProcessing(
+        IDeliveryHelper(addressResolver__.deliveryHelper()).startRequestProcessing(
             asyncId_,
             winningBid
         );
     }
 
     function expireBid(bytes32 asyncId_) external onlyWatcherPrecompile {
-        PayloadBatch memory batch = IDeliveryHelper(addressResolver__.deliveryHelper())
-            .payloadBatches(asyncId_);
+        PayloadRequest memory batch = IDeliveryHelper(addressResolver__.deliveryHelper())
+            .payloadRequestes(asyncId_);
 
         // if executed, bid is not expired
-        if (batch.totalPayloadsRemaining == 0 || batch.isBatchCancelled) return;
+        if (batch.totalPayloadsRemaining == 0 || batch.isRequestCancelled) return;
 
         IFeesManager(addressResolver__.feesManager()).unblockFees(asyncId_, batch.appGateway);
         winningBids[asyncId_] = Bid({fee: 0, transmitter: address(0), extraData: ""});

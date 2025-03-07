@@ -9,7 +9,7 @@ import "../contracts/interfaces/IForwarder.sol";
 import "../contracts/protocol/utils/common/AccessRoles.sol";
 import {Socket} from "../contracts/protocol/socket/Socket.sol";
 import "../contracts/protocol/socket/switchboard/FastSwitchboard.sol";
-import "../contracts/protocol/socket/SocketBatcher.sol";
+import "../contracts/protocol/socket/SocketRequester.sol";
 import "../contracts/protocol/AddressResolver.sol";
 import {ContractFactoryPlug} from "../contracts/protocol/payload-delivery/ContractFactoryPlug.sol";
 import {FeesPlug} from "../contracts/protocol/payload-delivery/FeesPlug.sol";
@@ -46,7 +46,7 @@ contract SetupTest is Test {
         uint32 chainSlug;
         Socket socket;
         FastSwitchboard switchboard;
-        SocketBatcher socketBatcher;
+        SocketRequester socketRequester;
         ContractFactoryPlug contractFactoryPlug;
         FeesPlug feesPlug;
     }
@@ -65,7 +65,7 @@ contract SetupTest is Test {
 
     function deploySocket(uint32 chainSlug_) internal returns (SocketContracts memory) {
         Socket socket = new Socket(chainSlug_, owner, "test");
-        SocketBatcher socketBatcher = new SocketBatcher(owner, socket);
+        SocketRequester socketRequester = new SocketRequester(owner, socket);
         FastSwitchboard switchboard = new FastSwitchboard(chainSlug_, socket, owner);
 
         FeesPlug feesPlug = new FeesPlug(address(socket), owner);
@@ -95,7 +95,7 @@ contract SetupTest is Test {
                 chainSlug: chainSlug_,
                 socket: socket,
                 switchboard: switchboard,
-                socketBatcher: socketBatcher,
+                socketRequester: socketRequester,
                 contractFactoryPlug: contractFactoryPlug,
                 feesPlug: feesPlug
             });
@@ -197,7 +197,7 @@ contract SetupTest is Test {
             deadline: deadline
         });
 
-        bytes memory returnData = socketConfig.socketBatcher.attestAndExecute(params);
+        bytes memory returnData = socketConfig.socketRequester.attestAndExecute(params);
         vm.stopPrank();
         return returnData;
     }

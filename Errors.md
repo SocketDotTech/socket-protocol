@@ -78,7 +78,7 @@
 | `InvalidTransmitter()`    | `0x58a70a0a` |
 | `LowerBidAlreadyExists()` | `0xaaa1f709` |
 
-## protocol/payload-delivery/app-gateway/BatchAsync.sol
+## protocol/payload-delivery/app-gateway/RequestAsync.sol
 
 | Error                   | Signature    |
 | ----------------------- | ------------ |

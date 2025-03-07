@@ -202,7 +202,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         Bid memory winningBid_,
         bytes32 asyncId_
     ) external {
-        if (msg.sender != deliveryHelper().getAsyncBatchDetails(asyncId_).auctionManager)
+        if (msg.sender != deliveryHelper().getAsyncRequestDetails(asyncId_).auctionManager)
             revert NotAuctionManager();
 
         address appGateway = _getCoreAppGateway(originAppGateway_);

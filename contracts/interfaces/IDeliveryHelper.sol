@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.3;
-import {PayloadDetails, CallParams, Bid, Fees, WriteFinality, DeployParams, CallType, PayloadBatch, Parallel, IsPlug} from "../protocol/utils/common/Structs.sol";
+import {PayloadDetails, CallParams, Bid, Fees, WriteFinality, DeployParams, CallType, PayloadRequest, Parallel, IsPlug} from "../protocol/utils/common/Structs.sol";
 
 interface IDeliveryHelper {
     event BidPlaced(
@@ -15,7 +15,7 @@ interface IDeliveryHelper {
 
     function bidTimeout() external view returns (uint128);
 
-    function payloadBatches(bytes32) external view returns (PayloadBatch memory);
+    function payloadRequestes(bytes32) external view returns (PayloadRequest memory);
 
     function clearQueue() external;
 
@@ -41,11 +41,11 @@ interface IDeliveryHelper {
 
     function increaseFees(bytes32 asyncId_, uint256 fees_) external;
 
-    function startBatchProcessing(bytes32 asyncId_, Bid memory winningBid_) external;
+    function startRequestProcessing(bytes32 asyncId_, Bid memory winningBid_) external;
 
     function getFees(bytes32 asyncId_) external view returns (Fees memory);
 
     function getCurrentAsyncId() external view returns (bytes32);
 
-    function getAsyncBatchDetails(bytes32 asyncId_) external view returns (PayloadBatch memory);
+    function getAsyncRequestDetails(bytes32 asyncId_) external view returns (PayloadRequest memory);
 }

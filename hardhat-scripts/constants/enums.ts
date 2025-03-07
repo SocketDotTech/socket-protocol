@@ -1,6 +1,6 @@
 export enum CORE_CONTRACTS {
   Socket = "Socket",
-  SocketBatcher = "SocketBatcher",
+  SocketRequester = "SocketRequester",
   FastSwitchboard = "FastSwitchboard",
   FeesPlug = "FeesPlug",
   ContractFactoryPlug = "ContractFactoryPlug",

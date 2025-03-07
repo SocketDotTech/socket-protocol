@@ -8,10 +8,10 @@ import "../utils/RescueFundsLib.sol";
 import {AttestAndExecutePayloadParams} from "../../protocol/utils/common/Structs.sol";
 
 /**
- * @title SocketBatcher
- * @notice The SocketBatcher contract is responsible for batching payloads and transmitting them to the destination chain
+ * @title SocketRequester
+ * @notice The SocketRequester contract is responsible for batching payloads and transmitting them to the destination chain
  */
-contract SocketBatcher is Ownable {
+contract SocketRequester is Ownable {
     // socket contract
     ISocket public immutable socket__;
 

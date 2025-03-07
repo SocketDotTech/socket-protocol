@@ -30,8 +30,8 @@
     ],
     [
       "0xA944BBe5D4F67a242C9e92d539fF2d55616283a7",
-      "SocketBatcher",
-      "contracts/protocol/socket/SocketBatcher.sol",
+      "SocketRequester",
+      "contracts/protocol/socket/SocketRequester.sol",
       [
         "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
         "0x6c40Fb39B03e32EC4D23e31DdE6D10283F2C7b4F"

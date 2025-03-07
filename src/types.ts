@@ -17,7 +17,7 @@ export type ChainFinalityBlocks = {
 
 export type ChainAddressesObj = {
   Socket: string;
-  SocketBatcher: string;
+  SocketRequester: string;
   FastSwitchboard: string;
   FeesPlug: string;
   ContractFactoryPlug: string;

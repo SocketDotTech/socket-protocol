@@ -243,7 +243,7 @@ const deploySocketContracts = async () => {
         );
         deployUtils.addresses[contractName] = socket.address;
 
-        contractName = CORE_CONTRACTS.SocketBatcher;
+        contractName = CORE_CONTRACTS.SocketRequester;
         const batcher: Contract = await getOrDeploy(
           contractName,
           contractName,
@@ -416,7 +416,6 @@ const deployContractWithProxy = async (
   return deployUtils;
 };
 
-
 export async function getImplementationAddress(
   proxyAddress: string
 ): Promise<string> {
@@ -433,12 +432,9 @@ export async function getImplementationAddress(
   return utils.getAddress("0x" + implHex.slice(-40));
 }
 
-
 main()
   .then(() => process.exit(0))
   .catch((error: Error) => {
     console.error(error);
     process.exit(1);
   });
-
-

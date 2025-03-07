@@ -97,6 +97,11 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     /// @dev callId => bool
     mapping(bytes32 => bool) public appGatewayCalled;
 
-    // slots 69-118: gap for future storage variables
-    uint256[50] _gap_after;
+    // slot 69: requests
+    /// @notice Mapping to store requests
+    /// @dev asyncId => Request
+    mapping(bytes32 => Request) public requests;
+
+    // slots 71-118: gap for future storage variables
+    uint256[48] _gap_after;
 }

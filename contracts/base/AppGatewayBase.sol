@@ -10,6 +10,7 @@ import "../interfaces/IPromise.sol";
 import {FeesPlugin} from "../protocol/utils/FeesPlugin.sol";
 import {InvalidPromise, FeesNotSet} from "../protocol/utils/common/Errors.sol";
 import {FAST} from "../protocol/utils/common/Constants.sol";
+
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway
 abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin {
@@ -52,11 +53,13 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         _setAddressResolver(addressResolver_);
         sbType = FAST;
     }
+
     /// @notice Sets the switchboard type
     /// @param sbType_ The switchboard type
     function _setSbType(bytes32 sbType_) internal {
         sbType = sbType_;
     }
+
     /// @notice Creates a contract ID
     /// @param contractName_ The contract name
     /// @return bytes32 The contract ID
@@ -307,17 +310,17 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// @notice Callback in pd promise to be called after all contracts are deployed
-    /// @param payloadBatch_ The payload batch
+    /// @param payloadRequest_ The payload batch
     /// @dev only payload delivery can call this
     /// @dev callback in pd promise to be called after all contracts are deployed
-    function onBatchComplete(
+    function onRequestComplete(
         bytes32,
-        PayloadBatch memory payloadBatch_
+        PayloadRequest memory payloadRequest_
     ) external override onlyDeliveryHelper {
-        if (payloadBatch_.onCompleteData.length == 0) return;
+        if (payloadRequest_.onCompleteData.length == 0) return;
 
         (uint32 chainSlug, bool isDeploy) = abi.decode(
-            payloadBatch_.onCompleteData,
+            payloadRequest_.onCompleteData,
             (uint32, bool)
         );
         if (isDeploy) {

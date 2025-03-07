@@ -160,7 +160,7 @@ contract ParallelCounterTest is DeliveryHelperTest {
     //     instances[0] = arbCounterForwarder;
     //     counterGateway.incrementCounters(instances);
 
-    //     _executeBatchSingleChain(arbChainSlug, 1);
+    //     _executeRequestSingleChain(arbChainSlug, 1);
     //     assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
     // }
 
@@ -191,7 +191,7 @@ contract ParallelCounterTest is DeliveryHelperTest {
     //     uint32[] memory chains = new uint32[](2);
     //     chains[0] = arbChainSlug;
     //     chains[1] = optChainSlug;
-    //     _executeBatchMultiChain(chains);
+    //     _executeRequestMultiChain(chains);
     //     assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
     //     assertEq(Counter(optCounter).counter(), optCounterBefore + 1);
     // }

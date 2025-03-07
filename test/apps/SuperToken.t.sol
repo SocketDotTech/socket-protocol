@@ -168,7 +168,7 @@ contract SuperTokenTest is DeliveryHelperTest {
         chainSlugs[1] = IForwarder(forwarderOpt).getChainSlug();
         // You can run the function below whenever you want to simulate the onchain execution for
         // the txs in batch of the current asyncId. It bids, finalises, relays and resolves promises
-        _executeWriteBatchMultiChain(chainSlugs);
+        _executeWriteRequestMultiChain(chainSlugs);
 
         assertEq(
             SuperToken(onChainArb).balanceOf(owner),

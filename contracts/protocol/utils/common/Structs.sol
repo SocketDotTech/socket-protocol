@@ -132,16 +132,16 @@ struct OverrideParams {
     uint256 readAt;
 }
 
-struct PayloadBatch {
+struct PayloadRequest {
     address appGateway;
     address auctionManager;
-    bool isBatchCancelled;
+    bool isRequestCancelled;
     uint256 currentPayloadIndex;
     uint256 totalPayloadsRemaining;
     Fees fees;
     Bid winningBid;
-    address[] lastBatchPromises;
-    bytes32[] lastBatchOfPayloads;
+    address[] lastRequestPromises;
+    bytes32[] lastRequestOfPayloads;
     bytes onCompleteData;
 }
 
@@ -153,7 +153,7 @@ struct PayloadDetails {
     address appGateway;
     address target;
     address asyncPromise;
-	address switchboard;
+    address switchboard;
     uint256 levelNumber;
     uint256 value;
     uint256 executionGasLimit;
@@ -183,6 +183,14 @@ struct QueryResults {
     bytes functionSelector;
     bytes returnData;
     bytes callback;
+}
+
+struct Request {
+    address middleware;
+    bool isRequestCancelled;
+    uint256 currentLevel;
+    uint256 totalLevels;
+    PayloadDetails[] payloadDetailsArray;
 }
 
 struct ResolvedPromises {
