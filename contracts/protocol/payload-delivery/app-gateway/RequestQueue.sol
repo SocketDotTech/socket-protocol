@@ -52,6 +52,7 @@ abstract contract RequestQueue is DeliveryUtils {
             fees: fees_,
             auctionManager: auctionManager_,
             winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
+            // w:
             isRequestCancelled: false,
             lastRequestExecuting: 0,
             onCompleteData: onCompleteData_,
@@ -113,7 +114,7 @@ abstract contract RequestQueue is DeliveryUtils {
                 revert("Invalid app gateway");
         }
 
-        // check limits on read and write
+        // todo: check limits on read and write
         watcherPrecompile__().checkAndConsumeLimit(appGateway_, QUERY, reads);
         watcherPrecompile__().checkAndConsumeLimit(appGateway_, FINALIZE, writes);
 
