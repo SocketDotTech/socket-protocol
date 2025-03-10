@@ -11,11 +11,12 @@ abstract contract RequestHandler {
 
     function submitRequest(
         PayloadSubmitParams[] calldata payloadSubmitParams
-    ) public returns (bytes32 requestCount) {
-        PayloadParams[] payloadParamsArray;
+    ) public returns (uint40 requestCount) {
+        PayloadParams[] payloadParamsArray = new PayloadParams[]();
 
-        uint256 requestCount = nextRequestCount++;
-        uint256 batchCount = nextBatchCount++;
+        requestCount = nextRequestCount++;
+        uint40 batchCount = nextBatchCount++;
+        uint40 currentBatch = batchCount;
 
         for (uint256 i = 0; i < payloadSubmitParams.length; i++) {
             PayloadSubmitParams p = payloadSubmitParams[i];
@@ -42,6 +43,7 @@ abstract contract RequestHandler {
                     switchboard: p.switchboard,
                     target: p.target,
                     appGateway: p.appGateway,
+                    promise: p.promise,
                     gasLimit: p.gasLimit,
                     value: p.value,
                     readAt: p.readAt,
@@ -49,13 +51,70 @@ abstract contract RequestHandler {
                 })
             );
         }
-        RequestParams requestParams = RequestParams({
+
+        requestParams[requestCount] = RequestParams({
             isRequestCancelled: false;
-            currentBatch;
-            currentBatchPayloadsExecuted; // todo
-            totalBatchPayloads; // todo
+            currentBatch: currentBatch;
+            currentBatchPayloadsExecuted: 0;
+            totalBatchPayloads: 0;
             middleware: msg.sender;
+            transmitter: address(0);
             payloadParamsArray: payloadParamsArray;
         });
+    }
+
+    function startProcessingRequest(uint40 requestCount, address transmitter) public {
+        RequestParams r = requestParams[requestCount];
+        require(!r.isRequestCancelled, RequestCancelled());
+        require(r.middleware == msg.sender, InvalidCaller());
+        require(r.transmitter == address(0), AlreadyStarted());
+        r.transmitter = transmitter;
+        _processNextBatch(requestCount);
+    }
+
+    function _processNextBatch(uint40 requestCount) private {
+        RequestParams r = requestParams[requestCount];
+        PayloadParams[] memory payloadParamsArray = _getNextBatch(requestCount);
+        for (uint40 i = 0; i < payloadParamsArray.length; i++) {
+            // todo: finalize or query
+        }
+    }
+
+    function updateTransmitter(uint40 requestCount, address transmitter) public {
+        RequestParams r = requestParams[requestCount];
+        require(!r.isRequestCancelled, RequestCancelled());
+        require(r.middleware == msg.sender, InvalidCaller());
+        r.transmitter = transmitter;
+        _reprocessCurrentBatch(requestCount);
+    }
+
+    function cancelRequest(uint40 requestCount) public {
+        RequestParams r = requestParams[requestCount];
+        require(!r.isRequestCancelled, RequestAlreadyCancelled());
+        require(r.middleware == msg.sender, InvalidCaller());
+        r.isRequestCancelled = true;
+    }
+
+    function _getNextBatch(uint40 requestCount) private view returns (PayloadParams[] memory) {
+        RequestParams r = requestParams[requestCount];
+        PayloadParams[] memory payloadParamsArray = new PayloadParams[]();
+        uint40 nextBatch = r.currentBatch + 1;
+        for (uint40 i = 0; i < r.payloadParamsArray.length; i++) {
+            if (r.payloadParamsArray[i].batchCount == nextBatch) {
+                payloadParamsArray.push(r.payloadParamsArray[i]);
+            }
+        }
+        return payloadParamsArray;
+    }
+
+    function _getCurrentBatch(uint40 requestCount) private view returns (PayloadParams[] memory) {
+        RequestParams r = requestParams[requestCount];
+        PayloadParams[] memory payloadParamsArray = new PayloadParams[]();
+        for (uint40 i = 0; i < r.payloadParamsArray.length; i++) {
+            if (r.payloadParamsArray[i].batchCount == r.currentBatch) {
+                payloadParamsArray.push(r.payloadParamsArray[i]);
+            }
+        }
+        return payloadParamsArray;
     }
 }

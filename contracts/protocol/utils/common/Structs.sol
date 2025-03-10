@@ -151,6 +151,7 @@ struct PayloadSubmitParams {
     address switchboard;
     address target;
     address appGateway;
+    address promise;
     uint256 gasLimit;
     uint256 value;
     uint256 readAt;
@@ -168,6 +169,7 @@ struct PayloadParams {
     address switchboard;
     address target;
     address appGateway;
+    address promise;
     uint256 gasLimit;
     uint256 value;
     uint256 readAt;
@@ -180,6 +182,7 @@ struct RequestParams {
     uint256 currentBatchPayloadsExecuted;
     uint256 totalBatchPayloads;
     address middleware;
+    address transmitter;
     PayloadParams[] payloadParamsArray;
 }
 
