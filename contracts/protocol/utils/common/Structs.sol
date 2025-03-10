@@ -158,8 +158,8 @@ struct PayloadSubmitParams {
 }
 
 struct PayloadParams {
-    bytes32 requestId;
-    bytes32 batchId;
+    uint40 requestCount;
+    uint40 batchCount;
     uint32 chainSlug;
     CallType callType;
     Parallel isParallel;
@@ -180,7 +180,7 @@ struct RequestParams {
     uint256 currentBatchPayloadsExecuted;
     uint256 totalBatchPayloads;
     address middleware;
-    PayloadDetails[] payloadDetailsArray;
+    PayloadParams[] payloadParamsArray;
 }
 
 struct RequestMetadata {
@@ -199,8 +199,8 @@ struct ExecuteParams {
 }
 
 struct PayloadIdParams {
-    bytes32 requestId;
-    bytes32 batchId;
+    uint40 requestCount;
+    uint40 batchCount;
     bytes32 prevPayloadHash; // should be id?
     address switchboard;
     uint32 chainSlug;
