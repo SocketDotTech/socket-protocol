@@ -43,7 +43,6 @@ abstract contract RequestHandler {
                     switchboard: p.switchboard,
                     target: p.target,
                     appGateway: p.appGateway,
-                    promise: p.promise,
                     gasLimit: p.gasLimit,
                     value: p.value,
                     readAt: p.readAt,

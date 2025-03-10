@@ -151,7 +151,6 @@ struct PayloadSubmitParams {
     address switchboard;
     address target;
     address appGateway;
-    address promise;
     uint256 gasLimit;
     uint256 value;
     uint256 readAt;
