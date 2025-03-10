@@ -23,6 +23,9 @@ abstract contract FeesManagerStorage is IFeesManager {
     // slot 51
     uint32 public evmxSlug;
 
+    // slot 52
+    bytes32 public sbType;
+
     /// @notice Struct containing fee amounts and status
     struct TokenBalance {
         uint256 deposited; // Amount deposited
@@ -130,9 +133,11 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     function initialize(
         address addressResolver_,
         address owner_,
-        uint32 evmxSlug_
+        uint32 evmxSlug_,
+        bytes32 sbType_
     ) public reinitializer(1) {
         evmxSlug = evmxSlug_;
+        sbType = sbType_;
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
     }
@@ -308,35 +313,54 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
             (token_, totalFees, receiver_, feesId)
         );
 
+        // todo: direct call to watcherPrecompile__().finalize()
         // Create payload for plug contract
-        payloadDetails = _createPayloadDetails(CallType.WRITE, chainSlug_, payload);
-        FinalizeParams memory finalizeParams = FinalizeParams({
-            payloadDetails: payloadDetails,
-            asyncId: bytes32(0),
-            transmitter: transmitter
-        });
+        // payloadDetails = _finalize(CallType.WRITE, chainSlug_, payload, transmitter);
+        // FinalizeParams memory finalizeParams = FinalizeParams({
+        //     payloadDetails: payloadDetails,
+        //     asyncId: bytes32(0),
+        //     transmitter: transmitter
+        // });
 
-        (payloadId, digest) = watcherPrecompile__().finalize(address(this), finalizeParams);
+        // (payloadId, digest) = watcherPrecompile__().finalize(address(this), finalizeParams);
     }
 
-    function _createPayloadDetails(
+    function _finalize(
         CallType callType_,
         uint32 chainSlug_,
-        bytes memory payload_
+        bytes memory payload_,
+        address auctionManager_,
+        Fees memory fees_
     ) internal view returns (PayloadDetails memory) {
+        deliveryHelper().queue(
+            _getQueuePayloadParams(callType_, chainSlug_, payload_, auctionManager_, fees_)
+        );
+        deliveryHelper().batch(fees_, auctionManager_, bytes(""));
+    }
+
+    function _getQueuePayloadParams(
+        CallType callType_,
+        uint32 chainSlug_,
+        bytes memory payload_,
+        address auctionManager_,
+        Fees memory fees_
+    ) internal view returns (QueuePayloadParams memory) {
         return
-            PayloadDetails({
-                appGateway: address(this),
+            QueuePayloadParams({
                 chainSlug: chainSlug_,
-                target: _getFeesPlugAddress(chainSlug_),
-                payload: payload_,
                 callType: callType_,
+                isParallel: Parallel.OFF,
+                isPlug: IsPlug.NO,
                 writeFinality: WriteFinality.LOW,
-                readAt: 0,
+                asyncPromise: address(0),
+                switchboard: address(0), // todo: add switchboard
+                target: _getFeesPlugAddress(chainSlug_),
+                appGateway: address(this),
+                gasLimit: 1000000,
                 value: 0,
-                executionGasLimit: 1000000,
-                next: new address[](2),
-                isParallel: Parallel.OFF
+                readAt: 0,
+                payload: payload_,
+                initCallData: bytes("")
             });
     }
 
@@ -352,8 +376,10 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         uint32 chainSlug_,
         address token_,
         uint256 amount_,
-        address receiver_
-    ) public returns (PayloadDetails memory) {
+        address receiver_,
+        address auctionManager_,
+        Fees memory fees_
+    ) public {
         address appGateway = _getCoreAppGateway(originAppGateway_);
 
         // Check if amount is available in fees plug
@@ -364,12 +390,13 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         tokenBalance.deposited -= amount_;
 
         // Create payload for pool contract
-        return
-            _createPayloadDetails(
-                CallType.WITHDRAW,
-                chainSlug_,
-                abi.encodeCall(IFeesPlug.withdrawFees, (token_, amount_, receiver_))
-            );
+        _finalize(
+            CallType.WITHDRAW,
+            chainSlug_,
+            abi.encodeCall(IFeesPlug.withdrawFees, (token_, amount_, receiver_)),
+            auctionManager_,
+            fees_
+        );
     }
 
     function _encodeFeesId(uint256 feesCounter_) internal view returns (bytes32) {

@@ -9,41 +9,14 @@ abstract contract FeesHelpers is RequestQueue {
     // slots [210-259] reserved for gap
     uint256[50] _gap_batch_async;
 
-    /// @notice Cancels a transaction
-    /// @param asyncId_ The ID of the batch
-    function cancelTransaction(bytes32 asyncId_) external {
-        if (msg.sender != _payloadRequestes[asyncId_].appGateway) {
-            revert OnlyAppGateway();
-        }
-
-        _payloadRequestes[asyncId_].isRequestCancelled = true;
-
-        if (_payloadRequestes[asyncId_].winningBid.transmitter != address(0)) {
-            IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
-                asyncId_,
-                _payloadRequestes[asyncId_].winningBid.transmitter,
-                _payloadRequestes[asyncId_].appGateway
-            );
-        } else {
-            IFeesManager(addressResolver__.feesManager()).unblockFees(
-                asyncId_,
-                _payloadRequestes[asyncId_].appGateway
-            );
-        }
-
-        emit RequestCancelled(asyncId_);
-    }
-
     function increaseFees(bytes32 asyncId_, uint256 newMaxFees_) external override {
         address appGateway = _getCoreAppGateway(msg.sender);
-        if (appGateway != _payloadRequestes[asyncId_].appGateway) {
+        if (appGateway != requests[asyncId_].appGateway) {
             revert OnlyAppGateway();
         }
 
-        if (_payloadRequestes[asyncId_].winningBid.transmitter != address(0))
-            revert WinningBidExists();
-
-        _payloadRequestes[asyncId_].fees.amount = newMaxFees_;
+        if (requests[asyncId_].winningBid.transmitter != address(0)) revert WinningBidExists();
+        requests[asyncId_].fees.amount = newMaxFees_;
         emit FeesIncreased(appGateway, asyncId_, newMaxFees_);
     }
 
@@ -62,16 +35,16 @@ abstract contract FeesHelpers is RequestQueue {
         Fees memory fees_
     ) external {
         PayloadDetails[] memory payloadDetailsArray = new PayloadDetails[](1);
+
+        // this will call batch function in RequestQueue
         payloadDetailsArray[0] = IFeesManager(addressResolver__.feesManager()).getWithdrawToPayload(
             msg.sender,
             chainSlug_,
             token_,
             amount_,
-            receiver_
+            receiver_,
+            auctionManager_,
+            fees_
         );
-        if (auctionManager_ == address(0)) {
-            auctionManager_ = IAddressResolver(addressResolver__).defaultAuctionManager();
-        }
-        _deliverPayload(payloadDetailsArray, fees_, auctionManager_, new bytes(0));
     }
 }
