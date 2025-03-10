@@ -9,7 +9,7 @@ import "../contracts/interfaces/IForwarder.sol";
 import "../contracts/protocol/utils/common/AccessRoles.sol";
 import {Socket} from "../contracts/protocol/socket/Socket.sol";
 import "../contracts/protocol/socket/switchboard/FastSwitchboard.sol";
-import "../contracts/protocol/socket/SocketRequester.sol";
+import "../contracts/protocol/socket/SocketBatcher.sol";
 import "../contracts/protocol/AddressResolver.sol";
 import {ContractFactoryPlug} from "../contracts/protocol/payload-delivery/ContractFactoryPlug.sol";
 import {FeesPlug} from "../contracts/protocol/payload-delivery/FeesPlug.sol";

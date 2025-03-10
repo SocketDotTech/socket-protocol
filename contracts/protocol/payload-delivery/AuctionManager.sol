@@ -10,7 +10,7 @@ import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 import {IAuctionManager} from "../../interfaces/IAuctionManager.sol";
 
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
-import {Fees, Bid, PayloadRequest} from "../utils/common/Structs.sol";
+import {Fees, Bid, RequestMetadata} from "../utils/common/Structs.sol";
 import {AuctionClosed, AuctionAlreadyStarted, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter} from "../utils/common/Errors.sol";
 
 abstract contract AuctionManagerStorage is IAuctionManager {
@@ -99,9 +99,9 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
 
         Bid memory newBid = Bid({fee: fee, transmitter: transmitter, extraData: extraData});
 
-        PayloadRequest memory payloadRequest = IDeliveryHelper(addressResolver__.deliveryHelper())
-            .payloadRequestes(asyncId_);
-        if (fee > payloadRequest.fees.amount) revert BidExceedsMaxFees();
+        RequestMetadata memory requestMetadata = IDeliveryHelper(addressResolver__.deliveryHelper())
+            .requests(asyncId_);
+        if (fee > requestMetadata.fees.amount) revert BidExceedsMaxFees();
 
         if (winningBids[asyncId_].transmitter != address(0) && fee >= winningBids[asyncId_].fee)
             revert LowerBidAlreadyExists();
@@ -109,8 +109,8 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
         winningBids[asyncId_] = newBid;
 
         IFeesManager(addressResolver__.feesManager()).blockFees(
-            payloadRequest.appGateway,
-            payloadRequest.fees,
+            requestMetadata.appGateway,
+            requestMetadata.fees,
             newBid,
             asyncId_
         );
@@ -118,7 +118,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
         if (auctionEndDelaySeconds > 0) {
             startAuction(asyncId_);
             watcherPrecompile__().setTimeout(
-                payloadRequest.appGateway,
+                requestMetadata.appGateway,
                 abi.encodeWithSelector(this.endAuction.selector, asyncId_),
                 auctionEndDelaySeconds
             );
@@ -143,11 +143,11 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
 
         emit AuctionEnded(asyncId_, winningBid);
 
-        PayloadRequest memory payloadRequest = IDeliveryHelper(addressResolver__.deliveryHelper())
-            .payloadRequestes(asyncId_);
+        RequestMetadata memory requestMetadata = IDeliveryHelper(addressResolver__.deliveryHelper())
+            .requests(asyncId_);
 
         watcherPrecompile__().setTimeout(
-            payloadRequest.appGateway,
+            requestMetadata.appGateway,
             abi.encodeWithSelector(this.expireBid.selector, asyncId_),
             IDeliveryHelper(addressResolver__.deliveryHelper()).bidTimeout()
         );
@@ -159,17 +159,19 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
     }
 
     function expireBid(bytes32 asyncId_) external onlyWatcherPrecompile {
-        PayloadRequest memory batch = IDeliveryHelper(addressResolver__.deliveryHelper())
-            .payloadRequestes(asyncId_);
+        RequestMetadata memory requestMetadata = IDeliveryHelper(addressResolver__.deliveryHelper())
+            .requests(asyncId_);
 
         // if executed, bid is not expired
-        if (batch.totalPayloadsRemaining == 0 || batch.isRequestCancelled) return;
+        // todo: check pending payloads from watcher precompile
+        // if (requestMetadata.totalBatchPayloadsRemaining == 0 || requestMetadata.isRequestCancelled)
+        //     return;
 
-        IFeesManager(addressResolver__.feesManager()).unblockFees(asyncId_, batch.appGateway);
-        winningBids[asyncId_] = Bid({fee: 0, transmitter: address(0), extraData: ""});
-        auctionClosed[asyncId_] = false;
+        // IFeesManager(addressResolver__.feesManager()).unblockFees(asyncId_, requestMetadata.appGateway);
+        // winningBids[asyncId_] = Bid({fee: 0, transmitter: address(0), extraData: ""});
+        // auctionClosed[asyncId_] = false;
 
-        emit AuctionRestarted(asyncId_);
+        // emit AuctionRestarted(asyncId_);
     }
 
     function _recoverSigner(

@@ -11,7 +11,7 @@ import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
 import {IAuctionManager} from "../../../interfaces/IAuctionManager.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 
-import {QueuePayloadParams, Fees, PayloadDetails, CallType, Bid, PayloadRequest, Parallel, IsPlug, FinalizeParams, WriteFinality} from "../../utils/common/Structs.sol";
+import {QueuePayloadParams, Fees, CallType, Bid, Parallel, IsPlug, WriteFinality} from "../../utils/common/Structs.sol";
 import {NotAuctionManager, InvalidPromise, InvalidIndex, PromisesNotResolved, InvalidTransmitter} from "../../utils/common/Errors.sol";
 import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW, QUERY, FINALIZE} from "../../utils/common/Constants.sol";
 

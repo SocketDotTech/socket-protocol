@@ -11,7 +11,7 @@ import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {WITHDRAW} from "../utils/common/Constants.sol";
 import {NotAuctionManager} from "../utils/common/Errors.sol";
-import {Bid, Fees, PayloadDetails, CallType, FinalizeParams, Parallel, WriteFinality} from "../utils/common/Structs.sol";
+import {Bid, Fees, CallType, Parallel, WriteFinality} from "../utils/common/Structs.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
     // slots [0-49] reserved for gap
@@ -298,7 +298,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         uint32 chainSlug_,
         address token_,
         address receiver_
-    ) external returns (bytes32 payloadId, bytes32 digest, PayloadDetails memory payloadDetails) {
+    ) external {
         address transmitter = msg.sender;
         // Get all asyncIds for the transmitter
         uint256 totalFees = transmitterFees[transmitter][chainSlug_][token_];
@@ -331,7 +331,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         bytes memory payload_,
         address auctionManager_,
         Fees memory fees_
-    ) internal view returns (PayloadDetails memory) {
+    ) internal {
         deliveryHelper().queue(
             _getQueuePayloadParams(callType_, chainSlug_, payload_, auctionManager_, fees_)
         );
