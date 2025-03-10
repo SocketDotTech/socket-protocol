@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./RequestAsync.sol";
+import "./FeesHelpers.sol";
 
-contract DeliveryHelper is RequestAsync {
+contract DeliveryHelper is FeesHelpers {
     constructor() {
         _disableInitializers(); // disable for implementation
     }
