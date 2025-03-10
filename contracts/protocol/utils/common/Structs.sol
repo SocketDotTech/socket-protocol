@@ -31,32 +31,6 @@ enum WriteFinality {
 }
 
 //// STRUCTS ////
-
-// watcher:
-struct PayloadExecutionDetails {
-    address middleware;
-    address transmitter;
-    uint256 deadline;
-    bytes32 requestId;
-    bytes32 batchId;
-    bytes32 digest;
-    Payload payload;
-}
-
-struct Request {
-    bool isRequestCancelled;
-    uint256 currentBatch;
-    uint256 currentBatchPayloadsExecuted;
-    uint256 totalBatchPayloads;
-    address middleware;
-    PayloadDetails[] payloadDetailsArray;
-}
-struct FinalizeParams {
-    address transmitter;
-    bytes32 asyncId;
-}
-
-
 // plug:
 struct LimitParams {
     uint256 lastUpdateTimestamp;
@@ -98,17 +72,6 @@ struct TimeoutRequest {
     uint256 executeAt;
     uint256 executedAt;
     bool isResolved;
-    bytes payload;
-}
-// digest:
-struct Digest {
-    address appGateway;
-    address transmitter;
-    address target;
-    bytes32 payloadId;
-    uint256 value;
-    uint256 executionGasLimit;
-    uint256 deadline;
     bytes payload;
 }
 struct QueryResults {
@@ -154,10 +117,35 @@ struct Fees {
     uint256 amount;
 }
 
-// delivery helper:
-struct Payload {
+// digest:
+struct DigestParams {
+    address transmitter;
+    bytes32 payloadId;
+    uint256 deadline;
+}
+
+struct QueuePayloadParams {
     uint32 chainSlug;
     CallType callType;
+    Parallel isParallel;
+    IsPlug isPlug;
+    WriteFinality writeFinality;
+    address asyncPromise;
+    address switchboard;
+    address target;
+    address appGateway;
+    uint256 gasLimit;
+    uint256 value;
+    uint256 readAt;
+    bytes payload;
+    bytes initCallData;
+}
+
+struct PayloadSubmitParams {
+    uint256 levelNumber;
+    uint32 chainSlug;
+    CallType callType;
+    Parallel isParallel;
     WriteFinality writeFinality;
     address asyncPromise;
     address switchboard;
@@ -168,21 +156,61 @@ struct Payload {
     uint256 readAt;
     bytes payload;
 }
-struct CallParams {
-    Payload payload;
-    IsPlug isPlug;
+
+struct PayloadParams {
+    bytes32 requestId;
+    bytes32 batchId;
+    uint32 chainSlug;
+    CallType callType;
     Parallel isParallel;
-    bytes initCallData;
+    WriteFinality writeFinality;
+    address asyncPromise;
+    address switchboard;
+    address target;
+    address appGateway;
+    uint256 gasLimit;
+    uint256 value;
+    uint256 readAt;
+    bytes payload;
 }
-struct PayloadDetails {
-    Parallel isParallel;
-    uint256 levelNumber;
-    Payload payload;
+
+struct RequestParams {
+    bool isRequestCancelled;
+    uint256 currentBatch;
+    uint256 currentBatchPayloadsExecuted;
+    uint256 totalBatchPayloads;
+    address middleware;
+    PayloadDetails[] payloadDetailsArray;
 }
-struct MiddlewarePayloadRequest {
+
+struct RequestMetadata {
     address appGateway;
     address auctionManager;
     Fees fees;
     Bid winningBid;
     bytes onCompleteData;
+}
+
+struct ExecuteParams {
+    address transmitter;
+    uint256 deadline;
+    bytes proof;
+    PayloadIdParams payloadIdParams;
+}
+
+struct PayloadIdParams {
+    bytes32 requestId;
+    bytes32 batchId;
+    bytes32 prevPayloadHash; // should be id?
+    address switchboard;
+    uint32 chainSlug;
+    CallType callType;
+    WriteFinality writeFinality;
+    address asyncPromise;
+    address target;
+    address appGateway;
+    uint256 gasLimit;
+    uint256 value;
+    uint256 readAt;
+    bytes payload;
 }
