@@ -120,21 +120,23 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
 
         onCompleteData = abi.encode(chainSlug_, true);
 
-        CallParams memory callParams = CallParams({
-            isPlug: isPlug_,
-            isParallel: overrideParams.isParallelCall,
+        QueuePayloadParams memory queuePayloadParams = QueuePayloadParams({
             chainSlug: chainSlug_,
-            target: address(0),
-            asyncPromise: asyncPromise,
-            value: 0,
-            gasLimit: overrideParams.gasLimit,
             callType: CallType.DEPLOY,
+            isParallel: overrideParams.isParallelCall,
+            isPlug: isPlug_,
             writeFinality: overrideParams.writeFinality,
+            asyncPromise: asyncPromise,
+            switchboard: address(0),
+            target: address(0),
+            appGateway: address(this),
+            gasLimit: overrideParams.gasLimit,
+            value: 0,
             readAt: overrideParams.readAt,
             payload: creationCodeWithArgs[contractId_],
             initCallData: initCallData_
         });
-        IDeliveryHelper(deliveryHelper()).queue(callParams);
+        IDeliveryHelper(deliveryHelper()).queue(queuePayloadParams);
     }
 
     /// @notice Sets the address for a deployed contract

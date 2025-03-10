@@ -14,13 +14,13 @@ abstract contract RequestQueue is DeliveryUtils {
 
     /// @notice Clears the call parameters array
     function clearQueue() public {
-        delete callParamsArray;
+        delete queuePayloadParams;
     }
 
     /// @notice Queues a new payload
-    /// @param callParams_ The call parameters
-    function queue(CallParams memory callParams_) external {
-        callParamsArray.push(callParams_);
+    /// @param queuePayloadParams_ The call parameters
+    function queue(QueuePayloadParams memory queuePayloadParams_) external {
+        queuePayloadParams.push(queuePayloadParams_);
     }
 
     /// @notice Initiates a batch of payloads
@@ -32,40 +32,41 @@ abstract contract RequestQueue is DeliveryUtils {
         address auctionManager_,
         bytes memory onCompleteData_
     ) external returns (bytes32) {
-        if (callParamsArray.length == 0) return bytes32(0);
+        if (queuePayloadParams.length == 0) return bytes32(0);
 
         address appGateway = _getCoreAppGateway(msg.sender);
         if (!IFeesManager(addressResolver__.feesManager()).isFeesEnough(appGateway, fees_))
             revert InsufficientFees();
 
         (
-            PayloadDetails[] memory payloadDetailsArray,
+            PayloadSubmitParams[] memory payloadSubmitParamsArray,
             uint256 levels,
             bool isFirstRequestRead
-        ) = _createPayloadDetailsArray(appGateway);
+        ) = _createPayloadSubmitParamsArray(appGateway);
 
         if (auctionManager_ == address(0))
             auctionManager_ = IAddressResolver(addressResolver__).defaultAuctionManager();
 
-        PayloadRequest memory payloadRequest = PayloadRequest({
+        RequestMetadata memory requestMetadata = RequestMetadata({
             appGateway: appGateway,
-            fees: fees_,
             auctionManager: auctionManager_,
+            fees: fees_,
             winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
-            // w:
-            isRequestCancelled: false,
-            lastRequestExecuting: 0,
-            onCompleteData: onCompleteData_,
-            payloadDetailsArray: payloadDetailsArray
+            onCompleteData: onCompleteData_
         });
 
-        (bytes32 asyncId, bytes32[] memory payloadIds) = watcherPrecompile__().createRequest(
-            payloadDetailsArray
-        );
+        bytes32 asyncId = watcherPrecompile__().createRequest(payloadSubmitParamsArray);
+        requests[asyncId] = requestMetadata;
 
         // send query directly if first batch is all reads
         if (isFirstRequestRead) watcherPrecompile__().execute(asyncId);
-        emit PayloadSubmitted(asyncId, appGateway, payloadDetailsArray, fees_, auctionManager_);
+        emit PayloadSubmitted(
+            asyncId,
+            appGateway,
+            payloadSubmitParamsArray,
+            fees_,
+            auctionManager_
+        );
     }
 
     /// @notice Creates an array of payload details
@@ -80,37 +81,37 @@ abstract contract RequestQueue is DeliveryUtils {
             bool isFirstRequestRead
         )
     {
-        if (callParamsArray.length == 0) return (payloadDetailsArray, isFirstRequestRead);
-        payloadDetailsArray = new PayloadDetails[](callParamsArray.length);
+        if (queuePayloadParams.length == 0) return (payloadDetailsArray, isFirstRequestRead);
+        payloadDetailsArray = new PayloadDetails[](queuePayloadParams.length);
 
         uint256 reads = 0;
         uint256 writes = 0;
         levels = 0;
-        isFirstRequestRead = callParamsArray[0].callType == CallType.READ;
+        isFirstRequestRead = queuePayloadParams[0].callType == CallType.READ;
 
-        for (uint256 i = 0; i < callParamsArray.length; i++) {
+        for (uint256 i = 0; i < queuePayloadParams.length; i++) {
             // Check if first batch is all reads
             if (
                 i == 0 &&
-                callParamsArray[i].isParallel == Parallel.ON &&
-                callParamsArray[i].callType != CallType.READ
+                queuePayloadParams[i].isParallel == Parallel.ON &&
+                queuePayloadParams[i].callType != CallType.READ
             ) {
                 isFirstRequestRead = false;
             }
 
             // Track read/write counts
-            if (callParamsArray[i].callType == CallType.READ) reads++;
+            if (queuePayloadParams[i].callType == CallType.READ) reads++;
             else writes++;
 
             // Update level for sequential calls
-            if (i > 0 && callParamsArray[i].isParallel != Parallel.ON) {
+            if (i > 0 && queuePayloadParams[i].isParallel != Parallel.ON) {
                 levels = levels + 1;
             }
 
-            payloadDetailsArray[i] = _createPayloadDetails(currentLevel, callParamsArray[i]);
+            payloadDetailsArray[i] = _createPayloadDetails(currentLevel, queuePayloadParams[i]);
 
             // verify app gateway
-            if (getCoreAppGateway(callParamsArray[i].appGateway) != appGateway_)
+            if (getCoreAppGateway(queuePayloadParams[i].appGateway) != appGateway_)
                 revert("Invalid app gateway");
         }
 
@@ -126,44 +127,50 @@ abstract contract RequestQueue is DeliveryUtils {
     /// @return payloadDetails The payload details
     function _createPayloadDetails(
         uint256 level_,
-        CallParams memory params_
+        QueuePayloadParams memory queuePayloadParams_
     ) internal returns (PayloadDetails memory) {
-        bytes memory payload_ = params_.payload;
-        address target = params_.target;
-        if (params_.callType == CallType.DEPLOY) {
+        bytes memory payload_ = queuePayloadParams_.payload;
+        address target = queuePayloadParams_.target;
+        if (queuePayloadParams_.callType == CallType.DEPLOY) {
             // getting app gateway for deployer as the plug is connected to the app gateway
             bytes32 salt_ = keccak256(
-                abi.encode(params_.appGateway, params_.chainSlug, saltCounter++)
+                abi.encode(
+                    queuePayloadParams_.appGateway,
+                    queuePayloadParams_.chainSlug,
+                    saltCounter++
+                )
             );
 
             // app gateway is set in the plug deployed on chain
             payload_ = abi.encodeWithSelector(
                 IContractFactoryPlug.deployContract.selector,
-                params_.isPlug,
+                queuePayloadParams_.isPlug,
                 salt_,
-                params_.appGateway,
+                queuePayloadParams_.appGateway,
                 payload_,
-                params_.initCallData
+                queuePayloadParams_.initCallData
             );
 
             if (payload_.length > 24.5 * 1024) revert PayloadTooLarge();
-            target = getDeliveryHelperPlugAddress(params_.chainSlug);
+            target = getDeliveryHelperPlugAddress(queuePayloadParams_.chainSlug);
         }
 
         return
             PayloadDetails({
                 levelNumber: level_,
-                chainSlug: params_.chainSlug,
-                isParallel: params_.isParallel,
-                callType: params_.callType,
-                writeFinality: params_.writeFinality,
-                appGateway: params_.appGateway,
+                chainSlug: queuePayloadParams_.chainSlug,
+                callType: queuePayloadParams_.callType,
+                isParallel: queuePayloadParams_.isParallel,
+                writeFinality: queuePayloadParams_.writeFinality,
+                asyncPromise: queuePayloadParams_.asyncPromise,
+                switchboard: queuePayloadParams_.switchboard,
                 target: target,
-                asyncPromise: params_.asyncPromise,
-                switchboard: params_.switchboard,
-                value: params_.value,
-                executionGasLimit: params_.gasLimit == 0 ? 1_000_000 : params_.gasLimit,
-                readAt: params_.readAt,
+                appGateway: queuePayloadParams_.appGateway,
+                gasLimit: queuePayloadParams_.gasLimit == 0
+                    ? 1_000_000
+                    : queuePayloadParams_.gasLimit,
+                value: queuePayloadParams_.value,
+                readAt: queuePayloadParams_.readAt,
                 payload: payload_
             });
     }
