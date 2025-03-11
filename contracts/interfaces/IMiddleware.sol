@@ -46,4 +46,5 @@ interface IMiddleware {
 
     function getCurrentAsyncId() external view returns (bytes32);
 
+    function finishRequest(uint40 requestCount_) external;
 }

@@ -8,15 +8,15 @@ interface IFeesManager {
         address appGateway_,
         Fees memory fees_,
         Bid memory winningBid_,
-        bytes32 asyncId_
+        uint40 asyncId_
     ) external;
 
-    function unblockFees(bytes32 asyncId_, address appGateway_) external;
+    function unblockFees(uint40 asyncId_, address appGateway_) external;
 
     function isFeesEnough(address appGateway_, Fees memory fees_) external view returns (bool);
 
     function unblockAndAssignFees(
-        bytes32 asyncId_,
+        uint40 asyncId_,
         address transmitter_,
         address appGateway_
     ) external;

@@ -243,7 +243,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @param asyncId_ The async ID of the executed batch
     /// @param transmitter_ The address of the transmitter who executed the batch
     function unblockAndAssignFees(
-        bytes32 asyncId_,
+        uint40 asyncId_,
         address transmitter_,
         address originAppGateway_
     ) external override onlyDeliveryHelper {

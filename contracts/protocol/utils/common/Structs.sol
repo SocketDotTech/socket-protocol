@@ -104,7 +104,7 @@ struct QueryResults {
 }
 struct ResolvedPromises {
     bytes32 payloadId;
-    bytes[] returnData;
+    bytes returnData;
 }
 
 // AM
