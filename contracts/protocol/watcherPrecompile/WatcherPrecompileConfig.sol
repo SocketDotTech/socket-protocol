@@ -25,19 +25,17 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
 
     /// @notice Emitted when contracts are set for a network
     /// @param chainSlug The identifier of the network
-    /// @param sbType The type of switchboard
-    /// @param switchboard The address of the switchboard
     /// @param socket The address of the socket
     /// @param contractFactoryPlug The address of the contract factory plug
     /// @param feesPlug The address of the fees plug
     event OnChainContractSet(
         uint32 chainSlug,
-        bytes32 sbType,
-        address switchboard,
         address socket,
         address contractFactoryPlug,
         address feesPlug
     );
+
+    /// @notice Emitted when a plug is set as valid for an app gateway
 
     /// @notice Configures app gateways with their respective plugs and switchboards
     /// @param configs_ Array of configurations containing app gateway, network, plug, and switchboard details
@@ -67,28 +65,29 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
 
     /// @notice Sets the switchboard for a network
     /// @param chainSlug_ The identifier of the network
-    /// @param switchboard_ The address of the switchboard
     function setOnChainContracts(
         uint32 chainSlug_,
-        bytes32 sbType_,
-        address switchboard_,
         address socket_,
         address contractFactoryPlug_,
         address feesPlug_
     ) external override onlyOwner {
-        switchboards[chainSlug_][sbType_] = switchboard_;
         sockets[chainSlug_] = socket_;
         contractFactoryPlug[chainSlug_] = contractFactoryPlug_;
         feesPlug[chainSlug_] = feesPlug_;
 
-        emit OnChainContractSet(
-            chainSlug_,
-            sbType_,
-            switchboard_,
-            socket_,
-            contractFactoryPlug_,
-            feesPlug_
-        );
+        emit OnChainContractSet(chainSlug_, socket_, contractFactoryPlug_, feesPlug_);
+    }
+
+    /// @notice Sets the switchboard for a network
+    /// @param chainSlug_ The identifier of the network
+    /// @param switchboard_ The address of the switchboard
+    function setSwitchboard(
+        uint32 chainSlug_,
+        bytes32 sbType_,
+        address switchboard_
+    ) external override onlyOwner {
+        switchboards[chainSlug_][sbType_] = switchboard_;
+        emit SwitchboardSet(chainSlug_, sbType_, switchboard_);
     }
 
     // @dev app gateway can set the valid plugs for each chain slug

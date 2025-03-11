@@ -104,10 +104,6 @@ abstract contract WatcherPrecompileLimits is
         bytes32 limitType_,
         uint256 consumeLimit_
     ) internal returns (address appGateway) {
-        // delivery helper consumes the limit while batching hence returned here
-        if (msg.sender == addressResolver__.deliveryHelper()) return appGateway_;
-
-        appGateway = _getAppGateway(appGateway_);
         LimitParams storage limitParams = _limitParams[appGateway][limitType_];
 
         // Initialize limit if not active
@@ -129,19 +125,6 @@ abstract contract WatcherPrecompileLimits is
 
         // Update the limit
         _consumeFullLimit(consumeLimit_ * 10 ** LIMIT_DECIMALS, limitParams);
-    }
-
-    /**
-     * @notice Internal function to get the core app gateway address
-     * @param originAppGateway_ The input app gateway address
-     * @return appGateway The resolved core app gateway address
-     */
-    function _getAppGateway(address originAppGateway_) internal view returns (address appGateway) {
-        address originAppGateway = msg.sender == addressResolver__.deliveryHelper()
-            ? originAppGateway_
-            : msg.sender;
-
-        appGateway = _getCoreAppGateway(originAppGateway);
     }
 
     /**

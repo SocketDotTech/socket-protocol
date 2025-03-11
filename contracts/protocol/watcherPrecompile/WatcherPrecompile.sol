@@ -2,10 +2,13 @@
 pragma solidity ^0.8.21;
 
 import "./RequestHandler.sol";
+import "../../interfaces/IMiddleware.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
 contract WatcherPrecompile is RequestHandler {
+    error RequestAlreadyCancelled();
+
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -38,8 +41,8 @@ contract WatcherPrecompile is RequestHandler {
     /// @param delayInSeconds_ The delay in seconds
     function setTimeout(
         address appGateway_,
-        bytes calldata payload_,
-        uint256 delayInSeconds_
+        uint256 delayInSeconds_,
+        bytes calldata payload_
     ) external {
         _setTimeout(appGateway_, payload_, delayInSeconds_);
     }
@@ -80,37 +83,27 @@ contract WatcherPrecompile is RequestHandler {
     // ================== Finalize functions ==================
 
     /// @notice Finalizes a payload request, requests the watcher to release the proofs to execute on chain
-    /// @param params_ The finalization parameters
-    /// @return payloadId The unique identifier for the finalized request
-    /// @return digest The digest of the payload parameters
+    /// @param params_ The payload parameters
+    /// @param transmitter_ The address of the transmitter
     function finalize(
-        address originAppGateway_,
-        FinalizeParams memory params_
+        PayloadParams memory params_,
+        address transmitter_
     ) external returns (bytes32 payloadId, bytes32 digest) {
-        digest = _finalize(payloadId, originAppGateway_, params_);
+        digest = _finalize(params_, transmitter_);
     }
 
     // ================== Query functions ==================
     /// @notice Creates a new query request
-    /// @param chainSlug_ The identifier of the destination chain
-    /// @param targetAddress_ The address of the target contract
-    /// @param asyncPromises_ Array of promise addresses to be resolved
-    /// @param payload_ The query payload data
-    /// @return payloadId The unique identifier for the query
-    function query(
-        uint32 chainSlug_,
-        address targetAddress_,
-        address appGateway_,
-        address[] memory asyncPromises_,
-        bytes memory payload_,
-        uint256 readAt_
-    ) internal returns (bytes32) {
-        return _query(chainSlug_, targetAddress_, appGateway_, asyncPromises_, payload_, readAt_);
+    /// @param params_ The payload parameters
+    function query(PayloadParams memory params_) external {
+        _query(params_);
     }
 
     /// @notice Marks a request as finalized with a proof on digest
     /// @param payloadId_ The unique identifier of the request
     /// @param proof_ The watcher's proof
+    /// @param signatureNonce_ The nonce of the signature
+    /// @param signature_ The signature of the watcher
     /// @dev Only callable by the contract owner
     /// @dev Watcher signs on following digest for validation on switchboard:
     /// @dev keccak256(abi.encode(switchboard, digest))
@@ -127,22 +120,22 @@ contract WatcherPrecompile is RequestHandler {
         );
 
         watcherProofs[payloadId_] = proof_;
-        emit Finalized(payloadId_, asyncRequests[payloadId_], proof_);
+        emit Finalized(payloadId_, proof_);
     }
 
     function updateTransmitter(uint40 requestCount, address transmitter) public {
-        RequestParams r = requestParams[requestCount];
+        RequestParams memory r = requestParams[requestCount];
         if (r.isRequestCancelled) revert RequestCancelled();
         if (r.middleware != msg.sender) revert InvalidCaller();
         if (r.transmitter != address(0)) revert AlreadyStarted();
 
         r.transmitter = transmitter;
         /// todo: recheck limits
-        _processBatch(requestCount, r.currentBatchCount);
+        _processBatch(requestCount, r.currentBatch);
     }
 
     function cancelRequest(uint40 requestCount) public {
-        RequestParams r = requestParams[requestCount];
+        RequestParams memory r = requestParams[requestCount];
         if (r.isRequestCancelled) revert RequestAlreadyCancelled();
         if (r.middleware != msg.sender) revert InvalidCaller();
 
@@ -165,24 +158,29 @@ contract WatcherPrecompile is RequestHandler {
 
         for (uint256 i = 0; i < resolvedPromises_.length; i++) {
             // Get the array of promise addresses for this payload
-            PayloadSubmitParams memory payloadSubmitParams = payload[
-                resolvedPromises_[i].payloadId
-            ];
-            address asyncPromise = payloadSubmitParams.asyncPromise;
+            PayloadParams memory payloadParams = payloads[resolvedPromises_[i].payloadId];
+            address asyncPromise = payloadParams.asyncPromise;
             if (asyncPromise == address(0)) continue;
 
             // Resolve each promise with its corresponding return data
             bool success = IPromise(asyncPromise).markResolved(
-                payloadSubmitParams.requestCount,
+                payloadParams.requestCount,
                 resolvedPromises_[i].payloadId,
                 resolvedPromises_[i].returnData
             );
 
             if (!success) {
                 emit PromiseNotResolved(resolvedPromises_[i].payloadId, success, asyncPromise);
-            } else {
-                emit PromiseResolved(resolvedPromises_[i].payloadId, success, asyncPromise);
+                continue;
             }
+
+            RequestParams storage requestParams_ = requestParams[payloadParams.requestCount];
+            requestParams_.currentBatchPayloadsLeft--;
+
+            if (requestParams_.currentBatchPayloadsLeft == 0) {
+                IMiddleware(requestParams_.middleware).finishRequest(payloadParams.requestCount);
+            }
+            emit PromiseResolved(resolvedPromises_[i].payloadId, success, asyncPromise);
         }
     }
 
@@ -199,7 +197,7 @@ contract WatcherPrecompile is RequestHandler {
             signature_
         );
 
-        PayloadParams storage payloadParams = payload[payloadId_];
+        PayloadParams storage payloadParams = payloads[payloadId_];
         RequestParams storage requestParams = requestParams[payloadParams.requestCount];
         requestParams.isRequestCancelled = true;
 

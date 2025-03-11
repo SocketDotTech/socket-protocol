@@ -37,7 +37,7 @@ abstract contract FeesHelpers is RequestQueue {
         PayloadDetails[] memory payloadDetailsArray = new PayloadDetails[](1);
 
         // this will call batch function in RequestQueue
-        payloadDetailsArray[0] = IFeesManager(addressResolver__.feesManager()).getWithdrawToPayload(
+        payloadDetailsArray[0] = IFeesManager(addressResolver__.feesManager()).withdrawFees(
             msg.sender,
             chainSlug_,
             token_,

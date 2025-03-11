@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {IDeliveryHelper} from "../../../interfaces/IDeliveryHelper.sol";
+import {IDeliveryHelper} from "../../../interfaces/IMiddleware.sol";
 import {IPromise} from "../../../interfaces/IPromise.sol";
 import {IAddressResolver} from "../../../interfaces/IAddressResolver.sol";
 import {IContractFactoryPlug} from "../../../interfaces/IContractFactoryPlug.sol";

@@ -4,7 +4,7 @@ pragma solidity ^0.8.3;
 import "../protocol/utils/AddressResolverUtil.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IForwarder.sol";
-import "../interfaces/IDeliveryHelper.sol";
+import "../interfaces/IMiddleware.sol";
 import "../interfaces/IPromise.sol";
 
 import {FeesPlugin} from "../protocol/utils/FeesPlugin.sol";
@@ -28,12 +28,12 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     modifier async() {
         if (fees.feePoolChain == 0) revert FeesNotSet();
         isAsyncModifierSet = true;
-        deliveryHelper().clearQueue();
+        deliveryHelper__().clearQueue();
         addressResolver__.clearPromises();
         _clearOverrides();
         _;
         isAsyncModifierSet = false;
-        deliveryHelper().batch(fees, auctionManager, onCompleteData, sbType);
+        deliveryHelper__().batch(fees, auctionManager, onCompleteData, sbType);
         _markValidPromises();
         onCompleteData = bytes("");
     }
@@ -70,7 +70,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @notice Gets the current async ID
     /// @return bytes32 The current async ID
     function _getCurrentAsyncId() internal view returns (bytes32) {
-        return deliveryHelper().getCurrentAsyncId();
+        return deliveryHelper__().getCurrentAsyncId();
     }
 
     /// @notice Sets the auction manager
@@ -136,7 +136,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             payload: creationCodeWithArgs[contractId_],
             initCallData: initCallData_
         });
-        IDeliveryHelper(deliveryHelper()).queue(queuePayloadParams);
+        IMiddleware(deliveryHelper__()).queue(queuePayloadParams);
     }
 
     /// @notice Sets the address for a deployed contract
@@ -166,8 +166,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
-            .getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -266,14 +265,15 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     function getOverrideParams()
         public
         view
-        returns (Read, Parallel, WriteFinality, uint256, uint256)
+        returns (Read, Parallel, WriteFinality, uint256, uint256, bytes32)
     {
         return (
             overrideParams.isReadCall,
             overrideParams.isParallelCall,
             overrideParams.writeFinality,
             overrideParams.readAt,
-            overrideParams.gasLimit
+            overrideParams.gasLimit,
+            sbType
         );
     }
 
@@ -284,13 +284,13 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @notice Reverts the transaction
     /// @param asyncId_ The async ID
     function _revertTx(bytes32 asyncId_) internal {
-        deliveryHelper().cancelTransaction(asyncId_);
+        deliveryHelper__().cancelTransaction(asyncId_);
     }
 
     /// @notice increases the transaction fees
     /// @param asyncId_ The async ID
     function _increaseFees(bytes32 asyncId_, uint256 newMaxFees_) internal {
-        deliveryHelper().increaseFees(asyncId_, newMaxFees_);
+        deliveryHelper__().increaseFees(asyncId_, newMaxFees_);
     }
 
     /// @notice Withdraws fee tokens
@@ -304,7 +304,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         uint256 amount_,
         address receiver_
     ) internal {
-        deliveryHelper().withdrawTo(chainSlug_, token_, amount_, receiver_, auctionManager, fees);
+        deliveryHelper__().withdrawTo(chainSlug_, token_, amount_, receiver_, auctionManager, fees);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -312,19 +312,12 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// @notice Callback in pd promise to be called after all contracts are deployed
-    /// @param payloadRequest_ The payload batch
+    /// @param onCompleteData_ The on complete data
     /// @dev only payload delivery can call this
     /// @dev callback in pd promise to be called after all contracts are deployed
-    function onRequestComplete(
-        bytes32,
-        PayloadRequest memory payloadRequest_
-    ) external override onlyDeliveryHelper {
-        if (payloadRequest_.onCompleteData.length == 0) return;
-
-        (uint32 chainSlug, bool isDeploy) = abi.decode(
-            payloadRequest_.onCompleteData,
-            (uint32, bool)
-        );
+    function onRequestComplete(bytes32, bytes calldata onCompleteData_) external override {
+        if (onCompleteData_.length == 0) return;
+        (uint32 chainSlug, bool isDeploy) = abi.decode(onCompleteData_, (uint32, bool));
         if (isDeploy) {
             initialize(chainSlug);
         }

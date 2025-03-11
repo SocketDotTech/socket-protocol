@@ -53,7 +53,7 @@ abstract contract DeliveryUtils is
     );
 
     modifier onlyAuctionManager(bytes32 asyncId_) {
-        if (msg.sender != _payloadRequestes[asyncId_].auctionManager) revert NotAuctionManager();
+        if (msg.sender != requestParams[asyncId_].auctionManager) revert NotAuctionManager();
         _;
     }
 

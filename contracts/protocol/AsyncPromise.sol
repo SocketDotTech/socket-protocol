@@ -5,15 +5,7 @@ import {AddressResolverUtil} from "./utils/AddressResolverUtil.sol";
 import {IPromise} from "../interfaces/IPromise.sol";
 import {IAppGateway} from "../interfaces/IAppGateway.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
-
-/// @notice The state of the async promise
-enum AsyncPromiseState {
-    WAITING_FOR_SET_CALLBACK_SELECTOR,
-    WAITING_FOR_CALLBACK_EXECUTION,
-    CALLBACK_REVERTING,
-    ONCHAIN_REVERTING,
-    RESOLVED
-}
+import {AsyncPromiseState} from "../protocol/utils/common/Structs.sol";
 
 abstract contract AsyncPromiseStorage is IPromise {
     // slots [0-49] reserved for gap

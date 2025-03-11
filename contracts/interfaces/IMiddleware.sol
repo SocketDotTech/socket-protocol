@@ -2,7 +2,7 @@
 pragma solidity ^0.8.3;
 import {QueuePayloadParams, Bid, Fees, WriteFinality, CallType, Parallel, IsPlug} from "../protocol/utils/common/Structs.sol";
 
-interface IDeliveryHelper {
+interface IMiddleware {
     event BidPlaced(
         bytes32 indexed asyncId,
         Bid bid // Replaced transmitter and bidAmount with Bid struct
@@ -15,7 +15,6 @@ interface IDeliveryHelper {
 
     function bidTimeout() external view returns (uint128);
 
-    function payloadRequestes(bytes32) external view returns (PayloadRequest memory);
 
     function clearQueue() external;
 
@@ -47,5 +46,4 @@ interface IDeliveryHelper {
 
     function getCurrentAsyncId() external view returns (bytes32);
 
-    function getAsyncRequestDetails(bytes32 asyncId_) external view returns (PayloadRequest memory);
 }

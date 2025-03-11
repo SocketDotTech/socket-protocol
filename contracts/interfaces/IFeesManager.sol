@@ -21,11 +21,13 @@ interface IFeesManager {
         address appGateway_
     ) external;
 
-    function getWithdrawToPayload(
+    function withdrawFees(
         address appGateway_,
         uint32 chainSlug_,
         address token_,
         uint256 amount_,
-        address receiver_
-    ) external returns (PayloadDetails memory);
+        address receiver_,
+        address auctionManager_,
+        Fees memory fees_
+    ) external;
 }

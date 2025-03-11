@@ -11,7 +11,7 @@ import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {WITHDRAW} from "../utils/common/Constants.sol";
 import {NotAuctionManager} from "../utils/common/Errors.sol";
-import {Bid, Fees, CallType, Parallel, WriteFinality} from "../utils/common/Structs.sol";
+import {Bid, Fees, CallType, Parallel, WriteFinality, TokenBalance} from "../utils/common/Structs.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
     // slots [0-49] reserved for gap
@@ -25,12 +25,6 @@ abstract contract FeesManagerStorage is IFeesManager {
 
     // slot 52
     bytes32 public sbType;
-
-    /// @notice Struct containing fee amounts and status
-    struct TokenBalance {
-        uint256 deposited; // Amount deposited
-        uint256 blocked; // Amount blocked
-    }
 
     // slot 52
     /// @notice Master mapping tracking all fee information
@@ -371,7 +365,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @param token_ The address of the token
     /// @param amount_ The amount of tokens to withdraw
     /// @param receiver_ The address of the receiver
-    function getWithdrawToPayload(
+    function withdrawFees(
         address originAppGateway_,
         uint32 chainSlug_,
         address token_,

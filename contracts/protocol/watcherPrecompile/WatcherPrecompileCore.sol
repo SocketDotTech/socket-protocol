@@ -2,10 +2,11 @@
 pragma solidity ^0.8.21;
 
 import "./WatcherPrecompileConfig.sol";
+import {RequestParams, PayloadSubmitParams, PayloadParams, CallType} from "../utils/common/Structs.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
-contract WatcherPrecompileCore is WatcherPrecompileConfig {
+abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
     /// @notice Error thrown when an invalid app gateway reaches a plug
@@ -18,6 +19,10 @@ contract WatcherPrecompileCore is WatcherPrecompileConfig {
     error InvalidPayloadId();
     /// @notice Error thrown when a caller is invalid
     error InvalidCaller();
+    /// @notice Error thrown when a gateway is invalid
+    error InvalidGateway();
+    /// @notice Error thrown when a switchboard is invalid
+    error InvalidSwitchboard();
 
     event CalledAppGateway(
         bytes32 callId,
@@ -29,28 +34,15 @@ contract WatcherPrecompileCore is WatcherPrecompileConfig {
     );
 
     /// @notice Emitted when a new query is requested
-    /// @param chainSlug The identifier of the destination chain
-    /// @param targetAddress The address of the target contract
-    /// @param payloadId The unique identifier for the query
-    /// @param payload The query data
-    event QueryRequested(
-        uint32 chainSlug,
-        address targetAddress,
-        bytes32 payloadId,
-        bytes payload,
-        uint256 readAt
-    );
+    event QueryRequested(PayloadParams params);
 
     /// @notice Emitted when a finalize request is made
-    /// @param payloadId The unique identifier for the request
-    /// @param asyncRequest The async request details
-    event FinalizeRequested(bytes32 indexed payloadId, AsyncRequest asyncRequest);
+    event FinalizeRequested(address transmitter, bytes32 digest, PayloadParams params);
 
     /// @notice Emitted when a request is finalized
     /// @param payloadId The unique identifier for the request
-    /// @param asyncRequest The async request details
     /// @param proof The proof from the watcher
-    event Finalized(bytes32 indexed payloadId, AsyncRequest asyncRequest, bytes proof);
+    event Finalized(bytes32 indexed payloadId, bytes proof);
 
     /// @notice Emitted when a promise is resolved
     /// @param payloadId The unique identifier for the resolved promise
@@ -106,14 +98,12 @@ contract WatcherPrecompileCore is WatcherPrecompileConfig {
         PayloadParams memory params_,
         address transmitter_
     ) internal returns (bytes32 digest) {
-        if (transmitter_ == address(0)) revert InvalidTransmitter();
-
         // Verify that the app gateway is properly configured for this chain and target
         _verifyConnections(
-            params_.payloadDetails.chainSlug,
-            params_.payloadDetails.target,
-            params_.payloadDetails.appGateway,
-            params_.payloadDetails.switchboard
+            params_.chainSlug,
+            params_.target,
+            params_.appGateway,
+            params_.switchboard
         );
 
         // Construct parameters for digest calculation
@@ -139,7 +129,6 @@ contract WatcherPrecompileCore is WatcherPrecompileConfig {
     // ================== Query functions ==================
     /// @notice Creates a new query request
     /// @param params_ The payload parameters
-    /// @return payloadId The unique identifier for the query
     function _query(PayloadParams memory params_) internal {
         emit QueryRequested(params_);
     }
@@ -147,7 +136,7 @@ contract WatcherPrecompileCore is WatcherPrecompileConfig {
     /// @notice Calculates the digest hash of payload parameters
     /// @param params_ The payload parameters
     /// @return digest The calculated digest
-    function getDigest(PayloadDigestParams memory params_) public pure returns (bytes32 digest) {
+    function getDigest(DigestParams memory params_) public pure returns (bytes32 digest) {
         digest = keccak256(
             abi.encode(
                 params_.transmitter,
@@ -198,12 +187,12 @@ contract WatcherPrecompileCore is WatcherPrecompileConfig {
     }
 
     function _createPayloadId(
-        PayloadSubmitParams calldata p_,
+        PayloadSubmitParams memory p_,
         uint40 requestCount_,
         uint40 batchCount_,
         uint40 payloadCount_,
         bytes32 prevDigestsHash_
-    ) private returns (bytes32) {
+    ) internal returns (bytes32) {
         return
             keccak256(
                 abi.encode(

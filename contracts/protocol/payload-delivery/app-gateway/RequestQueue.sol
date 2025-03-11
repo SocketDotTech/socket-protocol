@@ -104,8 +104,8 @@ abstract contract RequestQueue is DeliveryUtils {
         clearQueue();
     }
 
-    /// @notice Gets the payload details for a given call parameters
-    /// @param params_ The call parameters
+    /// @notice Creates the payload details for a given call parameters
+    /// @param queuePayloadParams_ The call parameters
     /// @return payloadDetails The payload details
     function _createPayloadDetails(
         uint256 level_,

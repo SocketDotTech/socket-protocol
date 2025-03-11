@@ -22,7 +22,7 @@ contract DeliveryHelper is FeesHelpers {
     }
 
     function endTimeout(bytes32 requestCount_) external onlyWatcherPrecompile {
-        IAuctionManager(_payloadRequestes[requestCount_].auctionManager).endAuction(requestCount_);
+        IAuctionManager(requests[requestCount_].auctionManager).endAuction(requestCount_);
     }
 
     function startRequestProcessing(
@@ -38,16 +38,17 @@ contract DeliveryHelper is FeesHelpers {
         }
     }
 
-    function finishRequest(
-        bytes32 requestCount_,
-        PayloadRequest storage payloadRequest_
-    ) external onlyWatcherPrecompile {
+    function finishRequest(bytes32 requestCount_) external onlyWatcherPrecompile {
+        RequestMetadata storage requestMetadata_ = requests[requestCount_];
         IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
             requestCount_,
-            payloadRequest_.winningBid.transmitter,
-            payloadRequest_.appGateway
+            requestMetadata_.winningBid.transmitter,
+            requestMetadata_.appGateway
         );
-        IAppGateway(payloadRequest_.appGateway).onRequestComplete(requestCount_, payloadRequest_);
+        IAppGateway(requestMetadata_.appGateway).onRequestComplete(
+            requestCount_,
+            requestMetadata_.onCompleteData
+        );
     }
 
     /// @notice Cancels a request

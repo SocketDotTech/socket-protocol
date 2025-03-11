@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 import "../../interfaces/IAddressResolver.sol";
-import "../../interfaces/IDeliveryHelper.sol";
+import "../../interfaces/IMiddleware.sol";
 import "../../interfaces/IWatcherPrecompile.sol";
 
 /// @title AddressResolverUtil
@@ -45,8 +45,8 @@ abstract contract AddressResolverUtil {
     /// @notice Gets the auction house contract interface
     /// @return IDeliveryHelper interface of the registered auction house
     /// @dev Resolves and returns the auction house contract for interaction
-    function deliveryHelper() public view returns (IDeliveryHelper) {
-        return IDeliveryHelper(addressResolver__.deliveryHelper());
+    function deliveryHelper__() public view returns (IMiddleware) {
+        return IMiddleware(addressResolver__.deliveryHelper());
     }
 
     /// @notice Gets the watcher precompile contract interface

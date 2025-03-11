@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {RequestParams, PayloadSubmitParams, PayloadParams} from "../utils/common/Structs.sol";
 import "./WatcherPrecompileCore.sol";
 
 abstract contract RequestHandler is WatcherPrecompileCore {
     uint40 public nextRequestCount;
-    uint40 public nextBatchCount = 1;
-    mapping(uint256 => RequestParams) public requestParams;
+    uint40 public nextBatchCount;
+
+    mapping(uint40 => RequestParams) public requestParams;
     mapping(uint40 => bytes32[]) public batchPayloadIds;
     mapping(uint40 => uint40[]) public requestBatchIds;
+    mapping(bytes32 => PayloadParams) public payloads;
 
     event RequestSubmitted(
         address middleware,
@@ -17,10 +18,14 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         PayloadParams[] payloadParamsArray
     );
 
+    error RequestCancelled();
+    error AlreadyStarted();
+    error InvalidLevelNumber();
+
     function submitRequest(
         PayloadSubmitParams[] calldata payloadSubmitParams
     ) public returns (uint40 requestCount) {
-        PayloadParams[] payloadParamsArray = new PayloadParams[]();
+        PayloadParams[] memory payloadParamsArray = new PayloadParams[](payloadSubmitParams.length);
 
         requestCount = nextRequestCount++;
         uint40 batchCount = nextBatchCount++;
@@ -31,8 +36,11 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         uint256 readCount;
         uint256 writeCount;
 
+        // todo: hash of hashes
+        bytes32 prevDigestsHash;
+
         for (uint256 i = 0; i < payloadSubmitParams.length; i++) {
-            PayloadSubmitParams p = payloadSubmitParams[i];
+            PayloadSubmitParams memory p = payloadSubmitParams[i];
 
             // Count reads and writes
             if (p.callType == CallType.READ) {
@@ -41,7 +49,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
 
             /// consume limit
             if (i > 0) {
-                PayloadSubmitParams lastP = payloadSubmitParams[i - 1];
+                PayloadSubmitParams memory lastP = payloadSubmitParams[i - 1];
                 if (p.levelNumber != lastP.levelNumber && p.levelNumber != lastP.levelNumber + 1)
                     revert InvalidLevelNumber();
                 if (p.levelNumber == lastP.levelNumber + 1) {
@@ -50,7 +58,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
                 }
             }
 
-            uint40 localPayloadCount = payloadCount++;
+            uint40 localPayloadCount = payloadCounter++;
             bytes32 payloadId = _createPayloadId(
                 p,
                 requestCount,
@@ -58,29 +66,30 @@ abstract contract RequestHandler is WatcherPrecompileCore {
                 localPayloadCount,
                 prevDigestsHash
             );
-            batchPayloadIds[batchCount].push(payloadId);
-            payload[payloadId] = p;
 
-            payloadParamsArray.push(
-                PayloadParams({
-                    requestCount: requestCount,
-                    batchCount: batchCount,
-                    payloadCount: localPayloadCount,
-                    chainSlug: p.chainSlug,
-                    callType: p.callType,
-                    isParallel: p.isParallel,
-                    writeFinality: p.writeFinality,
-                    asyncPromise: p.asyncPromise,
-                    switchboard: p.switchboard,
-                    target: p.target,
-                    appGateway: p.appGateway,
-                    payloadId: payloadId,
-                    gasLimit: p.gasLimit,
-                    value: p.value,
-                    readAt: p.readAt,
-                    payload: p.payload
-                })
-            );
+            batchPayloadIds[batchCount].push(payloadId);
+
+            PayloadParams memory payloadParams = PayloadParams({
+                requestCount: requestCount,
+                batchCount: batchCount,
+                payloadCount: localPayloadCount,
+                chainSlug: p.chainSlug,
+                callType: p.callType,
+                isParallel: p.isParallel,
+                writeFinality: p.writeFinality,
+                asyncPromise: p.asyncPromise,
+                switchboard: p.switchboard,
+                target: p.target,
+                appGateway: p.appGateway,
+                payloadId: payloadId,
+                gasLimit: p.gasLimit,
+                value: p.value,
+                readAt: p.readAt,
+                payload: p.payload
+            });
+
+            payloads[payloadId] = payloadParams;
+            payloadParamsArray[i] = payloadParams;
         }
 
         _consumeLimit(appGateway, QUERY, readCount);
@@ -89,7 +98,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         requestParams[requestCount] = RequestParams({
             isRequestCancelled: false,
             currentBatch: currentBatch,
-            currentBatchPayloadsExecuted: 0,
+            currentBatchPayloadsLeft: 0,
             totalBatchPayloads: 0,
             middleware: msg.sender,
             transmitter: address(0),
@@ -117,18 +126,18 @@ abstract contract RequestHandler is WatcherPrecompileCore {
     }
 
     function startProcessingRequest(uint40 requestCount, address transmitter) public {
-        RequestParams r = requestParams[requestCount];
+        RequestParams memory r = requestParams[requestCount];
         if (r.middleware != msg.sender) revert InvalidCaller();
         if (r.transmitter != address(0)) revert AlreadyStarted();
-        if (r.currentBatchPayloadsExecuted > 0) revert AlreadyStarted();
+        if (r.currentBatchPayloadsLeft > 0) revert AlreadyStarted();
 
         r.transmitter = transmitter;
         uint40 batchCount = r.payloadParamsArray[0].batchCount;
         _processBatch(requestCount, batchCount);
     }
 
-    function _processBatch(uint40 requestCount_, uint40 batchCount_) private {
-        RequestParams r = requestParams[requestCount_];
+    function _processBatch(uint40 requestCount_, uint40 batchCount_) internal {
+        RequestParams memory r = requestParams[requestCount_];
         PayloadParams[] memory payloadParamsArray = _getBatch(requestCount_, batchCount_);
         if (r.isRequestCancelled) revert RequestCancelled();
 
@@ -147,13 +156,13 @@ abstract contract RequestHandler is WatcherPrecompileCore {
     function _getBatch(
         uint40 requestCount,
         uint40 batchCount
-    ) private view returns (PayloadParams[] memory) {
-        RequestParams r = requestParams[requestCount];
-        PayloadParams[] memory payloadParamsArray = new PayloadParams[]();
+    ) internal view returns (PayloadParams[] memory) {
+        RequestParams memory r = requestParams[requestCount];
+        PayloadParams[] memory payloadParamsArray = new PayloadParams[](r.payloadParamsArray.length);
 
         for (uint40 i = 0; i < r.payloadParamsArray.length; i++) {
             if (r.payloadParamsArray[i].batchCount == batchCount) {
-                payloadParamsArray.push(r.payloadParamsArray[i]);
+                payloadParamsArray[i] = r.payloadParamsArray[i];
             }
         }
         return payloadParamsArray;

@@ -5,10 +5,11 @@ import {IWatcherPrecompile} from "../../interfaces/IWatcherPrecompile.sol";
 import {IAppGateway} from "../../interfaces/IAppGateway.sol";
 import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 import {IPromise} from "../../interfaces/IPromise.sol";
+import {IMiddleware} from "../../interfaces/IMiddleware.sol";
 
 import {QUERY, FINALIZE, SCHEDULE} from "../utils/common/Constants.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
-import {ResolvedPromises, AppGatewayConfig, LimitParams, WriteFinality, UpdateLimitParams, PlugConfig, DigestParams, TimeoutRequest, CallFromChainParams, QueuePayloadParams} from "../utils/common/Structs.sol";
+import {ResolvedPromises, AppGatewayConfig, LimitParams, WriteFinality, UpdateLimitParams, PlugConfig, DigestParams, TimeoutRequest, CallFromChainParams, QueuePayloadParams, PayloadParams} from "../utils/common/Structs.sol";
 
 abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     // slot 0-49: gap for future storage variables
@@ -74,15 +75,12 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     uint256 public maxTimeoutDelayInSeconds;
     // slot 63: payloadCounter
     /// @notice Counter for tracking payload requests
-    uint256 public payloadCounter;
+    uint40 public payloadCounter;
     // slot 64: expiryTime
     /// @notice The expiry time for the payload
     uint256 public expiryTime;
 
     // slot 65: asyncRequests
-    /// @notice Mapping to store async requests
-    /// @dev payloadId => AsyncRequest struct
-    mapping(bytes32 => AsyncRequest) public asyncRequests;
     // slot 66: timeoutRequests
     /// @notice Mapping to store timeout requests
     /// @dev timeoutId => TimeoutRequest struct
@@ -98,9 +96,6 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     mapping(bytes32 => bool) public appGatewayCalled;
 
     // slot 69: requests
-    /// @notice Mapping to store requests
-    /// @dev asyncId => Request
-    mapping(bytes32 => Request) public requests;
 
     // slots 71-118: gap for future storage variables
     uint256[48] _gap_after;

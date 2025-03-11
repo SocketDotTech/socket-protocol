@@ -30,6 +30,27 @@ enum WriteFinality {
     HIGH
 }
 
+enum SwitchboardStatus {
+    NOT_REGISTERED,
+    REGISTERED,
+    DISABLED
+}
+
+/// @notice The state of the async promise
+enum AsyncPromiseState {
+    WAITING_FOR_SET_CALLBACK_SELECTOR,
+    WAITING_FOR_CALLBACK_EXECUTION,
+    CALLBACK_REVERTING,
+    ONCHAIN_REVERTING,
+    RESOLVED
+}
+
+enum ExecutionStatus {
+    NotExecuted,
+    Executed,
+    Reverted
+}
+
 //// STRUCTS ////
 // plug:
 struct LimitParams {
@@ -178,8 +199,8 @@ struct PayloadParams {
 
 struct RequestParams {
     bool isRequestCancelled;
-    uint256 currentBatch;
-    uint256 currentBatchPayloadsExecuted;
+    uint40 currentBatch;
+    uint256 currentBatchPayloadsLeft;
     uint256 totalBatchPayloads;
     address middleware;
     address transmitter;
@@ -216,4 +237,10 @@ struct PayloadIdParams {
     bytes32 prevDigestsHash; // should be id? hash of hashes
     address switchboard;
     uint32 chainSlug;
+}
+
+/// @notice Struct containing fee amounts and status
+struct TokenBalance {
+    uint256 deposited; // Amount deposited
+    uint256 blocked; // Amount blocked
 }

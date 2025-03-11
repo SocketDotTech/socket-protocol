@@ -5,7 +5,7 @@ import {ECDSA} from "solady/utils/ECDSA.sol";
 import "solady/utils/Initializable.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
 
-import {IDeliveryHelper} from "../../interfaces/IDeliveryHelper.sol";
+import {IDeliveryHelper} from "../../interfaces/IMiddleware.sol";
 import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 import {IAuctionManager} from "../../interfaces/IAuctionManager.sol";
 
