@@ -43,7 +43,7 @@ abstract contract AddressResolverUtil {
     }
 
     /// @notice Gets the auction house contract interface
-    /// @return IDeliveryHelper interface of the registered auction house
+    /// @return IMiddleware interface of the registered auction house
     /// @dev Resolves and returns the auction house contract for interaction
     function deliveryHelper__() public view returns (IMiddleware) {
         return IMiddleware(addressResolver__.deliveryHelper());

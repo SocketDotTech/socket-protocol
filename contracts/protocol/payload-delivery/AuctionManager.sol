@@ -5,7 +5,7 @@ import {ECDSA} from "solady/utils/ECDSA.sol";
 import "solady/utils/Initializable.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
 
-import {IDeliveryHelper} from "../../interfaces/IMiddleware.sol";
+import {IMiddleware} from "../../interfaces/IMiddleware.sol";
 import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 import {IAuctionManager} from "../../interfaces/IAuctionManager.sol";
 
@@ -99,7 +99,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
 
         Bid memory newBid = Bid({fee: fee, transmitter: transmitter, extraData: extraData});
 
-        RequestMetadata memory requestMetadata = IDeliveryHelper(addressResolver__.deliveryHelper())
+        RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
             .requests(asyncId_);
         if (fee > requestMetadata.fees.amount) revert BidExceedsMaxFees();
 
@@ -143,23 +143,23 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
 
         emit AuctionEnded(asyncId_, winningBid);
 
-        RequestMetadata memory requestMetadata = IDeliveryHelper(addressResolver__.deliveryHelper())
+        RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
             .requests(asyncId_);
 
         watcherPrecompile__().setTimeout(
             requestMetadata.appGateway,
             abi.encodeWithSelector(this.expireBid.selector, asyncId_),
-            IDeliveryHelper(addressResolver__.deliveryHelper()).bidTimeout()
+            IMiddleware(addressResolver__.deliveryHelper()).bidTimeout()
         );
 
-        IDeliveryHelper(addressResolver__.deliveryHelper()).startRequestProcessing(
+        IMiddleware(addressResolver__.deliveryHelper()).startRequestProcessing(
             asyncId_,
             winningBid
         );
     }
 
     function expireBid(bytes32 asyncId_) external onlyWatcherPrecompile {
-        RequestMetadata memory requestMetadata = IDeliveryHelper(addressResolver__.deliveryHelper())
+        RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
             .requests(asyncId_);
 
         // if executed, bid is not expired

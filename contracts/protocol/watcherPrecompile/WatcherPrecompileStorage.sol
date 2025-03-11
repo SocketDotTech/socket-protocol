@@ -99,4 +99,12 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
 
     // slots 71-118: gap for future storage variables
     uint256[48] _gap_after;
+
+    uint40 public nextRequestCount;
+    uint40 public nextBatchCount;
+
+    mapping(uint40 => RequestParams) public requestParams;
+    mapping(uint40 => bytes32[]) public batchPayloadIds;
+    mapping(uint40 => uint40[]) public requestBatchIds;
+    mapping(bytes32 => PayloadParams) public payloads;
 }

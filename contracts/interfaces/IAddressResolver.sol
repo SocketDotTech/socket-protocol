@@ -13,7 +13,7 @@ interface IAddressResolver {
     event AddressSet(bytes32 indexed name, address oldAddress, address newAddress);
 
     /// @notice Gets the address of the delivery helper contract
-    /// @return IDeliveryHelper The delivery helper interface
+    /// @return IMiddleware The delivery helper interface
     /// @dev Returns interface pointing to zero address if not configured
     function deliveryHelper() external view returns (address);
 

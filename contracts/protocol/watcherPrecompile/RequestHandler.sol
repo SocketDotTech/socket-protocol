@@ -4,14 +4,6 @@ pragma solidity ^0.8.21;
 import "./WatcherPrecompileCore.sol";
 
 abstract contract RequestHandler is WatcherPrecompileCore {
-    uint40 public nextRequestCount;
-    uint40 public nextBatchCount;
-
-    mapping(uint40 => RequestParams) public requestParams;
-    mapping(uint40 => bytes32[]) public batchPayloadIds;
-    mapping(uint40 => uint40[]) public requestBatchIds;
-    mapping(bytes32 => PayloadParams) public payloads;
-
     event RequestSubmitted(
         address middleware,
         uint40 requestCount,
@@ -158,7 +150,9 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         uint40 batchCount
     ) internal view returns (PayloadParams[] memory) {
         RequestParams memory r = requestParams[requestCount];
-        PayloadParams[] memory payloadParamsArray = new PayloadParams[](r.payloadParamsArray.length);
+        PayloadParams[] memory payloadParamsArray = new PayloadParams[](
+            r.payloadParamsArray.length
+        );
 
         for (uint40 i = 0; i < r.payloadParamsArray.length; i++) {
             if (r.payloadParamsArray[i].batchCount == batchCount) {

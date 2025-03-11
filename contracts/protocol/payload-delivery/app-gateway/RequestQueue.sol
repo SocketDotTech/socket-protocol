@@ -4,7 +4,7 @@ pragma solidity ^0.8.21;
 import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
-import "./DeliveryHelperStorage.sol";
+import "./DeliveryUtils.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
 abstract contract RequestQueue is DeliveryUtils {
@@ -71,12 +71,16 @@ abstract contract RequestQueue is DeliveryUtils {
 
     /// @notice Creates an array of payload details
     /// @return payloadDetailsArray An array of payload details
-    function _createPayloadDetailsArray()
+    function _createPayloadSubmitParamsArray()
         internal
-        returns (PayloadDetails[] memory payloadDetailsArray, uint256 levels, bool onlyReadRequests)
+        returns (
+            QueuePayloadParams[] memory payloadDetailsArray,
+            uint256 levels,
+            bool onlyReadRequests
+        )
     {
         if (queuePayloadParams.length == 0) return (payloadDetailsArray, onlyReadRequests);
-        payloadDetailsArray = new PayloadDetails[](queuePayloadParams.length);
+        payloadDetailsArray = new QueuePayloadParams[](queuePayloadParams.length);
 
         levels = 0;
         onlyReadRequests = queuePayloadParams[0].callType == CallType.READ;
@@ -110,7 +114,7 @@ abstract contract RequestQueue is DeliveryUtils {
     function _createPayloadDetails(
         uint256 level_,
         QueuePayloadParams memory queuePayloadParams_
-    ) internal returns (PayloadDetails memory) {
+    ) internal returns (QueuePayloadParams memory) {
         bytes memory payload_ = queuePayloadParams_.payload;
         address target = queuePayloadParams_.target;
         if (queuePayloadParams_.callType == CallType.DEPLOY) {
@@ -138,7 +142,7 @@ abstract contract RequestQueue is DeliveryUtils {
         }
 
         return
-            PayloadDetails({
+            QueuePayloadParams({
                 levelNumber: level_,
                 chainSlug: queuePayloadParams_.chainSlug,
                 callType: queuePayloadParams_.callType,
