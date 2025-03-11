@@ -165,25 +165,23 @@ contract WatcherPrecompile is RequestHandler {
 
         for (uint256 i = 0; i < resolvedPromises_.length; i++) {
             // Get the array of promise addresses for this payload
-            AsyncRequest memory asyncRequest_ = asyncRequests[resolvedPromises_[i].payloadId];
-            address[] memory next = asyncRequest_.next;
+            PayloadSubmitParams memory payloadSubmitParams = payload[
+                resolvedPromises_[i].payloadId
+            ];
+            address asyncPromise = payloadSubmitParams.asyncPromise;
+            if (asyncPromise == address(0)) continue;
 
             // Resolve each promise with its corresponding return data
-            bool success;
-            for (uint256 j = 0; j < next.length; j++) {
-                if (next[j] == address(0)) continue;
-                success = IPromise(next[j]).markResolved(
-                    asyncRequest_.asyncId,
-                    resolvedPromises_[i].payloadId,
-                    resolvedPromises_[i].returnData[j]
-                );
+            bool success = IPromise(asyncPromise).markResolved(
+                payloadSubmitParams.requestCount,
+                resolvedPromises_[i].payloadId,
+                resolvedPromises_[i].returnData
+            );
 
-                if (!success) {
-                    emit PromiseNotResolved(resolvedPromises_[i].payloadId, success, next[j]);
-                    break;
-                } else {
-                    emit PromiseResolved(resolvedPromises_[i].payloadId, success, next[j]);
-                }
+            if (!success) {
+                emit PromiseNotResolved(resolvedPromises_[i].payloadId, success, asyncPromise);
+            } else {
+                emit PromiseResolved(resolvedPromises_[i].payloadId, success, asyncPromise);
             }
         }
     }
@@ -201,22 +199,22 @@ contract WatcherPrecompile is RequestHandler {
             signature_
         );
 
-        AsyncRequest memory asyncRequest_ = asyncRequests[payloadId_];
-        address[] memory next = asyncRequest_.next;
+        PayloadParams storage payloadParams = payload[payloadId_];
+        RequestParams storage requestParams = requestParams[payloadParams.requestCount];
+        requestParams.isRequestCancelled = true;
 
-        for (uint256 j = 0; j < next.length; j++) {
-            if (isRevertingOnchain_)
-                IPromise(next[j]).markOnchainRevert(asyncRequest_.asyncId, payloadId_);
-
-            // assign fees after expiry time
-            IFeesManager(asyncRequest_.appGateway).unblockAndAssignFees(
-                asyncRequest_.asyncId,
-                asyncRequest_.transmitter,
-                asyncRequest_.appGateway
+        if (isRevertingOnchain_)
+            IPromise(payloadParams.asyncPromise).markOnchainRevert(
+                payloadParams.requestCount,
+                payloadId_
             );
 
-            // batch.isRequestCancelled
-        }
+        // assign fees after expiry time
+        IFeesManager(payloadParams.appGateway).unblockAndAssignFees(
+            payloadParams.requestCount,
+            payloadParams.transmitter,
+            payloadParams.appGateway
+        );
     }
 
     function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external onlyOwner {
@@ -240,6 +238,7 @@ contract WatcherPrecompile is RequestHandler {
             if (appGatewayCalled[params_[i].callId]) revert AppGatewayAlreadyCalled();
             if (!isValidPlug[params_[i].appGateway][params_[i].chainSlug][params_[i].plug])
                 revert InvalidInboxCaller();
+
             appGatewayCalled[params_[i].callId] = true;
             IAppGateway(params_[i].appGateway).callFromChain(
                 params_[i].chainSlug,
@@ -247,6 +246,7 @@ contract WatcherPrecompile is RequestHandler {
                 params_[i].payload,
                 params_[i].params
             );
+
             emit CalledAppGateway(
                 params_[i].callId,
                 params_[i].chainSlug,
