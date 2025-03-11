@@ -19,7 +19,7 @@ contract FastSwitchboard is SwitchboardBase {
     error WatcherNotFound();
 
     // Event emitted when watcher attests a digest
-    event Attested(bytes32 payloadId, bytes32 digest_, address watcher);
+    event Attested(bytes32 digest_, address watcher);
 
     /**
      * @dev Constructor function for the FastSwitchboard contract
@@ -35,19 +35,18 @@ contract FastSwitchboard is SwitchboardBase {
 
     /**
      * @dev Function to attest a packet
-     * @param payloadId_ payloadId
      * @param digest_ digest of the payload to be executed
      * @param proof_ proof from watcher
      * @notice we are attesting a digest uniquely identified with payloadId.
      */
-    function attest(bytes32 payloadId_, bytes32 digest_, bytes calldata proof_) external {
+    function attest(bytes32 digest_, bytes calldata proof_) external {
         address watcher = _recoverSigner(keccak256(abi.encode(address(this), digest_)), proof_);
 
         if (isAttested[digest_]) revert AlreadyAttested();
         if (!_hasRole(WATCHER_ROLE, watcher)) revert WatcherNotFound();
-
         isAttested[digest_] = true;
-        emit Attested(payloadId_, digest_, watcher);
+
+        emit Attested(digest_, watcher);
     }
 
     /**
