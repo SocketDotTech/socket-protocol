@@ -23,8 +23,8 @@ contract CounterTest is DeliveryHelperTest {
         contractIds[0] = counterId;
     }
 
-    function deployCounterApp(uint32 chainSlug) internal returns (bytes32 asyncId) {
-        asyncId = _deploy(contractIds, chainSlug, 1, IAppGateway(counterGateway));
+    function deployCounterApp(uint32 chainSlug) internal returns (bytes32 requestCount) {
+        requestCount = _deploy(contractIds, chainSlug, 1, IAppGateway(counterGateway));
     }
 
     function testCounterDeployment() external {

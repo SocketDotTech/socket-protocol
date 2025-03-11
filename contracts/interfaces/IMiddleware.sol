@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.3;
-import {QueuePayloadParams, Bid, Fees, WriteFinality, CallType, Parallel, IsPlug} from "../protocol/utils/common/Structs.sol";
+import {QueuePayloadParams, Bid, Fees, WriteFinality, CallType, Parallel, IsPlug, RequestMetadata} from "../protocol/utils/common/Structs.sol";
 
 interface IMiddleware {
     event BidPlaced(
-        bytes32 indexed asyncId,
+        uint40 indexed requestCount,
         Bid bid // Replaced transmitter and bidAmount with Bid struct
     );
 
     event AuctionEnded(
-        bytes32 indexed asyncId,
+        uint40 indexed requestCount,
         Bid winningBid // Replaced winningTransmitter and winningBid with Bid struct
     );
 
     function bidTimeout() external view returns (uint128);
 
+    function getRequestMetadata(uint40 requestCount_) external view returns (RequestMetadata memory);
 
     function clearQueue() external;
 
@@ -23,9 +24,8 @@ interface IMiddleware {
     function batch(
         Fees memory fees_,
         address auctionManager_,
-        bytes memory onCompleteData_,
-        bytes32 sbType_
-    ) external returns (bytes32);
+        bytes memory onCompleteData_
+    ) external returns (uint40 requestCount);
 
     function withdrawTo(
         uint32 chainSlug_,
@@ -36,15 +36,13 @@ interface IMiddleware {
         Fees memory fees_
     ) external;
 
-    function cancelTransaction(bytes32 asyncId_) external;
+    function cancelRequest(uint40 requestCount_) external;
 
-    function increaseFees(bytes32 asyncId_, uint256 fees_) external;
+    function increaseFees(uint40 requestCount_, uint256 fees_) external;
 
-    function startRequestProcessing(bytes32 asyncId_, Bid memory winningBid_) external;
+    function startRequestProcessing(uint40 requestCount_, Bid memory winningBid_) external;
 
-    function getFees(bytes32 asyncId_) external view returns (Fees memory);
-
-    function getCurrentAsyncId() external view returns (bytes32);
+    function getFees(uint40 requestCount_) external view returns (Fees memory);
 
     function finishRequest(uint40 requestCount_) external;
 }

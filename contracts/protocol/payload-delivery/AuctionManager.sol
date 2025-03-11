@@ -21,14 +21,14 @@ abstract contract AuctionManagerStorage is IAuctionManager {
     uint32 public evmxSlug;
 
     // slot 51
-    mapping(bytes32 => Bid) public winningBids;
+    mapping(uint40 => Bid) public winningBids;
 
     // slot 52
-    // asyncId => auction status
-    mapping(bytes32 => bool) public override auctionClosed;
+    // requestCount => auction status
+    mapping(uint40 => bool) public override auctionClosed;
 
     // slot 53
-    mapping(bytes32 => bool) public override auctionStarted;
+    mapping(uint40 => bool) public override auctionStarted;
 
     // slot 54
     uint256 public auctionEndDelaySeconds;
@@ -42,10 +42,10 @@ abstract contract AuctionManagerStorage is IAuctionManager {
 /// @title AuctionManager
 /// @notice Contract for managing auctions and placing bids
 contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, AddressResolverUtil {
-    event AuctionRestarted(bytes32 asyncId);
-    event AuctionStarted(bytes32 asyncId);
-    event AuctionEnded(bytes32 asyncId, Bid winningBid);
-    event BidPlaced(bytes32 asyncId, Bid bid);
+    event AuctionRestarted(uint40 requestCount);
+    event AuctionStarted(uint40 requestCount);
+    event AuctionEnded(uint40 requestCount, Bid winningBid);
+    event BidPlaced(uint40 requestCount, Bid bid);
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -72,106 +72,108 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
     }
 
-    function startAuction(bytes32 asyncId_) internal {
-        if (auctionClosed[asyncId_]) revert AuctionClosed();
-        if (auctionStarted[asyncId_]) revert AuctionAlreadyStarted();
+    function startAuction(uint40 requestCount_) internal {
+        if (auctionClosed[requestCount_]) revert AuctionClosed();
+        if (auctionStarted[requestCount_]) revert AuctionAlreadyStarted();
 
-        auctionStarted[asyncId_] = true;
-        emit AuctionStarted(asyncId_);
+        auctionStarted[requestCount_] = true;
+        emit AuctionStarted(requestCount_);
     }
 
     /// @notice Places a bid for an auction
-    /// @param asyncId_ The ID of the auction
+    /// @param requestCount_ The ID of the auction
     /// @param fee The bid amount
     /// @param transmitterSignature The signature of the transmitter
     function bid(
-        bytes32 asyncId_,
+        uint40 requestCount_,
         uint256 fee,
         bytes memory transmitterSignature,
         bytes memory extraData
     ) external {
-        if (auctionClosed[asyncId_]) revert AuctionClosed();
+        if (auctionClosed[requestCount_]) revert AuctionClosed();
 
         address transmitter = _recoverSigner(
-            keccak256(abi.encode(address(this), evmxSlug, asyncId_, fee, extraData)),
+            keccak256(abi.encode(address(this), evmxSlug, requestCount_, fee, extraData)),
             transmitterSignature
         );
 
         Bid memory newBid = Bid({fee: fee, transmitter: transmitter, extraData: extraData});
 
         RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
-            .requests(asyncId_);
+            .getRequestMetadata(requestCount_);
         if (fee > requestMetadata.fees.amount) revert BidExceedsMaxFees();
 
-        if (winningBids[asyncId_].transmitter != address(0) && fee >= winningBids[asyncId_].fee)
-            revert LowerBidAlreadyExists();
+        if (
+            winningBids[requestCount_].transmitter != address(0) &&
+            fee >= winningBids[requestCount_].fee
+        ) revert LowerBidAlreadyExists();
 
-        winningBids[asyncId_] = newBid;
+        winningBids[requestCount_] = newBid;
 
         IFeesManager(addressResolver__.feesManager()).blockFees(
             requestMetadata.appGateway,
             requestMetadata.fees,
             newBid,
-            asyncId_
+            requestCount_
         );
 
         if (auctionEndDelaySeconds > 0) {
-            startAuction(asyncId_);
+            startAuction(requestCount_);
             watcherPrecompile__().setTimeout(
                 requestMetadata.appGateway,
-                abi.encodeWithSelector(this.endAuction.selector, asyncId_),
-                auctionEndDelaySeconds
+                auctionEndDelaySeconds,
+                abi.encodeWithSelector(this.endAuction.selector, requestCount_)
             );
         } else {
-            _endAuction(asyncId_);
+            _endAuction(requestCount_);
         }
 
-        emit BidPlaced(asyncId_, newBid);
-        auctionClosed[asyncId_] = true;
+        emit BidPlaced(requestCount_, newBid);
+        auctionClosed[requestCount_] = true;
     }
 
     /// @notice Ends an auction
-    /// @param asyncId_ The ID of the auction
-    function endAuction(bytes32 asyncId_) external onlyWatcherPrecompile {
-        _endAuction(asyncId_);
+    /// @param requestCount_ The ID of the auction
+    function endAuction(uint40 requestCount_) external onlyWatcherPrecompile {
+        _endAuction(requestCount_);
     }
 
-    function _endAuction(bytes32 asyncId_) internal {
-        auctionClosed[asyncId_] = true;
-        Bid memory winningBid = winningBids[asyncId_];
+    function _endAuction(uint40 requestCount_) internal {
+        auctionClosed[requestCount_] = true;
+        Bid memory winningBid = winningBids[requestCount_];
         if (winningBid.transmitter == address(0)) revert InvalidTransmitter();
 
-        emit AuctionEnded(asyncId_, winningBid);
+        emit AuctionEnded(requestCount_, winningBid);
 
         RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
-            .requests(asyncId_);
+            .getRequestMetadata(requestCount_);
 
         watcherPrecompile__().setTimeout(
             requestMetadata.appGateway,
-            abi.encodeWithSelector(this.expireBid.selector, asyncId_),
-            IMiddleware(addressResolver__.deliveryHelper()).bidTimeout()
+            IMiddleware(addressResolver__.deliveryHelper()).bidTimeout(),
+            abi.encodeWithSelector(this.expireBid.selector, requestCount_)
         );
 
         IMiddleware(addressResolver__.deliveryHelper()).startRequestProcessing(
-            asyncId_,
+            requestCount_,
             winningBid
         );
     }
 
-    function expireBid(bytes32 asyncId_) external onlyWatcherPrecompile {
+    function expireBid(uint40 requestCount_) external onlyWatcherPrecompile {
         RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
-            .requests(asyncId_);
+            .getRequestMetadata(requestCount_);
 
         // if executed, bid is not expired
         // todo: check pending payloads from watcher precompile
         // if (requestMetadata.totalBatchPayloadsRemaining == 0 || requestMetadata.isRequestCancelled)
         //     return;
 
-        // IFeesManager(addressResolver__.feesManager()).unblockFees(asyncId_, requestMetadata.appGateway);
-        // winningBids[asyncId_] = Bid({fee: 0, transmitter: address(0), extraData: ""});
-        // auctionClosed[asyncId_] = false;
+        // IFeesManager(addressResolver__.feesManager()).unblockFees(requestCount_, requestMetadata.appGateway);
+        // winningBids[requestCount_] = Bid({fee: 0, transmitter: address(0), extraData: ""});
+        // auctionClosed[requestCount_] = false;
 
-        // emit AuctionRestarted(asyncId_);
+        // emit AuctionRestarted(requestCount_);
     }
 
     function _recoverSigner(

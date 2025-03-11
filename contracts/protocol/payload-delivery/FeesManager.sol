@@ -34,8 +34,8 @@ abstract contract FeesManagerStorage is IFeesManager {
 
     // slot 53
     /// @notice Mapping to track blocked fees for each async id
-    /// @dev asyncId => Fees
-    mapping(bytes32 => Fees) public asyncIdBlockedFees;
+    /// @dev requestCount => Fees
+    mapping(uint40 => Fees) public requestCountBlockedFees;
 
     // slot 54
     /// @notice Mapping to track fees to be distributed to transmitters
@@ -57,23 +57,23 @@ abstract contract FeesManagerStorage is IFeesManager {
 /// @notice Contract for managing fees
 contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResolverUtil {
     /// @notice Emitted when fees are blocked for a batch
-    /// @param asyncId The batch identifier
+    /// @param requestCount The batch identifier
     /// @param chainSlug The chain identifier
     /// @param token The token address
     /// @param amount The blocked amount
     event FeesBlocked(
-        bytes32 indexed asyncId,
+        uint40 indexed requestCount,
         uint32 indexed chainSlug,
         address indexed token,
         uint256 amount
     );
 
     /// @notice Emitted when transmitter fees are updated
-    /// @param asyncId The batch identifier
+    /// @param requestCount The batch identifier
     /// @param transmitter The transmitter address
     /// @param amount The new amount deposited
     event TransmitterFeesUpdated(
-        bytes32 indexed asyncId,
+        uint40 indexed requestCount,
         address indexed transmitter,
         uint256 amount
     );
@@ -91,19 +91,19 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     );
 
     /// @notice Emitted when fees are unblocked and assigned to a transmitter
-    /// @param asyncId The batch identifier
+    /// @param requestCount The batch identifier
     /// @param transmitter The transmitter address
     /// @param amount The unblocked amount
     event FeesUnblockedAndAssigned(
-        bytes32 indexed asyncId,
+        uint40 indexed requestCount,
         address indexed transmitter,
         uint256 amount
     );
 
     /// @notice Emitted when fees are unblocked
-    /// @param asyncId The batch identifier
+    /// @param requestCount The batch identifier
     /// @param appGateway The app gateway address
-    event FeesUnblocked(bytes32 indexed asyncId, address indexed appGateway);
+    event FeesUnblocked(uint40 indexed requestCount, address indexed appGateway);
 
     /// @notice Error thrown when insufficient fees are available
     error InsufficientFeesAvailable();
@@ -193,15 +193,15 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @notice Blocks fees for transmitter
     /// @param originAppGateway_ The app gateway address
     /// @param feesGivenByApp_ The fees data struct given by the app gateway
-    /// @param asyncId_ The batch identifier
+    /// @param requestCount_ The batch identifier
     /// @dev Only callable by delivery helper
     function blockFees(
         address originAppGateway_,
         Fees memory feesGivenByApp_,
         Bid memory winningBid_,
-        bytes32 asyncId_
+        uint40 requestCount_
     ) external {
-        if (msg.sender != deliveryHelper__().getAsyncRequestDetails(asyncId_).auctionManager)
+        if (msg.sender != deliveryHelper__().getRequestMetadata(requestCount_).auctionManager)
             revert NotAuctionManager();
 
         address appGateway = _getCoreAppGateway(originAppGateway_);
@@ -212,8 +212,8 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
             feesGivenByApp_.feePoolToken
         );
 
-        if (asyncIdBlockedFees[asyncId_].amount > 0)
-            availableFees += asyncIdBlockedFees[asyncId_].amount;
+        if (requestCountBlockedFees[requestCount_].amount > 0)
+            availableFees += requestCountBlockedFees[requestCount_].amount;
 
         if (availableFees < winningBid_.fee) revert InsufficientFeesAvailable();
         TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][
@@ -223,16 +223,16 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         tokenBalance.blocked =
             tokenBalance.blocked +
             winningBid_.fee -
-            asyncIdBlockedFees[asyncId_].amount;
+            requestCountBlockedFees[requestCount_].amount;
 
-        asyncIdBlockedFees[asyncId_] = Fees({
+        requestCountBlockedFees[requestCount_] = Fees({
             feePoolChain: feesGivenByApp_.feePoolChain,
             feePoolToken: feesGivenByApp_.feePoolToken,
             amount: winningBid_.fee
         });
 
         emit FeesBlocked(
-            asyncId_,
+            requestCount_,
             feesGivenByApp_.feePoolChain,
             feesGivenByApp_.feePoolToken,
             winningBid_.fee
@@ -240,14 +240,14 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     }
 
     /// @notice Unblocks fees after successful execution and assigns them to the transmitter
-    /// @param asyncId_ The async ID of the executed batch
+    /// @param requestCount_ The async ID of the executed batch
     /// @param transmitter_ The address of the transmitter who executed the batch
     function unblockAndAssignFees(
-        uint40 asyncId_,
+        uint40 requestCount_,
         address transmitter_,
         address originAppGateway_
     ) external override onlyDeliveryHelper {
-        Fees memory fees = asyncIdBlockedFees[asyncId_];
+        Fees memory fees = requestCountBlockedFees[requestCount_];
         if (fees.amount == 0) revert NoFeesBlocked();
 
         address appGateway = _getCoreAppGateway(originAppGateway_);
@@ -263,12 +263,15 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         transmitterFees[transmitter_][fees.feePoolChain][fees.feePoolToken] += fees.amount;
 
         // Clean up storage
-        delete asyncIdBlockedFees[asyncId_];
-        emit FeesUnblockedAndAssigned(asyncId_, transmitter_, fees.amount);
+        delete requestCountBlockedFees[requestCount_];
+        emit FeesUnblockedAndAssigned(requestCount_, transmitter_, fees.amount);
     }
 
-    function unblockFees(bytes32 asyncId_, address originAppGateway_) external onlyDeliveryHelper {
-        Fees memory fees = asyncIdBlockedFees[asyncId_];
+    function unblockFees(
+        uint40 requestCount_,
+        address originAppGateway_
+    ) external onlyDeliveryHelper {
+        Fees memory fees = requestCountBlockedFees[requestCount_];
         if (fees.amount == 0) revert NoFeesBlocked();
 
         address appGateway = _getCoreAppGateway(originAppGateway_);
@@ -280,8 +283,8 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         tokenBalance.blocked -= fees.amount;
         tokenBalance.deposited += fees.amount;
 
-        delete asyncIdBlockedFees[asyncId_];
-        emit FeesUnblocked(asyncId_, appGateway);
+        delete requestCountBlockedFees[requestCount_];
+        emit FeesUnblocked(requestCount_, appGateway);
     }
 
     /// @notice Withdraws fees to a specified receiver
@@ -312,7 +315,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         // payloadDetails = _finalize(CallType.WRITE, chainSlug_, payload, transmitter);
         // FinalizeParams memory finalizeParams = FinalizeParams({
         //     payloadDetails: payloadDetails,
-        //     asyncId: bytes32(0),
+        //     requestCount: bytes32(0),
         //     transmitter: transmitter
         // });
 
@@ -327,7 +330,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         Fees memory fees_
     ) internal {
         deliveryHelper__().queue(
-            _getQueuePayloadParams(callType_, chainSlug_, payload_, auctionManager_, fees_)
+            _getQueuePayloadParams(callType_, chainSlug_, payload_)
         );
         deliveryHelper__().batch(fees_, auctionManager_, bytes(""));
     }
@@ -335,9 +338,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     function _getQueuePayloadParams(
         CallType callType_,
         uint32 chainSlug_,
-        bytes memory payload_,
-        address auctionManager_,
-        Fees memory fees_
+        bytes memory payload_
     ) internal view returns (QueuePayloadParams memory) {
         return
             QueuePayloadParams({

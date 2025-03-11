@@ -11,7 +11,7 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
     bytes32 public superTokenLockable = _createContractId("superTokenLockable");
     bytes32 public limitHook = _createContractId("limitHook");
 
-    event Bridged(bytes32 asyncId);
+    event Bridged(bytes32 requestCount);
 
     struct UserOrder {
         address srcToken;
@@ -76,11 +76,11 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
     }
 
     function checkBalance(bytes memory data_, bytes memory returnData_) external onlyPromises {
-        (UserOrder memory order, bytes32 asyncId) = abi.decode(data_, (UserOrder, bytes32));
+        (UserOrder memory order, bytes32 requestCount) = abi.decode(data_, (UserOrder, bytes32));
 
         uint256 balance = abi.decode(returnData_, (uint256));
         if (balance < order.srcAmount) {
-            _revertTx(asyncId);
+            _revertTx(requestCount);
             return;
         }
         _unlockTokens(order.srcToken, order.user, order.srcAmount);
@@ -90,21 +90,21 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
         ISuperToken(srcToken_).unlockTokens(user_, amount_);
     }
 
-    function bridge(bytes memory order_) external async returns (bytes32 asyncId_) {
+    function bridge(bytes memory order_) external async returns (uint40 requestCount_) {
         UserOrder memory order = abi.decode(order_, (UserOrder));
-        asyncId_ = _getCurrentAsyncId();
+        requestCount_ = _getCurrentAsyncId();
         ISuperToken(order.srcToken).lockTokens(order.user, order.srcAmount);
 
         _setOverrides(Read.ON);
         // goes to forwarder and deploys promise and stores it
         ISuperToken(order.srcToken).balanceOf(order.user);
-        IPromise(order.srcToken).then(this.checkBalance.selector, abi.encode(order, asyncId_));
+        IPromise(order.srcToken).then(this.checkBalance.selector, abi.encode(order, requestCount_));
 
         _setOverrides(Read.OFF);
         ISuperToken(order.dstToken).mint(order.user, order.srcAmount);
         ISuperToken(order.srcToken).burn(order.user, order.srcAmount);
 
-        emit Bridged(asyncId_);
+        emit Bridged(requestCount_);
     }
 
     function withdrawFeeTokens(

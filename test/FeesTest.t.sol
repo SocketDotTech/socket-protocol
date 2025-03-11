@@ -13,7 +13,7 @@ contract FeesTest is DeliveryHelperTest {
     uint32 feesChainSlug = arbChainSlug;
     SocketContracts feesConfig;
 
-    bytes32 asyncId;
+    bytes32 requestCount;
     CounterAppGateway counterGateway;
 
     function setUp() public {
@@ -25,7 +25,7 @@ contract FeesTest is DeliveryHelperTest {
 
         bytes32[] memory contractIds = new bytes32[](1);
         contractIds[0] = counterGateway.counter();
-        asyncId = _deploy(contractIds, feesChainSlug, 1, IAppGateway(counterGateway));
+        requestCount = _deploy(contractIds, feesChainSlug, 1, IAppGateway(counterGateway));
     }
 
     function testDistributeFee() public {
@@ -75,13 +75,13 @@ contract FeesTest is DeliveryHelperTest {
 
         counterGateway.withdrawFeeTokens(feesChainSlug, ETH_ADDRESS, withdrawAmount, receiver);
 
-        asyncId = getNextAsyncId();
+        requestCount = getNextAsyncId();
         bytes32[] memory payloadIds = getWritePayloadIds(
             feesChainSlug,
             address(getSocketConfig(feesChainSlug).switchboard),
             1
         );
-        bidAndEndAuction(asyncId);
+        bidAndEndAuction(requestCount);
 
         PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(payloadIds[0]);
         finalizeAndRelay(payloadIds[0], payloadDetails);

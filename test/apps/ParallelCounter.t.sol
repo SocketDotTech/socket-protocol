@@ -27,8 +27,8 @@ contract ParallelCounterTest is DeliveryHelperTest {
         contractIds[1] = counterId2;
     }
 
-    function _deployParallel(uint32[] memory chainSlugs_) internal returns (bytes32 asyncId) {
-        asyncId = getNextAsyncId();
+    function _deployParallel(uint32[] memory chainSlugs_) internal returns (bytes32 requestCount) {
+        requestCount = getNextAsyncId();
         bytes32[] memory payloadIds = new bytes32[](contractIds.length * chainSlugs_.length);
         for (uint32 i = 0; i < chainSlugs_.length; i++) {
             for (uint j = 0; j < contractIds.length; j++) {
@@ -43,14 +43,14 @@ contract ParallelCounterTest is DeliveryHelperTest {
         payloadIdCounter += chainSlugs_.length * contractIds.length + 1;
 
         parallelCounterGateway.deployMultiChainContracts(chainSlugs_);
-        bidAndExecute(payloadIds, asyncId);
+        bidAndExecute(payloadIds, requestCount);
         for (uint i = 0; i < chainSlugs_.length; i++) {
             setupGatewayAndPlugs(chainSlugs_[i], parallelCounterGateway, contractIds);
         }
     }
 
-    function deployCounterApps(uint32[] memory chainSlugs) internal returns (bytes32 asyncId) {
-        asyncId = _deployParallel(chainSlugs);
+    function deployCounterApps(uint32[] memory chainSlugs) internal returns (bytes32 requestCount) {
+        requestCount = _deployParallel(chainSlugs);
     }
 
     function testParallelCounterDeployment() external {

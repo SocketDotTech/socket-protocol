@@ -24,15 +24,15 @@ contract DeliveryHelperTest is SetupTest {
     AuctionManager auctionManager;
 
     event PayloadSubmitted(
-        bytes32 indexed asyncId,
+        uint40 indexed requestCount,
         address indexed appGateway,
         PayloadDetails[] payloads,
         Fees fees,
         uint256 auctionEndDelay
     );
-    event BidPlaced(bytes32 indexed asyncId, Bid bid);
-    event AuctionEnded(bytes32 indexed asyncId, Bid winningBid);
-    event RequestCancelled(bytes32 indexed asyncId);
+    event BidPlaced(uint40 indexed requestCount, Bid bid);
+    event AuctionEnded(uint40 indexed requestCount, Bid winningBid);
+    event RequestCancelled(uint40 indexed requestCount);
     event FinalizeRequested(bytes32 indexed payloadId, AsyncRequest asyncRequest);
     event QueryRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
 
@@ -239,11 +239,14 @@ contract DeliveryHelperTest is SetupTest {
 
     function checkPayloadRequestAndDetails(
         PayloadDetails[] memory payloadDetails,
-        bytes32 asyncId,
+        uint40 requestCount,
         address appGateway_
     ) internal view {
         for (uint i = 0; i < payloadDetails.length; i++) {
-            PayloadDetails memory payloadDetail = deliveryHelper.getPayloadIndexDetails(asyncId, i);
+            PayloadDetails memory payloadDetail = deliveryHelper.getPayloadIndexDetails(
+                requestCount,
+                i
+            );
 
             assertEq(payloadDetail.chainSlug, payloadDetails[i].chainSlug, "ChainSlug mismatch");
             // todo
@@ -269,7 +272,7 @@ contract DeliveryHelperTest is SetupTest {
             // );
         }
 
-        PayloadRequest memory payloadRequest = deliveryHelper.getAsyncRequestDetails(asyncId);
+        PayloadRequest memory payloadRequest = deliveryHelper.getAsyncRequestDetails(requestCount);
 
         assertEq(payloadRequest.appGateway, appGateway_, "AppGateway mismatch");
         assertEq(payloadRequest.auctionManager, address(auctionManager), "AuctionManager mismatch");
@@ -282,20 +285,20 @@ contract DeliveryHelperTest is SetupTest {
         assertEq(payloadRequest.isRequestCancelled, false, "IsRequestCancelled mismatch");
     }
 
-    function bidAndEndAuction(bytes32 asyncId) internal {
-        placeBid(asyncId);
+    function bidAndEndAuction(bytes32 requestCount) internal {
+        placeBid(requestCount);
         endAuction();
     }
 
-    function bidAndExecute(bytes32[] memory payloadIds, bytes32 asyncId_) internal {
-        bidAndEndAuction(asyncId_);
+    function bidAndExecute(bytes32[] memory payloadIds, uint40 requestCount_) internal {
+        bidAndEndAuction(requestCount_);
         for (uint i = 0; i < payloadIds.length; i++) {
             finalizeAndExecute(payloadIds[i]);
         }
     }
 
-    function bidAndExecuteParallel(bytes32[] memory payloadIds, bytes32 asyncId_) internal {
-        bidAndEndAuction(asyncId_);
+    function bidAndExecuteParallel(bytes32[] memory payloadIds, uint40 requestCount_) internal {
+        bidAndEndAuction(requestCount_);
 
         bytes[] memory returnData = new bytes[](payloadIds.length);
         for (uint i = 0; i < payloadIds.length; i++) {
@@ -311,10 +314,10 @@ contract DeliveryHelperTest is SetupTest {
         uint32 chainSlug_,
         uint256 totalPayloads,
         IAppGateway appGateway_
-    ) internal returns (bytes32 asyncId) {
+    ) internal returns (bytes32 requestCount) {
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
 
-        asyncId = getNextAsyncId();
+        requestCount = getNextAsyncId();
         bytes32[] memory payloadIds = getWritePayloadIds(
             chainSlug_,
             address(socketConfig.switchboard),
@@ -322,7 +325,7 @@ contract DeliveryHelperTest is SetupTest {
         );
 
         appGateway_.deployContracts(chainSlug_);
-        bidAndExecute(payloadIds, asyncId);
+        bidAndExecute(payloadIds, requestCount);
         setupGatewayAndPlugs(chainSlug_, appGateway_, contractIds);
     }
 
@@ -351,33 +354,33 @@ contract DeliveryHelperTest is SetupTest {
         watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
     }
 
-    function _executeReadRequestSingleChain() internal returns (bytes32 asyncId) {
-        asyncId = getNextAsyncId();
+    function _executeReadRequestSingleChain() internal returns (bytes32 requestCount) {
+        requestCount = getNextAsyncId();
     }
 
-    function _executeReadRequestMultiChain() internal returns (bytes32 asyncId) {
-        asyncId = getNextAsyncId();
+    function _executeReadRequestMultiChain() internal returns (bytes32 requestCount) {
+        requestCount = getNextAsyncId();
     }
 
     function _executeWriteRequestSingleChain(
         uint32 chainSlug_,
         uint256 totalPayloads
-    ) internal returns (bytes32 asyncId) {
-        asyncId = getNextAsyncId();
+    ) internal returns (bytes32 requestCount) {
+        requestCount = getNextAsyncId();
 
         bytes32[] memory payloadIds = getWritePayloadIds(
             chainSlug_,
             address(getSocketConfig(chainSlug_).switchboard),
             totalPayloads
         );
-        bidAndExecute(payloadIds, asyncId);
+        bidAndExecute(payloadIds, requestCount);
     }
 
     function _executeWriteRequestMultiChain(
         uint32[] memory chainSlugs_
-    ) internal returns (bytes32 asyncId) {
-        asyncId = getNextAsyncId();
-        bidAndEndAuction(asyncId);
+    ) internal returns (bytes32 requestCount) {
+        requestCount = getNextAsyncId();
+        bidAndEndAuction(requestCount);
         for (uint i = 0; i < chainSlugs_.length; i++) {
             bytes32 payloadId = getWritePayloadId(
                 chainSlugs_[i],
@@ -452,28 +455,28 @@ contract DeliveryHelperTest is SetupTest {
     }
 
     //// AUCTION RELATED FUNCTIONS ////
-    function placeBid(bytes32 asyncId) internal {
+    function placeBid(bytes32 requestCount) internal {
         // todo:
         // vm.expectEmit(false, false, false, false);
         // emit BidPlaced(
-        //     asyncId,
+        //     requestCount,
         //     Bid({fee: bidAmount, transmitter: transmitterEOA, extraData: ""})
         // );
 
         vm.prank(transmitterEOA);
         bytes memory transmitterSignature = _createSignature(
-            keccak256(abi.encode(address(auctionManager), evmxSlug, asyncId, bidAmount, "")),
+            keccak256(abi.encode(address(auctionManager), evmxSlug, requestCount, bidAmount, "")),
             transmitterPrivateKey
         );
 
-        auctionManager.bid(asyncId, bidAmount, transmitterSignature, "");
+        auctionManager.bid(requestCount, bidAmount, transmitterSignature, "");
     }
 
     function endAuction() internal {
         // todo:
         // vm.expectEmit(true, false, false, true);
         // emit AuctionEnded(
-        //     asyncId,
+        //     requestCount,
         //     Bid({fee: bidAmount, transmitter: transmitterEOA, extraData: ""})
         // );
 

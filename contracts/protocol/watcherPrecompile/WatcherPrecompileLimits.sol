@@ -97,17 +97,16 @@ abstract contract WatcherPrecompileLimits is
      * @param appGateway_ The app gateway address
      * @param limitType_ The type of limit to consume
      * @param consumeLimit_ The amount of limit to consume
-     * @return appGateway The resolved app gateway address
      */
     function _consumeLimit(
         address appGateway_,
         bytes32 limitType_,
         uint256 consumeLimit_
-    ) internal returns (address appGateway) {
-        LimitParams storage limitParams = _limitParams[appGateway][limitType_];
+    ) internal {
+        LimitParams storage limitParams = _limitParams[appGateway_][limitType_];
 
         // Initialize limit if not active
-        if (!_activeAppGateways[appGateway]) {
+        if (!_activeAppGateways[appGateway_]) {
             LimitParams memory limitParam = LimitParams({
                 maxLimit: defaultLimit,
                 ratePerSecond: defaultRatePerSecond,
@@ -115,12 +114,12 @@ abstract contract WatcherPrecompileLimits is
                 lastUpdateLimit: defaultLimit
             });
 
-            _limitParams[appGateway][QUERY] = limitParam;
-            _limitParams[appGateway][FINALIZE] = limitParam;
-            _limitParams[appGateway][SCHEDULE] = limitParam;
+            _limitParams[appGateway_][QUERY] = limitParam;
+            _limitParams[appGateway_][FINALIZE] = limitParam;
+            _limitParams[appGateway_][SCHEDULE] = limitParam;
 
-            _activeAppGateways[appGateway] = true;
-            emit AppGatewayActivated(appGateway, defaultLimit, defaultRatePerSecond);
+            _activeAppGateways[appGateway_] = true;
+            emit AppGatewayActivated(appGateway_, defaultLimit, defaultRatePerSecond);
         }
 
         // Update the limit

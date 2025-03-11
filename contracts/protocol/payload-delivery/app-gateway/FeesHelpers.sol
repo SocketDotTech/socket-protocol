@@ -9,15 +9,15 @@ abstract contract FeesHelpers is RequestQueue {
     // slots [210-259] reserved for gap
     uint256[50] _gap_batch_async;
 
-    function increaseFees(bytes32 asyncId_, uint256 newMaxFees_) external override {
+    function increaseFees(uint40 requestCount_, uint256 newMaxFees_) external override {
         address appGateway = _getCoreAppGateway(msg.sender);
-        if (appGateway != requests[asyncId_].appGateway) {
+        if (appGateway != requests[requestCount_].appGateway) {
             revert OnlyAppGateway();
         }
 
-        if (requests[asyncId_].winningBid.transmitter != address(0)) revert WinningBidExists();
-        requests[asyncId_].fees.amount = newMaxFees_;
-        emit FeesIncreased(appGateway, asyncId_, newMaxFees_);
+        if (requests[requestCount_].winningBid.transmitter != address(0)) revert WinningBidExists();
+        requests[requestCount_].fees.amount = newMaxFees_;
+        emit FeesIncreased(appGateway, requestCount_, newMaxFees_);
     }
 
     /// @notice Withdraws funds to a specified receiver
@@ -34,10 +34,7 @@ abstract contract FeesHelpers is RequestQueue {
         address auctionManager_,
         Fees memory fees_
     ) external {
-        PayloadDetails[] memory payloadDetailsArray = new PayloadDetails[](1);
-
-        // this will call batch function in RequestQueue
-        payloadDetailsArray[0] = IFeesManager(addressResolver__.feesManager()).withdrawFees(
+        IFeesManager(addressResolver__.feesManager()).withdrawFees(
             msg.sender,
             chainSlug_,
             token_,
@@ -46,5 +43,9 @@ abstract contract FeesHelpers is RequestQueue {
             auctionManager_,
             fees_
         );
+    }
+
+    function getFees(uint40 requestCount_) external view returns (Fees memory) {
+        return requests[requestCount_].fees;
     }
 }

@@ -33,7 +33,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         _clearOverrides();
         _;
         isAsyncModifierSet = false;
-        deliveryHelper__().batch(fees, auctionManager, onCompleteData, sbType);
+        deliveryHelper__().batch(fees, auctionManager, onCompleteData);
         _markValidPromises();
         onCompleteData = bytes("");
     }
@@ -68,9 +68,9 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     }
 
     /// @notice Gets the current async ID
-    /// @return bytes32 The current async ID
-    function _getCurrentAsyncId() internal view returns (bytes32) {
-        return deliveryHelper__().getCurrentAsyncId();
+    /// @return uint40 The current async ID
+    function _getCurrentAsyncId() internal view returns (uint40) {
+        return watcherPrecompile__().getCurrentRequestCount();
     }
 
     /// @notice Sets the auction manager
@@ -282,15 +282,15 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// @notice Reverts the transaction
-    /// @param asyncId_ The async ID
-    function _revertTx(bytes32 asyncId_) internal {
-        deliveryHelper__().cancelTransaction(asyncId_);
+    /// @param requestCount_ The async ID
+    function _revertTx(uint40 requestCount_) internal {
+        deliveryHelper__().cancelRequest(requestCount_);
     }
 
     /// @notice increases the transaction fees
-    /// @param asyncId_ The async ID
-    function _increaseFees(bytes32 asyncId_, uint256 newMaxFees_) internal {
-        deliveryHelper__().increaseFees(asyncId_, newMaxFees_);
+    /// @param requestCount_ The async ID
+    function _increaseFees(uint40 requestCount_, uint256 newMaxFees_) internal {
+        deliveryHelper__().increaseFees(requestCount_, newMaxFees_);
     }
 
     /// @notice Withdraws fee tokens
@@ -315,7 +315,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @param onCompleteData_ The on complete data
     /// @dev only payload delivery can call this
     /// @dev callback in pd promise to be called after all contracts are deployed
-    function onRequestComplete(bytes32, bytes calldata onCompleteData_) external override {
+    function onRequestComplete(uint40, bytes calldata onCompleteData_) external override {
         if (onCompleteData_.length == 0) return;
         (uint32 chainSlug, bool isDeploy) = abi.decode(onCompleteData_, (uint32, bool));
         if (isDeploy) {
@@ -326,8 +326,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     function callFromChain(
         uint32 chainSlug_,
         address plug_,
-        bytes calldata payload_,
-        bytes32 params_
+        bytes32 params_,
+        bytes calldata payload_
     ) external virtual onlyWatcherPrecompile {}
 
     /// @notice Initializes the contract
@@ -336,7 +336,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
 
     /// @notice hook to handle the revert in callbacks or onchain executions
     /// @dev can be overridden by the app gateway to add custom logic
-    /// @param asyncId_ The async ID
+    /// @param requestCount_ The async ID
     /// @param payloadId_ The payload ID
-    function handleRevert(bytes32 asyncId_, bytes32 payloadId_) external override onlyPromises {}
+    function handleRevert(
+        uint40 requestCount_,
+        bytes32 payloadId_
+    ) external override onlyPromises {}
 }

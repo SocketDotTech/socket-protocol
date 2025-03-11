@@ -145,7 +145,7 @@ contract MockWatcherPrecompile {
                 address(0),
                 0,
                 block.timestamp + 1000,
-                params_.asyncId,
+                params_.requestCount,
                 bytes32(0),
                 bytes(""),
                 next,

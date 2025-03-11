@@ -9,7 +9,7 @@ import "./SuperToken.sol";
 contract SuperTokenAppGateway is AppGatewayBase, Ownable {
     bytes32 public superToken = _createContractId("superToken");
 
-    event Transferred(bytes32 asyncId);
+    event Transferred(bytes32 requestCount);
 
     struct ConstructorParams {
         string name_;

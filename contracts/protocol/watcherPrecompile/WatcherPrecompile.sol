@@ -88,7 +88,7 @@ contract WatcherPrecompile is RequestHandler {
     function finalize(
         PayloadParams memory params_,
         address transmitter_
-    ) external returns (bytes32 payloadId, bytes32 digest) {
+    ) external returns (bytes32 digest) {
         digest = _finalize(params_, transmitter_);
     }
 
@@ -134,7 +134,7 @@ contract WatcherPrecompile is RequestHandler {
         _processBatch(requestCount, r.currentBatch);
     }
 
-    function cancelRequest(uint40 requestCount) public {
+    function cancelRequest(uint40 requestCount) external view {
         RequestParams memory r = requestParams[requestCount];
         if (r.isRequestCancelled) revert RequestAlreadyCancelled();
         if (r.middleware != msg.sender) revert InvalidCaller();
@@ -241,8 +241,8 @@ contract WatcherPrecompile is RequestHandler {
             IAppGateway(params_[i].appGateway).callFromChain(
                 params_[i].chainSlug,
                 params_[i].plug,
-                params_[i].payload,
-                params_[i].params
+                params_[i].params,
+                params_[i].payload
             );
 
             emit CalledAppGateway(

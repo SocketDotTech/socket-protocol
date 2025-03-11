@@ -11,16 +11,16 @@ interface IAppGateway {
         view
         returns (Read, Parallel, WriteFinality, uint256, uint256, bytes32);
 
-    function onRequestComplete(bytes32 asyncId_, bytes calldata onCompleteData_) external;
+    function onRequestComplete(uint40 requestCount_, bytes calldata onCompleteData_) external;
 
     function callFromChain(
         uint32 chainSlug_,
         address plug_,
-        bytes calldata payload_,
-        bytes32 params_
+        bytes32 params_,
+        bytes calldata payload_
     ) external;
 
-    function handleRevert(bytes32 asyncId_, bytes32 payloadId_) external;
+    function handleRevert(uint40 requestCount_, bytes32 payloadId_) external;
 
     /// @notice initialize the contracts on chain
     function initialize(uint32 chainSlug_) external;

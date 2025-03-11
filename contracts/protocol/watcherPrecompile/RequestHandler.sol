@@ -161,4 +161,8 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         }
         return payloadParamsArray;
     }
+
+    function getCurrentRequestCount() external view returns (uint40) {
+        return nextRequestCount;
+    }
 }

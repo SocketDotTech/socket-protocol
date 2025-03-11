@@ -22,11 +22,12 @@ abstract contract DeliveryHelperStorage is IMiddleware {
     uint256[50] _gap_before;
 
     uint128 public bidTimeout;
+    uint256 public saltCounter;
 
     /// @notice The call parameters array
     QueuePayloadParams[] public queuePayloadParams;
 
-    mapping(bytes32 => RequestMetadata) public requests;
+    mapping(uint40 => RequestMetadata) public requests;
 
     // slots [59-108] reserved for gap
     uint256[50] _gap_after;

@@ -192,7 +192,7 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
         uint40 batchCount_,
         uint40 payloadCount_,
         bytes32 prevDigestsHash_
-    ) internal returns (bytes32) {
+    ) internal pure returns (bytes32) {
         return
             keccak256(
                 abi.encode(

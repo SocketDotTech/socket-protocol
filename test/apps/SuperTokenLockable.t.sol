@@ -124,7 +124,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     }
 
     function testContractDeployment() public {
-        bytes32 asyncId = _deploy(
+        bytes32 requestCount = _deploy(
             contractIds,
             arbChainSlug,
             2,
@@ -190,7 +190,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         PayloadDetails[] memory payloadDetails = createDeployPayloadDetailsArray(arbChainSlug);
         checkPayloadRequestAndDetails(
             payloadDetails,
-            asyncId,
+            requestCount,
             address(appContracts.superTokenLockableApp)
         );
     }
@@ -198,7 +198,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
     function testConfigure() public {
         _deploy(contractIds, arbChainSlug, 2, IAppGateway(appContracts.superTokenLockableApp));
 
-        bytes32 asyncId = _executeWriteRequestSingleChain(arbChainSlug, 1);
+        bytes32 requestCount = _executeWriteRequestSingleChain(arbChainSlug, 1);
 
         (address onChainSuperToken, ) = getOnChainAndForwarderAddresses(
             arbChainSlug,
@@ -219,7 +219,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         PayloadDetails[] memory payloadDetails = createConfigurePayloadDetailsArray(arbChainSlug);
         checkPayloadRequestAndDetails(
             payloadDetails,
-            asyncId,
+            requestCount,
             address(appContracts.superTokenLockableApp)
         );
     }

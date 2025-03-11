@@ -21,15 +21,20 @@ contract DeliveryHelper is FeesHelpers {
         _initializeOwner(owner_);
     }
 
-    function endTimeout(bytes32 requestCount_) external onlyWatcherPrecompile {
+    function endTimeout(uint40 requestCount_) external onlyWatcherPrecompile {
         IAuctionManager(requests[requestCount_].auctionManager).endAuction(requestCount_);
     }
 
     function startRequestProcessing(
-        bytes32 requestCount_,
+        uint40 requestCount_,
         Bid memory winningBid_
     ) external onlyAuctionManager(requestCount_) {
         if (winningBid_.transmitter == address(0)) revert InvalidTransmitter();
+
+        RequestMetadata storage requestMetadata_ = requests[requestCount_];
+        bool isRestarted = requestMetadata_.winningBid.transmitter != address(0);
+
+        requestMetadata_.winningBid.transmitter = winningBid_.transmitter;
 
         if (!isRestarted) {
             watcherPrecompile__().startProcessingRequest(requestCount_, winningBid_.transmitter);
@@ -38,7 +43,7 @@ contract DeliveryHelper is FeesHelpers {
         }
     }
 
-    function finishRequest(bytes32 requestCount_) external onlyWatcherPrecompile {
+    function finishRequest(uint40 requestCount_) external onlyWatcherPrecompile {
         RequestMetadata storage requestMetadata_ = requests[requestCount_];
         IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
             requestCount_,
@@ -53,7 +58,7 @@ contract DeliveryHelper is FeesHelpers {
 
     /// @notice Cancels a request
     /// @param requestCount_ The ID of the request
-    function cancelRequest(bytes32 requestCount_) external {
+    function cancelRequest(uint40 requestCount_) external {
         if (msg.sender != requests[requestCount_].appGateway) {
             revert OnlyAppGateway();
         }
@@ -73,5 +78,11 @@ contract DeliveryHelper is FeesHelpers {
 
         watcherPrecompile__().cancelRequest(requestCount_);
         emit RequestCancelled(requestCount_);
+    }
+
+    function getRequestMetadata(
+        uint40 requestCount_
+    ) external view returns (RequestMetadata memory) {
+        return requests[requestCount_];
     }
 }

@@ -33,28 +33,32 @@ abstract contract DeliveryUtils is
     /// @notice Error thrown when a bid is insufficient
     error InsufficientFees();
 
-    event CallBackReverted(bytes32 asyncId_, bytes32 payloadId_);
-    event RequestCancelled(bytes32 indexed asyncId);
+    event CallBackReverted(uint40 requestCount_, bytes32 payloadId_);
+    event RequestCancelled(uint40 indexed requestCount);
     event BidTimeoutUpdated(uint256 newBidTimeout);
     event PayloadSubmitted(
-        bytes32 indexed asyncId,
+        uint40 indexed requestCount,
         address indexed appGateway,
         PayloadSubmitParams[] payloadSubmitParams,
         Fees fees,
         address auctionManager
     );
     /// @notice Emitted when fees are increased
-    event FeesIncreased(address indexed appGateway, bytes32 indexed asyncId, uint256 newMaxFees);
+    event FeesIncreased(
+        address indexed appGateway,
+        uint40 indexed requestCount,
+        uint256 newMaxFees
+    );
     /// @notice Emitted when a payload is requested asynchronously
     // event PayloadAsyncRequested(
-    //     bytes32 indexed asyncId,
+    //     uint40 indexed requestCount,
     //     bytes32 indexed payloadId,
     //     bytes32 indexed digest,
     //     PayloadDetails payloadDetails
     // );
 
-    modifier onlyAuctionManager(bytes32 asyncId_) {
-        if (msg.sender != requests[asyncId_].auctionManager) revert NotAuctionManager();
+    modifier onlyAuctionManager(uint40 requestCount_) {
+        if (msg.sender != requests[requestCount_].auctionManager) revert NotAuctionManager();
         _;
     }
 

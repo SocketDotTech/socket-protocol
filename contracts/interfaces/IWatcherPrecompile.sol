@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {DigestParams, AppGatewayConfig, ResolvedPromises, PayloadParams} from "../protocol/utils/common/Structs.sol";
+import {DigestParams, AppGatewayConfig, ResolvedPromises, PayloadParams, QueuePayloadParams, PayloadSubmitParams} from "../protocol/utils/common/Structs.sol";
 
 /// @title IWatcherPrecompile
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
@@ -29,12 +29,8 @@ interface IWatcherPrecompile {
 
     /// @notice Sets the switchboard for a network
     /// @param chainSlug_ The identifier of the network
-    /// @param switchboard_ The address of the switchboard  
-    function setSwitchboard(
-        uint32 chainSlug_,
-        bytes32 sbType_,
-        address switchboard_
-    ) external;
+    /// @param switchboard_ The address of the switchboard
+    function setSwitchboard(uint32 chainSlug_, bytes32 sbType_, address switchboard_) external;
 
     /// @notice Retrieves plug configuration for a specific network and plug
     /// @param chainSlug_ The identifier of the network
@@ -49,18 +45,15 @@ interface IWatcherPrecompile {
     /// @notice Finalizes a payload execution request
     /// @param params_ The payload parameters
     /// @param transmitter_ The address of the transmitter
-    /// @return payloadId The unique identifier for the finalized request   
     /// @return digest The digest of the payload parameters
     function finalize(
         PayloadParams memory params_,
         address transmitter_
-    ) external returns (bytes32 payloadId, bytes32 digest);
+    ) external returns (bytes32 digest);
 
     /// @notice Creates a new query request
     /// @param params_ The payload parameters
-    function query(
-        PayloadParams memory params_
-    ) external;
+    function query(PayloadParams memory params_) external;
 
     /// @notice Marks a request as finalized with a proof
     /// @param payloadId_ The unique identifier of the request
@@ -118,4 +111,16 @@ interface IWatcherPrecompile {
     function feesPlug(uint32 chainSlug_) external view returns (address);
 
     function setIsValidPlug(uint32 chainSlug_, address plug_, bool isValid_) external;
+
+    function getCurrentRequestCount() external view returns (uint40);
+
+    function submitRequest(
+        PayloadSubmitParams[] calldata payloadSubmitParams
+    ) external returns (uint40 requestCount);
+
+    function startProcessingRequest(uint40 requestCount, address transmitter) external;
+
+    function updateTransmitter(uint40 requestCount, address transmitter) external;
+
+    function cancelRequest(uint40 requestCount) external;
 }

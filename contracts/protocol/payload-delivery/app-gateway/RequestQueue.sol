@@ -26,13 +26,13 @@ abstract contract RequestQueue is DeliveryUtils {
     /// @notice Initiates a batch of payloads
     /// @param fees_ The fees data
     /// @param auctionManager_ The auction manager address
-    /// @return requestId The ID of the batch
+    /// @return requestCount The ID of the batch
     function batch(
         Fees memory fees_,
         address auctionManager_,
         bytes memory onCompleteData_
-    ) external returns (bytes32) {
-        if (queuePayloadParams.length == 0) return bytes32(0);
+    ) external returns (uint40 requestCount) {
+        if (queuePayloadParams.length == 0) return 0;
 
         address appGateway = _getCoreAppGateway(msg.sender);
         if (!IFeesManager(addressResolver__.feesManager()).isFeesEnough(appGateway, fees_))
@@ -40,6 +40,7 @@ abstract contract RequestQueue is DeliveryUtils {
 
         (
             PayloadSubmitParams[] memory payloadSubmitParamsArray,
+            ,
             bool onlyReadRequests
         ) = _createPayloadSubmitParamsArray();
 
@@ -54,14 +55,15 @@ abstract contract RequestQueue is DeliveryUtils {
             onCompleteData: onCompleteData_
         });
 
-        bytes32 requestId = watcherPrecompile__().submitRequest(payloadSubmitParamsArray);
-        requests[requestId] = requestMetadata;
+        requestCount = watcherPrecompile__().submitRequest(payloadSubmitParamsArray);
+        requests[requestCount] = requestMetadata;
 
-        // send query directly if req contains only reads
-        if (onlyReadRequests) watcherPrecompile__().startProcessingRequest(requestId, address(0));
+        // send query directly if request contains only reads
+        if (onlyReadRequests)
+            watcherPrecompile__().startProcessingRequest(requestCount, address(0));
 
         emit PayloadSubmitted(
-            requestId,
+            requestCount,
             appGateway,
             payloadSubmitParamsArray,
             fees_,
@@ -74,21 +76,22 @@ abstract contract RequestQueue is DeliveryUtils {
     function _createPayloadSubmitParamsArray()
         internal
         returns (
-            QueuePayloadParams[] memory payloadDetailsArray,
-            uint256 levels,
+            PayloadSubmitParams[] memory payloadDetailsArray,
+            uint256 totalLevels,
             bool onlyReadRequests
         )
     {
-        if (queuePayloadParams.length == 0) return (payloadDetailsArray, onlyReadRequests);
-        payloadDetailsArray = new QueuePayloadParams[](queuePayloadParams.length);
+        if (queuePayloadParams.length == 0)
+            return (payloadDetailsArray, totalLevels, onlyReadRequests);
+        payloadDetailsArray = new PayloadSubmitParams[](queuePayloadParams.length);
 
-        levels = 0;
+        totalLevels = 0;
         onlyReadRequests = queuePayloadParams[0].callType == CallType.READ;
 
         for (uint256 i = 0; i < queuePayloadParams.length; i++) {
             // Check if first batch is all reads
             if (
-                levels == 0 &&
+                totalLevels == 0 &&
                 queuePayloadParams[i].isParallel == Parallel.ON &&
                 queuePayloadParams[i].callType != CallType.READ
             ) {
@@ -97,13 +100,13 @@ abstract contract RequestQueue is DeliveryUtils {
 
             // Update level for sequential calls
             if (i > 0 && queuePayloadParams[i].isParallel != Parallel.ON) {
-                levels = levels + 1;
+                totalLevels = totalLevels + 1;
             }
 
-            payloadDetailsArray[i] = _createPayloadDetails(currentLevel, queuePayloadParams[i]);
+            payloadDetailsArray[i] = _createPayloadDetails(totalLevels, queuePayloadParams[i]);
         }
 
-        if (levels > 1) onlyReadRequests = false;
+        if (totalLevels > 1) onlyReadRequests = false;
 
         clearQueue();
     }
@@ -114,7 +117,7 @@ abstract contract RequestQueue is DeliveryUtils {
     function _createPayloadDetails(
         uint256 level_,
         QueuePayloadParams memory queuePayloadParams_
-    ) internal returns (QueuePayloadParams memory) {
+    ) internal returns (PayloadSubmitParams memory) {
         bytes memory payload_ = queuePayloadParams_.payload;
         address target = queuePayloadParams_.target;
         if (queuePayloadParams_.callType == CallType.DEPLOY) {
@@ -142,7 +145,7 @@ abstract contract RequestQueue is DeliveryUtils {
         }
 
         return
-            QueuePayloadParams({
+            PayloadSubmitParams({
                 levelNumber: level_,
                 chainSlug: queuePayloadParams_.chainSlug,
                 callType: queuePayloadParams_.callType,
