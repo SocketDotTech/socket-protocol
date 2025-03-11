@@ -5,13 +5,13 @@ import "solady/auth/Ownable.sol";
 import "../../interfaces/ISocket.sol";
 import "../../interfaces/ISwitchboard.sol";
 import "../utils/RescueFundsLib.sol";
-import {AttestAndExecutePayloadParams} from "../../protocol/utils/common/Structs.sol";
+import {ExecuteParams} from "../../protocol/utils/common/Structs.sol";
 
 /**
- * @title SocketRequester
- * @notice The SocketRequester contract is responsible for batching payloads and transmitting them to the destination chain
+ * @title SocketBatcher
+ * @notice The SocketBatcher contract is responsible for batching payloads and transmitting them to the destination chain
  */
-contract SocketRequester is Ownable {
+contract SocketBatcher is Ownable {
     // socket contract
     ISocket public immutable socket__;
 
@@ -26,23 +26,17 @@ contract SocketRequester is Ownable {
     }
 
     function attestAndExecute(
-        AttestAndExecutePayloadParams calldata params_
+        ExecuteParams calldata executeParams_,
+        bytes32 digest_,
+        bytes calldata proof_
     ) external payable returns (bytes memory) {
-        ISwitchboard(params_.switchboard).attest(params_.payloadId, params_.digest, params_.proof);
+        ISwitchboard(executeParams_.payloadIdParams.switchboard).attest(
+            executeParams_.digestParams.switchboard,
+            digest_,
+            proof_
+        );
 
-        ISocket.ExecuteParams memory executeParams = ISocket.ExecuteParams({
-            payloadId: params_.payloadId,
-            target: params_.target,
-            executionGasLimit: params_.executionGasLimit,
-            deadline: params_.deadline,
-            payload: params_.payload
-        });
-        return
-            socket__.execute{value: msg.value}(
-                params_.appGateway,
-                executeParams,
-                params_.transmitterSignature
-            );
+        return socket__.execute{value: msg.value}(executeParams_);
     }
 
     function rescueFunds(address token_, address to_, uint256 amount_) external onlyOwner {

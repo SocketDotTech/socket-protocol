@@ -196,7 +196,6 @@ struct RequestMetadata {
 struct ExecuteParams {
     DigestParams digestParams;
     PayloadIdParams payloadIdParams;
-    bytes proof;
 }
 
 struct PayloadIdParams {
