@@ -26,7 +26,7 @@ abstract contract RequestQueue is DeliveryUtils {
     /// @notice Initiates a batch of payloads
     /// @param fees_ The fees data
     /// @param auctionManager_ The auction manager address
-    /// @return asyncId The ID of the batch
+    /// @return requestId The ID of the batch
     function batch(
         Fees memory fees_,
         address auctionManager_,
@@ -40,9 +40,8 @@ abstract contract RequestQueue is DeliveryUtils {
 
         (
             PayloadSubmitParams[] memory payloadSubmitParamsArray,
-            uint256 levels,
-            bool isFirstRequestRead
-        ) = _createPayloadSubmitParamsArray(appGateway);
+            bool onlyReadRequests
+        ) = _createPayloadSubmitParamsArray();
 
         if (auctionManager_ == address(0))
             auctionManager_ = IAddressResolver(addressResolver__).defaultAuctionManager();
@@ -55,13 +54,14 @@ abstract contract RequestQueue is DeliveryUtils {
             onCompleteData: onCompleteData_
         });
 
-        bytes32 asyncId = watcherPrecompile__().createRequest(payloadSubmitParamsArray);
-        requests[asyncId] = requestMetadata;
+        bytes32 requestId = watcherPrecompile__().submitRequest(payloadSubmitParamsArray);
+        requests[requestId] = requestMetadata;
 
-        // send query directly if first batch is all reads
-        if (isFirstRequestRead) watcherPrecompile__().execute(asyncId);
+        // send query directly if req contains only reads
+        if (onlyReadRequests) watcherPrecompile__().startProcessingRequest(requestId, address(0));
+
         emit PayloadSubmitted(
-            asyncId,
+            requestId,
             appGateway,
             payloadSubmitParamsArray,
             fees_,
@@ -71,37 +71,25 @@ abstract contract RequestQueue is DeliveryUtils {
 
     /// @notice Creates an array of payload details
     /// @return payloadDetailsArray An array of payload details
-    function _createPayloadDetailsArray(
-        address appGateway_
-    )
+    function _createPayloadDetailsArray()
         internal
-        returns (
-            PayloadDetails[] memory payloadDetailsArray,
-            uint256 levels,
-            bool isFirstRequestRead
-        )
+        returns (PayloadDetails[] memory payloadDetailsArray, uint256 levels, bool onlyReadRequests)
     {
-        if (queuePayloadParams.length == 0) return (payloadDetailsArray, isFirstRequestRead);
+        if (queuePayloadParams.length == 0) return (payloadDetailsArray, onlyReadRequests);
         payloadDetailsArray = new PayloadDetails[](queuePayloadParams.length);
 
-        uint256 reads = 0;
-        uint256 writes = 0;
         levels = 0;
-        isFirstRequestRead = queuePayloadParams[0].callType == CallType.READ;
+        onlyReadRequests = queuePayloadParams[0].callType == CallType.READ;
 
         for (uint256 i = 0; i < queuePayloadParams.length; i++) {
             // Check if first batch is all reads
             if (
-                i == 0 &&
+                levels == 0 &&
                 queuePayloadParams[i].isParallel == Parallel.ON &&
                 queuePayloadParams[i].callType != CallType.READ
             ) {
-                isFirstRequestRead = false;
+                onlyReadRequests = false;
             }
-
-            // Track read/write counts
-            if (queuePayloadParams[i].callType == CallType.READ) reads++;
-            else writes++;
 
             // Update level for sequential calls
             if (i > 0 && queuePayloadParams[i].isParallel != Parallel.ON) {
@@ -109,15 +97,9 @@ abstract contract RequestQueue is DeliveryUtils {
             }
 
             payloadDetailsArray[i] = _createPayloadDetails(currentLevel, queuePayloadParams[i]);
-
-            // verify app gateway
-            if (getCoreAppGateway(queuePayloadParams[i].appGateway) != appGateway_)
-                revert("Invalid app gateway");
         }
 
-        // todo: check limits on read and write
-        watcherPrecompile__().checkAndConsumeLimit(appGateway_, QUERY, reads);
-        watcherPrecompile__().checkAndConsumeLimit(appGateway_, FINALIZE, writes);
+        if (levels > 1) onlyReadRequests = false;
 
         clearQueue();
     }

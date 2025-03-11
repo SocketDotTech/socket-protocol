@@ -89,7 +89,8 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         bytes32 payloadId,
         bytes memory returnData_
     ) external override onlyWatcherPrecompile returns (bool success) {
-        if (resolved) return true;
+        // todo: revisit
+        if (resolved) revert PromiseAlreadyResolved();
 
         resolved = true;
         state = AsyncPromiseState.RESOLVED;

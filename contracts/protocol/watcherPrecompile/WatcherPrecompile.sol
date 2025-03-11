@@ -1,79 +1,11 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import "./WatcherPrecompileConfig.sol";
+import "./RequestHandler.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
-contract WatcherPrecompile is WatcherPrecompileConfig {
-    /// @notice Error thrown when an invalid chain slug is provided
-    error InvalidChainSlug();
-    /// @notice Error thrown when an invalid app gateway reaches a plug
-    error InvalidConnection();
-    /// @notice Error thrown if winning bid is assigned to an invalid transmitter
-    error InvalidTransmitter();
-    /// @notice Error thrown when a timeout request is invalid
-    error InvalidTimeoutRequest();
-    /// @notice Error thrown when a payload id is invalid
-    error InvalidPayloadId();
-    /// @notice Error thrown when a caller is invalid
-    error InvalidCaller();
-
-    event CalledAppGateway(
-        bytes32 callId,
-        uint32 chainSlug,
-        address plug,
-        address appGateway,
-        bytes32 params,
-        bytes payload
-    );
-
-    /// @notice Emitted when a new query is requested
-    /// @param chainSlug The identifier of the destination chain
-    /// @param targetAddress The address of the target contract
-    /// @param payloadId The unique identifier for the query
-    /// @param payload The query data
-    event QueryRequested(
-        uint32 chainSlug,
-        address targetAddress,
-        bytes32 payloadId,
-        bytes payload,
-        uint256 readAt
-    );
-
-    /// @notice Emitted when a finalize request is made
-    /// @param payloadId The unique identifier for the request
-    /// @param asyncRequest The async request details
-    event FinalizeRequested(bytes32 indexed payloadId, AsyncRequest asyncRequest);
-
-    /// @notice Emitted when a request is finalized
-    /// @param payloadId The unique identifier for the request
-    /// @param asyncRequest The async request details
-    /// @param proof The proof from the watcher
-    event Finalized(bytes32 indexed payloadId, AsyncRequest asyncRequest, bytes proof);
-
-    /// @notice Emitted when a promise is resolved
-    /// @param payloadId The unique identifier for the resolved promise
-    event PromiseResolved(bytes32 indexed payloadId, bool success, address asyncPromise);
-
-    /// @notice Emitted when a promise is not resolved
-    /// @param payloadId The unique identifier for the not resolved promise
-    event PromiseNotResolved(bytes32 indexed payloadId, bool success, address asyncPromise);
-
-    event TimeoutRequested(
-        bytes32 timeoutId,
-        address target,
-        bytes payload,
-        uint256 executeAt // Epoch time when the task should execute
-    );
-
-    /// @notice Emitted when a timeout is resolved
-    /// @param timeoutId The unique identifier for the timeout
-    /// @param target The target address for the timeout
-    /// @param payload The payload data
-    /// @param executedAt The epoch time when the task was executed
-    event TimeoutResolved(bytes32 timeoutId, address target, bytes payload, uint256 executedAt);
-
+contract WatcherPrecompile is RequestHandler {
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -109,22 +41,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         bytes calldata payload_,
         uint256 delayInSeconds_
     ) external {
-        if (delayInSeconds_ > maxTimeoutDelayInSeconds) revert TimeoutDelayTooLarge();
-
-        // from auction manager
-        _consumeLimit(appGateway_, SCHEDULE, 1);
-        uint256 executeAt = block.timestamp + delayInSeconds_;
-        bytes32 timeoutId = _encodeId(evmxSlug, address(this));
-        timeoutRequests[timeoutId] = TimeoutRequest(
-            timeoutId,
-            msg.sender,
-            delayInSeconds_,
-            executeAt,
-            0,
-            false,
-            payload_
-        );
-        emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);
+        _setTimeout(appGateway_, payload_, delayInSeconds_);
     }
 
     /// @notice Ends the timeouts and calls the target address with the callback payload
@@ -170,78 +87,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         address originAppGateway_,
         FinalizeParams memory params_
     ) external returns (bytes32 payloadId, bytes32 digest) {
-        // Generate a unique payload ID by combining chain, target, and counter
-        payloadId = _encodeWritePayloadId(
-            params_.payloadDetails.chainSlug,
-            params_.payloadDetails.target
-        );
-
         digest = _finalize(payloadId, originAppGateway_, params_);
-    }
-
-    function refinalize(bytes32 payloadId_, FinalizeParams memory params_) external {
-        if (asyncRequests[payloadId_].appGateway == address(0)) revert InvalidPayloadId();
-        if (asyncRequests[payloadId_].finalizedBy != msg.sender) revert InvalidCaller();
-
-        _finalize(payloadId_, asyncRequests[payloadId_].appGateway, params_);
-    }
-
-    function _finalize(
-        bytes32 payloadId_,
-        address originAppGateway_,
-        FinalizeParams memory params_
-    ) internal returns (bytes32 digest) {
-        if (params_.transmitter == address(0)) revert InvalidTransmitter();
-
-        // The app gateway is the caller of this function
-        _consumeLimit(originAppGateway_, FINALIZE, 1);
-
-        // Verify that the app gateway is properly configured for this chain and target
-        _verifyConnections(
-            params_.payloadDetails.chainSlug,
-            params_.payloadDetails.target,
-            params_.payloadDetails.appGateway
-        );
-
-        // Get the switchboard address from plug configurations
-        (, address switchboard) = getPlugConfigs(
-            params_.payloadDetails.chainSlug,
-            params_.payloadDetails.target
-        );
-
-        // Construct parameters for digest calculation
-        PayloadDigestParams memory digestParams_ = PayloadDigestParams(
-            params_.payloadDetails.appGateway,
-            params_.transmitter,
-            params_.payloadDetails.target,
-            payloadId_,
-            params_.payloadDetails.value,
-            params_.payloadDetails.executionGasLimit,
-            block.timestamp + expiryTime,
-            params_.payloadDetails.payload
-        );
-
-        // Calculate digest from payload parameters
-        digest = getDigest(digestParams_);
-
-        // Create and store the async request with all necessary details
-        AsyncRequest memory asyncRequest = AsyncRequest(
-            msg.sender,
-            params_.payloadDetails.appGateway,
-            params_.transmitter,
-            params_.payloadDetails.target,
-            switchboard,
-            params_.payloadDetails.executionGasLimit,
-            block.timestamp + expiryTime,
-            params_.asyncId,
-            digest,
-            params_.payloadDetails.payload,
-            params_.payloadDetails.next,
-            params_.payloadDetails.writeFinality,
-            params_.payloadDetails.readAt
-        );
-        asyncRequests[payloadId_] = asyncRequest;
-        emit FinalizeRequested(payloadId_, asyncRequest);
     }
 
     // ================== Query functions ==================
@@ -258,31 +104,8 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         address[] memory asyncPromises_,
         bytes memory payload_,
         uint256 readAt_
-    ) public returns (bytes32 payloadId) {
-        // from payload delivery
-        _consumeLimit(appGateway_, QUERY, 1);
-        // Generate unique payload ID from query counter
-        payloadId = _encodeId(evmxSlug, address(this));
-
-        // Create async request with minimal information for queries
-        // Note: addresses set to 0 as they're not needed for queries
-        AsyncRequest memory asyncRequest_ = AsyncRequest(
-            msg.sender,
-            address(0),
-            address(0),
-            targetAddress_,
-            address(0),
-            0,
-            block.timestamp + expiryTime,
-            bytes32(0),
-            bytes32(0),
-            payload_,
-            asyncPromises_,
-            WriteFinality.LOW,
-            readAt_
-        );
-        asyncRequests[payloadId] = asyncRequest_;
-        emit QueryRequested(chainSlug_, targetAddress_, payloadId, payload_, readAt_);
+    ) internal returns (bytes32) {
+        return _query(chainSlug_, targetAddress_, appGateway_, asyncPromises_, payload_, readAt_);
     }
 
     /// @notice Marks a request as finalized with a proof on digest
@@ -305,6 +128,25 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
 
         watcherProofs[payloadId_] = proof_;
         emit Finalized(payloadId_, asyncRequests[payloadId_], proof_);
+    }
+
+    function updateTransmitter(uint40 requestCount, address transmitter) public {
+        RequestParams r = requestParams[requestCount];
+        if (r.isRequestCancelled) revert RequestCancelled();
+        if (r.middleware != msg.sender) revert InvalidCaller();
+        if (r.transmitter != address(0)) revert AlreadyStarted();
+
+        r.transmitter = transmitter;
+        /// todo: recheck limits
+        _processBatch(requestCount, r.currentBatchCount);
+    }
+
+    function cancelRequest(uint40 requestCount) public {
+        RequestParams r = requestParams[requestCount];
+        if (r.isRequestCancelled) revert RequestAlreadyCancelled();
+        if (r.middleware != msg.sender) revert InvalidCaller();
+
+        r.isRequestCancelled = true;
     }
 
     /// @notice Resolves multiple promises with their return data
@@ -377,24 +219,6 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
         }
     }
 
-    /// @notice Calculates the digest hash of payload parameters
-    /// @param params_ The payload parameters
-    /// @return digest The calculated digest
-    function getDigest(PayloadDigestParams memory params_) public pure returns (bytes32 digest) {
-        digest = keccak256(
-            abi.encode(
-                params_.payloadId,
-                params_.appGateway,
-                params_.transmitter,
-                params_.target,
-                params_.value,
-                params_.deadline,
-                params_.executionGasLimit,
-                params_.payload
-            )
-        );
-    }
-
     function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external onlyOwner {
         maxTimeoutDelayInSeconds = maxTimeoutDelayInSeconds_;
     }
@@ -435,45 +259,6 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
     }
 
     // ================== Helper functions ==================
-
-    /// @notice Verifies the connection between chain slug, target, and app gateway
-    /// @param chainSlug_ The identifier of the chain
-    /// @param target_ The target address
-    /// @param appGateway_ The app gateway address to verify
-    /// @dev Internal function to validate connections
-    function _verifyConnections(
-        uint32 chainSlug_,
-        address target_,
-        address appGateway_
-    ) internal view {
-        (address appGateway, ) = getPlugConfigs(chainSlug_, target_);
-        if (appGateway != appGateway_) revert InvalidConnection();
-    }
-
-    /// @notice Encodes a unique payload ID from chain slug, plug address, and counter
-    /// @param chainSlug_ The identifier of the chain
-    /// @param plug_ The plug address
-    /// @return The encoded payload ID as bytes32
-    /// @dev Reverts if chainSlug is 0
-    function _encodeWritePayloadId(uint32 chainSlug_, address plug_) internal returns (bytes32) {
-        if (chainSlug_ == 0) revert InvalidChainSlug();
-        (, address switchboard) = getPlugConfigs(chainSlug_, plug_);
-        return _encodeId(chainSlug_, switchboard);
-    }
-
-    function _encodeId(
-        uint32 chainSlug_,
-        address switchboardOrWatcher_
-    ) internal returns (bytes32) {
-        // Encode payload ID by bit-shifting and combining:
-        // chainSlug (32 bits) | switchboard or watcher precompile address (160 bits) | counter (64 bits)
-        return
-            bytes32(
-                (uint256(chainSlug_) << 224) |
-                    (uint256(uint160(switchboardOrWatcher_)) << 64) |
-                    payloadCounter++
-            );
-    }
 
     function setExpiryTime(uint256 expiryTime_) external onlyOwner {
         expiryTime = expiryTime_;

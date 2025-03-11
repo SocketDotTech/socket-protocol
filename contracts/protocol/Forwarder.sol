@@ -101,7 +101,8 @@ contract Forwarder is ForwarderStorage, Initializable {
             Parallel isParallelCall,
             WriteFinality writeFinality,
             uint256 readAt,
-            uint256 gasLimit
+            uint256 gasLimit,
+            bytes32 sbType
         ) = IAppGateway(msg.sender).getOverrideParams();
 
         // Queue the call in the auction house.
@@ -113,7 +114,7 @@ contract Forwarder is ForwarderStorage, Initializable {
                 isPlug: IsPlug.NO,
                 writeFinality: writeFinality,
                 asyncPromise: latestAsyncPromise,
-                switchboard: address(0), // todo: add switchboard
+                switchboard: IAddressResolver(addressResolver).switchboards(chainSlug, sbType),
                 target: onChainAddress,
                 appGateway: msg.sender,
                 gasLimit: gasLimit,

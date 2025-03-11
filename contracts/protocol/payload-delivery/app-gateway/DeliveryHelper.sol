@@ -21,56 +21,56 @@ contract DeliveryHelper is FeesHelpers {
         _initializeOwner(owner_);
     }
 
-    function endTimeout(bytes32 requestId_) external onlyWatcherPrecompile {
-        IAuctionManager(_payloadRequestes[requestId_].auctionManager).endAuction(requestId_);
+    function endTimeout(bytes32 requestCount_) external onlyWatcherPrecompile {
+        IAuctionManager(_payloadRequestes[requestCount_].auctionManager).endAuction(requestCount_);
     }
 
     function startRequestProcessing(
-        bytes32 requestId_,
+        bytes32 requestCount_,
         Bid memory winningBid_
-    ) external onlyAuctionManager(requestId_) {
+    ) external onlyAuctionManager(requestCount_) {
         if (winningBid_.transmitter == address(0)) revert InvalidTransmitter();
 
         if (!isRestarted) {
-            watcherPrecompile__().executeRequest(requestId_, winningBid_.transmitter);
+            watcherPrecompile__().startProcessingRequest(requestCount_, winningBid_.transmitter);
         } else {
-            watcherPrecompile__().updateTransmitter(requestId_, winningBid_.transmitter);
+            watcherPrecompile__().updateTransmitter(requestCount_, winningBid_.transmitter);
         }
     }
 
     function finishRequest(
-        bytes32 requestId_,
+        bytes32 requestCount_,
         PayloadRequest storage payloadRequest_
     ) external onlyWatcherPrecompile {
         IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
-            requestId_,
+            requestCount_,
             payloadRequest_.winningBid.transmitter,
             payloadRequest_.appGateway
         );
-        IAppGateway(payloadRequest_.appGateway).onRequestComplete(requestId_, payloadRequest_);
+        IAppGateway(payloadRequest_.appGateway).onRequestComplete(requestCount_, payloadRequest_);
     }
 
     /// @notice Cancels a request
-    /// @param requestId_ The ID of the request
-    function cancelRequest(bytes32 requestId_) external {
-        if (msg.sender != requests[requestId_].appGateway) {
+    /// @param requestCount_ The ID of the request
+    function cancelRequest(bytes32 requestCount_) external {
+        if (msg.sender != requests[requestCount_].appGateway) {
             revert OnlyAppGateway();
         }
 
-        if (requests[requestId_].winningBid.transmitter != address(0)) {
+        if (requests[requestCount_].winningBid.transmitter != address(0)) {
             IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
-                requestId_,
-                requests[requestId_].winningBid.transmitter,
-                requests[requestId_].appGateway
+                requestCount_,
+                requests[requestCount_].winningBid.transmitter,
+                requests[requestCount_].appGateway
             );
         } else {
             IFeesManager(addressResolver__.feesManager()).unblockFees(
-                requestId_,
-                requests[requestId_].appGateway
+                requestCount_,
+                requests[requestCount_].appGateway
             );
         }
 
-        watcherPrecompile__().cancelRequest(requestId_);
-        emit RequestCancelled(requestId_);
+        watcherPrecompile__().cancelRequest(requestCount_);
+        emit RequestCancelled(requestCount_);
     }
 }

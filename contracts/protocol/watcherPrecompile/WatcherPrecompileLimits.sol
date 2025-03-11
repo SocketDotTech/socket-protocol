@@ -69,21 +69,6 @@ abstract contract WatcherPrecompileLimits is
     }
 
     /**
-     * @notice Check and update limit for a specific app gateway
-     * @param appGateway_ The app gateway address
-     * @param limitType_ The type of limit to check
-     * @param consumeLimit_ The amount of limit to consume
-     */
-    function checkAndConsumeLimit(
-        address appGateway_,
-        bytes32 limitType_,
-        uint256 consumeLimit_
-    ) external {
-        if (msg.sender != addressResolver__.deliveryHelper()) revert NotDeliveryHelper();
-        _consumeLimit(appGateway_, limitType_, consumeLimit_);
-    }
-
-    /**
      * @notice Update limit parameters for multiple app gateways
      * @param updates_ Array of limit parameter updates
      */

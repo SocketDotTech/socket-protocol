@@ -160,6 +160,7 @@ struct PayloadSubmitParams {
 struct PayloadParams {
     uint40 requestCount;
     uint40 batchCount;
+    uint40 payloadCount;
     uint32 chainSlug;
     CallType callType;
     Parallel isParallel;
@@ -168,6 +169,7 @@ struct PayloadParams {
     address switchboard;
     address target;
     address appGateway;
+    bytes32 payloadId;
     uint256 gasLimit;
     uint256 value;
     uint256 readAt;
