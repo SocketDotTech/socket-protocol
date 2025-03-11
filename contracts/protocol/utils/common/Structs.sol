@@ -102,14 +102,6 @@ struct OverrideParams {
     uint256 readAt;
 }
 
-// socket:
-struct AttestAndExecutePayloadParams {
-    bytes32 payloadId;
-    bytes proof;
-    bytes transmitterSignature;
-    PayloadExecutionDetails payloadExecutionDetails;
-}
-
 // FM:
 struct Fees {
     uint32 feePoolChain;
@@ -122,6 +114,15 @@ struct DigestParams {
     address transmitter;
     bytes32 payloadId;
     uint256 deadline;
+    CallType callType;
+    WriteFinality writeFinality;
+    address asyncPromise;
+    uint256 gasLimit;
+    uint256 value;
+    uint256 readAt;
+    bytes payload;
+    address target;
+    address appGateway;
 }
 
 struct QueuePayloadParams {
@@ -193,25 +194,16 @@ struct RequestMetadata {
 }
 
 struct ExecuteParams {
-    address transmitter;
-    uint256 deadline;
-    bytes proof;
+    DigestParams digestParams;
     PayloadIdParams payloadIdParams;
+    bytes proof;
 }
 
 struct PayloadIdParams {
     uint40 requestCount;
     uint40 batchCount;
-    bytes32 prevPayloadHash; // should be id?
+    uint40 payloadCount;
+    bytes32 prevDigestsHash; // should be id? hash of hashes
     address switchboard;
     uint32 chainSlug;
-    CallType callType;
-    WriteFinality writeFinality;
-    address asyncPromise;
-    address target;
-    address appGateway;
-    uint256 gasLimit;
-    uint256 value;
-    uint256 readAt;
-    bytes payload;
 }
