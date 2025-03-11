@@ -4,7 +4,7 @@
     "FastSwitchboard": "0x772088727d003f5A6Cf816E745ba6B8F8dEBbCe9",
     "FeesPlug": "0xcc38176545fa5f6c2aB970F6d2D62b2D90bBA3Ba",
     "Socket": "0xdE177c392Ad47377BA944215A944f530F79E1d87",
-    "SocketRequester": "0x6BF08F11bDA6CD571Bc942F23ec38b8652FFfB2D",
+    "SocketBatcher": "0x6BF08F11bDA6CD571Bc942F23ec38b8652FFfB2D",
     "startBlock": 127798344
   },
   "7625382": {
@@ -26,7 +26,7 @@
     "FastSwitchboard": "0x59D9c8C5515cF9C8A9c83458E3D78C2a246E3e7C",
     "FeesPlug": "0x285d1b2e93c1c74E141dC37f759B8aFAcD479b2b",
     "Socket": "0xa347A8475d4d218b22e8b0cc90FF76B3e6c8043c",
-    "SocketRequester": "0x4a7Ccf2845222172A8B7Fc6E132eDb64cCB4E4a4",
+    "SocketBatcher": "0x4a7Ccf2845222172A8B7Fc6E132eDb64cCB4E4a4",
     "startBlock": 24425961
   }
 }
