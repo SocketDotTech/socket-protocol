@@ -28,15 +28,11 @@ contract SocketBatcher is Ownable {
     function attestAndExecute(
         ExecuteParams calldata executeParams_,
         bytes32 digest_,
-        bytes calldata proof_
+        bytes calldata proof_,
+        bytes calldata transmitterSignature_
     ) external payable returns (bytes memory) {
-        ISwitchboard(executeParams_.payloadIdParams.switchboard).attest(
-            executeParams_.digestParams.switchboard,
-            digest_,
-            proof_
-        );
-
-        return socket__.execute{value: msg.value}(executeParams_);
+        ISwitchboard(executeParams_.switchboard).attest(digest_, proof_);
+        return socket__.execute{value: msg.value}(executeParams_, transmitterSignature_);
     }
 
     function rescueFunds(address token_, address to_, uint256 amount_) external onlyOwner {

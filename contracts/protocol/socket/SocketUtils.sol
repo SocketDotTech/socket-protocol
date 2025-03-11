@@ -39,35 +39,58 @@ abstract contract SocketUtils is SocketConfig {
 
     /**
      * @notice Packs the payload into a bytes32 hash
-     * @param payloadId_ The ID of the payload
-     * @param appGateway_ The address of the application gateway
-     * @param transmitter_ The address of the transmitter
-     * @param target_ The address of the target contract
-     * @param executionGasLimit_ The gas limit for the execution
-     * @param payload_ The payload to be packed
+     * @param digestParams_ The parameters of the payload
      * @return The packed payload as a bytes32 hash
      */
-    function _packPayload(
+    function _createDigest(
+        address transmitter_,
         bytes32 payloadId_,
         address appGateway_,
-        address transmitter_,
-        address target_,
-        uint256 value_,
-        uint256 deadline_,
-        uint256 executionGasLimit_,
-        bytes memory payload_
+        ExecuteParams memory executeParams_
     ) internal pure returns (bytes32) {
         return
             keccak256(
                 abi.encode(
-                    payloadId_,
-                    appGateway_,
                     transmitter_,
-                    target_,
-                    value_,
-                    deadline_,
-                    executionGasLimit_,
-                    payload_
+                    payloadId_,
+                    executeParams_.deadline,
+                    executeParams_.callType,
+                    executeParams_.writeFinality,
+                    executeParams_.gasLimit,
+                    msg.value,
+                    executeParams_.readAt,
+                    executeParams_.payload,
+                    executeParams_.target,
+                    appGateway_
+                )
+            );
+    }
+
+    function _validateExecutionStatus(bytes32 payloadId_) internal {
+        if (payloadExecuted[payloadId_] != ExecutionStatus.NotExecuted)
+            revert PayloadAlreadyExecuted(payloadExecuted[payloadId_]);
+        payloadExecuted[payloadId_] = ExecutionStatus.Executed;
+    }
+
+    /**
+     * @notice Verifies the payload ID
+     * @param payloadIdParams_ The parameters of the payload
+     * @param payloadId_ The ID of the payload
+     */
+    function _createPayloadId(
+        address switchboard_,
+        ExecuteParams memory executeParams_
+    ) internal view returns (bytes32) {
+        // todo: match with watcher
+        return
+            keccak256(
+                abi.encode(
+                    executeParams_.requestCount,
+                    executeParams_.batchCount,
+                    executeParams_.payloadCount,
+                    executeParams_.prevDigestsHash,
+                    switchboard_,
+                    chainSlug
                 )
             );
     }
@@ -79,6 +102,16 @@ abstract contract SocketUtils is SocketConfig {
         bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
         // recovered signer is checked for the valid roles later
         signer = ECDSA.recover(digest, signature_);
+    }
+
+    // Packs the local plug, local chain slug, remote chain slug and nonce
+    // callCount++ will take care of call id overflow as well
+    // callId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
+    function _encodeCallId(address appGateway_) internal returns (bytes32) {
+        return
+            bytes32(
+                (uint256(chainSlug) << 224) | (uint256(uint160(appGateway_)) << 64) | callCounter++
+            );
     }
 
     //////////////////////////////////////////////

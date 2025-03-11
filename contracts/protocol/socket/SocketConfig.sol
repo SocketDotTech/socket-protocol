@@ -35,10 +35,10 @@ abstract contract SocketConfig is ISocket, AccessControl {
     // plug => (appGateway, switchboard__)
     mapping(address => PlugConfig) internal _plugConfigs;
 
-    error SwitchboardExists();
     // Error triggered when a connection is invalid
     error InvalidConnection();
     error InvalidSwitchboard();
+    error SwitchboardExists();
     error SwitchboardExistsOrDisabled();
 
     // Event triggered when a new switchboard is added
