@@ -77,7 +77,7 @@ contract SetupTest is Test {
 
         // switchboard
         switchboard.registerSwitchboard();
-        switchboard.grantWatcherRole(watcherEOA);
+        switchboard.grantRole(WATCHER_ROLE, watcherEOA);
         vm.stopPrank();
 
         hoax(watcherEOA);
