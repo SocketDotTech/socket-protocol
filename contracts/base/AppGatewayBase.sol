@@ -56,11 +56,13 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         _setAddressResolver(addressResolver_);
         sbType = FAST;
     }
+
     /// @notice Sets the switchboard type
     /// @param sbType_ The switchboard type
     function _setSbType(bytes32 sbType_) internal {
         sbType = sbType_;
     }
+
     /// @notice Creates a contract ID
     /// @param contractName_ The contract name
     /// @return bytes32 The contract ID
@@ -93,6 +95,16 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @return socketAddress_ The socket address
     function getSocketAddress(uint32 chainSlug_) public view returns (address) {
         return watcherPrecompile__().sockets(chainSlug_);
+    }
+
+    /// @notice Sets the validity of an on-chain contract (plug) to authorize it to send information to a specific AppGateway
+    /// @param chainSlug_ The unique identifier of the chain where the contract resides
+    /// @param contractId The bytes32 identifier of the contract to be validated
+    /// @param isValid Boolean flag indicating whether the contract is authorized (true) or not (false)
+    /// @dev This function retrieves the onchain address using the contractId and chainSlug, then calls the watcher precompile to update the plug's validity status
+    function setValidPlug(uint32 chainSlug_, bytes32 contractId, bool isValid) public {
+        address onchainAddress = getOnChainAddress(contractId, chainSlug_);
+        watcherPrecompile__().setIsValidPlug(chainSlug_, onchainAddress, isValid);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
