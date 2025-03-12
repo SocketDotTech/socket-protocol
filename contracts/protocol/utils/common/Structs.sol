@@ -143,6 +143,7 @@ struct DigestParams {
     bytes payload;
     address target;
     address appGateway;
+    bytes32 prevDigestsHash; // should be id? hash of hashes
 }
 
 struct QueuePayloadParams {
@@ -195,6 +196,7 @@ struct PayloadParams {
     uint256 value;
     uint256 readAt;
     bytes payload;
+    bytes32 prevDigestsHash; // should be id? hash of hashes
 }
 
 struct RequestParams {
@@ -234,7 +236,6 @@ struct PayloadIdParams {
     uint40 requestCount;
     uint40 batchCount;
     uint40 payloadCount;
-    bytes32 prevDigestsHash; // should be id? hash of hashes
     address switchboard;
     uint32 chainSlug;
 }

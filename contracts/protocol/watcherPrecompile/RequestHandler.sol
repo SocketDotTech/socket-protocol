@@ -28,9 +28,6 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         uint256 readCount;
         uint256 writeCount;
 
-        // todo: hash of hashes
-        bytes32 prevDigestsHash;
-
         for (uint256 i = 0; i < payloadSubmitParams.length; i++) {
             PayloadSubmitParams memory p = payloadSubmitParams[i];
 
@@ -51,13 +48,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
             }
 
             uint40 localPayloadCount = payloadCounter++;
-            bytes32 payloadId = _createPayloadId(
-                p,
-                requestCount,
-                batchCount,
-                localPayloadCount,
-                prevDigestsHash
-            );
+            bytes32 payloadId = _createPayloadId(p, requestCount, batchCount, localPayloadCount);
 
             batchPayloadIds[batchCount].push(payloadId);
 

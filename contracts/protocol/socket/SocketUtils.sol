@@ -96,7 +96,6 @@ abstract contract SocketUtils is SocketConfig {
                     executeParams_.requestCount,
                     executeParams_.batchCount,
                     executeParams_.payloadCount,
-                    executeParams_.prevDigestsHash,
                     switchboard_,
                     chainSlug
                 )

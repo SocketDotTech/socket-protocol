@@ -190,8 +190,7 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
         PayloadSubmitParams memory p_,
         uint40 requestCount_,
         uint40 batchCount_,
-        uint40 payloadCount_,
-        bytes32 prevDigestsHash_
+        uint40 payloadCount_
     ) internal pure returns (bytes32) {
         return
             keccak256(
