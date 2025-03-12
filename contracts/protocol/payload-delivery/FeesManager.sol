@@ -329,9 +329,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         address auctionManager_,
         Fees memory fees_
     ) internal {
-        deliveryHelper__().queue(
-            _getQueuePayloadParams(callType_, chainSlug_, payload_)
-        );
+        deliveryHelper__().queue(_getQueuePayloadParams(callType_, chainSlug_, payload_));
         deliveryHelper__().batch(fees_, auctionManager_, bytes(""));
     }
 

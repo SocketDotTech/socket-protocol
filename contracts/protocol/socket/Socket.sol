@@ -99,13 +99,10 @@ contract Socket is SocketUtils {
     ////////////////////////////////////////////////////////
     ////////////////// INTERNAL FUNCS //////////////////////
     ////////////////////////////////////////////////////////
-    function _verify(
-        bytes32 digest_,
-        bytes32 payloadId_,
-        address switchboard_
-    ) internal view {
+    function _verify(bytes32 digest_, bytes32 payloadId_, address switchboard_) internal view {
         // NOTE: is the the first un-trusted call in the system, another one is Plug.call
-        if (!ISwitchboard(switchboard_).allowPacket(digest_, payloadId_)) revert VerificationFailed();
+        if (!ISwitchboard(switchboard_).allowPacket(digest_, payloadId_))
+            revert VerificationFailed();
     }
 
     /**

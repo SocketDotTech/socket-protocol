@@ -103,7 +103,7 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     /// @dev Only callable by the watcher precompile.
     function markOnchainRevert(
         uint40 requestCount_,
-        bytes32 payloadId_  
+        bytes32 payloadId_
     ) external override onlyWatcherPrecompile {
         _handleRevert(requestCount_, payloadId_, AsyncPromiseState.ONCHAIN_REVERTING);
     }

@@ -15,7 +15,9 @@ interface IMiddleware {
 
     function bidTimeout() external view returns (uint128);
 
-    function getRequestMetadata(uint40 requestCount_) external view returns (RequestMetadata memory);
+    function getRequestMetadata(
+        uint40 requestCount_
+    ) external view returns (RequestMetadata memory);
 
     function clearQueue() external;
 

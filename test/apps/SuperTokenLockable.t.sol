@@ -291,6 +291,7 @@ contract SuperTokenLockableTest is DeliveryHelperTest {
         payloadDetails = deliveryHelper.getPayloadIndexDetails(bridgeAsyncId, 2);
         vm.expectEmit(true, false, false, false);
         emit FinalizeRequested(
+            transmitterEOA,
             payloadIds[2],
             AsyncRequest(
                 address(deliveryHelper),

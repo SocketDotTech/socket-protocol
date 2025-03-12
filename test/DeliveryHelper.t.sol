@@ -26,14 +26,14 @@ contract DeliveryHelperTest is SetupTest {
     event PayloadSubmitted(
         uint40 indexed requestCount,
         address indexed appGateway,
-        PayloadDetails[] payloads,
+        PayloadSubmitParams[] payloadSubmitParams,
         Fees fees,
-        uint256 auctionEndDelay
+        address auctionManager
     );
     event BidPlaced(uint40 indexed requestCount, Bid bid);
     event AuctionEnded(uint40 indexed requestCount, Bid winningBid);
     event RequestCancelled(uint40 indexed requestCount);
-    event FinalizeRequested(bytes32 indexed payloadId, AsyncRequest asyncRequest);
+    event FinalizeRequested(address transmitter, bytes32 digest, PayloadParams params);
     event QueryRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
 
     function setUpDeliveryHelper() internal {
@@ -238,17 +238,18 @@ contract DeliveryHelperTest is SetupTest {
     }
 
     function checkPayloadRequestAndDetails(
-        PayloadDetails[] memory payloadDetails,
+        PayloadSubmitParams[] memory payloadSubmitParams,
         uint40 requestCount,
         address appGateway_
     ) internal view {
-        for (uint i = 0; i < payloadDetails.length; i++) {
-            PayloadDetails memory payloadDetail = deliveryHelper.getPayloadIndexDetails(
-                requestCount,
-                i
-            );
+        for (uint i = 0; i < payloadSubmitParams.length; i++) {
+            PayloadSubmitParams memory payloadSubmitParam = payloadSubmitParams[i];
 
-            assertEq(payloadDetail.chainSlug, payloadDetails[i].chainSlug, "ChainSlug mismatch");
+            assertEq(
+                payloadSubmitParam.chainSlug,
+                payloadSubmitParams[i].chainSlug,
+                "ChainSlug mismatch"
+            );
             // todo
             // assertEq(
             //     payloadDetail.target,
@@ -261,8 +262,8 @@ contract DeliveryHelperTest is SetupTest {
             //     "Payload mismatch"
             // );
             assertEq(
-                uint(payloadDetail.callType),
-                uint(payloadDetails[i].callType),
+                uint(payloadSubmitParam.callType),
+                uint(payloadSubmitParams[i].callType),
                 "CallType mismatch"
             );
             // assertEq(
@@ -272,7 +273,7 @@ contract DeliveryHelperTest is SetupTest {
             // );
         }
 
-        PayloadRequest memory payloadRequest = deliveryHelper.getAsyncRequestDetails(requestCount);
+        RequestMetadata memory payloadRequest = deliveryHelper.requests(requestCount);
 
         assertEq(payloadRequest.appGateway, appGateway_, "AppGateway mismatch");
         assertEq(payloadRequest.auctionManager, address(auctionManager), "AuctionManager mismatch");
@@ -302,8 +303,10 @@ contract DeliveryHelperTest is SetupTest {
 
         bytes[] memory returnData = new bytes[](payloadIds.length);
         for (uint i = 0; i < payloadIds.length; i++) {
-            PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(payloadIds[i]);
-            returnData[i] = finalizeAndRelay(payloadIds[i], payloadDetails);
+            PayloadSubmitParams memory payloadSubmitParams = deliveryHelper.getPayloadSubmitParams(
+                payloadIds[i]
+            );
+            returnData[i] = finalizeAndRelay(payloadIds[i], payloadSubmitParams);
         }
 
         resolvePromises(payloadIds, returnData);
@@ -395,7 +398,7 @@ contract DeliveryHelperTest is SetupTest {
         uint32 chainSlug_,
         address appDeployer_,
         bytes memory bytecode_
-    ) internal returns (PayloadDetails memory payloadDetails) {
+    ) internal returns (PayloadSubmitParams memory payloadSubmitParams) {
         bytes32 salt = keccak256(abi.encode(appDeployer_, chainSlug_, deployCounter++));
         bytes memory payload = abi.encodeWithSelector(
             IContractFactoryPlug.deployContract.selector,
@@ -414,7 +417,7 @@ contract DeliveryHelperTest is SetupTest {
         address[] memory next = new address[](2);
         next[0] = asyncPromise;
 
-        payloadDetails = createPayloadDetails(
+        payloadSubmitParams = createPayloadSubmitParams(
             chainSlug_,
             address(appDeployer_),
             address(0),
@@ -429,7 +432,7 @@ contract DeliveryHelperTest is SetupTest {
         payloadDetails.payload = abi.encode(DEPLOY, payloadDetails.payload);
     }
 
-    function createPayloadDetails(
+    function createPayloadSubmitParams(
         uint32 chainSlug_,
         address appGateway_,
         address target_,
@@ -437,9 +440,9 @@ contract DeliveryHelperTest is SetupTest {
         CallType callType_,
         uint256 executionGasLimit_,
         address[] memory next_
-    ) internal pure returns (PayloadDetails memory) {
+    ) internal pure returns (PayloadSubmitParams memory) {
         return
-            PayloadDetails({
+            PayloadSubmitParams({
                 appGateway: appGateway_,
                 chainSlug: chainSlug_,
                 target: target_,
@@ -491,12 +494,12 @@ contract DeliveryHelperTest is SetupTest {
 
     function finalize(
         bytes32 payloadId,
-        PayloadDetails memory payloadDetails
+        PayloadParams memory payloadParams
     ) internal view returns (bytes memory, bytes32) {
-        SocketContracts memory socketConfig = getSocketConfig(payloadDetails.chainSlug);
+        SocketContracts memory socketConfig = getSocketConfig(payloadParams.chainSlug);
         (, , , , , , uint256 deadline, , , , , ) = watcherPrecompile.asyncRequests(payloadId);
 
-        PayloadDigestParams memory digestParams_ = PayloadDigestParams(
+        DigestParams memory digestParams_ = DigestParams(
             payloadDetails.appGateway,
             transmitterEOA,
             payloadDetails.target,
@@ -519,9 +522,9 @@ contract DeliveryHelperTest is SetupTest {
         address appGateway_,
         address forwarder_,
         bytes memory payload_
-    ) internal returns (PayloadDetails memory) {
+    ) internal returns (PayloadSubmitParams memory) {
         return
-            createWritePayloadDetail(
+            createWritePayloadSubmitParams(
                 chainSlug_,
                 target_,
                 appGateway_,
@@ -537,9 +540,9 @@ contract DeliveryHelperTest is SetupTest {
         address appGateway_,
         address forwarder_,
         bytes memory payload_
-    ) internal returns (PayloadDetails memory) {
+    ) internal returns (PayloadSubmitParams memory) {
         return
-            createWritePayloadDetail(
+            createWritePayloadSubmitParams(
                 chainSlug_,
                 target_,
                 appGateway_,
@@ -556,12 +559,12 @@ contract DeliveryHelperTest is SetupTest {
         address forwarder_,
         bytes32,
         bytes memory payload_
-    ) internal returns (PayloadDetails memory payloadDetails) {
+    ) internal returns (PayloadSubmitParams memory payloadSubmitParams) {
         address asyncPromise = predictAsyncPromiseAddress(appGateway_, forwarder_);
         address[] memory next = new address[](2);
         next[0] = asyncPromise;
 
-        payloadDetails = createPayloadDetails(
+        payloadSubmitParams = createPayloadSubmitParams(
             chainSlug_,
             appGateway_,
             target_,
@@ -581,13 +584,13 @@ contract DeliveryHelperTest is SetupTest {
         address appGateway_,
         address forwarder_,
         bytes memory payload_
-    ) internal returns (PayloadDetails memory) {
+    ) internal returns (PayloadSubmitParams memory) {
         address asyncPromise = predictAsyncPromiseAddress(appGateway_, forwarder_);
         address[] memory next = new address[](2);
         next[0] = asyncPromise;
 
         return
-            createPayloadDetails(
+            createPayloadSubmitParams(
                 chainSlug_,
                 appGateway_,
                 target_,
@@ -603,22 +606,24 @@ contract DeliveryHelperTest is SetupTest {
     }
 
     function finalizeAndExecute(bytes32 payloadId) internal {
-        PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(payloadId);
-        bytes memory returnData = finalizeAndRelay(payloadId, payloadDetails);
+        PayloadSubmitParams memory payloadSubmitParams = deliveryHelper.getPayloadSubmitParams(
+            payloadId
+        );
+        bytes memory returnData = finalizeAndRelay(payloadId, payloadSubmitParams);
         resolvePromise(payloadId, returnData);
     }
 
     function finalizeAndRelay(
         bytes32 payloadId_,
-        PayloadDetails memory payloadDetails
+        PayloadSubmitParams memory payloadSubmitParams
     ) internal returns (bytes memory returnData) {
-        (bytes memory watcherSig, bytes32 digest) = finalize(payloadId_, payloadDetails);
+        (bytes memory watcherSig, bytes32 digest) = finalize(payloadId_, payloadSubmitParams);
 
         returnData = relayTx(
-            payloadDetails.chainSlug,
+            payloadSubmitParams.chainSlug,
             payloadId_,
             digest,
-            payloadDetails,
+            payloadSubmitParams,
             watcherSig
         );
     }

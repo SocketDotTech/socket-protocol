@@ -165,11 +165,11 @@ contract WatcherPrecompile is RequestHandler {
             // Resolve each promise with its corresponding return data
             bool success = IPromise(asyncPromise).markResolved(
                 payloadParams.requestCount,
-                    resolvedPromises_[i].payloadId,
+                resolvedPromises_[i].payloadId,
                 resolvedPromises_[i].returnData
-                );
+            );
 
-                if (!success) {
+            if (!success) {
                 emit PromiseNotResolved(resolvedPromises_[i].payloadId, success, asyncPromise);
                 continue;
             }
@@ -201,13 +201,13 @@ contract WatcherPrecompile is RequestHandler {
         RequestParams storage requestParams = requestParams[payloadParams.requestCount];
         requestParams.isRequestCancelled = true;
 
-            if (isRevertingOnchain_)
+        if (isRevertingOnchain_)
             IPromise(payloadParams.asyncPromise).markOnchainRevert(
                 payloadParams.requestCount,
                 payloadId_
             );
 
-            // assign fees after expiry time
+        // assign fees after expiry time
         IFeesManager(payloadParams.appGateway).unblockAndAssignFees(
             payloadParams.requestCount,
             requestParams.transmitter,
