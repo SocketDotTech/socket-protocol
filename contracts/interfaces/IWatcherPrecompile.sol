@@ -7,6 +7,48 @@ import {DigestParams, AppGatewayConfig, ResolvedPromises, PayloadParams, QueuePa
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
 /// @dev Defines core functionality for payload processing and promise resolution
 interface IWatcherPrecompile {
+    event CalledAppGateway(
+        bytes32 callId,
+        uint32 chainSlug,
+        address plug,
+        address appGateway,
+        bytes32 params,
+        bytes payload
+    );
+
+    /// @notice Emitted when a new query is requested
+    event QueryRequested(PayloadParams params);
+
+    /// @notice Emitted when a finalize request is made
+    event FinalizeRequested(address transmitter, bytes32 digest, PayloadParams params);
+
+    /// @notice Emitted when a request is finalized
+    /// @param payloadId The unique identifier for the request
+    /// @param proof The proof from the watcher
+    event Finalized(bytes32 indexed payloadId, bytes proof);
+
+    /// @notice Emitted when a promise is resolved
+    /// @param payloadId The unique identifier for the resolved promise
+    event PromiseResolved(bytes32 indexed payloadId, bool success, address asyncPromise);
+
+    /// @notice Emitted when a promise is not resolved
+    /// @param payloadId The unique identifier for the not resolved promise
+    event PromiseNotResolved(bytes32 indexed payloadId, bool success, address asyncPromise);
+
+    event TimeoutRequested(
+        bytes32 timeoutId,
+        address target,
+        bytes payload,
+        uint256 executeAt // Epoch time when the task should execute
+    );
+
+    /// @notice Emitted when a timeout is resolved
+    /// @param timeoutId The unique identifier for the timeout
+    /// @param target The target address for the timeout
+    /// @param payload The payload data
+    /// @param executedAt The epoch time when the task was executed
+    event TimeoutResolved(bytes32 timeoutId, address target, bytes payload, uint256 executedAt);
+
     /// @notice Sets up app gateway configurations
     /// @param configs_ Array of app gateway configurations
     /// @param signatureNonce_ The nonce of the signature

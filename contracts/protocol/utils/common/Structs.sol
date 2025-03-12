@@ -192,9 +192,11 @@ struct PayloadParams {
     address target;
     address appGateway;
     bytes32 payloadId;
+    bytes32 prevDigestsHash;
     uint256 gasLimit;
     uint256 value;
     uint256 readAt;
+    uint256 deadline;
     bytes payload;
     bytes32 prevDigestsHash; // should be id? hash of hashes
 }

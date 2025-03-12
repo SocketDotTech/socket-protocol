@@ -102,8 +102,8 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     function callFromChain(
         uint32,
         address,
-        bytes calldata payload_,
-        bytes32
+        bytes32,
+        bytes calldata payload_
     ) external override onlyWatcherPrecompile {
         uint256 value = abi.decode(payload_, (uint256));
         counterVal += value;

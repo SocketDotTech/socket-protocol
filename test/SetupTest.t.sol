@@ -83,12 +83,12 @@ contract SetupTest is Test {
         hoax(watcherEOA);
         watcherPrecompile.setOnChainContracts(
             chainSlug_,
-            FAST,
-            address(switchboard),
             address(socket),
             address(contractFactoryPlug),
             address(feesPlug)
         );
+
+        watcherPrecompile.setSwitchboard(chainSlug_, FAST, address(switchboard));
 
         return
             SocketContracts({
@@ -172,49 +172,72 @@ contract SetupTest is Test {
 
     function relayTx(
         uint32 chainSlug_,
-        bytes32 payloadId,
-        bytes32 digest,
-        PayloadDetails memory payloadDetails,
-        bytes memory watcherProof
+        bytes32 payloadId_,
+        bytes32 digest_,
+        bytes memory watcherProof_
     ) internal returns (bytes memory) {
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
-        bytes32 transmitterDigest = keccak256(abi.encode(address(socketConfig.socket), payloadId));
+        bytes32 transmitterDigest = keccak256(abi.encode(address(socketConfig.socket), payloadId_));
         bytes memory transmitterSig = _createSignature(transmitterDigest, transmitterPrivateKey);
 
-        (, , , , , , uint256 deadline, , , , , ) = watcherPrecompile.asyncRequests(payloadId);
+        (
+            uint40 requestCount,
+            uint40 batchCount,
+            uint40 payloadCount,
+            ,
+            CallType callType,
+            ,
+            WriteFinality writeFinality,
+            ,
+            address switchboard,
+            address target,
+            ,
+            bytes32 payloadId,
+            bytes32 prevDigestsHash,
+            uint256 gasLimit,
+            uint256 value,
+            uint256 readAt,
+            uint256 deadline,
+            bytes memory payload
+        ) = watcherPrecompile.payloads(payloadId_);
+
+        assertEq(payloadId, payloadId_);
 
         vm.startPrank(transmitterEOA);
-        AttestAndExecutePayloadParams memory params = AttestAndExecutePayloadParams({
-            switchboard: address(socketConfig.switchboard),
-            digest: digest,
-            proof: watcherProof,
-            payloadId: payloadId,
-            appGateway: payloadDetails.appGateway,
-            executionGasLimit: payloadDetails.executionGasLimit,
-            transmitterSignature: transmitterSig,
-            payload: payloadDetails.payload,
-            target: payloadDetails.target,
-            deadline: deadline
+        ExecuteParams memory params = ExecuteParams({
+            deadline: deadline,
+            callType: callType,
+            writeFinality: writeFinality,
+            gasLimit: gasLimit,
+            readAt: readAt,
+            payload: payload,
+            target: target,
+            requestCount: requestCount,
+            batchCount: batchCount,
+            payloadCount: payloadCount,
+            prevDigestsHash: prevDigestsHash,
+            switchboard: switchboard
         });
 
-        bytes memory returnData = socketConfig.socketBatcher.attestAndExecute(params);
+        bytes memory returnData = socketConfig.socketBatcher.attestAndExecute{value: value}(
+            params,
+            digest_,
+            watcherProof_,
+            transmitterSig
+        );
         vm.stopPrank();
         return returnData;
     }
 
-    function resolvePromises(bytes32[] memory payloadIds, bytes[] memory returnDatas_) internal {
+    function resolvePromises(bytes32[] memory payloadIds, bytes[] memory returnData) internal {
         for (uint i = 0; i < payloadIds.length; i++) {
-            resolvePromise(payloadIds[i], returnDatas_[i]);
+            resolvePromise(payloadIds[i], returnData[i]);
         }
     }
 
     function resolvePromise(bytes32 payloadId, bytes memory returnData) internal {
         ResolvedPromises[] memory resolvedPromises = new ResolvedPromises[](1);
-
-        bytes[] memory returnDatas = new bytes[](2);
-        returnDatas[0] = returnData;
-
-        resolvedPromises[0] = ResolvedPromises({payloadId: payloadId, returnData: returnDatas});
+        resolvedPromises[0] = ResolvedPromises({payloadId: payloadId, returnData: returnData});
 
         bytes memory watcherSignature = _createWatcherSignature(
             abi.encode(WatcherPrecompile.resolvePromises.selector, resolvedPromises)
@@ -238,36 +261,5 @@ contract SetupTest is Test {
             mstore(add(sig, 32), sigR)
             mstore(add(sig, 64), sigS)
         }
-    }
-
-    function getWritePayloadId(
-        uint32 chainSlug_,
-        address switchboard_,
-        uint256 counter_
-    ) internal pure returns (bytes32) {
-        return _encodeId(chainSlug_, switchboard_, counter_);
-    }
-
-    function getWritePayloadIds(
-        uint32 chainSlug_,
-        address switchboard_,
-        uint256 numPayloads
-    ) internal returns (bytes32[] memory) {
-        bytes32[] memory payloadIds = new bytes32[](numPayloads);
-        for (uint256 i = 0; i < numPayloads; i++) {
-            payloadIds[i] = _encodeId(chainSlug_, switchboard_, payloadIdCounter++);
-        }
-        return payloadIds;
-    }
-
-    function _encodeId(
-        uint32 chainSlug_,
-        address sbOrWatcher_,
-        uint256 counter_
-    ) internal pure returns (bytes32) {
-        return
-            bytes32(
-                (uint256(chainSlug_) << 224) | (uint256(uint160(sbOrWatcher_)) << 64) | counter_
-            );
     }
 }

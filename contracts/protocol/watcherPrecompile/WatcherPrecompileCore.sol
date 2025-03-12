@@ -24,48 +24,6 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
     /// @notice Error thrown when a switchboard is invalid
     error InvalidSwitchboard();
 
-    event CalledAppGateway(
-        bytes32 callId,
-        uint32 chainSlug,
-        address plug,
-        address appGateway,
-        bytes32 params,
-        bytes payload
-    );
-
-    /// @notice Emitted when a new query is requested
-    event QueryRequested(PayloadParams params);
-
-    /// @notice Emitted when a finalize request is made
-    event FinalizeRequested(address transmitter, bytes32 digest, PayloadParams params);
-
-    /// @notice Emitted when a request is finalized
-    /// @param payloadId The unique identifier for the request
-    /// @param proof The proof from the watcher
-    event Finalized(bytes32 indexed payloadId, bytes proof);
-
-    /// @notice Emitted when a promise is resolved
-    /// @param payloadId The unique identifier for the resolved promise
-    event PromiseResolved(bytes32 indexed payloadId, bool success, address asyncPromise);
-
-    /// @notice Emitted when a promise is not resolved
-    /// @param payloadId The unique identifier for the not resolved promise
-    event PromiseNotResolved(bytes32 indexed payloadId, bool success, address asyncPromise);
-
-    event TimeoutRequested(
-        bytes32 timeoutId,
-        address target,
-        bytes payload,
-        uint256 executeAt // Epoch time when the task should execute
-    );
-
-    /// @notice Emitted when a timeout is resolved
-    /// @param timeoutId The unique identifier for the timeout
-    /// @param target The target address for the timeout
-    /// @param payload The payload data
-    /// @param executedAt The epoch time when the task was executed
-    event TimeoutResolved(bytes32 timeoutId, address target, bytes payload, uint256 executedAt);
-
     // ================== Timeout functions ==================
 
     /// @notice Sets a timeout for a payload execution on app gateway
@@ -106,11 +64,14 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
             params_.switchboard
         );
 
+        uint256 deadline = block.timestamp + expiryTime;
+        payloads[params_.payloadId].deadline = deadline;
+
         // Construct parameters for digest calculation
         DigestParams memory digestParams_ = DigestParams(
             transmitter_,
             params_.payloadId,
-            block.timestamp + expiryTime,
+            deadline,
             params_.callType,
             params_.writeFinality,
             params_.gasLimit,
