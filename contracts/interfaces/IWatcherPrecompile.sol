@@ -127,7 +127,7 @@ interface IWatcherPrecompile {
         address appGateway_,
         uint256 delayInSeconds_,
         bytes calldata payload_
-    ) external;
+    ) external returns (bytes32 timeoutId);
 
     /// @notice Resolves a timeout by executing the payload
     /// @param timeoutId_ The unique identifier for the timeout

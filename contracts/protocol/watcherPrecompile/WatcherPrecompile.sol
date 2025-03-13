@@ -30,7 +30,6 @@ contract WatcherPrecompile is RequestHandler {
         defaultLimit = defaultLimit_ * 10 ** LIMIT_DECIMALS;
         // limit per second
         defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
-
         evmxSlug = evmxSlug_;
     }
 
@@ -43,8 +42,8 @@ contract WatcherPrecompile is RequestHandler {
         address appGateway_,
         uint256 delayInSeconds_,
         bytes calldata payload_
-    ) external {
-        _setTimeout(appGateway_, payload_, delayInSeconds_);
+    ) external returns (bytes32) {
+        return _setTimeout(appGateway_, payload_, delayInSeconds_);
     }
 
     /// @notice Ends the timeouts and calls the target address with the callback payload

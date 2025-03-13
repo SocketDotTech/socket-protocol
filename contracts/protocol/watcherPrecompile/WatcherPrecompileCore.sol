@@ -33,13 +33,13 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
         address appGateway_,
         bytes calldata payload_,
         uint256 delayInSeconds_
-    ) internal {
+    ) internal returns(bytes32 timeoutId) {
         if (delayInSeconds_ > maxTimeoutDelayInSeconds) revert TimeoutDelayTooLarge();
 
         // from auction manager
         _consumeLimit(appGateway_, SCHEDULE, 1);
         uint256 executeAt = block.timestamp + delayInSeconds_;
-        bytes32 timeoutId = _encodeId(evmxSlug, address(this));
+        timeoutId = _encodeId(evmxSlug, address(this));
         timeoutRequests[timeoutId] = TimeoutRequest(
             timeoutId,
             msg.sender,
@@ -79,7 +79,8 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
             params_.readAt,
             params_.payload,
             params_.target,
-            params_.appGateway
+            params_.appGateway,
+            params_.prevDigestsHash
         );
 
         // Calculate digest from payload parameters
@@ -159,7 +160,7 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
                     requestCount_,
                     batchCount_,
                     payloadCount_,
-                    prevDigestsHash_,
+                    p_.prevDigestsHash,
                     p_.switchboard,
                     p_.chainSlug
                 )

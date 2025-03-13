@@ -76,7 +76,12 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     // slot 63: payloadCounter
     /// @notice Counter for tracking payload requests
     uint40 public payloadCounter;
-    // slot 64: expiryTime
+
+    // slot 64: timeoutCounter
+    /// @notice Counter for tracking timeout requests
+    uint40 public timeoutCounter;
+    
+    // slot 65: expiryTime
     /// @notice The expiry time for the payload
     uint256 public expiryTime;
 

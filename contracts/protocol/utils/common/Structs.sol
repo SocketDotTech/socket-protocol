@@ -198,7 +198,6 @@ struct PayloadParams {
     uint256 readAt;
     uint256 deadline;
     bytes payload;
-    bytes32 prevDigestsHash; // should be id? hash of hashes
 }
 
 struct RequestParams {

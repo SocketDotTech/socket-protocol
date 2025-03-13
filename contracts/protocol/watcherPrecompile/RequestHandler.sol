@@ -65,7 +65,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
                 target: p.target,
                 appGateway: p.appGateway,
                 payloadId: payloadId,
-                prevDigestsHash: prevDigestsHash,
+                prevDigestsHash: bytes32(0),
                 gasLimit: p.gasLimit,
                 value: p.value,
                 readAt: p.readAt,
