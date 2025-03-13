@@ -206,7 +206,7 @@ contract DeliveryHelperTest is SetupTest {
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
         requestCount = watcherPrecompile.nextRequestCount();
         appGateway_.deployContracts(chainSlug_);
-        bidAndEndAuction(requestCount);
+        finalizeRequest(new bytes[](0));
         setupGatewayAndPlugs(chainSlug_, appGateway_, contractIds_);
     }
 
@@ -237,7 +237,7 @@ contract DeliveryHelperTest is SetupTest {
 
     //////////////////////////////////// Auction ////////////////////////////////////
 
-    function placeBid(bytes32 requestCount) internal {
+    function placeBid(uint40 requestCount) internal {
         // todo:
         // vm.expectEmit(false, false, false, false);
         // emit BidPlaced(
@@ -362,7 +362,7 @@ contract DeliveryHelperTest is SetupTest {
             // );
         }
 
-        RequestMetadata memory payloadRequest = deliveryHelper.requests(requestCount);
+        RequestMetadata memory payloadRequest = deliveryHelper.getRequestMetadata(requestCount);
 
         assertEq(payloadRequest.appGateway, appGateway_, "AppGateway mismatch");
         assertEq(payloadRequest.auctionManager, address(auctionManager), "AuctionManager mismatch");
@@ -372,6 +372,5 @@ contract DeliveryHelperTest is SetupTest {
             transmitterEOA,
             "WinningBid transmitter mismatch"
         );
-        assertEq(payloadRequest.isRequestCancelled, false, "IsRequestCancelled mismatch");
     }
 }

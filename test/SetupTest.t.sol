@@ -149,8 +149,18 @@ contract SetupTest is Test {
     }
 
     //////////////////////////////////// Watcher precompiles ////////////////////////////////////
+    function finalizeRequest(
+        bytes[] memory readReturnData_
+    ) internal returns (uint40 requestCount) {
+        requestCount = watcherPrecompile.nextRequestCount();
+        requestCount = requestCount == 0 ? 0 : requestCount - 1;
+        finalizeRequestForCount(requestCount, readReturnData_);
+    }
 
-    function finalizeRequest(uint40 requestCount_, bytes[] memory readReturnData_) internal {
+    function finalizeRequestForCount(
+        uint40 requestCount_,
+        bytes[] memory readReturnData_
+    ) internal {
         uint40[] memory batches = watcherPrecompile.getBatches(requestCount_);
         uint256 readCount = 0;
         for (uint i = 0; i < batches.length; i++) {
