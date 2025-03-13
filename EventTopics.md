@@ -36,14 +36,14 @@
 | `AuctionEnded`   | `0xefa02d67c6f01c72b191e6c5076e63d9a4941f9037bf1c4aa4ccc613340e1571` |
 | `BidPlaced`      | `0xaf5c23b337289338f72cec2fdec2c736d419c7607e4c840ee4d28176477d4e08` |
 
-## apps/payload-delivery/app-gateway/BatchAsync.sol
+## apps/payload-delivery/app-gateway/RequestAsync.sol
 
 | Event                   | Topic                                                                |
 | ----------------------- | -------------------------------------------------------------------- |
 | `PayloadSubmitted`      | `0xaab415570fdc7fb2a70601b49667178ab5f887c7901dc5e84b853c5bad514106` |
 | `FeesIncreased`         | `0xf1a5d6adcecf6c2be482b515e9564a9898cd629b54c57ede69295dffbf16bb1d` |
 | `PayloadAsyncRequested` | `0x71c5226e31c1ad0fb69f89c62225760ba7c06c4ebdd284dfc71fd61603120d95` |
-| `BatchCancelled`        | `0xac01c50ce693d1fe783ba60ec0f82ab99f65e62446fffb028e3bd639cd5684d4` |
+| `RequestCancelled`      | `0xac01c50ce693d1fe783ba60ec0f82ab99f65e62446fffb028e3bd639cd5684d4` |
 
 ## apps/payload-delivery/app-gateway/DeliveryHelper.sol
 
@@ -63,9 +63,9 @@
 
 ## apps/payload-delivery/app-gateway/QueueAsync.sol
 
-| Event                   | Topic                                                                |
-| ----------------------- | -------------------------------------------------------------------- |
-| `PayloadBatchCancelled` | `0xae2e532ea00438ec2fc3e806f19c85f21334853d16c32107c75ff8d176af7633` |
+| Event                     | Topic                                                                |
+| ------------------------- | -------------------------------------------------------------------- |
+| `PayloadRequestCancelled` | `0xae2e532ea00438ec2fc3e806f19c85f21334853d16c32107c75ff8d176af7633` |
 
 ## apps/super-token/SuperTokenAppGateway.sol
 

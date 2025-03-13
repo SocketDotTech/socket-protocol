@@ -32,7 +32,7 @@ contract DeliveryHelperTest is SetupTest {
     );
     event BidPlaced(bytes32 indexed asyncId, Bid bid);
     event AuctionEnded(bytes32 indexed asyncId, Bid winningBid);
-    event BatchCancelled(bytes32 indexed asyncId);
+    event RequestCancelled(bytes32 indexed asyncId);
     event FinalizeRequested(bytes32 indexed payloadId, AsyncRequest asyncRequest);
     event QueryRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
 
@@ -237,7 +237,7 @@ contract DeliveryHelperTest is SetupTest {
         return address(getSocketConfig(chainSlug_).contractFactoryPlug);
     }
 
-    function checkPayloadBatchAndDetails(
+    function checkPayloadRequestAndDetails(
         PayloadDetails[] memory payloadDetails,
         bytes32 asyncId,
         address appGateway_
@@ -269,17 +269,17 @@ contract DeliveryHelperTest is SetupTest {
             // );
         }
 
-        PayloadBatch memory payloadBatch = deliveryHelper.getAsyncBatchDetails(asyncId);
+        PayloadRequest memory payloadRequest = deliveryHelper.getAsyncRequestDetails(asyncId);
 
-        assertEq(payloadBatch.appGateway, appGateway_, "AppGateway mismatch");
-        assertEq(payloadBatch.auctionManager, address(auctionManager), "AuctionManager mismatch");
-        assertEq(payloadBatch.winningBid.fee, bidAmount, "WinningBid mismatch");
+        assertEq(payloadRequest.appGateway, appGateway_, "AppGateway mismatch");
+        assertEq(payloadRequest.auctionManager, address(auctionManager), "AuctionManager mismatch");
+        assertEq(payloadRequest.winningBid.fee, bidAmount, "WinningBid mismatch");
         assertEq(
-            payloadBatch.winningBid.transmitter,
+            payloadRequest.winningBid.transmitter,
             transmitterEOA,
             "WinningBid transmitter mismatch"
         );
-        assertEq(payloadBatch.isBatchCancelled, false, "IsBatchCancelled mismatch");
+        assertEq(payloadRequest.isRequestCancelled, false, "IsRequestCancelled mismatch");
     }
 
     function bidAndEndAuction(bytes32 asyncId) internal {
@@ -351,15 +351,15 @@ contract DeliveryHelperTest is SetupTest {
         watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
     }
 
-    function _executeReadBatchSingleChain() internal returns (bytes32 asyncId) {
+    function _executeReadRequestSingleChain() internal returns (bytes32 asyncId) {
         asyncId = getNextAsyncId();
     }
 
-    function _executeReadBatchMultiChain() internal returns (bytes32 asyncId) {
+    function _executeReadRequestMultiChain() internal returns (bytes32 asyncId) {
         asyncId = getNextAsyncId();
     }
 
-    function _executeWriteBatchSingleChain(
+    function _executeWriteRequestSingleChain(
         uint32 chainSlug_,
         uint256 totalPayloads
     ) internal returns (bytes32 asyncId) {
@@ -373,7 +373,7 @@ contract DeliveryHelperTest is SetupTest {
         bidAndExecute(payloadIds, asyncId);
     }
 
-    function _executeWriteBatchMultiChain(
+    function _executeWriteRequestMultiChain(
         uint32[] memory chainSlugs_
     ) internal returns (bytes32 asyncId) {
         asyncId = getNextAsyncId();

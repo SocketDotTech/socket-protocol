@@ -373,7 +373,7 @@ contract WatcherPrecompile is WatcherPrecompileConfig {
                 asyncRequest_.appGateway
             );
 
-            // batch.isBatchCancelled
+            // batch.isRequestCancelled
         }
     }
 

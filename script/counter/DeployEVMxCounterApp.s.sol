@@ -23,10 +23,7 @@ contract CounterDeploy is Script {
             amount: 0.001 ether
         });
 
-        CounterAppGateway gateway = new CounterAppGateway(
-            addressResolver,
-            fees
-        );
+        CounterAppGateway gateway = new CounterAppGateway(addressResolver, fees);
 
         console.log("Contracts deployed:");
         console.log("CounterAppGateway:", address(gateway));

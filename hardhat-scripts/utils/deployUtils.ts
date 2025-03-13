@@ -5,11 +5,7 @@ import { ContractFactory, Contract } from "ethers";
 import { Address } from "hardhat-deploy/dist/types";
 import path from "path";
 import fs from "fs";
-import {
-  ChainAddressesObj,
-  ChainSlug,
-  DeploymentMode,
-} from "../../src";
+import { ChainAddressesObj, ChainSlug, DeploymentMode } from "../../src";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { overrides } from "../utils";
 import { VerifyArgs } from "../verify";

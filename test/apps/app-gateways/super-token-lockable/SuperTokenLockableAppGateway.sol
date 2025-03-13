@@ -67,7 +67,7 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
     }
 
     // don't need to call this directly, will be called automatically after all contracts are deployed.
-    // check AppGatewayBase.onBatchComplete
+    // check AppGatewayBase.onRequestComplete
     function initialize(uint32 chainSlug_) public override async {
         address limitHookContract = getOnChainAddress(limitHook, chainSlug_);
         SuperTokenLockable(forwarderAddresses[superTokenLockable][chainSlug_]).setLimitHook(
