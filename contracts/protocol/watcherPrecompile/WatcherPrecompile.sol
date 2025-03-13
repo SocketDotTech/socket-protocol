@@ -166,7 +166,6 @@ contract WatcherPrecompile is RequestHandler {
                 resolvedPromises_[i].payloadId,
                 resolvedPromises_[i].returnData
             );
-            console.log("success: %s", success);
 
             if (!success) {
                 emit PromiseNotResolved(resolvedPromises_[i].payloadId, success, asyncPromise);
