@@ -206,7 +206,9 @@ contract DeliveryHelperTest is SetupTest {
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
         requestCount = watcherPrecompile.nextRequestCount();
         appGateway_.deployContracts(chainSlug_);
-        finalizeRequest(new bytes[](0));
+
+        bidAndEndAuction(requestCount);
+        finalizeRequestForCount(requestCount, new bytes[](0));
         setupGatewayAndPlugs(chainSlug_, appGateway_, contractIds_);
     }
 

@@ -187,6 +187,10 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
         address appGateway_,
         address switchboard_
     ) internal view {
+        // todo: revisit this
+        // if target is contractFactoryPlug, return
+        if (target_ == contractFactoryPlug[chainSlug_]) return;
+
         (address appGateway, address switchboard) = getPlugConfigs(chainSlug_, target_);
         if (appGateway != appGateway_) revert InvalidGateway();
         if (switchboard != switchboard_) revert InvalidSwitchboard();

@@ -20,7 +20,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         PayloadParams[] memory payloadParamsArray = new PayloadParams[](payloadSubmitParams.length);
 
         requestCount = nextRequestCount++;
-        uint40 batchCount = nextBatchCount++;
+        uint40 batchCount = nextBatchCount;
         uint40 currentBatch = batchCount;
 
         address appGateway = _checkAppGateways(payloadSubmitParams);
@@ -78,6 +78,8 @@ abstract contract RequestHandler is WatcherPrecompileCore {
             payloadParamsArray[i] = payloadParams;
         }
 
+        nextBatchCount++;
+
         _consumeLimit(appGateway, QUERY, readCount);
         _consumeLimit(appGateway, FINALIZE, writeCount);
 
@@ -124,6 +126,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
 
     function _processBatch(uint40 requestCount_, uint40 batchCount_) internal {
         RequestParams memory r = requestParams[requestCount_];
+
         PayloadParams[] memory payloadParamsArray = _getBatch(requestCount_, batchCount_);
         if (r.isRequestCancelled) revert RequestCancelled();
 
