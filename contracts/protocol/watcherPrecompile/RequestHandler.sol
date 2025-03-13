@@ -36,7 +36,6 @@ abstract contract RequestHandler is WatcherPrecompileCore {
                 readCount++;
             } else writeCount++;
 
-            /// consume limit
             if (i > 0) {
                 PayloadSubmitParams memory lastP = payloadSubmitParams[i - 1];
                 if (p.levelNumber != lastP.levelNumber && p.levelNumber != lastP.levelNumber + 1)
@@ -63,7 +62,9 @@ abstract contract RequestHandler is WatcherPrecompileCore {
                 asyncPromise: p.asyncPromise,
                 switchboard: p.switchboard,
                 target: p.target,
-                appGateway: p.appGateway,
+                appGateway: p.callType == CallType.DEPLOY
+                    ? addressResolver__.deliveryHelper()
+                    : p.appGateway,
                 payloadId: payloadId,
                 prevDigestsHash: bytes32(0),
                 gasLimit: p.gasLimit,
@@ -78,8 +79,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
             payloadParamsArray[i] = payloadParams;
         }
 
-        nextBatchCount++;
-
+        requestBatchIds[requestCount].push(nextBatchCount++);
         _consumeLimit(appGateway, QUERY, readCount);
         _consumeLimit(appGateway, FINALIZE, writeCount);
 
@@ -114,7 +114,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
     }
 
     function startProcessingRequest(uint40 requestCount, address transmitter) public {
-        RequestParams memory r = requestParams[requestCount];
+        RequestParams storage r = requestParams[requestCount];
         if (r.middleware != msg.sender) revert InvalidCaller();
         if (r.transmitter != address(0)) revert AlreadyStarted();
         if (r.currentBatchPayloadsLeft > 0) revert AlreadyStarted();

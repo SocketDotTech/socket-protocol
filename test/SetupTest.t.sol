@@ -90,7 +90,7 @@ contract SetupTest is Test {
             address(contractFactoryPlug),
             address(feesPlug)
         );
-        
+
         hoax(watcherEOA);
         watcherPrecompile.setSwitchboard(chainSlug_, FAST, address(switchboard));
 
@@ -163,10 +163,7 @@ contract SetupTest is Test {
         uint40 requestCount_,
         bytes[] memory readReturnData_
     ) internal {
-        console.log("finalizeRequestForCount", requestCount_);
         uint40[] memory batches = watcherPrecompile.getBatches(requestCount_);
-        console.log("batches", batches.length);
-
         uint256 readCount = 0;
         for (uint i = 0; i < batches.length; i++) {
             readCount = _finalizeBatch(batches[i], readReturnData_, readCount);
@@ -205,9 +202,8 @@ contract SetupTest is Test {
             bytes memory transmitterSig
         ) = _getExecuteParams(payloadParams);
 
-        hoax(transmitterEOA);
         return
-            socketBatcher.attestAndExecute{value: value}(
+            socketBatcher.attestAndExecute(
                 params,
                 digest,
                 watcherProof,

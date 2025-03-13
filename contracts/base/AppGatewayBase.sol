@@ -127,7 +127,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             isPlug: isPlug_,
             writeFinality: overrideParams.writeFinality,
             asyncPromise: asyncPromise,
-            switchboard: address(0),
+            switchboard: watcherPrecompile__().switchboards(chainSlug_, sbType),
             target: address(0),
             appGateway: address(this),
             gasLimit: overrideParams.gasLimit,
@@ -166,8 +166,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
-            .getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

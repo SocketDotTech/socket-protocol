@@ -4,7 +4,7 @@ pragma solidity ^0.8.21;
 import "../utils/RescueFundsLib.sol";
 import "./SocketConfig.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
-
+import "forge-std/console.sol";
 /**
  * @title SocketUtils
  * @notice A contract that is responsible for common storage for src and dest contracts, governance
@@ -62,6 +62,18 @@ abstract contract SocketUtils is SocketConfig {
         address appGateway_,
         ExecuteParams memory executeParams_
     ) internal view returns (bytes32) {
+        console.log("transmitter_: %s", transmitter_);
+        console.logBytes32(payloadId_);
+        console.log("deadline: %s", executeParams_.deadline);
+        console.log("callType: %s", uint256(executeParams_.callType));
+        console.log("writeFinality: %s", uint256(executeParams_.writeFinality));
+        console.log("gasLimit: %s", executeParams_.gasLimit);
+        console.log("msg.value: %s", msg.value);
+        console.log("readAt: %s", executeParams_.readAt);
+        console.logBytes(executeParams_.payload);
+        console.log("target: %s", executeParams_.target);
+        console.log("appGateway_: %s", appGateway_);
+        console.logBytes32(executeParams_.prevDigestsHash);
         return
             keccak256(
                 abi.encode(
@@ -75,7 +87,8 @@ abstract contract SocketUtils is SocketConfig {
                     executeParams_.readAt,
                     executeParams_.payload,
                     executeParams_.target,
-                    appGateway_
+                    appGateway_,
+                    executeParams_.prevDigestsHash
                 )
             );
     }

@@ -54,10 +54,7 @@ contract FastSwitchboard is SwitchboardBase {
      */
     function allowPacket(bytes32 digest_, bytes32) external view returns (bool) {
         // digest has enough attestations
-        if (isAttested[digest_]) return true;
-
-        // not enough attestations and timeout not hit
-        return false;
+        return isAttested[digest_];
     }
 
     function registerSwitchboard() external onlyOwner {

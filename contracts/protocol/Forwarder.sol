@@ -101,6 +101,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
             uint256 gasLimit,
             bytes32 sbType
         ) = IAppGateway(msg.sender).getOverrideParams();
+        address switchboard = watcherPrecompile__().switchboards(chainSlug, sbType);
 
         // Queue the call in the auction house.
         deliveryHelper__().queue(
@@ -111,7 +112,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
                 isPlug: IsPlug.NO,
                 writeFinality: writeFinality,
                 asyncPromise: latestAsyncPromise,
-                switchboard: watcherPrecompile__().switchboards(chainSlug, sbType),
+                switchboard: switchboard,
                 target: onChainAddress,
                 appGateway: msg.sender,
                 gasLimit: gasLimit,
