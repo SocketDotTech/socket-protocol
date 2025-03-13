@@ -205,7 +205,7 @@ struct RequestParams {
     bool isRequestCancelled;
     uint40 currentBatch;
     uint256 currentBatchPayloadsLeft;
-    uint256 totalBatchPayloads;
+    uint256 payloadsRemaining;
     address middleware;
     address transmitter;
     PayloadParams[] payloadParamsArray;

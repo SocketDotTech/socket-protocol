@@ -87,7 +87,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
             isRequestCancelled: false,
             currentBatch: currentBatch,
             currentBatchPayloadsLeft: 0,
-            totalBatchPayloads: 0,
+            payloadsRemaining: payloadParamsArray.length,
             middleware: msg.sender,
             transmitter: address(0),
             payloadParamsArray: payloadParamsArray
@@ -119,12 +119,17 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         if (r.transmitter != address(0)) revert AlreadyStarted();
         if (r.currentBatchPayloadsLeft > 0) revert AlreadyStarted();
 
+        uint256 totalPayloadsLeft = _processBatch(requestCount, r.payloadParamsArray[0].batchCount);
         r.transmitter = transmitter;
-        uint40 batchCount = r.payloadParamsArray[0].batchCount;
-        _processBatch(requestCount, batchCount);
+
+        // todo: for retry cases
+        r.currentBatchPayloadsLeft = totalPayloadsLeft;
     }
 
-    function _processBatch(uint40 requestCount_, uint40 batchCount_) internal {
+    function _processBatch(
+        uint40 requestCount_,
+        uint40 batchCount_
+    ) internal returns (uint256 totalPayloadsLeft) {
         RequestParams memory r = requestParams[requestCount_];
 
         PayloadParams[] memory payloadParamsArray = _getBatch(requestCount_, batchCount_);
@@ -133,6 +138,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         for (uint40 i = 0; i < payloadParamsArray.length; i++) {
             bool isResolved = IPromise(payloadParamsArray[i].asyncPromise).resolved();
             if (isResolved) continue;
+            totalPayloadsLeft++;
 
             if (payloadParamsArray[i].callType != CallType.READ) {
                 _finalize(payloadParamsArray[i], r.transmitter);

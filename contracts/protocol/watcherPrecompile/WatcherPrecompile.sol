@@ -3,7 +3,6 @@ pragma solidity ^0.8.21;
 
 import "./RequestHandler.sol";
 import "../../interfaces/IMiddleware.sol";
-
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
 contract WatcherPrecompile is RequestHandler {
@@ -167,6 +166,7 @@ contract WatcherPrecompile is RequestHandler {
                 resolvedPromises_[i].payloadId,
                 resolvedPromises_[i].returnData
             );
+            console.log("success: %s", success);
 
             if (!success) {
                 emit PromiseNotResolved(resolvedPromises_[i].payloadId, success, asyncPromise);
@@ -175,8 +175,9 @@ contract WatcherPrecompile is RequestHandler {
 
             RequestParams storage requestParams_ = requestParams[payloadParams.requestCount];
             requestParams_.currentBatchPayloadsLeft--;
+            requestParams_.payloadsRemaining--;
 
-            if (requestParams_.currentBatchPayloadsLeft == 0) {
+            if (requestParams_.payloadsRemaining == 0) {
                 IMiddleware(requestParams_.middleware).finishRequest(payloadParams.requestCount);
             }
             emit PromiseResolved(resolvedPromises_[i].payloadId, success, asyncPromise);

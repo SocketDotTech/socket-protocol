@@ -136,6 +136,7 @@ abstract contract RequestQueue is DeliveryUtils {
                 queuePayloadParams_.isPlug,
                 salt_,
                 queuePayloadParams_.appGateway,
+                queuePayloadParams_.switchboard,
                 payload_,
                 queuePayloadParams_.initCallData
             );
