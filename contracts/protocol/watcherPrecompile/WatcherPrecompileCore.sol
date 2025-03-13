@@ -134,7 +134,8 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
                 params_.readAt,
                 params_.payload,
                 params_.target,
-                params_.appGateway
+                params_.appGateway,
+                params_.prevDigestsHash
             )
         );
     }
