@@ -66,6 +66,10 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
 
         uint256 deadline = block.timestamp + expiryTime;
         payloads[params_.payloadId].deadline = deadline;
+        payloads[params_.payloadId].finalizedTransmitter = transmitter_;
+
+        bytes32 prevDigestsHash = _getPreviousDigestsHash(params_.requestCount, params_.batchCount);
+        payloads[params_.payloadId].prevDigestsHash = prevDigestsHash;
 
         // Construct parameters for digest calculation
         DigestParams memory digestParams_ = DigestParams(
@@ -80,7 +84,7 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
             params_.payload,
             params_.target,
             params_.appGateway,
-            params_.prevDigestsHash
+            prevDigestsHash
         );
 
         // Calculate digest from payload parameters
@@ -88,10 +92,29 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
         emit FinalizeRequested(transmitter_, digest, params_);
     }
 
+    function _getBatch(
+        uint40 requestCount,
+        uint40 batchCount
+    ) internal view returns (PayloadParams[] memory) {
+        RequestParams memory r = requestParams[requestCount];
+        PayloadParams[] memory payloadParamsArray = new PayloadParams[](
+            r.payloadParamsArray.length
+        );
+
+        for (uint40 i = 0; i < r.payloadParamsArray.length; i++) {
+            if (r.payloadParamsArray[i].batchCount == batchCount) {
+                payloadParamsArray[i] = r.payloadParamsArray[i];
+            }
+        }
+        return payloadParamsArray;
+    }
+
     // ================== Query functions ==================
     /// @notice Creates a new query request
     /// @param params_ The payload parameters
     function _query(PayloadParams memory params_) internal {
+        bytes32 prevDigestsHash = _getPreviousDigestsHash(params_.requestCount, params_.batchCount);
+        payloads[params_.payloadId].prevDigestsHash = prevDigestsHash;
         emit QueryRequested(params_);
     }
 
@@ -114,6 +137,41 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
                 params_.appGateway
             )
         );
+    }
+
+    function _getPreviousDigestsHash(
+        uint40 requestCount_,
+        uint40 batchCount_
+    ) internal view returns (bytes32) {
+        RequestParams memory r = requestParams[requestCount_];
+
+        // If this is the first batch of the request, return 0 bytes
+        if (batchCount_ == r.payloadParamsArray[0].batchCount) {
+            return bytes32(0);
+        }
+
+        PayloadParams[] memory previousPayloads = _getBatch(requestCount_, batchCount_ - 1);
+        bytes32 prevDigestsHash = bytes32(0);
+
+        for (uint40 i = 0; i < previousPayloads.length; i++) {
+            PayloadParams memory p = payloads[previousPayloads[i].payloadId];
+            DigestParams memory digestParams = DigestParams(
+                p.finalizedTransmitter,
+                p.payloadId,
+                p.deadline,
+                p.callType,
+                p.writeFinality,
+                p.gasLimit,
+                p.value,
+                p.readAt,
+                p.payload,
+                p.target,
+                p.appGateway,
+                p.prevDigestsHash
+            );
+            prevDigestsHash = keccak256(abi.encodePacked(prevDigestsHash, getDigest(digestParams)));
+        }
+        return prevDigestsHash;
     }
 
     // ================== Helper functions ==================

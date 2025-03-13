@@ -70,7 +70,8 @@ abstract contract RequestHandler is WatcherPrecompileCore {
                 value: p.value,
                 readAt: p.readAt,
                 deadline: 0,
-                payload: p.payload
+                payload: p.payload,
+                finalizedTransmitter: address(0)
             });
 
             payloads[payloadId] = payloadParams;
@@ -136,23 +137,6 @@ abstract contract RequestHandler is WatcherPrecompileCore {
                 _query(payloadParamsArray[i]);
             }
         }
-    }
-
-    function _getBatch(
-        uint40 requestCount,
-        uint40 batchCount
-    ) internal view returns (PayloadParams[] memory) {
-        RequestParams memory r = requestParams[requestCount];
-        PayloadParams[] memory payloadParamsArray = new PayloadParams[](
-            r.payloadParamsArray.length
-        );
-
-        for (uint40 i = 0; i < r.payloadParamsArray.length; i++) {
-            if (r.payloadParamsArray[i].batchCount == batchCount) {
-                payloadParamsArray[i] = r.payloadParamsArray[i];
-            }
-        }
-        return payloadParamsArray;
     }
 
     function getCurrentRequestCount() external view returns (uint40) {

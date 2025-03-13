@@ -198,6 +198,7 @@ struct PayloadParams {
     uint256 readAt;
     uint256 deadline;
     bytes payload;
+    address finalizedTransmitter;
 }
 
 struct RequestParams {
