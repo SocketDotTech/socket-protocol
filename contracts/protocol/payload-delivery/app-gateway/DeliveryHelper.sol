@@ -21,213 +21,56 @@ contract DeliveryHelper is RequestAsync {
         _initializeOwner(owner_);
     }
 
+    function endTimeout(bytes32 requestId_) external onlyWatcherPrecompile {
+        IAuctionManager(_payloadRequestes[requestId_].auctionManager).endAuction(requestId_);
+    }
+
     function startRequestProcessing(
-        bytes32 asyncId_,
+        bytes32 requestId_,
         Bid memory winningBid_
-    ) external onlyAuctionManager(asyncId_) {
+    ) external onlyAuctionManager(requestId_) {
         if (winningBid_.transmitter == address(0)) revert InvalidTransmitter();
 
-        bool isRestarted = _payloadRequestes[asyncId_].winningBid.transmitter != address(0);
-        _payloadRequestes[asyncId_].winningBid = winningBid_;
-
-        if (!isRestarted) return _process(asyncId_, false);
-
-        // Re-finalize all payloads in the batch if a new transmitter is assigned
-        bytes32[] memory payloadIds = _payloadRequestes[asyncId_].lastRequestOfPayloads;
-        for (uint256 i = 0; i < payloadIds.length; i++) {
-            watcherPrecompile__().refinalize(
-                payloadIds[i],
-                FinalizeParams({
-                    payloadDetails: payloadIdToPayloadDetails[payloadIds[i]],
-                    asyncId: asyncId_,
-                    transmitter: winningBid_.transmitter
-                })
-            );
-        }
-    }
-
-    function callback(bytes memory asyncId_, bytes memory) external override onlyPromises {
-        bytes32 asyncId = abi.decode(asyncId_, (bytes32));
-        _process(asyncId, true);
-    }
-
-    function _process(bytes32 asyncId_, bool isCallback_) internal {
-        PayloadRequest storage payloadRequest = _payloadRequestes[asyncId_];
-        if (payloadRequest.isRequestCancelled) return;
-
-        // Check if there are remaining payloads to process
-        // Check if there are promises from last batch that need to be resolved
-        if (payloadRequest.lastRequestPromises.length > 0) {
-            // Check if all promises are resolved
-            for (uint256 i = 0; i < payloadRequest.lastRequestPromises.length; i++) {
-                if (payloadRequest.lastRequestPromises[i] == address(0)) continue;
-                if (!IPromise(payloadRequest.lastRequestPromises[i]).resolved()) {
-                    if (isCallback_) revert PromisesNotResolved();
-                }
-            }
-            // Clear promises array after all are resolved
-            if (isCallback_) {
-                delete payloadRequest.lastRequestPromises;
-            }
-        }
-
-        if (payloadRequest.totalPayloadsRemaining > 0) {
-            delete tempPayloadIds;
-
-            // Proceed with next payload only if all promises are resolved
-            _finalizeNextPayload(asyncId_);
-            payloadRequest.lastRequestOfPayloads = tempPayloadIds;
+        if (!isRestarted) {
+            watcherPrecompile__().executeRequest(requestId_, winningBid_.transmitter);
         } else {
-            _finishRequest(asyncId_, payloadRequest);
+            watcherPrecompile__().updateTransmitter(requestId_, winningBid_.transmitter);
         }
     }
 
-    function _finishRequest(bytes32 asyncId_, PayloadRequest storage payloadRequest_) internal {
+    function finishRequest(
+        bytes32 requestId_,
+        PayloadRequest storage payloadRequest_
+    ) external onlyWatcherPrecompile {
         IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
-            asyncId_,
+            requestId_,
             payloadRequest_.winningBid.transmitter,
             payloadRequest_.appGateway
         );
-        IAppGateway(payloadRequest_.appGateway).onRequestComplete(asyncId_, payloadRequest_);
+        IAppGateway(payloadRequest_.appGateway).onRequestComplete(requestId_, payloadRequest_);
     }
 
-    function _finalizeNextPayload(bytes32 asyncId_) internal {
-        PayloadRequest storage payloadRequest_ = _payloadRequestes[asyncId_];
-        uint256 currentIndex = payloadRequest_.currentPayloadIndex;
-        PayloadDetails[] storage payloads = payloadRequestDetails[asyncId_];
-
-        // Check for empty payloads or index out of bounds
-        if (payloads.length == 0 || currentIndex >= payloads.length) {
-            revert InvalidIndex();
+    /// @notice Cancels a request
+    /// @param requestId_ The ID of the request
+    function cancelRequest(bytes32 requestId_) external {
+        if (msg.sender != requests[requestId_].appGateway) {
+            revert OnlyAppGateway();
         }
 
-        // Deploy single promise for the next batch of operations
-        address batchPromise = IAddressResolver(addressResolver__).deployAsyncPromiseContract(
-            address(this)
-        );
-
-        isValidPromise[batchPromise] = true;
-        IPromise(batchPromise).then(this.callback.selector, abi.encode(asyncId_));
-
-        // Handle batch processing based on type
-        if (payloads[currentIndex].isParallel == Parallel.ON) {
-            _processParallelCalls(asyncId_, payloadRequest_, payloads, currentIndex, batchPromise);
+        if (requests[requestId_].winningBid.transmitter != address(0)) {
+            IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
+                requestId_,
+                requests[requestId_].winningBid.transmitter,
+                requests[requestId_].appGateway
+            );
         } else {
-            _processSequentialCall(
-                asyncId_,
-                payloadRequest_,
-                payloads,
-                currentIndex,
-                batchPromise,
-                payloads[currentIndex].callType == CallType.READ
-            );
-        }
-    }
-
-    function _executeWatcherCall(
-        bytes32 asyncId_,
-        PayloadDetails storage payloadDetails_,
-        PayloadRequest storage payloadRequest_,
-        address batchPromise_,
-        bool isRead_
-    ) internal returns (bytes32 payloadId, bytes32 digest) {
-        payloadDetails_.next[1] = batchPromise_;
-        if (isRead_) {
-            payloadId = watcherPrecompile__().query(
-                payloadDetails_.chainSlug,
-                payloadDetails_.target,
-                payloadDetails_.appGateway,
-                payloadDetails_.next,
-                payloadDetails_.payload,
-                payloadDetails_.readAt
-            );
-            digest = bytes32(0);
-        } else {
-            FinalizeParams memory finalizeParams = FinalizeParams({
-                payloadDetails: payloadDetails_,
-                asyncId: asyncId_,
-                transmitter: payloadRequest_.winningBid.transmitter
-            });
-            (payloadId, digest) = watcherPrecompile__().finalize(
-                payloadRequest_.appGateway,
-                finalizeParams
+            IFeesManager(addressResolver__.feesManager()).unblockFees(
+                requestId_,
+                requests[requestId_].appGateway
             );
         }
 
-        tempPayloadIds.push(payloadId);
-        payloadIdToRequestHash[payloadId] = asyncId_;
-        payloadIdToPayloadDetails[payloadId] = payloadDetails_;
-
-        emit PayloadAsyncRequested(asyncId_, payloadId, digest, payloadDetails_);
-    }
-
-    function _processParallelCalls(
-        bytes32 asyncId_,
-        PayloadRequest storage payloadRequest_,
-        PayloadDetails[] storage payloads_,
-        uint256 startIndex_,
-        address batchPromise_
-    ) internal {
-        // Validate input parameters
-        if (startIndex_ >= payloads_.length) revert InvalidIndex();
-
-        uint256 endIndex = startIndex_;
-        while (
-            endIndex + 1 < payloads_.length && payloads_[endIndex + 1].isParallel == Parallel.ON
-        ) {
-            endIndex++;
-        }
-
-        address[] memory promises = new address[](endIndex - startIndex_ + 1);
-        for (uint256 i = startIndex_; i <= endIndex; i++) {
-            promises[i - startIndex_] = payloads_[i].next[0];
-            if (payloads_[i].callType == CallType.READ) {
-                _executeWatcherCall(asyncId_, payloads_[i], payloadRequest_, batchPromise_, true);
-            } else {
-                _executeWatcherCall(asyncId_, payloads_[i], payloadRequest_, batchPromise_, false);
-            }
-        }
-
-        _updateRequestState(payloadRequest_, promises, endIndex - startIndex_ + 1, endIndex + 1);
-    }
-
-    function _processSequentialCall(
-        bytes32 asyncId_,
-        PayloadRequest storage payloadRequest_,
-        PayloadDetails[] storage payloads_,
-        uint256 currentIndex_,
-        address batchPromise_,
-        bool isRead_
-    ) internal {
-        // Validate input parameters
-        if (currentIndex_ >= payloads_.length) revert InvalidIndex();
-
-        address[] memory promises = new address[](1);
-        promises[0] = payloads_[currentIndex_].next[0];
-
-        _executeWatcherCall(
-            asyncId_,
-            payloads_[currentIndex_],
-            payloadRequest_,
-            batchPromise_,
-            isRead_
-        );
-        _updateRequestState(payloadRequest_, promises, 1, currentIndex_ + 1);
-    }
-
-    function _updateRequestState(
-        PayloadRequest storage batch_,
-        address[] memory promises_,
-        uint256 completedCount_,
-        uint256 nextIndex_
-    ) internal {
-        batch_.totalPayloadsRemaining -= completedCount_;
-
-        batch_.currentPayloadIndex = nextIndex_;
-        batch_.lastRequestPromises = promises_;
-    }
-
-    function handleRevert(bytes32 asyncId_, bytes32 payloadId_) external onlyPromises {
-        emit CallBackReverted(asyncId_, payloadId_);
+        watcherPrecompile__().cancelRequest(requestId_);
+        emit RequestCancelled(requestId_);
     }
 }

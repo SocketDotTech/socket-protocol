@@ -70,8 +70,4 @@ abstract contract DeliveryUtils is
         bidTimeout = newBidTimeout_;
         emit BidTimeoutUpdated(newBidTimeout_);
     }
-
-    function endTimeout(bytes32 asyncId_) external onlyWatcherPrecompile {
-        IAuctionManager(_payloadRequestes[asyncId_].auctionManager).endAuction(asyncId_);
-    }
 }
