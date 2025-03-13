@@ -217,4 +217,16 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
                 abi.encode(requestCount_, batchCount_, payloadCount_, p_.switchboard, p_.chainSlug)
             );
     }
+
+    function getBatches(uint40 requestCount_) external view returns (uint40[] memory) {
+        return requestBatchIds[requestCount_];
+    }
+
+    function getBatchPayloadIds(uint40 batchCount_) external view returns (bytes32[] memory) {
+        return batchPayloadIds[batchCount_];
+    }
+
+    function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory) {
+        return payloads[payloadId_];
+    }
 }

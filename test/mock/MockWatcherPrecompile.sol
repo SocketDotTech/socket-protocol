@@ -14,8 +14,6 @@ import "solady/utils/ERC1967Factory.sol";
 /// @notice Contract that handles payload verification, execution and app configurations
 contract MockWatcherPrecompile {
     uint256 public maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
-    /// @notice Counter for tracking query requests
-    uint256 public queryCounter;
     /// @notice Counter for tracking payload execution requests
     uint256 public payloadCounter;
     /// @notice Counter for tracking timeout requests
@@ -116,7 +114,6 @@ contract MockWatcherPrecompile {
 
     /// @notice Finalizes a payload request, requests the watcher to release the proofs to execute on chain
     /// @param params_ The finalization parameters
-    /// @return payloadId The unique identifier for the finalized request
     /// @return digest The digest of the payload parameters
     function finalize(
         PayloadParams memory params_,
@@ -139,7 +136,7 @@ contract MockWatcherPrecompile {
         address[] memory,
         bytes memory payload
     ) public returns (bytes32 payloadId) {
-        payloadId = bytes32(queryCounter++);
+        payloadId = bytes32(payloadCounter++);
         emit QueryRequested(chainSlug, targetAddress, payloadId, payload);
     }
 

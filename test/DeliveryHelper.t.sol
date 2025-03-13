@@ -36,6 +36,7 @@ contract DeliveryHelperTest is SetupTest {
     event FinalizeRequested(address transmitter, bytes32 digest, PayloadParams params);
     event QueryRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
 
+    //////////////////////////////////// Setup ////////////////////////////////////
     function setUpDeliveryHelper() internal {
         // core
         deployEVMxCore();
@@ -49,7 +50,8 @@ contract DeliveryHelperTest is SetupTest {
             FeesManager.initialize.selector,
             address(addressResolver),
             watcherEOA,
-            evmxSlug
+            evmxSlug,
+            FAST
         );
 
         vm.expectEmit(true, true, true, false);
@@ -65,8 +67,7 @@ contract DeliveryHelperTest is SetupTest {
             evmxSlug,
             auctionEndDelaySeconds,
             address(addressResolver),
-            owner,
-            version
+            owner
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(version);
@@ -105,7 +106,6 @@ contract DeliveryHelperTest is SetupTest {
         // chain core contracts
         arbConfig = deploySocket(arbChainSlug);
         optConfig = deploySocket(optChainSlug);
-
         connectDeliveryHelper();
     }
 
@@ -163,36 +163,10 @@ contract DeliveryHelperTest is SetupTest {
         bytes memory watcherSignature = _createWatcherSignature(
             abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
         );
-
         watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
     }
 
-    function setLimit(address appGateway_) internal {
-        UpdateLimitParams[] memory params = new UpdateLimitParams[](3);
-        params[0] = UpdateLimitParams({
-            limitType: QUERY,
-            appGateway: appGateway_,
-            maxLimit: 10000000000000000000000,
-            ratePerSecond: 10000000000000000000000
-        });
-        params[1] = UpdateLimitParams({
-            limitType: SCHEDULE,
-            appGateway: appGateway_,
-            maxLimit: 10000000000000000000000,
-            ratePerSecond: 10000000000000000000000
-        });
-        params[2] = UpdateLimitParams({
-            limitType: FINALIZE,
-            appGateway: appGateway_,
-            maxLimit: 10000000000000000000000,
-            ratePerSecond: 10000000000000000000000
-        });
-
-        hoax(watcherEOA);
-        watcherPrecompile.updateLimitParams(params);
-
-        skip(100);
-    }
+    //////////////////////////////////// Fees ////////////////////////////////////
 
     function depositFees(address appGateway_, Fees memory fees_) internal {
         SocketContracts memory socketConfig = getSocketConfig(fees_.feePoolChain);
@@ -208,20 +182,11 @@ contract DeliveryHelperTest is SetupTest {
             fees_.feePoolToken,
             fees_.amount
         );
+
         bytes32 digest = keccak256(
             abi.encode(address(feesManager), evmxSlug, signatureNonce, bytesInput)
         );
-
-        digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
-        (uint8 sigV, bytes32 sigR, bytes32 sigS) = vm.sign(watcherPrivateKey, digest);
-        bytes memory sig = new bytes(65);
-        bytes1 v32 = bytes1(sigV);
-
-        assembly {
-            mstore(add(sig, 96), v32)
-            mstore(add(sig, 32), sigR)
-            mstore(add(sig, 64), sigS)
-        }
+        bytes memory sig = _createSignature(digest, watcherPrivateKey);
         feesManager.incrementFeesDeposited(
             fees_.feePoolChain,
             appGateway_,
@@ -232,10 +197,134 @@ contract DeliveryHelperTest is SetupTest {
         );
     }
 
-    //// BATCH DEPLOY AND EXECUTE HELPERS ////
+    ////////////////////////////////// Deployment helpers ////////////////////////////////////
+    function _deploy(
+        uint32 chainSlug_,
+        IAppGateway appGateway_,
+        bytes32[] memory contractIds_
+    ) internal returns (uint40 requestCount) {
+        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
+        requestCount = watcherPrecompile.nextRequestCount();
+        appGateway_.deployContracts(chainSlug_);
+        bidAndEndAuction(requestCount);
+        setupGatewayAndPlugs(chainSlug_, appGateway_, contractIds_);
+    }
+
+    function setupGatewayAndPlugs(
+        uint32 chainSlug_,
+        IAppGateway appGateway_,
+        bytes32[] memory contractIds_
+    ) internal {
+        AppGatewayConfig[] memory gateways = new AppGatewayConfig[](contractIds_.length);
+
+        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
+        for (uint i = 0; i < contractIds_.length; i++) {
+            address plug = appGateway_.getOnChainAddress(contractIds_[i], chainSlug_);
+
+            gateways[i] = AppGatewayConfig({
+                plug: plug,
+                chainSlug: chainSlug_,
+                appGateway: address(appGateway_),
+                switchboard: address(socketConfig.switchboard)
+            });
+        }
+
+        bytes memory watcherSignature = _createWatcherSignature(
+            abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
+        );
+        watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
+    }
+
+    //////////////////////////////////// Auction ////////////////////////////////////
+
+    function placeBid(bytes32 requestCount) internal {
+        // todo:
+        // vm.expectEmit(false, false, false, false);
+        // emit BidPlaced(
+        //     requestCount,
+        //     Bid({fee: bidAmount, transmitter: transmitterEOA, extraData: ""})
+        // );
+
+        vm.prank(transmitterEOA);
+        bytes memory transmitterSignature = _createSignature(
+            keccak256(abi.encode(address(auctionManager), evmxSlug, requestCount, bidAmount, "")),
+            transmitterPrivateKey
+        );
+
+        auctionManager.bid(requestCount, bidAmount, transmitterSignature, "");
+    }
+
+    function endAuction() internal {
+        // todo:
+        // vm.expectEmit(true, false, false, true);
+        // emit AuctionEnded(
+        //     requestCount,
+        //     Bid({fee: bidAmount, transmitter: transmitterEOA, extraData: ""})
+        // );
+
+        if (auctionEndDelaySeconds == 0) return;
+        bytes32 timeoutId = _encodeId(evmxSlug, address(watcherPrecompile), timeoutIdCounter++);
+
+        bytes memory watcherSignature = _createWatcherSignature(
+            abi.encode(IWatcherPrecompile.resolveTimeout.selector, timeoutId)
+        );
+        watcherPrecompile.resolveTimeout(timeoutId, signatureNonce++, watcherSignature);
+    }
+
+    function bidAndEndAuction(uint40 requestCount) internal {
+        placeBid(requestCount);
+        endAuction();
+    }
+
+    //////////////////////////////////// Utils ///////////////////////////////////
+    function _encodeId(
+        uint32 chainSlug_,
+        address sbOrWatcher_,
+        uint256 counter_
+    ) internal pure returns (bytes32) {
+        return
+            bytes32(
+                (uint256(chainSlug_) << 224) | (uint256(uint160(sbOrWatcher_)) << 64) | counter_
+            );
+    }
+
+    function getOnChainAndForwarderAddresses(
+        uint32 chainSlug_,
+        bytes32 contractId_,
+        IAppGateway appGateway_
+    ) internal view returns (address, address) {
+        address app = appGateway_.getOnChainAddress(contractId_, chainSlug_);
+        address forwarder = appGateway_.forwarderAddresses(contractId_, chainSlug_);
+        return (app, forwarder);
+    }
+
     function getContractFactoryPlug(uint32 chainSlug_) internal view returns (address) {
         return address(getSocketConfig(chainSlug_).contractFactoryPlug);
     }
+
+    //////////////////////////////////// Helpers ////////////////////////////////////
+    function predictAsyncPromiseAddress(
+        address invoker_,
+        address forwarder_
+    ) internal returns (address) {
+        bytes memory constructorArgs = abi.encode(invoker_, forwarder_, address(addressResolver));
+        bytes memory combinedBytecode = abi.encodePacked(asyncPromiseBytecode, constructorArgs);
+
+        bytes32 salt = keccak256(abi.encodePacked(constructorArgs, asyncPromiseCounterLocal++));
+
+        bytes32 hash = keccak256(
+            abi.encodePacked(
+                bytes1(0xff),
+                address(addressResolver),
+                salt,
+                keccak256(combinedBytecode)
+            )
+        );
+
+        return address(uint160(uint256(hash)));
+    }
+
+    //////////////////////////////////// Validators ////////////////////////////////////
 
     function checkPayloadRequestAndDetails(
         PayloadSubmitParams[] memory payloadSubmitParams,
@@ -284,383 +373,5 @@ contract DeliveryHelperTest is SetupTest {
             "WinningBid transmitter mismatch"
         );
         assertEq(payloadRequest.isRequestCancelled, false, "IsRequestCancelled mismatch");
-    }
-
-    function bidAndEndAuction(bytes32 requestCount) internal {
-        placeBid(requestCount);
-        endAuction();
-    }
-
-    function bidAndExecute(bytes32[] memory payloadIds, uint40 requestCount_) internal {
-        bidAndEndAuction(requestCount_);
-        for (uint i = 0; i < payloadIds.length; i++) {
-            finalizeAndExecute(payloadIds[i]);
-        }
-    }
-
-    function bidAndExecuteParallel(bytes32[] memory payloadIds, uint40 requestCount_) internal {
-        bidAndEndAuction(requestCount_);
-
-        bytes[] memory returnData = new bytes[](payloadIds.length);
-        for (uint i = 0; i < payloadIds.length; i++) {
-            PayloadSubmitParams memory payloadSubmitParams = deliveryHelper.getPayloadSubmitParams(
-                payloadIds[i]
-            );
-            returnData[i] = finalizeAndRelay(payloadIds[i], payloadSubmitParams);
-        }
-
-        resolvePromises(payloadIds, returnData);
-    }
-
-    function _deploy(
-        bytes32[] memory contractIds,
-        uint32 chainSlug_,
-        uint256 totalPayloads,
-        IAppGateway appGateway_
-    ) internal returns (bytes32 requestCount) {
-        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
-
-        requestCount = getNextAsyncId();
-        bytes32[] memory payloadIds = getWritePayloadIds(
-            chainSlug_,
-            address(socketConfig.switchboard),
-            totalPayloads
-        );
-
-        appGateway_.deployContracts(chainSlug_);
-        bidAndExecute(payloadIds, requestCount);
-        setupGatewayAndPlugs(chainSlug_, appGateway_, contractIds);
-    }
-
-    function setupGatewayAndPlugs(
-        uint32 chainSlug_,
-        IAppGateway appGateway_,
-        bytes32[] memory contractIds
-    ) internal {
-        AppGatewayConfig[] memory gateways = new AppGatewayConfig[](contractIds.length);
-
-        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
-        for (uint i = 0; i < contractIds.length; i++) {
-            address plug = appGateway_.getOnChainAddress(contractIds[i], chainSlug_);
-
-            gateways[i] = AppGatewayConfig({
-                plug: plug,
-                chainSlug: chainSlug_,
-                appGateway: address(appGateway_),
-                switchboard: address(socketConfig.switchboard)
-            });
-        }
-
-        bytes memory watcherSignature = _createWatcherSignature(
-            abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
-        );
-        watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
-    }
-
-    function _executeReadRequestSingleChain() internal returns (bytes32 requestCount) {
-        requestCount = getNextAsyncId();
-    }
-
-    function _executeReadRequestMultiChain() internal returns (bytes32 requestCount) {
-        requestCount = getNextAsyncId();
-    }
-
-    function _executeWriteRequestSingleChain(
-        uint32 chainSlug_,
-        uint256 totalPayloads
-    ) internal returns (bytes32 requestCount) {
-        requestCount = getNextAsyncId();
-
-        bytes32[] memory payloadIds = getWritePayloadIds(
-            chainSlug_,
-            address(getSocketConfig(chainSlug_).switchboard),
-            totalPayloads
-        );
-        bidAndExecute(payloadIds, requestCount);
-    }
-
-    function _executeWriteRequestMultiChain(
-        uint32[] memory chainSlugs_
-    ) internal returns (bytes32 requestCount) {
-        requestCount = getNextAsyncId();
-        bidAndEndAuction(requestCount);
-        for (uint i = 0; i < chainSlugs_.length; i++) {
-            bytes32 payloadId = getWritePayloadId(
-                chainSlugs_[i],
-                address(getSocketConfig(chainSlugs_[i]).switchboard),
-                payloadIdCounter++
-            );
-            finalizeAndExecute(payloadId);
-        }
-    }
-
-    function createDeployPayloadDetail(
-        uint32 chainSlug_,
-        address appDeployer_,
-        bytes memory bytecode_
-    ) internal returns (PayloadSubmitParams memory payloadSubmitParams) {
-        bytes32 salt = keccak256(abi.encode(appDeployer_, chainSlug_, deployCounter++));
-        bytes memory payload = abi.encodeWithSelector(
-            IContractFactoryPlug.deployContract.selector,
-            true,
-            salt,
-            address(appDeployer_),
-            address(0),
-            bytecode_,
-            ""
-        );
-
-        address asyncPromise = predictAsyncPromiseAddress(
-            address(deliveryHelper),
-            address(deliveryHelper)
-        );
-        address[] memory next = new address[](2);
-        next[0] = asyncPromise;
-
-        payloadSubmitParams = createPayloadSubmitParams(
-            chainSlug_,
-            address(appDeployer_),
-            address(0),
-            payload,
-            CallType.DEPLOY,
-            1_000_000_0,
-            next
-        );
-
-        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
-        payloadDetails.target = address(socketConfig.contractFactoryPlug);
-        payloadDetails.payload = abi.encode(DEPLOY, payloadDetails.payload);
-    }
-
-    function createPayloadSubmitParams(
-        uint32 chainSlug_,
-        address appGateway_,
-        address target_,
-        bytes memory payload_,
-        CallType callType_,
-        uint256 executionGasLimit_,
-        address[] memory next_
-    ) internal pure returns (PayloadSubmitParams memory) {
-        return
-            PayloadSubmitParams({
-                appGateway: appGateway_,
-                chainSlug: chainSlug_,
-                target: target_,
-                payload: payload_,
-                callType: callType_,
-                writeFinality: WriteFinality.LOW,
-                readAt: 0,
-                executionGasLimit: executionGasLimit_,
-                value: 0,
-                next: next_,
-                isParallel: Parallel.ON
-            });
-    }
-
-    //// AUCTION RELATED FUNCTIONS ////
-    function placeBid(bytes32 requestCount) internal {
-        // todo:
-        // vm.expectEmit(false, false, false, false);
-        // emit BidPlaced(
-        //     requestCount,
-        //     Bid({fee: bidAmount, transmitter: transmitterEOA, extraData: ""})
-        // );
-
-        vm.prank(transmitterEOA);
-        bytes memory transmitterSignature = _createSignature(
-            keccak256(abi.encode(address(auctionManager), evmxSlug, requestCount, bidAmount, "")),
-            transmitterPrivateKey
-        );
-
-        auctionManager.bid(requestCount, bidAmount, transmitterSignature, "");
-    }
-
-    function endAuction() internal {
-        // todo:
-        // vm.expectEmit(true, false, false, true);
-        // emit AuctionEnded(
-        //     requestCount,
-        //     Bid({fee: bidAmount, transmitter: transmitterEOA, extraData: ""})
-        // );
-
-        if (auctionEndDelaySeconds == 0) return;
-        bytes32 timeoutId = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
-
-        bytes memory watcherSignature = _createWatcherSignature(
-            abi.encode(IWatcherPrecompile.resolveTimeout.selector, timeoutId)
-        );
-        watcherPrecompile.resolveTimeout(timeoutId, signatureNonce++, watcherSignature);
-    }
-
-    function finalize(
-        bytes32 payloadId,
-        PayloadParams memory payloadParams
-    ) internal view returns (bytes memory, bytes32) {
-        SocketContracts memory socketConfig = getSocketConfig(payloadParams.chainSlug);
-        (, , , , , , uint256 deadline, , , , , ) = watcherPrecompile.asyncRequests(payloadId);
-
-        DigestParams memory digestParams_ = DigestParams(
-            payloadDetails.appGateway,
-            transmitterEOA,
-            payloadDetails.target,
-            payloadId,
-            payloadDetails.value,
-            payloadDetails.executionGasLimit,
-            deadline,
-            payloadDetails.payload
-        );
-        bytes32 digest = watcherPrecompile.getDigest(digestParams_);
-
-        bytes32 sigDigest = keccak256(abi.encode(address(socketConfig.switchboard), digest));
-        bytes memory proof = _createSignature(sigDigest, watcherPrivateKey);
-        return (proof, digest);
-    }
-
-    function createWithdrawPayloadDetail(
-        uint32 chainSlug_,
-        address target_,
-        address appGateway_,
-        address forwarder_,
-        bytes memory payload_
-    ) internal returns (PayloadSubmitParams memory) {
-        return
-            createWritePayloadSubmitParams(
-                chainSlug_,
-                target_,
-                appGateway_,
-                forwarder_,
-                WITHDRAW,
-                payload_
-            );
-    }
-
-    function createExecutePayloadDetail(
-        uint32 chainSlug_,
-        address target_,
-        address appGateway_,
-        address forwarder_,
-        bytes memory payload_
-    ) internal returns (PayloadSubmitParams memory) {
-        return
-            createWritePayloadSubmitParams(
-                chainSlug_,
-                target_,
-                appGateway_,
-                forwarder_,
-                FORWARD_CALL,
-                payload_
-            );
-    }
-
-    function createWritePayloadDetail(
-        uint32 chainSlug_,
-        address target_,
-        address appGateway_,
-        address forwarder_,
-        bytes32,
-        bytes memory payload_
-    ) internal returns (PayloadSubmitParams memory payloadSubmitParams) {
-        address asyncPromise = predictAsyncPromiseAddress(appGateway_, forwarder_);
-        address[] memory next = new address[](2);
-        next[0] = asyncPromise;
-
-        payloadSubmitParams = createPayloadSubmitParams(
-            chainSlug_,
-            appGateway_,
-            target_,
-            payload_,
-            CallType.WRITE,
-            CONFIGURE_GAS_LIMIT,
-            next
-        );
-
-        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
-        payloadDetails.target = address(socketConfig.contractFactoryPlug);
-    }
-
-    function createReadPayloadDetail(
-        uint32 chainSlug_,
-        address target_,
-        address appGateway_,
-        address forwarder_,
-        bytes memory payload_
-    ) internal returns (PayloadSubmitParams memory) {
-        address asyncPromise = predictAsyncPromiseAddress(appGateway_, forwarder_);
-        address[] memory next = new address[](2);
-        next[0] = asyncPromise;
-
-        return
-            createPayloadSubmitParams(
-                chainSlug_,
-                appGateway_,
-                target_,
-                payload_,
-                CallType.READ,
-                CONFIGURE_GAS_LIMIT,
-                next
-            );
-    }
-
-    function finalizeQuery(bytes32 payloadId, bytes memory returnData_) internal {
-        resolvePromise(payloadId, returnData_);
-    }
-
-    function finalizeAndExecute(bytes32 payloadId) internal {
-        PayloadSubmitParams memory payloadSubmitParams = deliveryHelper.getPayloadSubmitParams(
-            payloadId
-        );
-        bytes memory returnData = finalizeAndRelay(payloadId, payloadSubmitParams);
-        resolvePromise(payloadId, returnData);
-    }
-
-    function finalizeAndRelay(
-        bytes32 payloadId_,
-        PayloadSubmitParams memory payloadSubmitParams
-    ) internal returns (bytes memory returnData) {
-        (bytes memory watcherSig, bytes32 digest) = finalize(payloadId_, payloadSubmitParams);
-
-        returnData = relayTx(
-            payloadSubmitParams.chainSlug,
-            payloadId_,
-            digest,
-            payloadSubmitParams,
-            watcherSig
-        );
-    }
-
-    function predictAsyncPromiseAddress(
-        address invoker_,
-        address forwarder_
-    ) internal returns (address) {
-        bytes memory constructorArgs = abi.encode(invoker_, forwarder_, address(addressResolver));
-        bytes memory combinedBytecode = abi.encodePacked(asyncPromiseBytecode, constructorArgs);
-
-        bytes32 salt = keccak256(abi.encodePacked(constructorArgs, asyncPromiseCounterLocal++));
-
-        bytes32 hash = keccak256(
-            abi.encodePacked(
-                bytes1(0xff),
-                address(addressResolver),
-                salt,
-                keccak256(combinedBytecode)
-            )
-        );
-
-        return address(uint160(uint256(hash)));
-    }
-
-    function getNextAsyncId() public returns (bytes32) {
-        payloadIdCounter++;
-        return bytes32((uint256(uint160(address(deliveryHelper))) << 64) | asyncCounterTest++);
-    }
-
-    function getOnChainAndForwarderAddresses(
-        uint32 chainSlug_,
-        bytes32 contractId_,
-        IAppGateway appGateway_
-    ) internal view returns (address, address) {
-        address app = appGateway_.getOnChainAddress(contractId_, chainSlug_);
-        address forwarder = appGateway_.forwarderAddresses(contractId_, chainSlug_);
-        return (app, forwarder);
     }
 }
