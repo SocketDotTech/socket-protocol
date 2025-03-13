@@ -33,7 +33,7 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
         address appGateway_,
         bytes calldata payload_,
         uint256 delayInSeconds_
-    ) internal returns(bytes32 timeoutId) {
+    ) internal returns (bytes32 timeoutId) {
         if (delayInSeconds_ > maxTimeoutDelayInSeconds) revert TimeoutDelayTooLarge();
 
         // from auction manager
@@ -156,14 +156,7 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
     ) internal pure returns (bytes32) {
         return
             keccak256(
-                abi.encode(
-                    requestCount_,
-                    batchCount_,
-                    payloadCount_,
-                    p_.prevDigestsHash,
-                    p_.switchboard,
-                    p_.chainSlug
-                )
+                abi.encode(requestCount_, batchCount_, payloadCount_, p_.switchboard, p_.chainSlug)
             );
     }
 }
