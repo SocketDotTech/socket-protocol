@@ -3,10 +3,11 @@ pragma solidity ^0.8.21;
 
 import "./RequestHandler.sol";
 import "../../interfaces/IMiddleware.sol";
-
+import "./DumpDecoder.sol";
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
 contract WatcherPrecompile is RequestHandler {
+    using DumpDecoder for bytes32;
     error RequestAlreadyCancelled();
 
     constructor() {
@@ -158,12 +159,12 @@ contract WatcherPrecompile is RequestHandler {
         for (uint256 i = 0; i < resolvedPromises_.length; i++) {
             // Get the array of promise addresses for this payload
             PayloadParams memory payloadParams = payloads[resolvedPromises_[i].payloadId];
-            address asyncPromise = payloadParams.asyncPromise;
+            address asyncPromise = payloadParams.dump.getAsyncPromise();
             if (asyncPromise == address(0)) continue;
 
             // Resolve each promise with its corresponding return data
             bool success = IPromise(asyncPromise).markResolved(
-                payloadParams.requestCount,
+                payloadParams.dump.getRequestCount(),
                 resolvedPromises_[i].payloadId,
                 resolvedPromises_[i].returnData
             );
@@ -173,11 +174,15 @@ contract WatcherPrecompile is RequestHandler {
                 continue;
             }
 
-            RequestParams storage requestParams_ = requestParams[payloadParams.requestCount];
+            RequestParams storage requestParams_ = requestParams[
+                payloadParams.dump.getRequestCount()
+            ];
             requestParams_.currentBatchPayloadsLeft--;
 
             if (requestParams_.currentBatchPayloadsLeft == 0) {
-                IMiddleware(requestParams_.middleware).finishRequest(payloadParams.requestCount);
+                IMiddleware(requestParams_.middleware).finishRequest(
+                    payloadParams.dump.getRequestCount()
+                );
             }
             emit PromiseResolved(resolvedPromises_[i].payloadId, success, asyncPromise);
         }
@@ -197,18 +202,18 @@ contract WatcherPrecompile is RequestHandler {
         );
 
         PayloadParams storage payloadParams = payloads[payloadId_];
-        RequestParams storage requestParams = requestParams[payloadParams.requestCount];
+        RequestParams storage requestParams = requestParams[payloadParams.dump.getRequestCount()];
         requestParams.isRequestCancelled = true;
 
         if (isRevertingOnchain_)
-            IPromise(payloadParams.asyncPromise).markOnchainRevert(
-                payloadParams.requestCount,
+            IPromise(payloadParams.dump.getAsyncPromise()).markOnchainRevert(
+                payloadParams.dump.getRequestCount(),
                 payloadId_
             );
 
         // assign fees after expiry time
         IFeesManager(payloadParams.appGateway).unblockAndAssignFees(
-            payloadParams.requestCount,
+            payloadParams.dump.getRequestCount(),
             requestParams.transmitter,
             payloadParams.appGateway
         );

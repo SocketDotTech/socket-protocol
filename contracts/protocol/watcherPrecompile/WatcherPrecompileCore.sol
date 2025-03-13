@@ -3,10 +3,11 @@ pragma solidity ^0.8.21;
 
 import "./WatcherPrecompileConfig.sol";
 import {RequestParams, PayloadSubmitParams, PayloadParams, CallType} from "../utils/common/Structs.sol";
-
+import "./DumpDecoder.sol";
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
 abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
+    using DumpDecoder for bytes32;
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
     /// @notice Error thrown when an invalid app gateway reaches a plug
@@ -58,7 +59,7 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
     ) internal returns (bytes32 digest) {
         // Verify that the app gateway is properly configured for this chain and target
         _verifyConnections(
-            params_.chainSlug,
+            params_.dump.getChainSlug(),
             params_.target,
             params_.appGateway,
             params_.switchboard
@@ -68,7 +69,10 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
         payloads[params_.payloadId].deadline = deadline;
         payloads[params_.payloadId].finalizedTransmitter = transmitter_;
 
-        bytes32 prevDigestsHash = _getPreviousDigestsHash(params_.requestCount, params_.batchCount);
+        bytes32 prevDigestsHash = _getPreviousDigestsHash(
+            params_.dump.getRequestCount(),
+            params_.dump.getBatchCount()
+        );
         payloads[params_.payloadId].prevDigestsHash = prevDigestsHash;
 
         // Construct parameters for digest calculation
@@ -76,8 +80,8 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
             transmitter_,
             params_.payloadId,
             deadline,
-            params_.callType,
-            params_.writeFinality,
+            params_.dump.getCallType(),
+            params_.dump.getWriteFinality(),
             params_.gasLimit,
             params_.value,
             params_.readAt,
@@ -102,7 +106,7 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
         );
 
         for (uint40 i = 0; i < r.payloadParamsArray.length; i++) {
-            if (r.payloadParamsArray[i].batchCount == batchCount) {
+            if (r.payloadParamsArray[i].dump.getBatchCount() == batchCount) {
                 payloadParamsArray[i] = r.payloadParamsArray[i];
             }
         }
@@ -113,7 +117,10 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
     /// @notice Creates a new query request
     /// @param params_ The payload parameters
     function _query(PayloadParams memory params_) internal {
-        bytes32 prevDigestsHash = _getPreviousDigestsHash(params_.requestCount, params_.batchCount);
+        bytes32 prevDigestsHash = _getPreviousDigestsHash(
+            params_.dump.getRequestCount(),
+            params_.dump.getBatchCount()
+        );
         payloads[params_.payloadId].prevDigestsHash = prevDigestsHash;
         emit QueryRequested(params_);
     }
@@ -146,7 +153,7 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
         RequestParams memory r = requestParams[requestCount_];
 
         // If this is the first batch of the request, return 0 bytes
-        if (batchCount_ == r.payloadParamsArray[0].batchCount) {
+        if (batchCount_ == r.payloadParamsArray[0].dump.getBatchCount()) {
             return bytes32(0);
         }
 
@@ -159,8 +166,8 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
                 p.finalizedTransmitter,
                 p.payloadId,
                 p.deadline,
-                p.callType,
-                p.writeFinality,
+                p.dump.getCallType(),
+                p.dump.getWriteFinality(),
                 p.gasLimit,
                 p.value,
                 p.readAt,
