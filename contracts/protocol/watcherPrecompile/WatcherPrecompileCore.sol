@@ -8,7 +8,8 @@ import {AccessControl} from "../utils/AccessControl.sol";
 import "solady/utils/Initializable.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {IWatcherPrecompile} from "../../interfaces/IWatcherPrecompile.sol";
-import {console} from "forge-std/console.sol";
+import "./DumpDecoder.sol";
+
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
 abstract contract WatcherPrecompileCore is
@@ -18,6 +19,8 @@ abstract contract WatcherPrecompileCore is
     AccessControl,
     AddressResolverUtil
 {
+    using DumpDecoder for bytes32;
+
     // ================== Timeout functions ==================
 
     /// @notice Sets a timeout for a payload execution on app gateway
@@ -52,7 +55,7 @@ abstract contract WatcherPrecompileCore is
     ) internal returns (bytes32 digest) {
         // Verify that the app gateway is properly configured for this chain and target
         watcherPrecompileConfig__.verifyConnections(
-            params_.chainSlug,
+            params_.dump.getChainSlug(),
             params_.target,
             params_.appGateway,
             params_.switchboard
@@ -62,9 +65,10 @@ abstract contract WatcherPrecompileCore is
         payloads[params_.payloadId].deadline = deadline;
         payloads[params_.payloadId].finalizedTransmitter = transmitter_;
 
-        console.log("deadline", deadline);
-
-        bytes32 prevDigestsHash = _getPreviousDigestsHash(params_.requestCount, params_.batchCount);
+        bytes32 prevDigestsHash = _getPreviousDigestsHash(
+            params_.dump.getRequestCount(),
+            params_.dump.getBatchCount()
+        );
         payloads[params_.payloadId].prevDigestsHash = prevDigestsHash;
 
         // Construct parameters for digest calculation
@@ -72,8 +76,8 @@ abstract contract WatcherPrecompileCore is
             transmitter_,
             params_.payloadId,
             deadline,
-            params_.callType,
-            params_.writeFinality,
+            params_.dump.getCallType(),
+            params_.dump.getWriteFinality(),
             params_.gasLimit,
             params_.value,
             params_.readAt,
@@ -98,7 +102,7 @@ abstract contract WatcherPrecompileCore is
         );
 
         for (uint40 i = 0; i < r.payloadParamsArray.length; i++) {
-            if (r.payloadParamsArray[i].batchCount == batchCount) {
+            if (r.payloadParamsArray[i].dump.getBatchCount() == batchCount) {
                 payloadParamsArray[i] = r.payloadParamsArray[i];
             }
         }
@@ -109,7 +113,10 @@ abstract contract WatcherPrecompileCore is
     /// @notice Creates a new query request
     /// @param params_ The payload parameters
     function _query(PayloadParams memory params_) internal {
-        bytes32 prevDigestsHash = _getPreviousDigestsHash(params_.requestCount, params_.batchCount);
+        bytes32 prevDigestsHash = _getPreviousDigestsHash(
+            params_.dump.getRequestCount(),
+            params_.dump.getBatchCount()
+        );
         payloads[params_.payloadId].prevDigestsHash = prevDigestsHash;
         emit QueryRequested(params_);
     }
@@ -143,7 +150,7 @@ abstract contract WatcherPrecompileCore is
         RequestParams memory r = requestParams[requestCount_];
 
         // If this is the first batch of the request, return 0 bytes
-        if (batchCount_ == r.payloadParamsArray[0].batchCount) {
+        if (batchCount_ == r.payloadParamsArray[0].dump.getBatchCount()) {
             return bytes32(0);
         }
 
@@ -156,8 +163,8 @@ abstract contract WatcherPrecompileCore is
                 p.finalizedTransmitter,
                 p.payloadId,
                 p.deadline,
-                p.callType,
-                p.writeFinality,
+                p.dump.getCallType(),
+                p.dump.getWriteFinality(),
                 p.gasLimit,
                 p.value,
                 p.readAt,

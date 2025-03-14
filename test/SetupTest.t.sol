@@ -7,6 +7,7 @@ import "../contracts/protocol/utils/common/Constants.sol";
 import "../contracts/protocol/watcherPrecompile/WatcherPrecompile.sol";
 import "../contracts/protocol/watcherPrecompile/WatcherPrecompileConfig.sol";
 import "../contracts/protocol/watcherPrecompile/WatcherPrecompileLimits.sol";
+import "../contracts/protocol/watcherPrecompile/DumpDecoder.sol";
 import "../contracts/interfaces/IForwarder.sol";
 import "../contracts/protocol/utils/common/AccessRoles.sol";
 import {Socket} from "../contracts/protocol/socket/Socket.sol";
@@ -22,6 +23,7 @@ import {ResolvedPromises} from "../contracts/protocol/utils/common/Structs.sol";
 import "solady/utils/ERC1967Factory.sol";
 
 contract SetupTest is Test {
+    using DumpDecoder for bytes32;
     uint public c = 1;
     address owner = address(uint160(c++));
 
@@ -197,8 +199,7 @@ contract SetupTest is Test {
 
         for (uint i = 0; i < payloadIds.length; i++) {
             PayloadParams memory payloadParams = watcherPrecompile.getPayloadParams(payloadIds[i]);
-            console.log("payloadParams.callType: %s", uint256(payloadParams.callType));
-            if (payloadParams.callType != CallType.READ) {
+            if (payloadParams.dump.getCallType() != CallType.READ) {
                 return false;
             }
         }
@@ -215,7 +216,7 @@ contract SetupTest is Test {
 
         for (uint i = 0; i < payloadIds.length; i++) {
             PayloadParams memory payloadParams = watcherPrecompile.getPayloadParams(payloadIds[i]);
-            if (payloadParams.callType == CallType.READ) {
+            if (payloadParams.dump.getCallType() == CallType.READ) {
                 _resolvePromise(payloadParams.payloadId, readReturnData_[readCount_++]);
             } else {
                 bytes memory returnData = _uploadProofAndExecute(payloadParams);
@@ -259,13 +260,13 @@ contract SetupTest is Test {
     function _generateWatcherProof(
         PayloadParams memory params_
     ) internal view returns (bytes memory, bytes32) {
-        SocketContracts memory socketConfig = getSocketConfig(params_.chainSlug);
+        SocketContracts memory socketConfig = getSocketConfig(params_.dump.getChainSlug());
         DigestParams memory digestParams_ = DigestParams(
             transmitterEOA,
             params_.payloadId,
             params_.deadline,
-            params_.callType,
-            params_.writeFinality,
+            params_.dump.getCallType(),
+            params_.dump.getWriteFinality(),
             params_.gasLimit,
             params_.value,
             params_.readAt,
@@ -307,7 +308,7 @@ contract SetupTest is Test {
             bytes memory transmitterSig
         )
     {
-        SocketContracts memory socketConfig = getSocketConfig(payloadParams.chainSlug);
+        SocketContracts memory socketConfig = getSocketConfig(payloadParams.dump.getChainSlug());
         bytes32 transmitterDigest = keccak256(
             abi.encode(address(socketConfig.socket), payloadParams.payloadId)
         );
@@ -315,15 +316,15 @@ contract SetupTest is Test {
 
         params = ExecuteParams({
             deadline: payloadParams.deadline,
-            callType: payloadParams.callType,
-            writeFinality: payloadParams.writeFinality,
+            callType: payloadParams.dump.getCallType(),
+            writeFinality: payloadParams.dump.getWriteFinality(),
             gasLimit: payloadParams.gasLimit,
             readAt: payloadParams.readAt,
             payload: payloadParams.payload,
             target: payloadParams.target,
-            requestCount: payloadParams.requestCount,
-            batchCount: payloadParams.batchCount,
-            payloadCount: payloadParams.payloadCount,
+            requestCount: payloadParams.dump.getRequestCount(),
+            batchCount: payloadParams.dump.getBatchCount(),
+            payloadCount: payloadParams.dump.getPayloadCount(),
             prevDigestsHash: payloadParams.prevDigestsHash,
             switchboard: payloadParams.switchboard
         });
