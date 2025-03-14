@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {PayloadDetails, AsyncRequest, FinalizeParams, WriteFinality, PayloadDigestParams, AppGatewayConfig, PlugConfig, ResolvedPromises} from "../protocol/utils/common/Structs.sol";
+import {DigestParams, AppGatewayConfig, ResolvedPromises} from "../protocol/utils/common/Structs.sol";
 
 /// @title IWatcherPrecompile
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
@@ -45,7 +45,8 @@ interface IWatcherPrecompile {
     /// @return digest The digest of the payload parameters
     function finalize(
         address originAppGateway_,
-        FinalizeParams memory params_
+        address transmitter_,
+        bytes32 requestId_
     ) external returns (bytes32 payloadId, bytes32 digest);
 
     /// @notice Creates a new query request
@@ -106,7 +107,7 @@ interface IWatcherPrecompile {
     /// @notice Calculates the Digest hash for payload parameters
     /// @param params_ The payload parameters used to calculate the digest
     /// @return digest The calculated digest hash
-    function getDigest(PayloadDigestParams memory params_) external pure returns (bytes32 digest);
+    function getDigest(DigestParams memory params_) external pure returns (bytes32 digest);
 
     function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external;
 

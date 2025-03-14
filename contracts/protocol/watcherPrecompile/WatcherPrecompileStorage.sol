@@ -8,7 +8,7 @@ import {IPromise} from "../../interfaces/IPromise.sol";
 
 import {QUERY, FINALIZE, SCHEDULE} from "../utils/common/Constants.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
-import {ResolvedPromises, AppGatewayConfig, LimitParams, WriteFinality, UpdateLimitParams, PlugConfig, PayloadDigestParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromChainParams} from "../utils/common/Structs.sol";
+import {ResolvedPromises, AppGatewayConfig, LimitParams, WriteFinality, UpdateLimitParams, PlugConfig, DigestParams, TimeoutRequest, CallFromChainParams, QueuePayloadParams} from "../utils/common/Structs.sol";
 
 abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     // slot 0-49: gap for future storage variables

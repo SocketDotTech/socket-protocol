@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {Fees, Read, Parallel, QueuePayloadParams, OverrideParams, CallType, WriteFinality, PayloadRequest} from "../protocol/utils/common/Structs.sol";
+import {Fees, Read, Parallel, QueuePayloadParams, OverrideParams, CallType, WriteFinality} from "../protocol/utils/common/Structs.sol";
 
 interface IAppGateway {
     function isAsyncModifierSet() external view returns (bool);

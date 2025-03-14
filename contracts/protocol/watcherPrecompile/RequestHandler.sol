@@ -52,13 +52,13 @@ abstract contract RequestHandler {
         }
 
         requestParams[requestCount] = RequestParams({
-            isRequestCancelled: false;
-            currentBatch: currentBatch;
-            currentBatchPayloadsExecuted: 0;
-            totalBatchPayloads: 0;
-            middleware: msg.sender;
-            transmitter: address(0);
-            payloadParamsArray: payloadParamsArray;
+            isRequestCancelled: false,
+            currentBatch: currentBatch,
+            currentBatchPayloadsExecuted: 0,
+            totalBatchPayloads: 0,
+            middleware: msg.sender,
+            transmitter: address(0),
+            payloadParamsArray: payloadParamsArray
         });
     }
 
