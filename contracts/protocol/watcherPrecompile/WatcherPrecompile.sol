@@ -134,8 +134,8 @@ contract WatcherPrecompile is RequestHandler {
         _processBatch(requestCount, r.currentBatch);
     }
 
-    function cancelRequest(uint40 requestCount) external view {
-        RequestParams memory r = requestParams[requestCount];
+    function cancelRequest(uint40 requestCount) external {
+        RequestParams storage r = requestParams[requestCount];
         if (r.isRequestCancelled) revert RequestAlreadyCancelled();
         if (r.middleware != msg.sender) revert InvalidCaller();
 
