@@ -3,12 +3,9 @@ pragma solidity ^0.8.21;
 
 import "./WatcherPrecompileStorage.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
-import {RequestParams, PayloadSubmitParams, PayloadParams, CallType, DigestParams} from "../utils/common/Structs.sol";
 import {AccessControl} from "../utils/AccessControl.sol";
 import "solady/utils/Initializable.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
-import {IWatcherPrecompile} from "../../interfaces/IWatcherPrecompile.sol";
-import "./DumpDecoder.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
@@ -89,7 +86,7 @@ abstract contract WatcherPrecompileCore is
 
         // Calculate digest from payload parameters
         digest = getDigest(digestParams_);
-        emit FinalizeRequested(transmitter_, digest, params_);
+        emit FinalizeRequested(transmitter_, digest, prevDigestsHash, params_);
     }
 
     function _getBatch(

@@ -113,14 +113,31 @@ const deployEVMxContracts = async () => {
       );
 
       deployUtils = await deployContractWithProxy(
+        EVMxCoreContracts.WatcherPrecompileLimits,
+        `contracts/protocol/watcherPrecompile/WatcherPrecompileLimits.sol`,
+        [EVMxOwner, addressResolver.address, DEFAULT_MAX_LIMIT],
+        proxyFactory,
+        deployUtils
+      );
+
+      deployUtils = await deployContractWithProxy(
+        EVMxCoreContracts.WatcherPrecompileConfig,
+        `contracts/protocol/watcherPrecompile/WatcherPrecompileConfig.sol`,
+        [EVMxOwner, addressResolver.address, EVMX_CHAIN_ID],
+        proxyFactory,
+        deployUtils
+      );
+
+      deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.WatcherPrecompile,
         `contracts/protocol/watcherPrecompile/WatcherPrecompile.sol`,
         [
           EVMxOwner,
           addressResolver.address,
-          DEFAULT_MAX_LIMIT,
           EXPIRY_TIME,
           EVMX_CHAIN_ID,
+          deployUtils.addresses[EVMxCoreContracts.WatcherPrecompileLimits],
+          deployUtils.addresses[EVMxCoreContracts.WatcherPrecompileConfig],
         ],
         proxyFactory,
         deployUtils
@@ -129,7 +146,12 @@ const deployEVMxContracts = async () => {
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.FeesManager,
         `contracts/protocol/payload-delivery/FeesManager.sol`,
-        [addressResolver.address, EVMxOwner, EVMX_CHAIN_ID, FAST_SWITCHBOARD_TYPE],
+        [
+          addressResolver.address,
+          EVMxOwner,
+          EVMX_CHAIN_ID,
+          FAST_SWITCHBOARD_TYPE,
+        ],
         proxyFactory,
         deployUtils
       );

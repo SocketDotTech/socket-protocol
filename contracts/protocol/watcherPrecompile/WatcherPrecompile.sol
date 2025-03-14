@@ -2,8 +2,6 @@
 pragma solidity ^0.8.21;
 
 import "./RequestHandler.sol";
-import "../../interfaces/IMiddleware.sol";
-import "./DumpDecoder.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
@@ -203,7 +201,9 @@ contract WatcherPrecompile is RequestHandler {
         );
 
         PayloadParams storage payloadParams = payloads[payloadId_];
-        RequestParams storage currentRequestParams = requestParams[payloadParams.dump.getRequestCount()];
+        RequestParams storage currentRequestParams = requestParams[
+            payloadParams.dump.getRequestCount()
+        ];
         currentRequestParams.isRequestCancelled = true;
 
         if (isRevertingOnchain_)

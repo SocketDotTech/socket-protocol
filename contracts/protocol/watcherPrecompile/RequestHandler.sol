@@ -2,7 +2,6 @@
 pragma solidity ^0.8.21;
 
 import "./WatcherPrecompileCore.sol";
-import "./DumpDecoder.sol";
 
 abstract contract RequestHandler is WatcherPrecompileCore {
     using DumpDecoder for bytes32;

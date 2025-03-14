@@ -31,6 +31,8 @@ export enum Contracts {
   Socket = "Socket",
   FeesPlug = "FeesPlug",
   WatcherPrecompile = "WatcherPrecompile",
+  WatcherPrecompileLimits = "WatcherPrecompileLimits",
+  WatcherPrecompileConfig = "WatcherPrecompileConfig",
   AuctionManager = "AuctionManager",
   DeliveryHelper = "DeliveryHelper",
 }

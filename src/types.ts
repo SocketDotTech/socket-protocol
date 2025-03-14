@@ -27,6 +27,8 @@ export type ChainAddressesObj = {
 export type EVMxAddressesObj = {
   AddressResolver: string;
   WatcherPrecompile: string;
+  WatcherPrecompileLimits: string;
+  WatcherPrecompileConfig: string;
   AuctionManager: string;
   FeesManager: string;
   DeliveryHelper: string;

@@ -1,4 +1,4 @@
-import { ChainAddressesObj, ChainSlug } from "../../src";
+import { ChainAddressesObj, ChainSlug, EVMxAddressesObj } from "../../src";
 
 import { config as dotenvConfig } from "dotenv";
 dotenvConfig();
@@ -16,7 +16,7 @@ import {
   getInstance,
   getSocketSigner,
   getWatcherSigner,
-  storeAddresses
+  storeAddresses,
 } from "../utils";
 
 export const main = async () => {
@@ -54,30 +54,31 @@ export const main = async () => {
   }
 };
 
-async function setOnchainContracts(chain, addresses) {
+async function setOnchainContracts(chain: number, addresses) {
   const signer: Wallet = getWatcherSigner();
-  const EVMxAddresses = addresses[EVMX_CHAIN_ID]!;
-  const watcherPrecompile = (
+  const EVMxAddresses = addresses[EVMX_CHAIN_ID] as EVMxAddressesObj;
+  const chainAddresses = addresses[chain] as ChainAddressesObj;
+  const watcherPrecompileConfig = (
     await getInstance(
-      EVMxCoreContracts.WatcherPrecompile,
-      EVMxAddresses[EVMxCoreContracts.WatcherPrecompile]
+      EVMxCoreContracts.WatcherPrecompileConfig,
+      EVMxAddresses[EVMxCoreContracts.WatcherPrecompileConfig]
     )
   ).connect(signer);
 
-  const sbAddress = addresses[chain][CORE_CONTRACTS.FastSwitchboard];
-  const socketAddress = addresses[chain][CORE_CONTRACTS.Socket];
+  const sbAddress = chainAddresses[CORE_CONTRACTS.FastSwitchboard];
+  const socketAddress = chainAddresses[CORE_CONTRACTS.Socket];
   const contractFactoryPlugAddress =
-    addresses[chain][CORE_CONTRACTS.ContractFactoryPlug];
-  const feesPlugAddress = addresses[chain][CORE_CONTRACTS.FeesPlug];
+    chainAddresses[CORE_CONTRACTS.ContractFactoryPlug];
+  const feesPlugAddress = chainAddresses[CORE_CONTRACTS.FeesPlug];
 
-  const currentSbAddress = await watcherPrecompile.switchboards(
+  const currentSbAddress = await watcherPrecompileConfig.switchboards(
     chain,
     FAST_SWITCHBOARD_TYPE
   );
-  const currentSocket = await watcherPrecompile.sockets(chain);
+  const currentSocket = await watcherPrecompileConfig.sockets(chain);
   const currentContractFactoryPlug =
-    await watcherPrecompile.contractFactoryPlug(chain);
-  const currentFeesPlug = await watcherPrecompile.feesPlug(chain);
+    await watcherPrecompileConfig.contractFactoryPlug(chain);
+  const currentFeesPlug = await watcherPrecompileConfig.feesPlug(chain);
 
   console.log("Setting onchain contracts for", chain);
   if (
@@ -86,7 +87,7 @@ async function setOnchainContracts(chain, addresses) {
       contractFactoryPlugAddress.toLowerCase() ||
     currentFeesPlug.toLowerCase() !== feesPlugAddress.toLowerCase()
   ) {
-    const tx = await watcherPrecompile
+    const tx = await watcherPrecompileConfig
       .connect(signer)
       .setOnChainContracts(
         chain,
@@ -100,22 +101,14 @@ async function setOnchainContracts(chain, addresses) {
   }
 
   console.log("Setting switchboard for", chain);
-  if (
-    currentSbAddress.toLowerCase() !== sbAddress.toLowerCase()
-  ) {
-    const tx = await watcherPrecompile
+  if (currentSbAddress.toLowerCase() !== sbAddress.toLowerCase()) {
+    const tx = await watcherPrecompileConfig
       .connect(signer)
-      .setSwitchboard(
-        chain,
-        FAST_SWITCHBOARD_TYPE,
-        sbAddress
-      );
+      .setSwitchboard(chain, FAST_SWITCHBOARD_TYPE, sbAddress);
 
     console.log(`Setting switchboard for ${chain}, txHash: `, tx.hash);
     await tx.wait();
   }
-
-
 }
 
 const registerSb = async (sbAddress, signer, socket) => {

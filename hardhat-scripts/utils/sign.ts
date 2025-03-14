@@ -1,18 +1,18 @@
-import { ethers, Wallet } from "ethers";
-import { EVMX_CHAIN_ID, mode } from "../config/config";
-import { EVMxCoreContracts } from "../constants";
-import { getAddresses } from "./address";
-import { getProviderFromChainSlug } from "./networks";
+import { ethers } from "ethers";
 import { ChainSlug } from "../../src";
-export const signWatcherMessage = async (encodedMessage: string) => {
+import { EVMX_CHAIN_ID } from "../config/config";
+import { getProviderFromChainSlug } from "./networks";
+
+export const signWatcherMessage = async (
+  encodedMessage: string,
+  watcherContractAddress: string
+) => {
   const signatureNonce = Date.now();
-  const signer = new Wallet(process.env.WATCHER_PRIVATE_KEY!);
-  const watcherPrecompileAddress =
-    getAddresses(mode)[EVMX_CHAIN_ID][EVMxCoreContracts.WatcherPrecompile];
+  const signer = getWatcherSigner();
   const digest = ethers.utils.keccak256(
     ethers.utils.defaultAbiCoder.encode(
       ["address", "uint32", "uint256", "bytes"],
-      [watcherPrecompileAddress, EVMX_CHAIN_ID, signatureNonce, encodedMessage]
+      [watcherContractAddress, EVMX_CHAIN_ID, signatureNonce, encodedMessage]
     )
   );
   const signature = await signer.signMessage(ethers.utils.arrayify(digest));

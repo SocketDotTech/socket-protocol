@@ -22,7 +22,12 @@ interface IWatcherPrecompile {
     event QueryRequested(PayloadParams params);
 
     /// @notice Emitted when a finalize request is made
-    event FinalizeRequested(address transmitter, bytes32 digest, PayloadParams params);
+    event FinalizeRequested(
+        address transmitter,
+        bytes32 digest,
+        bytes32 prevDigestsHash,
+        PayloadParams params
+    );
 
     /// @notice Emitted when a request is finalized
     /// @param payloadId The unique identifier for the request

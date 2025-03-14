@@ -45,7 +45,12 @@ contract MockWatcherPrecompile {
     event QueryRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
 
     /// @notice Emitted when a finalize request is made
-    event FinalizeRequested(address transmitter, bytes32 digest, PayloadParams params);
+    event FinalizeRequested(
+        address transmitter,
+        bytes32 digest,
+        bytes32 prevDigestsHash,
+        PayloadParams params
+    );
 
     /// @notice Emitted when a request is finalized
     /// @param payloadId The unique identifier for the request
@@ -121,7 +126,7 @@ contract MockWatcherPrecompile {
     ) external returns (bytes32 digest) {
         digest = keccak256(abi.encode(block.timestamp));
         // Generate a unique payload ID by combining chain, target, and counter
-        emit FinalizeRequested(transmitter_, digest, params_);
+        emit FinalizeRequested(transmitter_, digest, bytes32(0), params_);
     }
 
     // ================== Query functions ==================

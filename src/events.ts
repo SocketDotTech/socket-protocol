@@ -10,20 +10,19 @@ export const socketEvents = [
 export const feesPlugEvents = [Events.FeesDeposited];
 
 export const watcherPrecompileEvents = [
+  Events.CalledAppGateway,
   Events.QueryRequested,
   Events.FinalizeRequested,
   Events.Finalized,
   Events.PromiseResolved,
+  Events.PromiseNotResolved,
   Events.TimeoutRequested,
   Events.TimeoutResolved,
-  Events.CalledAppGateway,
   Events.RequestSubmitted,
-  Events.PromiseNotResolved,
 ];
 
 export const deliveryHelperEvents = [
   Events.PayloadSubmitted,
-  // Events.PayloadAsyncRequested,
   Events.FeesIncreased,
 ];
 

@@ -1,84 +1,5 @@
 # Event Topics
 
-## AddressResolver.sol
-
-| Event                   | Topic                                                                |
-| ----------------------- | -------------------------------------------------------------------- |
-| `PlugAdded`             | `0x2cb8d865028f9abf3dc064724043264907615fadc8615a3699a85edb66472273` |
-| `ForwarderDeployed`     | `0x4dbbecb9cf9c8b93da9743a2b48ea52efe68d69230ab1c1b711891d9d223b29f` |
-| `AsyncPromiseDeployed`  | `0xb6c5491cf83e09749b1a4dd6a9f07b0e925fcb0a915ac8c2b40e8ab28191c270` |
-| `ImplementationUpdated` | `0xa1e41aa2c2f3f20d9b63ac06b634d2788768d6034f3d9192cdf7d07374bb16f4` |
-
-## apps/cron/CronAppGateway.sol
-
-| Event             | Topic                                                                |
-| ----------------- | -------------------------------------------------------------------- |
-| `TimeoutResolved` | `0x21f74fe97870cde3cfbde7addf2b9343c27ca433b826801e63b3d6153699ec3f` |
-
-## apps/payload-delivery/ContractFactoryPlug.sol
-
-| Event      | Topic                                                                |
-| ---------- | -------------------------------------------------------------------- |
-| `Deployed` | `0x94bfd9af14ef450884c8a7ddb5734e2e1e14e70a1c84f0801cc5a29e34d26428` |
-
-## apps/payload-delivery/FeesPlug.sol
-
-| Event           | Topic                                                                |
-| --------------- | -------------------------------------------------------------------- |
-| `FeesDeposited` | `0x0fd38537e815732117cfdab41ba9b6d3eb2c5799d44039c100c05fc9c112f235` |
-| `FeesWithdrawn` | `0x87044da2612407bc001bb0985725dcc651a0dc71eaabfd1d7e8617ca85a8c19c` |
-
-## apps/payload-delivery/app-gateway/AuctionManager.sol
-
-| Event            | Topic                                                                |
-| ---------------- | -------------------------------------------------------------------- |
-| `AuctionStarted` | `0x884055d82c091219e252c5c2acca6051c823fcba97cecb3ba07d5f06c1628e6c` |
-| `AuctionEnded`   | `0xefa02d67c6f01c72b191e6c5076e63d9a4941f9037bf1c4aa4ccc613340e1571` |
-| `BidPlaced`      | `0xaf5c23b337289338f72cec2fdec2c736d419c7607e4c840ee4d28176477d4e08` |
-
-## apps/payload-delivery/app-gateway/RequestAsync.sol
-
-| Event                   | Topic                                                                |
-| ----------------------- | -------------------------------------------------------------------- |
-| `PayloadSubmitted`      | `0xaab415570fdc7fb2a70601b49667178ab5f887c7901dc5e84b853c5bad514106` |
-| `FeesIncreased`         | `0xf1a5d6adcecf6c2be482b515e9564a9898cd629b54c57ede69295dffbf16bb1d` |
-| `PayloadAsyncRequested` | `0x71c5226e31c1ad0fb69f89c62225760ba7c06c4ebdd284dfc71fd61603120d95` |
-| `RequestCancelled`      | `0xac01c50ce693d1fe783ba60ec0f82ab99f65e62446fffb028e3bd639cd5684d4` |
-
-## apps/payload-delivery/app-gateway/DeliveryHelper.sol
-
-| Event              | Topic                                                                |
-| ------------------ | -------------------------------------------------------------------- |
-| `CallBackReverted` | `0xb793657774d4efcce6746ecc3d896279387c392fe6f6f2932daf35d5a1d65be6` |
-
-## apps/payload-delivery/app-gateway/FeesManager.sol
-
-| Event                      | Topic                                                                |
-| -------------------------- | -------------------------------------------------------------------- |
-| `FeesBlocked`              | `0xc1639cc709c1b397fa20d3a1ece33aee2eb5c29573fe9e1e06d2364d40cdf2f7` |
-| `TransmitterFeesUpdated`   | `0x409067fdd2f9c474161a5b1f96399f2d24c45cfc4a93f4b1c27c9bf351f1e2bb` |
-| `FeesDepositedUpdated`     | `0xe82dece33ef85114446a366b7d94538d641968e3ec87bf9f2f5a957ace1086e7` |
-| `FeesUnblockedAndAssigned` | `0x09a0f93a20f672833eeac3a1c9d63495cfcbee2e32f968e947a6124054b44a79` |
-| `FeesUnblocked`            | `0x5290de2b93b8542dc233ee9f02c346e94a47254ed50e00738e6d7ec4a54bcb3a` |
-
-## apps/payload-delivery/app-gateway/QueueAsync.sol
-
-| Event                     | Topic                                                                |
-| ------------------------- | -------------------------------------------------------------------- |
-| `PayloadRequestCancelled` | `0xae2e532ea00438ec2fc3e806f19c85f21334853d16c32107c75ff8d176af7633` |
-
-## apps/super-token/SuperTokenAppGateway.sol
-
-| Event         | Topic                                                                |
-| ------------- | -------------------------------------------------------------------- |
-| `Transferred` | `0xd729be146db2a3467d5eaf1eed3f1afcdd5cc05d1b3b14d27675e36844fb3aba` |
-
-## apps/super-token-lockable/SuperTokenLockableAppGateway.sol
-
-| Event     | Topic                                                                |
-| --------- | -------------------------------------------------------------------- |
-| `Bridged` | `0x19138f4129b378a375fc2f5ca3b1be3fea2f048ef2b1884a1d0fff5dca83e0ac` |
-
 ## base/PlugBase.sol
 
 | Event                       | Topic                                                                |
@@ -87,99 +8,125 @@
 
 ## interfaces/IAddressResolver.sol
 
-| Event        | Topic                                                                |
-| ------------ | -------------------------------------------------------------------- |
-| `AddressSet` | `0x9ef0e8c8e52743bb38b83b17d9429141d494b8041ca6d616a6c77cebae9cd8b7` |
+| Event                                 | Topic                                                                |
+| ------------------------------------- | -------------------------------------------------------------------- |
+| `AddressSet(bytes32,address,address)` | `0x9ef0e8c8e52743bb38b83b17d9429141d494b8041ca6d616a6c77cebae9cd8b7` |
 
-## interfaces/IDeliveryHelper.sol
+## interfaces/IMiddleware.sol
 
-| Event          | Topic                                                                |
-| -------------- | -------------------------------------------------------------------- |
-| `BidPlaced`    | `0xaf5c23b337289338f72cec2fdec2c736d419c7607e4c840ee4d28176477d4e08` |
-| `AuctionEnded` | `0xefa02d67c6f01c72b191e6c5076e63d9a4941f9037bf1c4aa4ccc613340e1571` |
-
-## interfaces/IERC20.sol
-
-| Event      | Topic                                                                |
-| ---------- | -------------------------------------------------------------------- |
-| `Transfer` | `0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef` |
-| `Approval` | `0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925` |
+| Event                      | Topic                                                                |
+| -------------------------- | -------------------------------------------------------------------- |
+| `BidPlaced(uint40,Bid)`    | `0xf3ae5b3ee2e40669d77bd3a4cf2bd6b4e74a8a28d2944a88f46978b2754ca431` |
+| `AuctionEnded(uint40,Bid)` | `0xe0653b5457803803208b7fd0e583b7be1d8ec58613838fef4f86341ab2e36a04` |
 
 ## interfaces/ISocket.sol
 
-| Event                     | Topic                                                                |
-| ------------------------- | -------------------------------------------------------------------- |
-| `ExecutionSuccess`        | `0xc54787fbe087097b182e713f16d3443ad2e67cbe6732628451dd3695a11814c2` |
-| `PlugConnected`           | `0x99c37c6da3bd69c6d59967915f8339f11a0a17fed28c615efb19457fdec0d7db` |
-| `AppGatewayCallRequested` | `0x392cb36fae7bd0470268c65b15c32a745b37168c4ccd13348c59bd9170f3b3e8` |
+| Event                                                                   | Topic                                                                |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `ExecutionSuccess(bytes32,bytes)`                                       | `0xc54787fbe087097b182e713f16d3443ad2e67cbe6732628451dd3695a11814c2` |
+| `ExecutionFailed(bytes32,bytes)`                                        | `0xd255d8a333980d77af4f9179384057def133983cb02db3e1fdb70c4dc14102e8` |
+| `PlugConnected(address,address,address)`                                | `0x99c37c6da3bd69c6d59967915f8339f11a0a17fed28c615efb19457fdec0d7db` |
+| `AppGatewayCallRequested(bytes32,uint32,address,address,bytes32,bytes)` | `0x392cb36fae7bd0470268c65b15c32a745b37168c4ccd13348c59bd9170f3b3e8` |
 
-## mock/MockWatcherPrecompile.sol
+## interfaces/IWatcherPrecompile.sol
 
-| Event               | Topic                                                                |
-| ------------------- | -------------------------------------------------------------------- |
-| `CalledAppGateway`  | `0x255bcf22d238fe60f6611670cd7919d2bc890283be2fdaf6d2ad3411e777e33c` |
-| `QueryRequested`    | `0x19a4898a6390d795c9d86362d12853f4f6515b41b95a57f9b28774b4b36fc916` |
-| `FinalizeRequested` | `0x17e763b469fcd8535794b9c8c1452d90597be1eeb0eb0367662e18c067fe9656` |
-| `Finalized`         | `0x8ee21307ed5b839a691d488e11de81bee61525893865b7ae106cc712ef42376e` |
-| `PromiseResolved`   | `0x2e6de63938bd94bb20d9aa80f8bc4b07be2d8fbd4525664156351836588ed365` |
-| `TimeoutRequested`  | `0xdf94fed77e41734b8a17815476bbbf88e2db15d762f42a30ddb9d7870f2fb858` |
-| `TimeoutResolved`   | `0x221462ec065e22637f794ec3a7edb17b2f04bec88f0546dda308bc37a83801b8` |
+| Event                                                            | Topic                                                                |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `CalledAppGateway(bytes32,uint32,address,address,bytes32,bytes)` | `0x255bcf22d238fe60f6611670cd7919d2bc890283be2fdaf6d2ad3411e777e33c` |
+| `QueryRequested(PayloadParams)`                                  | `0x7488872f7dfa5365c1eb3ff6e87be6f76e1943fd7a0d49e7680ddffd31033864` |
+| `FinalizeRequested(address,bytes32,bytes32,PayloadParams)`       | `0xa598ce01fa40f1a400aefe99a30ccdbb45c65ee903b94d98982d8572156f8a02` |
+| `Finalized(bytes32,bytes)`                                       | `0x7e6e3e411317567fb9eabe3eb86768c3e33c46e38a50790726e916939b4918d6` |
+| `PromiseResolved(bytes32,bool,address)`                          | `0x3f1120f34271f52a541dfc8a71efbe6123ab80730562e8948fa7275514c41bda` |
+| `PromiseNotResolved(bytes32,bool,address)`                       | `0xcf395c2f3b165573b3e8f83c5810f6fb22f1659497882dc2e75f8157d241485e` |
+| `TimeoutRequested(bytes32,address,bytes,uint256)`                | `0xdf94fed77e41734b8a17815476bbbf88e2db15d762f42a30ddb9d7870f2fb858` |
+| `TimeoutResolved(bytes32,address,bytes,uint256)`                 | `0x221462ec065e22637f794ec3a7edb17b2f04bec88f0546dda308bc37a83801b8` |
+| `RequestSubmitted(address,uint40,PayloadParams[])`               | `0x5d58a8d0c1df3c5daf9fbdc1e2fb915882f50f1f49dba0ee2d437a787917a697` |
 
-## socket/SocketBase.sol
+## interfaces/IWatcherPrecompileLimits.sol
 
-| Event                  | Topic                                                                |
-| ---------------------- | -------------------------------------------------------------------- |
-| `HasherSet`            | `0xc7238b23787eb9f8aa74c79b27083bb4b8f0db527df90366b487c40fa0ba2d3a` |
-| `SignatureVerifierSet` | `0xcb341def955dbf73920141be056568edde30b1dbc56a29396945e5596a03c68c` |
+| Event                                          | Topic                                                                |
+| ---------------------------------------------- | -------------------------------------------------------------------- |
+| `LimitParamsUpdated(UpdateLimitParams[])`      | `0x76b76501b1f65d80b7de6c1a42b2245466c1c80504052e7ad48e86b6038d39a1` |
+| `AppGatewayActivated(address,uint256,uint256)` | `0x44628d7d5628b9fbc2c84ea9bf3bd3987fa9cde8d2b28e2d5ceb451f916cb8b9` |
 
-## socket/SocketConfig.sol
+## protocol/AddressResolver.sol
 
-| Event              | Topic                                                                |
-| ------------------ | -------------------------------------------------------------------- |
-| `SwitchboardAdded` | `0x1595852923edfbbf906f09fc8523e4cfb022a194773c4d1509446b614146ee88` |
+| Event                                   | Topic                                                                |
+| --------------------------------------- | -------------------------------------------------------------------- |
+| `PlugAdded(address,uint32,address)`     | `0x2cb8d865028f9abf3dc064724043264907615fadc8615a3699a85edb66472273` |
+| `ForwarderDeployed(address,bytes32)`    | `0x4dbbecb9cf9c8b93da9743a2b48ea52efe68d69230ab1c1b711891d9d223b29f` |
+| `AsyncPromiseDeployed(address,bytes32)` | `0xb6c5491cf83e09749b1a4dd6a9f07b0e925fcb0a915ac8c2b40e8ab28191c270` |
+| `ImplementationUpdated(string,address)` | `0xa1e41aa2c2f3f20d9b63ac06b634d2788768d6034f3d9192cdf7d07374bb16f4` |
 
-## socket/switchboard/FastSwitchboard.sol
+## protocol/payload-delivery/AuctionManager.sol
 
-| Event      | Topic                                                                |
-| ---------- | -------------------------------------------------------------------- |
-| `Attested` | `0x2f8e66b1207a4b70274a2a3da88ffb5737c8214576490da1b35acc38b2d62db6` |
+| Event                      | Topic                                                                |
+| -------------------------- | -------------------------------------------------------------------- |
+| `AuctionRestarted(uint40)` | `0x071867b21946ec4655665f0d4515d3757a5a52f144c762ecfdfb11e1da542b82` |
+| `AuctionStarted(uint40)`   | `0xcd040613cf8ef0cfcaa3af0d711783e827a275fc647c116b74595bf17cb9364f` |
+| `AuctionEnded(uint40,Bid)` | `0xe0653b5457803803208b7fd0e583b7be1d8ec58613838fef4f86341ab2e36a04` |
+| `BidPlaced(uint40,Bid)`    | `0xf3ae5b3ee2e40669d77bd3a4cf2bd6b4e74a8a28d2944a88f46978b2754ca431` |
 
-## socket/utils/AccessControl.sol
+## protocol/payload-delivery/ContractFactoryPlug.sol
 
-| Event         | Topic                                                                |
-| ------------- | -------------------------------------------------------------------- |
-| `RoleGranted` | `0x2ae6a113c0ed5b78a53413ffbb7679881f11145ccfba4fb92e863dfcd5a1d2f3` |
-| `RoleRevoked` | `0x155aaafb6329a2098580462df33ec4b7441b19729b9601c5fc17ae1cf99a8a52` |
+| Event                             | Topic                                                                |
+| --------------------------------- | -------------------------------------------------------------------- |
+| `Deployed(address,bytes32,bytes)` | `0x1246c6f8fd9f4abc542c7c8c8f793cfcde6b67aed1976a38aa134fc24af2dfe3` |
 
-## utils/OwnableTwoStep.sol
+## protocol/payload-delivery/FeesManager.sol
 
-| Event            | Topic                                                                |
-| ---------------- | -------------------------------------------------------------------- |
-| `OwnerNominated` | `0x906a1c6bd7e3091ea86693dd029a831c19049ce77f1dce2ce0bab1cacbabce22` |
-| `OwnerClaimed`   | `0xfbe19c9b601f5ee90b44c7390f3fa2319eba01762d34ee372aeafd59b25c7f87` |
+| Event                                                  | Topic                                                                |
+| ------------------------------------------------------ | -------------------------------------------------------------------- |
+| `FeesBlocked(uint40,uint32,address,uint256)`           | `0xbb23ad39130b455188189b8de52b55fa41a7ea8ee8413dc28ced31e543d0df0c` |
+| `TransmitterFeesUpdated(uint40,address,uint256)`       | `0x9839a0f8408a769f0f3bb89025b64a6cff279673c77d2de3ab8d59b1841fcd5f` |
+| `FeesDepositedUpdated(uint32,address,address,uint256)` | `0xe82dece33ef85114446a366b7d94538d641968e3ec87bf9f2f5a957ace1086e7` |
+| `FeesUnblockedAndAssigned(uint40,address,uint256)`     | `0x04d2986fb321499f6bc8263ff6e65d823570e186dcdc16c04c6b388ccd0f29a8` |
+| `FeesUnblocked(uint40,address)`                        | `0xc8b27128d97a92b6664c696ac891afaa87c9fc7d7c7cda17d892237589ebd4fc` |
 
-## watcherPrecompile/WatcherPrecompile.sol
+## protocol/payload-delivery/FeesPlug.sol
 
-| Event               | Topic                                                                |
-| ------------------- | -------------------------------------------------------------------- |
-| `CalledAppGateway`  | `0x255bcf22d238fe60f6611670cd7919d2bc890283be2fdaf6d2ad3411e777e33c` |
-| `QueryRequested`    | `0x19a4898a6390d795c9d86362d12853f4f6515b41b95a57f9b28774b4b36fc916` |
-| `FinalizeRequested` | `0x17e763b469fcd8535794b9c8c1452d90597be1eeb0eb0367662e18c067fe9656` |
-| `Finalized`         | `0x8ee21307ed5b839a691d488e11de81bee61525893865b7ae106cc712ef42376e` |
-| `PromiseResolved`   | `0x3f1120f34271f52a541dfc8a71efbe6123ab80730562e8948fa7275514c41bda` |
-| `TimeoutRequested`  | `0xdf94fed77e41734b8a17815476bbbf88e2db15d762f42a30ddb9d7870f2fb858` |
-| `TimeoutResolved`   | `0x221462ec065e22637f794ec3a7edb17b2f04bec88f0546dda308bc37a83801b8` |
+| Event                                    | Topic                                                                |
+| ---------------------------------------- | -------------------------------------------------------------------- |
+| `FeesDeposited(address,address,uint256)` | `0x0fd38537e815732117cfdab41ba9b6d3eb2c5799d44039c100c05fc9c112f235` |
+| `FeesWithdrawn(address,uint256,address)` | `0x87044da2612407bc001bb0985725dcc651a0dc71eaabfd1d7e8617ca85a8c19c` |
+| `TokenWhitelisted(address)`              | `0x6a65f90b1a644d2faac467a21e07e50e3f8fa5846e26231d30ae79a417d3d262` |
+| `TokenRemovedFromWhitelist(address)`     | `0xdd2e6d9f52cbe8f695939d018b7d4a216dc613a669876163ac548b916489d917` |
 
-## watcherPrecompile/WatcherPrecompileConfig.sol
+## protocol/payload-delivery/app-gateway/DeliveryUtils.sol
 
-| Event            | Topic                                                                |
-| ---------------- | -------------------------------------------------------------------- |
-| `PlugAdded`      | `0x2cb8d865028f9abf3dc064724043264907615fadc8615a3699a85edb66472273` |
-| `SwitchboardSet` | `0x6273f161f4a795e66ef3585d9b4442ef3796b32337157fdfb420b5281e4cf2e3` |
+| Event                                                                 | Topic                                                                |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `CallBackReverted(uint40,bytes32)`                                    | `0xcecb2641ea89470f68bf9f852d731e123505424e4dcfd770c7ea9e2e25326b1b` |
+| `RequestCancelled(uint40)`                                            | `0xff191657769be72fc08def44c645014c60d18cb24b9ca05c9a33406a28253245` |
+| `BidTimeoutUpdated(uint256)`                                          | `0xd4552e666d0e4e343fb2b13682972a8f0c7f1a86e252d6433b356f0c0e817c3d` |
+| `PayloadSubmitted(uint40,address,PayloadSubmitParams[],Fees,address)` | `0x0d73f57fea2b58d4d2df3d65c988018a30f52ae1537eee65ac24558bdc533c73` |
+| `FeesIncreased(address,uint40,uint256)`                               | `0x63ee9e9e84d216b804cb18f51b7f7511254b0c1f11304b7a3aa34d57511aa6dc` |
+| `PayloadAsyncRequested(//,//,//,//)`                                  | `0x1c268ecaf7a0d595f8c277430613b278197257c9315654ce1717f7aebdc9674c` |
 
-## watcherPrecompile/WatcherPrecompileLimits.sol
+## protocol/socket/SocketConfig.sol
 
-| Event                 | Topic                                                                |
-| --------------------- | -------------------------------------------------------------------- |
-| `LimitParamsUpdated`  | `0x76b76501b1f65d80b7de6c1a42b2245466c1c80504052e7ad48e86b6038d39a1` |
-| `AppGatewayActivated` | `0x44628d7d5628b9fbc2c84ea9bf3bd3987fa9cde8d2b28e2d5ceb451f916cb8b9` |
+| Event                          | Topic                                                                |
+| ------------------------------ | -------------------------------------------------------------------- |
+| `SwitchboardAdded(address)`    | `0x1595852923edfbbf906f09fc8523e4cfb022a194773c4d1509446b614146ee88` |
+| `SwitchboardDisabled(address)` | `0x1b4ee41596b4e754e5665f01ed6122b356f7b36ea0a02030804fac7fa0fdddfc` |
+
+## protocol/socket/switchboard/FastSwitchboard.sol
+
+| Event                       | Topic                                                                |
+| --------------------------- | -------------------------------------------------------------------- |
+| `Attested(bytes32,address)` | `0x3d83c7bc55c269e0bc853ddc0d7b9fca30216ecc43779acb4e36b7e0ad1c71e4` |
+
+## protocol/utils/AccessControl.sol
+
+| Event                          | Topic                                                                |
+| ------------------------------ | -------------------------------------------------------------------- |
+| `RoleGranted(bytes32,address)` | `0x2ae6a113c0ed5b78a53413ffbb7679881f11145ccfba4fb92e863dfcd5a1d2f3` |
+| `RoleRevoked(bytes32,address)` | `0x155aaafb6329a2098580462df33ec4b7441b19729b9601c5fc17ae1cf99a8a52` |
+
+## protocol/watcherPrecompile/WatcherPrecompileConfig.sol
+
+| Event                                                | Topic                                                                |
+| ---------------------------------------------------- | -------------------------------------------------------------------- |
+| `PlugAdded(address,uint32,address)`                  | `0x2cb8d865028f9abf3dc064724043264907615fadc8615a3699a85edb66472273` |
+| `SwitchboardSet(uint32,bytes32,address)`             | `0x6273f161f4a795e66ef3585d9b4442ef3796b32337157fdfb420b5281e4cf2e3` |
+| `OnChainContractSet(uint32,address,address,address)` | `0xd24cf816377e3c571e7bc798dd43d3d5fc78c32f7fc94b42898b0d37c5301a4e` |
