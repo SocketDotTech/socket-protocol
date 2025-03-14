@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IWatcherPrecompile} from "../../interfaces/IWatcherPrecompile.sol";
+import "../../interfaces/IWatcherPrecompile.sol";
 import {IAppGateway} from "../../interfaces/IAppGateway.sol";
 import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 import {IPromise} from "../../interfaces/IPromise.sol";
 import {IMiddleware} from "../../interfaces/IMiddleware.sol";
-
 import {QUERY, FINALIZE, SCHEDULE} from "../utils/common/Constants.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
 import {ResolvedPromises, AppGatewayConfig, LimitParams, WriteFinality, UpdateLimitParams, PlugConfig, DigestParams, TimeoutRequest, CallFromChainParams, QueuePayloadParams, PayloadParams, RequestParams} from "../utils/common/Structs.sol";
@@ -15,61 +14,14 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     // slot 0-49: gap for future storage variables
     uint256[50] _gap_before;
 
-    /// @notice Number of decimals used in limit calculations
-    uint256 public constant LIMIT_DECIMALS = 18;
-
-    // slot 50: defaultLimit
-    /// @notice Default limit value for any app gateway
-    uint256 public defaultLimit;
-    // slot 51: defaultRatePerSecond
-    /// @notice Rate at which limit replenishes per second
-    uint256 public defaultRatePerSecond;
-
     // slot 52: evmxSlug
     /// @notice The chain slug of the watcher precompile
     uint32 public evmxSlug;
-
-    // slot 53: _limitParams
-    // appGateway => limitType => receivingLimitParams
-    mapping(address => mapping(bytes32 => LimitParams)) internal _limitParams;
-
-    // slot 54: _activeAppGateways
-    // Mapping to track active app gateways
-    mapping(address => bool) internal _activeAppGateways;
-
-    // slot 55: _plugConfigs
-    /// @notice Maps network and plug to their configuration
-    /// @dev chainSlug => plug => PlugConfig
-    mapping(uint32 => mapping(address => PlugConfig)) internal _plugConfigs;
-
-    // slot 56: switchboards
-    /// @notice Maps chain slug to their associated switchboard
-    /// @dev chainSlug => sb type => switchboard address
-    mapping(uint32 => mapping(bytes32 => address)) public switchboards;
-
-    // slot 57: sockets
-    /// @notice Maps chain slug to their associated socket
-    /// @dev chainSlug => socket address
-    mapping(uint32 => address) public sockets;
-
-    // slot 58: contractFactoryPlug
-    /// @notice Maps chain slug to their associated contract factory plug
-    /// @dev chainSlug => contract factory plug address
-    mapping(uint32 => address) public contractFactoryPlug;
-
-    // slot 59: feesPlug
-    /// @notice Maps chain slug to their associated fees plug
-    /// @dev chainSlug => fees plug address
-    mapping(uint32 => address) public feesPlug;
 
     // slot 60: isNonceUsed
     /// @notice Maps nonce to whether it has been used
     /// @dev signatureNonce => isValid
     mapping(uint256 => bool) public isNonceUsed;
-
-    // slot 61: isValidPlug
-    // appGateway => chainSlug => plug => isValid
-    mapping(address => mapping(uint32 => mapping(address => bool))) public isValidPlug;
 
     // slot 62: maxTimeoutDelayInSeconds
     uint256 public maxTimeoutDelayInSeconds;
@@ -112,4 +64,7 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     mapping(uint40 => bytes32[]) public batchPayloadIds;
     mapping(uint40 => uint40[]) public requestBatchIds;
     mapping(bytes32 => PayloadParams) public payloads;
+
+    IWatcherPrecompileLimits public watcherPrecompileLimits__;
+    IWatcherPrecompileConfig public watcherPrecompileConfig__;
 }

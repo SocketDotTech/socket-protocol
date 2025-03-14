@@ -46,7 +46,7 @@ contract UpdateLimitsScript is Script {
             ratePerSecond: 10000000000 // Rate per second
         });
         // // Update the limits
-        watcherContract.updateLimitParams(updates);
+        watcherContract.watcherPrecompileLimits__().updateLimitParams(updates);
 
         vm.stopBroadcast();
     }

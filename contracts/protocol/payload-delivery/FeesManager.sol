@@ -398,7 +398,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     }
 
     function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (address) {
-        return watcherPrecompile__().feesPlug(chainSlug_);
+        return watcherPrecompileConfig().feesPlug(chainSlug_);
     }
 
     function _isWatcherSignatureValid(

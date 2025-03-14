@@ -5,6 +5,8 @@ import "forge-std/Test.sol";
 import "../contracts/protocol/utils/common/Structs.sol";
 import "../contracts/protocol/utils/common/Constants.sol";
 import "../contracts/protocol/watcherPrecompile/WatcherPrecompile.sol";
+import "../contracts/protocol/watcherPrecompile/WatcherPrecompileConfig.sol";
+import "../contracts/protocol/watcherPrecompile/WatcherPrecompileLimits.sol";
 import "../contracts/interfaces/IForwarder.sol";
 import "../contracts/protocol/utils/common/AccessRoles.sol";
 import {Socket} from "../contracts/protocol/socket/Socket.sol";
@@ -54,11 +56,16 @@ contract SetupTest is Test {
 
     AddressResolver public addressResolver;
     WatcherPrecompile public watcherPrecompile;
+    WatcherPrecompileConfig public watcherPrecompileConfig;
+    WatcherPrecompileLimits public watcherPrecompileLimits;
+
     SocketContracts public arbConfig;
     SocketContracts public optConfig;
 
     // Add new variables for proxy admin and implementation contracts
     WatcherPrecompile public watcherPrecompileImpl;
+    WatcherPrecompileConfig public watcherPrecompileConfigImpl;
+    WatcherPrecompileLimits public watcherPrecompileLimitsImpl;
     AddressResolver public addressResolverImpl;
     ERC1967Factory public proxyFactory;
 
@@ -84,7 +91,7 @@ contract SetupTest is Test {
         vm.stopPrank();
 
         hoax(watcherEOA);
-        watcherPrecompile.setOnChainContracts(
+        watcherPrecompileConfig.setOnChainContracts(
             chainSlug_,
             address(socket),
             address(contractFactoryPlug),
@@ -92,7 +99,7 @@ contract SetupTest is Test {
         );
 
         hoax(watcherEOA);
-        watcherPrecompile.setSwitchboard(chainSlug_, FAST, address(switchboard));
+        watcherPrecompileConfig.setSwitchboard(chainSlug_, FAST, address(switchboard));
 
         return
             SocketContracts({
@@ -109,6 +116,8 @@ contract SetupTest is Test {
         // Deploy implementations
         addressResolverImpl = new AddressResolver();
         watcherPrecompileImpl = new WatcherPrecompile();
+        watcherPrecompileConfigImpl = new WatcherPrecompileConfig();
+        watcherPrecompileLimitsImpl = new WatcherPrecompileLimits();
         proxyFactory = new ERC1967Factory();
 
         // Deploy and initialize proxies
@@ -124,13 +133,42 @@ contract SetupTest is Test {
             addressResolverData
         );
 
+        bytes memory watcherPrecompileLimitsData = abi.encodeWithSelector(
+            WatcherPrecompileLimits.initialize.selector,
+            watcherEOA,
+            address(addressResolverProxy),
+            defaultLimit
+        );
+        vm.expectEmit(true, true, true, false);
+        emit Initialized(version);
+        address watcherPrecompileLimitsProxy = proxyFactory.deployAndCall(
+            address(watcherPrecompileLimitsImpl),
+            watcherEOA,
+            watcherPrecompileLimitsData
+        );
+
+        bytes memory watcherPrecompileConfigData = abi.encodeWithSelector(
+            WatcherPrecompileConfig.initialize.selector,
+            watcherEOA,
+            address(addressResolverProxy),
+            evmxSlug
+        );
+        vm.expectEmit(true, true, true, false);
+        emit Initialized(version);
+        address watcherPrecompileConfigProxy = proxyFactory.deployAndCall(
+            address(watcherPrecompileConfigImpl),
+            watcherEOA,
+            watcherPrecompileConfigData
+        );
+
         bytes memory watcherPrecompileData = abi.encodeWithSelector(
             WatcherPrecompile.initialize.selector,
             watcherEOA,
             address(addressResolverProxy),
-            defaultLimit,
             expiryTime,
-            evmxSlug
+            evmxSlug,
+            address(watcherPrecompileLimitsProxy),
+            address(watcherPrecompileConfigProxy)
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(version);
@@ -143,6 +181,8 @@ contract SetupTest is Test {
         // Assign proxy addresses to public variables
         addressResolver = AddressResolver(address(addressResolverProxy));
         watcherPrecompile = WatcherPrecompile(address(watcherPrecompileProxy));
+        watcherPrecompileConfig = WatcherPrecompileConfig(address(watcherPrecompileConfigProxy));
+        watcherPrecompileLimits = WatcherPrecompileLimits(address(watcherPrecompileLimitsProxy));
 
         vm.startPrank(watcherEOA);
         watcherPrecompile.grantRole(WATCHER_ROLE, watcherEOA);
@@ -247,7 +287,10 @@ contract SetupTest is Test {
             payloadId_,
             watcherProof_
         );
-        bytes memory watcherSignature = _createWatcherSignature(bytesInput);
+        bytes memory watcherSignature = _createWatcherSignature(
+            address(watcherPrecompile),
+            bytesInput
+        );
         watcherPrecompile.finalized(payloadId_, watcherProof_, signatureNonce++, watcherSignature);
         assertEq(watcherPrecompile.watcherProofs(payloadId_), watcherProof_);
     }
@@ -294,14 +337,18 @@ contract SetupTest is Test {
         resolvedPromises[0] = ResolvedPromises({payloadId: payloadId, returnData: returnData});
 
         bytes memory watcherSignature = _createWatcherSignature(
+            address(watcherPrecompile),
             abi.encode(WatcherPrecompile.resolvePromises.selector, resolvedPromises)
         );
         watcherPrecompile.resolvePromises(resolvedPromises, signatureNonce++, watcherSignature);
     }
 
-    function _createWatcherSignature(bytes memory params_) internal view returns (bytes memory) {
+    function _createWatcherSignature(
+        address watcherPrecompile_,
+        bytes memory params_
+    ) internal view returns (bytes memory) {
         bytes32 digest = keccak256(
-            abi.encode(address(watcherPrecompile), evmxSlug, signatureNonce, params_)
+            abi.encode(watcherPrecompile_, evmxSlug, signatureNonce, params_)
         );
         return _createSignature(digest, watcherPrivateKey);
     }

@@ -3,13 +3,55 @@ pragma solidity ^0.8.21;
 
 import "./WatcherPrecompileLimits.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
+import "solady/utils/Initializable.sol";
+import {IWatcherPrecompileConfig} from "../../interfaces/IWatcherPrecompileConfig.sol";
 
 /// @title WatcherPrecompileConfig
 /// @notice Configuration contract for the Watcher Precompile system
 /// @dev Handles the mapping between networks, plugs, and app gateways for payload execution
-abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
-    // slot 322-371: gap for future storage variables
-    uint256[50] _gap_watcher_precompile_config;
+contract WatcherPrecompileConfig is
+    IWatcherPrecompileConfig,
+    Initializable,
+    AccessControl,
+    AddressResolverUtil
+{
+    // slot 52: evmxSlug
+    /// @notice The chain slug of the watcher precompile
+    uint32 public evmxSlug;
+
+    // slot 55: _plugConfigs
+    /// @notice Maps network and plug to their configuration
+    /// @dev chainSlug => plug => PlugConfig
+    mapping(uint32 => mapping(address => PlugConfig)) internal _plugConfigs;
+
+    // slot 56: switchboards
+    /// @notice Maps chain slug to their associated switchboard
+    /// @dev chainSlug => sb type => switchboard address
+    mapping(uint32 => mapping(bytes32 => address)) public switchboards;
+
+    // slot 57: sockets
+    /// @notice Maps chain slug to their associated socket
+    /// @dev chainSlug => socket address
+    mapping(uint32 => address) public sockets;
+
+    // slot 58: contractFactoryPlug
+    /// @notice Maps chain slug to their associated contract factory plug
+    /// @dev chainSlug => contract factory plug address
+    mapping(uint32 => address) public contractFactoryPlug;
+
+    // slot 59: feesPlug
+    /// @notice Maps chain slug to their associated fees plug
+    /// @dev chainSlug => fees plug address
+    mapping(uint32 => address) public feesPlug;
+
+    // slot 60: isNonceUsed
+    /// @notice Maps nonce to whether it has been used
+    /// @dev signatureNonce => isValid
+    mapping(uint256 => bool) public isNonceUsed;
+
+    // slot 61: isValidPlug
+    // appGateway => chainSlug => plug => isValid
+    mapping(address => mapping(uint32 => mapping(address => bool))) public isValidPlug;
 
     /// @notice Emitted when a new plug is configured for an app gateway
     /// @param appGateway The address of the app gateway
@@ -34,6 +76,21 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
         address contractFactoryPlug,
         address feesPlug
     );
+
+    error InvalidGateway();
+    error InvalidSwitchboard();
+
+    /// @notice Initial initialization (version 1)
+    function initialize(
+        address owner_,
+        address addressResolver_,
+        uint32 evmxSlug_
+    ) public reinitializer(1) {
+        _setAddressResolver(addressResolver_);
+        _initializeOwner(owner_);
+
+        evmxSlug = evmxSlug_;
+    }
 
     /// @notice Emitted when a plug is set as valid for an app gateway
 
@@ -70,7 +127,7 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
         address socket_,
         address contractFactoryPlug_,
         address feesPlug_
-    ) external override onlyOwner {
+    ) external onlyOwner {
         sockets[chainSlug_] = socket_;
         contractFactoryPlug[chainSlug_] = contractFactoryPlug_;
         feesPlug[chainSlug_] = feesPlug_;
@@ -85,7 +142,7 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
         uint32 chainSlug_,
         bytes32 sbType_,
         address switchboard_
-    ) external override onlyOwner {
+    ) external onlyOwner {
         switchboards[chainSlug_][sbType_] = switchboard_;
         emit SwitchboardSet(chainSlug_, sbType_, switchboard_);
     }
@@ -108,6 +165,21 @@ abstract contract WatcherPrecompileConfig is WatcherPrecompileLimits {
             _plugConfigs[chainSlug_][plug_].appGateway,
             _plugConfigs[chainSlug_][plug_].switchboard
         );
+    }
+
+    function verifyConnections(
+        uint32 chainSlug_,
+        address target_,
+        address appGateway_,
+        address switchboard_
+    ) external view {
+        // todo: revisit this
+        // if target is contractFactoryPlug, return
+        if (target_ == contractFactoryPlug[chainSlug_]) return;
+
+        (address appGateway, address switchboard) = getPlugConfigs(chainSlug_, target_);
+        if (appGateway != appGateway_) revert InvalidGateway();
+        if (switchboard != switchboard_) revert InvalidSwitchboard();
     }
 
     function _isWatcherSignatureValid(

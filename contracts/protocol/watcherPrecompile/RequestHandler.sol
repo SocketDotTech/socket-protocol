@@ -4,16 +4,6 @@ pragma solidity ^0.8.21;
 import "./WatcherPrecompileCore.sol";
 
 abstract contract RequestHandler is WatcherPrecompileCore {
-    event RequestSubmitted(
-        address middleware,
-        uint40 requestCount,
-        PayloadParams[] payloadParamsArray
-    );
-
-    error RequestCancelled();
-    error AlreadyStarted();
-    error InvalidLevelNumber();
-
     function submitRequest(
         PayloadSubmitParams[] calldata payloadSubmitParams
     ) public returns (uint40 requestCount) {
@@ -80,8 +70,8 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         }
 
         requestBatchIds[requestCount].push(nextBatchCount++);
-        _consumeLimit(appGateway, QUERY, readCount);
-        _consumeLimit(appGateway, FINALIZE, writeCount);
+        watcherPrecompileLimits__.consumeLimit(appGateway, QUERY, readCount);
+        watcherPrecompileLimits__.consumeLimit(appGateway, FINALIZE, writeCount);
 
         requestParams[requestCount] = RequestParams({
             isRequestCancelled: false,

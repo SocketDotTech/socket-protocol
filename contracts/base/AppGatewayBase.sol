@@ -91,7 +91,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @param chainSlug_ The chain slug
     /// @return socketAddress_ The socket address
     function getSocketAddress(uint32 chainSlug_) public view returns (address) {
-        return watcherPrecompile__().sockets(chainSlug_);
+        return watcherPrecompileConfig().sockets(chainSlug_);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -127,7 +127,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             isPlug: isPlug_,
             writeFinality: overrideParams.writeFinality,
             asyncPromise: asyncPromise,
-            switchboard: watcherPrecompile__().switchboards(chainSlug_, sbType),
+            switchboard: watcherPrecompileConfig().switchboards(chainSlug_, sbType),
             target: address(0),
             appGateway: address(this),
             gasLimit: overrideParams.gasLimit,

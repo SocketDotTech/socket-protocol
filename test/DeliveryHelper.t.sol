@@ -161,9 +161,10 @@ contract DeliveryHelperTest is SetupTest {
         });
 
         bytes memory watcherSignature = _createWatcherSignature(
-            abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
+            address(watcherPrecompileConfig),
+            abi.encode(IWatcherPrecompileConfig.setAppGateways.selector, gateways)
         );
-        watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
+        watcherPrecompileConfig.setAppGateways(gateways, signatureNonce++, watcherSignature);
     }
 
     //////////////////////////////////// Fees ////////////////////////////////////
@@ -250,9 +251,10 @@ contract DeliveryHelperTest is SetupTest {
         }
 
         bytes memory watcherSignature = _createWatcherSignature(
-            abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
+            address(watcherPrecompileConfig),
+            abi.encode(IWatcherPrecompileConfig.setAppGateways.selector, gateways)
         );
-        watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
+        watcherPrecompileConfig.setAppGateways(gateways, signatureNonce++, watcherSignature);
     }
 
     //////////////////////////////////// Auction ////////////////////////////////////
@@ -286,6 +288,7 @@ contract DeliveryHelperTest is SetupTest {
         bytes32 timeoutId = _encodeId(evmxSlug, address(watcherPrecompile), timeoutIdCounter++);
 
         bytes memory watcherSignature = _createWatcherSignature(
+            address(watcherPrecompile),
             abi.encode(IWatcherPrecompile.resolveTimeout.selector, timeoutId)
         );
         watcherPrecompile.resolveTimeout(timeoutId, signatureNonce++, watcherSignature);

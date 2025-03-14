@@ -3,11 +3,10 @@ pragma solidity ^0.8.21;
 
 import "./RequestHandler.sol";
 import "../../interfaces/IMiddleware.sol";
+
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
 contract WatcherPrecompile is RequestHandler {
-    error RequestAlreadyCancelled();
-
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -16,19 +15,19 @@ contract WatcherPrecompile is RequestHandler {
     function initialize(
         address owner_,
         address addressResolver_,
-        uint256 defaultLimit_,
         uint256 expiryTime_,
-        uint32 evmxSlug_
+        uint32 evmxSlug_,
+        address watcherPrecompileLimits_,
+        address watcherPrecompileConfig_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
+
+        watcherPrecompileLimits__ = IWatcherPrecompileLimits(watcherPrecompileLimits_);
+        watcherPrecompileConfig__ = IWatcherPrecompileConfig(watcherPrecompileConfig_);
         maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
         expiryTime = expiryTime_;
 
-        // limit per day
-        defaultLimit = defaultLimit_ * 10 ** LIMIT_DECIMALS;
-        // limit per second
-        defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
         evmxSlug = evmxSlug_;
     }
 
@@ -233,8 +232,13 @@ contract WatcherPrecompile is RequestHandler {
 
         for (uint256 i = 0; i < params_.length; i++) {
             if (appGatewayCalled[params_[i].callId]) revert AppGatewayAlreadyCalled();
-            if (!isValidPlug[params_[i].appGateway][params_[i].chainSlug][params_[i].plug])
-                revert InvalidInboxCaller();
+            if (
+                !watcherPrecompileConfig__.isValidPlug(
+                    params_[i].appGateway,
+                    params_[i].chainSlug,
+                    params_[i].plug
+                )
+            ) revert InvalidInboxCaller();
 
             appGatewayCalled[params_[i].callId] = true;
             IAppGateway(params_[i].appGateway).callFromChain(
