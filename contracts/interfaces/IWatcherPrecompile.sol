@@ -128,7 +128,7 @@ interface IWatcherPrecompile {
 
     function updateTransmitter(uint40 requestCount, address transmitter) external;
 
-    function cancelRequest(uint40 requestCount) external view;
+    function cancelRequest(uint40 requestCount) external;
 
     function resolvePromises(
         ResolvedPromises[] calldata resolvedPromises_,
