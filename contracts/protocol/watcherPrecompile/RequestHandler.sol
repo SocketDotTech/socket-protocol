@@ -19,8 +19,6 @@ abstract contract RequestHandler is WatcherPrecompileCore {
     function submitRequest(
         PayloadSubmitParams[] calldata payloadSubmitParams
     ) public returns (uint40 requestCount) {
-        PayloadParams[] memory payloadParamsArray = new PayloadParams[](payloadSubmitParams.length);
-
         requestCount = nextRequestCount++;
         uint40 batchCount = nextBatchCount;
         uint40 currentBatch = batchCount;
@@ -72,7 +70,8 @@ abstract contract RequestHandler is WatcherPrecompileCore {
             payloads[payloadId].deadline = 0;
             payloads[payloadId].payload = p.payload;
             payloads[payloadId].finalizedTransmitter = address(0);
-            requestParams[requestCount].payloadParamsArray[i] = payloads[payloadId];
+
+            requestParams[requestCount].payloadParamsArray.push(payloads[payloadId]);
         }
 
         requestBatchIds[requestCount].push(nextBatchCount++);
