@@ -74,7 +74,6 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
             IPromise(instances_[i]).then(this.setCounterValues.selector, abi.encode(chainSlug));
         }
         _setOverrides(Read.OFF, Parallel.OFF);
-        ICounter(instances_[0]).increase();
     }
 
     function readCounterAtBlock(address instance_, uint256 blockNumber_) public async {
@@ -123,7 +122,6 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     }
 
     // UTILS
-
     function setFees(Fees memory fees_) public {
         fees = fees_;
     }

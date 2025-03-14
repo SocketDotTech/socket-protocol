@@ -216,7 +216,6 @@ contract DeliveryHelperTest is SetupTest {
         uint40[] memory batches = watcherPrecompile.getBatches(requestCount_);
 
         bool onlyReads = _checkIfOnlyReads(batches[0]);
-
         if (!(onlyReads && batches.length == 1)) {
             bidAndEndAuction(requestCount_);
         }
