@@ -64,7 +64,7 @@ contract CounterTest is DeliveryHelperTest {
         address[] memory instances = new address[](1);
         instances[0] = arbCounterForwarder;
         counterGateway.incrementCounters(instances);
-        finalizeRequest(new bytes[](0));
+        executeRequest(new bytes[](0));
 
         assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
     }
@@ -97,7 +97,7 @@ contract CounterTest is DeliveryHelperTest {
         chains[0] = arbChainSlug;
         chains[1] = optChainSlug;
 
-        finalizeRequest(new bytes[](0));
+        executeRequest(new bytes[](0));
 
         assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
         assertEq(Counter(optCounter).counter(), optCounterBefore + 1);
@@ -121,9 +121,14 @@ contract CounterTest is DeliveryHelperTest {
         instances[0] = arbCounterForwarder;
         instances[1] = optCounterForwarder;
 
-        finalizeRequest(new bytes[](0));
-
         counterGateway.readCounters(instances);
-        finalizeRequest(new bytes[](0));
+
+        bytes[] memory readReturnData = new bytes[](2);
+        readReturnData[0] = abi.encode(1);
+        readReturnData[1] = abi.encode(1);
+
+        uint256 writeId = watcherPrecompile.nextRequestCount();
+        console.log("writeId: %s", writeId);
+        executeRequest(readReturnData);
     }
 }

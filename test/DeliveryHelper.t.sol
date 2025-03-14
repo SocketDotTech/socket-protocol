@@ -207,9 +207,27 @@ contract DeliveryHelperTest is SetupTest {
         requestCount = watcherPrecompile.nextRequestCount();
         appGateway_.deployContracts(chainSlug_);
 
-        bidAndEndAuction(requestCount);
-        finalizeRequestForCount(requestCount, new bytes[](0));
+        finalizeRequest(requestCount, new bytes[](0));
         setupGatewayAndPlugs(chainSlug_, appGateway_, contractIds_);
+    }
+
+    function finalizeRequest(uint40 requestCount_, bytes[] memory readReturnData_) internal {
+        uint40[] memory batches = watcherPrecompile.getBatches(requestCount_);
+
+        bool onlyReads = _checkIfOnlyReads(batches[0]);
+        console.log("onlyReads: %s", onlyReads);
+        if (!onlyReads && batches.length > 1) bidAndEndAuction(requestCount_);
+
+        uint256 readCount = 0;
+        for (uint i = 0; i < batches.length; i++) {
+            readCount = _finalizeBatch(batches[i], readReturnData_, readCount);
+        }
+    }
+
+    function executeRequest(bytes[] memory readReturnData_) internal {
+        uint40 requestCount = watcherPrecompile.nextRequestCount();
+        requestCount = requestCount == 0 ? 0 : requestCount - 1;
+        finalizeRequest(requestCount, readReturnData_);
     }
 
     function setupGatewayAndPlugs(

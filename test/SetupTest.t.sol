@@ -151,23 +151,19 @@ contract SetupTest is Test {
     }
 
     //////////////////////////////////// Watcher precompiles ////////////////////////////////////
-    function finalizeRequest(
-        bytes[] memory readReturnData_
-    ) internal returns (uint40 requestCount) {
-        requestCount = watcherPrecompile.nextRequestCount();
-        requestCount = requestCount == 0 ? 0 : requestCount - 1;
-        finalizeRequestForCount(requestCount, readReturnData_);
-    }
 
-    function finalizeRequestForCount(
-        uint40 requestCount_,
-        bytes[] memory readReturnData_
-    ) internal {
-        uint40[] memory batches = watcherPrecompile.getBatches(requestCount_);
-        uint256 readCount = 0;
-        for (uint i = 0; i < batches.length; i++) {
-            readCount = _finalizeBatch(batches[i], readReturnData_, readCount);
+    function _checkIfOnlyReads(uint40 batchCount_) internal view returns (bool) {
+        bytes32[] memory payloadIds = watcherPrecompile.getBatchPayloadIds(batchCount_);
+
+        for (uint i = 0; i < payloadIds.length; i++) {
+            PayloadParams memory payloadParams = watcherPrecompile.getPayloadParams(payloadIds[i]);
+            console.log("payloadParams.callType: %s", uint256(payloadParams.callType));
+            if (payloadParams.callType != CallType.READ) {
+                return false;
+            }
         }
+
+        return true;
     }
 
     function _finalizeBatch(
@@ -202,13 +198,7 @@ contract SetupTest is Test {
             bytes memory transmitterSig
         ) = _getExecuteParams(payloadParams);
 
-        return
-            socketBatcher.attestAndExecute(
-                params,
-                digest,
-                watcherProof,
-                transmitterSig
-            );
+        return socketBatcher.attestAndExecute(params, digest, watcherProof, transmitterSig);
     }
 
     function resolvePromises(bytes32[] memory payloadIds, bytes[] memory returnData) internal {
@@ -218,7 +208,6 @@ contract SetupTest is Test {
     }
 
     //////////////////////////////////// Helpers ////////////////////////////////////
-
     function getSocketConfig(uint32 chainSlug_) internal view returns (SocketContracts memory) {
         return chainSlug_ == arbChainSlug ? arbConfig : optConfig;
     }
