@@ -243,7 +243,7 @@ const deploySocketContracts = async () => {
         );
         deployUtils.addresses[contractName] = socket.address;
 
-        contractName = CORE_CONTRACTS.SocketRequester;
+        contractName = CORE_CONTRACTS.SocketBatcher;
         const batcher: Contract = await getOrDeploy(
           contractName,
           contractName,

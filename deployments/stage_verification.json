@@ -116,8 +116,8 @@
     ],
     [
       "0xC559BABEbcD92278E91a545308190E4761efc347",
-      "SocketRequester",
-      "contracts/protocol/socket/SocketRequester.sol",
+      "SocketBatcher",
+      "contracts/protocol/socket/SocketBatcher.sol",
       [
         "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
         "0x6D54668ba18B425a1DbFC0BD720145c0aeE97f65"

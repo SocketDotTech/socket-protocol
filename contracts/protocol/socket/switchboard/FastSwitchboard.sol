@@ -6,22 +6,26 @@ import "./SwitchboardBase.sol";
 /**
  * @title FastSwitchboard contract
  * @dev This contract implements a fast version of the SwitchboardBase contract
- * that enables packet attestations and watchers registration.
+ * that enables packet attestations
  */
 contract FastSwitchboard is SwitchboardBase {
-    // used to track which watcher have attested a digest
-    // watcher => digest => isAttested
+    // used to track if watcher have attested a digest
+    // digest => isAttested
     mapping(bytes32 => bool) public isAttested;
 
-    // Error emitted when a digest is already attested by a specific watcher.
-    // This is hit even if they are attesting a new proposalCount with same digest.
+    // Error emitted when a digest is already attested by watcher.
     error AlreadyAttested();
+    // Error emitted when watcher is not valid
     error WatcherNotFound();
-    event Attested(bytes32 payloadId, bytes32 digest_, address watcher);
+
+    // Event emitted when watcher attests a digest
+    event Attested(bytes32 digest_, address watcher);
 
     /**
      * @dev Constructor function for the FastSwitchboard contract
      * @param chainSlug_ Chain slug of the chain where the contract is deployed
+     * @param socket_ Socket contract address
+     * @param owner_ Owner of the contract
      */
     constructor(
         uint32 chainSlug_,
@@ -31,21 +35,18 @@ contract FastSwitchboard is SwitchboardBase {
 
     /**
      * @dev Function to attest a packet
-     * @param payloadId_ Packet ID
-     * @param digest_ Digest of the packet
-     * @param proof_ Proof of the watcher
-     * @notice we are attesting a digest uniquely identified with packetId and proposalCount. However,
-     * there can be multiple proposals for same digest. To avoid need to re-attest for different proposals
-     *  with same digest, we are storing attestations against digest instead of packetId and proposalCount.
+     * @param digest_ digest of the payload to be executed
+     * @param proof_ proof from watcher
+     * @notice we are attesting a digest uniquely identified with payloadId.
      */
-    function attest(bytes32 payloadId_, bytes32 digest_, bytes calldata proof_) external {
+    function attest(bytes32 digest_, bytes calldata proof_) external {
         address watcher = _recoverSigner(keccak256(abi.encode(address(this), digest_)), proof_);
 
         if (isAttested[digest_]) revert AlreadyAttested();
         if (!_hasRole(WATCHER_ROLE, watcher)) revert WatcherNotFound();
-
         isAttested[digest_] = true;
-        emit Attested(payloadId_, digest_, watcher);
+
+        emit Attested(digest_, watcher);
     }
 
     /**
@@ -57,22 +58,6 @@ contract FastSwitchboard is SwitchboardBase {
 
         // not enough attestations and timeout not hit
         return false;
-    }
-
-    /**
-     * @notice adds a watcher for `srcChainSlug_` chain
-     * @param watcher_ watcher address
-     */
-    function grantWatcherRole(address watcher_) external onlyOwner {
-        _grantRole(WATCHER_ROLE, watcher_);
-    }
-
-    /**
-     * @notice removes a watcher from `srcChainSlug_` chain list
-     * @param watcher_ watcher address
-     */
-    function revokeWatcherRole(address watcher_) external onlyOwner {
-        _revokeRole(WATCHER_ROLE, watcher_);
     }
 
     function registerSwitchboard() external onlyOwner {

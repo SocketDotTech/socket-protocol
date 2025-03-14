@@ -46,7 +46,7 @@ contract SetupTest is Test {
         uint32 chainSlug;
         Socket socket;
         FastSwitchboard switchboard;
-        SocketRequester socketRequester;
+        SocketBatcher socketBatcher;
         ContractFactoryPlug contractFactoryPlug;
         FeesPlug feesPlug;
     }
@@ -65,7 +65,7 @@ contract SetupTest is Test {
 
     function deploySocket(uint32 chainSlug_) internal returns (SocketContracts memory) {
         Socket socket = new Socket(chainSlug_, owner, "test");
-        SocketRequester socketRequester = new SocketRequester(owner, socket);
+        SocketBatcher socketBatcher = new SocketBatcher(owner, socket);
         FastSwitchboard switchboard = new FastSwitchboard(chainSlug_, socket, owner);
 
         FeesPlug feesPlug = new FeesPlug(address(socket), owner);
@@ -77,7 +77,7 @@ contract SetupTest is Test {
 
         // switchboard
         switchboard.registerSwitchboard();
-        switchboard.grantWatcherRole(watcherEOA);
+        switchboard.grantRole(WATCHER_ROLE, watcherEOA);
         vm.stopPrank();
 
         hoax(watcherEOA);
@@ -95,7 +95,7 @@ contract SetupTest is Test {
                 chainSlug: chainSlug_,
                 socket: socket,
                 switchboard: switchboard,
-                socketRequester: socketRequester,
+                socketBatcher: socketBatcher,
                 contractFactoryPlug: contractFactoryPlug,
                 feesPlug: feesPlug
             });
@@ -197,7 +197,7 @@ contract SetupTest is Test {
             deadline: deadline
         });
 
-        bytes memory returnData = socketConfig.socketRequester.attestAndExecute(params);
+        bytes memory returnData = socketConfig.socketBatcher.attestAndExecute(params);
         vm.stopPrank();
         return returnData;
     }

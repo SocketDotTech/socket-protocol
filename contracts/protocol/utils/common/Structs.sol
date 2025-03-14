@@ -116,7 +116,6 @@ struct DigestParams {
     uint256 deadline;
     CallType callType;
     WriteFinality writeFinality;
-    address asyncPromise;
     uint256 gasLimit;
     uint256 value;
     uint256 readAt;
@@ -194,9 +193,18 @@ struct RequestMetadata {
 }
 
 struct ExecuteParams {
-    DigestParams digestParams;
-    PayloadIdParams payloadIdParams;
-    bytes proof;
+    uint256 deadline;
+    CallType callType;
+    WriteFinality writeFinality;
+    uint256 gasLimit;
+    uint256 readAt;
+    bytes payload;
+    address target;
+    uint40 requestCount;
+    uint40 batchCount;
+    uint40 payloadCount;
+    bytes32 prevDigestsHash; // should be id? hash of hashes
+    address switchboard;
 }
 
 struct PayloadIdParams {

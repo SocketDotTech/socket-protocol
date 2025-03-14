@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 
 import "../protocol/utils/common/Structs.sol";
 
-interface ISocketRequester {
+interface SocketBatcher {
     function attestAndExecute(
         AttestAndExecutePayloadParams calldata params_
     ) external returns (bytes memory);
