@@ -30,6 +30,27 @@ enum WriteFinality {
     HIGH
 }
 
+enum SwitchboardStatus {
+    NOT_REGISTERED,
+    REGISTERED,
+    DISABLED
+}
+
+/// @notice The state of the async promise
+enum AsyncPromiseState {
+    WAITING_FOR_SET_CALLBACK_SELECTOR,
+    WAITING_FOR_CALLBACK_EXECUTION,
+    CALLBACK_REVERTING,
+    ONCHAIN_REVERTING,
+    RESOLVED
+}
+
+enum ExecutionStatus {
+    NotExecuted,
+    Executed,
+    Reverted
+}
+
 //// STRUCTS ////
 // plug:
 struct LimitParams {
@@ -83,7 +104,7 @@ struct QueryResults {
 }
 struct ResolvedPromises {
     bytes32 payloadId;
-    bytes[] returnData;
+    bytes returnData;
 }
 
 // AM
@@ -122,6 +143,7 @@ struct DigestParams {
     bytes payload;
     address target;
     address appGateway;
+    bytes32 prevDigestsHash; // should be id? hash of hashes
 }
 
 struct QueuePayloadParams {
@@ -158,26 +180,34 @@ struct PayloadSubmitParams {
 }
 
 struct PayloadParams {
-    uint40 requestCount;
-    uint40 batchCount;
-    uint32 chainSlug;
-    CallType callType;
-    Parallel isParallel;
-    WriteFinality writeFinality;
-    address asyncPromise;
+    // uint40 requestCount + uint40 batchCount + uint40 payloadCount + uint32 chainSlug
+    // CallType callType + Parallel isParallel + WriteFinality writeFinality + address asyncPromise
+    bytes32 dump;
+    // uint40 requestCount;
+    // uint40 batchCount;
+    // uint40 payloadCount;
+    // uint32 chainSlug;
+    // CallType callType;
+    // Parallel isParallel;
+    // WriteFinality writeFinality;
+    // address asyncPromise;
     address switchboard;
     address target;
     address appGateway;
+    bytes32 payloadId;
+    bytes32 prevDigestsHash;
     uint256 gasLimit;
     uint256 value;
     uint256 readAt;
+    uint256 deadline;
     bytes payload;
+    address finalizedTransmitter;
 }
 
 struct RequestParams {
     bool isRequestCancelled;
-    uint256 currentBatch;
-    uint256 currentBatchPayloadsExecuted;
+    uint40 currentBatch;
+    uint256 currentBatchPayloadsLeft;
     uint256 totalBatchPayloads;
     address middleware;
     address transmitter;
@@ -211,7 +241,12 @@ struct PayloadIdParams {
     uint40 requestCount;
     uint40 batchCount;
     uint40 payloadCount;
-    bytes32 prevDigestsHash; // should be id? hash of hashes
     address switchboard;
     uint32 chainSlug;
+}
+
+/// @notice Struct containing fee amounts and status
+struct TokenBalance {
+    uint256 deposited; // Amount deposited
+    uint256 blocked; // Amount blocked
 }

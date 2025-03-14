@@ -162,13 +162,7 @@ contract SuperTokenTest is DeliveryHelperTest {
         });
         bytes memory encodedOrder = abi.encode(transferOrder);
         appContracts.superTokenApp.transfer(encodedOrder);
-
-        uint32[] memory chainSlugs = new uint32[](2);
-        chainSlugs[0] = IForwarder(forwarderArb).getChainSlug();
-        chainSlugs[1] = IForwarder(forwarderOpt).getChainSlug();
-        // You can run the function below whenever you want to simulate the onchain execution for
-        // the txs in batch of the current asyncId. It bids, finalises, relays and resolves promises
-        _executeWriteRequestMultiChain(chainSlugs);
+        finalizeRequest(new bytes[](0));
 
         assertEq(
             SuperToken(onChainArb).balanceOf(owner),

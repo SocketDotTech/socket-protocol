@@ -32,22 +32,6 @@ contract Socket is SocketUtils {
     error InvalidSlug();
     error DeadlinePassed();
 
-    ////////////////////////////////////////////////////////////
-    ////////////////////// State Vars //////////////////////////
-    ////////////////////////////////////////////////////////////
-    uint64 public callCounter;
-
-    enum ExecutionStatus {
-        NotExecuted,
-        Executed,
-        Reverted
-    }
-
-    /**
-     * @dev keeps track of whether a payload has been executed or not using payload id
-     */
-    mapping(bytes32 => ExecutionStatus) public payloadExecuted;
-
     constructor(
         uint32 chainSlug_,
         address owner_,
@@ -94,7 +78,7 @@ contract Socket is SocketUtils {
         PlugConfig memory plugConfig = _plugConfigs[executeParams_.target];
         if (plugConfig.appGateway == address(0)) revert PlugDisconnected();
 
-        bytes32 payloadId = _createPayloadId(plugConfig.switchboard__, executeParams_);
+        bytes32 payloadId = _createPayloadId(plugConfig.switchboard, executeParams_);
         _validateExecutionStatus(payloadId);
 
         address transmitter = _recoverSigner(
@@ -108,20 +92,17 @@ contract Socket is SocketUtils {
             plugConfig.appGateway,
             executeParams_
         );
-        _verify(digest, payloadId, ISwitchboard(plugConfig.switchboard__));
+        _verify(digest, payloadId, plugConfig.switchboard);
         return _execute(payloadId, executeParams_);
     }
 
     ////////////////////////////////////////////////////////
     ////////////////// INTERNAL FUNCS //////////////////////
     ////////////////////////////////////////////////////////
-    function _verify(
-        bytes32 digest_,
-        bytes32 payloadId_,
-        ISwitchboard switchboard__
-    ) internal view {
+    function _verify(bytes32 digest_, bytes32 payloadId_, address switchboard_) internal view {
         // NOTE: is the the first un-trusted call in the system, another one is Plug.call
-        if (!switchboard__.allowPacket(digest_, payloadId_)) revert VerificationFailed();
+        if (!ISwitchboard(switchboard_).allowPacket(digest_, payloadId_))
+            revert VerificationFailed();
     }
 
     /**
@@ -133,13 +114,13 @@ contract Socket is SocketUtils {
         bytes32 payloadId_,
         ExecuteParams memory executeParams_
     ) internal returns (bytes memory) {
-        if (gasleft() < executeParams_.digestParams.executionGasLimit) revert LowGasLimit();
+        if (gasleft() < executeParams_.gasLimit) revert LowGasLimit();
 
         // NOTE: external un-trusted call
-        (bool success, bytes memory returnData) = localPlug_.call{
-            gas: executeParams_.digestParams.executionGasLimit,
+        (bool success, bytes memory returnData) = executeParams_.target.call{
+            gas: executeParams_.gasLimit,
             value: msg.value
-        }(executeParams_.digestParams.payload);
+        }(executeParams_.payload);
 
         if (!success) {
             payloadExecuted[payloadId_] = ExecutionStatus.Reverted;
@@ -149,5 +130,11 @@ contract Socket is SocketUtils {
         }
 
         return returnData;
+    }
+
+    function _validateExecutionStatus(bytes32 payloadId_) internal {
+        if (payloadExecuted[payloadId_] != ExecutionStatus.NotExecuted)
+            revert PayloadAlreadyExecuted(payloadExecuted[payloadId_]);
+        payloadExecuted[payloadId_] = ExecutionStatus.Executed;
     }
 }

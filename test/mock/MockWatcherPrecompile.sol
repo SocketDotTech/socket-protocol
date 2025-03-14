@@ -5,7 +5,7 @@ import "../../contracts/interfaces/IAppGateway.sol";
 import "../../contracts/interfaces/IWatcherPrecompile.sol";
 import "../../contracts/interfaces/IPromise.sol";
 
-import {PayloadDigestParams, AsyncRequest, FinalizeParams, TimeoutRequest, CallFromChainParams, PlugConfig, ResolvedPromises, AppGatewayConfig} from "../../contracts/protocol/utils/common/Structs.sol";
+import {TimeoutRequest, CallFromChainParams, PlugConfig, ResolvedPromises, AppGatewayConfig} from "../../contracts/protocol/utils/common/Structs.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/protocol/utils/common/Constants.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../../contracts/protocol/utils/common/Errors.sol";
 import "solady/utils/ERC1967Factory.sol";
@@ -14,15 +14,10 @@ import "solady/utils/ERC1967Factory.sol";
 /// @notice Contract that handles payload verification, execution and app configurations
 contract MockWatcherPrecompile {
     uint256 public maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
-    /// @notice Counter for tracking query requests
-    uint256 public queryCounter;
     /// @notice Counter for tracking payload execution requests
     uint256 public payloadCounter;
     /// @notice Counter for tracking timeout requests
     uint256 public timeoutCounter;
-    /// @notice Mapping to store async requests
-    /// @dev payloadId => AsyncRequest struct
-    mapping(bytes32 => AsyncRequest) public asyncRequests;
     /// @notice Mapping to store timeout requests
     /// @dev timeoutId => TimeoutRequest struct
     mapping(bytes32 => TimeoutRequest) public timeoutRequests;
@@ -50,15 +45,12 @@ contract MockWatcherPrecompile {
     event QueryRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
 
     /// @notice Emitted when a finalize request is made
-    /// @param payloadId The unique identifier for the request
-    /// @param asyncRequest The async request details
-    event FinalizeRequested(bytes32 indexed payloadId, AsyncRequest asyncRequest);
+    event FinalizeRequested(address transmitter, bytes32 digest, PayloadParams params);
 
     /// @notice Emitted when a request is finalized
     /// @param payloadId The unique identifier for the request
-    /// @param asyncRequest The async request details
     /// @param proof The proof from the watcher
-    event Finalized(bytes32 indexed payloadId, AsyncRequest asyncRequest, bytes proof);
+    event Finalized(bytes32 indexed payloadId, bytes proof);
 
     /// @notice Emitted when a promise is resolved
     /// @param payloadId The unique identifier for the resolved promise
@@ -122,37 +114,14 @@ contract MockWatcherPrecompile {
 
     /// @notice Finalizes a payload request, requests the watcher to release the proofs to execute on chain
     /// @param params_ The finalization parameters
-    /// @return payloadId The unique identifier for the finalized request
     /// @return digest The digest of the payload parameters
     function finalize(
-        FinalizeParams memory params_
-    ) external returns (bytes32 payloadId, bytes32 digest) {
+        PayloadParams memory params_,
+        address transmitter_
+    ) external returns (bytes32 digest) {
         digest = keccak256(abi.encode(block.timestamp));
         // Generate a unique payload ID by combining chain, target, and counter
-        payloadId = encodePayloadId(
-            params_.payloadDetails.chainSlug,
-            params_.payloadDetails.target,
-            payloadCounter++
-        );
-        address[] memory next = new address[](1);
-        emit FinalizeRequested(
-            payloadId,
-            AsyncRequest(
-                msg.sender,
-                address(0),
-                address(0),
-                params_.payloadDetails.target,
-                address(0),
-                0,
-                block.timestamp + 1000,
-                params_.asyncId,
-                bytes32(0),
-                bytes(""),
-                next,
-                params_.payloadDetails.writeFinality,
-                params_.payloadDetails.readAt
-            )
-        );
+        emit FinalizeRequested(transmitter_, digest, params_);
     }
 
     // ================== Query functions ==================
@@ -167,7 +136,7 @@ contract MockWatcherPrecompile {
         address[] memory,
         bytes memory payload
     ) public returns (bytes32 payloadId) {
-        payloadId = bytes32(queryCounter++);
+        payloadId = bytes32(payloadCounter++);
         emit QueryRequested(chainSlug, targetAddress, payloadId, payload);
     }
 
@@ -176,7 +145,7 @@ contract MockWatcherPrecompile {
     /// @param proof_ The watcher's proof
     /// @dev Only callable by the contract owner
     function finalized(bytes32 payloadId_, bytes calldata proof_) external {
-        emit Finalized(payloadId_, asyncRequests[payloadId_], proof_);
+        emit Finalized(payloadId_, proof_);
     }
 
     /// @notice Resolves multiple promises with their return data

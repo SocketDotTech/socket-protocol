@@ -5,6 +5,7 @@ import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
 import "./DeliveryHelperStorage.sol";
+import {PayloadSubmitParams} from "../../utils/common/Structs.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
 abstract contract DeliveryUtils is
@@ -15,7 +16,7 @@ abstract contract DeliveryUtils is
 {
     // slots [0-108] reserved for delivery helper storage and [109-159] reserved for addr resolver util
     // slots [160-209] reserved for gap
-    uint256[50] _gap_queue_async;
+    uint256[50] _gap_delivery_utils;
 
     /// @notice Error thrown when attempting to executed payloads after all have been executed
     error AllPayloadsExecuted();
@@ -32,28 +33,32 @@ abstract contract DeliveryUtils is
     /// @notice Error thrown when a bid is insufficient
     error InsufficientFees();
 
-    event CallBackReverted(bytes32 asyncId_, bytes32 payloadId_);
-    event RequestCancelled(bytes32 indexed asyncId);
+    event CallBackReverted(uint40 requestCount_, bytes32 payloadId_);
+    event RequestCancelled(uint40 indexed requestCount);
     event BidTimeoutUpdated(uint256 newBidTimeout);
     event PayloadSubmitted(
-        bytes32 indexed asyncId,
+        uint40 indexed requestCount,
         address indexed appGateway,
-        PayloadDetails[] payloads,
+        PayloadSubmitParams[] payloadSubmitParams,
         Fees fees,
         address auctionManager
     );
     /// @notice Emitted when fees are increased
-    event FeesIncreased(address indexed appGateway, bytes32 indexed asyncId, uint256 newMaxFees);
-    /// @notice Emitted when a payload is requested asynchronously
-    event PayloadAsyncRequested(
-        bytes32 indexed asyncId,
-        bytes32 indexed payloadId,
-        bytes32 indexed digest,
-        PayloadDetails payloadDetails
+    event FeesIncreased(
+        address indexed appGateway,
+        uint40 indexed requestCount,
+        uint256 newMaxFees
     );
+    /// @notice Emitted when a payload is requested asynchronously
+    // event PayloadAsyncRequested(
+    //     uint40 indexed requestCount,
+    //     bytes32 indexed payloadId,
+    //     bytes32 indexed digest,
+    //     PayloadDetails payloadDetails
+    // );
 
-    modifier onlyAuctionManager(bytes32 asyncId_) {
-        if (msg.sender != _payloadRequestes[asyncId_].auctionManager) revert NotAuctionManager();
+    modifier onlyAuctionManager(uint40 requestCount_) {
+        if (msg.sender != requests[requestCount_].auctionManager) revert NotAuctionManager();
         _;
     }
 

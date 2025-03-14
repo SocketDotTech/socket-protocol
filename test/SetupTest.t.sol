@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "../contracts/protocol/utils/common/Structs.sol";
 import "../contracts/protocol/utils/common/Constants.sol";
 import "../contracts/protocol/watcherPrecompile/WatcherPrecompile.sol";
+import "../contracts/protocol/watcherPrecompile/DumpDecoder.sol";
 import "../contracts/interfaces/IForwarder.sol";
 import "../contracts/protocol/utils/common/AccessRoles.sol";
 import {Socket} from "../contracts/protocol/socket/Socket.sol";
@@ -20,6 +21,7 @@ import {ResolvedPromises} from "../contracts/protocol/utils/common/Structs.sol";
 import "solady/utils/ERC1967Factory.sol";
 
 contract SetupTest is Test {
+    using DumpDecoder for bytes32;
     uint public c = 1;
     address owner = address(uint160(c++));
 
@@ -35,8 +37,9 @@ contract SetupTest is Test {
     uint32 evmxSlug = 1;
     uint256 expiryTime = 10000000;
 
-    uint256 public signatureNonce = 0;
-    uint256 public payloadIdCounter = 0;
+    uint256 public signatureNonce;
+    uint256 public payloadIdCounter;
+    uint256 public timeoutIdCounter;
     uint256 public defaultLimit = 1000;
 
     bytes public asyncPromiseBytecode = type(AsyncPromise).creationCode;
@@ -63,6 +66,8 @@ contract SetupTest is Test {
 
     event Initialized(uint64 version);
 
+    //////////////////////////////////// Setup ////////////////////////////////////
+
     function deploySocket(uint32 chainSlug_) internal returns (SocketContracts memory) {
         Socket socket = new Socket(chainSlug_, owner, "test");
         SocketBatcher socketBatcher = new SocketBatcher(owner, socket);
@@ -83,12 +88,13 @@ contract SetupTest is Test {
         hoax(watcherEOA);
         watcherPrecompile.setOnChainContracts(
             chainSlug_,
-            FAST,
-            address(switchboard),
             address(socket),
             address(contractFactoryPlug),
             address(feesPlug)
         );
+
+        hoax(watcherEOA);
+        watcherPrecompile.setSwitchboard(chainSlug_, FAST, address(switchboard));
 
         return
             SocketContracts({
@@ -146,6 +152,173 @@ contract SetupTest is Test {
         vm.stopPrank();
     }
 
+    //////////////////////////////////// Watcher precompiles ////////////////////////////////////
+    function finalizeRequest(
+        bytes[] memory readReturnData_
+    ) internal returns (uint40 requestCount) {
+        requestCount = watcherPrecompile.nextRequestCount();
+        requestCount = requestCount == 0 ? 0 : requestCount - 1;
+        finalizeRequestForCount(requestCount, readReturnData_);
+    }
+
+    function finalizeRequestForCount(
+        uint40 requestCount_,
+        bytes[] memory readReturnData_
+    ) internal {
+        uint40[] memory batches = watcherPrecompile.getBatches(requestCount_);
+        uint256 readCount = 0;
+        for (uint i = 0; i < batches.length; i++) {
+            readCount = _finalizeBatch(batches[i], readReturnData_, readCount);
+        }
+    }
+
+    function _finalizeBatch(
+        uint40 batchCount_,
+        bytes[] memory readReturnData_,
+        uint256 readCount_
+    ) internal returns (uint256) {
+        bytes32[] memory payloadIds = watcherPrecompile.getBatchPayloadIds(batchCount_);
+
+        for (uint i = 0; i < payloadIds.length; i++) {
+            PayloadParams memory payloadParams = watcherPrecompile.getPayloadParams(payloadIds[i]);
+            if (payloadParams.dump.getCallType() == CallType.READ) {
+                _resolvePromise(payloadParams.payloadId, readReturnData_[readCount_++]);
+            } else {
+                bytes memory returnData = _uploadProofAndExecute(payloadParams);
+                _resolvePromise(payloadParams.payloadId, returnData);
+            }
+        }
+        return readCount_;
+    }
+
+    function _uploadProofAndExecute(
+        PayloadParams memory payloadParams
+    ) internal returns (bytes memory) {
+        (bytes memory watcherProof, bytes32 digest) = _generateWatcherProof(payloadParams);
+        _writeProof(payloadParams.payloadId, watcherProof);
+
+        (
+            ExecuteParams memory params,
+            SocketBatcher socketBatcher,
+            uint256 value,
+            bytes memory transmitterSig
+        ) = _getExecuteParams(payloadParams);
+
+        return
+            socketBatcher.attestAndExecute(
+                params,
+                digest,
+                watcherProof,
+                transmitterSig
+            );
+    }
+
+    function resolvePromises(bytes32[] memory payloadIds, bytes[] memory returnData) internal {
+        for (uint i = 0; i < payloadIds.length; i++) {
+            _resolvePromise(payloadIds[i], returnData[i]);
+        }
+    }
+
+    //////////////////////////////////// Helpers ////////////////////////////////////
+
+    function getSocketConfig(uint32 chainSlug_) internal view returns (SocketContracts memory) {
+        return chainSlug_ == arbChainSlug ? arbConfig : optConfig;
+    }
+
+    function createFees(uint256 maxFees_) internal view returns (Fees memory) {
+        return Fees({feePoolChain: arbChainSlug, feePoolToken: ETH_ADDRESS, amount: maxFees_});
+    }
+
+    function _generateWatcherProof(
+        PayloadParams memory params_
+    ) internal view returns (bytes memory, bytes32) {
+        SocketContracts memory socketConfig = getSocketConfig(params_.dump.getChainSlug());
+        DigestParams memory digestParams_ = DigestParams(
+            transmitterEOA,
+            params_.payloadId,
+            params_.deadline,
+            params_.dump.getCallType(),
+            params_.dump.getWriteFinality(),
+            params_.gasLimit,
+            params_.value,
+            params_.readAt,
+            params_.payload,
+            params_.target,
+            params_.appGateway,
+            params_.prevDigestsHash
+        );
+        bytes32 digest = watcherPrecompile.getDigest(digestParams_);
+
+        bytes32 sigDigest = keccak256(abi.encode(address(socketConfig.switchboard), digest));
+        bytes memory proof = _createSignature(sigDigest, watcherPrivateKey);
+        return (proof, digest);
+    }
+
+    function _writeProof(bytes32 payloadId_, bytes memory watcherProof_) internal {
+        bytes memory bytesInput = abi.encode(
+            IWatcherPrecompile.finalized.selector,
+            payloadId_,
+            watcherProof_
+        );
+        bytes memory watcherSignature = _createWatcherSignature(bytesInput);
+        watcherPrecompile.finalized(payloadId_, watcherProof_, signatureNonce++, watcherSignature);
+        assertEq(watcherPrecompile.watcherProofs(payloadId_), watcherProof_);
+    }
+
+    function _getExecuteParams(
+        PayloadParams memory payloadParams
+    )
+        internal
+        view
+        returns (
+            ExecuteParams memory params,
+            SocketBatcher socketBatcher,
+            uint256 value,
+            bytes memory transmitterSig
+        )
+    {
+        SocketContracts memory socketConfig = getSocketConfig(payloadParams.dump.getChainSlug());
+        bytes32 transmitterDigest = keccak256(
+            abi.encode(address(socketConfig.socket), payloadParams.payloadId)
+        );
+        transmitterSig = _createSignature(transmitterDigest, transmitterPrivateKey);
+
+        params = ExecuteParams({
+            deadline: payloadParams.deadline,
+            callType: payloadParams.dump.getCallType(),
+            writeFinality: payloadParams.dump.getWriteFinality(),
+            gasLimit: payloadParams.gasLimit,
+            readAt: payloadParams.readAt,
+            payload: payloadParams.payload,
+            target: payloadParams.target,
+            requestCount: payloadParams.dump.getRequestCount(),
+            batchCount: payloadParams.dump.getBatchCount(),
+            payloadCount: payloadParams.dump.getPayloadCount(),
+            prevDigestsHash: payloadParams.prevDigestsHash,
+            switchboard: payloadParams.switchboard
+        });
+
+        value = payloadParams.value;
+        socketBatcher = socketConfig.socketBatcher;
+    }
+
+    function _resolvePromise(bytes32 payloadId, bytes memory returnData) internal {
+        ResolvedPromises[] memory resolvedPromises = new ResolvedPromises[](1);
+        resolvedPromises[0] = ResolvedPromises({payloadId: payloadId, returnData: returnData});
+
+        bytes memory watcherSignature = _createWatcherSignature(
+            abi.encode(WatcherPrecompile.resolvePromises.selector, resolvedPromises)
+        );
+        watcherPrecompile.resolvePromises(resolvedPromises, signatureNonce++, watcherSignature);
+    }
+
+    function _createWatcherSignature(bytes memory params_) internal view returns (bytes memory) {
+        bytes32 digest = keccak256(
+            abi.encode(address(watcherPrecompile), evmxSlug, signatureNonce, params_)
+        );
+        return _createSignature(digest, watcherPrivateKey);
+    }
+
     function _createSignature(
         bytes32 digest_,
         uint256 privateKey_
@@ -160,114 +333,5 @@ contract SetupTest is Test {
             mstore(add(sig, 32), sigR)
             mstore(add(sig, 64), sigS)
         }
-    }
-
-    function getSocketConfig(uint32 chainSlug_) internal view returns (SocketContracts memory) {
-        return chainSlug_ == arbChainSlug ? arbConfig : optConfig;
-    }
-
-    function createFees(uint256 maxFees_) internal view returns (Fees memory) {
-        return Fees({feePoolChain: arbChainSlug, feePoolToken: ETH_ADDRESS, amount: maxFees_});
-    }
-
-    function relayTx(
-        uint32 chainSlug_,
-        bytes32 payloadId,
-        bytes32 digest,
-        PayloadDetails memory payloadDetails,
-        bytes memory watcherProof
-    ) internal returns (bytes memory) {
-        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
-        bytes32 transmitterDigest = keccak256(abi.encode(address(socketConfig.socket), payloadId));
-        bytes memory transmitterSig = _createSignature(transmitterDigest, transmitterPrivateKey);
-
-        (, , , , , , uint256 deadline, , , , , ) = watcherPrecompile.asyncRequests(payloadId);
-
-        vm.startPrank(transmitterEOA);
-        AttestAndExecutePayloadParams memory params = AttestAndExecutePayloadParams({
-            switchboard: address(socketConfig.switchboard),
-            digest: digest,
-            proof: watcherProof,
-            payloadId: payloadId,
-            appGateway: payloadDetails.appGateway,
-            executionGasLimit: payloadDetails.executionGasLimit,
-            transmitterSignature: transmitterSig,
-            payload: payloadDetails.payload,
-            target: payloadDetails.target,
-            deadline: deadline
-        });
-
-        bytes memory returnData = socketConfig.socketBatcher.attestAndExecute(params);
-        vm.stopPrank();
-        return returnData;
-    }
-
-    function resolvePromises(bytes32[] memory payloadIds, bytes[] memory returnDatas_) internal {
-        for (uint i = 0; i < payloadIds.length; i++) {
-            resolvePromise(payloadIds[i], returnDatas_[i]);
-        }
-    }
-
-    function resolvePromise(bytes32 payloadId, bytes memory returnData) internal {
-        ResolvedPromises[] memory resolvedPromises = new ResolvedPromises[](1);
-
-        bytes[] memory returnDatas = new bytes[](2);
-        returnDatas[0] = returnData;
-
-        resolvedPromises[0] = ResolvedPromises({payloadId: payloadId, returnData: returnDatas});
-
-        bytes memory watcherSignature = _createWatcherSignature(
-            abi.encode(WatcherPrecompile.resolvePromises.selector, resolvedPromises)
-        );
-        watcherPrecompile.resolvePromises(resolvedPromises, signatureNonce++, watcherSignature);
-    }
-
-    function _createWatcherSignature(
-        bytes memory params_
-    ) internal view returns (bytes memory sig) {
-        bytes32 digest = keccak256(
-            abi.encode(address(watcherPrecompile), evmxSlug, signatureNonce, params_)
-        );
-        digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
-        (uint8 sigV, bytes32 sigR, bytes32 sigS) = vm.sign(watcherPrivateKey, digest);
-        sig = new bytes(65);
-        bytes1 v32 = bytes1(sigV);
-
-        assembly {
-            mstore(add(sig, 96), v32)
-            mstore(add(sig, 32), sigR)
-            mstore(add(sig, 64), sigS)
-        }
-    }
-
-    function getWritePayloadId(
-        uint32 chainSlug_,
-        address switchboard_,
-        uint256 counter_
-    ) internal pure returns (bytes32) {
-        return _encodeId(chainSlug_, switchboard_, counter_);
-    }
-
-    function getWritePayloadIds(
-        uint32 chainSlug_,
-        address switchboard_,
-        uint256 numPayloads
-    ) internal returns (bytes32[] memory) {
-        bytes32[] memory payloadIds = new bytes32[](numPayloads);
-        for (uint256 i = 0; i < numPayloads; i++) {
-            payloadIds[i] = _encodeId(chainSlug_, switchboard_, payloadIdCounter++);
-        }
-        return payloadIds;
-    }
-
-    function _encodeId(
-        uint32 chainSlug_,
-        address sbOrWatcher_,
-        uint256 counter_
-    ) internal pure returns (bytes32) {
-        return
-            bytes32(
-                (uint256(chainSlug_) << 224) | (uint256(uint160(sbOrWatcher_)) << 64) | counter_
-            );
     }
 }

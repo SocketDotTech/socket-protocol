@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
+import {ExecuteParams} from "../protocol/utils/common/Structs.sol";
 /**
  * @title ISocket
  * @notice An interface for a Chain Abstraction contract
@@ -49,22 +50,6 @@ interface ISocket {
     );
 
     /**
-     * @notice params for executing a payload
-     * @param payloadId the id of the payload
-     * @param target the address of the contract to call
-     * @param executionGasLimit the gas limit for the execution
-     * @param deadline the deadline for the execution
-     * @param payload the data to be executed
-     */
-    struct ExecuteParams {
-        bytes32 payloadId;
-        address target;
-        uint256 executionGasLimit;
-        uint256 deadline;
-        bytes payload;
-    }
-
-    /**
      * @notice To call the appGateway on EVMx. Should only be called by a plug.
      * @param payload_ bytes to be delivered to the Plug on EVMx
      * @param params_ a 32 bytes param to add details for execution.
@@ -78,8 +63,7 @@ interface ISocket {
      * @notice executes a payload
      */
     function execute(
-        address appGateway_,
-        ExecuteParams memory params_,
+        ExecuteParams memory executeParams_,
         bytes memory transmitterSignature_
     ) external payable returns (bytes memory);
 

@@ -21,56 +21,68 @@ contract DeliveryHelper is FeesHelpers {
         _initializeOwner(owner_);
     }
 
-    function endTimeout(bytes32 requestId_) external onlyWatcherPrecompile {
-        IAuctionManager(_payloadRequestes[requestId_].auctionManager).endAuction(requestId_);
+    function endTimeout(uint40 requestCount_) external onlyWatcherPrecompile {
+        IAuctionManager(requests[requestCount_].auctionManager).endAuction(requestCount_);
     }
 
     function startRequestProcessing(
-        bytes32 requestId_,
+        uint40 requestCount_,
         Bid memory winningBid_
-    ) external onlyAuctionManager(requestId_) {
+    ) external onlyAuctionManager(requestCount_) {
         if (winningBid_.transmitter == address(0)) revert InvalidTransmitter();
 
+        RequestMetadata storage requestMetadata_ = requests[requestCount_];
+        bool isRestarted = requestMetadata_.winningBid.transmitter != address(0);
+
+        requestMetadata_.winningBid.transmitter = winningBid_.transmitter;
+
         if (!isRestarted) {
-            watcherPrecompile__().executeRequest(requestId_, winningBid_.transmitter);
+            watcherPrecompile__().startProcessingRequest(requestCount_, winningBid_.transmitter);
         } else {
-            watcherPrecompile__().updateTransmitter(requestId_, winningBid_.transmitter);
+            watcherPrecompile__().updateTransmitter(requestCount_, winningBid_.transmitter);
         }
     }
 
-    function finishRequest(
-        bytes32 requestId_,
-        PayloadRequest storage payloadRequest_
-    ) external onlyWatcherPrecompile {
+    function finishRequest(uint40 requestCount_) external onlyWatcherPrecompile {
+        RequestMetadata storage requestMetadata_ = requests[requestCount_];
         IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
-            requestId_,
-            payloadRequest_.winningBid.transmitter,
-            payloadRequest_.appGateway
+            requestCount_,
+            requestMetadata_.winningBid.transmitter,
+            requestMetadata_.appGateway
         );
-        IAppGateway(payloadRequest_.appGateway).onRequestComplete(requestId_, payloadRequest_);
+        IAppGateway(requestMetadata_.appGateway).onRequestComplete(
+            requestCount_,
+            requestMetadata_.onCompleteData
+        );
     }
 
     /// @notice Cancels a request
-    /// @param requestId_ The ID of the request
-    function cancelRequest(bytes32 requestId_) external {
-        if (msg.sender != requests[requestId_].appGateway) {
+    /// @param requestCount_ The ID of the request
+    function cancelRequest(uint40 requestCount_) external {
+        if (msg.sender != requests[requestCount_].appGateway) {
             revert OnlyAppGateway();
         }
 
-        if (requests[requestId_].winningBid.transmitter != address(0)) {
+        if (requests[requestCount_].winningBid.transmitter != address(0)) {
             IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
-                requestId_,
-                requests[requestId_].winningBid.transmitter,
-                requests[requestId_].appGateway
+                requestCount_,
+                requests[requestCount_].winningBid.transmitter,
+                requests[requestCount_].appGateway
             );
         } else {
             IFeesManager(addressResolver__.feesManager()).unblockFees(
-                requestId_,
-                requests[requestId_].appGateway
+                requestCount_,
+                requests[requestCount_].appGateway
             );
         }
 
-        watcherPrecompile__().cancelRequest(requestId_);
-        emit RequestCancelled(requestId_);
+        watcherPrecompile__().cancelRequest(requestCount_);
+        emit RequestCancelled(requestCount_);
+    }
+
+    function getRequestMetadata(
+        uint40 requestCount_
+    ) external view returns (RequestMetadata memory) {
+        return requests[requestCount_];
     }
 }

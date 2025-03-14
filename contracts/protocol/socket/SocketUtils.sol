@@ -11,10 +11,21 @@ import {ECDSA} from "solady/utils/ECDSA.sol";
  * setters and inherits SocketConfig
  */
 abstract contract SocketUtils is SocketConfig {
+    ////////////////////////////////////////////////////////////
+    ////////////////////// State Vars //////////////////////////
+    ////////////////////////////////////////////////////////////
+
     // Version string for this socket instance
     bytes32 public immutable version;
     // ChainSlug for this deployed socket instance
     uint32 public immutable chainSlug;
+
+    uint64 public callCounter;
+
+    /**
+     * @dev keeps track of whether a payload has been executed or not using payload id
+     */
+    mapping(bytes32 => ExecutionStatus) public payloadExecuted;
 
     /*
      * @notice constructor for creating a new Socket contract instance.
@@ -38,8 +49,11 @@ abstract contract SocketUtils is SocketConfig {
     error InvalidTransmitter();
 
     /**
-     * @notice Packs the payload into a bytes32 hash
-     * @param digestParams_ The parameters of the payload
+     * @notice creates the digest for the payload
+     * @param transmitter_ The address of the transmitter
+     * @param payloadId_ The ID of the payload
+     * @param appGateway_ The address of the app gateway
+     * @param executeParams_ The parameters of the payload
      * @return The packed payload as a bytes32 hash
      */
     function _createDigest(
@@ -47,7 +61,7 @@ abstract contract SocketUtils is SocketConfig {
         bytes32 payloadId_,
         address appGateway_,
         ExecuteParams memory executeParams_
-    ) internal pure returns (bytes32) {
+    ) internal view returns (bytes32) {
         return
             keccak256(
                 abi.encode(
@@ -61,21 +75,16 @@ abstract contract SocketUtils is SocketConfig {
                     executeParams_.readAt,
                     executeParams_.payload,
                     executeParams_.target,
-                    appGateway_
+                    appGateway_,
+                    executeParams_.prevDigestsHash
                 )
             );
     }
 
-    function _validateExecutionStatus(bytes32 payloadId_) internal {
-        if (payloadExecuted[payloadId_] != ExecutionStatus.NotExecuted)
-            revert PayloadAlreadyExecuted(payloadExecuted[payloadId_]);
-        payloadExecuted[payloadId_] = ExecutionStatus.Executed;
-    }
-
     /**
-     * @notice Verifies the payload ID
-     * @param payloadIdParams_ The parameters of the payload
-     * @param payloadId_ The ID of the payload
+     * @notice creates the payload ID
+     * @param switchboard_ The address of the switchboard
+     * @param executeParams_ The parameters of the payload
      */
     function _createPayloadId(
         address switchboard_,
@@ -88,7 +97,6 @@ abstract contract SocketUtils is SocketConfig {
                     executeParams_.requestCount,
                     executeParams_.batchCount,
                     executeParams_.payloadCount,
-                    executeParams_.prevDigestsHash,
                     switchboard_,
                     chainSlug
                 )

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {Fees, Read, Parallel, QueuePayloadParams, OverrideParams, CallType, WriteFinality} from "../protocol/utils/common/Structs.sol";
+import {Fees, Read, Parallel, QueuePayloadParams, OverrideParams, CallType, WriteFinality, PayloadParams} from "../protocol/utils/common/Structs.sol";
 
 interface IAppGateway {
     function isAsyncModifierSet() external view returns (bool);
@@ -9,18 +9,18 @@ interface IAppGateway {
     function getOverrideParams()
         external
         view
-        returns (Read, Parallel, WriteFinality, uint256, uint256);
+        returns (Read, Parallel, WriteFinality, uint256, uint256, bytes32);
 
-    function onRequestComplete(bytes32 asyncId_, PayloadRequest memory payloadRequest_) external;
+    function onRequestComplete(uint40 requestCount_, bytes calldata onCompleteData_) external;
 
     function callFromChain(
         uint32 chainSlug_,
         address plug_,
-        bytes calldata payload_,
-        bytes32 params_
+        bytes32 params_,
+        bytes calldata payload_
     ) external;
 
-    function handleRevert(bytes32 asyncId_, bytes32 payloadId_) external;
+    function handleRevert(uint40 requestCount_, bytes32 payloadId_) external;
 
     /// @notice initialize the contracts on chain
     function initialize(uint32 chainSlug_) external;

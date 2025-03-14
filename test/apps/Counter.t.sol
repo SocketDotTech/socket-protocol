@@ -23,8 +23,8 @@ contract CounterTest is DeliveryHelperTest {
         contractIds[0] = counterId;
     }
 
-    function deployCounterApp(uint32 chainSlug) internal returns (bytes32 asyncId) {
-        asyncId = _deploy(contractIds, chainSlug, 1, IAppGateway(counterGateway));
+    function deployCounterApp(uint32 chainSlug) internal returns (uint40 requestCount) {
+        requestCount = _deploy(chainSlug, IAppGateway(counterGateway), contractIds);
     }
 
     function testCounterDeployment() external {
@@ -64,8 +64,8 @@ contract CounterTest is DeliveryHelperTest {
         address[] memory instances = new address[](1);
         instances[0] = arbCounterForwarder;
         counterGateway.incrementCounters(instances);
+        finalizeRequest(new bytes[](0));
 
-        _executeWriteRequestSingleChain(arbChainSlug, 1);
         assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
     }
 
@@ -96,7 +96,8 @@ contract CounterTest is DeliveryHelperTest {
         uint32[] memory chains = new uint32[](2);
         chains[0] = arbChainSlug;
         chains[1] = optChainSlug;
-        _executeWriteRequestMultiChain(chains);
+
+        finalizeRequest(new bytes[](0));
 
         assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
         assertEq(Counter(optCounter).counter(), optCounterBefore + 1);
@@ -120,23 +121,9 @@ contract CounterTest is DeliveryHelperTest {
         instances[0] = arbCounterForwarder;
         instances[1] = optCounterForwarder;
 
-        bytes32 bridgeAsyncId = getNextAsyncId();
-
-        bytes32[] memory payloadIds = new bytes32[](3);
-        payloadIds[0] = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
-        payloadIds[1] = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
-
-        payloadIds[2] = getWritePayloadId(
-            arbChainSlug,
-            address(getSocketConfig(arbChainSlug).switchboard),
-            payloadIdCounter++
-        );
+        finalizeRequest(new bytes[](0));
 
         counterGateway.readCounters(instances);
-
-        bidAndEndAuction(bridgeAsyncId);
-        finalizeQuery(payloadIds[0], abi.encode(Counter(arbCounter).counter()));
-        finalizeQuery(payloadIds[1], abi.encode(Counter(optCounter).counter()));
-        finalizeAndExecute(payloadIds[2]);
+        finalizeRequest(new bytes[](0));
     }
 }

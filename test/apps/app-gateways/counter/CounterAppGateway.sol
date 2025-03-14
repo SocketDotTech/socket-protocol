@@ -102,8 +102,8 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     function callFromChain(
         uint32,
         address,
-        bytes calldata payload_,
-        bytes32
+        bytes32,
+        bytes calldata payload_
     ) external override onlyWatcherPrecompile {
         uint256 value = abi.decode(payload_, (uint256));
         counterVal += value;
@@ -115,7 +115,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
             this.resolveTimeout.selector,
             block.timestamp
         );
-        watcherPrecompile__().setTimeout(address(this), payload, delayInSeconds_);
+        watcherPrecompile__().setTimeout(address(this), delayInSeconds_, payload);
     }
 
     function resolveTimeout(uint256 creationTimestamp_) external onlyWatcherPrecompile {

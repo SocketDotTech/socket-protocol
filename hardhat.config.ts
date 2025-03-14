@@ -166,7 +166,7 @@ const config: HardhatUserConfig = {
           },
         },
       },
-      viaIR: true,
+      viaIR: false,
     },
   },
 };
