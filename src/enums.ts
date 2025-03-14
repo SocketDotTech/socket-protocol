@@ -24,6 +24,7 @@ export enum Events {
   Finalized = "Finalized",
   FeesDeposited = "FeesDeposited",
   FeesIncreased = "FeesIncreased",
+  RequestSubmitted = "RequestSubmitted",
 }
 
 export enum Contracts {

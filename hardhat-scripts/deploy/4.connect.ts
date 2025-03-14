@@ -59,7 +59,7 @@ export const isConfigSetOnSocket = async (
   return (
     plugConfigRegistered.appGateway.toLowerCase() ===
       appGateway?.toLowerCase() &&
-    plugConfigRegistered.switchboard__.toLowerCase() ===
+    plugConfigRegistered.switchboard.toLowerCase() ===
       switchboard.toLowerCase()
   );
 };

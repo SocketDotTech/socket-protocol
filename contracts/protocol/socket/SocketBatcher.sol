@@ -6,12 +6,13 @@ import "../../interfaces/ISocket.sol";
 import "../../interfaces/ISwitchboard.sol";
 import "../utils/RescueFundsLib.sol";
 import {ExecuteParams} from "../../protocol/utils/common/Structs.sol";
+import "../../interfaces/ISocketBatcher.sol";
 
 /**
  * @title SocketBatcher
  * @notice The SocketBatcher contract is responsible for batching payloads and transmitting them to the destination chain
  */
-contract SocketBatcher is Ownable {
+contract SocketBatcher is ISocketBatcher, Ownable {
     // socket contract
     ISocket public immutable socket__;
 

@@ -17,12 +17,13 @@ export const watcherPrecompileEvents = [
   Events.TimeoutRequested,
   Events.TimeoutResolved,
   Events.CalledAppGateway,
+  Events.RequestSubmitted,
   Events.PromiseNotResolved,
 ];
 
 export const deliveryHelperEvents = [
   Events.PayloadSubmitted,
-  Events.PayloadAsyncRequested,
+  // Events.PayloadAsyncRequested,
   Events.FeesIncreased,
 ];
 

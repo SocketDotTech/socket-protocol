@@ -25,8 +25,8 @@ export const logConfig = () => {
 
 export const chains: Array<ChainSlug> = [
   ChainSlug.ARBITRUM_SEPOLIA,
-  ChainSlug.OPTIMISM_SEPOLIA,
-  ChainSlug.BASE_SEPOLIA,
+  // ChainSlug.OPTIMISM_SEPOLIA,
+  // ChainSlug.BASE_SEPOLIA,
   // ChainSlug.SEPOLIA,
 ];
 export const EVM_CHAIN_ID_MAP: Record<DeploymentMode, number> = {
@@ -39,7 +39,7 @@ export const auctionEndDelaySeconds = 0;
 export const watcher = "0xb62505feacC486e809392c65614Ce4d7b051923b";
 export const MAX_FEES = ethers.utils.parseEther("0.001");
 export const EVMX_CHAIN_ID = EVM_CHAIN_ID_MAP[mode];
-export const MAX_LIMIT = 100;
+export const DEFAULT_MAX_LIMIT = 100;
 export const BID_TIMEOUT = 600;
 export const EXPIRY_TIME = 300;
 export const UPGRADE_VERSION = 1;

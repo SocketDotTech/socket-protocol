@@ -203,8 +203,8 @@ contract WatcherPrecompile is RequestHandler {
         );
 
         PayloadParams storage payloadParams = payloads[payloadId_];
-        RequestParams storage requestParams = requestParams[payloadParams.dump.getRequestCount()];
-        requestParams.isRequestCancelled = true;
+        RequestParams storage currentRequestParams = requestParams[payloadParams.dump.getRequestCount()];
+        currentRequestParams.isRequestCancelled = true;
 
         if (isRevertingOnchain_)
             IPromise(payloadParams.asyncPromise).markOnchainRevert(
@@ -215,7 +215,7 @@ contract WatcherPrecompile is RequestHandler {
         // assign fees after expiry time
         IFeesManager(payloadParams.appGateway).unblockAndAssignFees(
             payloadParams.dump.getRequestCount(),
-            requestParams.transmitter,
+            currentRequestParams.transmitter,
             payloadParams.appGateway
         );
     }

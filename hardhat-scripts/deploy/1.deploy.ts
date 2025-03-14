@@ -7,6 +7,7 @@ import {
   CORE_CONTRACTS,
   DeploymentAddresses,
   EVMxCoreContracts,
+  FAST_SWITCHBOARD_TYPE,
   IMPLEMENTATION_SLOT,
 } from "../constants";
 import {
@@ -23,7 +24,7 @@ import {
   EVMX_CHAIN_ID,
   EXPIRY_TIME,
   logConfig,
-  MAX_LIMIT,
+  DEFAULT_MAX_LIMIT,
   mode,
 } from "../config/config";
 config();
@@ -117,7 +118,7 @@ const deployEVMxContracts = async () => {
         [
           EVMxOwner,
           addressResolver.address,
-          MAX_LIMIT,
+          DEFAULT_MAX_LIMIT,
           EXPIRY_TIME,
           EVMX_CHAIN_ID,
         ],
@@ -128,7 +129,7 @@ const deployEVMxContracts = async () => {
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.FeesManager,
         `contracts/protocol/payload-delivery/FeesManager.sol`,
-        [addressResolver.address, EVMxOwner, EVMX_CHAIN_ID],
+        [addressResolver.address, EVMxOwner, EVMX_CHAIN_ID, FAST_SWITCHBOARD_TYPE],
         proxyFactory,
         deployUtils
       );
