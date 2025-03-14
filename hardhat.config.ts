@@ -5,6 +5,8 @@ import "hardhat-preprocessor";
 import "hardhat-deploy";
 import "hardhat-abi-exporter";
 import "hardhat-change-network";
+import "hardhat-contract-sizer";
+
 import { config as dotenvConfig } from "dotenv";
 import type { HardhatUserConfig } from "hardhat/config";
 import type {
@@ -158,7 +160,7 @@ const config: HardhatUserConfig = {
       evmVersion: "paris",
       optimizer: {
         enabled: true,
-        runs: 200,
+        runs: 1,
         details: {
           yul: true,
           yulDetails: {
