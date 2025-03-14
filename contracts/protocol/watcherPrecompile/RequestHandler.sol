@@ -41,7 +41,6 @@ abstract contract RequestHandler is WatcherPrecompileCore {
             batchPayloadIds[batchCount].push(payloadId);
 
             bytes32 dump;
-
             dump = dump.setRequestCount(requestCount);
             dump = dump.setBatchCount(batchCount);
             dump = dump.setPayloadCount(localPayloadCount);

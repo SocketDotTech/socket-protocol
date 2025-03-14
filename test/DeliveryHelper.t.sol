@@ -216,8 +216,10 @@ contract DeliveryHelperTest is SetupTest {
         uint40[] memory batches = watcherPrecompile.getBatches(requestCount_);
 
         bool onlyReads = _checkIfOnlyReads(batches[0]);
-        console.log("onlyReads: %s", onlyReads);
-        if (!onlyReads && batches.length > 1) bidAndEndAuction(requestCount_);
+
+        if (!(onlyReads && batches.length == 1)) {
+            bidAndEndAuction(requestCount_);
+        }
 
         uint256 readCount = 0;
         for (uint i = 0; i < batches.length; i++) {
