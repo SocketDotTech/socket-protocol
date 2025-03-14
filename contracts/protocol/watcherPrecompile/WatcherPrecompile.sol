@@ -159,7 +159,7 @@ contract WatcherPrecompile is RequestHandler {
         for (uint256 i = 0; i < resolvedPromises_.length; i++) {
             // Get the array of promise addresses for this payload
             PayloadParams memory payloadParams = payloads[resolvedPromises_[i].payloadId];
-            address asyncPromise = payloadParams.dump.getAsyncPromise();
+            address asyncPromise = payloadParams.asyncPromise;
             if (asyncPromise == address(0)) continue;
 
             // Resolve each promise with its corresponding return data
@@ -207,7 +207,7 @@ contract WatcherPrecompile is RequestHandler {
         requestParams.isRequestCancelled = true;
 
         if (isRevertingOnchain_)
-            IPromise(payloadParams.dump.getAsyncPromise()).markOnchainRevert(
+            IPromise(payloadParams.asyncPromise).markOnchainRevert(
                 payloadParams.dump.getRequestCount(),
                 payloadId_
             );

@@ -40,14 +40,18 @@ abstract contract RequestHandler is WatcherPrecompileCore {
             bytes32 payloadId = _createPayloadId(p, requestCount, batchCount, localPayloadCount);
             batchPayloadIds[batchCount].push(payloadId);
 
-            payloads[payloadId].dump.setRequestCount(requestCount);
-            payloads[payloadId].dump.setBatchCount(batchCount);
-            payloads[payloadId].dump.setPayloadCount(localPayloadCount);
-            payloads[payloadId].dump.setChainSlug(p.chainSlug);
-            payloads[payloadId].dump.setCallType(p.callType);
-            payloads[payloadId].dump.setIsParallel(p.isParallel);
-            payloads[payloadId].dump.setWriteFinality(p.writeFinality);
-            payloads[payloadId].dump.setAsyncPromise(p.asyncPromise);
+            bytes32 dump;
+
+            dump = dump.setRequestCount(requestCount);
+            dump = dump.setBatchCount(batchCount);
+            dump = dump.setPayloadCount(localPayloadCount);
+            dump = dump.setChainSlug(p.chainSlug);
+            dump = dump.setCallType(p.callType);
+            dump = dump.setIsParallel(p.isParallel);
+            dump = dump.setWriteFinality(p.writeFinality);
+
+            payloads[payloadId].dump = dump;
+            payloads[payloadId].asyncPromise = p.asyncPromise;
             payloads[payloadId].switchboard = p.switchboard;
             payloads[payloadId].target = p.target;
             payloads[payloadId].appGateway = p.callType == CallType.DEPLOY
@@ -120,7 +124,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         PayloadParams[] memory payloadParamsArray = _getBatch(requestCount_, batchCount_);
         if (r.isRequestCancelled) revert RequestCancelled();
         for (uint40 i = 0; i < payloadParamsArray.length; i++) {
-            bool isResolved = IPromise(payloadParamsArray[i].dump.getAsyncPromise()).resolved();
+            bool isResolved = IPromise(payloadParamsArray[i].asyncPromise).resolved();
             if (isResolved) continue;
             totalPayloadsLeft++;
 

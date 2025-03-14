@@ -181,7 +181,7 @@ struct PayloadSubmitParams {
 
 struct PayloadParams {
     // uint40 requestCount + uint40 batchCount + uint40 payloadCount + uint32 chainSlug
-    // CallType callType + Parallel isParallel + WriteFinality writeFinality + address asyncPromise
+    // CallType callType + Parallel isParallel + WriteFinality writeFinality
     bytes32 dump;
     // uint40 requestCount;
     // uint40 batchCount;
@@ -190,7 +190,7 @@ struct PayloadParams {
     // CallType callType;
     // Parallel isParallel;
     // WriteFinality writeFinality;
-    // address asyncPromise;
+    address asyncPromise;
     address switchboard;
     address target;
     address appGateway;
