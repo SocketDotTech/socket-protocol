@@ -18,8 +18,12 @@
     "FeesManager": "0x777fAAf1c30Ce8E68262b1cbF0a752d4f1bA652C",
     "FeesManagerImpl": "0xB423eE3bffc3604F96B59cF419C48AE05b8E9d0b",
     "startBlock": 73062,
-    "WatcherPrecompile": "0xadA397123A6E80F67b1887895A62B2D9273E50b4",
-    "WatcherPrecompileImpl": "0x71956F006Ec5434581D3Fd5E7224BB3bae231907"
+    "WatcherPrecompile": "0xb84A0a3780d2766b0B610cef851D9CbB1dB9e9EC",
+    "WatcherPrecompileConfig": "0x6D52e71E235be8354e3ce1eC5d3E10DD2B2ad441",
+    "WatcherPrecompileConfigImpl": "0x33fCf171878FBcfc7d4E09354032Bbce4D30c75F",
+    "WatcherPrecompileImpl": "0x7FD88f010b2EDe0BC60AB4eD7475Fe89D60D7483",
+    "WatcherPrecompileLimits": "0x2cC4D88Ac8C795212C754bA481137dD916bE7850",
+    "WatcherPrecompileLimitsImpl": "0xd37c334d02688ae1d552142353136a99bfA6cc0D"
   },
   "11155420": {
     "ContractFactoryPlug": "0x289A0413420f812a7b05F931FB0726168121ae5a",
