@@ -52,13 +52,15 @@ abstract contract RequestQueue is DeliveryUtils {
             auctionManager: auctionManager_,
             fees: fees_,
             winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
-            onCompleteData: onCompleteData_
+            onCompleteData: onCompleteData_,
+            onlyReadRequests: onlyReadRequests
         });
 
         requestCount = watcherPrecompile__().submitRequest(payloadSubmitParamsArray);
         requests[requestCount] = requestMetadata;
 
         // send query directly if request contains only reads
+        // transmitter should ignore the batch for auction, the transaction will also revert if someone bids
         if (onlyReadRequests)
             watcherPrecompile__().startProcessingRequest(requestCount, address(0));
 
@@ -67,7 +69,8 @@ abstract contract RequestQueue is DeliveryUtils {
             appGateway,
             payloadSubmitParamsArray,
             fees_,
-            auctionManager_
+            auctionManager_,
+            onlyReadRequests
         );
     }
 
@@ -87,14 +90,8 @@ abstract contract RequestQueue is DeliveryUtils {
 
         totalLevels = 0;
         onlyReadRequests = queuePayloadParams[0].callType == CallType.READ;
-
         for (uint256 i = 0; i < queuePayloadParams.length; i++) {
-            // Check if first batch is all reads
-            if (
-                totalLevels == 0 &&
-                queuePayloadParams[i].isParallel == Parallel.ON &&
-                queuePayloadParams[i].callType != CallType.READ
-            ) {
+            if (queuePayloadParams[i].callType != CallType.READ) {
                 onlyReadRequests = false;
             }
 
@@ -105,8 +102,6 @@ abstract contract RequestQueue is DeliveryUtils {
 
             payloadDetailsArray[i] = _createPayloadDetails(totalLevels, queuePayloadParams[i]);
         }
-
-        if (totalLevels > 1) onlyReadRequests = false;
 
         clearQueue();
     }

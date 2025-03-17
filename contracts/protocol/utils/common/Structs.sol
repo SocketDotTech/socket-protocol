@@ -220,6 +220,7 @@ struct RequestMetadata {
     Fees fees;
     Bid winningBid;
     bytes onCompleteData;
+    bool onlyReadRequests;
 }
 
 struct ExecuteParams {

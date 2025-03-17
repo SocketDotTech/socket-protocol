@@ -120,7 +120,9 @@ abstract contract RequestHandler is WatcherPrecompileCore {
     ) internal returns (uint256 totalPayloadsLeft) {
         RequestParams memory r = requestParams[requestCount_];
         PayloadParams[] memory payloadParamsArray = _getBatch(requestCount_, batchCount_);
+
         if (r.isRequestCancelled) revert RequestCancelled();
+
         for (uint40 i = 0; i < payloadParamsArray.length; i++) {
             bool isResolved = IPromise(payloadParamsArray[i].asyncPromise).resolved();
             if (isResolved) continue;
