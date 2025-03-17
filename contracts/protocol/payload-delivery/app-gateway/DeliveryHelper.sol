@@ -45,11 +45,14 @@ contract DeliveryHelper is FeesHelpers {
 
     function finishRequest(uint40 requestCount_) external onlyWatcherPrecompile {
         RequestMetadata storage requestMetadata_ = requests[requestCount_];
-        IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
-            requestCount_,
-            requestMetadata_.winningBid.transmitter,
-            requestMetadata_.appGateway
-        );
+
+        if (requestMetadata_.winningBid.transmitter != address(0))
+            IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
+                requestCount_,
+                requestMetadata_.winningBid.transmitter,
+                requestMetadata_.appGateway
+            );
+
         IAppGateway(requestMetadata_.appGateway).onRequestComplete(
             requestCount_,
             requestMetadata_.onCompleteData

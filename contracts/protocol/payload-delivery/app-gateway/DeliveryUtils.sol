@@ -66,7 +66,7 @@ abstract contract DeliveryUtils is
     /// @param chainSlug_ The chain identifier
     /// @return address The address of the payload delivery plug
     function getDeliveryHelperPlugAddress(uint32 chainSlug_) public view returns (address) {
-        return watcherPrecompile__().contractFactoryPlug(chainSlug_);
+        return watcherPrecompileConfig().contractFactoryPlug(chainSlug_);
     }
 
     /// @notice Updates the bid timeout

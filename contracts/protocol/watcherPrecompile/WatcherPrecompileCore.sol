@@ -1,29 +1,25 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import "./WatcherPrecompileConfig.sol";
-import {RequestParams, PayloadSubmitParams, PayloadParams, CallType} from "../utils/common/Structs.sol";
+import "./WatcherPrecompileStorage.sol";
+import {ECDSA} from "solady/utils/ECDSA.sol";
+import {RequestParams, PayloadSubmitParams, PayloadParams, CallType, DigestParams} from "../utils/common/Structs.sol";
+import {AccessControl} from "../utils/AccessControl.sol";
+import "solady/utils/Initializable.sol";
+import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
+import {IWatcherPrecompile} from "../../interfaces/IWatcherPrecompile.sol";
 import "./DumpDecoder.sol";
+
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
-abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
+abstract contract WatcherPrecompileCore is
+    IWatcherPrecompile,
+    WatcherPrecompileStorage,
+    Initializable,
+    AccessControl,
+    AddressResolverUtil
+{
     using DumpDecoder for bytes32;
-    /// @notice Error thrown when an invalid chain slug is provided
-    error InvalidChainSlug();
-    /// @notice Error thrown when an invalid app gateway reaches a plug
-    error InvalidConnection();
-    /// @notice Error thrown if winning bid is assigned to an invalid transmitter
-    error InvalidTransmitter();
-    /// @notice Error thrown when a timeout request is invalid
-    error InvalidTimeoutRequest();
-    /// @notice Error thrown when a payload id is invalid
-    error InvalidPayloadId();
-    /// @notice Error thrown when a caller is invalid
-    error InvalidCaller();
-    /// @notice Error thrown when a gateway is invalid
-    error InvalidGateway();
-    /// @notice Error thrown when a switchboard is invalid
-    error InvalidSwitchboard();
 
     // ================== Timeout functions ==================
 
@@ -38,7 +34,7 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
         if (delayInSeconds_ > maxTimeoutDelayInSeconds) revert TimeoutDelayTooLarge();
 
         // from auction manager
-        _consumeLimit(appGateway_, SCHEDULE, 1);
+        watcherPrecompileLimits__.consumeLimit(appGateway_, SCHEDULE, 1);
         uint256 executeAt = block.timestamp + delayInSeconds_;
         timeoutId = _encodeId(evmxSlug, address(this));
         timeoutRequests[timeoutId] = TimeoutRequest(
@@ -58,7 +54,7 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
         address transmitter_
     ) internal returns (bytes32 digest) {
         // Verify that the app gateway is properly configured for this chain and target
-        _verifyConnections(
+        watcherPrecompileConfig__.verifyConnections(
             params_.dump.getChainSlug(),
             params_.target,
             params_.appGateway,
@@ -197,9 +193,12 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
     ) internal view {
         // todo: revisit this
         // if target is contractFactoryPlug, return
-        if (target_ == contractFactoryPlug[chainSlug_]) return;
+        if (target_ == watcherPrecompileConfig__.contractFactoryPlug(chainSlug_)) return;
 
-        (address appGateway, address switchboard) = getPlugConfigs(chainSlug_, target_);
+        (address appGateway, address switchboard) = watcherPrecompileConfig__.getPlugConfigs(
+            chainSlug_,
+            target_
+        );
         if (appGateway != appGateway_) revert InvalidGateway();
         if (switchboard != switchboard_) revert InvalidSwitchboard();
     }
@@ -228,6 +227,22 @@ abstract contract WatcherPrecompileCore is WatcherPrecompileConfig {
             keccak256(
                 abi.encode(requestCount_, batchCount_, payloadCount_, p_.switchboard, p_.chainSlug)
             );
+    }
+
+    function _isWatcherSignatureValid(
+        bytes memory digest_,
+        uint256 signatureNonce_,
+        bytes memory signature_
+    ) internal {
+        if (isNonceUsed[signatureNonce_]) revert NonceUsed();
+        isNonceUsed[signatureNonce_] = true;
+
+        bytes32 digest = keccak256(abi.encode(address(this), evmxSlug, signatureNonce_, digest_));
+        digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
+
+        // recovered signer is checked for the valid roles later
+        address signer = ECDSA.recover(digest, signature_);
+        if (signer != owner()) revert InvalidWatcherSignature();
     }
 
     function getBatches(uint40 requestCount_) external view returns (uint40[] memory) {

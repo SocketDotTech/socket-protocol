@@ -4,6 +4,8 @@ pragma solidity ^0.8.21;
 import "../../interfaces/IAddressResolver.sol";
 import "../../interfaces/IMiddleware.sol";
 import "../../interfaces/IWatcherPrecompile.sol";
+import "../../interfaces/IWatcherPrecompileConfig.sol";
+import "../../interfaces/IWatcherPrecompileLimits.sol";
 
 /// @title AddressResolverUtil
 /// @notice Utility contract for resolving system contract addresses
@@ -53,7 +55,21 @@ abstract contract AddressResolverUtil {
     /// @return IWatcherPrecompile interface of the registered watcher precompile
     /// @dev Resolves and returns the watcher precompile contract for interaction
     function watcherPrecompile__() public view returns (IWatcherPrecompile) {
-        return IWatcherPrecompile(addressResolver__.watcherPrecompile__());
+        return addressResolver__.watcherPrecompile__();
+    }
+
+    /// @notice Gets the watcher precompile config contract interface
+    /// @return IWatcherPrecompileConfig interface of the registered watcher precompile config
+    /// @dev Resolves and returns the watcher precompile config contract for interaction
+    function watcherPrecompileConfig() public view returns (IWatcherPrecompileConfig) {
+        return addressResolver__.watcherPrecompile__().watcherPrecompileConfig__();
+    }
+
+    /// @notice Gets the watcher precompile limits contract interface
+    /// @return IWatcherPrecompileLimits interface of the registered watcher precompile limits
+    /// @dev Resolves and returns the watcher precompile limits contract for interaction
+    function watcherPrecompileLimits() public view returns (IWatcherPrecompileLimits) {
+        return addressResolver__.watcherPrecompile__().watcherPrecompileLimits__();
     }
 
     /// @notice Internal function to set the address resolver

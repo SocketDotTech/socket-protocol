@@ -161,9 +161,10 @@ contract DeliveryHelperTest is SetupTest {
         });
 
         bytes memory watcherSignature = _createWatcherSignature(
-            abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
+            address(watcherPrecompileConfig),
+            abi.encode(IWatcherPrecompileConfig.setAppGateways.selector, gateways)
         );
-        watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
+        watcherPrecompileConfig.setAppGateways(gateways, signatureNonce++, watcherSignature);
     }
 
     //////////////////////////////////// Fees ////////////////////////////////////
@@ -207,9 +208,28 @@ contract DeliveryHelperTest is SetupTest {
         requestCount = watcherPrecompile.nextRequestCount();
         appGateway_.deployContracts(chainSlug_);
 
-        bidAndEndAuction(requestCount);
-        finalizeRequestForCount(requestCount, new bytes[](0));
+        finalizeRequest(requestCount, new bytes[](0));
         setupGatewayAndPlugs(chainSlug_, appGateway_, contractIds_);
+    }
+
+    function finalizeRequest(uint40 requestCount_, bytes[] memory readReturnData_) internal {
+        uint40[] memory batches = watcherPrecompile.getBatches(requestCount_);
+
+        bool onlyReads = _checkIfOnlyReads(batches[0]);
+        if (!(onlyReads && batches.length == 1)) {
+            bidAndEndAuction(requestCount_);
+        }
+
+        uint256 readCount = 0;
+        for (uint i = 0; i < batches.length; i++) {
+            readCount = _finalizeBatch(batches[i], readReturnData_, readCount);
+        }
+    }
+
+    function executeRequest(bytes[] memory readReturnData_) internal {
+        uint40 requestCount = watcherPrecompile.nextRequestCount();
+        requestCount = requestCount == 0 ? 0 : requestCount - 1;
+        finalizeRequest(requestCount, readReturnData_);
     }
 
     function setupGatewayAndPlugs(
@@ -232,9 +252,10 @@ contract DeliveryHelperTest is SetupTest {
         }
 
         bytes memory watcherSignature = _createWatcherSignature(
-            abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
+            address(watcherPrecompileConfig),
+            abi.encode(IWatcherPrecompileConfig.setAppGateways.selector, gateways)
         );
-        watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
+        watcherPrecompileConfig.setAppGateways(gateways, signatureNonce++, watcherSignature);
     }
 
     //////////////////////////////////// Auction ////////////////////////////////////
@@ -268,6 +289,7 @@ contract DeliveryHelperTest is SetupTest {
         bytes32 timeoutId = _encodeId(evmxSlug, address(watcherPrecompile), timeoutIdCounter++);
 
         bytes memory watcherSignature = _createWatcherSignature(
+            address(watcherPrecompile),
             abi.encode(IWatcherPrecompile.resolveTimeout.selector, timeoutId)
         );
         watcherPrecompile.resolveTimeout(timeoutId, signatureNonce++, watcherSignature);

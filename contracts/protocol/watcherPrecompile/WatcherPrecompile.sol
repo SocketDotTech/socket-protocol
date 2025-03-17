@@ -4,11 +4,11 @@ pragma solidity ^0.8.21;
 import "./RequestHandler.sol";
 import "../../interfaces/IMiddleware.sol";
 import "./DumpDecoder.sol";
+
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
 contract WatcherPrecompile is RequestHandler {
     using DumpDecoder for bytes32;
-    error RequestAlreadyCancelled();
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -18,19 +18,19 @@ contract WatcherPrecompile is RequestHandler {
     function initialize(
         address owner_,
         address addressResolver_,
-        uint256 defaultLimit_,
         uint256 expiryTime_,
-        uint32 evmxSlug_
+        uint32 evmxSlug_,
+        address watcherPrecompileLimits_,
+        address watcherPrecompileConfig_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
+
+        watcherPrecompileLimits__ = IWatcherPrecompileLimits(watcherPrecompileLimits_);
+        watcherPrecompileConfig__ = IWatcherPrecompileConfig(watcherPrecompileConfig_);
         maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
         expiryTime = expiryTime_;
 
-        // limit per day
-        defaultLimit = defaultLimit_ * 10 ** LIMIT_DECIMALS;
-        // limit per second
-        defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
         evmxSlug = evmxSlug_;
     }
 
@@ -159,7 +159,7 @@ contract WatcherPrecompile is RequestHandler {
         for (uint256 i = 0; i < resolvedPromises_.length; i++) {
             // Get the array of promise addresses for this payload
             PayloadParams memory payloadParams = payloads[resolvedPromises_[i].payloadId];
-            address asyncPromise = payloadParams.dump.getAsyncPromise();
+            address asyncPromise = payloadParams.asyncPromise;
             if (asyncPromise == address(0)) continue;
 
             // Resolve each promise with its corresponding return data
@@ -178,8 +178,9 @@ contract WatcherPrecompile is RequestHandler {
                 payloadParams.dump.getRequestCount()
             ];
             requestParams_.currentBatchPayloadsLeft--;
+            requestParams_.payloadsRemaining--;
 
-            if (requestParams_.currentBatchPayloadsLeft == 0) {
+            if (requestParams_.payloadsRemaining == 0) {
                 IMiddleware(requestParams_.middleware).finishRequest(
                     payloadParams.dump.getRequestCount()
                 );
@@ -206,7 +207,7 @@ contract WatcherPrecompile is RequestHandler {
         requestParams.isRequestCancelled = true;
 
         if (isRevertingOnchain_)
-            IPromise(payloadParams.dump.getAsyncPromise()).markOnchainRevert(
+            IPromise(payloadParams.asyncPromise).markOnchainRevert(
                 payloadParams.dump.getRequestCount(),
                 payloadId_
             );
@@ -238,8 +239,13 @@ contract WatcherPrecompile is RequestHandler {
 
         for (uint256 i = 0; i < params_.length; i++) {
             if (appGatewayCalled[params_[i].callId]) revert AppGatewayAlreadyCalled();
-            if (!isValidPlug[params_[i].appGateway][params_[i].chainSlug][params_[i].plug])
-                revert InvalidInboxCaller();
+            if (
+                !watcherPrecompileConfig__.isValidPlug(
+                    params_[i].appGateway,
+                    params_[i].chainSlug,
+                    params_[i].plug
+                )
+            ) revert InvalidInboxCaller();
 
             appGatewayCalled[params_[i].callId] = true;
             IAppGateway(params_[i].appGateway).callFromChain(

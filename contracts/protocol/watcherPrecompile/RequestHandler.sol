@@ -6,15 +6,6 @@ import "./DumpDecoder.sol";
 
 abstract contract RequestHandler is WatcherPrecompileCore {
     using DumpDecoder for bytes32;
-    event RequestSubmitted(
-        address middleware,
-        uint40 requestCount,
-        PayloadParams[] payloadParamsArray
-    );
-
-    error RequestCancelled();
-    error AlreadyStarted();
-    error InvalidLevelNumber();
 
     function submitRequest(
         PayloadSubmitParams[] calldata payloadSubmitParams
@@ -49,14 +40,17 @@ abstract contract RequestHandler is WatcherPrecompileCore {
             bytes32 payloadId = _createPayloadId(p, requestCount, batchCount, localPayloadCount);
             batchPayloadIds[batchCount].push(payloadId);
 
-            payloads[payloadId].dump.setRequestCount(requestCount);
-            payloads[payloadId].dump.setBatchCount(batchCount);
-            payloads[payloadId].dump.setPayloadCount(localPayloadCount);
-            payloads[payloadId].dump.setChainSlug(p.chainSlug);
-            payloads[payloadId].dump.setCallType(p.callType);
-            payloads[payloadId].dump.setIsParallel(p.isParallel);
-            payloads[payloadId].dump.setWriteFinality(p.writeFinality);
-            payloads[payloadId].dump.setAsyncPromise(p.asyncPromise);
+            bytes32 dump;
+            dump = dump.setRequestCount(requestCount);
+            dump = dump.setBatchCount(batchCount);
+            dump = dump.setPayloadCount(localPayloadCount);
+            dump = dump.setChainSlug(p.chainSlug);
+            dump = dump.setCallType(p.callType);
+            dump = dump.setIsParallel(p.isParallel);
+            dump = dump.setWriteFinality(p.writeFinality);
+
+            payloads[payloadId].dump = dump;
+            payloads[payloadId].asyncPromise = p.asyncPromise;
             payloads[payloadId].switchboard = p.switchboard;
             payloads[payloadId].target = p.target;
             payloads[payloadId].appGateway = p.callType == CallType.DEPLOY
@@ -76,12 +70,12 @@ abstract contract RequestHandler is WatcherPrecompileCore {
 
         requestBatchIds[requestCount].push(nextBatchCount++);
 
-        _consumeLimit(appGateway, QUERY, readCount);
-        _consumeLimit(appGateway, FINALIZE, writeCount);
+        watcherPrecompileLimits__.consumeLimit(appGateway, QUERY, readCount);
+        watcherPrecompileLimits__.consumeLimit(appGateway, FINALIZE, writeCount);
         requestParams[requestCount].isRequestCancelled = false;
         requestParams[requestCount].currentBatch = currentBatch;
         requestParams[requestCount].currentBatchPayloadsLeft = 0;
-        requestParams[requestCount].totalBatchPayloads = 0;
+        requestParams[requestCount].payloadsRemaining = payloadSubmitParams.length;
         requestParams[requestCount].middleware = msg.sender;
         requestParams[requestCount].transmitter = address(0);
 
@@ -113,18 +107,26 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         if (r.middleware != msg.sender) revert InvalidCaller();
         if (r.transmitter != address(0)) revert AlreadyStarted();
         if (r.currentBatchPayloadsLeft > 0) revert AlreadyStarted();
+
         r.transmitter = transmitter;
         uint40 batchCount = r.payloadParamsArray[0].dump.getBatchCount();
-        _processBatch(requestCount, batchCount);
+        uint256 totalPayloadsLeft = _processBatch(requestCount, batchCount);
+        // todo: for retry cases
+        r.currentBatchPayloadsLeft = totalPayloadsLeft;
     }
 
-    function _processBatch(uint40 requestCount_, uint40 batchCount_) internal {
+    function _processBatch(
+        uint40 requestCount_,
+        uint40 batchCount_
+    ) internal returns (uint256 totalPayloadsLeft) {
         RequestParams memory r = requestParams[requestCount_];
         PayloadParams[] memory payloadParamsArray = _getBatch(requestCount_, batchCount_);
         if (r.isRequestCancelled) revert RequestCancelled();
         for (uint40 i = 0; i < payloadParamsArray.length; i++) {
-            bool isResolved = IPromise(payloadParamsArray[i].dump.getAsyncPromise()).resolved();
+            bool isResolved = IPromise(payloadParamsArray[i].asyncPromise).resolved();
             if (isResolved) continue;
+            totalPayloadsLeft++;
+
             if (payloadParamsArray[i].dump.getCallType() != CallType.READ) {
                 _finalize(payloadParamsArray[i], r.transmitter);
             } else {

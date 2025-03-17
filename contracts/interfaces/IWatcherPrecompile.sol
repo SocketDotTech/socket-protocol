@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {DigestParams, AppGatewayConfig, ResolvedPromises, PayloadParams, QueuePayloadParams, PayloadSubmitParams} from "../protocol/utils/common/Structs.sol";
+import {DigestParams, ResolvedPromises, PayloadParams, CallFromChainParams, PayloadSubmitParams} from "../protocol/utils/common/Structs.sol";
+import {IWatcherPrecompileLimits} from "./IWatcherPrecompileLimits.sol";
+import {IWatcherPrecompileConfig} from "./IWatcherPrecompileConfig.sol";
 
 /// @title IWatcherPrecompile
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
@@ -49,59 +51,74 @@ interface IWatcherPrecompile {
     /// @param executedAt The epoch time when the task was executed
     event TimeoutResolved(bytes32 timeoutId, address target, bytes payload, uint256 executedAt);
 
-    /// @notice Sets up app gateway configurations
-    /// @param configs_ Array of app gateway configurations
-    /// @param signatureNonce_ The nonce of the signature
-    /// @param signature_ The signature of the watcher
-    /// @dev Only callable by authorized addresses
-    function setAppGateways(
-        AppGatewayConfig[] calldata configs_,
+    event RequestSubmitted(
+        address middleware,
+        uint40 requestCount,
+        PayloadParams[] payloadParamsArray
+    );
+
+    /// @notice Error thrown when an invalid chain slug is provided
+    error InvalidChainSlug();
+    /// @notice Error thrown when an invalid app gateway reaches a plug
+    error InvalidConnection();
+    /// @notice Error thrown if winning bid is assigned to an invalid transmitter
+    error InvalidTransmitter();
+    /// @notice Error thrown when a timeout request is invalid
+    error InvalidTimeoutRequest();
+    /// @notice Error thrown when a payload id is invalid
+    error InvalidPayloadId();
+    /// @notice Error thrown when a caller is invalid
+    error InvalidCaller();
+    /// @notice Error thrown when a gateway is invalid
+    error InvalidGateway();
+    /// @notice Error thrown when a switchboard is invalid
+    error InvalidSwitchboard();
+    /// @notice Error thrown when a request is already cancelled
+    error RequestAlreadyCancelled();
+
+    error RequestCancelled();
+    error AlreadyStarted();
+    error InvalidLevelNumber();
+
+    /// @notice Calculates the digest hash of payload parameters
+    /// @param params_ The payload parameters
+    /// @return digest The calculated digest
+    function getDigest(DigestParams memory params_) external pure returns (bytes32 digest);
+
+    /// @notice Gets the batch IDs for a request
+    /// @param requestCount_ The request count
+    /// @return Array of batch IDs
+    function getBatches(uint40 requestCount_) external view returns (uint40[] memory);
+
+    /// @notice Gets the payload IDs for a batch
+    /// @param batchCount_ The batch count
+    /// @return Array of payload IDs
+    function getBatchPayloadIds(uint40 batchCount_) external view returns (bytes32[] memory);
+
+    /// @notice Gets the payload parameters for a payload ID
+    /// @param payloadId_ The payload ID
+    /// @return The payload parameters
+    function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory);
+
+    function setTimeout(
+        address appGateway_,
+        uint256 delayInSeconds_,
+        bytes calldata payload_
+    ) external returns (bytes32);
+
+    function resolveTimeout(
+        bytes32 timeoutId_,
         uint256 signatureNonce_,
         bytes calldata signature_
     ) external;
 
-    /// @notice Sets up on-chain contract configurations
-    /// @dev Only callable by authorized addresses
-    function setOnChainContracts(
-        uint32 chainSlug_,
-        address socket_,
-        address contractFactoryPlug_,
-        address feesPlug_
-    ) external;
-
-    /// @notice Sets the switchboard for a network
-    /// @param chainSlug_ The identifier of the network
-    /// @param switchboard_ The address of the switchboard
-    function setSwitchboard(uint32 chainSlug_, bytes32 sbType_, address switchboard_) external;
-
-    /// @notice Retrieves plug configuration for a specific network and plug
-    /// @param chainSlug_ The identifier of the network
-    /// @param plug_ The address of the plug
-    /// @return appGateway The configured app gateway address
-    /// @return switchboard The configured switchboard address
-    function getPlugConfigs(
-        uint32 chainSlug_,
-        address plug_
-    ) external view returns (address appGateway, address switchboard);
-
-    /// @notice Finalizes a payload execution request
-    /// @param params_ The payload parameters
-    /// @param transmitter_ The address of the transmitter
-    /// @return digest The digest of the payload parameters
     function finalize(
         PayloadParams memory params_,
         address transmitter_
     ) external returns (bytes32 digest);
 
-    /// @notice Creates a new query request
-    /// @param params_ The payload parameters
     function query(PayloadParams memory params_) external;
 
-    /// @notice Marks a request as finalized with a proof
-    /// @param payloadId_ The unique identifier of the request
-    /// @param proof_ The watcher's proof
-    /// @param signatureNonce_ The nonce of the signature
-    /// @param signature_ The signature of the watcher
     function finalized(
         bytes32 payloadId_,
         bytes calldata proof_,
@@ -109,52 +126,32 @@ interface IWatcherPrecompile {
         bytes calldata signature_
     ) external;
 
-    /// @notice Resolves multiple promises with their return data
-    /// @param resolvedPromises_ Array of resolved promises and their return data
-    /// @param signatureNonce_ The nonce of the signature
-    /// @param signature_ The signature of the watcher
+    function updateTransmitter(uint40 requestCount, address transmitter) external;
+
+    function cancelRequest(uint40 requestCount) external;
+
     function resolvePromises(
         ResolvedPromises[] calldata resolvedPromises_,
         uint256 signatureNonce_,
         bytes calldata signature_
     ) external;
 
-    /// @notice Sets a timeout for payload execution
-    /// @param appGateway_ app gateway address
-    /// @param delayInSeconds_ The timeout duration in seconds
-    /// @param payload_ The payload data
-    function setTimeout(
-        address appGateway_,
-        uint256 delayInSeconds_,
-        bytes calldata payload_
-    ) external returns (bytes32 timeoutId);
-
-    /// @notice Resolves a timeout by executing the payload
-    /// @param timeoutId_ The unique identifier for the timeout
-    function resolveTimeout(
-        bytes32 timeoutId_,
+    function markRevert(
+        bool isRevertingOnchain_,
+        bytes32 payloadId_,
         uint256 signatureNonce_,
         bytes calldata signature_
     ) external;
 
-    /// @notice Calculates the Digest hash for payload parameters
-    /// @param params_ The payload parameters used to calculate the digest
-    /// @return digest The calculated digest hash
-    function getDigest(DigestParams memory params_) external pure returns (bytes32 digest);
-
     function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external;
 
-    function switchboards(uint32 chainSlug_, bytes32 sbType_) external view returns (address);
+    function callAppGateways(
+        CallFromChainParams[] calldata params_,
+        uint256 signatureNonce_,
+        bytes calldata signature_
+    ) external;
 
-    function sockets(uint32 chainSlug_) external view returns (address);
-
-    function contractFactoryPlug(uint32 chainSlug_) external view returns (address);
-
-    function feesPlug(uint32 chainSlug_) external view returns (address);
-
-    function setIsValidPlug(uint32 chainSlug_, address plug_, bool isValid_) external;
-
-    function getCurrentRequestCount() external view returns (uint40);
+    function setExpiryTime(uint256 expiryTime_) external;
 
     function submitRequest(
         PayloadSubmitParams[] calldata payloadSubmitParams
@@ -162,7 +159,9 @@ interface IWatcherPrecompile {
 
     function startProcessingRequest(uint40 requestCount, address transmitter) external;
 
-    function updateTransmitter(uint40 requestCount, address transmitter) external;
+    function getCurrentRequestCount() external view returns (uint40);
 
-    function cancelRequest(uint40 requestCount) external;
+    function watcherPrecompileConfig__() external view returns (IWatcherPrecompileConfig);
+
+    function watcherPrecompileLimits__() external view returns (IWatcherPrecompileLimits);
 }

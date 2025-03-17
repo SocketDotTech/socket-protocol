@@ -11,7 +11,7 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
     bytes32 public superTokenLockable = _createContractId("superTokenLockable");
     bytes32 public limitHook = _createContractId("limitHook");
 
-    event Bridged(bytes32 requestCount);
+    event Bridged(uint40 requestCount);
 
     struct UserOrder {
         address srcToken;
@@ -76,7 +76,7 @@ contract SuperTokenLockableAppGateway is AppGatewayBase, Ownable {
     }
 
     function checkBalance(bytes memory data_, bytes memory returnData_) external onlyPromises {
-        (UserOrder memory order, bytes32 requestCount) = abi.decode(data_, (UserOrder, bytes32));
+        (UserOrder memory order, uint40 requestCount) = abi.decode(data_, (UserOrder, uint40));
 
         uint256 balance = abi.decode(returnData_, (uint256));
         if (balance < order.srcAmount) {
