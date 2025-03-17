@@ -1,3 +1,4 @@
 hardhat-deploy/=node_modules/hardhat-deploy/
 hardhat/=node_modules/hardhat/
 solady/=lib/solady/src/
+optimism/=lib/optimism/packages/contracts-bedrock/
