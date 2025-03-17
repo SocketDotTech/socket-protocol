@@ -24,12 +24,15 @@ export enum Events {
   Finalized = "Finalized",
   FeesDeposited = "FeesDeposited",
   FeesIncreased = "FeesIncreased",
+  RequestSubmitted = "RequestSubmitted",
 }
 
 export enum Contracts {
   Socket = "Socket",
   FeesPlug = "FeesPlug",
   WatcherPrecompile = "WatcherPrecompile",
+  WatcherPrecompileLimits = "WatcherPrecompileLimits",
+  WatcherPrecompileConfig = "WatcherPrecompileConfig",
   AuctionManager = "AuctionManager",
   DeliveryHelper = "DeliveryHelper",
 }

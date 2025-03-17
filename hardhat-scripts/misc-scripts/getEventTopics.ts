@@ -32,7 +32,7 @@ function extractEventTopics(filePath: string): string[] {
       .map((param) => param.trim().split(" ")[0]) // Extract only the type
       .join(",");
     const topic = ethers.utils.id(`${eventName}(${params})`);
-    topics.push(`${eventName} -> ${topic}`);
+    topics.push(`${eventName}${params ? `(${params})` : ""} -> ${topic}`);
   }
 
   return topics;

@@ -63,7 +63,10 @@ export const getOrDeploy = async (
       deployUtils.mode
     );
   } else {
-    contract = await getInstance(contractName, deployUtils.addresses[keyName]);
+    contract = await getInstance(
+      path + `:${contractName}`,
+      deployUtils.addresses[keyName]
+    );
     console.log(
       `${contractName} found on ${deployUtils.currentChainSlug} for ${deployUtils.mode} at address ${contract.address}`
     );
@@ -79,6 +82,7 @@ export async function deployContractWithArgs(
   chainSlug: ChainSlug
 ) {
   try {
+    console.log("deploying", contractName, args);
     const Contract: ContractFactory = await ethers.getContractFactory(
       contractName
     );

@@ -1,7 +1,7 @@
-if [ "$1" = "compile" ]; then
-  time npx hardhat run hardhat-scripts/deploy/1.deploy.ts
-else
+if [ "$1" = "skip-compile" ]; then
   time npx hardhat run hardhat-scripts/deploy/1.deploy.ts --no-compile
+else
+  time npx hardhat run hardhat-scripts/deploy/1.deploy.ts
 fi
 time npx hardhat run hardhat-scripts/deploy/2.roles.ts --no-compile
 time npx hardhat run hardhat-scripts/deploy/3.upgradeManagers.ts --no-compile

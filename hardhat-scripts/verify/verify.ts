@@ -8,11 +8,14 @@ import hre from "hardhat";
 import { EVMX_CHAIN_ID, mode } from "../config/config";
 import { storeUnVerifiedParams, verify } from "../utils";
 
+import local_verification from "../../deployments/local_verification.json";
 import dev_verification from "../../deployments/dev_verification.json";
 import stage_verification from "../../deployments/stage_verification.json";
 
 const getVerificationParams = (mode: DeploymentMode) => {
   switch (mode) {
+    case DeploymentMode.LOCAL:
+      return local_verification;
     case DeploymentMode.DEV:
       return dev_verification;
     case DeploymentMode.STAGE:

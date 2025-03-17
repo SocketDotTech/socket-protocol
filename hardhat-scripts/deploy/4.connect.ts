@@ -58,9 +58,8 @@ export const isConfigSetOnSocket = async (
   const plugConfigRegistered = await socket.getPlugConfig(plug.address);
   return (
     plugConfigRegistered.appGateway.toLowerCase() ===
-      appGateway?.toLowerCase() &&
-    plugConfigRegistered.switchboard__.toLowerCase() ===
-      switchboard.toLowerCase()
+      appGateway.toLowerCase() &&
+    plugConfigRegistered.switchboard.toLowerCase() === switchboard.toLowerCase()
   );
 };
 
@@ -147,10 +146,10 @@ export const updateConfigEVMx = async () => {
     // Set up Watcher contract
     const signer = getWatcherSigner();
     const EVMxAddresses = addresses[EVMX_CHAIN_ID]!;
-    const watcher = (
+    const watcherPrecompileConfig = (
       await getInstance(
-        EVMxCoreContracts.WatcherPrecompile,
-        EVMxAddresses[EVMxCoreContracts.WatcherPrecompile]
+        EVMxCoreContracts.WatcherPrecompileConfig,
+        EVMxAddresses[EVMxCoreContracts.WatcherPrecompileConfig]
       )
     ).connect(signer);
 
@@ -168,7 +167,7 @@ export const updateConfigEVMx = async () => {
 
           if (
             await isConfigSetOnEVMx(
-              watcher,
+              watcherPrecompileConfig,
               chain,
               addr[plugContract],
               appGateway,
@@ -196,12 +195,21 @@ export const updateConfigEVMx = async () => {
           "bytes4",
           "tuple(address plug,address appGateway,address switchboard,uint32 chainSlug)[]",
         ],
-        [watcher.interface.getSighash("setAppGateways"), appConfigs]
+        [
+          watcherPrecompileConfig.interface.getSighash("setAppGateways"),
+          appConfigs,
+        ]
       );
-      const { nonce, signature } = await signWatcherMessage(encodedMessage);
-      const tx = await watcher.setAppGateways(appConfigs, nonce, signature, {
-        ...overrides(EVMX_CHAIN_ID),
-      });
+      const { nonce, signature } = await signWatcherMessage(
+        encodedMessage,
+        watcherPrecompileConfig.address
+      );
+      const tx = await watcherPrecompileConfig.setAppGateways(
+        appConfigs,
+        nonce,
+        signature,
+        { ...overrides(EVMX_CHAIN_ID) }
+      );
       console.log(`Updating EVMx Config tx hash: ${tx.hash}`);
       await tx.wait();
     }

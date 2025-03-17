@@ -33,7 +33,12 @@ contract DeliveryHelperTest is SetupTest {
     event BidPlaced(uint40 indexed requestCount, Bid bid);
     event AuctionEnded(uint40 indexed requestCount, Bid winningBid);
     event RequestCancelled(uint40 indexed requestCount);
-    event FinalizeRequested(address transmitter, bytes32 digest, PayloadParams params);
+    event FinalizeRequested(
+        address transmitter,
+        bytes32 digest,
+        bytes32 prevDigestsHash,
+        PayloadParams params
+    );
     event QueryRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
 
     //////////////////////////////////// Setup ////////////////////////////////////
