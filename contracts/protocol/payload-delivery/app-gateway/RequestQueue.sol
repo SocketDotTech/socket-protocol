@@ -152,7 +152,7 @@ abstract contract RequestQueue is DeliveryUtils {
                 target: target,
                 appGateway: queuePayloadParams_.appGateway,
                 gasLimit: queuePayloadParams_.gasLimit == 0
-                    ? 1_000_000
+                    ? 10_000_000
                     : queuePayloadParams_.gasLimit,
                 value: queuePayloadParams_.value,
                 readAt: queuePayloadParams_.readAt,

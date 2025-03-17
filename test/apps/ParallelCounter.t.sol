@@ -29,7 +29,7 @@ contract ParallelCounterTest is DeliveryHelperTest {
 
     function deployCounterApps(uint32[] memory chainSlugs) internal {
         parallelCounterGateway.deployMultiChainContracts(chainSlugs);
-        finalizeRequest(new bytes[](0));
+        executeRequest(new bytes[](0));
     }
 
     function testParallelCounterDeployment() external {

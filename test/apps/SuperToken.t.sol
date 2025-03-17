@@ -92,7 +92,7 @@ contract SuperTokenTest is DeliveryHelperTest {
      * - Correct setup of forwarder contracts for multi-chain communication
      */
     function testContractDeployment() public {
-        _deploy(contractIds, arbChainSlug, 1, IAppGateway(appContracts.superTokenApp));
+        _deploy(arbChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
 
         (address onChain, address forwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
@@ -123,8 +123,8 @@ contract SuperTokenTest is DeliveryHelperTest {
      * @dev Deploys necessary contracts on both Arbitrum and Optimism chains
      */
     function beforeTransfer() internal {
-        _deploy(contractIds, arbChainSlug, 1, IAppGateway(appContracts.superTokenApp));
-        _deploy(contractIds, optChainSlug, 1, IAppGateway(appContracts.superTokenApp));
+        _deploy(arbChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
+        _deploy(optChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
     }
 
     /**
@@ -160,9 +160,10 @@ contract SuperTokenTest is DeliveryHelperTest {
             srcAmount: srcAmount,
             deadline: block.timestamp + 1000000
         });
+
         bytes memory encodedOrder = abi.encode(transferOrder);
         appContracts.superTokenApp.transfer(encodedOrder);
-        finalizeRequest(new bytes[](0));
+        executeRequest(new bytes[](0));
 
         assertEq(
             SuperToken(onChainArb).balanceOf(owner),
