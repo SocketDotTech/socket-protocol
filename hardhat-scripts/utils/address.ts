@@ -10,8 +10,10 @@ export const getAddresses = (
     case DeploymentMode.LOCAL:
       return local_addresses;
     case DeploymentMode.DEV:
+      // @ts-ignore
       return dev_addresses;
     case DeploymentMode.STAGE:
+      // @ts-ignore
       return stage_addresses;
     default:
       throw new Error(`Invalid deployment mode: ${mode}`);
