@@ -122,7 +122,7 @@ contract WatcherPrecompile is RequestHandler {
     }
 
     function updateTransmitter(uint40 requestCount, address transmitter) public {
-        RequestParams memory r = requestParams[requestCount];
+        RequestParams storage r = requestParams[requestCount];
         if (r.isRequestCancelled) revert RequestCancelled();
         if (r.middleware != msg.sender) revert InvalidCaller();
         if (r.transmitter != address(0)) revert AlreadyStarted();

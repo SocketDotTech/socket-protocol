@@ -200,6 +200,7 @@ abstract contract WatcherPrecompileCore is
         if (switchboard != switchboard_) revert InvalidSwitchboard();
     }
 
+    // todo: revisit when we do timeout precompile
     function _encodeId(
         uint32 chainSlug_,
         address switchboardOrWatcher_
