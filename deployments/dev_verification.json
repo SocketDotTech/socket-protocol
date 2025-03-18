@@ -58,6 +58,24 @@
   ],
   "7625382": [
     [
+      "0x7FD88f010b2EDe0BC60AB4eD7475Fe89D60D7483",
+      "WatcherPrecompile",
+      "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",
+      []
+    ],
+    [
+      "0x33fCf171878FBcfc7d4E09354032Bbce4D30c75F",
+      "WatcherPrecompileConfig",
+      "contracts/protocol/watcherPrecompile/WatcherPrecompileConfig.sol",
+      []
+    ],
+    [
+      "0xd37c334d02688ae1d552142353136a99bfA6cc0D",
+      "WatcherPrecompileLimits",
+      "contracts/protocol/watcherPrecompile/WatcherPrecompileLimits.sol",
+      []
+    ],
+    [
       "0xa07e38cAB46eAA358C3653C63219f1009e8F7789",
       "AuctionManager",
       "contracts/protocol/payload-delivery/AuctionManager.sol",

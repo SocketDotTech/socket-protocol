@@ -66,6 +66,7 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     mapping(uint40 => bytes32[]) public batchPayloadIds;
     mapping(uint40 => uint40[]) public requestBatchIds;
     mapping(bytes32 => PayloadParams) public payloads;
+    mapping(bytes32 => bool) public isPromiseExecuted;
 
     IWatcherPrecompileLimits public watcherPrecompileLimits__;
     IWatcherPrecompileConfig public watcherPrecompileConfig__;

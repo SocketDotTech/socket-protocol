@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.3;
 
-import {Fees, Bid} from "../protocol/utils/common/Structs.sol";
+import {Fees, Bid, QueuePayloadParams} from "../protocol/utils/common/Structs.sol";
 
 interface IFeesManager {
     function blockFees(
@@ -29,5 +29,5 @@ interface IFeesManager {
         address receiver_,
         address auctionManager_,
         Fees memory fees_
-    ) external;
+    ) external returns (uint40);
 }

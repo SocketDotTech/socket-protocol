@@ -28,7 +28,8 @@ contract DeliveryHelperTest is SetupTest {
         address indexed appGateway,
         PayloadSubmitParams[] payloadSubmitParams,
         Fees fees,
-        address auctionManager
+        address auctionManager,
+        bool onlyReadRequests
     );
     event BidPlaced(uint40 indexed requestCount, Bid bid);
     event AuctionEnded(uint40 indexed requestCount, Bid winningBid);

@@ -9,9 +9,8 @@ import {IFeesPlug} from "../../interfaces/IFeesPlug.sol";
 import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
-import {WITHDRAW} from "../utils/common/Constants.sol";
 import {NotAuctionManager} from "../utils/common/Errors.sol";
-import {Bid, Fees, CallType, Parallel, WriteFinality, TokenBalance, QueuePayloadParams, IsPlug} from "../utils/common/Structs.sol";
+import {Bid, Fees, CallType, Parallel, WriteFinality, TokenBalance, QueuePayloadParams, IsPlug, PayloadSubmitParams} from "../utils/common/Structs.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
     // slots [0-49] reserved for gap
@@ -295,12 +294,13 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         uint32 chainSlug_,
         address token_,
         address receiver_
-    ) external {
+    ) external returns (uint40 requestCount) {
         address transmitter = msg.sender;
-        // Get all asyncIds for the transmitter
+        // Get total fees for the transmitter in given chain and token
         uint256 totalFees = transmitterFees[transmitter][chainSlug_][token_];
         if (totalFees == 0) revert NoFeesForTransmitter();
 
+        // Clean up storage
         transmitterFees[transmitter][chainSlug_][token_] = 0;
 
         // Create fee distribution payload
@@ -310,46 +310,55 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
             (token_, totalFees, receiver_, feesId)
         );
 
-        // todo: direct call to watcherPrecompile__().finalize()
-        // Create payload for plug contract
-        // payloadDetails = _finalize(CallType.WRITE, chainSlug_, payload, transmitter);
-        // FinalizeParams memory finalizeParams = FinalizeParams({
-        //     payloadDetails: payloadDetails,
-        //     requestCount: bytes32(0),
-        //     transmitter: transmitter
-        // });
-
-        // (payloadId, digest) = watcherPrecompile__().finalize(address(this), finalizeParams);
+        // finalize for plug contract
+        return _submitAndStartProcessing(chainSlug_, payload, transmitter);
     }
 
-    function _finalize(
-        CallType callType_,
+    function _submitAndStartProcessing(
         uint32 chainSlug_,
         bytes memory payload_,
-        address auctionManager_,
-        Fees memory fees_
-    ) internal {
-        deliveryHelper__().queue(_getQueuePayloadParams(callType_, chainSlug_, payload_));
-        deliveryHelper__().batch(fees_, auctionManager_, bytes(""));
+        address transmitter_
+    ) internal returns (uint40 requestCount) {
+        PayloadSubmitParams[] memory payloadSubmitParamsArray = new PayloadSubmitParams[](1);
+        payloadSubmitParamsArray[0] = PayloadSubmitParams({
+            levelNumber: 0,
+            chainSlug: chainSlug_,
+            callType: CallType.WRITE,
+            isParallel: Parallel.OFF,
+            writeFinality: WriteFinality.LOW,
+            asyncPromise: address(0),
+            switchboard: _getSwitchboard(chainSlug_),
+            target: _getFeesPlugAddress(chainSlug_),
+            appGateway: address(this),
+            gasLimit: 10000000,
+            value: 0,
+            readAt: 0,
+            payload: payload_
+        });
+        requestCount = watcherPrecompile__().submitRequest(payloadSubmitParamsArray);
+        watcherPrecompile__().startProcessingRequest(requestCount, transmitter_);
     }
 
-    function _getQueuePayloadParams(
-        CallType callType_,
+    function _getSwitchboard(uint32 chainSlug_) internal view returns (address) {
+        return watcherPrecompile__().watcherPrecompileConfig__().switchboards(chainSlug_, sbType);
+    }
+
+    function _createQueuePayloadParams(
         uint32 chainSlug_,
         bytes memory payload_
-    ) internal view returns (QueuePayloadParams memory) {
+    ) internal returns (QueuePayloadParams memory) {
         return
             QueuePayloadParams({
                 chainSlug: chainSlug_,
-                callType: callType_,
+                callType: CallType.WRITE,
                 isParallel: Parallel.OFF,
                 isPlug: IsPlug.NO,
                 writeFinality: WriteFinality.LOW,
                 asyncPromise: address(0),
-                switchboard: address(0), // todo: add switchboard
+                switchboard: _getSwitchboard(chainSlug_),
                 target: _getFeesPlugAddress(chainSlug_),
                 appGateway: address(this),
-                gasLimit: 1000000,
+                gasLimit: 10000000,
                 value: 0,
                 readAt: 0,
                 payload: payload_,
@@ -372,7 +381,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         address receiver_,
         address auctionManager_,
         Fees memory fees_
-    ) public {
+    ) public returns (uint40) {
         address appGateway = _getCoreAppGateway(originAppGateway_);
 
         // Check if amount is available in fees plug
@@ -382,14 +391,16 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][chainSlug_][token_];
         tokenBalance.deposited -= amount_;
 
-        // Create payload for pool contract
-        _finalize(
-            CallType.WITHDRAW,
+        // Add it to the queue and submit request
+        _queue(chainSlug_, abi.encodeCall(IFeesPlug.withdrawFees, (token_, amount_, receiver_)));
+    }
+
+    function _queue(uint32 chainSlug_, bytes memory payload_) internal {
+        QueuePayloadParams memory queuePayloadParams = _createQueuePayloadParams(
             chainSlug_,
-            abi.encodeCall(IFeesPlug.withdrawFees, (token_, amount_, receiver_)),
-            auctionManager_,
-            fees_
+            payload_
         );
+        deliveryHelper__().queue(queuePayloadParams);
     }
 
     function _encodeFeesId(uint256 feesCounter_) internal view returns (bytes32) {

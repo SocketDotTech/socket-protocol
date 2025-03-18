@@ -131,7 +131,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         address token_,
         uint256 amount_,
         address receiver_
-    ) external {
-        _withdrawFeeTokens(chainSlug_, token_, amount_, receiver_);
+    ) external returns (uint40) {
+        return _withdrawFeeTokens(chainSlug_, token_, amount_, receiver_);
     }
 }

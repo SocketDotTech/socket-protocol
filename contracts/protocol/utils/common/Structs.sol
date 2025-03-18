@@ -5,8 +5,7 @@ pragma solidity ^0.8.21;
 enum CallType {
     READ,
     WRITE,
-    DEPLOY,
-    WITHDRAW
+    DEPLOY
 }
 
 enum IsPlug {
@@ -220,6 +219,7 @@ struct RequestMetadata {
     Fees fees;
     Bid winningBid;
     bytes onCompleteData;
+    bool onlyReadRequests;
 }
 
 struct ExecuteParams {
