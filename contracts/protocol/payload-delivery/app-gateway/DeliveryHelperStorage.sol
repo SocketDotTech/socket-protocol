@@ -13,7 +13,7 @@ import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 
 import {QueuePayloadParams, Fees, CallType, Bid, Parallel, IsPlug, WriteFinality, RequestMetadata} from "../../utils/common/Structs.sol";
 import {NotAuctionManager, InvalidPromise, InvalidIndex, PromisesNotResolved, InvalidTransmitter} from "../../utils/common/Errors.sol";
-import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, WITHDRAW, QUERY, FINALIZE} from "../../utils/common/Constants.sol";
+import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, QUERY, FINALIZE} from "../../utils/common/Constants.sol";
 
 /// @title DeliveryHelperStorage
 /// @notice Storage contract for DeliveryHelper
