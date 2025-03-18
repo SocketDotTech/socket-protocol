@@ -167,6 +167,7 @@ contract WatcherPrecompile is RequestHandler {
                 resolvedPromises_[i].returnData
             );
 
+            isPromiseExecuted[resolvedPromises_[i].payloadId] = true;
             if (!success) {
                 emit PromiseNotResolved(resolvedPromises_[i].payloadId, success, asyncPromise);
                 continue;
