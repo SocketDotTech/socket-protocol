@@ -52,9 +52,9 @@ export enum CallTypeNames {
 }
 
 export enum FinalityBucket {
-  LOW = 1, // low confirmations / latest
-  MEDIUM = 2, // medium confirmations / data posted
-  HIGH = 3, // high confirmations / data posted and finalized
+  LOW, // low confirmations / latest
+  MEDIUM, // medium confirmations / data posted
+  HIGH, // high confirmations / data posted and finalized
 }
 
 export enum FinalityBucketNames {
