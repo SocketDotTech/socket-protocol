@@ -17,18 +17,15 @@ abstract contract ForwarderStorage is IForwarder {
     // slot 50
     /// @notice chain id
     uint32 public chainSlug;
-
-    // slot 51
+    
     /// @notice on-chain address associated with this forwarder
     address public onChainAddress;
 
-    // slot 52
-
-    // slot 53
+    // slot 51
     /// @notice caches the latest async promise address for the last call
     address public latestAsyncPromise;
 
-    // slots [54-103] reserved for gap
+    // slots [52-101] reserved for gap
     uint256[50] _gap_after;
 }
 
