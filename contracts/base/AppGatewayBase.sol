@@ -304,8 +304,16 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         address token_,
         uint256 amount_,
         address receiver_
-    ) internal {
-        deliveryHelper__().withdrawTo(chainSlug_, token_, amount_, receiver_, auctionManager, fees);
+    ) internal returns (uint40) {
+        return
+            deliveryHelper__().withdrawTo(
+                chainSlug_,
+                token_,
+                amount_,
+                receiver_,
+                auctionManager,
+                fees
+            );
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

@@ -32,10 +32,19 @@ abstract contract RequestQueue is DeliveryUtils {
         address auctionManager_,
         bytes memory onCompleteData_
     ) external returns (uint40 requestCount) {
+        address appGateway = _getCoreAppGateway(msg.sender);
+        return _batch(appGateway, auctionManager_, fees_, onCompleteData_);
+    }
+
+    function _batch(
+        address appGateway_,
+        address auctionManager_,
+        Fees memory fees_,
+        bytes memory onCompleteData_
+    ) internal returns (uint40 requestCount) {
         if (queuePayloadParams.length == 0) return 0;
 
-        address appGateway = _getCoreAppGateway(msg.sender);
-        if (!IFeesManager(addressResolver__.feesManager()).isFeesEnough(appGateway, fees_))
+        if (!IFeesManager(addressResolver__.feesManager()).isFeesEnough(appGateway_, fees_))
             revert InsufficientFees();
 
         (
@@ -43,12 +52,11 @@ abstract contract RequestQueue is DeliveryUtils {
             ,
             bool onlyReadRequests
         ) = _createPayloadSubmitParamsArray();
-
         if (auctionManager_ == address(0))
             auctionManager_ = IAddressResolver(addressResolver__).defaultAuctionManager();
 
         RequestMetadata memory requestMetadata = RequestMetadata({
-            appGateway: appGateway,
+            appGateway: appGateway_,
             auctionManager: auctionManager_,
             fees: fees_,
             winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
@@ -66,7 +74,7 @@ abstract contract RequestQueue is DeliveryUtils {
 
         emit PayloadSubmitted(
             requestCount,
-            appGateway,
+            appGateway_,
             payloadSubmitParamsArray,
             fees_,
             auctionManager_,
