@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 import {FastSwitchboard} from "./FastSwitchboard.sol";
 import {SuperchainEnabled} from "./SuperchainEnabled.sol";
 import {ISocket} from "../../../interfaces/ISocket.sol";
+import {ExecuteParams, ExecutionStatus} from "../../utils/common/Structs.sol";
 
 contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
     address public token;
@@ -13,8 +14,17 @@ contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
     mapping(bytes32 => bool) public isSyncedOut;
     mapping(bytes32 => bytes32) public payloadIdToDigest;
     mapping(address => uint256) public unminted;
+    mapping(bytes32 => bytes32) public remoteExecutedDigests;
+    mapping(bytes32 => bool) public isRemoteExecuted;
 
     error OnlyTokenAllowed();
+    error RemoteExecutionNotFound();
+    error DigestMismatch();
+    error PreviousDigestsHashMismatch();
+    error NotAttested();
+    error NotExecuted();
+
+    event Attested(bytes32 payloadId, bytes32 digest, address watcher);
 
     modifier onlyToken() {
         if (msg.sender != token) revert OnlyTokenAllowed();
@@ -33,7 +43,11 @@ contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
         }
     }
 
-    function attest(bytes32 payloadId_, bytes32 digest_, bytes calldata proof_) external override {
+    function attest(bytes32 /*digest_*/, bytes calldata /*proof_*/) external override {
+        revert("Not implemented");
+    }
+
+    function attest(bytes32 payloadId_, bytes32 digest_, bytes calldata proof_) external {
         address watcher = _recoverSigner(keccak256(abi.encode(address(this), digest_)), proof_);
 
         if (isAttested[digest_]) revert AlreadyAttested();
@@ -44,29 +58,35 @@ contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
         emit Attested(payloadId_, digest_, watcher);
     }
 
-    function syncOut(
+    function allowPacket(
         bytes32 digest_,
-        bytes32 payloadId_,
-        PayloadParams calldata payloadParams_
-    ) external override {
-        if (isSyncedOut[digest_]) return;
-        isSyncedOut[digest_] = true;
+        bytes32 payloadId_
+    ) external view override returns (bool) {
+        // digest has enough attestations and is remote executed
+        return
+            payloadIdToDigest[payloadId_] == digest_ &&
+            isAttested[digest_] &&
+            isRemoteExecuted[payloadId_];
+    }
 
-        if (!isAttested[digest_]) return;
-
+    function syncOut(bytes32 payloadId_) external {
         bytes32 digest = payloadIdToDigest[payloadId_];
-        if (digest != digest_) return;
 
-        bytes32 expectedDigest = _packPayload(payloadParams_);
-        if (expectedDigest != digest_) return;
+        // not attested
+        if (digest == bytes32(0) || !isAttested[digest]) revert NotAttested();
 
-        ISocket.ExecutionStatus isExecuted = socket__.payloadExecuted(payloadId_);
-        if (isExecuted != ISocket.ExecutionStatus.Executed) return;
+        // already synced out
+        if (isSyncedOut[digest]) return;
+        isSyncedOut[digest] = true;
+
+        // not executed
+        ExecutionStatus isExecuted = socket__.payloadExecuted(payloadId_);
+        if (isExecuted != ExecutionStatus.Executed) revert NotExecuted();
 
         _xMessageContract(
             remoteChainId,
             remoteAddress,
-            abi.encodeWithSelector(this.syncIn.selector, payloadId_, digest_)
+            abi.encodeWithSelector(this.syncIn.selector, payloadId_, digest)
         );
     }
 
@@ -78,23 +98,40 @@ contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
     }
 
     function proveRemoteExecutions(
-        bytes32[] calldata payloadIds_,
-        ExecuteParams memory executeParams_,
-        bytes memory transmitterSignature_
+        bytes32[] calldata previousPayloadIds_,
+        bytes32 currentPayloadId_,
+        address transmitter_,
+        ExecuteParams memory executeParams_
     ) external {
+        // Calculate previousDigestsHash from stored remoteExecutedDigests
         bytes32 previousDigestsHash = bytes32(0);
-        if (!isAttested[digest_]) revert AlreadyAttested();
-        if (!_hasRole(WATCHER_ROLE, watcher)) revert WatcherNotFound();
-
-        isAttested[digest_] = true;
-        bytes32 digest = payloadIdToDigest[payloadId_];
-        for (uint256 i = 0; i < payloadIds_.length; i++) {
-            if (remoteExecutedDigests[payloadIds_[i]] == bytes32(0))
+        for (uint256 i = 0; i < previousPayloadIds_.length; i++) {
+            if (remoteExecutedDigests[previousPayloadIds_[i]] == bytes32(0))
                 revert RemoteExecutionNotFound();
             previousDigestsHash = keccak256(
-                abi.encodePacked(previousDigestsHash, remoteExecutedDigests[payloadIds_[i]])
+                abi.encodePacked(previousDigestsHash, remoteExecutedDigests[previousPayloadIds_[i]])
             );
         }
+
+        // Check if the calculated previousDigestsHash matches the one in executeParams_
+        if (previousDigestsHash != executeParams_.prevDigestsHash)
+            revert PreviousDigestsHashMismatch();
+
+        // Construct current digest
+        (address appGateway, ) = socket__.getPlugConfig(executeParams_.target);
+        bytes32 constructedDigest = _createDigest(
+            transmitter_,
+            currentPayloadId_,
+            appGateway,
+            executeParams_
+        );
+
+        // Verify the constructed digest matches the stored one
+        bytes32 storedDigest = payloadIdToDigest[currentPayloadId_];
+        if (storedDigest == bytes32(0) || !isAttested[storedDigest]) revert NotAttested();
+        if (constructedDigest != storedDigest) revert DigestMismatch();
+
+        isRemoteExecuted[currentPayloadId_] = true;
     }
 
     /**
@@ -151,50 +188,6 @@ contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
                 )
             );
     }
-
-    // function _decodeBurn(
-    //     bytes memory payload
-    // ) internal pure returns (address user, uint256 amount, bool isBurn) {
-    //     // Extract function selector from payload
-    //     bytes4 selector;
-    //     assembly {
-    //         // Load first 4 bytes from payload data
-    //         selector := mload(add(payload, 32))
-    //     }
-    //     // Check if selector matches burn()
-    //     if (selector != bytes4(0x9dc29fac)) return (user, amount, false);
-
-    //     // Decode the payload after the selector (skip first 4 bytes)
-    //     assembly {
-    //         user := mload(add(add(payload, 36), 0)) // 32 + 4 bytes offset for first param
-    //         amount := mload(add(add(payload, 68), 0)) // 32 + 4 + 32 bytes offset for second param
-    //     }
-    //     isBurn = true;
-    // }
-
-    // function _packPayload(PayloadParams memory payloadParams_) internal pure returns (bytes32) {
-    //     return
-    //         keccak256(
-    //             abi.encode(
-    //                 payloadParams_.payloadId,
-    //                 payloadParams_.appGateway,
-    //                 payloadParams_.transmitter,
-    //                 payloadParams_.target,
-    //                 payloadParams_.value,
-    //                 payloadParams_.deadline,
-    //                 payloadParams_.executionGasLimit,
-    //                 payloadParams_.payload
-    //             )
-    //         );
-    // }
-
-    // function checkAndConsume(address user_, uint256 amount_) external onlyToken {
-    //     unminted[user_] -= amount_;
-    // }
-
-    // function setToken(address token_) external onlyOwner {
-    //     token = token_;
-    // }
 
     function setRemoteAddress(address _remoteAddress) external onlyOwner {
         remoteAddress = _remoteAddress;

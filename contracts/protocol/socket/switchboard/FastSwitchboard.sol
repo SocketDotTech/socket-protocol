@@ -39,7 +39,7 @@ contract FastSwitchboard is SwitchboardBase {
      * @param proof_ proof from watcher
      * @notice we are attesting a digest uniquely identified with payloadId.
      */
-    function attest(bytes32 digest_, bytes calldata proof_) external {
+    function attest(bytes32 digest_, bytes calldata proof_) external virtual {
         address watcher = _recoverSigner(keccak256(abi.encode(address(this), digest_)), proof_);
 
         if (isAttested[digest_]) revert AlreadyAttested();
@@ -52,7 +52,7 @@ contract FastSwitchboard is SwitchboardBase {
     /**
      * @inheritdoc ISwitchboard
      */
-    function allowPacket(bytes32 digest_, bytes32) external view returns (bool) {
+    function allowPacket(bytes32 digest_, bytes32) external view virtual returns (bool) {
         // digest has enough attestations
         return isAttested[digest_];
     }

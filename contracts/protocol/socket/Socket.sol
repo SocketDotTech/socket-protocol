@@ -50,7 +50,7 @@ contract Socket is SocketUtils {
         bytes calldata payload,
         bytes32 params
     ) external returns (bytes32 callId) {
-        PlugConfig memory plugConfig = _plugConfigs[msg.sender];
+        PlugConfig memory plugConfig = plugConfigs[msg.sender];
 
         // if no sibling plug is found for the given chain slug, revert
         if (plugConfig.appGateway == address(0)) revert PlugDisconnected();
@@ -75,7 +75,7 @@ contract Socket is SocketUtils {
         bytes memory transmitterSignature_
     ) external payable returns (bytes memory) {
         if (executeParams_.deadline < block.timestamp) revert DeadlinePassed();
-        PlugConfig memory plugConfig = _plugConfigs[executeParams_.target];
+        PlugConfig memory plugConfig = plugConfigs[executeParams_.target];
         if (plugConfig.appGateway == address(0)) revert PlugDisconnected();
 
         bytes32 payloadId = _createPayloadId(plugConfig.switchboard, executeParams_);

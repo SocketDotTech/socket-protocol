@@ -18,7 +18,7 @@ abstract contract SocketConfig is ISocket, AccessControl {
     mapping(address => SwitchboardStatus) public isValidSwitchboard;
 
     // plug => (appGateway, switchboard__)
-    mapping(address => PlugConfig) internal _plugConfigs;
+    mapping(address => PlugConfig) public plugConfigs;
 
     // Error triggered when a connection is invalid
     error InvalidConnection();
@@ -50,7 +50,7 @@ abstract contract SocketConfig is ISocket, AccessControl {
         if (isValidSwitchboard[switchboard_] != SwitchboardStatus.REGISTERED)
             revert InvalidSwitchboard();
 
-        PlugConfig storage _plugConfig = _plugConfigs[msg.sender];
+        PlugConfig storage _plugConfig = plugConfigs[msg.sender];
 
         _plugConfig.appGateway = appGateway_;
         _plugConfig.switchboard = switchboard_;
@@ -65,7 +65,7 @@ abstract contract SocketConfig is ISocket, AccessControl {
     function getPlugConfig(
         address plugAddress_
     ) external view returns (address appGateway, address switchboard) {
-        PlugConfig memory _plugConfig = _plugConfigs[plugAddress_];
+        PlugConfig memory _plugConfig = plugConfigs[plugAddress_];
         return (_plugConfig.appGateway, _plugConfig.switchboard);
     }
 }
