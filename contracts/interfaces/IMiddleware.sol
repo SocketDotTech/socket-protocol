@@ -36,7 +36,7 @@ interface IMiddleware {
         address receiver_,
         address auctionManager_,
         Fees memory fees_
-    ) external;
+    ) external returns (uint40);
 
     function cancelRequest(uint40 requestCount_) external;
 

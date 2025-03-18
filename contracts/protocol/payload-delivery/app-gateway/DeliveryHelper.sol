@@ -29,6 +29,7 @@ contract DeliveryHelper is FeesHelpers {
         uint40 requestCount_,
         Bid memory winningBid_
     ) external onlyAuctionManager(requestCount_) {
+        if (requests[requestCount_].onlyReadRequests) revert ReadOnlyRequests();
         if (winningBid_.transmitter == address(0)) revert InvalidTransmitter();
 
         RequestMetadata storage requestMetadata_ = requests[requestCount_];

@@ -86,7 +86,7 @@ abstract contract WatcherPrecompileCore is
 
         // Calculate digest from payload parameters
         digest = getDigest(digestParams_);
-        emit FinalizeRequested(transmitter_, digest, prevDigestsHash, params_);
+        emit FinalizeRequested(transmitter_, digest, prevDigestsHash, payloads[params_.payloadId]);
     }
 
     function _getBatch(
@@ -200,6 +200,7 @@ abstract contract WatcherPrecompileCore is
         if (switchboard != switchboard_) revert InvalidSwitchboard();
     }
 
+    // todo: revisit when we do timeout precompile
     function _encodeId(
         uint32 chainSlug_,
         address switchboardOrWatcher_

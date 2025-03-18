@@ -106,9 +106,9 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         if (r.middleware != msg.sender) revert InvalidCaller();
         if (r.transmitter != address(0)) revert AlreadyStarted();
         if (r.currentBatchPayloadsLeft > 0) revert AlreadyStarted();
-
         r.transmitter = transmitter;
         uint40 batchCount = r.payloadParamsArray[0].dump.getBatchCount();
+
         uint256 totalPayloadsLeft = _processBatch(requestCount, batchCount);
         // todo: for retry cases
         r.currentBatchPayloadsLeft = totalPayloadsLeft;
@@ -120,10 +120,12 @@ abstract contract RequestHandler is WatcherPrecompileCore {
     ) internal returns (uint256 totalPayloadsLeft) {
         RequestParams memory r = requestParams[requestCount_];
         PayloadParams[] memory payloadParamsArray = _getBatch(requestCount_, batchCount_);
+
         if (r.isRequestCancelled) revert RequestCancelled();
+
         for (uint40 i = 0; i < payloadParamsArray.length; i++) {
-            bool isResolved = IPromise(payloadParamsArray[i].asyncPromise).resolved();
-            if (isResolved) continue;
+            bool executed = isPromiseExecuted[payloadParamsArray[i].payloadId];
+            if (executed) continue;
             totalPayloadsLeft++;
 
             if (payloadParamsArray[i].dump.getCallType() != CallType.READ) {

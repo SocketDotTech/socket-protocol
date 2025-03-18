@@ -32,6 +32,8 @@ abstract contract DeliveryUtils is
     error WinningBidExists();
     /// @notice Error thrown when a bid is insufficient
     error InsufficientFees();
+    /// @notice Error thrown when a request contains only reads
+    error ReadOnlyRequests();
 
     event CallBackReverted(uint40 requestCount_, bytes32 payloadId_);
     event RequestCancelled(uint40 indexed requestCount);
@@ -41,7 +43,8 @@ abstract contract DeliveryUtils is
         address indexed appGateway,
         PayloadSubmitParams[] payloadSubmitParams,
         Fees fees,
-        address auctionManager
+        address auctionManager,
+        bool onlyReadRequests
     );
     /// @notice Emitted when fees are increased
     event FeesIncreased(
@@ -49,13 +52,6 @@ abstract contract DeliveryUtils is
         uint40 indexed requestCount,
         uint256 newMaxFees
     );
-    /// @notice Emitted when a payload is requested asynchronously
-    // event PayloadAsyncRequested(
-    //     uint40 indexed requestCount,
-    //     bytes32 indexed payloadId,
-    //     bytes32 indexed digest,
-    //     PayloadDetails payloadDetails
-    // );
 
     modifier onlyAuctionManager(uint40 requestCount_) {
         if (msg.sender != requests[requestCount_].auctionManager) revert NotAuctionManager();

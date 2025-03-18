@@ -32,10 +32,19 @@ abstract contract RequestQueue is DeliveryUtils {
         address auctionManager_,
         bytes memory onCompleteData_
     ) external returns (uint40 requestCount) {
+        address appGateway = _getCoreAppGateway(msg.sender);
+        return _batch(appGateway, auctionManager_, fees_, onCompleteData_);
+    }
+
+    function _batch(
+        address appGateway_,
+        address auctionManager_,
+        Fees memory fees_,
+        bytes memory onCompleteData_
+    ) internal returns (uint40 requestCount) {
         if (queuePayloadParams.length == 0) return 0;
 
-        address appGateway = _getCoreAppGateway(msg.sender);
-        if (!IFeesManager(addressResolver__.feesManager()).isFeesEnough(appGateway, fees_))
+        if (!IFeesManager(addressResolver__.feesManager()).isFeesEnough(appGateway_, fees_))
             revert InsufficientFees();
 
         (
@@ -43,31 +52,33 @@ abstract contract RequestQueue is DeliveryUtils {
             ,
             bool onlyReadRequests
         ) = _createPayloadSubmitParamsArray();
-
         if (auctionManager_ == address(0))
             auctionManager_ = IAddressResolver(addressResolver__).defaultAuctionManager();
 
         RequestMetadata memory requestMetadata = RequestMetadata({
-            appGateway: appGateway,
+            appGateway: appGateway_,
             auctionManager: auctionManager_,
             fees: fees_,
             winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
-            onCompleteData: onCompleteData_
+            onCompleteData: onCompleteData_,
+            onlyReadRequests: onlyReadRequests
         });
 
         requestCount = watcherPrecompile__().submitRequest(payloadSubmitParamsArray);
         requests[requestCount] = requestMetadata;
 
         // send query directly if request contains only reads
+        // transmitter should ignore the batch for auction, the transaction will also revert if someone bids
         if (onlyReadRequests)
             watcherPrecompile__().startProcessingRequest(requestCount, address(0));
 
         emit PayloadSubmitted(
             requestCount,
-            appGateway,
+            appGateway_,
             payloadSubmitParamsArray,
             fees_,
-            auctionManager_
+            auctionManager_,
+            onlyReadRequests
         );
     }
 
@@ -87,14 +98,8 @@ abstract contract RequestQueue is DeliveryUtils {
 
         totalLevels = 0;
         onlyReadRequests = queuePayloadParams[0].callType == CallType.READ;
-
         for (uint256 i = 0; i < queuePayloadParams.length; i++) {
-            // Check if first batch is all reads
-            if (
-                totalLevels == 0 &&
-                queuePayloadParams[i].isParallel == Parallel.ON &&
-                queuePayloadParams[i].callType != CallType.READ
-            ) {
+            if (queuePayloadParams[i].callType != CallType.READ) {
                 onlyReadRequests = false;
             }
 
@@ -105,8 +110,6 @@ abstract contract RequestQueue is DeliveryUtils {
 
             payloadDetailsArray[i] = _createPayloadDetails(totalLevels, queuePayloadParams[i]);
         }
-
-        if (totalLevels > 1) onlyReadRequests = false;
 
         clearQueue();
     }
@@ -157,7 +160,7 @@ abstract contract RequestQueue is DeliveryUtils {
                 target: target,
                 appGateway: queuePayloadParams_.appGateway,
                 gasLimit: queuePayloadParams_.gasLimit == 0
-                    ? 1_000_000
+                    ? 10_000_000
                     : queuePayloadParams_.gasLimit,
                 value: queuePayloadParams_.value,
                 readAt: queuePayloadParams_.readAt,
