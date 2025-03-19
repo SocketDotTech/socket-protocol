@@ -24,14 +24,13 @@ abstract contract WatcherPrecompileCore is
     /// @param payload_ The payload data
     /// @param delayInSeconds_ The delay in seconds
     function _setTimeout(
-        address appGateway_,
         bytes calldata payload_,
         uint256 delayInSeconds_
     ) internal returns (bytes32 timeoutId) {
         if (delayInSeconds_ > maxTimeoutDelayInSeconds) revert TimeoutDelayTooLarge();
 
         // from auction manager
-        watcherPrecompileLimits__.consumeLimit(appGateway_, SCHEDULE, 1);
+        watcherPrecompileLimits__.consumeLimit(_getCoreAppGateway(msg.sender), SCHEDULE, 1);
         uint256 executeAt = block.timestamp + delayInSeconds_;
         timeoutId = _encodeId(evmxSlug, address(this));
         timeoutRequests[timeoutId] = TimeoutRequest(
@@ -86,7 +85,7 @@ abstract contract WatcherPrecompileCore is
 
         // Calculate digest from payload parameters
         digest = getDigest(digestParams_);
-        emit FinalizeRequested(transmitter_, digest, prevDigestsHash, payloads[params_.payloadId]);
+        emit FinalizeRequested(digest, payloads[params_.payloadId]);
     }
 
     function _getBatch(

@@ -22,12 +22,7 @@ interface IWatcherPrecompile {
     event QueryRequested(PayloadParams params);
 
     /// @notice Emitted when a finalize request is made
-    event FinalizeRequested(
-        address transmitter,
-        bytes32 digest,
-        bytes32 prevDigestsHash,
-        PayloadParams params
-    );
+    event FinalizeRequested(bytes32 digest, PayloadParams params);
 
     /// @notice Emitted when a request is finalized
     /// @param payloadId The unique identifier for the request
@@ -36,11 +31,11 @@ interface IWatcherPrecompile {
 
     /// @notice Emitted when a promise is resolved
     /// @param payloadId The unique identifier for the resolved promise
-    event PromiseResolved(bytes32 indexed payloadId, bool success, address asyncPromise);
+    event PromiseResolved(bytes32 indexed payloadId, address asyncPromise);
 
     /// @notice Emitted when a promise is not resolved
     /// @param payloadId The unique identifier for the not resolved promise
-    event PromiseNotResolved(bytes32 indexed payloadId, bool success, address asyncPromise);
+    event PromiseNotResolved(bytes32 indexed payloadId, address asyncPromise);
 
     event TimeoutRequested(
         bytes32 timeoutId,
@@ -106,7 +101,6 @@ interface IWatcherPrecompile {
     function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory);
 
     function setTimeout(
-        address appGateway_,
         uint256 delayInSeconds_,
         bytes calldata payload_
     ) external returns (bytes32);

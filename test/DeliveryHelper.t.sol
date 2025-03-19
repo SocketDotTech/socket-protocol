@@ -31,15 +31,10 @@ contract DeliveryHelperTest is SetupTest {
         address auctionManager,
         bool onlyReadRequests
     );
-    event BidPlaced(uint40 indexed requestCount, Bid bid);
+    event BidPlaced(uint40 requestCount, Bid bid);
     event AuctionEnded(uint40 indexed requestCount, Bid winningBid);
     event RequestCancelled(uint40 indexed requestCount);
-    event FinalizeRequested(
-        address transmitter,
-        bytes32 digest,
-        bytes32 prevDigestsHash,
-        PayloadParams params
-    );
+    event FinalizeRequested(bytes32 digest, PayloadParams params);
     event QueryRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
 
     //////////////////////////////////// Setup ////////////////////////////////////
@@ -108,6 +103,11 @@ contract DeliveryHelperTest is SetupTest {
         addressResolver.setDefaultAuctionManager(address(auctionManager));
         addressResolver.setFeesManager(address(feesManager));
         vm.stopPrank();
+
+        address[] memory transmitters = new address[](1);
+        transmitters[0] = transmitterEOA;
+        hoax(owner);
+        auctionManager.addTransmitters(transmitters);
 
         // chain core contracts
         arbConfig = deploySocket(arbChainSlug);
@@ -210,7 +210,6 @@ contract DeliveryHelperTest is SetupTest {
         IAppGateway appGateway_,
         bytes32[] memory contractIds_
     ) internal returns (uint40 requestCount) {
-        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
         requestCount = watcherPrecompile.nextRequestCount();
         appGateway_.deployContracts(chainSlug_);
 
@@ -265,32 +264,21 @@ contract DeliveryHelperTest is SetupTest {
     }
 
     //////////////////////////////////// Auction ////////////////////////////////////
-
     function placeBid(uint40 requestCount) internal {
-        // todo:
-        // vm.expectEmit(false, false, false, false);
-        // emit BidPlaced(
-        //     requestCount,
-        //     Bid({fee: bidAmount, transmitter: transmitterEOA, extraData: ""})
-        // );
-
-        vm.prank(transmitterEOA);
         bytes memory transmitterSignature = _createSignature(
             keccak256(abi.encode(address(auctionManager), evmxSlug, requestCount, bidAmount, "")),
             transmitterPrivateKey
         );
 
-        auctionManager.bid(requestCount, bidAmount, transmitterSignature, "");
+        vm.expectEmit(false, false, false, false);
+        emit BidPlaced(
+            requestCount,
+            Bid({transmitter: transmitterEOA, fee: bidAmount, extraData: bytes("")})
+        );
+        auctionManager.bid(requestCount, bidAmount, transmitterSignature, bytes(""));
     }
 
-    function endAuction() internal {
-        // todo:
-        // vm.expectEmit(true, false, false, true);
-        // emit AuctionEnded(
-        //     requestCount,
-        //     Bid({fee: bidAmount, transmitter: transmitterEOA, extraData: ""})
-        // );
-
+    function endAuction(uint40 requestCount_) internal {
         if (auctionEndDelaySeconds == 0) return;
         bytes32 timeoutId = _encodeId(evmxSlug, address(watcherPrecompile), timeoutIdCounter++);
 
@@ -298,12 +286,18 @@ contract DeliveryHelperTest is SetupTest {
             address(watcherPrecompile),
             abi.encode(IWatcherPrecompile.resolveTimeout.selector, timeoutId)
         );
+
+        vm.expectEmit(true, true, true, true);
+        emit AuctionEnded(
+            requestCount_,
+            Bid({fee: bidAmount, transmitter: transmitterEOA, extraData: ""})
+        );
         watcherPrecompile.resolveTimeout(timeoutId, signatureNonce++, watcherSignature);
     }
 
     function bidAndEndAuction(uint40 requestCount) internal {
         placeBid(requestCount);
-        endAuction();
+        endAuction(requestCount);
     }
 
     //////////////////////////////////// Utils ///////////////////////////////////
@@ -370,26 +364,22 @@ contract DeliveryHelperTest is SetupTest {
                 "ChainSlug mismatch"
             );
             // todo
-            // assertEq(
-            //     payloadDetail.target,
-            //     payloadDetails[i].target,
-            //     "Target mismatch"
-            // );
-            // assertEq(
-            //     keccak256(payloadDetail.payload),
-            //     keccak256(payloadDetails[i].payload),
-            //     "Payload mismatch"
-            // );
+            assertEq(payloadSubmitParam.target, payloadSubmitParams[i].target, "Target mismatch");
+            assertEq(
+                keccak256(payloadSubmitParam.payload),
+                keccak256(payloadSubmitParams[i].payload),
+                "Payload mismatch"
+            );
             assertEq(
                 uint(payloadSubmitParam.callType),
                 uint(payloadSubmitParams[i].callType),
                 "CallType mismatch"
             );
-            // assertEq(
-            //     payloadDetail.executionGasLimit,
-            //     payloadDetails[i].executionGasLimit,
-            //     "ExecutionGasLimit mismatch"
-            // );
+            assertEq(
+                payloadSubmitParam.gasLimit,
+                payloadSubmitParams[i].gasLimit,
+                "gasLimit mismatch"
+            );
         }
 
         RequestMetadata memory payloadRequest = deliveryHelper.getRequestMetadata(requestCount);

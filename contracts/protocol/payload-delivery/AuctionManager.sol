@@ -33,6 +33,9 @@ abstract contract AuctionManagerStorage is IAuctionManager {
     // slot 54
     uint256 public auctionEndDelaySeconds;
 
+    // slot 55
+    mapping(address => bool) public whitelistedTransmitters;
+
     // slots [55-104] reserved for gap
     uint256[50] _gap_after;
 
@@ -46,6 +49,8 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
     event AuctionStarted(uint40 requestCount);
     event AuctionEnded(uint40 requestCount, Bid winningBid);
     event BidPlaced(uint40 requestCount, Bid bid);
+
+    error InvalidBid();
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -66,6 +71,22 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
         _initializeOwner(owner_);
         evmxSlug = evmxSlug_;
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
+    }
+
+    /// @notice Adds multiple transmitters to the whitelist
+    /// @param transmitters_ Array of transmitter addresses to whitelist
+    function addTransmitters(address[] calldata transmitters_) external onlyOwner {
+        for (uint256 i = 0; i < transmitters_.length; i++) {
+            whitelistedTransmitters[transmitters_[i]] = true;
+        }
+    }
+
+    /// @notice Removes multiple transmitters from the whitelist
+    /// @param transmitters_ Array of transmitter addresses to remove
+    function removeTransmitters(address[] calldata transmitters_) external onlyOwner {
+        for (uint256 i = 0; i < transmitters_.length; i++) {
+            whitelistedTransmitters[transmitters_[i]] = false;
+        }
     }
 
     function setAuctionEndDelaySeconds(uint256 auctionEndDelaySeconds_) external onlyOwner {
@@ -96,12 +117,14 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
             keccak256(abi.encode(address(this), evmxSlug, requestCount_, fee, extraData)),
             transmitterSignature
         );
+        if (!whitelistedTransmitters[transmitter]) revert InvalidTransmitter();
 
         Bid memory newBid = Bid({fee: fee, transmitter: transmitter, extraData: extraData});
 
         RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
             .getRequestMetadata(requestCount_);
         if (fee > requestMetadata.fees.amount) revert BidExceedsMaxFees();
+        if (requestMetadata.auctionManager != address(this)) revert InvalidBid();
 
         if (
             winningBids[requestCount_].transmitter != address(0) &&
@@ -120,7 +143,6 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
         if (auctionEndDelaySeconds > 0) {
             startAuction(requestCount_);
             watcherPrecompile__().setTimeout(
-                requestMetadata.appGateway,
                 auctionEndDelaySeconds,
                 abi.encodeWithSelector(this.endAuction.selector, requestCount_)
             );
@@ -145,11 +167,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
 
         emit AuctionEnded(requestCount_, winningBid);
 
-        RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
-            .getRequestMetadata(requestCount_);
-
         watcherPrecompile__().setTimeout(
-            requestMetadata.appGateway,
             IMiddleware(addressResolver__.deliveryHelper()).bidTimeout(),
             abi.encodeWithSelector(this.expireBid.selector, requestCount_)
         );
