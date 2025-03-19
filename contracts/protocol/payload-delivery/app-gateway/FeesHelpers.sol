@@ -39,9 +39,7 @@ abstract contract FeesHelpers is RequestQueue {
             chainSlug_,
             token_,
             amount_,
-            receiver_,
-            auctionManager_,
-            fees_
+            receiver_
         );
 
         return _batch(msg.sender, auctionManager_, fees_, bytes(""));

@@ -114,7 +114,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
             this.resolveTimeout.selector,
             block.timestamp
         );
-        watcherPrecompile__().setTimeout(address(this), delayInSeconds_, payload);
+        watcherPrecompile__().setTimeout(delayInSeconds_, payload);
     }
 
     function resolveTimeout(uint256 creationTimestamp_) external onlyWatcherPrecompile {

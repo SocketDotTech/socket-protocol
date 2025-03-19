@@ -346,7 +346,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     function _createQueuePayloadParams(
         uint32 chainSlug_,
         bytes memory payload_
-    ) internal returns (QueuePayloadParams memory) {
+    ) internal view returns (QueuePayloadParams memory) {
         return
             QueuePayloadParams({
                 chainSlug: chainSlug_,
@@ -378,10 +378,8 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         uint32 chainSlug_,
         address token_,
         uint256 amount_,
-        address receiver_,
-        address auctionManager_,
-        Fees memory fees_
-    ) public returns (uint40) {
+        address receiver_
+    ) public {
         address appGateway = _getCoreAppGateway(originAppGateway_);
 
         // Check if amount is available in fees plug
