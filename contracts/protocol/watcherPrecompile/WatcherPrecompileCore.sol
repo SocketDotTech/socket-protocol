@@ -31,7 +31,7 @@ abstract contract WatcherPrecompileCore is
         if (delayInSeconds_ > maxTimeoutDelayInSeconds) revert TimeoutDelayTooLarge();
 
         // from auction manager
-        watcherPrecompileLimits__.consumeLimit(appGateway_, SCHEDULE, 1);
+        watcherPrecompileLimits__.consumeLimit(_getCoreAppGateway(appGateway_), SCHEDULE, 1);
         uint256 executeAt = block.timestamp + delayInSeconds_;
         timeoutId = _encodeId(evmxSlug, address(this));
         timeoutRequests[timeoutId] = TimeoutRequest(
