@@ -107,17 +107,14 @@ async function setRolesForEVMx(addresses: DeploymentAddresses) {
   const contractAddress = chainAddresses[EVMxCoreContracts.WatcherPrecompile];
   if (!contractAddress) return;
 
-  for (const relayerAddress of [...relayerAddressList, signer.address]) {
-    console.log(`setting WATCHER_ROLE for ${relayerAddress} on EVMX`);
-    await setRoleForContract(
-      EVMxCoreContracts.WatcherPrecompile,
-      contractAddress,
-      relayerAddress,
-      ROLES.WATCHER_ROLE,
-      signer,
-      EVMX_CHAIN_ID
-    );
-  }
+  await setRoleForContract(
+    EVMxCoreContracts.AuctionManager,
+    chainAddresses[EVMxCoreContracts.AuctionManager],
+    signer.address,
+    ROLES.TRANSMITTER_ROLE,
+    signer,
+    EVMX_CHAIN_ID
+  );
 }
 
 export const main = async () => {
@@ -128,6 +125,7 @@ export const main = async () => {
     for (const chain of chains) {
       await setRolesForOnChain(chain, addresses);
     }
+    await setRolesForEVMx(addresses);
   } catch (error) {
     console.log("Error:", error);
   }
