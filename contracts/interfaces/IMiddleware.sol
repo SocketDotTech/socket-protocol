@@ -3,12 +3,7 @@ pragma solidity ^0.8.3;
 import {QueuePayloadParams, Bid, Fees, WriteFinality, CallType, Parallel, IsPlug, RequestMetadata} from "../protocol/utils/common/Structs.sol";
 
 interface IMiddleware {
-    event BidPlaced(
-        uint40 indexed requestCount,
-        Bid bid // Replaced transmitter and bidAmount with Bid struct
-    );
-
-    event AuctionEnded(
+   event AuctionEnded(
         uint40 indexed requestCount,
         Bid winningBid // Replaced winningTransmitter and winningBid with Bid struct
     );
