@@ -68,7 +68,8 @@ contract DeliveryHelperTest is SetupTest {
             evmxSlug,
             auctionEndDelaySeconds,
             address(addressResolver),
-            owner
+            owner,
+            maxReAuctionCount
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(version);
