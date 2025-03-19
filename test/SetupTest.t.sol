@@ -235,7 +235,7 @@ contract SetupTest is Test {
         (
             ExecuteParams memory params,
             SocketBatcher socketBatcher,
-            uint256 value,
+            ,
             bytes memory transmitterSig
         ) = _getExecuteParams(payloadParams);
 

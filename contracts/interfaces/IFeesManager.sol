@@ -26,8 +26,6 @@ interface IFeesManager {
         uint32 chainSlug_,
         address token_,
         uint256 amount_,
-        address receiver_,
-        address auctionManager_,
-        Fees memory fees_
-    ) external returns (uint40);
+        address receiver_
+    ) external;
 }

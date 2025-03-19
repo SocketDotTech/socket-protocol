@@ -168,9 +168,6 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
 
         emit AuctionEnded(requestCount_, winningBid);
 
-        RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
-            .getRequestMetadata(requestCount_);
-
         watcherPrecompile__().setTimeout(
             address(this),
             IMiddleware(addressResolver__.deliveryHelper()).bidTimeout(),

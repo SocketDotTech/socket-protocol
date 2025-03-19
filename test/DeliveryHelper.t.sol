@@ -34,12 +34,7 @@ contract DeliveryHelperTest is SetupTest {
     event BidPlaced(uint40 requestCount, Bid bid);
     event AuctionEnded(uint40 indexed requestCount, Bid winningBid);
     event RequestCancelled(uint40 indexed requestCount);
-    event FinalizeRequested(
-        address transmitter,
-        bytes32 digest,
-        bytes32 prevDigestsHash,
-        PayloadParams params
-    );
+    event FinalizeRequested(bytes32 digest, PayloadParams params);
     event QueryRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
 
     //////////////////////////////////// Setup ////////////////////////////////////
@@ -215,7 +210,6 @@ contract DeliveryHelperTest is SetupTest {
         IAppGateway appGateway_,
         bytes32[] memory contractIds_
     ) internal returns (uint40 requestCount) {
-        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
         requestCount = watcherPrecompile.nextRequestCount();
         appGateway_.deployContracts(chainSlug_);
 

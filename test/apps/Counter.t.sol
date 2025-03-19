@@ -105,12 +105,12 @@ contract CounterTest is DeliveryHelperTest {
     function testCounterReadMultipleChains() external {
         testCounterIncrementMultipleChains();
 
-        (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
+        (, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId,
             counterGateway
         );
-        (address optCounter, address optCounterForwarder) = getOnChainAndForwarderAddresses(
+        (, address optCounterForwarder) = getOnChainAndForwarderAddresses(
             optChainSlug,
             counterId,
             counterGateway

@@ -169,7 +169,7 @@ contract WatcherPrecompile is RequestHandler {
 
             isPromiseExecuted[resolvedPromises_[i].payloadId] = true;
             if (!success) {
-                emit PromiseNotResolved(resolvedPromises_[i].payloadId, success, asyncPromise);
+                emit PromiseNotResolved(resolvedPromises_[i].payloadId, asyncPromise);
                 continue;
             }
 
@@ -184,7 +184,7 @@ contract WatcherPrecompile is RequestHandler {
                     payloadParams.dump.getRequestCount()
                 );
             }
-            emit PromiseResolved(resolvedPromises_[i].payloadId, success, asyncPromise);
+            emit PromiseResolved(resolvedPromises_[i].payloadId, asyncPromise);
         }
     }
 
