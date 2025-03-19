@@ -42,4 +42,6 @@ interface IMiddleware {
     function getFees(uint40 requestCount_) external view returns (Fees memory);
 
     function finishRequest(uint40 requestCount_) external;
+
+    function handleRequestReverts(uint40 requestCount_) external;
 }
