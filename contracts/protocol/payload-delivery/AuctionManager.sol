@@ -50,6 +50,8 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
     event AuctionEnded(uint40 requestCount, Bid winningBid);
     event BidPlaced(uint40 requestCount, Bid bid);
 
+    error InvalidBid();
+
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -122,6 +124,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
         RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
             .getRequestMetadata(requestCount_);
         if (fee > requestMetadata.fees.amount) revert BidExceedsMaxFees();
+        if (requestMetadata.auctionManager != address(this)) revert InvalidBid();
 
         if (
             winningBids[requestCount_].transmitter != address(0) &&
