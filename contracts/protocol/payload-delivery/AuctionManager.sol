@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {ECDSA} from "solady/utils/ECDSA.sol";
 import "solady/utils/Initializable.sol";
-import {Ownable} from "solady/auth/Ownable.sol";
+import "../utils/AccessControl.sol";
 
 import {IMiddleware} from "../../interfaces/IMiddleware.sol";
 import {IFeesManager} from "../../interfaces/IFeesManager.sol";
@@ -12,6 +12,7 @@ import {IAuctionManager} from "../../interfaces/IAuctionManager.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {Fees, Bid, RequestMetadata, RequestParams} from "../utils/common/Structs.sol";
 import {AuctionClosed, AuctionAlreadyStarted, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter} from "../utils/common/Errors.sol";
+import {TRANSMITTER_ROLE} from "../utils/common/AccessRoles.sol";
 
 abstract contract AuctionManagerStorage is IAuctionManager {
     // slots [0-49] reserved for gap
@@ -50,7 +51,12 @@ abstract contract AuctionManagerStorage is IAuctionManager {
 
 /// @title AuctionManager
 /// @notice Contract for managing auctions and placing bids
-contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, AddressResolverUtil {
+contract AuctionManager is
+    AuctionManagerStorage,
+    Initializable,
+    AccessControl,
+    AddressResolverUtil
+{
     event AuctionRestarted(uint40 requestCount);
     event AuctionStarted(uint40 requestCount);
     event AuctionEnded(uint40 requestCount, Bid winningBid);
@@ -83,22 +89,6 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
         maxReAuctionCount = maxReAuctionCount_;
     }
 
-    /// @notice Adds multiple transmitters to the whitelist
-    /// @param transmitters_ Array of transmitter addresses to whitelist
-    function addTransmitters(address[] calldata transmitters_) external onlyOwner {
-        for (uint256 i = 0; i < transmitters_.length; i++) {
-            whitelistedTransmitters[transmitters_[i]] = true;
-        }
-    }
-
-    /// @notice Removes multiple transmitters from the whitelist
-    /// @param transmitters_ Array of transmitter addresses to remove
-    function removeTransmitters(address[] calldata transmitters_) external onlyOwner {
-        for (uint256 i = 0; i < transmitters_.length; i++) {
-            whitelistedTransmitters[transmitters_[i]] = false;
-        }
-    }
-
     function setAuctionEndDelaySeconds(uint256 auctionEndDelaySeconds_) external onlyOwner {
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
     }
@@ -127,10 +117,9 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
             keccak256(abi.encode(address(this), evmxSlug, requestCount_, fee, extraData)),
             transmitterSignature
         );
-        if (!whitelistedTransmitters[transmitter]) revert InvalidTransmitter();
+        if (!_hasRole(TRANSMITTER_ROLE, transmitter)) revert InvalidTransmitter();
 
         Bid memory newBid = Bid({fee: fee, transmitter: transmitter, extraData: extraData});
-
         RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
             .getRequestMetadata(requestCount_);
         if (fee > requestMetadata.fees.amount) revert BidExceedsMaxFees();
