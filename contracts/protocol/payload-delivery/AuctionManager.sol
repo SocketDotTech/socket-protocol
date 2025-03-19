@@ -68,6 +68,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
     /// @param auctionEndDelaySeconds_ The delay in seconds before an auction can end
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the contract owner
+    /// @param maxReAuctionCount_ The maximum number of re-auctions allowed
     function initialize(
         uint32 evmxSlug_,
         uint256 auctionEndDelaySeconds_,
@@ -174,34 +175,28 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
         Bid memory winningBid = winningBids[requestCount_];
         if (winningBid.transmitter == address(0)) revert InvalidTransmitter();
 
-        emit AuctionEnded(requestCount_, winningBid);
-
         watcherPrecompile__().setTimeout(
             IMiddleware(addressResolver__.deliveryHelper()).bidTimeout(),
             abi.encodeWithSelector(this.expireBid.selector, requestCount_)
         );
-
         IMiddleware(addressResolver__.deliveryHelper()).startRequestProcessing(
             requestCount_,
             winningBid
         );
+        emit AuctionEnded(requestCount_, winningBid);
     }
 
     function expireBid(uint40 requestCount_) external onlyWatcherPrecompile {
         if (reAuctionCount[requestCount_] >= maxReAuctionCount) revert MaxReAuctionCountReached();
-
         RequestParams memory requestParams = watcherPrecompile__().getRequestParams(requestCount_);
 
         // if executed, bid is not expired
         if (requestParams.payloadsRemaining == 0 || requestParams.isRequestCancelled) return;
-
-        IFeesManager(addressResolver__.feesManager()).unblockFees(
-            requestCount_,
-            requestParams.appGateway
-        );
         winningBids[requestCount_] = Bid({fee: 0, transmitter: address(0), extraData: ""});
         auctionClosed[requestCount_] = false;
         reAuctionCount[requestCount_]++;
+
+        IFeesManager(addressResolver__.feesManager()).unblockFees(requestCount_);
         emit AuctionRestarted(requestCount_);
     }
 
