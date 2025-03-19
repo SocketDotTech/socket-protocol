@@ -245,7 +245,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         uint40 requestCount_,
         address transmitter_,
         address originAppGateway_
-    ) external override onlyDeliveryHelper {
+    ) external override onlyWatcherPrecompileOrDeliveryHelper {
         Fees memory fees = requestCountBlockedFees[requestCount_];
         if (fees.amount == 0) revert NoFeesBlocked();
 

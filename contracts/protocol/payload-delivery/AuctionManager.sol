@@ -10,7 +10,7 @@ import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 import {IAuctionManager} from "../../interfaces/IAuctionManager.sol";
 
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
-import {Fees, Bid, RequestMetadata} from "../utils/common/Structs.sol";
+import {Fees, Bid, RequestMetadata, RequestParams} from "../utils/common/Structs.sol";
 import {AuctionClosed, AuctionAlreadyStarted, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter} from "../utils/common/Errors.sol";
 
 abstract contract AuctionManagerStorage is IAuctionManager {
@@ -179,19 +179,19 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
     }
 
     function expireBid(uint40 requestCount_) external onlyWatcherPrecompile {
-        RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
-            .getRequestMetadata(requestCount_);
+        RequestParams memory requestParams = watcherPrecompile__().requestParams(requestCount_);
 
         // if executed, bid is not expired
-        // todo: check pending payloads from watcher precompile
-        // if (requestMetadata.totalBatchPayloadsRemaining == 0 || requestMetadata.isRequestCancelled)
-        //     return;
+        if (requestParams.payloadsRemaining == 0 || requestParams.isRequestCancelled) return;
 
-        // IFeesManager(addressResolver__.feesManager()).unblockFees(requestCount_, requestMetadata.appGateway);
-        // winningBids[requestCount_] = Bid({fee: 0, transmitter: address(0), extraData: ""});
-        // auctionClosed[requestCount_] = false;
+        IFeesManager(addressResolver__.feesManager()).unblockFees(
+            requestCount_,
+            requestMetadata.appGateway
+        );
+        winningBids[requestCount_] = Bid({fee: 0, transmitter: address(0), extraData: ""});
+        auctionClosed[requestCount_] = false;
 
-        // emit AuctionRestarted(requestCount_);
+        emit AuctionRestarted(requestCount_);
     }
 
     function _recoverSigner(
