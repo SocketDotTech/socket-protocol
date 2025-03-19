@@ -33,6 +33,9 @@ abstract contract AuctionManagerStorage is IAuctionManager {
     // slot 54
     uint256 public auctionEndDelaySeconds;
 
+    // slot 55
+    mapping(address => bool) public whitelistedTransmitters;
+
     // slots [55-104] reserved for gap
     uint256[50] _gap_after;
 
@@ -68,6 +71,22 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
     }
 
+    /// @notice Adds multiple transmitters to the whitelist
+    /// @param transmitters_ Array of transmitter addresses to whitelist
+    function addTransmitters(address[] calldata transmitters_) external onlyOwner {
+        for (uint256 i = 0; i < transmitters_.length; i++) {
+            whitelistedTransmitters[transmitters_[i]] = true;
+        }
+    }
+
+    /// @notice Removes multiple transmitters from the whitelist
+    /// @param transmitters_ Array of transmitter addresses to remove
+    function removeTransmitters(address[] calldata transmitters_) external onlyOwner {
+        for (uint256 i = 0; i < transmitters_.length; i++) {
+            whitelistedTransmitters[transmitters_[i]] = false;
+        }
+    }
+
     function setAuctionEndDelaySeconds(uint256 auctionEndDelaySeconds_) external onlyOwner {
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
     }
@@ -96,6 +115,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
             keccak256(abi.encode(address(this), evmxSlug, requestCount_, fee, extraData)),
             transmitterSignature
         );
+        if (!whitelistedTransmitters[transmitter]) revert InvalidTransmitter();
 
         Bid memory newBid = Bid({fee: fee, transmitter: transmitter, extraData: extraData});
 

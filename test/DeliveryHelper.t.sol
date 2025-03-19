@@ -109,6 +109,11 @@ contract DeliveryHelperTest is SetupTest {
         addressResolver.setFeesManager(address(feesManager));
         vm.stopPrank();
 
+        address[] memory transmitters = new address[](1);
+        transmitters[0] = transmitterEOA;
+        hoax(owner);
+        auctionManager.addTransmitters(transmitters);
+
         // chain core contracts
         arbConfig = deploySocket(arbChainSlug);
         optConfig = deploySocket(optChainSlug);
