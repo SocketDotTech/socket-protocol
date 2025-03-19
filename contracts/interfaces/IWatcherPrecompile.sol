@@ -101,7 +101,6 @@ interface IWatcherPrecompile {
     function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory);
 
     function setTimeout(
-        address appGateway_,
         uint256 delayInSeconds_,
         bytes calldata payload_
     ) external returns (bytes32);

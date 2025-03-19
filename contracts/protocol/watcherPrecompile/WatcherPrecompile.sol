@@ -38,11 +38,10 @@ contract WatcherPrecompile is RequestHandler {
     /// @param payload_ The payload data
     /// @param delayInSeconds_ The delay in seconds
     function setTimeout(
-        address appGateway_,
         uint256 delayInSeconds_,
         bytes calldata payload_
     ) external returns (bytes32) {
-        return _setTimeout(appGateway_, payload_, delayInSeconds_);
+        return _setTimeout(payload_, delayInSeconds_);
     }
 
     /// @notice Ends the timeouts and calls the target address with the callback payload

@@ -143,7 +143,6 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
         if (auctionEndDelaySeconds > 0) {
             startAuction(requestCount_);
             watcherPrecompile__().setTimeout(
-                address(this),
                 auctionEndDelaySeconds,
                 abi.encodeWithSelector(this.endAuction.selector, requestCount_)
             );
@@ -169,7 +168,6 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
         emit AuctionEnded(requestCount_, winningBid);
 
         watcherPrecompile__().setTimeout(
-            address(this),
             IMiddleware(addressResolver__.deliveryHelper()).bidTimeout(),
             abi.encodeWithSelector(this.expireBid.selector, requestCount_)
         );
