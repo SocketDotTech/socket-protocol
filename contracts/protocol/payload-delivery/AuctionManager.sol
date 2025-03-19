@@ -36,8 +36,14 @@ abstract contract AuctionManagerStorage is IAuctionManager {
     // slot 55
     mapping(address => bool) public whitelistedTransmitters;
 
-    // slots [55-104] reserved for gap
-    uint256[50] _gap_after;
+    // slot 56
+    mapping(uint40 => uint256) public reAuctionCount;
+
+    // slot 57
+    uint256 public maxReAuctionCount;
+
+    // slots [57-104] reserved for gap
+    uint256[48] _gap_after;
 
     // slots 105-155 reserved for addr resolver util
 }
@@ -51,6 +57,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
     event BidPlaced(uint40 requestCount, Bid bid);
 
     error InvalidBid();
+    error MaxReAuctionCountReached();
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -65,12 +72,14 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
         uint32 evmxSlug_,
         uint256 auctionEndDelaySeconds_,
         address addressResolver_,
-        address owner_
+        address owner_,
+        uint256 maxReAuctionCount_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
         evmxSlug = evmxSlug_;
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
+        maxReAuctionCount = maxReAuctionCount_;
     }
 
     /// @notice Adds multiple transmitters to the whitelist
@@ -179,18 +188,20 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
     }
 
     function expireBid(uint40 requestCount_) external onlyWatcherPrecompile {
-        RequestParams memory requestParams = watcherPrecompile__().requestParams(requestCount_);
+        if (reAuctionCount[requestCount_] >= maxReAuctionCount) revert MaxReAuctionCountReached();
+
+        RequestParams memory requestParams = watcherPrecompile__().getRequestParams(requestCount_);
 
         // if executed, bid is not expired
         if (requestParams.payloadsRemaining == 0 || requestParams.isRequestCancelled) return;
 
         IFeesManager(addressResolver__.feesManager()).unblockFees(
             requestCount_,
-            requestMetadata.appGateway
+            requestParams.appGateway
         );
         winningBids[requestCount_] = Bid({fee: 0, transmitter: address(0), extraData: ""});
         auctionClosed[requestCount_] = false;
-
+        reAuctionCount[requestCount_]++;
         emit AuctionRestarted(requestCount_);
     }
 
