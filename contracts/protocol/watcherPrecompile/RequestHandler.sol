@@ -110,7 +110,6 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         uint40 batchCount = r.payloadParamsArray[0].dump.getBatchCount();
 
         uint256 totalPayloadsLeft = _processBatch(requestCount, batchCount);
-        // todo: for retry cases
         r.currentBatchPayloadsLeft = totalPayloadsLeft;
     }
 
