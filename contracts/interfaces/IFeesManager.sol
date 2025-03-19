@@ -11,7 +11,7 @@ interface IFeesManager {
         uint40 requestCount_
     ) external;
 
-    function unblockFees(uint40 requestCount_, address appGateway_) external;
+    function unblockFees(uint40 requestCount_) external;
 
     function isFeesEnough(address appGateway_, Fees memory fees_) external view returns (bool);
 

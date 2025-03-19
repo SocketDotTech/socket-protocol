@@ -31,19 +31,15 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     /// @notice Counter for tracking payload requests
     uint40 public payloadCounter;
 
-    // slot 64: timeoutCounter
-    /// @notice Counter for tracking timeout requests
-    uint40 public timeoutCounter;
-
     // slot 65: expiryTime
     /// @notice The expiry time for the payload
     uint256 public expiryTime;
 
-    // slot 65: asyncRequests
     // slot 66: timeoutRequests
     /// @notice Mapping to store timeout requests
     /// @dev timeoutId => TimeoutRequest struct
     mapping(bytes32 => TimeoutRequest) public timeoutRequests;
+
     // slot 67: watcherProofs
     /// @notice Mapping to store watcher proofs
     /// @dev payloadId => proof bytes
@@ -53,11 +49,6 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     /// @notice Mapping to store if appGateway has been called with trigger from on-chain Inbox
     /// @dev callId => bool
     mapping(bytes32 => bool) public appGatewayCalled;
-
-    // slot 69: requests
-
-    // slots 71-118: gap for future storage variables
-    uint256[48] _gap_after;
 
     uint40 public nextRequestCount;
     uint40 public nextBatchCount;
@@ -70,4 +61,7 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
 
     IWatcherPrecompileLimits public watcherPrecompileLimits__;
     IWatcherPrecompileConfig public watcherPrecompileConfig__;
+
+    // slots 71-118: gap for future storage variables
+    uint256[48] _gap_after;
 }
