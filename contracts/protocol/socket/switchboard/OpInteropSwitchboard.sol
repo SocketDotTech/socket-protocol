@@ -2,46 +2,43 @@
 pragma solidity ^0.8.21;
 
 import {FastSwitchboard} from "./FastSwitchboard.sol";
-import {SuperchainEnabled} from "./SuperchainEnabled.sol";
+// import {SuperchainEnabled} from "./SuperchainEnabled.sol";
 import {ISocket} from "../../../interfaces/ISocket.sol";
 import {ExecuteParams, ExecutionStatus} from "../../utils/common/Structs.sol";
+import {IL2ToL2CrossDomainMessenger} from "optimism/interfaces/L2/IL2ToL2CrossDomainMessenger.sol";
+import {Predeploys} from "optimism/src/libraries/Predeploys.sol";
 
-contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
-    address public token;
-    address public remoteAddress;
-    uint256 public remoteChainId;
+contract OpInteropSwitchboard is FastSwitchboard {
+    struct RemoteEndpoint {
+        uint256 remoteChainId;
+        address remoteAddress;
+    }
+
+    // remoteChainSlug => remoteEndpoint
+    mapping(uint32 => RemoteEndpoint) public remoteEndpoints;
+    // remoteChainId => remoteAddress
+    mapping(uint256 => address) public remoteAddresses;
 
     mapping(bytes32 => bool) public isSyncedOut;
     mapping(bytes32 => bytes32) public payloadIdToDigest;
-    mapping(address => uint256) public unminted;
     mapping(bytes32 => bytes32) public remoteExecutedDigests;
     mapping(bytes32 => bool) public isRemoteExecuted;
 
-    error OnlyTokenAllowed();
     error RemoteExecutionNotFound();
     error DigestMismatch();
     error PreviousDigestsHashMismatch();
     error NotAttested();
     error NotExecuted();
+    error CallerNotL2ToL2CrossDomainMessenger();
+    error InvalidCrossDomainSender();
 
     event Attested(bytes32 payloadId, bytes32 digest, address watcher);
-
-    modifier onlyToken() {
-        if (msg.sender != token) revert OnlyTokenAllowed();
-        _;
-    }
 
     constructor(
         uint32 chainSlug_,
         ISocket socket_,
         address owner_
-    ) FastSwitchboard(chainSlug_, socket_, owner_) {
-        if (chainSlug_ == 420120000) {
-            remoteChainId = 420120001;
-        } else if (chainSlug_ == 420120001) {
-            remoteChainId = 420120000;
-        }
-    }
+    ) FastSwitchboard(chainSlug_, socket_, owner_) {}
 
     function attest(bytes32 /*digest_*/, bytes calldata /*proof_*/) external override {
         revert("Not implemented");
@@ -69,7 +66,7 @@ contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
             isRemoteExecuted[payloadId_];
     }
 
-    function syncOut(bytes32 payloadId_) external {
+    function syncOut(bytes32 payloadId_, uint32 remoteChainSlug_) external {
         bytes32 digest = payloadIdToDigest[payloadId_];
 
         // not attested
@@ -84,16 +81,28 @@ contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
         if (isExecuted != ExecutionStatus.Executed) revert NotExecuted();
 
         _xMessageContract(
-            remoteChainId,
-            remoteAddress,
+            remoteEndpoints[remoteChainSlug_].remoteChainId,
+            remoteEndpoints[remoteChainSlug_].remoteAddress,
             abi.encodeWithSelector(this.syncIn.selector, payloadId_, digest)
         );
     }
 
-    function syncIn(
-        bytes32 payloadId_,
-        bytes32 digest_
-    ) external xOnlyFromContract(remoteAddress, remoteChainId) {
+    function syncIn(bytes32 payloadId_, bytes32 digest_) external {
+        if (msg.sender != Predeploys.L2_TO_L2_CROSS_DOMAIN_MESSENGER) {
+            revert CallerNotL2ToL2CrossDomainMessenger();
+        }
+
+        address remoteAddress = IL2ToL2CrossDomainMessenger(
+            Predeploys.L2_TO_L2_CROSS_DOMAIN_MESSENGER
+        ).crossDomainMessageSender();
+        uint256 remoteChainId = IL2ToL2CrossDomainMessenger(
+            Predeploys.L2_TO_L2_CROSS_DOMAIN_MESSENGER
+        ).crossDomainMessageSource();
+
+        if (remoteAddresses[remoteChainId] != remoteAddress) {
+            revert InvalidCrossDomainSender();
+        }
+
         remoteExecutedDigests[payloadId_] = digest_;
     }
 
@@ -189,11 +198,33 @@ contract OpInteropSwitchboard is FastSwitchboard, SuperchainEnabled {
             );
     }
 
-    function setRemoteAddress(address _remoteAddress) external onlyOwner {
-        remoteAddress = _remoteAddress;
+    function _xMessageContract(
+        uint256 destChainId,
+        address destAddress,
+        bytes memory data
+    ) internal {
+        IL2ToL2CrossDomainMessenger(Predeploys.L2_TO_L2_CROSS_DOMAIN_MESSENGER).sendMessage(
+            destChainId,
+            destAddress,
+            data
+        );
     }
 
-    function setRemoteChainId(uint256 _remoteChainId) external onlyOwner {
-        remoteChainId = _remoteChainId;
+    function addRemoteEndpoint(
+        uint32 remoteChainSlug_,
+        uint256 remoteChainId_,
+        address remoteAddress_
+    ) external onlyOwner {
+        remoteEndpoints[remoteChainSlug_] = RemoteEndpoint({
+            remoteChainId: remoteChainId_,
+            remoteAddress: remoteAddress_
+        });
+        remoteAddresses[remoteChainId_] = remoteAddress_;
+    }
+
+    function removeRemoteEndpoint(uint32 remoteChainSlug_) external onlyOwner {
+        uint256 remoteChainId = remoteEndpoints[remoteChainSlug_].remoteChainId;
+        delete remoteEndpoints[remoteChainSlug_];
+        delete remoteAddresses[remoteChainId];
     }
 }
