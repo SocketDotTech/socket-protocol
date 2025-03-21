@@ -87,7 +87,7 @@ contract WatcherPrecompileLimits is
      * @notice Update limit parameters for multiple app gateways
      * @param updates_ Array of limit parameter updates
      */
-    function updateLimitParams(UpdateLimitParams[] calldata updates_) external onlyOwner {
+    function updateLimitParams(UpdateLimitParams[] memory updates_) external onlyOwner {
         _updateLimitParams(updates_);
     }
 
@@ -95,7 +95,7 @@ contract WatcherPrecompileLimits is
      * @notice Internal function to update limit parameters
      * @param updates_ Array of limit parameter updates
      */
-    function _updateLimitParams(UpdateLimitParams[] calldata updates_) internal {
+    function _updateLimitParams(UpdateLimitParams[] memory updates_) internal {
         for (uint256 i = 0; i < updates_.length; i++) {
             _consumePartLimit(0, _limitParams[updates_[i].appGateway][updates_[i].limitType]);
             _limitParams[updates_[i].appGateway][updates_[i].limitType].maxLimit = updates_[i]
