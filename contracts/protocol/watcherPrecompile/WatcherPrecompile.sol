@@ -39,9 +39,24 @@ contract WatcherPrecompile is RequestHandler {
     /// @param delayInSeconds_ The delay in seconds
     function setTimeout(
         uint256 delayInSeconds_,
-        bytes calldata payload_
-    ) external returns (bytes32) {
-        return _setTimeout(payload_, delayInSeconds_);
+        bytes memory payload_
+    ) external returns (bytes32 timeoutId) {
+        if (delayInSeconds_ > maxTimeoutDelayInSeconds) revert TimeoutDelayTooLarge();
+
+        // from auction manager
+        watcherPrecompileLimits__.consumeLimit(_getCoreAppGateway(msg.sender), SCHEDULE, 1);
+        uint256 executeAt = block.timestamp + delayInSeconds_;
+        timeoutId = _encodeId(evmxSlug, address(this));
+        timeoutRequests[timeoutId] = TimeoutRequest(
+            timeoutId,
+            msg.sender,
+            delayInSeconds_,
+            executeAt,
+            0,
+            false,
+            payload_
+        );
+        emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);
     }
 
     /// @notice Ends the timeouts and calls the target address with the callback payload
@@ -50,7 +65,7 @@ contract WatcherPrecompile is RequestHandler {
     function resolveTimeout(
         bytes32 timeoutId_,
         uint256 signatureNonce_,
-        bytes calldata signature_
+        bytes memory signature_
     ) external {
         _isWatcherSignatureValid(
             abi.encode(this.resolveTimeout.selector, timeoutId_),
@@ -106,9 +121,9 @@ contract WatcherPrecompile is RequestHandler {
     /// @dev keccak256(abi.encode(switchboard, digest))
     function finalized(
         bytes32 payloadId_,
-        bytes calldata proof_,
+        bytes memory proof_,
         uint256 signatureNonce_,
-        bytes calldata signature_
+        bytes memory signature_
     ) external {
         _isWatcherSignatureValid(
             abi.encode(this.finalized.selector, payloadId_, proof_),
@@ -143,9 +158,9 @@ contract WatcherPrecompile is RequestHandler {
     /// @param resolvedPromises_ Array of resolved promises and their return data
     /// @dev Only callable by the contract owner
     function resolvePromises(
-        ResolvedPromises[] calldata resolvedPromises_,
+        ResolvedPromises[] memory resolvedPromises_,
         uint256 signatureNonce_,
-        bytes calldata signature_
+        bytes memory signature_
     ) external {
         _isWatcherSignatureValid(
             abi.encode(this.resolvePromises.selector, resolvedPromises_),
@@ -192,7 +207,7 @@ contract WatcherPrecompile is RequestHandler {
         bool isRevertingOnchain_,
         bytes32 payloadId_,
         uint256 signatureNonce_,
-        bytes calldata signature_
+        bytes memory signature_
     ) external {
         _isWatcherSignatureValid(
             abi.encode(this.markRevert.selector, isRevertingOnchain_, payloadId_),
@@ -224,9 +239,9 @@ contract WatcherPrecompile is RequestHandler {
     // ================== On-Chain Inbox ==================
 
     function callAppGateways(
-        CallFromChainParams[] calldata params_,
+        CallFromChainParams[] memory params_,
         uint256 signatureNonce_,
-        bytes calldata signature_
+        bytes memory signature_
     ) external {
         _isWatcherSignatureValid(
             abi.encode(this.callAppGateways.selector, params_),
@@ -271,5 +286,9 @@ contract WatcherPrecompile is RequestHandler {
 
     function getRequestParams(uint40 requestCount) external view returns (RequestParams memory) {
         return requestParams[requestCount];
+    }
+
+    function getBatches(uint40 requestCount) external view returns (uint40[] memory) {
+        return requestBatchIds[requestCount];
     }
 }

@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 
 import "./WatcherPrecompileStorage.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
-import {AccessControl} from "../utils/AccessControl.sol";
+import "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 
@@ -13,37 +13,10 @@ abstract contract WatcherPrecompileCore is
     IWatcherPrecompile,
     WatcherPrecompileStorage,
     Initializable,
-    AccessControl,
+    Ownable,
     AddressResolverUtil
 {
     using DumpDecoder for bytes32;
-
-    // ================== Timeout functions ==================
-
-    /// @notice Sets a timeout for a payload execution on app gateway
-    /// @param payload_ The payload data
-    /// @param delayInSeconds_ The delay in seconds
-    function _setTimeout(
-        bytes calldata payload_,
-        uint256 delayInSeconds_
-    ) internal returns (bytes32 timeoutId) {
-        if (delayInSeconds_ > maxTimeoutDelayInSeconds) revert TimeoutDelayTooLarge();
-
-        // from auction manager
-        watcherPrecompileLimits__.consumeLimit(_getCoreAppGateway(msg.sender), SCHEDULE, 1);
-        uint256 executeAt = block.timestamp + delayInSeconds_;
-        timeoutId = _encodeId(evmxSlug, address(this));
-        timeoutRequests[timeoutId] = TimeoutRequest(
-            timeoutId,
-            msg.sender,
-            delayInSeconds_,
-            executeAt,
-            0,
-            false,
-            payload_
-        );
-        emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);
-    }
 
     function _finalize(
         PayloadParams memory params_,
@@ -174,30 +147,6 @@ abstract contract WatcherPrecompileCore is
         return prevDigestsHash;
     }
 
-    // ================== Helper functions ==================
-
-    /// @notice Verifies the connection between chain slug, target, and app gateway
-    /// @param chainSlug_ The identifier of the chain
-    /// @param target_ The target address
-    /// @param appGateway_ The app gateway address to verify
-    /// @dev Internal function to validate connections
-    function _verifyConnections(
-        uint32 chainSlug_,
-        address target_,
-        address appGateway_,
-        address switchboard_
-    ) internal view {
-        // todo: revisit this
-        // if target is contractFactoryPlug, return
-        if (target_ == watcherPrecompileConfig__.contractFactoryPlug(chainSlug_)) return;
-
-        (address appGateway, address switchboard) = watcherPrecompileConfig__.getPlugConfigs(
-            chainSlug_,
-            target_
-        );
-        if (appGateway != appGateway_) revert InvalidGateway();
-        if (switchboard != switchboard_) revert InvalidSwitchboard();
-    }
 
     // todo: revisit when we do timeout precompile
     function _encodeId(
@@ -242,15 +191,7 @@ abstract contract WatcherPrecompileCore is
         if (signer != owner()) revert InvalidWatcherSignature();
     }
 
-    function getBatches(uint40 requestCount_) external view returns (uint40[] memory) {
-        return requestBatchIds[requestCount_];
-    }
-
     function getBatchPayloadIds(uint40 batchCount_) external view returns (bytes32[] memory) {
         return batchPayloadIds[batchCount_];
-    }
-
-    function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory) {
-        return payloads[payloadId_];
     }
 }

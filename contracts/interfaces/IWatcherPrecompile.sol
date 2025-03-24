@@ -75,30 +75,9 @@ interface IWatcherPrecompile {
     error InvalidSwitchboard();
     /// @notice Error thrown when a request is already cancelled
     error RequestAlreadyCancelled();
-
     error RequestCancelled();
     error AlreadyStarted();
     error InvalidLevelNumber();
-
-    /// @notice Calculates the digest hash of payload parameters
-    /// @param params_ The payload parameters
-    /// @return digest The calculated digest
-    function getDigest(DigestParams memory params_) external pure returns (bytes32 digest);
-
-    /// @notice Gets the batch IDs for a request
-    /// @param requestCount_ The request count
-    /// @return Array of batch IDs
-    function getBatches(uint40 requestCount_) external view returns (uint40[] memory);
-
-    /// @notice Gets the payload IDs for a batch
-    /// @param batchCount_ The batch count
-    /// @return Array of payload IDs
-    function getBatchPayloadIds(uint40 batchCount_) external view returns (bytes32[] memory);
-
-    /// @notice Gets the payload parameters for a payload ID
-    /// @param payloadId_ The payload ID
-    /// @return The payload parameters
-    function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory);
 
     function setTimeout(
         uint256 delayInSeconds_,

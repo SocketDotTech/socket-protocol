@@ -99,9 +99,9 @@ contract WatcherPrecompileConfig is
     /// @dev Only callable by the contract owner
     /// @dev This helps in verifying that plugs are called by respective app gateways
     function setAppGateways(
-        AppGatewayConfig[] calldata configs_,
+        AppGatewayConfig[] memory configs_,
         uint256 signatureNonce_,
-        bytes calldata signature_
+        bytes memory signature_
     ) external {
         _isWatcherSignatureValid(
             abi.encode(this.setAppGateways.selector, configs_),

@@ -7,7 +7,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
     using DumpDecoder for bytes32;
 
     function submitRequest(
-        PayloadSubmitParams[] calldata payloadSubmitParams
+        PayloadSubmitParams[] memory payloadSubmitParams
     ) public returns (uint40 requestCount) {
         requestCount = nextRequestCount++;
         uint40 batchCount = nextBatchCount;
@@ -86,7 +86,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
     }
 
     function _checkAppGateways(
-        PayloadSubmitParams[] calldata payloadSubmitParams
+        PayloadSubmitParams[] memory payloadSubmitParams
     ) internal view returns (address appGateway) {
         bool isDeliveryHelper = msg.sender == addressResolver__.deliveryHelper();
         address coreAppGateway = isDeliveryHelper
@@ -110,7 +110,6 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         uint40 batchCount = r.payloadParamsArray[0].dump.getBatchCount();
 
         uint256 totalPayloadsLeft = _processBatch(requestCount, batchCount);
-        // todo: for retry cases
         r.currentBatchPayloadsLeft = totalPayloadsLeft;
     }
 

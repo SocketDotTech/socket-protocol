@@ -199,13 +199,48 @@ contract SetupTest is Test {
         bytes32[] memory payloadIds = watcherPrecompile.getBatchPayloadIds(batchCount_);
 
         for (uint i = 0; i < payloadIds.length; i++) {
-            PayloadParams memory payloadParams = watcherPrecompile.getPayloadParams(payloadIds[i]);
-            if (payloadParams.dump.getCallType() != CallType.READ) {
+            (bytes32 dump, , , , , , , , , , , , ) = watcherPrecompile.payloads(payloadIds[i]);
+            if (dump.getCallType() != CallType.READ) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    function getPayloadParams(bytes32 payloadId_) internal view returns (PayloadParams memory) {
+        (
+            bytes32 dump,
+            address asyncPromise,
+            address switchboard,
+            address target,
+            address appGateway,
+            bytes32 payloadId,
+            bytes32 prevDigestsHash,
+            uint256 gasLimit,
+            ,
+            uint256 readAt,
+            uint256 deadline,
+            bytes memory payload,
+            address finalizedTransmitter
+        ) = watcherPrecompile.payloads(payloadId_);
+
+        return
+            PayloadParams({
+                dump: dump,
+                asyncPromise: asyncPromise,
+                switchboard: switchboard,
+                target: target,
+                appGateway: appGateway,
+                payloadId: payloadId,
+                prevDigestsHash: prevDigestsHash,
+                gasLimit: gasLimit,
+                value: 0,
+                readAt: readAt,
+                deadline: deadline,
+                payload: payload,
+                finalizedTransmitter: finalizedTransmitter
+            });
     }
 
     function _finalizeBatch(
@@ -216,12 +251,12 @@ contract SetupTest is Test {
         bytes32[] memory payloadIds = watcherPrecompile.getBatchPayloadIds(batchCount_);
 
         for (uint i = 0; i < payloadIds.length; i++) {
-            PayloadParams memory payloadParams = watcherPrecompile.getPayloadParams(payloadIds[i]);
+            PayloadParams memory payloadParams = getPayloadParams(payloadIds[i]);
             if (payloadParams.dump.getCallType() == CallType.READ) {
-                _resolvePromise(payloadParams.payloadId, readReturnData_[readCount_++]);
+                _resolvePromise(payloadIds[i], payloadParams.payload);
             } else {
                 bytes memory returnData = _uploadProofAndExecute(payloadParams);
-                _resolvePromise(payloadParams.payloadId, returnData);
+                _resolvePromise(payloadIds[i], returnData);
             }
         }
         return readCount_;

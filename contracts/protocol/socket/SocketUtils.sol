@@ -90,7 +90,6 @@ abstract contract SocketUtils is SocketConfig {
         address switchboard_,
         ExecuteParams memory executeParams_
     ) internal view returns (bytes32) {
-        // todo: match with watcher
         return
             keccak256(
                 abi.encode(
