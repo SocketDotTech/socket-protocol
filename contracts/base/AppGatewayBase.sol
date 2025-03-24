@@ -114,7 +114,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @notice Deploys a contract
     /// @param contractId_ The contract ID
     /// @param chainSlug_ The chain slug
-    function _deploy(bytes32 contractId_, uint32 chainSlug_, IsPlug isPlug_) internal {
+    function _deploy(bytes32 contractId_, uint32 chainSlug_, IsPlug isPlug_) internal async {
         _deploy(contractId_, chainSlug_, isPlug_, new bytes(0));
     }
 
@@ -126,7 +126,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         uint32 chainSlug_,
         IsPlug isPlug_,
         bytes memory initCallData_
-    ) internal {
+    ) internal async {
         address asyncPromise = addressResolver__.deployAsyncPromiseContract(address(this));
         isValidPromise[asyncPromise] = true;
         IPromise(asyncPromise).then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
