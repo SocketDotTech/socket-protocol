@@ -74,14 +74,26 @@ contract DeliveryHelper is FeesHelpers {
                 requests[requestCount_].appGateway
             );
         } else {
-            IFeesManager(addressResolver__.feesManager()).unblockFees(
-                requestCount_,
-                requests[requestCount_].appGateway
-            );
+            IFeesManager(addressResolver__.feesManager()).unblockFees(requestCount_);
         }
 
         watcherPrecompile__().cancelRequest(requestCount_);
         emit RequestCancelled(requestCount_);
+    }
+
+    /// @notice Handles request reverts
+    /// @param requestCount_ The ID of the request
+    function handleRequestReverts(uint40 requestCount_) external onlyWatcherPrecompile {
+        // assign fees after expiry time
+        if (requests[requestCount_].winningBid.transmitter != address(0)) {
+            IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
+                requestCount_,
+                requests[requestCount_].winningBid.transmitter,
+                requests[requestCount_].appGateway
+            );
+        } else {
+            IFeesManager(addressResolver__.feesManager()).unblockFees(requestCount_);
+        }
     }
 
     function getRequestMetadata(

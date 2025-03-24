@@ -43,3 +43,4 @@ export const DEFAULT_MAX_LIMIT = 100;
 export const BID_TIMEOUT = 600;
 export const EXPIRY_TIME = 300;
 export const UPGRADE_VERSION = 1;
+export const MAX_RE_AUCTION_COUNT = 5;

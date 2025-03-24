@@ -10,7 +10,7 @@ import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {NotAuctionManager} from "../utils/common/Errors.sol";
-import {Bid, Fees, CallType, Parallel, WriteFinality, TokenBalance, QueuePayloadParams, IsPlug, PayloadSubmitParams} from "../utils/common/Structs.sol";
+import {Bid, Fees, CallType, Parallel, WriteFinality, TokenBalance, QueuePayloadParams, IsPlug, PayloadSubmitParams, RequestParams, RequestMetadata} from "../utils/common/Structs.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
     // slots [0-49] reserved for gap
@@ -114,6 +114,8 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     error InvalidWatcherSignature();
     /// @notice Error thrown when nonce is used
     error NonceUsed();
+    /// @notice Error thrown when caller is invalid
+    error InvalidCaller();
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -266,24 +268,30 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         emit FeesUnblockedAndAssigned(requestCount_, transmitter_, fees.amount);
     }
 
-    function unblockFees(
-        uint40 requestCount_,
-        address originAppGateway_
-    ) external onlyDeliveryHelper {
+    function unblockFees(uint40 requestCount_) external {
+        RequestParams memory requestParams = watcherPrecompile__().getRequestParams(requestCount_);
+        RequestMetadata memory requestMetadata = deliveryHelper__().getRequestMetadata(
+            requestCount_
+        );
+
+        if (
+            msg.sender != requestMetadata.auctionManager ||
+            msg.sender != address(deliveryHelper__())
+        ) revert InvalidCaller();
+
         Fees memory fees = requestCountBlockedFees[requestCount_];
         if (fees.amount == 0) revert NoFeesBlocked();
 
-        address appGateway = _getCoreAppGateway(originAppGateway_);
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees.feePoolChain][
-            fees.feePoolToken
-        ];
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[requestMetadata.appGateway][
+            fees.feePoolChain
+        ][fees.feePoolToken];
 
         // Unblock fees from deposit
         tokenBalance.blocked -= fees.amount;
         tokenBalance.deposited += fees.amount;
 
         delete requestCountBlockedFees[requestCount_];
-        emit FeesUnblocked(requestCount_, appGateway);
+        emit FeesUnblocked(requestCount_, requestMetadata.appGateway);
     }
 
     /// @notice Withdraws fees to a specified receiver
@@ -312,6 +320,33 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
 
         // finalize for plug contract
         return _submitAndStartProcessing(chainSlug_, payload, transmitter);
+    }
+
+    /// @notice Withdraws funds to a specified receiver
+    /// @dev This function is used to withdraw fees from the fees plug
+    /// @param originAppGateway_ The address of the app gateway
+    /// @param chainSlug_ The chain identifier
+    /// @param token_ The address of the token
+    /// @param amount_ The amount of tokens to withdraw
+    /// @param receiver_ The address of the receiver
+    function withdrawFees(
+        address originAppGateway_,
+        uint32 chainSlug_,
+        address token_,
+        uint256 amount_,
+        address receiver_
+    ) public {
+        address appGateway = _getCoreAppGateway(originAppGateway_);
+
+        // Check if amount is available in fees plug
+        uint256 availableAmount = getAvailableFees(chainSlug_, appGateway, token_);
+        if (availableAmount < amount_) revert InsufficientFeesAvailable();
+
+        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][chainSlug_][token_];
+        tokenBalance.deposited -= amount_;
+
+        // Add it to the queue and submit request
+        _queue(chainSlug_, abi.encodeCall(IFeesPlug.withdrawFees, (token_, amount_, receiver_)));
     }
 
     function _submitAndStartProcessing(
@@ -364,33 +399,6 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
                 payload: payload_,
                 initCallData: bytes("")
             });
-    }
-
-    /// @notice Withdraws funds to a specified receiver
-    /// @dev This function is used to withdraw fees from the fees plug
-    /// @param originAppGateway_ The address of the app gateway
-    /// @param chainSlug_ The chain identifier
-    /// @param token_ The address of the token
-    /// @param amount_ The amount of tokens to withdraw
-    /// @param receiver_ The address of the receiver
-    function withdrawFees(
-        address originAppGateway_,
-        uint32 chainSlug_,
-        address token_,
-        uint256 amount_,
-        address receiver_
-    ) public {
-        address appGateway = _getCoreAppGateway(originAppGateway_);
-
-        // Check if amount is available in fees plug
-        uint256 availableAmount = getAvailableFees(chainSlug_, appGateway, token_);
-        if (availableAmount < amount_) revert InsufficientFeesAvailable();
-
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][chainSlug_][token_];
-        tokenBalance.deposited -= amount_;
-
-        // Add it to the queue and submit request
-        _queue(chainSlug_, abi.encodeCall(IFeesPlug.withdrawFees, (token_, amount_, receiver_)));
     }
 
     function _queue(uint32 chainSlug_, bytes memory payload_) internal {

@@ -212,11 +212,8 @@ contract WatcherPrecompile is RequestHandler {
                 payloadId_
             );
 
-        // assign fees after expiry time
-        IFeesManager(payloadParams.appGateway).unblockAndAssignFees(
-            payloadParams.dump.getRequestCount(),
-            currentRequestParams.transmitter,
-            payloadParams.appGateway
+        IMiddleware(currentRequestParams.middleware).handleRequestReverts(
+            payloadParams.dump.getRequestCount()
         );
     }
 
@@ -270,5 +267,9 @@ contract WatcherPrecompile is RequestHandler {
 
     function setExpiryTime(uint256 expiryTime_) external onlyOwner {
         expiryTime = expiryTime_;
+    }
+
+    function getRequestParams(uint40 requestCount) external view returns (RequestParams memory) {
+        return requestParams[requestCount];
     }
 }

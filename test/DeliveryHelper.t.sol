@@ -68,7 +68,8 @@ contract DeliveryHelperTest is SetupTest {
             evmxSlug,
             auctionEndDelaySeconds,
             address(addressResolver),
-            owner
+            owner,
+            maxReAuctionCount
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(version);
@@ -104,10 +105,8 @@ contract DeliveryHelperTest is SetupTest {
         addressResolver.setFeesManager(address(feesManager));
         vm.stopPrank();
 
-        address[] memory transmitters = new address[](1);
-        transmitters[0] = transmitterEOA;
         hoax(owner);
-        auctionManager.addTransmitters(transmitters);
+        auctionManager.grantRole(TRANSMITTER_ROLE, transmitterEOA);
 
         // chain core contracts
         arbConfig = deploySocket(arbChainSlug);

@@ -3,7 +3,7 @@ pragma solidity ^0.8.3;
 import {QueuePayloadParams, Bid, Fees, WriteFinality, CallType, Parallel, IsPlug, RequestMetadata} from "../protocol/utils/common/Structs.sol";
 
 interface IMiddleware {
-   event AuctionEnded(
+    event AuctionEnded(
         uint40 indexed requestCount,
         Bid winningBid // Replaced winningTransmitter and winningBid with Bid struct
     );
@@ -42,4 +42,6 @@ interface IMiddleware {
     function getFees(uint40 requestCount_) external view returns (Fees memory);
 
     function finishRequest(uint40 requestCount_) external;
+
+    function handleRequestReverts(uint40 requestCount_) external;
 }

@@ -25,6 +25,7 @@ import {
   EXPIRY_TIME,
   logConfig,
   DEFAULT_MAX_LIMIT,
+  MAX_RE_AUCTION_COUNT,
   mode,
 } from "../config/config";
 config();
@@ -176,6 +177,7 @@ const deployEVMxContracts = async () => {
           auctionEndDelaySeconds,
           addressResolver.address,
           EVMxOwner,
+          MAX_RE_AUCTION_COUNT,
         ],
         proxyFactory,
         deployUtils

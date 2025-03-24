@@ -38,6 +38,7 @@ contract SetupTest is Test {
     uint32 optChainSlug = 11155420;
     uint32 evmxSlug = 1;
     uint256 expiryTime = 10000000;
+    uint256 maxReAuctionCount = 10;
 
     uint256 public signatureNonce;
     uint256 public payloadIdCounter;

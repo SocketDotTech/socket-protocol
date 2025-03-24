@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {DigestParams, ResolvedPromises, PayloadParams, CallFromChainParams, PayloadSubmitParams} from "../protocol/utils/common/Structs.sol";
+import {DigestParams, ResolvedPromises, PayloadParams, CallFromChainParams, PayloadSubmitParams, RequestParams} from "../protocol/utils/common/Structs.sol";
 import {IWatcherPrecompileLimits} from "./IWatcherPrecompileLimits.sol";
 import {IWatcherPrecompileConfig} from "./IWatcherPrecompileConfig.sol";
 
@@ -163,4 +163,6 @@ interface IWatcherPrecompile {
     function watcherPrecompileConfig__() external view returns (IWatcherPrecompileConfig);
 
     function watcherPrecompileLimits__() external view returns (IWatcherPrecompileLimits);
+
+    function getRequestParams(uint40 requestCount) external view returns (RequestParams memory);
 }

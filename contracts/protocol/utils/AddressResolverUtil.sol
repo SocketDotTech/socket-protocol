@@ -23,6 +23,8 @@ abstract contract AddressResolverUtil {
     error OnlyPayloadDelivery();
     /// @notice Error thrown when an invalid address attempts to call the Watcher only function
     error OnlyWatcherPrecompile();
+    /// @notice Error thrown when an invalid address attempts to call the Watcher precompile or delivery helper
+    error OnlyWatcherPrecompileOrDeliveryHelper();
 
     /// @notice Restricts function access to the auction house contract
     /// @dev Validates that msg.sender matches the registered auction house address
@@ -39,6 +41,19 @@ abstract contract AddressResolverUtil {
     modifier onlyWatcherPrecompile() {
         if (msg.sender != address(addressResolver__.watcherPrecompile__())) {
             revert OnlyWatcherPrecompile();
+        }
+
+        _;
+    }
+
+    /// @notice Restricts function access to the watcher precompile contract
+    /// @dev Validates that msg.sender matches the registered watcher precompile address
+    modifier onlyWatcherPrecompileOrDeliveryHelper() {
+        if (
+            msg.sender != address(addressResolver__.watcherPrecompile__()) &&
+            msg.sender != addressResolver__.deliveryHelper()
+        ) {
+            revert OnlyWatcherPrecompileOrDeliveryHelper();
         }
 
         _;

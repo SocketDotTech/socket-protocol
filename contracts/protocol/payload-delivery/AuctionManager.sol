@@ -3,15 +3,16 @@ pragma solidity ^0.8.0;
 
 import {ECDSA} from "solady/utils/ECDSA.sol";
 import "solady/utils/Initializable.sol";
-import {Ownable} from "solady/auth/Ownable.sol";
+import "../utils/AccessControl.sol";
 
 import {IMiddleware} from "../../interfaces/IMiddleware.sol";
 import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 import {IAuctionManager} from "../../interfaces/IAuctionManager.sol";
 
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
-import {Fees, Bid, RequestMetadata} from "../utils/common/Structs.sol";
+import {Fees, Bid, RequestMetadata, RequestParams} from "../utils/common/Structs.sol";
 import {AuctionClosed, AuctionAlreadyStarted, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter} from "../utils/common/Errors.sol";
+import {TRANSMITTER_ROLE} from "../utils/common/AccessRoles.sol";
 
 abstract contract AuctionManagerStorage is IAuctionManager {
     // slots [0-49] reserved for gap
@@ -36,21 +37,33 @@ abstract contract AuctionManagerStorage is IAuctionManager {
     // slot 55
     mapping(address => bool) public whitelistedTransmitters;
 
-    // slots [55-104] reserved for gap
-    uint256[50] _gap_after;
+    // slot 56
+    mapping(uint40 => uint256) public reAuctionCount;
+
+    // slot 57
+    uint256 public maxReAuctionCount;
+
+    // slots [57-104] reserved for gap
+    uint256[48] _gap_after;
 
     // slots 105-155 reserved for addr resolver util
 }
 
 /// @title AuctionManager
 /// @notice Contract for managing auctions and placing bids
-contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, AddressResolverUtil {
+contract AuctionManager is
+    AuctionManagerStorage,
+    Initializable,
+    AccessControl,
+    AddressResolverUtil
+{
     event AuctionRestarted(uint40 requestCount);
     event AuctionStarted(uint40 requestCount);
     event AuctionEnded(uint40 requestCount, Bid winningBid);
     event BidPlaced(uint40 requestCount, Bid bid);
 
     error InvalidBid();
+    error MaxReAuctionCountReached();
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -61,32 +74,19 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
     /// @param auctionEndDelaySeconds_ The delay in seconds before an auction can end
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the contract owner
+    /// @param maxReAuctionCount_ The maximum number of re-auctions allowed
     function initialize(
         uint32 evmxSlug_,
         uint256 auctionEndDelaySeconds_,
         address addressResolver_,
-        address owner_
+        address owner_,
+        uint256 maxReAuctionCount_
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
         evmxSlug = evmxSlug_;
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
-    }
-
-    /// @notice Adds multiple transmitters to the whitelist
-    /// @param transmitters_ Array of transmitter addresses to whitelist
-    function addTransmitters(address[] calldata transmitters_) external onlyOwner {
-        for (uint256 i = 0; i < transmitters_.length; i++) {
-            whitelistedTransmitters[transmitters_[i]] = true;
-        }
-    }
-
-    /// @notice Removes multiple transmitters from the whitelist
-    /// @param transmitters_ Array of transmitter addresses to remove
-    function removeTransmitters(address[] calldata transmitters_) external onlyOwner {
-        for (uint256 i = 0; i < transmitters_.length; i++) {
-            whitelistedTransmitters[transmitters_[i]] = false;
-        }
+        maxReAuctionCount = maxReAuctionCount_;
     }
 
     function setAuctionEndDelaySeconds(uint256 auctionEndDelaySeconds_) external onlyOwner {
@@ -117,10 +117,9 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
             keccak256(abi.encode(address(this), evmxSlug, requestCount_, fee, extraData)),
             transmitterSignature
         );
-        if (!whitelistedTransmitters[transmitter]) revert InvalidTransmitter();
+        if (!_hasRole(TRANSMITTER_ROLE, transmitter)) revert InvalidTransmitter();
 
         Bid memory newBid = Bid({fee: fee, transmitter: transmitter, extraData: extraData});
-
         RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
             .getRequestMetadata(requestCount_);
         if (fee > requestMetadata.fees.amount) revert BidExceedsMaxFees();
@@ -165,33 +164,29 @@ contract AuctionManager is AuctionManagerStorage, Initializable, Ownable, Addres
         Bid memory winningBid = winningBids[requestCount_];
         if (winningBid.transmitter == address(0)) revert InvalidTransmitter();
 
-        emit AuctionEnded(requestCount_, winningBid);
-
         watcherPrecompile__().setTimeout(
             IMiddleware(addressResolver__.deliveryHelper()).bidTimeout(),
             abi.encodeWithSelector(this.expireBid.selector, requestCount_)
         );
-
         IMiddleware(addressResolver__.deliveryHelper()).startRequestProcessing(
             requestCount_,
             winningBid
         );
+        emit AuctionEnded(requestCount_, winningBid);
     }
 
     function expireBid(uint40 requestCount_) external onlyWatcherPrecompile {
-        RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
-            .getRequestMetadata(requestCount_);
+        if (reAuctionCount[requestCount_] >= maxReAuctionCount) revert MaxReAuctionCountReached();
+        RequestParams memory requestParams = watcherPrecompile__().getRequestParams(requestCount_);
 
         // if executed, bid is not expired
-        // todo: check pending payloads from watcher precompile
-        // if (requestMetadata.totalBatchPayloadsRemaining == 0 || requestMetadata.isRequestCancelled)
-        //     return;
+        if (requestParams.payloadsRemaining == 0 || requestParams.isRequestCancelled) return;
+        winningBids[requestCount_] = Bid({fee: 0, transmitter: address(0), extraData: ""});
+        auctionClosed[requestCount_] = false;
+        reAuctionCount[requestCount_]++;
 
-        // IFeesManager(addressResolver__.feesManager()).unblockFees(requestCount_, requestMetadata.appGateway);
-        // winningBids[requestCount_] = Bid({fee: 0, transmitter: address(0), extraData: ""});
-        // auctionClosed[requestCount_] = false;
-
-        // emit AuctionRestarted(requestCount_);
+        IFeesManager(addressResolver__.feesManager()).unblockFees(requestCount_);
+        emit AuctionRestarted(requestCount_);
     }
 
     function _recoverSigner(
