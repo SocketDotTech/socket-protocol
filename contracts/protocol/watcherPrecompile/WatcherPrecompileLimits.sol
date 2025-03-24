@@ -6,7 +6,6 @@ import {Gauge} from "../utils/Gauge.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {WATCHER_ROLE} from "../utils/common/AccessRoles.sol";
 import {IWatcherPrecompileLimits} from "../../interfaces/IWatcherPrecompileLimits.sol";
-import "./WatcherPrecompileStorage.sol";
 import "solady/utils/Initializable.sol";
 
 contract WatcherPrecompileLimits is
