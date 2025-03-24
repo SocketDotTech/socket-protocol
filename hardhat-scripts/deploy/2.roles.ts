@@ -2,7 +2,7 @@ import { config as dotenvConfig } from "dotenv";
 dotenvConfig();
 
 import { Wallet } from "ethers";
-import { chains, EVMX_CHAIN_ID, mode, watcher } from "../config";
+import { chains, EVMX_CHAIN_ID, mode, watcher, transmitter } from "../config";
 import {
   CORE_CONTRACTS,
   DeploymentAddresses,
@@ -110,7 +110,7 @@ async function setRolesForEVMx(addresses: DeploymentAddresses) {
   await setRoleForContract(
     EVMxCoreContracts.AuctionManager,
     chainAddresses[EVMxCoreContracts.AuctionManager],
-    signer.address,
+    transmitter,
     ROLES.TRANSMITTER_ROLE,
     signer,
     EVMX_CHAIN_ID
