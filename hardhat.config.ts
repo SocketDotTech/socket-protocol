@@ -128,8 +128,8 @@ const config: HardhatUserConfig = {
         network: "evmx",
         chainId: EVMX_CHAIN_ID,
         urls: {
-          apiURL: "",
-          browserURL: "",
+          apiURL: "https://evmx.cloud.blockscout.com/api",
+          browserURL: "https://evmx.cloud.blockscout.com/",
         },
       },
     ],
