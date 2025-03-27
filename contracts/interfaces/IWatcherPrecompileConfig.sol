@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {DigestParams, AppGatewayConfig, ResolvedPromises, PayloadParams, QueuePayloadParams, PayloadSubmitParams} from "../protocol/utils/common/Structs.sol";
+import {AppGatewayConfig, PlugConfig} from "../protocol/utils/common/Structs.sol";
 
 /// @title IWatcherPrecompileConfig
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution

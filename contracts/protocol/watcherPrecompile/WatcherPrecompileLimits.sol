@@ -5,8 +5,9 @@ import {AccessControl} from "../utils/AccessControl.sol";
 import {Gauge} from "../utils/Gauge.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {WATCHER_ROLE} from "../utils/common/AccessRoles.sol";
-import {IWatcherPrecompileLimits} from "../../interfaces/IWatcherPrecompileLimits.sol";
+import "../../interfaces/IWatcherPrecompileLimits.sol";
 import "solady/utils/Initializable.sol";
+import {SCHEDULE, QUERY, FINALIZE} from "../utils/common/Constants.sol";
 
 contract WatcherPrecompileLimits is
     IWatcherPrecompileLimits,

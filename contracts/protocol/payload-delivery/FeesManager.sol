@@ -269,7 +269,6 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     }
 
     function unblockFees(uint40 requestCount_) external {
-        RequestParams memory requestParams = watcherPrecompile__().getRequestParams(requestCount_);
         RequestMetadata memory requestMetadata = deliveryHelper__().getRequestMetadata(
             requestCount_
         );
