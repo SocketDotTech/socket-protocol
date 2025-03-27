@@ -37,7 +37,7 @@ export const EVM_CHAIN_ID_MAP: Record<DeploymentMode, number> = {
 };
 export const auctionEndDelaySeconds = 0;
 export const watcher = "0xb62505feacC486e809392c65614Ce4d7b051923b";
-export const transmitter = "todo";
+export const transmitter = "0x138e9840861C983DC0BB9b3e941FB7C0e9Ade320";
 export const MAX_FEES = ethers.utils.parseEther("0.001");
 export const EVMX_CHAIN_ID = EVM_CHAIN_ID_MAP[mode];
 export const DEFAULT_MAX_LIMIT = 100;
