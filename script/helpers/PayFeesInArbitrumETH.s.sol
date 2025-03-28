@@ -7,6 +7,7 @@ import {FeesPlug} from "../../contracts/protocol/payload-delivery/FeesPlug.sol";
 import {Fees} from "../../contracts/protocol/utils/common/Structs.sol";
 import {ETH_ADDRESS} from "../../contracts/protocol/utils/common/Constants.sol";
 
+// source .env && forge script script/helpers/PayFeesInArbitrumETH.s.sol --broadcast --skip-simulation
 contract DepositFees is Script {
     function run() external {
         vm.createSelectFork(vm.envString("ARBITRUM_SEPOLIA_RPC"));

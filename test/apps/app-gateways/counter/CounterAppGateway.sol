@@ -13,8 +13,8 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
 
     uint256 public counterVal;
 
-    uint256 arbCounter;
-    uint256 optCounter;
+    uint256 public arbCounter;
+    uint256 public optCounter;
     event TimeoutResolved(uint256 creationTimestamp, uint256 executionTimestamp);
 
     constructor(address addressResolver_, Fees memory fees_) AppGatewayBase(addressResolver_) {

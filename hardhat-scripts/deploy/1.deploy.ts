@@ -68,7 +68,7 @@ const deployEVMxContracts = async () => {
     let deployUtils: DeployParams = {
       addresses: {} as ChainAddressesObj,
       mode,
-      signer: getWatcherSigner(),
+      signer: await getWatcherSigner(),
       currentChainSlug: EVMX_CHAIN_ID as ChainSlug,
     };
     const chain = EVMX_CHAIN_ID;

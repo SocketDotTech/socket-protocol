@@ -4,7 +4,7 @@ pragma solidity ^0.8.21;
 import "./WatcherPrecompileLimits.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
 import "solady/utils/Initializable.sol";
-import {IWatcherPrecompileConfig} from "../../interfaces/IWatcherPrecompileConfig.sol";
+import "../../interfaces/IWatcherPrecompileConfig.sol";
 
 /// @title WatcherPrecompileConfig
 /// @notice Configuration contract for the Watcher Precompile system
@@ -79,6 +79,8 @@ contract WatcherPrecompileConfig is
 
     error InvalidGateway();
     error InvalidSwitchboard();
+    error NonceUsed();
+    error InvalidWatcherSignature();
 
     /// @notice Initial initialization (version 1)
     function initialize(

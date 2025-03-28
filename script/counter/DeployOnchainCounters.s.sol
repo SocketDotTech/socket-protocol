@@ -6,6 +6,7 @@ import {console} from "forge-std/console.sol";
 import {ETH_ADDRESS} from "../../contracts/protocol/utils/common/Constants.sol";
 import {CounterAppGateway} from "../../test/apps/app-gateways/counter/CounterAppGateway.sol";
 
+// source .env && forge script script/counter/DeployCounterOnchain.s.sol --broadcast --skip-simulation --legacy --gas-price 0
 contract CounterDeployOnchain is Script {
     function run() external {
         string memory rpc = vm.envString("EVMX_RPC");

@@ -188,7 +188,6 @@ contract SetupTest is Test {
         watcherPrecompileLimits = WatcherPrecompileLimits(address(watcherPrecompileLimitsProxy));
 
         vm.startPrank(watcherEOA);
-        watcherPrecompile.grantRole(WATCHER_ROLE, watcherEOA);
         addressResolver.setWatcherPrecompile(address(watcherPrecompile));
         vm.stopPrank();
     }
