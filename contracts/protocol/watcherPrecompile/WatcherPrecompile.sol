@@ -175,8 +175,19 @@ contract WatcherPrecompile is RequestHandler {
             RequestParams storage requestParams_ = requestParams[
                 payloadParams.dump.getRequestCount()
             ];
+
             requestParams_.currentBatchPayloadsLeft--;
             requestParams_.payloadsRemaining--;
+
+            if (
+                requestParams_.currentBatchPayloadsLeft == 0 && requestParams_.payloadsRemaining > 0
+            ) {
+                uint256 totalPayloadsLeft = _processBatch(
+                    payloadParams.dump.getRequestCount(),
+                    ++requestParams_.currentBatch
+                );
+                requestParams_.currentBatchPayloadsLeft = totalPayloadsLeft;
+            }
 
             if (requestParams_.payloadsRemaining == 0) {
                 IMiddleware(requestParams_.middleware).finishRequest(
