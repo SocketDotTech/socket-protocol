@@ -92,15 +92,13 @@ abstract contract WatcherPrecompileCore is
         uint40 requestCount,
         uint40 batchCount
     ) internal view returns (PayloadParams[] memory) {
-        RequestParams memory r = requestParams[requestCount];
+        bytes32[] memory payloadIds = batchPayloadIds[batchCount];
         PayloadParams[] memory payloadParamsArray = new PayloadParams[](
-            r.payloadParamsArray.length
+            payloadIds.length
         );
 
-        for (uint40 i = 0; i < r.payloadParamsArray.length; i++) {
-            if (r.payloadParamsArray[i].dump.getBatchCount() == batchCount) {
-                payloadParamsArray[i] = r.payloadParamsArray[i];
-            }
+        for (uint40 i = 0; i < payloadIds.length; i++) {
+            payloadParamsArray[i] = payloads[payloadIds[i]];
         }
         return payloadParamsArray;
     }
