@@ -34,7 +34,6 @@ contract DeliveryHelperTest is SetupTest {
     event BidPlaced(uint40 requestCount, Bid bid);
     event AuctionEnded(uint40 indexed requestCount, Bid winningBid);
     event RequestCancelled(uint40 indexed requestCount);
-    event FinalizeRequested(bytes32 digest, PayloadParams params);
     event QueryRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
 
     //////////////////////////////////// Setup ////////////////////////////////////
@@ -226,7 +225,8 @@ contract DeliveryHelperTest is SetupTest {
 
         uint256 readCount = 0;
         for (uint i = 0; i < batches.length; i++) {
-            readCount = _finalizeBatch(batches[i], readReturnData_, readCount);
+            bool hasMoreBatches = i < batches.length - 1;
+            readCount = _finalizeBatch(batches[i], readReturnData_, readCount, hasMoreBatches);
         }
     }
 
