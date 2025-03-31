@@ -1,4 +1,12 @@
 {
+  "84532": {
+    "ContractFactoryPlug": "0xFEFdbD9CB5bdC58Aa8B6B455923454275392838c",
+    "FastSwitchboard": "0xCc9f995DAE2D3Cf3C0763e353986E97ab78801b4",
+    "FeesPlug": "0xBBff19fBEAd971f39F1B298De985D7ADfb57b784",
+    "Socket": "0x89e66357C5F101C56b4F9F97cf378Cc32A21438a",
+    "SocketBatcher": "0x3bABE35428D9E2B87d678289f837F805dAB0db3A",
+    "startBlock": 23827713
+  },
   "421614": {
     "ContractFactoryPlug": "0x10BFD064258ac890957Ca65A85E7997a923Fb551",
     "FastSwitchboard": "0xB0feE9136102B99A5722C693C8eb538C8c8d013B",
@@ -21,8 +29,24 @@
     "WatcherPrecompile": "0x6E4c1afEcc1AbFF69dF3bC6bFf81eF7A34a343d5",
     "WatcherPrecompileConfig": "0x95f86089D4015e6874031B3583dE8795C3b217Fd",
     "WatcherPrecompileConfigImpl": "0xE4a2eBcE3Bdcaa1861c01ddc6465b90311B749e4",
-    "WatcherPrecompileImpl": "0x4894D35BF607BB47099172d42133ffe411a1d4B8",
+    "WatcherPrecompileImpl": "0x4D0FA91403b4902B56Ad650aF2BA9D4fcA46aB0B",
     "WatcherPrecompileLimits": "0x34212a2Cf92D2863F35877Ed835B7e28b8287764",
     "WatcherPrecompileLimitsImpl": "0xdfeA8cb793b84b3f046d2426259e0eC237Ec9bF3"
+  },
+  "11155111": {
+    "ContractFactoryPlug": "0xdd7b56968a3505D1A10181F2880cAA65a89E4750",
+    "FastSwitchboard": "0xb34DB19C7FAeECf14B3D0336C6E34f7dc1336968",
+    "FeesPlug": "0xfBa932AaE9Ae2777aEC77832FC0C2D9059C8E905",
+    "Socket": "0xF86B89B5c689c170BfD2734254228D6d2db5a672",
+    "SocketBatcher": "0x466b51bcc1799A4cb8F629C46640ab3aA2608F75",
+    "startBlock": 23827730
+  },
+  "11155420": {
+    "ContractFactoryPlug": "0xDd73B7C6Bc8Cb4FFB3F0b460FF0985A91622f7E1",
+    "FastSwitchboard": "0x0CdaCA0B9F9bFfF1D9B660173BB8BE46c4fB71Da",
+    "FeesPlug": "0x95D672aaF036887aABEe72a6496D583317e6e48B",
+    "Socket": "0xDad99e0D8bA0ffe4955523ea0BCbe8F3DE3446D1",
+    "SocketBatcher": "0xb8D652C7D1dfA7578c6F119712c7b4c812BB3b57",
+    "startBlock": 25810565
   }
 }
