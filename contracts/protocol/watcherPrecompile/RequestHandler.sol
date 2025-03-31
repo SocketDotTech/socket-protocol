@@ -123,7 +123,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         uint40 batchCount_
     ) internal returns (uint256 totalPayloadsLeft) {
         RequestParams memory r = requestParams[requestCount_];
-        PayloadParams[] memory payloadParamsArray = _getBatch(requestCount_, batchCount_);
+        PayloadParams[] memory payloadParamsArray = _getBatch(batchCount_);
 
         if (r.isRequestCancelled) revert RequestCancelled();
 

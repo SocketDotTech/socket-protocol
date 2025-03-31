@@ -89,7 +89,6 @@ abstract contract WatcherPrecompileCore is
     }
 
     function _getBatch(
-        uint40 requestCount,
         uint40 batchCount
     ) internal view returns (PayloadParams[] memory) {
         bytes32[] memory payloadIds = batchPayloadIds[batchCount];
@@ -148,7 +147,7 @@ abstract contract WatcherPrecompileCore is
             return bytes32(0);
         }
 
-        PayloadParams[] memory previousPayloads = _getBatch(requestCount_, batchCount_ - 1);
+        PayloadParams[] memory previousPayloads = _getBatch(batchCount_ - 1);
         bytes32 prevDigestsHash = bytes32(0);
 
         for (uint40 i = 0; i < previousPayloads.length; i++) {
