@@ -88,13 +88,9 @@ abstract contract WatcherPrecompileCore is
         emit FinalizeRequested(digest, payloads[params_.payloadId]);
     }
 
-    function _getBatch(
-        uint40 batchCount
-    ) internal view returns (PayloadParams[] memory) {
+    function _getBatch(uint40 batchCount) internal view returns (PayloadParams[] memory) {
         bytes32[] memory payloadIds = batchPayloadIds[batchCount];
-        PayloadParams[] memory payloadParamsArray = new PayloadParams[](
-            payloadIds.length
-        );
+        PayloadParams[] memory payloadParamsArray = new PayloadParams[](payloadIds.length);
 
         for (uint40 i = 0; i < payloadIds.length; i++) {
             payloadParamsArray[i] = payloads[payloadIds[i]];

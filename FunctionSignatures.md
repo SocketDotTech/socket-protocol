@@ -104,16 +104,22 @@
 | `endAuction`                 | `0x1212e653` |
 | `evmxSlug`                   | `0x8bae77c2` |
 | `expireBid`                  | `0x1dd5022c` |
-| `initialize`                 | `0xaaf7fc1a` |
+| `grantRole`                  | `0x2f2ff15d` |
+| `hasRole`                    | `0x91d14854` |
+| `initialize`                 | `0x5f24043b` |
+| `maxReAuctionCount`          | `0xc367b376` |
 | `owner`                      | `0x8da5cb5b` |
 | `ownershipHandoverExpiresAt` | `0xfee81cf4` |
+| `reAuctionCount`             | `0x9b4b22d3` |
 | `renounceOwnership`          | `0x715018a6` |
 | `requestOwnershipHandover`   | `0x25692962` |
+| `revokeRole`                 | `0xd547741f` |
 | `setAuctionEndDelaySeconds`  | `0x88606b1a` |
 | `transferOwnership`          | `0xf2fde38b` |
 | `watcherPrecompileConfig`    | `0x8618a912` |
 | `watcherPrecompileLimits`    | `0xa71cd97d` |
 | `watcherPrecompile__`        | `0x1de360c3` |
+| `whitelistedTransmitters`    | `0xc2f1bf5d` |
 | `winningBids`                | `0x9133f232` |
 
 ## ContractFactoryPlug
@@ -165,11 +171,11 @@
 | `transferOwnership`          | `0xf2fde38b` |
 | `transmitterFees`            | `0xefb4cdea` |
 | `unblockAndAssignFees`       | `0x3c5366a2` |
-| `unblockFees`                | `0xac141f59` |
+| `unblockFees`                | `0xc1867a4b` |
 | `watcherPrecompileConfig`    | `0x8618a912` |
 | `watcherPrecompileLimits`    | `0xa71cd97d` |
 | `watcherPrecompile__`        | `0x1de360c3` |
-| `withdrawFees`               | `0x54dc9308` |
+| `withdrawFees`               | `0xe1a69364` |
 | `withdrawTransmitterFees`    | `0x8c047bbd` |
 
 ## FeesPlug
@@ -264,10 +270,12 @@
 | `getCurrentRequestCount`      | `0x5715abbb` |
 | `getDigest`                   | `0xeba9500e` |
 | `getPayloadParams`            | `0xae5eeb77` |
+| `getRequestParams`            | `0x71263d0d` |
 | `grantRole`                   | `0x2f2ff15d` |
 | `hasRole`                     | `0x91d14854` |
 | `initialize`                  | `0xb7dc6b77` |
 | `isNonceUsed`                 | `0x5d00bb12` |
+| `isPromiseExecuted`           | `0x17a2cdf0` |
 | `markRevert`                  | `0x1c75dad5` |
 | `maxTimeoutDelayInSeconds`    | `0x46fbc9d7` |
 | `nextBatchCount`              | `0x333a3963` |
@@ -286,7 +294,7 @@
 | `revokeRole`                  | `0xd547741f` |
 | `setExpiryTime`               | `0x30fc4cff` |
 | `setMaxTimeoutDelayInSeconds` | `0x65d480fc` |
-| `setTimeout`                  | `0xc8725073` |
+| `setTimeout`                  | `0x9c29ec74` |
 | `startProcessingRequest`      | `0x77290f24` |
 | `submitRequest`               | `0x16b47482` |
 | `timeoutCounter`              | `0x94f6522e` |
@@ -381,6 +389,7 @@
 | `getDeliveryHelperPlugAddress` | `0xb709bd9f` |
 | `getFees`                      | `0xfbf4ec4b` |
 | `getRequestMetadata`           | `0x5f1dde51` |
+| `handleRequestReverts`         | `0x8fe9734f` |
 | `increaseFees`                 | `0xe9b304da` |
 | `initialize`                   | `0x7265580f` |
 | `owner`                        | `0x8da5cb5b` |
