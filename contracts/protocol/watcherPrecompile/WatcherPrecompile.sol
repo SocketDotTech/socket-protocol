@@ -226,6 +226,8 @@ contract WatcherPrecompile is RequestHandler {
         IMiddleware(currentRequestParams.middleware).handleRequestReverts(
             payloadParams.dump.getRequestCount()
         );
+
+        emit MarkedRevert(payloadId_, isRevertingOnchain_);
     }
 
     function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external onlyOwner {

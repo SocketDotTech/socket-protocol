@@ -51,6 +51,18 @@
   "421614": [],
   "7625382": [
     [
+      "0x2c50B6e519e0705A396E5c8652E5D447F37f9796",
+      "FeesManager",
+      "contracts/protocol/payload-delivery/FeesManager.sol",
+      []
+    ],
+    [
+      "0x233539d6BBf231660652AF00B5d6E850E892946a",
+      "WatcherPrecompile",
+      "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",
+      []
+    ],
+    [
       "0x4D0FA91403b4902B56Ad650aF2BA9D4fcA46aB0B",
       "WatcherPrecompile",
       "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",

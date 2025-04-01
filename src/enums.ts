@@ -6,25 +6,35 @@ export enum DeploymentMode {
 }
 
 export enum Events {
+  // Socket
   ExecutionSuccess = "ExecutionSuccess",
   ExecutionFailed = "ExecutionFailed",
   PlugConnected = "PlugConnected",
-  CalledAppGateway = "CalledAppGateway",
   AppGatewayCallRequested = "AppGatewayCallRequested",
+
+  // FeesPlug
+  FeesDeposited = "FeesDeposited",
+
+  // WatcherPrecompile
+  CalledAppGateway = "CalledAppGateway",
   QueryRequested = "QueryRequested",
   FinalizeRequested = "FinalizeRequested",
   PromiseResolved = "PromiseResolved",
   PromiseNotResolved = "PromiseNotResolved",
   TimeoutRequested = "TimeoutRequested",
   TimeoutResolved = "TimeoutResolved",
+  RequestSubmitted = "RequestSubmitted",
+  Finalized = "Finalized",
+  MarkedRevert = "MarkedRevert",
+  // AuctionManager
   AuctionEnded = "AuctionEnded",
   AuctionRestarted = "AuctionRestarted",
+
+  // DeliveryHelper
   PayloadSubmitted = "PayloadSubmitted",
   PayloadAsyncRequested = "PayloadAsyncRequested",
-  Finalized = "Finalized",
-  FeesDeposited = "FeesDeposited",
   FeesIncreased = "FeesIncreased",
-  RequestSubmitted = "RequestSubmitted",
+  RequestCancelled = "RequestCancelled",
 }
 
 export enum Contracts {

@@ -1,6 +1,18 @@
 {
   "43": [
     [
+      "0x71956F006Ec5434581D3Fd5E7224BB3bae231907",
+      "FeesManager",
+      "contracts/protocol/payload-delivery/FeesManager.sol",
+      []
+    ],
+    [
+      "0xbAeF84edEae864Ff22Bd9c9912AdfF84aD490d82",
+      "WatcherPrecompile",
+      "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",
+      []
+    ],
+    [
       "0x02Bd15aa48BAE9A92E23a3F30Be0c1bD253970Cf",
       "WatcherPrecompile",
       "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",

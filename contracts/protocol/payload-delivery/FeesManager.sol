@@ -249,7 +249,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         address originAppGateway_
     ) external override onlyDeliveryHelper {
         Fees memory fees = requestCountBlockedFees[requestCount_];
-        if (fees.amount == 0) revert NoFeesBlocked();
+        if (fees.amount == 0) return;
 
         address appGateway = _getCoreAppGateway(originAppGateway_);
         TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees.feePoolChain][
@@ -274,12 +274,12 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         );
 
         if (
-            msg.sender != requestMetadata.auctionManager ||
+            msg.sender != requestMetadata.auctionManager &&
             msg.sender != address(deliveryHelper__())
         ) revert InvalidCaller();
 
         Fees memory fees = requestCountBlockedFees[requestCount_];
-        if (fees.amount == 0) revert NoFeesBlocked();
+        if (fees.amount == 0) return;
 
         TokenBalance storage tokenBalance = appGatewayFeeBalances[requestMetadata.appGateway][
             fees.feePoolChain

@@ -37,6 +37,7 @@ interface IWatcherPrecompile {
     /// @param payloadId The unique identifier for the not resolved promise
     event PromiseNotResolved(bytes32 indexed payloadId, address asyncPromise);
 
+    event MarkedRevert(bytes32 indexed payloadId, bool isRevertingOnchain);
     event TimeoutRequested(
         bytes32 timeoutId,
         address target,
