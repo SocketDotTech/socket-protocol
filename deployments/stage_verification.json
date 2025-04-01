@@ -1,6 +1,18 @@
 {
   "43": [
     [
+      "0x71956F006Ec5434581D3Fd5E7224BB3bae231907",
+      "FeesManager",
+      "contracts/protocol/payload-delivery/FeesManager.sol",
+      []
+    ],
+    [
+      "0xbAeF84edEae864Ff22Bd9c9912AdfF84aD490d82",
+      "WatcherPrecompile",
+      "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",
+      []
+    ],
+    [
       "0x02Bd15aa48BAE9A92E23a3F30Be0c1bD253970Cf",
       "WatcherPrecompile",
       "contracts/protocol/watcherPrecompile/WatcherPrecompile.sol",
@@ -97,7 +109,11 @@
       "0x92562Ae6526aB8B4fFF9Fa8ECAb6db67f0753693",
       "Socket",
       "contracts/protocol/socket/Socket.sol",
-      [84532, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
+      [
+        84532,
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
+        "EVMX"
+      ]
     ]
   ],
   "421614": [],
@@ -143,7 +159,11 @@
       "0x899AE7770eFb9714aF717d03c0d577e41d78ed48",
       "Socket",
       "contracts/protocol/socket/Socket.sol",
-      [11155111, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
+      [
+        11155111,
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
+        "EVMX"
+      ]
     ]
   ],
   "11155420": []
