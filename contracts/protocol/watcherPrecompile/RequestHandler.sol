@@ -17,6 +17,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
 
         uint256 readCount;
         uint256 writeCount;
+        PayloadSubmitParams memory lastP;
 
         for (uint256 i = 0; i < payloadSubmitParams.length; i++) {
             PayloadSubmitParams memory p = payloadSubmitParams[i];
@@ -27,14 +28,14 @@ abstract contract RequestHandler is WatcherPrecompileCore {
             } else writeCount++;
 
             if (i > 0) {
-                PayloadSubmitParams memory lastP = payloadSubmitParams[i - 1];
                 if (p.levelNumber != lastP.levelNumber && p.levelNumber != lastP.levelNumber + 1)
                     revert InvalidLevelNumber();
                 if (p.levelNumber == lastP.levelNumber + 1) {
                     requestBatchIds[requestCount].push(batchCount);
-                    batchCount = nextBatchCount++;
+                    batchCount = ++nextBatchCount;
                 }
             }
+
             uint40 localPayloadCount = payloadCounter++;
             bytes32 payloadId = _createPayloadId(p, requestCount, batchCount, localPayloadCount);
             batchPayloadIds[batchCount].push(payloadId);
@@ -65,6 +66,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
             payloads[payloadId].finalizedTransmitter = address(0);
 
             requestParams[requestCount].payloadParamsArray.push(payloads[payloadId]);
+            lastP = p;
         }
 
         requestBatchIds[requestCount].push(nextBatchCount++);
@@ -106,8 +108,10 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         if (r.middleware != msg.sender) revert InvalidCaller();
         if (r.transmitter != address(0)) revert AlreadyStarted();
         if (r.currentBatchPayloadsLeft > 0) revert AlreadyStarted();
-        r.transmitter = transmitter;
+
         uint40 batchCount = r.payloadParamsArray[0].dump.getBatchCount();
+        r.transmitter = transmitter;
+        r.currentBatch = batchCount;
 
         uint256 totalPayloadsLeft = _processBatch(requestCount, batchCount);
         // todo: for retry cases
@@ -119,7 +123,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         uint40 batchCount_
     ) internal returns (uint256 totalPayloadsLeft) {
         RequestParams memory r = requestParams[requestCount_];
-        PayloadParams[] memory payloadParamsArray = _getBatch(requestCount_, batchCount_);
+        PayloadParams[] memory payloadParamsArray = _getBatch(batchCount_);
 
         if (r.isRequestCancelled) revert RequestCancelled();
 

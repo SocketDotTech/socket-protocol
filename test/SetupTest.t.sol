@@ -73,6 +73,7 @@ contract SetupTest is Test {
     ERC1967Factory public proxyFactory;
 
     event Initialized(uint64 version);
+    event FinalizeRequested(bytes32 payloadId, PayloadParams payloadParams);
 
     //////////////////////////////////// Setup ////////////////////////////////////
 
@@ -207,20 +208,47 @@ contract SetupTest is Test {
         return true;
     }
 
+    function _resolveAndExpectFinalizeRequested(
+        bytes32 payloadId_,
+        PayloadParams memory payloadParams,
+        bytes memory returnData,
+        bool isLastPayload
+    ) internal {
+        if (isLastPayload) {
+            vm.expectEmit(false, false, false, false);
+            emit FinalizeRequested(payloadId_, payloadParams);
+        }
+
+        _resolvePromise(payloadId_, returnData);
+    }
+
     function _finalizeBatch(
         uint40 batchCount_,
         bytes[] memory readReturnData_,
-        uint256 readCount_
+        uint256 readCount_,
+        bool hasMoreBatches
     ) internal returns (uint256) {
         bytes32[] memory payloadIds = watcherPrecompile.getBatchPayloadIds(batchCount_);
 
         for (uint i = 0; i < payloadIds.length; i++) {
             PayloadParams memory payloadParams = watcherPrecompile.getPayloadParams(payloadIds[i]);
+            bool isLastPayload = i == payloadIds.length - 1 && hasMoreBatches;
+
             if (payloadParams.dump.getCallType() == CallType.READ) {
-                _resolvePromise(payloadParams.payloadId, readReturnData_[readCount_++]);
+                _resolveAndExpectFinalizeRequested(
+                    payloadParams.payloadId,
+                    payloadParams,
+                    readReturnData_[readCount_++],
+                    isLastPayload
+                );
             } else {
                 bytes memory returnData = _uploadProofAndExecute(payloadParams);
-                _resolvePromise(payloadParams.payloadId, returnData);
+                _resolveAndExpectFinalizeRequested(
+                    payloadParams.payloadId,
+                    payloadParams,
+                    returnData,
+                    isLastPayload
+                );
             }
         }
         return readCount_;

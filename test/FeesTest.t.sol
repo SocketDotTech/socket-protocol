@@ -51,7 +51,7 @@ contract FeesTest is DeliveryHelperTest {
             address(receiver)
         );
         uint40[] memory batches = watcherPrecompile.getBatches(requestCount);
-        _finalizeBatch(batches[0], new bytes[](0), 0);
+        _finalizeBatch(batches[0], new bytes[](0), 0, false);
 
         assertEq(
             transmitterReceiverBalanceBefore + bidAmount,

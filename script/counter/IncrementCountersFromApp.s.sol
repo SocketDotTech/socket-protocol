@@ -5,6 +5,8 @@ import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {CounterAppGateway} from "../../test/apps/app-gateways/counter/CounterAppGateway.sol";
 
+// source .env && forge script script/counter/IncrementCountersFromApp.s.sol --broadcast --skip-simulation --legacy --gas-price 0
+// source .env && cast send $APP_GATEWAY "incrementCounters(address[])" '[0xdA908E7491499d64944Ea5Dc967135a0F22d2057]' --private-key $PRIVATE_KEY --legacy --gas-price 0
 contract IncrementCounters is Script {
     function run() external {
         string memory socketRPC = vm.envString("EVMX_RPC");
