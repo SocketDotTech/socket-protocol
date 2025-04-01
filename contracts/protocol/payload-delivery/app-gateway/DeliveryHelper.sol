@@ -66,7 +66,7 @@ contract DeliveryHelper is FeesHelpers {
         if (msg.sender != requests[requestCount_].appGateway) {
             revert OnlyAppGateway();
         }
-
+        // If the request has a winning bid, ie. transmitter already assigned, unblock and assign fees
         if (requests[requestCount_].winningBid.transmitter != address(0)) {
             IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
                 requestCount_,
@@ -74,6 +74,7 @@ contract DeliveryHelper is FeesHelpers {
                 requests[requestCount_].appGateway
             );
         } else {
+            // If the request has no winning bid, ie. transmitter not assigned, unblock fees
             IFeesManager(addressResolver__.feesManager()).unblockFees(requestCount_);
         }
 

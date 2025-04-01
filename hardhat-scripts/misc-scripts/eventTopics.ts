@@ -47,8 +47,8 @@ async function main() {
     console.log("-".repeat(contractName.length + 1));
 
     mdContent += `## ${contractName}\n\n`;
-    mdContent += "| Event | Topic |\n";
-    mdContent += "| ----- | ----- |\n";
+    mdContent += "| Event | Arguments | Topic |\n";
+    mdContent += "| ----- | --------- | ----- |\n";
 
     const artifact = await artifacts.readArtifact(contractName);
     const iface = new ethers.utils.Interface(artifact.abi);
@@ -56,8 +56,11 @@ async function main() {
     const events = iface.events;
     Object.values(events).forEach((event) => {
       const topic = iface.getEventTopic(event.name);
-      console.log(`${event.name}: ${topic}`);
-      mdContent += `| \`${event.name}\` | \`${topic}\` |\n`;
+      const args = event.inputs
+        .map((input) => `${input.name}: ${input.type}`)
+        .join(", ");
+      console.log(`${event.name}(${args}): ${topic}`);
+      mdContent += `| \`${event.name}\` | \`(${args})\` | \`${topic}\` |\n`;
     });
 
     mdContent += "\n";

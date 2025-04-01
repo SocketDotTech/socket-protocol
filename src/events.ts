@@ -11,6 +11,7 @@ export const feesPlugEvents = [Events.FeesDeposited];
 
 export const watcherPrecompileEvents = [
   Events.CalledAppGateway,
+  Events.RequestSubmitted,
   Events.QueryRequested,
   Events.FinalizeRequested,
   Events.Finalized,
@@ -18,12 +19,13 @@ export const watcherPrecompileEvents = [
   Events.PromiseNotResolved,
   Events.TimeoutRequested,
   Events.TimeoutResolved,
-  Events.RequestSubmitted,
+  Events.MarkedRevert,
 ];
 
 export const deliveryHelperEvents = [
   Events.PayloadSubmitted,
   Events.FeesIncreased,
+  Events.RequestCancelled,
 ];
 
 export const auctionManagerEvents = [

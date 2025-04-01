@@ -134,4 +134,23 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     ) external returns (uint40) {
         return _withdrawFeeTokens(chainSlug_, token_, amount_, receiver_);
     }
+
+    function testOnChainRevert(uint32 chainSlug) public async {
+        address instance = forwarderAddresses[counter][chainSlug];
+        ICounter(instance).wrongFunction();
+    }
+
+    function testCallBackRevert(uint32 chainSlug) public async {
+        // the increase function is called on given list of instances
+        _setOverrides(Read.ON, Parallel.ON);
+        address instance = forwarderAddresses[counter][chainSlug];
+        ICounter(instance).getCounter();
+        // wrong function call in callback so it reverts
+        IPromise(instance).then(this.withdrawFeeTokens.selector, abi.encode(chainSlug));
+        _setOverrides(Read.OFF, Parallel.OFF);
+    }
+
+    function increaseFees(uint40 requestCount_, uint256 newMaxFees_) public {
+        _increaseFees(requestCount_, newMaxFees_);
+    }
 }
