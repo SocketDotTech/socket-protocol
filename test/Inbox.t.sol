@@ -41,6 +41,7 @@ contract InboxTest is DeliveryHelperTest {
             address(watcherPrecompileConfig),
             abi.encode(IWatcherPrecompileConfig.setAppGateways.selector, gateways)
         );
+
         watcherPrecompileConfig.setAppGateways(gateways, signatureNonce++, watcherSignature);
 
         hoax(watcherEOA);

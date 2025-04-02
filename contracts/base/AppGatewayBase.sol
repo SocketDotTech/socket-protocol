@@ -94,6 +94,16 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         return watcherPrecompileConfig().sockets(chainSlug_);
     }
 
+    /// @notice Sets the validity of an onchain contract (plug) to authorize it to send information to a specific AppGateway
+    /// @param chainSlug_ The unique identifier of the chain where the contract resides
+    /// @param contractId The bytes32 identifier of the contract to be validated
+    /// @param isValid Boolean flag indicating whether the contract is authorized (true) or not (false)
+    /// @dev This function retrieves the onchain address using the contractId and chainSlug, then calls the watcher precompile to update the plug's validity status
+    function _setValidPlug(uint32 chainSlug_, bytes32 contractId, bool isValid) internal {
+        address onchainAddress = getOnChainAddress(contractId, chainSlug_);
+        watcherPrecompile__().setIsValidPlug(chainSlug_, onchainAddress, isValid);
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////   DEPLOY HELPERS ///////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////

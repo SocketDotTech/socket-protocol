@@ -40,7 +40,7 @@ abstract contract PlugBase is IPlug {
     }
 
     /// @notice Disconnects the plug from the socket
-    function _disconnect() internal {
+    function _disconnectSocket() internal {
         (, address switchboard) = socket__.getPlugConfig(address(this));
         socket__.connect(address(0), switchboard);
         emit ConnectorPlugDisconnected();
