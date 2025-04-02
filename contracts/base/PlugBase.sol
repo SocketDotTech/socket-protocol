@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {ISocket} from "../interfaces/ISocket.sol";
 import {IPlug} from "../interfaces/IPlug.sol";
 import {NotSocket} from "../protocol/utils/common/Errors.sol";
+
 /// @title PlugBase
 /// @notice Abstract contract for plugs
 abstract contract PlugBase is IPlug {
@@ -40,7 +40,7 @@ abstract contract PlugBase is IPlug {
     }
 
     /// @notice Disconnects the plug from the socket
-    function _disconnect() internal {
+    function _disconnectSocket() internal {
         (, address switchboard) = socket__.getPlugConfig(address(this));
         socket__.connect(address(0), switchboard);
         emit ConnectorPlugDisconnected();

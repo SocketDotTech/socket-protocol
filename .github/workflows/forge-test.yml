@@ -37,20 +37,10 @@ jobs:
         run: |
           forge --version
 
-      - name: Run Forge build
-        run: |
-          forge build --sizes
-        id: build
-
       - name: Run Forge tests
         run: |
-          forge test -vvv
+          forge test
         id: test
-
-      - name: Run coverage
-        run: |
-          forge coverage
-        id: coverage
 
       - name: Run snapshot
         run: |

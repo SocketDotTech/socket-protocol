@@ -1,25 +1,26 @@
 import {
   ChainSlug,
-  ChainSlugToKey,
-  DeploymentMode,
   HardhatChainName,
-} from "@socket.tech/socket-protocol-common";
+  DeploymentMode,
+  ChainSlugToKey,
+} from "../../src";
 import hre from "hardhat";
 import { EVMX_CHAIN_ID, mode } from "../config/config";
 import { storeUnVerifiedParams, verify } from "../utils";
 
+import local_addresses from "../../deployments/local_addresses.json";
 import dev_verification from "../../deployments/dev_verification.json";
-import prod_verification from "../../deployments/prod_verification.json";
 import stage_verification from "../../deployments/stage_verification.json";
 
 const getVerificationParams = (mode: DeploymentMode) => {
   switch (mode) {
+    case DeploymentMode.LOCAL:
+      //@ts-ignore
+      return local_addresses;
     case DeploymentMode.DEV:
       return dev_verification;
     case DeploymentMode.STAGE:
       return stage_verification;
-    case DeploymentMode.PROD:
-      return prod_verification;
     default:
       throw new Error(`Invalid deployment mode: ${mode}`);
   }

@@ -18,10 +18,7 @@ contract InboxTest is DeliveryHelperTest {
         inbox = new Counter();
 
         // Deploy the gateway with fees
-        gateway = new CounterAppGateway(
-            address(addressResolver),
-            createFees(feesAmount)
-        );
+        gateway = new CounterAppGateway(address(addressResolver), createFees(feesAmount));
         gateway.setIsValidPlug(arbChainSlug, address(inbox));
 
         // Connect the inbox to the gateway and socket
@@ -41,12 +38,14 @@ contract InboxTest is DeliveryHelperTest {
         });
 
         bytes memory watcherSignature = _createWatcherSignature(
-            abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
+            address(watcherPrecompileConfig),
+            abi.encode(IWatcherPrecompileConfig.setAppGateways.selector, gateways)
         );
-        watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
+
+        watcherPrecompileConfig.setAppGateways(gateways, signatureNonce++, watcherSignature);
 
         hoax(watcherEOA);
-        watcherPrecompile.setIsValidPlug(arbChainSlug, address(inbox), true);
+        watcherPrecompileConfig.setIsValidPlug(arbChainSlug, address(inbox), true);
     }
 
     function testInboxIncrement() public {
@@ -68,7 +67,8 @@ contract InboxTest is DeliveryHelperTest {
         });
 
         bytes memory watcherSignature = _createWatcherSignature(
-            abi.encode(WatcherPrecompile.callAppGateways.selector, params)
+            address(watcherPrecompile),
+            abi.encode(IWatcherPrecompile.callAppGateways.selector, params)
         );
         watcherPrecompile.callAppGateways(params, signatureNonce++, watcherSignature);
         // Check counter was incremented

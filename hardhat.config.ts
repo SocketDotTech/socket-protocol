@@ -5,6 +5,8 @@ import "hardhat-preprocessor";
 import "hardhat-deploy";
 import "hardhat-abi-exporter";
 import "hardhat-change-network";
+import "hardhat-contract-sizer";
+
 import { config as dotenvConfig } from "dotenv";
 import type { HardhatUserConfig } from "hardhat/config";
 import type {
@@ -22,9 +24,8 @@ import {
   ChainSlugToId,
   HardhatChainName,
   hardhatChainNameToSlug,
-} from "@socket.tech/socket-protocol-common";
+} from "./src";
 import { EVMX_CHAIN_ID } from "./hardhat-scripts/config/config";
-import { BASE_SEPOLIA_CHAIN_ID } from "./hardhat-scripts/constants";
 
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || "./.env";
 dotenvConfig({ path: resolve(__dirname, dotenvConfigPath) });
@@ -59,15 +60,11 @@ let liveNetworks = {
     ChainSlug.OPTIMISM_SEPOLIA
   ),
   [HardhatChainName.SEPOLIA]: getChainConfig(ChainSlug.SEPOLIA),
+  [HardhatChainName.BASE_SEPOLIA]: getChainConfig(ChainSlug.BASE_SEPOLIA),
   EVMX: {
     accounts: [`0x${privateKey}`],
     chainId: EVMX_CHAIN_ID,
     url: process.env.EVMX_RPC,
-  },
-  ["base_sepolia"]: {
-    accounts: [`0x${privateKey}`],
-    chainId: BASE_SEPOLIA_CHAIN_ID,
-    url: process.env.BASE_SEPOLIA_RPC,
   },
 };
 
@@ -121,7 +118,7 @@ const config: HardhatUserConfig = {
       },
       {
         network: "baseTestnet",
-        chainId: BASE_SEPOLIA_CHAIN_ID,
+        chainId: ChainId.BASE_SEPOLIA,
         urls: {
           apiURL: "https://api-sepolia.basescan.org/api",
           browserURL: "https://sepolia.basescan.org/",
@@ -131,8 +128,8 @@ const config: HardhatUserConfig = {
         network: "evmx",
         chainId: EVMX_CHAIN_ID,
         urls: {
-          apiURL: "",
-          browserURL: "",
+          apiURL: "https://evmx.cloud.blockscout.com/api",
+          browserURL: "https://evmx.cloud.blockscout.com/",
         },
       },
     ],
@@ -163,7 +160,7 @@ const config: HardhatUserConfig = {
       evmVersion: "paris",
       optimizer: {
         enabled: true,
-        runs: 999,
+        runs: 1,
         details: {
           yul: true,
           yulDetails: {
@@ -171,7 +168,7 @@ const config: HardhatUserConfig = {
           },
         },
       },
-      viaIR: true,
+      viaIR: false,
     },
   },
 };

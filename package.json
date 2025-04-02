@@ -1,7 +1,7 @@
 {
   "name": "@socket.tech/socket-protocol",
-  "main": "./dist/src/index.js",
-  "types": "./dist/src/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist",
     "artifacts/abi"
@@ -9,16 +9,17 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.0.15",
+  "version": "1.1.9",
   "description": "socket protocol",
   "scripts": {
-    "build": "hardhat export-abi && tsc --project lib.tsconfig.json",
+    "build": "yarn abi && tsc --project lib.tsconfig.json",
     "tsc": "tsc --project lib.tsconfig.json",
     "abi": "hardhat export-abi",
     "lint": "prettier \"./**\" --write",
     "lintContracts": "prettier \"./**\"  --write --plugin=prettier-plugin-solidity",
     "compile": "forge build",
-    "deploy": "bash setupInfraContracts.sh"
+    "deploy": "bash setupInfraContracts.sh",
+    "publish-core": "yarn build && yarn publish --patch --no-git-tag-version"
   },
   "pre-commit": [],
   "author": "",
@@ -27,24 +28,29 @@
     "@aws-sdk/client-s3": "^3.670.0",
     "@nomicfoundation/hardhat-verify": "^2.0.12",
     "@nomiclabs/hardhat-ethers": "2.2.3",
-    "@socket.tech/socket-protocol-common": "1.1.31",
+    "@socket.tech/socket-protocol-common": "1.1.44",
     "@typechain/ethers-v5": "^10.0.0",
     "@typechain/hardhat": "6.0.0",
+    "@types/node": "^22.13.9",
+    "@types/prompts": "^2.4.9",
     "dotenv": "^16.0.3",
     "ethers": "5.6.6",
-    "forge-std": "^1.1.2",
     "hardhat": "2.12.2",
     "hardhat-abi-exporter": "2.10.1",
     "hardhat-change-network": "^0.0.7",
     "hardhat-deploy": "0.11.20",
     "hardhat-preprocessor": "0.1.4",
     "http-server": "^14.1.1",
+    "path": "^0.12.7",
     "pre-commit": "^1.2.2",
     "prettier": "^2.3.1",
     "prettier-plugin-solidity": "^1.4.1",
+    "prompts": "^2.4.2",
     "ts-node": "^10.7.0",
     "typechain": "^8.0.0",
     "typescript": "^4.6.4"
   },
-  "dependencies": {}
+  "dependencies": {
+    "hardhat-contract-sizer": "^2.10.0"
+  }
 }

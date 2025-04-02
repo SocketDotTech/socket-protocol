@@ -5,11 +5,12 @@ import {AccessControl} from "../utils/AccessControl.sol";
 import {Gauge} from "../utils/Gauge.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {WATCHER_ROLE} from "../utils/common/AccessRoles.sol";
-import "./WatcherPrecompileStorage.sol";
+import "../../interfaces/IWatcherPrecompileLimits.sol";
 import "solady/utils/Initializable.sol";
+import {SCHEDULE, QUERY, FINALIZE} from "../utils/common/Constants.sol";
 
-abstract contract WatcherPrecompileLimits is
-    WatcherPrecompileStorage,
+contract WatcherPrecompileLimits is
+    IWatcherPrecompileLimits,
     Initializable,
     AccessControl,
     Gauge,
@@ -24,23 +25,37 @@ abstract contract WatcherPrecompileLimits is
     // slots 271-320: gap for future storage variables
     uint256[50] _gap_watcher_precompile_limits;
 
-    ////////////////////////////////////////////////////////
-    ////////////////////// EVENTS //////////////////////////
-    ////////////////////////////////////////////////////////
+    /// @notice Number of decimals used in limit calculations
+    uint256 public constant LIMIT_DECIMALS = 18;
+    // slot 50: defaultLimit
+    /// @notice Default limit value for any app gateway
+    uint256 public defaultLimit;
+    // slot 51: defaultRatePerSecond
+    /// @notice Rate at which limit replenishes per second
+    uint256 public defaultRatePerSecond;
 
-    // Emitted when limit parameters are updated
-    event LimitParamsUpdated(UpdateLimitParams[] updates);
-    // Emitted when an app gateway is activated with default limits
-    event AppGatewayActivated(address indexed appGateway, uint256 maxLimit, uint256 ratePerSecond);
+    // slot 53: _limitParams
+    // appGateway => limitType => receivingLimitParams
+    mapping(address => mapping(bytes32 => LimitParams)) internal _limitParams;
 
-    error ActionNotSupported(address appGateway_, bytes32 limitType_);
-    error NotDeliveryHelper();
-    error LimitExceeded(
-        address appGateway,
-        bytes32 limitType,
-        uint256 requested,
-        uint256 available
-    );
+    // slot 54: _activeAppGateways
+    // Mapping to track active app gateways
+    mapping(address => bool) internal _activeAppGateways;
+
+    /// @notice Initial initialization (version 1)
+    function initialize(
+        address owner_,
+        address addressResolver_,
+        uint256 defaultLimit_
+    ) public reinitializer(1) {
+        _setAddressResolver(addressResolver_);
+        _initializeOwner(owner_);
+
+        // limit per day
+        defaultLimit = defaultLimit_ * 10 ** LIMIT_DECIMALS;
+        // limit per second
+        defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
+    }
 
     /**
      * @notice Get the current limit for a specific app gateway and limit type
@@ -66,21 +81,6 @@ abstract contract WatcherPrecompileLimits is
         address appGateway_
     ) external view returns (LimitParams memory) {
         return _limitParams[appGateway_][limitType_];
-    }
-
-    /**
-     * @notice Check and update limit for a specific app gateway
-     * @param appGateway_ The app gateway address
-     * @param limitType_ The type of limit to check
-     * @param consumeLimit_ The amount of limit to consume
-     */
-    function checkAndConsumeLimit(
-        address appGateway_,
-        bytes32 limitType_,
-        uint256 consumeLimit_
-    ) external {
-        if (msg.sender != addressResolver__.deliveryHelper()) revert NotDeliveryHelper();
-        _consumeLimit(appGateway_, limitType_, consumeLimit_);
     }
 
     /**
@@ -112,21 +112,16 @@ abstract contract WatcherPrecompileLimits is
      * @param appGateway_ The app gateway address
      * @param limitType_ The type of limit to consume
      * @param consumeLimit_ The amount of limit to consume
-     * @return appGateway The resolved app gateway address
      */
-    function _consumeLimit(
+    function consumeLimit(
         address appGateway_,
         bytes32 limitType_,
         uint256 consumeLimit_
-    ) internal returns (address appGateway) {
-        // delivery helper consumes the limit while batching hence returned here
-        if (msg.sender == addressResolver__.deliveryHelper()) return appGateway_;
-
-        appGateway = _getAppGateway(appGateway_);
-        LimitParams storage limitParams = _limitParams[appGateway][limitType_];
+    ) external override onlyWatcherPrecompile {
+        LimitParams storage limitParams = _limitParams[appGateway_][limitType_];
 
         // Initialize limit if not active
-        if (!_activeAppGateways[appGateway]) {
+        if (!_activeAppGateways[appGateway_]) {
             LimitParams memory limitParam = LimitParams({
                 maxLimit: defaultLimit,
                 ratePerSecond: defaultRatePerSecond,
@@ -134,29 +129,16 @@ abstract contract WatcherPrecompileLimits is
                 lastUpdateLimit: defaultLimit
             });
 
-            _limitParams[appGateway][QUERY] = limitParam;
-            _limitParams[appGateway][FINALIZE] = limitParam;
-            _limitParams[appGateway][SCHEDULE] = limitParam;
+            _limitParams[appGateway_][QUERY] = limitParam;
+            _limitParams[appGateway_][FINALIZE] = limitParam;
+            _limitParams[appGateway_][SCHEDULE] = limitParam;
 
-            _activeAppGateways[appGateway] = true;
-            emit AppGatewayActivated(appGateway, defaultLimit, defaultRatePerSecond);
+            _activeAppGateways[appGateway_] = true;
+            emit AppGatewayActivated(appGateway_, defaultLimit, defaultRatePerSecond);
         }
 
         // Update the limit
         _consumeFullLimit(consumeLimit_ * 10 ** LIMIT_DECIMALS, limitParams);
-    }
-
-    /**
-     * @notice Internal function to get the core app gateway address
-     * @param originAppGateway_ The input app gateway address
-     * @return appGateway The resolved core app gateway address
-     */
-    function _getAppGateway(address originAppGateway_) internal view returns (address appGateway) {
-        address originAppGateway = msg.sender == addressResolver__.deliveryHelper()
-            ? originAppGateway_
-            : msg.sender;
-
-        appGateway = _getCoreAppGateway(originAppGateway);
     }
 
     /**

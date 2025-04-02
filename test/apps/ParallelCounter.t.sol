@@ -27,30 +27,9 @@ contract ParallelCounterTest is DeliveryHelperTest {
         contractIds[1] = counterId2;
     }
 
-    function _deployParallel(uint32[] memory chainSlugs_) internal returns (bytes32 asyncId) {
-        asyncId = getNextAsyncId();
-        bytes32[] memory payloadIds = new bytes32[](contractIds.length * chainSlugs_.length);
-        for (uint32 i = 0; i < chainSlugs_.length; i++) {
-            for (uint j = 0; j < contractIds.length; j++) {
-                payloadIds[i * contractIds.length + j] = getWritePayloadId(
-                    chainSlugs_[i],
-                    address(getSocketConfig(chainSlugs_[i]).switchboard),
-                    i * contractIds.length + j + payloadIdCounter
-                );
-            }
-        }
-        // for fees
-        payloadIdCounter += chainSlugs_.length * contractIds.length + 1;
-
-        parallelCounterGateway.deployMultiChainContracts(chainSlugs_);
-        bidAndExecute(payloadIds, asyncId);
-        for (uint i = 0; i < chainSlugs_.length; i++) {
-            setupGatewayAndPlugs(chainSlugs_[i], parallelCounterGateway, contractIds);
-        }
-    }
-
-    function deployCounterApps(uint32[] memory chainSlugs) internal returns (bytes32 asyncId) {
-        asyncId = _deployParallel(chainSlugs);
+    function deployCounterApps(uint32[] memory chainSlugs) internal {
+        parallelCounterGateway.deployMultiChainContracts(chainSlugs);
+        executeRequest(new bytes[](0));
     }
 
     function testParallelCounterDeployment() external {
@@ -160,7 +139,7 @@ contract ParallelCounterTest is DeliveryHelperTest {
     //     instances[0] = arbCounterForwarder;
     //     counterGateway.incrementCounters(instances);
 
-    //     _executeBatchSingleChain(arbChainSlug, 1);
+    //     _executeRequestSingleChain(arbChainSlug, 1);
     //     assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
     // }
 
@@ -191,7 +170,7 @@ contract ParallelCounterTest is DeliveryHelperTest {
     //     uint32[] memory chains = new uint32[](2);
     //     chains[0] = arbChainSlug;
     //     chains[1] = optChainSlug;
-    //     _executeBatchMultiChain(chains);
+    //     _executeRequestMultiChain(chains);
     //     assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
     //     assertEq(Counter(optCounter).counter(), optCounterBefore + 1);
     // }

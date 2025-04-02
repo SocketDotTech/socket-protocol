@@ -8,7 +8,6 @@ address constant ZERO_ADDRESS = address(0);
 bytes32 constant FORWARD_CALL = keccak256("FORWARD_CALL");
 bytes32 constant DISTRIBUTE_FEE = keccak256("DISTRIBUTE_FEE");
 bytes32 constant DEPLOY = keccak256("DEPLOY");
-bytes32 constant WITHDRAW = keccak256("WITHDRAW");
 bytes32 constant CONFIGURE = keccak256("CONFIGURE");
 bytes32 constant CONNECT = keccak256("CONNECT");
 bytes32 constant QUERY = keccak256("QUERY");

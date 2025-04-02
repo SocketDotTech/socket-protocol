@@ -2,10 +2,12 @@
 pragma solidity ^0.8.21;
 
 import "../interfaces/IAddressResolver.sol";
-import "../interfaces/IDeliveryHelper.sol";
+import "../interfaces/IMiddleware.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
 import "../interfaces/IForwarder.sol";
+
+import {AddressResolverUtil} from "./utils/AddressResolverUtil.sol";
 import "solady/utils/Initializable.sol";
 
 abstract contract ForwarderStorage is IForwarder {
@@ -16,25 +18,20 @@ abstract contract ForwarderStorage is IForwarder {
     /// @notice chain id
     uint32 public chainSlug;
 
-    // slot 51
     /// @notice on-chain address associated with this forwarder
     address public onChainAddress;
 
-    // slot 52
-    /// @notice address resolver contract address for imp addresses
-    address public addressResolver;
-
-    // slot 53
+    // slot 51
     /// @notice caches the latest async promise address for the last call
     address public latestAsyncPromise;
 
-    // slots [54-103] reserved for gap
+    // slots [52-101] reserved for gap
     uint256[50] _gap_after;
 }
 
 /// @title Forwarder Contract
 /// @notice This contract acts as a forwarder for async calls to the on-chain contracts.
-contract Forwarder is ForwarderStorage, Initializable {
+contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
     error AsyncModifierNotUsed();
 
     constructor() {
@@ -52,7 +49,7 @@ contract Forwarder is ForwarderStorage, Initializable {
     ) public initializer {
         chainSlug = chainSlug_;
         onChainAddress = onChainAddress_;
-        addressResolver = addressResolver_;
+        _setAddressResolver(addressResolver_);
     }
 
     /// @notice Stores the callback address and data to be executed once the promise is resolved.
@@ -82,8 +79,7 @@ contract Forwarder is ForwarderStorage, Initializable {
     /// @dev It queues the calls in the auction house and deploys the promise contract
     fallback() external payable {
         // Retrieve the auction house address from the address resolver.
-        address deliveryHelper = IAddressResolver(addressResolver).deliveryHelper();
-        if (deliveryHelper == address(0)) {
+        if (address(deliveryHelper__()) == address(0)) {
             revert("Forwarder: deliveryHelper not found");
         }
 
@@ -91,25 +87,37 @@ contract Forwarder is ForwarderStorage, Initializable {
         if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
 
         // Deploy a new async promise contract.
-        latestAsyncPromise = IAddressResolver(addressResolver).deployAsyncPromiseContract(
-            msg.sender
-        );
+        latestAsyncPromise = addressResolver__.deployAsyncPromiseContract(msg.sender);
 
         // Determine if the call is a read or write operation.
-        Read isReadCall = IAppGateway(msg.sender).isReadCall();
-        Parallel isParallelCall = IAppGateway(msg.sender).isParallelCall();
+        (
+            Read isReadCall,
+            Parallel isParallelCall,
+            WriteFinality writeFinality,
+            uint256 readAt,
+            uint256 gasLimit,
+            bytes32 sbType
+        ) = IAppGateway(msg.sender).getOverrideParams();
+        address switchboard = watcherPrecompileConfig().switchboards(chainSlug, sbType);
 
         // Queue the call in the auction house.
-        IDeliveryHelper(deliveryHelper).queue(
-            IsPlug.NO,
-            isParallelCall,
-            chainSlug,
-            onChainAddress,
-            latestAsyncPromise,
-            0,
-            isReadCall == Read.ON ? CallType.READ : CallType.WRITE,
-            msg.data,
-            bytes("")
+        deliveryHelper__().queue(
+            QueuePayloadParams({
+                chainSlug: chainSlug,
+                callType: isReadCall == Read.ON ? CallType.READ : CallType.WRITE,
+                isParallel: isParallelCall,
+                isPlug: IsPlug.NO,
+                writeFinality: writeFinality,
+                asyncPromise: latestAsyncPromise,
+                switchboard: switchboard,
+                target: onChainAddress,
+                appGateway: msg.sender,
+                gasLimit: gasLimit,
+                value: 0,
+                readAt: readAt,
+                payload: msg.data,
+                initCallData: bytes("")
+            })
         );
     }
 

@@ -16,18 +16,15 @@ contract CounterTest is DeliveryHelperTest {
     function deploySetup() internal {
         setUpDeliveryHelper();
 
-        counterGateway = new CounterAppGateway(
-            address(addressResolver),
-            createFees(feesAmount)
-        );
+        counterGateway = new CounterAppGateway(address(addressResolver), createFees(feesAmount));
         depositFees(address(counterGateway), createFees(1 ether));
 
         counterId = counterGateway.counter();
         contractIds[0] = counterId;
     }
 
-    function deployCounterApp(uint32 chainSlug) internal returns (bytes32 asyncId) {
-        asyncId = _deploy(contractIds, chainSlug, 1, IAppGateway(counterGateway));
+    function deployCounterApp(uint32 chainSlug) internal returns (uint40 requestCount) {
+        requestCount = _deploy(chainSlug, IAppGateway(counterGateway), contractIds);
     }
 
     function testCounterDeployment() external {
@@ -52,6 +49,13 @@ contract CounterTest is DeliveryHelperTest {
         );
     }
 
+    function testCounterDeploymentWithoutAsync() external {
+        deploySetup();
+
+        vm.expectRevert(abi.encodeWithSelector(AsyncModifierNotUsed.selector));
+        counterGateway.deployContractsWithoutAsync(arbChainSlug);
+    }
+
     function testCounterIncrement() external {
         deploySetup();
         deployCounterApp(arbChainSlug);
@@ -67,8 +71,8 @@ contract CounterTest is DeliveryHelperTest {
         address[] memory instances = new address[](1);
         instances[0] = arbCounterForwarder;
         counterGateway.incrementCounters(instances);
+        executeRequest(new bytes[](0));
 
-        _executeWriteBatchSingleChain(arbChainSlug, 1);
         assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
     }
 
@@ -99,8 +103,8 @@ contract CounterTest is DeliveryHelperTest {
         uint32[] memory chains = new uint32[](2);
         chains[0] = arbChainSlug;
         chains[1] = optChainSlug;
-        _executeWriteBatchMultiChain(chains);
 
+        executeRequest(new bytes[](0));
         assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
         assertEq(Counter(optCounter).counter(), optCounterBefore + 1);
     }
@@ -108,12 +112,12 @@ contract CounterTest is DeliveryHelperTest {
     function testCounterReadMultipleChains() external {
         testCounterIncrementMultipleChains();
 
-        (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
+        (, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId,
             counterGateway
         );
-        (address optCounter, address optCounterForwarder) = getOnChainAndForwarderAddresses(
+        (, address optCounterForwarder) = getOnChainAndForwarderAddresses(
             optChainSlug,
             counterId,
             counterGateway
@@ -123,23 +127,12 @@ contract CounterTest is DeliveryHelperTest {
         instances[0] = arbCounterForwarder;
         instances[1] = optCounterForwarder;
 
-        bytes32 bridgeAsyncId = getNextAsyncId();
-
-        bytes32[] memory payloadIds = new bytes32[](3);
-        payloadIds[0] = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
-        payloadIds[1] = _encodeId(evmxSlug, address(watcherPrecompile), payloadIdCounter++);
-
-        payloadIds[2] = getWritePayloadId(
-            arbChainSlug,
-            address(getSocketConfig(arbChainSlug).switchboard),
-            payloadIdCounter++
-        );
-
         counterGateway.readCounters(instances);
 
-        bidAndEndAuction(bridgeAsyncId);
-        finalizeQuery(payloadIds[0], abi.encode(Counter(arbCounter).counter()));
-        finalizeQuery(payloadIds[1], abi.encode(Counter(optCounter).counter()));
-        finalizeAndExecute(payloadIds[2]);
+        bytes[] memory readReturnData = new bytes[](2);
+        readReturnData[0] = abi.encode(10);
+        readReturnData[1] = abi.encode(10);
+
+        executeRequest(readReturnData);
     }
 }

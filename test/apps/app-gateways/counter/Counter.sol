@@ -6,9 +6,10 @@ import "../../../../contracts/base/PlugBase.sol";
 
 contract Counter is Ownable, PlugBase {
     uint256 public counter;
-
+    event CounterIncreased(uint256 value);
     function increase() external onlySocket {
         counter++;
+        emit CounterIncreased(counter);
     }
 
     function getCounter() external view returns (uint256) {

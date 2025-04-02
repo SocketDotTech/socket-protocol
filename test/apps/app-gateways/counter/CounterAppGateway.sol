@@ -13,14 +13,11 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
 
     uint256 public counterVal;
 
-    uint256 arbCounter;
-    uint256 optCounter;
+    uint256 public arbCounter;
+    uint256 public optCounter;
     event TimeoutResolved(uint256 creationTimestamp, uint256 executionTimestamp);
 
-    constructor(
-        address addressResolver_,
-        Fees memory fees_
-    ) AppGatewayBase(addressResolver_) {
+    constructor(address addressResolver_, Fees memory fees_) AppGatewayBase(addressResolver_) {
         creationCodeWithArgs[counter] = abi.encodePacked(type(Counter).creationCode);
         creationCodeWithArgs[counter1] = abi.encodePacked(type(Counter).creationCode);
         _setOverrides(fees_);
@@ -29,6 +26,10 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
 
     // deploy contracts
     function deployContracts(uint32 chainSlug_) external async {
+        _deploy(counter, chainSlug_, IsPlug.YES);
+    }
+
+    function deployContractsWithoutAsync(uint32 chainSlug_) external {
         _deploy(counter, chainSlug_, IsPlug.YES);
     }
 
@@ -77,7 +78,13 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
             IPromise(instances_[i]).then(this.setCounterValues.selector, abi.encode(chainSlug));
         }
         _setOverrides(Read.OFF, Parallel.OFF);
-        ICounter(instances_[0]).increase();
+    }
+
+    function readCounterAtBlock(address instance_, uint256 blockNumber_) public async {
+        uint32 chainSlug = IForwarder(instance_).getChainSlug();
+        _setOverrides(Read.ON, Parallel.ON, blockNumber_);
+        ICounter(instance_).getCounter();
+        IPromise(instance_).then(this.setCounterValues.selector, abi.encode(chainSlug));
     }
 
     function setCounterValues(bytes memory data, bytes memory returnData) external onlyPromises {
@@ -92,14 +99,14 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
 
     // INBOX
     function setIsValidPlug(uint32 chainSlug_, address plug_) public {
-        watcherPrecompile__().setIsValidPlug(chainSlug_, plug_, true);
+        watcherPrecompileConfig().setIsValidPlug(chainSlug_, plug_, true);
     }
 
     function callFromChain(
         uint32,
         address,
-        bytes calldata payload_,
-        bytes32
+        bytes32,
+        bytes calldata payload_
     ) external override onlyWatcherPrecompile {
         uint256 value = abi.decode(payload_, (uint256));
         counterVal += value;
@@ -111,7 +118,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
             this.resolveTimeout.selector,
             block.timestamp
         );
-        watcherPrecompile__().setTimeout(address(this), payload, delayInSeconds_);
+        watcherPrecompile__().setTimeout(delayInSeconds_, payload);
     }
 
     function resolveTimeout(uint256 creationTimestamp_) external onlyWatcherPrecompile {
@@ -119,7 +126,6 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     }
 
     // UTILS
-
     function setFees(Fees memory fees_) public {
         fees = fees_;
     }
@@ -129,7 +135,26 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         address token_,
         uint256 amount_,
         address receiver_
-    ) external {
-        _withdrawFeeTokens(chainSlug_, token_, amount_, receiver_);
+    ) external returns (uint40) {
+        return _withdrawFeeTokens(chainSlug_, token_, amount_, receiver_);
+    }
+
+    function testOnChainRevert(uint32 chainSlug) public async {
+        address instance = forwarderAddresses[counter][chainSlug];
+        ICounter(instance).wrongFunction();
+    }
+
+    function testCallBackRevert(uint32 chainSlug) public async {
+        // the increase function is called on given list of instances
+        _setOverrides(Read.ON, Parallel.ON);
+        address instance = forwarderAddresses[counter][chainSlug];
+        ICounter(instance).getCounter();
+        // wrong function call in callback so it reverts
+        IPromise(instance).then(this.withdrawFeeTokens.selector, abi.encode(chainSlug));
+        _setOverrides(Read.OFF, Parallel.OFF);
+    }
+
+    function increaseFees(uint40 requestCount_, uint256 newMaxFees_) public {
+        _increaseFees(requestCount_, newMaxFees_);
     }
 }

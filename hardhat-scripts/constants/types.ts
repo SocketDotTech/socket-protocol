@@ -1,7 +1,4 @@
-import {
-  ChainAddressesObj,
-  ChainSlug,
-} from "@socket.tech/socket-protocol-common";
+import { ChainAddressesObj, ChainSlug } from "../../src";
 
 export type DeploymentAddresses = {
   [chainSlug in ChainSlug]?: ChainAddressesObj;

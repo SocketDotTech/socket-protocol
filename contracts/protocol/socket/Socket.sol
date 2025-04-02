@@ -17,45 +17,20 @@ contract Socket is SocketUtils {
     ////////////////////// ERRORS //////////////////////////
     ////////////////////////////////////////////////////////
     /**
-     * @dev Error emitted when proof is invalid
-     */
-
-    /**
      * @dev Error emitted when a payload has already been executed
      */
     error PayloadAlreadyExecuted(ExecutionStatus status);
     /**
-     * @dev Error emitted when the executor is not valid
-     */
-    /**
      * @dev Error emitted when verification fails
      */
     error VerificationFailed();
-    /**
-     * @dev Error emitted when source slugs deduced from packet id and msg id don't match
-     */
+
     /**
      * @dev Error emitted when less gas limit is provided for execution than expected
      */
     error LowGasLimit();
     error InvalidSlug();
     error DeadlinePassed();
-
-    ////////////////////////////////////////////////////////////
-    ////////////////////// State Vars //////////////////////////
-    ////////////////////////////////////////////////////////////
-    uint64 public callCounter;
-
-    enum ExecutionStatus {
-        NotExecuted,
-        Executed,
-        Reverted
-    }
-
-    /**
-     * @dev keeps track of whether a payload has been executed or not using payload id
-     */
-    mapping(bytes32 => ExecutionStatus) public payloadExecuted;
 
     constructor(
         uint32 chainSlug_,
@@ -96,64 +71,38 @@ contract Socket is SocketUtils {
      * @notice Executes a payload that has been delivered by transmitters and authenticated by switchboards
      */
     function execute(
-        address appGateway_,
-        ExecuteParams memory params_,
+        ExecuteParams memory executeParams_,
         bytes memory transmitterSignature_
     ) external payable returns (bytes memory) {
-        // make sure payload is not executed already
-        if (payloadExecuted[params_.payloadId] != ExecutionStatus.NotExecuted)
-            revert PayloadAlreadyExecuted(payloadExecuted[params_.payloadId]);
-        // update state to make sure no reentrancy
-        payloadExecuted[params_.payloadId] = ExecutionStatus.Executed;
+        if (executeParams_.deadline < block.timestamp) revert DeadlinePassed();
+        PlugConfig memory plugConfig = _plugConfigs[executeParams_.target];
+        if (plugConfig.appGateway == address(0)) revert PlugDisconnected();
 
-        if (params_.deadline < block.timestamp) revert DeadlinePassed();
-
-        // extract plug address from msgID
-        address switchboard = _decodeSwitchboard(params_.payloadId);
-        uint32 localSlug = _decodeChainSlug(params_.payloadId);
-
-        PlugConfig memory plugConfig = _plugConfigs[params_.target];
-
-        if (switchboard != address(plugConfig.switchboard__)) revert InvalidSwitchboard();
-        if (localSlug != chainSlug) revert InvalidSlug();
+        bytes32 payloadId = _createPayloadId(plugConfig.switchboard, executeParams_);
+        _validateExecutionStatus(payloadId);
 
         address transmitter = _recoverSigner(
-            keccak256(abi.encode(address(this), params_.payloadId)),
+            keccak256(abi.encode(address(this), payloadId)),
             transmitterSignature_
         );
 
-        // create packed payload
-        bytes32 digest = _packPayload(
-            params_.payloadId,
-            appGateway_,
+        bytes32 digest = _createDigest(
             transmitter,
-            params_.target,
-            msg.value,
-            params_.deadline,
-            params_.executionGasLimit,
-            params_.payload
+            payloadId,
+            plugConfig.appGateway,
+            executeParams_
         );
-
-        // verify payload was part of the packet and
-        // authenticated by respective switchboard
-        _verify(digest, params_.payloadId, ISwitchboard(switchboard));
-
-        // execute payload
-        return
-            _execute(params_.target, params_.payloadId, params_.executionGasLimit, params_.payload);
+        _verify(digest, payloadId, plugConfig.switchboard);
+        return _execute(payloadId, executeParams_);
     }
 
     ////////////////////////////////////////////////////////
     ////////////////// INTERNAL FUNCS //////////////////////
     ////////////////////////////////////////////////////////
-
-    function _verify(
-        bytes32 digest_,
-        bytes32 payloadId_,
-        ISwitchboard switchboard__
-    ) internal view {
+    function _verify(bytes32 digest_, bytes32 payloadId_, address switchboard_) internal view {
         // NOTE: is the the first un-trusted call in the system, another one is Plug.call
-        if (!switchboard__.allowPacket(digest_, payloadId_)) revert VerificationFailed();
+        if (!ISwitchboard(switchboard_).allowPacket(digest_, payloadId_))
+            revert VerificationFailed();
     }
 
     /**
@@ -162,18 +111,16 @@ contract Socket is SocketUtils {
      * code exists in the given address.
      */
     function _execute(
-        address localPlug_,
         bytes32 payloadId_,
-        uint256 executionGasLimit_,
-        bytes memory payload_
+        ExecuteParams memory executeParams_
     ) internal returns (bytes memory) {
-        if (gasleft() < executionGasLimit_) revert LowGasLimit();
+        if (gasleft() < executeParams_.gasLimit) revert LowGasLimit();
 
         // NOTE: external un-trusted call
-        (bool success, bytes memory returnData) = localPlug_.call{
-            gas: executionGasLimit_,
+        (bool success, bytes memory returnData) = executeParams_.target.call{
+            gas: executeParams_.gasLimit,
             value: msg.value
-        }(payload_);
+        }(executeParams_.payload);
 
         if (!success) {
             payloadExecuted[payloadId_] = ExecutionStatus.Reverted;
@@ -185,31 +132,9 @@ contract Socket is SocketUtils {
         return returnData;
     }
 
-    /**
-     * @dev Decodes the switchboard address from a given payload id.
-     * @param id_ The ID of the msg to decode the switchboard from.
-     * @return switchboard_ The address of switchboard decoded from the payload ID.
-     */
-    function _decodeSwitchboard(bytes32 id_) internal pure returns (address switchboard_) {
-        switchboard_ = address(uint160(uint256(id_) >> 64));
-    }
-
-    /**
-     * @dev Decodes the chain ID from a given packet/payload ID.
-     * @param id_ The ID of the packet/msg to decode the chain slug from.
-     * @return chainSlug_ The chain slug decoded from the packet/payload ID.
-     */
-    function _decodeChainSlug(bytes32 id_) internal pure returns (uint32 chainSlug_) {
-        chainSlug_ = uint32(uint256(id_) >> 224);
-    }
-
-    // Packs the local plug, local chain slug, remote chain slug and nonce
-    // callCount++ will take care of call id overflow as well
-    // callId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
-    function _encodeCallId(address appGateway_) internal returns (bytes32) {
-        return
-            bytes32(
-                (uint256(chainSlug) << 224) | (uint256(uint160(appGateway_)) << 64) | callCounter++
-            );
+    function _validateExecutionStatus(bytes32 payloadId_) internal {
+        if (payloadExecuted[payloadId_] != ExecutionStatus.NotExecuted)
+            revert PayloadAlreadyExecuted(payloadExecuted[payloadId_]);
+        payloadExecuted[payloadId_] = ExecutionStatus.Executed;
     }
 }
