@@ -29,6 +29,10 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         _deploy(counter, chainSlug_, IsPlug.YES);
     }
 
+    function deployContractsWithoutAsync(uint32 chainSlug_) external {
+        _deploy(counter, chainSlug_, IsPlug.YES);
+    }
+
     function deployParallelContracts(uint32 chainSlug_) external async {
         _setOverrides(Parallel.ON);
         _deploy(counter, chainSlug_, IsPlug.YES);

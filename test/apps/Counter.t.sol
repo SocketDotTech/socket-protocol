@@ -49,6 +49,13 @@ contract CounterTest is DeliveryHelperTest {
         );
     }
 
+    function testCounterDeploymentWithoutAsync() external {
+        deploySetup();
+
+        vm.expectRevert(abi.encodeWithSelector(AsyncModifierNotUsed.selector));
+        counterGateway.deployContractsWithoutAsync(arbChainSlug);
+    }
+
     function testCounterIncrement() external {
         deploySetup();
         deployCounterApp(arbChainSlug);
