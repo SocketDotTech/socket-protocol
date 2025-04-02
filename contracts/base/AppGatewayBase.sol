@@ -101,7 +101,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @dev This function retrieves the onchain address using the contractId and chainSlug, then calls the watcher precompile to update the plug's validity status
     function _setValidPlug(uint32 chainSlug_, bytes32 contractId, bool isValid) internal {
         address onchainAddress = getOnChainAddress(contractId, chainSlug_);
-        watcherPrecompile__().setIsValidPlug(chainSlug_, onchainAddress, isValid);
+        watcherPrecompileConfig().setIsValidPlug(chainSlug_, onchainAddress, isValid);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -178,8 +178,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
-            .getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
