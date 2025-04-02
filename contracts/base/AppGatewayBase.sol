@@ -8,7 +8,7 @@ import "../interfaces/IMiddleware.sol";
 import "../interfaces/IPromise.sol";
 
 import {FeesPlugin} from "../protocol/utils/FeesPlugin.sol";
-import {InvalidPromise, FeesNotSet} from "../protocol/utils/common/Errors.sol";
+import {InvalidPromise, FeesNotSet, AsyncModifierNotUsed} from "../protocol/utils/common/Errors.sol";
 import {FAST} from "../protocol/utils/common/Constants.sol";
 
 /// @title AppGatewayBase
@@ -114,6 +114,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         IsPlug isPlug_,
         bytes memory initCallData_
     ) internal {
+        if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
+
         address asyncPromise = addressResolver__.deployAsyncPromiseContract(address(this));
         isValidPromise[asyncPromise] = true;
         IPromise(asyncPromise).then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
