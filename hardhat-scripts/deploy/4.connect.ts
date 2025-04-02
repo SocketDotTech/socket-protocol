@@ -1,5 +1,5 @@
-import { ChainAddressesObj } from "@socket.tech/socket-protocol-common";
-import { Contract, ethers, providers, Wallet } from "ethers";
+import { Contract, ethers, Wallet } from "ethers";
+import { ChainAddressesObj, ChainSlug } from "../../src";
 import { chains, EVMX_CHAIN_ID, mode } from "../config";
 import {
   CORE_CONTRACTS,
@@ -9,10 +9,10 @@ import {
 import {
   getAddresses,
   getInstance,
-  getProviderFromChainSlug,
+  getSocketSigner,
   overrides,
 } from "../utils";
-import { signWatcherMessage } from "../utils/sign";
+import { getWatcherSigner, signWatcherMessage } from "../utils/sign";
 const plugs = [CORE_CONTRACTS.ContractFactoryPlug, CORE_CONTRACTS.FeesPlug];
 export type AppGatewayConfig = {
   plug: string;
@@ -58,9 +58,8 @@ export const isConfigSetOnSocket = async (
   const plugConfigRegistered = await socket.getPlugConfig(plug.address);
   return (
     plugConfigRegistered.appGateway.toLowerCase() ===
-      appGateway?.toLowerCase() &&
-    plugConfigRegistered.switchboard__.toLowerCase() ===
-      switchboard.toLowerCase()
+      appGateway.toLowerCase() &&
+    plugConfigRegistered.switchboard.toLowerCase() === switchboard.toLowerCase()
   );
 };
 
@@ -113,11 +112,7 @@ export const connectPlugsOnSocket = async () => {
     chains.map(async (chain) => {
       if (!addresses[chain]) return;
 
-      const providerInstance = getProviderFromChainSlug(chain);
-      const socketSigner = new Wallet(
-        process.env.SOCKET_SIGNER_KEY as string,
-        providerInstance
-      );
+      const socketSigner = getSocketSigner(chain as ChainSlug);
       const addr = addresses[chain]!;
       // Connect each plug contract
       for (const plugContract of plugs) {
@@ -149,18 +144,12 @@ export const updateConfigEVMx = async () => {
     const appConfigs: AppGatewayConfig[] = [];
 
     // Set up Watcher contract
-    const providerInstance = new providers.StaticJsonRpcProvider(
-      process.env.EVMX_RPC as string
-    );
-    const signer = new ethers.Wallet(
-      process.env.WATCHER_PRIVATE_KEY as string,
-      providerInstance
-    );
+    const signer = getWatcherSigner();
     const EVMxAddresses = addresses[EVMX_CHAIN_ID]!;
-    const watcher = (
+    const watcherPrecompileConfig = (
       await getInstance(
-        EVMxCoreContracts.WatcherPrecompile,
-        EVMxAddresses[EVMxCoreContracts.WatcherPrecompile]
+        EVMxCoreContracts.WatcherPrecompileConfig,
+        EVMxAddresses[EVMxCoreContracts.WatcherPrecompileConfig]
       )
     ).connect(signer);
 
@@ -178,7 +167,7 @@ export const updateConfigEVMx = async () => {
 
           if (
             await isConfigSetOnEVMx(
-              watcher,
+              watcherPrecompileConfig,
               chain,
               addr[plugContract],
               appGateway,
@@ -206,12 +195,21 @@ export const updateConfigEVMx = async () => {
           "bytes4",
           "tuple(address plug,address appGateway,address switchboard,uint32 chainSlug)[]",
         ],
-        [watcher.interface.getSighash("setAppGateways"), appConfigs]
+        [
+          watcherPrecompileConfig.interface.getSighash("setAppGateways"),
+          appConfigs,
+        ]
       );
-      const { nonce, signature } = await signWatcherMessage(encodedMessage);
-      const tx = await watcher.setAppGateways(appConfigs, nonce, signature, {
-        ...overrides(EVMX_CHAIN_ID),
-      });
+      const { nonce, signature } = await signWatcherMessage(
+        encodedMessage,
+        watcherPrecompileConfig.address
+      );
+      const tx = await watcherPrecompileConfig.setAppGateways(
+        appConfigs,
+        nonce,
+        signature,
+        { ...overrides(EVMX_CHAIN_ID) }
+      );
       console.log(`Updating EVMx Config tx hash: ${tx.hash}`);
       await tx.wait();
     }

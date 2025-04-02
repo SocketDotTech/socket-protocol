@@ -13,22 +13,18 @@ contract FeesTest is DeliveryHelperTest {
     uint32 feesChainSlug = arbChainSlug;
     SocketContracts feesConfig;
 
-    bytes32 asyncId;
     CounterAppGateway counterGateway;
 
     function setUp() public {
         setUpDeliveryHelper();
         feesConfig = getSocketConfig(feesChainSlug);
 
-        counterGateway = new CounterAppGateway(
-            address(addressResolver),
-            createFees(feesAmount)
-        );
+        counterGateway = new CounterAppGateway(address(addressResolver), createFees(feesAmount));
         depositFees(address(counterGateway), createFees(depositAmount));
 
         bytes32[] memory contractIds = new bytes32[](1);
         contractIds[0] = counterGateway.counter();
-        asyncId = _deploy(contractIds, feesChainSlug, 1, IAppGateway(counterGateway));
+        _deploy(feesChainSlug, IAppGateway(counterGateway), contractIds);
     }
 
     function testDistributeFee() public {
@@ -49,10 +45,13 @@ contract FeesTest is DeliveryHelperTest {
         uint256 transmitterReceiverBalanceBefore = address(receiver).balance;
 
         hoax(transmitterEOA);
-        (bytes32 payloadId, , PayloadDetails memory payloadDetails) = feesManager
-            .withdrawTransmitterFees(feesChainSlug, ETH_ADDRESS, address(receiver));
-        payloadIdCounter++;
-        finalizeAndRelay(payloadId, payloadDetails);
+        uint40 requestCount = feesManager.withdrawTransmitterFees(
+            feesChainSlug,
+            ETH_ADDRESS,
+            address(receiver)
+        );
+        uint40[] memory batches = watcherPrecompile.getBatches(requestCount);
+        _finalizeBatch(batches[0], new bytes[](0), 0, false);
 
         assertEq(
             transmitterReceiverBalanceBefore + bidAmount,
@@ -77,17 +76,8 @@ contract FeesTest is DeliveryHelperTest {
         uint256 withdrawAmount = 0.5 ether;
 
         counterGateway.withdrawFeeTokens(feesChainSlug, ETH_ADDRESS, withdrawAmount, receiver);
+        executeRequest(new bytes[](0));
 
-        asyncId = getNextAsyncId();
-        bytes32[] memory payloadIds = getWritePayloadIds(
-            feesChainSlug,
-            address(getSocketConfig(feesChainSlug).switchboard),
-            1
-        );
-        bidAndEndAuction(asyncId);
-
-        PayloadDetails memory payloadDetails = deliveryHelper.getPayloadDetails(payloadIds[0]);
-        finalizeAndRelay(payloadIds[0], payloadDetails);
         assertEq(
             depositAmount - withdrawAmount,
             address(feesConfig.feesPlug).balance,

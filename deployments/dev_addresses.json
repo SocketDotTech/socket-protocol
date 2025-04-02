@@ -1,32 +1,52 @@
 {
+  "84532": {
+    "ContractFactoryPlug": "0xFEFdbD9CB5bdC58Aa8B6B455923454275392838c",
+    "FastSwitchboard": "0xCc9f995DAE2D3Cf3C0763e353986E97ab78801b4",
+    "FeesPlug": "0xBBff19fBEAd971f39F1B298De985D7ADfb57b784",
+    "Socket": "0x89e66357C5F101C56b4F9F97cf378Cc32A21438a",
+    "SocketBatcher": "0x3bABE35428D9E2B87d678289f837F805dAB0db3A",
+    "startBlock": 23827713
+  },
   "421614": {
-    "ContractFactoryPlug": "0xCE9aF7Fb0Ee31276Ea64Cd7414d54eC57dA9b675",
-    "FastSwitchboard": "0x772088727d003f5A6Cf816E745ba6B8F8dEBbCe9",
-    "FeesPlug": "0xcc38176545fa5f6c2aB970F6d2D62b2D90bBA3Ba",
-    "Socket": "0xdE177c392Ad47377BA944215A944f530F79E1d87",
-    "SocketBatcher": "0x6BF08F11bDA6CD571Bc942F23ec38b8652FFfB2D",
-    "startBlock": 127798344
+    "ContractFactoryPlug": "0x10BFD064258ac890957Ca65A85E7997a923Fb551",
+    "FastSwitchboard": "0xB0feE9136102B99A5722C693C8eb538C8c8d013B",
+    "FeesPlug": "0x0Ae8458F80a50a4ad706680605c88e050AaC8A89",
+    "Socket": "0xA99E6020d973C5956dBD727eDB45cDA5F7C4ca99",
+    "SocketBatcher": "0x3F95273234164329aec7DE66A037a80eb5a8F393",
+    "startBlock": 136387501
   },
   "7625382": {
-    "AddressResolver": "0x403eCBcC4d4bB8Fad09034bf0d197dDC626C832f",
-    "AddressResolverImpl": "0xbAeF84edEae864Ff22Bd9c9912AdfF84aD490d82",
-    "AuctionManager": "0x7dc45C49650e2914e3fA6E194e2080775c58256E",
-    "AuctionManagerImpl": "0xa07e38cAB46eAA358C3653C63219f1009e8F7789",
-    "DeliveryHelper": "0x0861f0888125e5A243C7af2c3E0F80C357c4c0C0",
-    "DeliveryHelperImpl": "0x9F10A0c71178dbD4d049f2C04fD0e34966134b9e",
-    "ERC1967Factory": "0x945e9ab4c08c225C10F178a0bd600BcC2bA7Cc78",
-    "FeesManager": "0x777fAAf1c30Ce8E68262b1cbF0a752d4f1bA652C",
-    "FeesManagerImpl": "0xB423eE3bffc3604F96B59cF419C48AE05b8E9d0b",
-    "startBlock": 73062,
-    "WatcherPrecompile": "0xadA397123A6E80F67b1887895A62B2D9273E50b4",
-    "WatcherPrecompileImpl": "0x71956F006Ec5434581D3Fd5E7224BB3bae231907"
+    "AddressResolver": "0x491DE197D50aaa4F59090DBDa4b5Aa6C2E14A10D",
+    "AddressResolverImpl": "0x2736Fc0AA0fa5Ca595Ae5F27Ec807B912A5b1D0f",
+    "AuctionManager": "0x7187372e1fF5CB8E8B84Ee02F25033fc42B3D033",
+    "AuctionManagerImpl": "0xaE4624b006D7730f22De1F7df5b1C0b960262AE3",
+    "DeliveryHelper": "0x8b4a6cee33f18D757d7F3613476b135E3B889303",
+    "DeliveryHelperImpl": "0xE693bEc40e39223749AC351156E713b7256541B0",
+    "ERC1967Factory": "0x122beAFCfc2E99D825322a78EAFD8a11fa2d9E0b",
+    "FeesManager": "0x7c0922C2AfaBF9098F55710E8D8E3c8F81bCB8ee",
+    "FeesManagerImpl": "0x2c50B6e519e0705A396E5c8652E5D447F37f9796",
+    "startBlock": 2491495,
+    "WatcherPrecompile": "0x6E4c1afEcc1AbFF69dF3bC6bFf81eF7A34a343d5",
+    "WatcherPrecompileConfig": "0x95f86089D4015e6874031B3583dE8795C3b217Fd",
+    "WatcherPrecompileConfigImpl": "0xE4a2eBcE3Bdcaa1861c01ddc6465b90311B749e4",
+    "WatcherPrecompileImpl": "0x233539d6BBf231660652AF00B5d6E850E892946a",
+    "WatcherPrecompileLimits": "0x34212a2Cf92D2863F35877Ed835B7e28b8287764",
+    "WatcherPrecompileLimitsImpl": "0xdfeA8cb793b84b3f046d2426259e0eC237Ec9bF3"
+  },
+  "11155111": {
+    "ContractFactoryPlug": "0xdd7b56968a3505D1A10181F2880cAA65a89E4750",
+    "FastSwitchboard": "0xb34DB19C7FAeECf14B3D0336C6E34f7dc1336968",
+    "FeesPlug": "0xfBa932AaE9Ae2777aEC77832FC0C2D9059C8E905",
+    "Socket": "0xF86B89B5c689c170BfD2734254228D6d2db5a672",
+    "SocketBatcher": "0x466b51bcc1799A4cb8F629C46640ab3aA2608F75",
+    "startBlock": 23827730
   },
   "11155420": {
-    "ContractFactoryPlug": "0x289A0413420f812a7b05F931FB0726168121ae5a",
-    "FastSwitchboard": "0x59D9c8C5515cF9C8A9c83458E3D78C2a246E3e7C",
-    "FeesPlug": "0x285d1b2e93c1c74E141dC37f759B8aFAcD479b2b",
-    "Socket": "0xa347A8475d4d218b22e8b0cc90FF76B3e6c8043c",
-    "SocketBatcher": "0x4a7Ccf2845222172A8B7Fc6E132eDb64cCB4E4a4",
-    "startBlock": 24425961
+    "ContractFactoryPlug": "0xDd73B7C6Bc8Cb4FFB3F0b460FF0985A91622f7E1",
+    "FastSwitchboard": "0x0CdaCA0B9F9bFfF1D9B660173BB8BE46c4fB71Da",
+    "FeesPlug": "0x95D672aaF036887aABEe72a6496D583317e6e48B",
+    "Socket": "0xDad99e0D8bA0ffe4955523ea0BCbe8F3DE3446D1",
+    "SocketBatcher": "0xb8D652C7D1dfA7578c6F119712c7b4c812BB3b57",
+    "startBlock": 25810565
   }
 }

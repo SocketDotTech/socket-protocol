@@ -11,10 +11,21 @@ import {ECDSA} from "solady/utils/ECDSA.sol";
  * setters and inherits SocketConfig
  */
 abstract contract SocketUtils is SocketConfig {
+    ////////////////////////////////////////////////////////////
+    ////////////////////// State Vars //////////////////////////
+    ////////////////////////////////////////////////////////////
+
     // Version string for this socket instance
     bytes32 public immutable version;
     // ChainSlug for this deployed socket instance
     uint32 public immutable chainSlug;
+
+    uint64 public callCounter;
+
+    /**
+     * @dev keeps track of whether a payload has been executed or not using payload id
+     */
+    mapping(bytes32 => ExecutionStatus) public payloadExecuted;
 
     /*
      * @notice constructor for creating a new Socket contract instance.
@@ -38,36 +49,56 @@ abstract contract SocketUtils is SocketConfig {
     error InvalidTransmitter();
 
     /**
-     * @notice Packs the payload into a bytes32 hash
-     * @param payloadId_ The ID of the payload
-     * @param appGateway_ The address of the application gateway
+     * @notice creates the digest for the payload
      * @param transmitter_ The address of the transmitter
-     * @param target_ The address of the target contract
-     * @param executionGasLimit_ The gas limit for the execution
-     * @param payload_ The payload to be packed
+     * @param payloadId_ The ID of the payload
+     * @param appGateway_ The address of the app gateway
+     * @param executeParams_ The parameters of the payload
      * @return The packed payload as a bytes32 hash
      */
-    function _packPayload(
+    function _createDigest(
+        address transmitter_,
         bytes32 payloadId_,
         address appGateway_,
-        address transmitter_,
-        address target_,
-        uint256 value_,
-        uint256 deadline_,
-        uint256 executionGasLimit_,
-        bytes memory payload_
-    ) internal pure returns (bytes32) {
+        ExecuteParams memory executeParams_
+    ) internal view returns (bytes32) {
         return
             keccak256(
                 abi.encode(
-                    payloadId_,
-                    appGateway_,
                     transmitter_,
-                    target_,
-                    value_,
-                    deadline_,
-                    executionGasLimit_,
-                    payload_
+                    payloadId_,
+                    executeParams_.deadline,
+                    executeParams_.callType,
+                    executeParams_.writeFinality,
+                    executeParams_.gasLimit,
+                    msg.value,
+                    executeParams_.readAt,
+                    executeParams_.payload,
+                    executeParams_.target,
+                    appGateway_,
+                    executeParams_.prevDigestsHash
+                )
+            );
+    }
+
+    /**
+     * @notice creates the payload ID
+     * @param switchboard_ The address of the switchboard
+     * @param executeParams_ The parameters of the payload
+     */
+    function _createPayloadId(
+        address switchboard_,
+        ExecuteParams memory executeParams_
+    ) internal view returns (bytes32) {
+        // todo: match with watcher
+        return
+            keccak256(
+                abi.encode(
+                    executeParams_.requestCount,
+                    executeParams_.batchCount,
+                    executeParams_.payloadCount,
+                    switchboard_,
+                    chainSlug
                 )
             );
     }
@@ -79,6 +110,16 @@ abstract contract SocketUtils is SocketConfig {
         bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
         // recovered signer is checked for the valid roles later
         signer = ECDSA.recover(digest, signature_);
+    }
+
+    // Packs the local plug, local chain slug, remote chain slug and nonce
+    // callCount++ will take care of call id overflow as well
+    // callId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
+    function _encodeCallId(address appGateway_) internal returns (bytes32) {
+        return
+            bytes32(
+                (uint256(chainSlug) << 224) | (uint256(uint160(appGateway_)) << 64) | callCounter++
+            );
     }
 
     //////////////////////////////////////////////

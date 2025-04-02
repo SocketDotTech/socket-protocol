@@ -118,8 +118,7 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
             Forwarder.initialize.selector,
             chainSlug_,
             chainContractAddress_,
-            address(this),
-            version
+            address(this)
         );
         salt = keccak256(constructorArgs);
     }
@@ -132,8 +131,7 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
             AsyncPromise.initialize.selector,
             invoker_,
             msg.sender,
-            address(this),
-            version
+            address(this)
         );
 
         salt = keccak256(abi.encodePacked(constructorArgs, asyncPromiseCounter));

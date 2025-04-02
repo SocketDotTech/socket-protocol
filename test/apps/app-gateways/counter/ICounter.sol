@@ -5,4 +5,7 @@ interface ICounter {
     function increase() external;
 
     function getCounter() external;
+
+    // A function that is not part of the interface, used for testing on-chian revert.
+    function wrongFunction() external;
 }

@@ -6,7 +6,7 @@ import {
   hardhatChainNameToSlug,
   HardhatChainName,
   chainSlugToHardhatChainName,
-} from "@socket.tech/socket-protocol-common";
+} from "../../src";
 import { EVMX_CHAIN_ID } from "../config/config";
 
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || "./.env";
@@ -21,13 +21,21 @@ function createReverseEnumMap(enumObj: any) {
   return reverseMap;
 }
 
-export const rpcKeys = (chainSlug: ChainSlug) => {
-  if (chainSlug == (EVMX_CHAIN_ID as ChainSlug)) {
-    return "EVMX_RPC";
+export const getChainName = (chainSlug: ChainSlug) => {
+  if (chainSlug === EVMX_CHAIN_ID) {
+    return "EVMX";
   }
-  let chainName = chainSlugToHardhatChainName[chainSlug].toString();
-  chainName = chainName.replace("-", "_");
+  return chainSlugToHardhatChainName[chainSlug].toString().replace("-", "_");
+};
+
+export const rpcKeys = (chainSlug: ChainSlug) => {
+  const chainName = getChainName(chainSlug);
   return `${chainName.toUpperCase()}_RPC`;
+};
+
+export const wssRpcKeys = (chainSlug: ChainSlug) => {
+  const chainName = getChainName(chainSlug);
+  return `${chainName.toUpperCase()}_WSS_RPC`;
 };
 
 export function getJsonRpcUrl(chain: ChainSlug): string {

@@ -5,6 +5,7 @@ import "../../interfaces/ISocket.sol";
 import "../../interfaces/ISwitchboard.sol";
 import "../utils/AccessControl.sol";
 import {GOVERNANCE_ROLE, RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
+import {PlugConfig, SwitchboardStatus, ExecutionStatus} from "../utils/common/Structs.sol";
 
 /**
  * @title SocketConfig
@@ -13,32 +14,16 @@ import {GOVERNANCE_ROLE, RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
  * @dev This contract is meant to be inherited by other contracts that require socket configuration functionality
  */
 abstract contract SocketConfig is ISocket, AccessControl {
-    /**
-     * @dev Struct to store the configuration for a plug connection
-     */
-    struct PlugConfig {
-        // address of the sibling plug on the remote chain
-        address appGateway;
-        // switchboard instance for the plug connection
-        ISwitchboard switchboard__;
-    }
-
-    enum SwitchboardStatus {
-        NOT_REGISTERED,
-        REGISTERED,
-        DISABLED
-    }
-
     // Error triggered when a switchboard already exists
     mapping(address => SwitchboardStatus) public isValidSwitchboard;
 
     // plug => (appGateway, switchboard__)
     mapping(address => PlugConfig) internal _plugConfigs;
 
-    error SwitchboardExists();
     // Error triggered when a connection is invalid
     error InvalidConnection();
     error InvalidSwitchboard();
+    error SwitchboardExists();
     error SwitchboardExistsOrDisabled();
 
     // Event triggered when a new switchboard is added
@@ -68,7 +53,7 @@ abstract contract SocketConfig is ISocket, AccessControl {
         PlugConfig storage _plugConfig = _plugConfigs[msg.sender];
 
         _plugConfig.appGateway = appGateway_;
-        _plugConfig.switchboard__ = ISwitchboard(switchboard_);
+        _plugConfig.switchboard = switchboard_;
 
         emit PlugConnected(msg.sender, appGateway_, switchboard_);
     }
@@ -79,8 +64,8 @@ abstract contract SocketConfig is ISocket, AccessControl {
      */
     function getPlugConfig(
         address plugAddress_
-    ) external view returns (address appGateway, address switchboard__) {
+    ) external view returns (address appGateway, address switchboard) {
         PlugConfig memory _plugConfig = _plugConfigs[plugAddress_];
-        return (_plugConfig.appGateway, address(_plugConfig.switchboard__));
+        return (_plugConfig.appGateway, _plugConfig.switchboard);
     }
 }

@@ -1,24 +1,21 @@
-import {
-  ChainSlug,
-  ChainAddressesObj,
-  DeploymentMode,
-} from "@socket.tech/socket-protocol-common";
+import { ChainAddressesObj, ChainSlug, EVMxAddressesObj } from "../../src";
 
 import { config as dotenvConfig } from "dotenv";
 dotenvConfig();
 
 import { Wallet } from "ethers";
-import { ethers } from "hardhat";
 import { chains, EVMX_CHAIN_ID, mode } from "../config";
 import {
   CORE_CONTRACTS,
   DeploymentAddresses,
   EVMxCoreContracts,
+  FAST_SWITCHBOARD_TYPE,
 } from "../constants";
 import {
   getAddresses,
   getInstance,
-  getProviderFromChainSlug,
+  getSocketSigner,
+  getWatcherSigner,
   storeAddresses,
 } from "../utils";
 
@@ -33,11 +30,7 @@ export const main = async () => {
         ? (addresses[chain] as ChainAddressesObj)
         : ({} as ChainAddressesObj);
 
-      const providerInstance = getProviderFromChainSlug(chain);
-      const signer: Wallet = new ethers.Wallet(
-        process.env.SOCKET_SIGNER_KEY as string,
-        providerInstance
-      );
+      const signer: Wallet = getSocketSigner(chain as ChainSlug);
 
       const socketContract = (
         await getInstance(
@@ -61,55 +54,59 @@ export const main = async () => {
   }
 };
 
-async function setOnchainContracts(chain, addresses) {
-  const providerInstance = getProviderFromChainSlug(EVMX_CHAIN_ID as ChainSlug);
-  const signer: Wallet = new ethers.Wallet(
-    process.env.WATCHER_PRIVATE_KEY as string,
-    providerInstance
-  );
-  const EVMxAddresses = addresses[EVMX_CHAIN_ID]!;
-  const watcherPrecompile = (
+async function setOnchainContracts(chain: number, addresses) {
+  const signer: Wallet = getWatcherSigner();
+  const EVMxAddresses = addresses[EVMX_CHAIN_ID] as EVMxAddressesObj;
+  const chainAddresses = addresses[chain] as ChainAddressesObj;
+  const watcherPrecompileConfig = (
     await getInstance(
-      EVMxCoreContracts.WatcherPrecompile,
-      EVMxAddresses[EVMxCoreContracts.WatcherPrecompile]
+      EVMxCoreContracts.WatcherPrecompileConfig,
+      EVMxAddresses[EVMxCoreContracts.WatcherPrecompileConfig]
     )
   ).connect(signer);
 
-  const fastSBtype = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("FAST"));
-  const sbAddress = addresses[chain][CORE_CONTRACTS.FastSwitchboard];
-  const socketAddress = addresses[chain][CORE_CONTRACTS.Socket];
+  const sbAddress = chainAddresses[CORE_CONTRACTS.FastSwitchboard];
+  const socketAddress = chainAddresses[CORE_CONTRACTS.Socket];
   const contractFactoryPlugAddress =
-    addresses[chain][CORE_CONTRACTS.ContractFactoryPlug];
-  const feesPlugAddress = addresses[chain][CORE_CONTRACTS.FeesPlug];
+    chainAddresses[CORE_CONTRACTS.ContractFactoryPlug];
+  const feesPlugAddress = chainAddresses[CORE_CONTRACTS.FeesPlug];
 
-  const currentSbAddress = await watcherPrecompile.switchboards(
+  const currentSbAddress = await watcherPrecompileConfig.switchboards(
     chain,
-    fastSBtype
+    FAST_SWITCHBOARD_TYPE
   );
-  const currentSocket = await watcherPrecompile.sockets(chain);
+  const currentSocket = await watcherPrecompileConfig.sockets(chain);
   const currentContractFactoryPlug =
-    await watcherPrecompile.contractFactoryPlug(chain);
-  const currentFeesPlug = await watcherPrecompile.feesPlug(chain);
+    await watcherPrecompileConfig.contractFactoryPlug(chain);
+  const currentFeesPlug = await watcherPrecompileConfig.feesPlug(chain);
 
+  console.log("Setting onchain contracts for", chain);
   if (
-    currentSbAddress.toLowerCase() !== sbAddress.toLowerCase() ||
     currentSocket.toLowerCase() !== socketAddress.toLowerCase() ||
     currentContractFactoryPlug.toLowerCase() !==
       contractFactoryPlugAddress.toLowerCase() ||
     currentFeesPlug.toLowerCase() !== feesPlugAddress.toLowerCase()
   ) {
-    const tx = await watcherPrecompile
+    const tx = await watcherPrecompileConfig
       .connect(signer)
       .setOnChainContracts(
         chain,
-        fastSBtype,
-        sbAddress,
         socketAddress,
         contractFactoryPlugAddress,
         feesPlugAddress
       );
 
     console.log(`Setting onchain contracts for ${chain}, txHash: `, tx.hash);
+    await tx.wait();
+  }
+
+  console.log("Setting switchboard for", chain);
+  if (currentSbAddress.toLowerCase() !== sbAddress.toLowerCase()) {
+    const tx = await watcherPrecompileConfig
+      .connect(signer)
+      .setSwitchboard(chain, FAST_SWITCHBOARD_TYPE, sbAddress);
+
+    console.log(`Setting switchboard for ${chain}, txHash: `, tx.hash);
     await tx.wait();
   }
 }

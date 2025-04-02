@@ -4,24 +4,20 @@ pragma solidity ^0.8.3;
 import "../protocol/utils/AddressResolverUtil.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IForwarder.sol";
-import "../interfaces/IDeliveryHelper.sol";
+import "../interfaces/IMiddleware.sol";
 import "../interfaces/IPromise.sol";
 
 import {FeesPlugin} from "../protocol/utils/FeesPlugin.sol";
-import {InvalidPromise, FeesNotSet} from "../protocol/utils/common/Errors.sol";
+import {InvalidPromise, FeesNotSet, AsyncModifierNotUsed} from "../protocol/utils/common/Errors.sol";
 import {FAST} from "../protocol/utils/common/Constants.sol";
 
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway
 abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin {
-    Read public override isReadCall;
-    Parallel public override isParallelCall;
-    uint256 public override gasLimit;
-
+    OverrideParams public overrideParams;
     address public auctionManager;
     bytes public onCompleteData;
     bytes32 public sbType;
-
     bool public isAsyncModifierSet;
 
     mapping(address => bool) public isValidPromise;
@@ -32,11 +28,12 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     modifier async() {
         if (fees.feePoolChain == 0) revert FeesNotSet();
         isAsyncModifierSet = true;
-        deliveryHelper().clearQueue();
+        deliveryHelper__().clearQueue();
         addressResolver__.clearPromises();
+        _clearOverrides();
         _;
         isAsyncModifierSet = false;
-        deliveryHelper().batch(fees, auctionManager, onCompleteData, sbType);
+        deliveryHelper__().batch(fees, auctionManager, onCompleteData);
         _markValidPromises();
         onCompleteData = bytes("");
     }
@@ -71,9 +68,9 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     }
 
     /// @notice Gets the current async ID
-    /// @return bytes32 The current async ID
-    function _getCurrentAsyncId() internal view returns (bytes32) {
-        return deliveryHelper().getCurrentAsyncId();
+    /// @return uint40 The current async ID
+    function _getCurrentAsyncId() internal view returns (uint40) {
+        return watcherPrecompile__().getCurrentRequestCount();
     }
 
     /// @notice Sets the auction manager
@@ -94,7 +91,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @param chainSlug_ The chain slug
     /// @return socketAddress_ The socket address
     function getSocketAddress(uint32 chainSlug_) public view returns (address) {
-        return watcherPrecompile__().sockets(chainSlug_);
+        return watcherPrecompileConfig().sockets(chainSlug_);
     }
 
     /// @notice Sets the validity of an onchain contract (plug) to authorize it to send information to a specific AppGateway
@@ -104,7 +101,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @dev This function retrieves the onchain address using the contractId and chainSlug, then calls the watcher precompile to update the plug's validity status
     function _setValidPlug(uint32 chainSlug_, bytes32 contractId, bool isValid) internal {
         address onchainAddress = getOnChainAddress(contractId, chainSlug_);
-        watcherPrecompile__().setIsValidPlug(chainSlug_, onchainAddress, isValid);
+        watcherPrecompileConfig().setIsValidPlug(chainSlug_, onchainAddress, isValid);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -127,22 +124,31 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         IsPlug isPlug_,
         bytes memory initCallData_
     ) internal {
+        if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
+
         address asyncPromise = addressResolver__.deployAsyncPromiseContract(address(this));
         isValidPromise[asyncPromise] = true;
         IPromise(asyncPromise).then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
 
         onCompleteData = abi.encode(chainSlug_, true);
-        IDeliveryHelper(deliveryHelper()).queue(
-            isPlug_,
-            isParallelCall,
-            chainSlug_,
-            address(0),
-            asyncPromise,
-            0,
-            CallType.DEPLOY,
-            creationCodeWithArgs[contractId_],
-            initCallData_
-        );
+
+        QueuePayloadParams memory queuePayloadParams = QueuePayloadParams({
+            chainSlug: chainSlug_,
+            callType: CallType.DEPLOY,
+            isParallel: overrideParams.isParallelCall,
+            isPlug: isPlug_,
+            writeFinality: overrideParams.writeFinality,
+            asyncPromise: asyncPromise,
+            switchboard: watcherPrecompileConfig().switchboards(chainSlug_, sbType),
+            target: address(0),
+            appGateway: address(this),
+            gasLimit: overrideParams.gasLimit,
+            value: 0,
+            readAt: overrideParams.readAt,
+            payload: creationCodeWithArgs[contractId_],
+            initCallData: initCallData_
+        });
+        IMiddleware(deliveryHelper__()).queue(queuePayloadParams);
     }
 
     /// @notice Sets the address for a deployed contract
@@ -191,10 +197,18 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         uint256 gasLimit_,
         Fees memory fees_
     ) internal {
-        isReadCall = isReadCall_;
-        isParallelCall = isParallelCall_;
-        gasLimit = gasLimit_;
+        overrideParams.isReadCall = isReadCall_;
+        overrideParams.isParallelCall = isParallelCall_;
+        overrideParams.gasLimit = gasLimit_;
         fees = fees_;
+    }
+
+    function _clearOverrides() internal {
+        overrideParams.isReadCall = Read.OFF;
+        overrideParams.isParallelCall = Parallel.OFF;
+        overrideParams.gasLimit = 0;
+        overrideParams.readAt = 0;
+        overrideParams.writeFinality = WriteFinality.LOW;
     }
 
     /// @notice Sets isReadCall, fees and gasLimit overrides
@@ -202,35 +216,57 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @param isParallelCall_ The sequential call flag
     /// @param gasLimit_ The gas limit
     function _setOverrides(Read isReadCall_, Parallel isParallelCall_, uint256 gasLimit_) internal {
-        isReadCall = isReadCall_;
-        isParallelCall = isParallelCall_;
-        gasLimit = gasLimit_;
+        overrideParams.isReadCall = isReadCall_;
+        overrideParams.isParallelCall = isParallelCall_;
+        overrideParams.gasLimit = gasLimit_;
     }
 
     /// @notice Sets isReadCall and isParallelCall overrides
     /// @param isReadCall_ The read call flag
     /// @param isParallelCall_ The sequential call flag
     function _setOverrides(Read isReadCall_, Parallel isParallelCall_) internal {
-        isReadCall = isReadCall_;
-        isParallelCall = isParallelCall_;
+        overrideParams.isReadCall = isReadCall_;
+        overrideParams.isParallelCall = isParallelCall_;
+    }
+
+    /// @notice Sets isParallelCall overrides
+    /// @param writeFinality_ The write finality
+    function _setOverrides(WriteFinality writeFinality_) internal {
+        overrideParams.writeFinality = writeFinality_;
     }
 
     /// @notice Sets isParallelCall overrides
     /// @param isParallelCall_ The sequential call flag
     function _setOverrides(Parallel isParallelCall_) internal {
-        isParallelCall = isParallelCall_;
+        overrideParams.isParallelCall = isParallelCall_;
+    }
+
+    /// @notice Sets isParallelCall overrides
+    /// @param isParallelCall_ The sequential call flag
+    /// @param readAt_ The read anchor value. Currently block number.
+    function _setOverrides(Parallel isParallelCall_, uint256 readAt_) internal {
+        overrideParams.isParallelCall = isParallelCall_;
+        overrideParams.readAt = readAt_;
     }
 
     /// @notice Sets isReadCall overrides
     /// @param isReadCall_ The read call flag
     function _setOverrides(Read isReadCall_) internal {
-        isReadCall = isReadCall_;
+        overrideParams.isReadCall = isReadCall_;
+    }
+
+    /// @notice Sets isReadCall overrides
+    /// @param isReadCall_ The read call flag
+    /// @param readAt_ The read anchor value. Currently block number.
+    function _setOverrides(Read isReadCall_, uint256 readAt_) internal {
+        overrideParams.isReadCall = isReadCall_;
+        overrideParams.readAt = readAt_;
     }
 
     /// @notice Sets gasLimit overrides
     /// @param gasLimit_ The gas limit
     function _setOverrides(uint256 gasLimit_) internal {
-        gasLimit = gasLimit_;
+        overrideParams.gasLimit = gasLimit_;
     }
 
     /// @notice Sets fees overrides
@@ -239,20 +275,35 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         fees = fees_;
     }
 
+    function getOverrideParams()
+        public
+        view
+        returns (Read, Parallel, WriteFinality, uint256, uint256, bytes32)
+    {
+        return (
+            overrideParams.isReadCall,
+            overrideParams.isParallelCall,
+            overrideParams.writeFinality,
+            overrideParams.readAt,
+            overrideParams.gasLimit,
+            sbType
+        );
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////// ASYNC BATCH HELPERS /////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// @notice Reverts the transaction
-    /// @param asyncId_ The async ID
-    function _revertTx(bytes32 asyncId_) internal {
-        deliveryHelper().cancelTransaction(asyncId_);
+    /// @param requestCount_ The async ID
+    function _revertTx(uint40 requestCount_) internal {
+        deliveryHelper__().cancelRequest(requestCount_);
     }
 
     /// @notice increases the transaction fees
-    /// @param asyncId_ The async ID
-    function _increaseFees(bytes32 asyncId_, uint256 newMaxFees_) internal {
-        deliveryHelper().increaseFees(asyncId_, newMaxFees_);
+    /// @param requestCount_ The async ID
+    function _increaseFees(uint40 requestCount_, uint256 newMaxFees_) internal {
+        deliveryHelper__().increaseFees(requestCount_, newMaxFees_);
     }
 
     /// @notice Withdraws fee tokens
@@ -265,8 +316,16 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         address token_,
         uint256 amount_,
         address receiver_
-    ) internal {
-        deliveryHelper().withdrawTo(chainSlug_, token_, amount_, receiver_, auctionManager, fees);
+    ) internal returns (uint40) {
+        return
+            deliveryHelper__().withdrawTo(
+                chainSlug_,
+                token_,
+                amount_,
+                receiver_,
+                auctionManager,
+                fees
+            );
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -274,19 +333,12 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// @notice Callback in pd promise to be called after all contracts are deployed
-    /// @param payloadBatch_ The payload batch
+    /// @param onCompleteData_ The on complete data
     /// @dev only payload delivery can call this
     /// @dev callback in pd promise to be called after all contracts are deployed
-    function onBatchComplete(
-        bytes32,
-        PayloadBatch memory payloadBatch_
-    ) external override onlyDeliveryHelper {
-        if (payloadBatch_.onCompleteData.length == 0) return;
-
-        (uint32 chainSlug, bool isDeploy) = abi.decode(
-            payloadBatch_.onCompleteData,
-            (uint32, bool)
-        );
+    function onRequestComplete(uint40, bytes calldata onCompleteData_) external override {
+        if (onCompleteData_.length == 0) return;
+        (uint32 chainSlug, bool isDeploy) = abi.decode(onCompleteData_, (uint32, bool));
         if (isDeploy) {
             initialize(chainSlug);
         }
@@ -295,8 +347,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     function callFromChain(
         uint32 chainSlug_,
         address plug_,
-        bytes calldata payload_,
-        bytes32 params_
+        bytes32 params_,
+        bytes calldata payload_
     ) external virtual onlyWatcherPrecompile {}
 
     /// @notice Initializes the contract
@@ -305,7 +357,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
 
     /// @notice hook to handle the revert in callbacks or onchain executions
     /// @dev can be overridden by the app gateway to add custom logic
-    /// @param asyncId_ The async ID
+    /// @param requestCount_ The async ID
     /// @param payloadId_ The payload ID
-    function handleRevert(bytes32 asyncId_, bytes32 payloadId_) external override onlyPromises {}
+    function handleRevert(
+        uint40 requestCount_,
+        bytes32 payloadId_
+    ) external override onlyPromises {}
 }

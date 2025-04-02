@@ -12,17 +12,21 @@ contract CheckDepositedFees is Script {
         vm.createSelectFork(vm.envString("EVMX_RPC"));
         FeesManager feesManager = FeesManager(payable(vm.envAddress("FEES_MANAGER")));
         address appGateway = vm.envAddress("APP_GATEWAY");
-
+        uint32 chain = 421614;
+        address token = ETH_ADDRESS;
         (uint256 deposited, uint256 blocked) = feesManager.appGatewayFeeBalances(
             appGateway,
-            421614,
-            ETH_ADDRESS
+            chain,
+            token
         );
         console.log("App Gateway:", appGateway);
+        console.log("Fees Manager:", address(feesManager));
+        console.logUint(chain);
+        console.log("Token:", token);
         console.log("Deposited fees:", deposited);
         console.log("Blocked fees:", blocked);
 
-        uint256 availableFees = feesManager.getAvailableFees(421614, appGateway, ETH_ADDRESS);
+        uint256 availableFees = feesManager.getAvailableFees(chain, appGateway, token);
         console.log("Available fees:", availableFees);
     }
 }

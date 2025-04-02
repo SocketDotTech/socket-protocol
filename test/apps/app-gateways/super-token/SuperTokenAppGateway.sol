@@ -8,8 +8,7 @@ import "./SuperToken.sol";
 
 contract SuperTokenAppGateway is AppGatewayBase, Ownable {
     bytes32 public superToken = _createContractId("superToken");
-
-    event Transferred(bytes32 asyncId);
+    event Transferred(uint40 requestCount);
 
     struct ConstructorParams {
         string name_;
@@ -56,7 +55,7 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
     }
 
     // no need to call this directly, will be called automatically after all contracts are deployed.
-    // check AppGatewayBase._deploy and AppGatewayBase.onBatchComplete
+    // check AppGatewayBase._deploy and AppGatewayBase.onRequestComplete
     function initialize(uint32) public pure override {
         return;
     }

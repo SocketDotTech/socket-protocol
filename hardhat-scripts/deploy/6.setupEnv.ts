@@ -1,4 +1,4 @@
-import { ChainSlug } from "@socket.tech/socket-protocol-common";
+import { ChainSlug } from "../../src";
 import fs from "fs";
 import path from "path";
 import { EVMX_CHAIN_ID, mode } from "../config/config";

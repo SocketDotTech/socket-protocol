@@ -38,9 +38,14 @@ contract InboxTest is DeliveryHelperTest {
         });
 
         bytes memory watcherSignature = _createWatcherSignature(
-            abi.encode(IWatcherPrecompile.setAppGateways.selector, gateways)
+            address(watcherPrecompileConfig),
+            abi.encode(IWatcherPrecompileConfig.setAppGateways.selector, gateways)
         );
-        watcherPrecompile.setAppGateways(gateways, signatureNonce++, watcherSignature);
+
+        watcherPrecompileConfig.setAppGateways(gateways, signatureNonce++, watcherSignature);
+
+        hoax(watcherEOA);
+        watcherPrecompileConfig.setIsValidPlug(arbChainSlug, address(inbox), true);
     }
 
     function testInboxIncrement() public {
@@ -62,7 +67,8 @@ contract InboxTest is DeliveryHelperTest {
         });
 
         bytes memory watcherSignature = _createWatcherSignature(
-            abi.encode(WatcherPrecompile.callAppGateways.selector, params)
+            address(watcherPrecompile),
+            abi.encode(IWatcherPrecompile.callAppGateways.selector, params)
         );
         watcherPrecompile.callAppGateways(params, signatureNonce++, watcherSignature);
         // Check counter was incremented

@@ -7,6 +7,7 @@ import {FeesPlug} from "../../contracts/protocol/payload-delivery/FeesPlug.sol";
 import {Fees} from "../../contracts/protocol/utils/common/Structs.sol";
 import {ETH_ADDRESS} from "../../contracts/protocol/utils/common/Constants.sol";
 
+// source .env && forge script script/helpers/PayFeesInArbitrumETH.s.sol --broadcast --skip-simulation
 contract DepositFees is Script {
     function run() external {
         vm.createSelectFork(vm.envString("ARBITRUM_SEPOLIA_RPC"));
@@ -20,7 +21,8 @@ contract DepositFees is Script {
         console.log("Sender address:", sender);
         uint256 balance = sender.balance;
         console.log("Sender balance in wei:", balance);
-
+        console.log("App Gateway:", appGateway);
+        console.log("Fees Plug:", address(feesPlug));
         uint feesAmount = 0.001 ether;
         feesPlug.deposit{value: feesAmount}(ETH_ADDRESS, appGateway, feesAmount);
     }
