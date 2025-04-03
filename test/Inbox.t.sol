@@ -5,13 +5,13 @@ import {CounterAppGateway} from "./apps/app-gateways/counter/CounterAppGateway.s
 import {Counter} from "./apps/app-gateways/counter/Counter.sol";
 import "./DeliveryHelper.t.sol";
 
-contract InboxTest is DeliveryHelperTest {
+contract TriggerTest is DeliveryHelperTest {
     uint256 constant feesAmount = 0.01 ether;
     CounterAppGateway public gateway;
-    Counter public inbox;
+    Counter public counter;
 
     event AppGatewayCallRequested(
-        bytes32 inboxId,
+        bytes32 triggerId,
         uint32 chainSlug,
         address plug,
         address appGateway,
@@ -23,15 +23,15 @@ contract InboxTest is DeliveryHelperTest {
         // Setup core test infrastructure
         setUpDeliveryHelper();
 
-        // Deploy the inbox contract
-        inbox = new Counter();
+        // Deploy the counter contract
+        counter = new Counter();
 
         // Deploy the gateway with fees
         gateway = new CounterAppGateway(address(addressResolver), createFees(feesAmount));
-        gateway.setIsValidPlug(arbChainSlug, address(inbox));
+        gateway.setIsValidPlug(arbChainSlug, address(counter));
 
-        // Connect the inbox to the gateway and socket
-        inbox.initSocket(
+        // Connect the counter to the gateway and socket
+        counter.initSocket(
             address(gateway),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
@@ -40,7 +40,7 @@ contract InboxTest is DeliveryHelperTest {
         // Setup gateway config for the watcher
         AppGatewayConfig[] memory gateways = new AppGatewayConfig[](1);
         gateways[0] = AppGatewayConfig({
-            plug: address(inbox),
+            plug: address(counter),
             chainSlug: arbChainSlug,
             appGateway: address(gateway),
             switchboard: address(arbConfig.switchboard)
@@ -54,16 +54,16 @@ contract InboxTest is DeliveryHelperTest {
         watcherPrecompileConfig.setAppGateways(gateways, signatureNonce++, watcherSignature);
 
         hoax(watcherEOA);
-        watcherPrecompileConfig.setIsValidPlug(arbChainSlug, address(inbox), true);
+        watcherPrecompileConfig.setIsValidPlug(arbChainSlug, address(counter), true);
     }
 
-    function testInboxIncrement() public {
+    function testIncrementAfterTrigger() public {
         // Initial counter value should be 0
         assertEq(gateway.counterVal(), 0, "Initial gateway counter should be 0");
 
         // Simulate a message from another chain through the watcher
         uint256 incrementValue = 5;
-        bytes32 inboxId = _encodeInboxId(address(gateway), arbChainSlug);
+        bytes32 triggerId = _encodeTriggerId(address(gateway), arbChainSlug);
         bytes memory payload = abi.encodeWithSelector(
             CounterAppGateway.increase.selector,
             incrementValue
@@ -71,21 +71,21 @@ contract InboxTest is DeliveryHelperTest {
 
         vm.expectEmit(true, true, true, true);
         emit AppGatewayCallRequested(
-            inboxId,
+            triggerId,
             arbChainSlug,
-            address(inbox),
+            address(counter),
             address(gateway),
             bytes(""),
             payload
         );
-        inbox.increaseOnGateway(incrementValue);
+        counter.increaseOnGateway(incrementValue);
 
-        CallFromChainParams[] memory params = new CallFromChainParams[](1);
-        params[0] = CallFromChainParams({
-            inboxId: inboxId,
+        TriggerParams[] memory params = new TriggerParams[](1);
+        params[0] = TriggerParams({
+            triggerId: triggerId,
             chainSlug: arbChainSlug,
             appGateway: address(gateway),
-            plug: address(inbox),
+            plug: address(counter),
             payload: payload,
             params: bytes32(0)
         });
@@ -99,12 +99,12 @@ contract InboxTest is DeliveryHelperTest {
         assertEq(gateway.counterVal(), incrementValue, "Gateway counter should be incremented");
     }
 
-    function _encodeInboxId(address appGateway_, uint256 chainSlug_) internal returns (bytes32) {
+    function _encodeTriggerId(address appGateway_, uint256 chainSlug_) internal returns (bytes32) {
         return
             bytes32(
                 (uint256(chainSlug_) << 224) |
                     (uint256(uint160(appGateway_)) << 64) |
-                    inboxCounter++
+                    triggerCounter++
             );
     }
 }

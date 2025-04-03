@@ -20,7 +20,7 @@ abstract contract SocketUtils is SocketConfig {
     // ChainSlug for this deployed socket instance
     uint32 public immutable chainSlug;
 
-    uint64 public inboxCounter;
+    uint64 public triggerCounter;
 
     /**
      * @dev keeps track of whether a payload has been executed or not using payload id
@@ -113,12 +113,14 @@ abstract contract SocketUtils is SocketConfig {
     }
 
     // Packs the local plug, local chain slug, remote chain slug and nonce
-    // inboxCounter++ will take care of call id overflow as well
-    // inboxId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
-    function _encodeInboxId(address appGateway_) internal returns (bytes32) {
+    // triggerCounter++ will take care of call id overflow as well
+    // triggerId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
+    function _encodeTriggerId(address appGateway_) internal returns (bytes32) {
         return
             bytes32(
-                (uint256(chainSlug) << 224) | (uint256(uint160(appGateway_)) << 64) | inboxCounter++
+                (uint256(chainSlug) << 224) |
+                    (uint256(uint160(appGateway_)) << 64) |
+                    triggerCounter++
             );
     }
 

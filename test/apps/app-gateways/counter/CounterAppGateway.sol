@@ -97,7 +97,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         }
     }
 
-    // INBOX
+    // trigger from a chain
     function setIsValidPlug(uint32 chainSlug_, address plug_) public {
         watcherPrecompileConfig().setIsValidPlug(chainSlug_, plug_, true);
     }

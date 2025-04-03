@@ -22,7 +22,7 @@ contract Counter is Ownable, PlugBase {
     }
 
     function increaseOnGateway(uint256 value_) external returns (bytes32) {
-        // can set inbox params here: _setInboxParams(params_);
+        // can set trigger params here: _setTriggerParams(params_);
         return ICounterAppGateway(address(socket__)).increase(value_);
     }
 }

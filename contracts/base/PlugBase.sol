@@ -11,7 +11,7 @@ abstract contract PlugBase is IPlug {
     ISocket public socket__;
     address public appGateway;
     uint256 public isSocketInitialized;
-    bytes public inboxParams;
+    bytes public triggerParams;
 
     error SocketAlreadyInitialized();
     event ConnectorPlugDisconnected();
@@ -53,10 +53,10 @@ abstract contract PlugBase is IPlug {
         socket__ = ISocket(socket_);
     }
 
-    /// @notice Sets the inbox params
-    /// @param inboxParams_ The inbox params
-    function _setInboxParams(bytes memory inboxParams_) internal {
-        inboxParams = inboxParams_;
+    /// @notice Sets the trigger params
+    /// @param triggerParams_ The trigger params
+    function _setTriggerParams(bytes memory triggerParams_) internal {
+        triggerParams = triggerParams_;
     }
 
     function initSocket(

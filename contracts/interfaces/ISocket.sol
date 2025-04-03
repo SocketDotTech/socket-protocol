@@ -34,7 +34,7 @@ interface ISocket {
 
     /**
      * @notice emits the message details when a new message arrives at outbound
-     * @param inboxId call id
+     * @param triggerId call id
      * @param chainSlug local chain slug
      * @param plug local plug address
      * @param appGateway appGateway address to trigger the call
@@ -42,7 +42,7 @@ interface ISocket {
      * @param payload the data which will be used by contracts on chain
      */
     event AppGatewayCallRequested(
-        bytes32 inboxId,
+        bytes32 triggerId,
         uint32 chainSlug,
         address plug,
         address appGateway,

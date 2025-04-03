@@ -9,8 +9,8 @@ import "./DumpDecoder.sol";
 
 import {IMiddleware} from "../../interfaces/IMiddleware.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../utils/common/Constants.sol";
-import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
-import {ResolvedPromises, AppGatewayConfig, LimitParams, WriteFinality, UpdateLimitParams, PlugConfig, DigestParams, TimeoutRequest, CallFromChainParams, QueuePayloadParams, PayloadParams, RequestParams} from "../utils/common/Structs.sol";
+import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidCallerTriggered, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
+import {ResolvedPromises, AppGatewayConfig, LimitParams, WriteFinality, UpdateLimitParams, PlugConfig, DigestParams, TimeoutRequest, TriggerParams, QueuePayloadParams, PayloadParams, RequestParams} from "../utils/common/Structs.sol";
 
 abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     // slots [0-49]: gap for future storage variables
@@ -57,8 +57,8 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     mapping(bytes32 => bytes) public watcherProofs;
 
     // slot 57: appGatewayCalled
-    /// @notice Mapping to store if appGateway has been called with trigger from on-chain Inbox
-    /// @dev inboxId => bool
+    /// @notice Mapping to store if appGateway has been called with trigger from on-chain plug
+    /// @dev triggerId => bool
     mapping(bytes32 => bool) public appGatewayCalled;
 
     // slot 58: requestParams

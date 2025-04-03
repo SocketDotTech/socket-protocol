@@ -234,10 +234,10 @@ contract WatcherPrecompile is RequestHandler {
         maxTimeoutDelayInSeconds = maxTimeoutDelayInSeconds_;
     }
 
-    // ================== On-Chain Inbox ==================
+    // ================== On-Chain Trigger ==================
 
     function callAppGateways(
-        CallFromChainParams[] calldata params_,
+        TriggerParams[] calldata params_,
         uint256 signatureNonce_,
         bytes calldata signature_
     ) external {
@@ -248,23 +248,23 @@ contract WatcherPrecompile is RequestHandler {
         );
 
         for (uint256 i = 0; i < params_.length; i++) {
-            if (appGatewayCalled[params_[i].inboxId]) revert AppGatewayAlreadyCalled();
+            if (appGatewayCalled[params_[i].triggerId]) revert AppGatewayAlreadyCalled();
             if (
                 !watcherPrecompileConfig__.isValidPlug(
                     params_[i].appGateway,
                     params_[i].chainSlug,
                     params_[i].plug
                 )
-            ) revert InvalidInboxCaller();
+            ) revert InvalidCallerTriggered();
 
             appGatewayCaller = params_[i].appGateway;
-            appGatewayCalled[params_[i].inboxId] = true;
+            appGatewayCalled[params_[i].triggerId] = true;
 
             (bool success, ) = address(params_[i].appGateway).call(params_[i].payload);
             if (!success) revert CallFailed();
 
             emit CalledAppGateway(
-                params_[i].inboxId,
+                params_[i].triggerId,
                 params_[i].chainSlug,
                 params_[i].plug,
                 params_[i].appGateway,

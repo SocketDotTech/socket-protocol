@@ -117,26 +117,26 @@ contract Socket is SocketUtils {
     /**
      * @notice To send message to a connected remote chain. Should only be called by a plug.
      * @param payload_ bytes to be delivered to the Plug on the siblingChainSlug_
-     * @param inboxParams_ a 32 bytes param to add details for execution, for eg: fees to be paid for execution
+     * @param triggerParams_ a 32 bytes param to add details for execution, for eg: fees to be paid for execution
      */
     function _callAppGateway(
         address plug_,
-        bytes memory inboxParams_,
+        bytes memory triggerParams_,
         bytes memory payload_
-    ) internal returns (bytes32 inboxId) {
+    ) internal returns (bytes32 triggerId) {
         PlugConfig memory plugConfig = _plugConfigs[plug_];
 
         // if no sibling plug is found for the given chain slug, revert
         if (plugConfig.appGateway == address(0)) revert PlugDisconnected();
 
         // creates a unique ID for the message
-        inboxId = _encodeInboxId(plugConfig.appGateway);
+        triggerId = _encodeTriggerId(plugConfig.appGateway);
         emit AppGatewayCallRequested(
-            inboxId,
+            triggerId,
             chainSlug,
             plug_,
             plugConfig.appGateway,
-            inboxParams_,
+            triggerParams_,
             payload_
         );
     }
@@ -144,8 +144,8 @@ contract Socket is SocketUtils {
     /// @notice Fallback function that forwards all calls to Socket's callAppGateway
     /// @dev The calldata is passed as-is to the gateways
     fallback(bytes calldata) external payable returns (bytes memory) {
-        bytes memory inboxParams = IPlug(msg.sender).inboxParams();
-        return abi.encode(_callAppGateway(msg.sender, inboxParams, msg.data));
+        bytes memory triggerParams = IPlug(msg.sender).triggerParams();
+        return abi.encode(_callAppGateway(msg.sender, triggerParams, msg.data));
     }
 
     /// @notice Receive function to accept ETH payments
