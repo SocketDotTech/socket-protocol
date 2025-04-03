@@ -68,12 +68,6 @@ contract MockSocket is ISocket {
     uint64 public callCounter;
     uint32 public chainSlug;
 
-    enum ExecutionStatus {
-        NotExecuted,
-        Executed,
-        Reverted
-    }
-
     /**
      * @dev keeps track of whether a payload has been executed or not using payload id
      */
