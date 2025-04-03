@@ -44,6 +44,7 @@ contract SetupTest is Test {
     uint256 public signatureNonce;
     uint256 public payloadIdCounter;
     uint256 public timeoutIdCounter;
+    uint256 public inboxCounter;
     uint256 public defaultLimit = 1000;
 
     bytes public asyncPromiseBytecode = type(AsyncPromise).creationCode;

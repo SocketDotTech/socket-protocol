@@ -10,6 +10,15 @@ contract InboxTest is DeliveryHelperTest {
     CounterAppGateway public gateway;
     Counter public inbox;
 
+    event AppGatewayCallRequested(
+        bytes32 inboxId,
+        uint32 chainSlug,
+        address plug,
+        address appGateway,
+        bytes params,
+        bytes payload
+    );
+
     function setUp() public {
         // Setup core test infrastructure
         setUpDeliveryHelper();
@@ -54,15 +63,30 @@ contract InboxTest is DeliveryHelperTest {
 
         // Simulate a message from another chain through the watcher
         uint256 incrementValue = 5;
+        bytes32 inboxId = _encodeInboxId(address(gateway), arbChainSlug);
+        bytes memory payload = abi.encodeWithSelector(
+            CounterAppGateway.increase.selector,
+            incrementValue
+        );
 
-        bytes32 callId = inbox.increaseOnGateway(incrementValue);
+        vm.expectEmit(true, true, true, true);
+        emit AppGatewayCallRequested(
+            inboxId,
+            arbChainSlug,
+            address(inbox),
+            address(gateway),
+            bytes(""),
+            payload
+        );
+        inbox.increaseOnGateway(incrementValue);
+
         CallFromChainParams[] memory params = new CallFromChainParams[](1);
         params[0] = CallFromChainParams({
-            callId: callId,
+            inboxId: inboxId,
             chainSlug: arbChainSlug,
             appGateway: address(gateway),
             plug: address(inbox),
-            payload: abi.encode(incrementValue),
+            payload: payload,
             params: bytes32(0)
         });
 
@@ -73,5 +97,14 @@ contract InboxTest is DeliveryHelperTest {
         watcherPrecompile.callAppGateways(params, signatureNonce++, watcherSignature);
         // Check counter was incremented
         assertEq(gateway.counterVal(), incrementValue, "Gateway counter should be incremented");
+    }
+
+    function _encodeInboxId(address appGateway_, uint256 chainSlug_) internal returns (bytes32) {
+        return
+            bytes32(
+                (uint256(chainSlug_) << 224) |
+                    (uint256(uint160(appGateway_)) << 64) |
+                    inboxCounter++
+            );
     }
 }

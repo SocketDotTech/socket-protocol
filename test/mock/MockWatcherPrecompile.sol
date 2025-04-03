@@ -29,7 +29,7 @@ contract MockWatcherPrecompile {
     error InvalidTransmitter();
 
     event CalledAppGateway(
-        bytes32 callId,
+        bytes32 inboxId,
         uint32 chainSlug,
         address plug,
         address appGateway,
@@ -159,7 +159,7 @@ contract MockWatcherPrecompile {
     function callAppGateways(CallFromChainParams[] calldata params_) external {
         for (uint256 i = 0; i < params_.length; i++) {
             emit CalledAppGateway(
-                params_[i].callId,
+                params_[i].inboxId,
                 params_[i].chainSlug,
                 params_[i].plug,
                 params_[i].appGateway,

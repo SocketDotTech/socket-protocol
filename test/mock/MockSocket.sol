@@ -65,7 +65,7 @@ contract MockSocket is ISocket {
     ////////////////////////////////////////////////////////////
     ////////////////////// State Vars //////////////////////////
     ////////////////////////////////////////////////////////////
-    uint64 public callCounter;
+    uint64 public inboxCounter;
     uint32 public chainSlug;
 
     enum ExecutionStatus {
@@ -94,13 +94,13 @@ contract MockSocket is ISocket {
      */
     function callAppGateway(
         bytes calldata payload,
-        bytes32 params
-    ) external returns (bytes32 callId) {
+        bytes calldata params
+    ) external returns (bytes32 inboxId) {
         PlugConfig memory plugConfig = _plugConfigs[msg.sender];
         // creates a unique ID for the message
-        callId = _encodeCallId(plugConfig.appGateway);
+        inboxId = _encodeInboxId(plugConfig.appGateway);
         emit AppGatewayCallRequested(
-            callId,
+            inboxId,
             chainSlug,
             msg.sender,
             plugConfig.appGateway,
@@ -174,12 +174,12 @@ contract MockSocket is ISocket {
     }
 
     // Packs the local plug, local chain slug, remote chain slug and nonce
-    // callCount++ will take care of call id overflow as well
-    // callId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
-    function _encodeCallId(address appGateway_) internal returns (bytes32) {
+    // inboxCounter++ will take care of call id overflow as well
+    // inboxId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
+    function _encodeInboxId(address appGateway_) internal returns (bytes32) {
         return
             bytes32(
-                (uint256(chainSlug) << 224) | (uint256(uint160(appGateway_)) << 64) | callCounter++
+                (uint256(chainSlug) << 224) | (uint256(uint160(appGateway_)) << 64) | inboxCounter++
             );
     }
 }
