@@ -8,8 +8,7 @@ import "./DeliveryUtils.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
 abstract contract RequestQueue is DeliveryUtils {
-    // slots [0-108] reserved for delivery helper storage and [109-159] reserved for addr resolver util
-    // slots [160-209] reserved for gap
+    // slots [205-255] reserved for gap
     uint256[50] _gap_queue_async;
 
     /// @notice Clears the call parameters array

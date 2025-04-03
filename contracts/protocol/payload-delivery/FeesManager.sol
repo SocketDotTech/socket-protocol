@@ -49,7 +49,7 @@ abstract contract FeesManagerStorage is IFeesManager {
     // slots [57-106] reserved for gap
     uint256[50] _gap_after;
 
-    // slots 107-157 reserved for addr resolver util
+    // slots 107-157 (51) reserved for addr resolver util
 }
 
 /// @title FeesManager

@@ -34,7 +34,6 @@ contract DeliveryHelper is FeesHelpers {
 
         RequestMetadata storage requestMetadata_ = requests[requestCount_];
         bool isRestarted = requestMetadata_.winningBid.transmitter != address(0);
-
         requestMetadata_.winningBid.transmitter = winningBid_.transmitter;
 
         if (!isRestarted) {

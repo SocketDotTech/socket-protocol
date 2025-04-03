@@ -37,7 +37,7 @@ abstract contract AsyncPromiseStorage is IPromise {
     // slots [53-102] reserved for gap
     uint256[50] _gap_after;
 
-    // slots 103-154 reserved for addr resolver util
+    // slots 103-154 (51) reserved for addr resolver util
 }
 
 /// @title AsyncPromise

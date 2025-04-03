@@ -22,31 +22,32 @@ abstract contract AuctionManagerStorage is IAuctionManager {
     uint32 public evmxSlug;
 
     // slot 51
-    mapping(uint40 => Bid) public winningBids;
+    uint256 public maxReAuctionCount;
 
     // slot 52
+    uint256 public auctionEndDelaySeconds;
+
+    // slot 53
+    mapping(uint40 => Bid) public winningBids;
+
+    // slot 54
     // requestCount => auction status
     mapping(uint40 => bool) public override auctionClosed;
 
-    // slot 53
+    // slot 55
     mapping(uint40 => bool) public override auctionStarted;
 
-    // slot 54
-    uint256 public auctionEndDelaySeconds;
-
-    // slot 55
+    // slot 56
     mapping(address => bool) public whitelistedTransmitters;
 
-    // slot 56
+    // slot 57
     mapping(uint40 => uint256) public reAuctionCount;
 
-    // slot 57
-    uint256 public maxReAuctionCount;
+    // slots [58-107] reserved for gap
+    uint256[50] _gap_after;
 
-    // slots [57-104] reserved for gap
-    uint256[48] _gap_after;
-
-    // slots 105-155 reserved for addr resolver util
+    // slots 108-158 (51) reserved for access control
+    // slots 159-209 (51) reserved for addr resolver util
 }
 
 /// @title AuctionManager

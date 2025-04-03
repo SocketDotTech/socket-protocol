@@ -3,9 +3,9 @@ pragma solidity ^0.8.21;
 
 import "./WatcherPrecompileStorage.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
-import {AccessControl} from "../utils/AccessControl.sol";
+import {AccessControl} from "../../utils/AccessControl.sol";
 import "solady/utils/Initializable.sol";
-import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
+import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
@@ -17,6 +17,9 @@ abstract contract WatcherPrecompileCore is
     AddressResolverUtil
 {
     using DumpDecoder for bytes32;
+
+    // slots [215-265] reserved for gap
+    uint256[50] _core_gap;
 
     // ================== Timeout functions ==================
 
@@ -61,10 +64,7 @@ abstract contract WatcherPrecompileCore is
         payloads[params_.payloadId].deadline = deadline;
         payloads[params_.payloadId].finalizedTransmitter = transmitter_;
 
-        bytes32 prevDigestsHash = _getPreviousDigestsHash(
-            params_.dump.getRequestCount(),
-            params_.dump.getBatchCount()
-        );
+        bytes32 prevDigestsHash = _getPreviousDigestsHash(params_.dump.getBatchCount());
         payloads[params_.payloadId].prevDigestsHash = prevDigestsHash;
 
         // Construct parameters for digest calculation
@@ -102,10 +102,7 @@ abstract contract WatcherPrecompileCore is
     /// @notice Creates a new query request
     /// @param params_ The payload parameters
     function _query(PayloadParams memory params_) internal {
-        bytes32 prevDigestsHash = _getPreviousDigestsHash(
-            params_.dump.getRequestCount(),
-            params_.dump.getBatchCount()
-        );
+        bytes32 prevDigestsHash = _getPreviousDigestsHash(params_.dump.getBatchCount());
         payloads[params_.payloadId].prevDigestsHash = prevDigestsHash;
         emit QueryRequested(params_);
     }
@@ -133,7 +130,7 @@ abstract contract WatcherPrecompileCore is
     }
 
     function _getPreviousDigestsHash(uint40 batchCount_) internal view returns (bytes32) {
-        bytes32[] memory payloadIds = batchPayloadIds[batchCount];
+        bytes32[] memory payloadIds = batchPayloadIds[batchCount_];
         bytes32 prevDigestsHash = bytes32(0);
 
         for (uint40 i = 0; i < payloadIds.length; i++) {

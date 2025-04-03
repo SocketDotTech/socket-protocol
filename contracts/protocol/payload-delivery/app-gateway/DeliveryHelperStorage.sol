@@ -21,14 +21,20 @@ abstract contract DeliveryHelperStorage is IMiddleware {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
+    // slot 50
     uint128 public bidTimeout;
+    // slot 51
     uint256 public saltCounter;
 
+    // slot 52
     /// @notice The call parameters array
     QueuePayloadParams[] public queuePayloadParams;
 
+    // slot 53
     mapping(uint40 => RequestMetadata) public requests;
 
-    // slots [59-108] reserved for gap
+    // slots [54-103] reserved for gap
     uint256[50] _gap_after;
+
+    // slots 104-154 (51) reserved for addr resolver util
 }

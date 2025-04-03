@@ -17,7 +17,6 @@ abstract contract ForwarderStorage is IForwarder {
     // slot 50
     /// @notice chain id
     uint32 public chainSlug;
-
     /// @notice on-chain address associated with this forwarder
     address public onChainAddress;
 
@@ -27,6 +26,8 @@ abstract contract ForwarderStorage is IForwarder {
 
     // slots [52-101] reserved for gap
     uint256[50] _gap_after;
+
+    // slots 102-153 (51) reserved for addr resolver util
 }
 
 /// @title Forwarder Contract

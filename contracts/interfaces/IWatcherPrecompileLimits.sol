@@ -38,7 +38,7 @@ interface IWatcherPrecompileLimits {
     function setDefaultRatePerSecond(uint256 defaultRatePerSecond_) external;
 
     /// @notice Number of decimals used in limit calculations
-    function LIMIT_DECIMALS() external view returns (uint256);
+    function limitDecimals() external view returns (uint256);
 
     /// @notice Default limit value for any app gateway
     function defaultLimit() external view returns (uint256);

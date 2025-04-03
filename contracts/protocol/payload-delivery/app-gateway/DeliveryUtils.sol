@@ -14,8 +14,7 @@ abstract contract DeliveryUtils is
     Ownable,
     AddressResolverUtil
 {
-    // slots [0-108] reserved for delivery helper storage and [109-159] reserved for addr resolver util
-    // slots [160-209] reserved for gap
+    // slots [155-205] reserved for gap
     uint256[50] _gap_delivery_utils;
 
     /// @notice Error thrown when attempting to executed payloads after all have been executed

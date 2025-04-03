@@ -17,16 +17,16 @@ abstract contract AddressResolverStorage is IAddressResolver {
     IWatcherPrecompile public override watcherPrecompile__;
 
     // slot 51
-    address public override deliveryHelper;
-
-    // slot 52
-    address public override feesManager;
-
-    // slot 53
     UpgradeableBeacon public forwarderBeacon;
 
-    // slot 54
+    // slot 52
     UpgradeableBeacon public asyncPromiseBeacon;
+
+    // slot 53
+    address public override deliveryHelper;
+
+    // slot 54
+    address public override feesManager;
 
     // slot 55
     address public forwarderImplementation;
@@ -42,15 +42,13 @@ abstract contract AddressResolverStorage is IAddressResolver {
 
     // slot 59
     uint64 public version;
+    address public override defaultAuctionManager;
 
     // slot 60
     mapping(address => address) public override contractsToGateways;
 
-    // slot 61
-    address public override defaultAuctionManager;
-
-    // slots [62-110] reserved for gap
-    uint256[49] _gap_after;
+    // slots [61-110] reserved for gap
+    uint256[50] _gap_after;
 }
 
 /// @title AddressResolver Contract

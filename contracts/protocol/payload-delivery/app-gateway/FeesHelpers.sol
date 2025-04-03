@@ -6,7 +6,7 @@ import "./RequestQueue.sol";
 /// @title RequestAsync
 /// @notice Abstract contract for managing asynchronous payload batches
 abstract contract FeesHelpers is RequestQueue {
-    // slots [210-259] reserved for gap
+    // slots [256-306] reserved for gap
     uint256[50] _gap_batch_async;
 
     function increaseFees(uint40 requestCount_, uint256 newMaxFees_) external override {

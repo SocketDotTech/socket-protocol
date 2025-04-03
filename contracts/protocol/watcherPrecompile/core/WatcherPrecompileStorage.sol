@@ -16,11 +16,9 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     // slots [0-49]: gap for future storage variables
     uint256[50] _gap_before;
 
-    // slot 50: evmxSlug
+    // slot 50
     /// @notice The chain slug of the watcher precompile
     uint32 public evmxSlug;
-
-    // slot 51: payloadCounter
     /// @notice Counter for tracking payload requests
     uint40 public payloadCounter;
     /// @notice Counter for tracking timeout requests
@@ -30,55 +28,58 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     /// @notice Counter for tracking batch counts
     uint40 public nextBatchCount;
 
-    // slot 52: expiryTime
+    // slot 51
     /// @notice The time from finalize for the payload to be executed
     uint256 public expiryTime;
 
-    // slot 53: maxTimeoutDelayInSeconds
+    // slot 52
     /// @notice The maximum delay for a timeout
     uint256 public maxTimeoutDelayInSeconds;
 
-    // slot 54: isNonceUsed
+    // slot 53
     /// @notice Maps nonce to whether it has been used
     /// @dev signatureNonce => isValid
     mapping(uint256 => bool) public isNonceUsed;
 
-    // slot 55: timeoutRequests
+    // slot 54
     /// @notice Mapping to store timeout requests
     /// @dev timeoutId => TimeoutRequest struct
     mapping(bytes32 => TimeoutRequest) public timeoutRequests;
 
-    // slot 56: watcherProofs
+    // slot 55
     /// @notice Mapping to store watcher proofs
     /// @dev payloadId => proof bytes
     mapping(bytes32 => bytes) public watcherProofs;
 
-    // slot 57: appGatewayCalled
+    // slot 56
     /// @notice Mapping to store if appGateway has been called with trigger from on-chain Inbox
     /// @dev callId => bool
     mapping(bytes32 => bool) public appGatewayCalled;
 
-    // slot 58: requestParams
+    // slot 57
     mapping(uint40 => RequestParams) public requestParams;
 
-    // slot 59: batchPayloadIds
+    // slot 58
     mapping(uint40 => bytes32[]) public batchPayloadIds;
 
-    // slot 60: requestBatchIds
+    // slot 59
     mapping(uint40 => uint40[]) public requestBatchIds;
 
-    // slot 61: payloads
+    // slot 60
     mapping(bytes32 => PayloadParams) public payloads;
 
-    // slot 62: isPromiseExecuted
+    // slot 61
     mapping(bytes32 => bool) public isPromiseExecuted;
 
-    // slot 63: watcherPrecompileLimits__
+    // slot 62
     IWatcherPrecompileLimits public watcherPrecompileLimits__;
 
-    // slot 64: watcherPrecompileConfig__
+    // slot 63
     IWatcherPrecompileConfig public watcherPrecompileConfig__;
 
-    // slots [65-114]: gap for future storage variables
+    // slots [64-113]: gap for future storage variables
     uint256[50] _gap_after;
+
+    // slots 114-164 (51) reserved for access control
+    // slots 165-215 (51) reserved for addr resolver util
 }

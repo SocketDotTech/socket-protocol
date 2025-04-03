@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import "./WatcherPrecompileLimits.sol";
-import {ECDSA} from "solady/utils/ECDSA.sol";
 import "solady/utils/Initializable.sol";
+import {ECDSA} from "solady/utils/ECDSA.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
 import "../../interfaces/IWatcherPrecompileConfig.sol";
+import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 
 /// @title WatcherPrecompileConfig
 /// @notice Configuration contract for the Watcher Precompile system
@@ -12,44 +13,49 @@ import "../../interfaces/IWatcherPrecompileConfig.sol";
 contract WatcherPrecompileConfig is
     IWatcherPrecompileConfig,
     Initializable,
-    AccessControl,
+    Ownable,
     AddressResolverUtil
 {
-    // slot 52: evmxSlug
+    // slots 0-50 (51) reserved for addr resolver util
+
+    // slots [51-100]: gap for future storage variables
+    uint256[50] _gap_before;
+
+    // slot 101: evmxSlug
     /// @notice The chain slug of the watcher precompile
     uint32 public evmxSlug;
 
-    // slot 55: _plugConfigs
+    // slot 102: _plugConfigs
     /// @notice Maps network and plug to their configuration
     /// @dev chainSlug => plug => PlugConfig
     mapping(uint32 => mapping(address => PlugConfig)) internal _plugConfigs;
 
-    // slot 56: switchboards
+    // slot 103: switchboards
     /// @notice Maps chain slug to their associated switchboard
     /// @dev chainSlug => sb type => switchboard address
     mapping(uint32 => mapping(bytes32 => address)) public switchboards;
 
-    // slot 57: sockets
+    // slot 104: sockets
     /// @notice Maps chain slug to their associated socket
     /// @dev chainSlug => socket address
     mapping(uint32 => address) public sockets;
 
-    // slot 58: contractFactoryPlug
+    // slot 105: contractFactoryPlug
     /// @notice Maps chain slug to their associated contract factory plug
     /// @dev chainSlug => contract factory plug address
     mapping(uint32 => address) public contractFactoryPlug;
 
-    // slot 59: feesPlug
+    // slot 106: feesPlug
     /// @notice Maps chain slug to their associated fees plug
     /// @dev chainSlug => fees plug address
     mapping(uint32 => address) public feesPlug;
 
-    // slot 60: isNonceUsed
+    // slot 107: isNonceUsed
     /// @notice Maps nonce to whether it has been used
     /// @dev signatureNonce => isValid
     mapping(uint256 => bool) public isNonceUsed;
 
-    // slot 61: isValidPlug
+    // slot 108: isValidPlug
     // appGateway => chainSlug => plug => isValid
     mapping(address => mapping(uint32 => mapping(address => bool))) public isValidPlug;
 
