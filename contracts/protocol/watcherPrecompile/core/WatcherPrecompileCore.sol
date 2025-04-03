@@ -132,22 +132,13 @@ abstract contract WatcherPrecompileCore is
         );
     }
 
-    function _getPreviousDigestsHash(
-        uint40 requestCount_,
-        uint40 batchCount_
-    ) internal view returns (bytes32) {
-        RequestParams memory r = requestParams[requestCount_];
-
-        // If this is the first batch of the request, return 0 bytes
-        if (batchCount_ == r.payloadParamsArray[0].dump.getBatchCount()) {
-            return bytes32(0);
-        }
-
-        PayloadParams[] memory previousPayloads = _getBatch(batchCount_ - 1);
+    function _getPreviousDigestsHash(uint40 batchCount_) internal view returns (bytes32) {
+        bytes32[] memory payloadIds = batchPayloadIds[batchCount];
         bytes32 prevDigestsHash = bytes32(0);
 
-        for (uint40 i = 0; i < previousPayloads.length; i++) {
-            PayloadParams memory p = payloads[previousPayloads[i].payloadId];
+        for (uint40 i = 0; i < payloadIds.length; i++) {
+            PayloadParams memory p = payloads[payloadIds[i]];
+
             DigestParams memory digestParams = DigestParams(
                 p.finalizedTransmitter,
                 p.payloadId,
