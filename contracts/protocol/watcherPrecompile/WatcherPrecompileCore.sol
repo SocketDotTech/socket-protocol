@@ -192,17 +192,12 @@ abstract contract WatcherPrecompileCore is
         if (switchboard != switchboard_) revert InvalidSwitchboard();
     }
 
-    function _encodeTimeoutId(
-        uint32 chainSlug_,
-        address switchboardOrWatcher_
-    ) internal returns (bytes32) {
+    function _encodeTimeoutId(uint32 chainSlug_, address watcher_) internal returns (bytes32) {
         // Encode timeout ID by bit-shifting and combining:
         // chainSlug (32 bits) | switchboard or watcher precompile address (160 bits) | counter (64 bits)
         return
             bytes32(
-                (uint256(chainSlug_) << 224) |
-                    (uint256(uint160(switchboardOrWatcher_)) << 64) |
-                    timeoutCounter++
+                (uint256(chainSlug_) << 224) | (uint256(uint160(watcher_)) << 64) | timeoutCounter++
             );
     }
 
