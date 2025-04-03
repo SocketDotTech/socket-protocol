@@ -10,7 +10,7 @@ import {IWatcherPrecompileConfig} from "./IWatcherPrecompileConfig.sol";
 /// @dev Defines core functionality for payload processing and promise resolution
 interface IWatcherPrecompile {
     event CalledAppGateway(
-        bytes32 callId,
+        bytes32 inboxId,
         uint32 chainSlug,
         address plug,
         address appGateway,

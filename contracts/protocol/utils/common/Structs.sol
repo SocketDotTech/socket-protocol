@@ -77,7 +77,7 @@ struct PlugConfig {
 }
 //inbox:
 struct CallFromChainParams {
-    bytes32 callId;
+    bytes32 inboxId;
     bytes32 params;
     address plug;
     address appGateway;

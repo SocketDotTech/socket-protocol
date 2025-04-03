@@ -248,7 +248,7 @@ contract WatcherPrecompile is RequestHandler {
         );
 
         for (uint256 i = 0; i < params_.length; i++) {
-            if (appGatewayCalled[params_[i].callId]) revert AppGatewayAlreadyCalled();
+            if (appGatewayCalled[params_[i].inboxId]) revert AppGatewayAlreadyCalled();
             if (
                 !watcherPrecompileConfig__.isValidPlug(
                     params_[i].appGateway,
@@ -257,16 +257,14 @@ contract WatcherPrecompile is RequestHandler {
                 )
             ) revert InvalidInboxCaller();
 
-            appGatewayCalled[params_[i].callId] = true;
-            IAppGateway(params_[i].appGateway).callFromChain(
-                params_[i].chainSlug,
-                params_[i].plug,
-                params_[i].params,
-                params_[i].payload
-            );
+            appGatewayCaller = params_[i].appGateway;
+            appGatewayCalled[params_[i].inboxId] = true;
+
+            (bool success, ) = address(params_[i].appGateway).call(params_[i].payload);
+            if (!success) revert CallFailed();
 
             emit CalledAppGateway(
-                params_[i].callId,
+                params_[i].inboxId,
                 params_[i].chainSlug,
                 params_[i].plug,
                 params_[i].appGateway,
@@ -274,6 +272,8 @@ contract WatcherPrecompile is RequestHandler {
                 params_[i].payload
             );
         }
+
+        appGatewayCaller = address(0);
     }
 
     // ================== Helper functions ==================

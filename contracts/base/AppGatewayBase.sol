@@ -344,13 +344,6 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         }
     }
 
-    function callFromChain(
-        uint32 chainSlug_,
-        address plug_,
-        bytes32 params_,
-        bytes calldata payload_
-    ) external virtual onlyWatcherPrecompile {}
-
     /// @notice Initializes the contract
     /// @param chainSlug_ The chain slug
     function initialize(uint32 chainSlug_) public virtual {}

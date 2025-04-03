@@ -36,6 +36,7 @@ interface IWatcherPrecompileConfig {
     function setSwitchboard(uint32 chainSlug_, bytes32 sbType_, address switchboard_) external;
 
     /// @notice Sets valid plugs for each chain slug
+    /// @dev This function is used to verify if a plug deployed on a chain slug is valid connection to the app gateway
     function setIsValidPlug(uint32 chainSlug_, address plug_, bool isValid_) external;
 
     /// @notice Retrieves the configuration for a specific plug on a network
