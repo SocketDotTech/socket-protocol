@@ -32,7 +32,7 @@ abstract contract WatcherPrecompileCore is
         // from auction manager
         watcherPrecompileLimits__.consumeLimit(_getCoreAppGateway(msg.sender), SCHEDULE, 1);
         uint256 executeAt = block.timestamp + delayInSeconds_;
-        timeoutId = _encodeId(evmxSlug, address(this));
+        timeoutId = _encodeTimeoutId(evmxSlug, address(this));
         timeoutRequests[timeoutId] = TimeoutRequest(
             timeoutId,
             msg.sender,
@@ -192,18 +192,17 @@ abstract contract WatcherPrecompileCore is
         if (switchboard != switchboard_) revert InvalidSwitchboard();
     }
 
-    // todo: revisit when we do timeout precompile
-    function _encodeId(
+    function _encodeTimeoutId(
         uint32 chainSlug_,
         address switchboardOrWatcher_
     ) internal returns (bytes32) {
-        // Encode payload ID by bit-shifting and combining:
+        // Encode timeout ID by bit-shifting and combining:
         // chainSlug (32 bits) | switchboard or watcher precompile address (160 bits) | counter (64 bits)
         return
             bytes32(
                 (uint256(chainSlug_) << 224) |
                     (uint256(uint160(switchboardOrWatcher_)) << 64) |
-                    payloadCounter++
+                    timeoutCounter++
             );
     }
 
