@@ -2,6 +2,7 @@
 pragma solidity ^0.8.21;
 
 import {ExecuteParams} from "../protocol/utils/common/Structs.sol";
+
 /**
  * @title ISocket
  * @notice An interface for a Chain Abstraction contract
@@ -33,7 +34,7 @@ interface ISocket {
 
     /**
      * @notice emits the message details when a new message arrives at outbound
-     * @param callId call id
+     * @param inboxId call id
      * @param chainSlug local chain slug
      * @param plug local plug address
      * @param appGateway appGateway address to trigger the call
@@ -41,23 +42,13 @@ interface ISocket {
      * @param payload the data which will be used by contracts on chain
      */
     event AppGatewayCallRequested(
-        bytes32 callId,
+        bytes32 inboxId,
         uint32 chainSlug,
         address plug,
         address appGateway,
-        bytes32 params,
+        bytes params,
         bytes payload
     );
-
-    /**
-     * @notice To call the appGateway on EVMx. Should only be called by a plug.
-     * @param payload_ bytes to be delivered to the Plug on EVMx
-     * @param params_ a 32 bytes param to add details for execution.
-     */
-    function callAppGateway(
-        bytes calldata payload_,
-        bytes32 params_
-    ) external returns (bytes32 callId);
 
     /**
      * @notice executes a payload

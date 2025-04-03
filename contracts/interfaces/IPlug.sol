@@ -7,4 +7,6 @@ pragma solidity ^0.8.21;
  */
 interface IPlug {
     function initSocket(address appGateway_, address socket_, address switchboard_) external;
+
+    function inboxParams() external view returns (bytes memory);
 }

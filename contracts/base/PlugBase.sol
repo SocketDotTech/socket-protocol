@@ -11,6 +11,7 @@ abstract contract PlugBase is IPlug {
     ISocket public socket__;
     address public appGateway;
     uint256 public isSocketInitialized;
+    bytes public inboxParams;
 
     error SocketAlreadyInitialized();
     event ConnectorPlugDisconnected();
@@ -52,8 +53,10 @@ abstract contract PlugBase is IPlug {
         socket__ = ISocket(socket_);
     }
 
-    function _callAppGateway(bytes memory payload_, bytes32 params_) internal returns (bytes32) {
-        return socket__.callAppGateway(payload_, params_);
+    /// @notice Sets the inbox params
+    /// @param inboxParams_ The inbox params
+    function _setInboxParams(bytes memory inboxParams_) internal {
+        inboxParams = inboxParams_;
     }
 
     function initSocket(
