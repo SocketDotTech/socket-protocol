@@ -11,7 +11,7 @@ abstract contract PlugBase is IPlug {
     ISocket public socket__;
     address public appGateway;
     uint256 public isSocketInitialized;
-    bytes public triggerParams;
+    bytes public overrides;
 
     error SocketAlreadyInitialized();
     event ConnectorPlugDisconnected();
@@ -53,10 +53,10 @@ abstract contract PlugBase is IPlug {
         socket__ = ISocket(socket_);
     }
 
-    /// @notice Sets the trigger params
-    /// @param triggerParams_ The trigger params
-    function _setTriggerParams(bytes memory triggerParams_) internal {
-        triggerParams = triggerParams_;
+    /// @notice Sets the overrides needed for the trigger
+    /// @param overrides_ The overrides
+    function _setOverrides(bytes memory overrides_) internal {
+        overrides = overrides_;
     }
 
     function initSocket(
