@@ -13,7 +13,6 @@ interface IWatcherPrecompile {
         bytes32 triggerId,
         uint32 chainSlug,
         address plug,
-        address appGateway,
         bytes32 params,
         bytes payload
     );

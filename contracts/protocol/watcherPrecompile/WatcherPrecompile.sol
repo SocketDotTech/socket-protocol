@@ -249,25 +249,26 @@ contract WatcherPrecompile is RequestHandler {
 
         for (uint256 i = 0; i < params_.length; i++) {
             if (appGatewayCalled[params_[i].triggerId]) revert AppGatewayAlreadyCalled();
+
+            address appGateway = _decodeAppGateway(params_[i].triggerId);
             if (
                 !watcherPrecompileConfig__.isValidPlug(
-                    params_[i].appGateway,
+                    appGateway,
                     params_[i].chainSlug,
                     params_[i].plug
                 )
             ) revert InvalidCallerTriggered();
 
-            appGatewayCaller = params_[i].appGateway;
+            appGatewayCaller = appGateway;
             appGatewayCalled[params_[i].triggerId] = true;
 
-            (bool success, ) = address(params_[i].appGateway).call(params_[i].payload);
+            (bool success, ) = address(appGateway).call(params_[i].payload);
             if (!success) revert CallFailed();
 
             emit CalledAppGateway(
                 params_[i].triggerId,
                 params_[i].chainSlug,
                 params_[i].plug,
-                params_[i].appGateway,
                 params_[i].params,
                 params_[i].payload
             );
@@ -284,5 +285,9 @@ contract WatcherPrecompile is RequestHandler {
 
     function getRequestParams(uint40 requestCount) external view returns (RequestParams memory) {
         return requestParams[requestCount];
+    }
+
+    function _decodeAppGateway(bytes32 triggerId_) internal pure returns (address) {
+        return address(uint160(uint256(triggerId_) >> 64));
     }
 }

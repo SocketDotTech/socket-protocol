@@ -37,7 +37,6 @@ interface ISocket {
      * @param triggerId call id
      * @param chainSlug local chain slug
      * @param plug local plug address
-     * @param appGateway appGateway address to trigger the call
      * @param params params, for specifying details like fee pool chain, fee pool token and max fees if required
      * @param payload the data which will be used by contracts on chain
      */
@@ -45,7 +44,6 @@ interface ISocket {
         bytes32 triggerId,
         uint32 chainSlug,
         address plug,
-        address appGateway,
         bytes params,
         bytes payload
     );

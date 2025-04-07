@@ -32,7 +32,6 @@ contract MockWatcherPrecompile {
         bytes32 triggerId,
         uint32 chainSlug,
         address plug,
-        address appGateway,
         bytes32 params,
         bytes payload
     );
@@ -162,7 +161,6 @@ contract MockWatcherPrecompile {
                 params_[i].triggerId,
                 params_[i].chainSlug,
                 params_[i].plug,
-                params_[i].appGateway,
                 params_[i].params,
                 params_[i].payload
             );

@@ -135,7 +135,6 @@ contract Socket is SocketUtils {
             triggerId,
             chainSlug,
             plug_,
-            plugConfig.appGateway,
             overrides_,
             payload_
         );

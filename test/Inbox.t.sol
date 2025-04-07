@@ -14,7 +14,6 @@ contract TriggerTest is DeliveryHelperTest {
         bytes32 triggerId,
         uint32 chainSlug,
         address plug,
-        address appGateway,
         bytes params,
         bytes payload
     );
@@ -74,7 +73,6 @@ contract TriggerTest is DeliveryHelperTest {
             triggerId,
             arbChainSlug,
             address(counter),
-            address(gateway),
             bytes(""),
             payload
         );
