@@ -234,10 +234,10 @@ contract WatcherPrecompile is RequestHandler {
         maxTimeoutDelayInSeconds = maxTimeoutDelayInSeconds_;
     }
 
-    // ================== On-Chain Inbox ==================
+    // ================== On-Chain Trigger ==================
 
     function callAppGateways(
-        CallFromChainParams[] calldata params_,
+        TriggerParams[] calldata params_,
         uint256 signatureNonce_,
         bytes calldata signature_
     ) external {
@@ -248,32 +248,29 @@ contract WatcherPrecompile is RequestHandler {
         );
 
         for (uint256 i = 0; i < params_.length; i++) {
-            if (appGatewayCalled[params_[i].callId]) revert AppGatewayAlreadyCalled();
+            if (appGatewayCalled[params_[i].triggerId]) revert AppGatewayAlreadyCalled();
+
+            address appGateway = _decodeAppGateway(params_[i].triggerId);
             if (
                 !watcherPrecompileConfig__.isValidPlug(
-                    params_[i].appGateway,
+                    appGateway,
                     params_[i].chainSlug,
                     params_[i].plug
                 )
-            ) revert InvalidInboxCaller();
+            ) revert InvalidCallerTriggered();
 
-            appGatewayCalled[params_[i].callId] = true;
-            IAppGateway(params_[i].appGateway).callFromChain(
-                params_[i].chainSlug,
-                params_[i].plug,
-                params_[i].params,
-                params_[i].payload
-            );
+            appGatewayCaller = appGateway;
+            appGatewayCalled[params_[i].triggerId] = true;
 
-            emit CalledAppGateway(
-                params_[i].callId,
-                params_[i].chainSlug,
-                params_[i].plug,
-                params_[i].appGateway,
-                params_[i].params,
-                params_[i].payload
-            );
+            (bool success, ) = address(appGateway).call(params_[i].payload);
+            if (!success) {
+                emit AppGatewayCallFailed(params_[i].triggerId);
+            } else {
+                emit CalledAppGateway(params_[i].triggerId);
+            }
         }
+
+        appGatewayCaller = address(0);
     }
 
     // ================== Helper functions ==================
@@ -284,5 +281,9 @@ contract WatcherPrecompile is RequestHandler {
 
     function getRequestParams(uint40 requestCount) external view returns (RequestParams memory) {
         return requestParams[requestCount];
+    }
+
+    function _decodeAppGateway(bytes32 triggerId_) internal pure returns (address) {
+        return address(uint160(uint256(triggerId_) >> 64));
     }
 }

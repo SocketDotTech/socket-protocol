@@ -75,9 +75,9 @@ struct PlugConfig {
     address appGateway;
     address switchboard;
 }
-//inbox:
-struct CallFromChainParams {
-    bytes32 callId;
+//trigger:
+struct TriggerParams {
+    bytes32 triggerId;
     bytes32 params;
     address plug;
     address appGateway;

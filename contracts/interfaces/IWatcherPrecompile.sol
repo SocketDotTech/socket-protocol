@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {DigestParams, ResolvedPromises, PayloadParams, CallFromChainParams, PayloadSubmitParams, RequestParams} from "../protocol/utils/common/Structs.sol";
+import {DigestParams, ResolvedPromises, PayloadParams, TriggerParams, PayloadSubmitParams, RequestParams} from "../protocol/utils/common/Structs.sol";
 import {IWatcherPrecompileLimits} from "./IWatcherPrecompileLimits.sol";
 import {IWatcherPrecompileConfig} from "./IWatcherPrecompileConfig.sol";
 
@@ -9,14 +9,9 @@ import {IWatcherPrecompileConfig} from "./IWatcherPrecompileConfig.sol";
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
 /// @dev Defines core functionality for payload processing and promise resolution
 interface IWatcherPrecompile {
-    event CalledAppGateway(
-        bytes32 callId,
-        uint32 chainSlug,
-        address plug,
-        address appGateway,
-        bytes32 params,
-        bytes payload
-    );
+    event CalledAppGateway(bytes32 triggerId);
+
+    event AppGatewayCallFailed(bytes32 triggerId);
 
     /// @notice Emitted when a new query is requested
     event QueryRequested(PayloadParams params);
@@ -146,7 +141,7 @@ interface IWatcherPrecompile {
     function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external;
 
     function callAppGateways(
-        CallFromChainParams[] calldata params_,
+        TriggerParams[] calldata params_,
         uint256 signatureNonce_,
         bytes calldata signature_
     ) external;

@@ -65,7 +65,7 @@ contract MockSocket is ISocket {
     ////////////////////////////////////////////////////////////
     ////////////////////// State Vars //////////////////////////
     ////////////////////////////////////////////////////////////
-    uint64 public callCounter;
+    uint64 public triggerCounter;
     uint32 public chainSlug;
 
     enum ExecutionStatus {
@@ -89,24 +89,15 @@ contract MockSocket is ISocket {
 
     /**
      * @notice To send message to a connected remote chain. Should only be called by a plug.
-     * @param payload bytes to be delivered to the Plug on the siblingChainSlug_
-     * @param params a 32 bytes param to add details for execution, for eg: fees to be paid for execution
      */
     function callAppGateway(
         bytes calldata payload,
-        bytes32 params
-    ) external returns (bytes32 callId) {
+        bytes calldata overrides
+    ) external returns (bytes32 triggerId) {
         PlugConfig memory plugConfig = _plugConfigs[msg.sender];
         // creates a unique ID for the message
-        callId = _encodeCallId(plugConfig.appGateway);
-        emit AppGatewayCallRequested(
-            callId,
-            chainSlug,
-            msg.sender,
-            plugConfig.appGateway,
-            params,
-            payload
-        );
+        triggerId = _encodeTriggerId(plugConfig.appGateway);
+        emit AppGatewayCallRequested(triggerId, chainSlug, msg.sender, overrides, payload);
     }
 
     /**
@@ -174,12 +165,14 @@ contract MockSocket is ISocket {
     }
 
     // Packs the local plug, local chain slug, remote chain slug and nonce
-    // callCount++ will take care of call id overflow as well
-    // callId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
-    function _encodeCallId(address appGateway_) internal returns (bytes32) {
+    // triggerCounter++ will take care of call id overflow as well
+    // triggerId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
+    function _encodeTriggerId(address appGateway_) internal returns (bytes32) {
         return
             bytes32(
-                (uint256(chainSlug) << 224) | (uint256(uint160(appGateway_)) << 64) | callCounter++
+                (uint256(chainSlug) << 224) |
+                    (uint256(uint160(appGateway_)) << 64) |
+                    triggerCounter++
             );
     }
 }

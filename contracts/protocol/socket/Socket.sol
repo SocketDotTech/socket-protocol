@@ -2,6 +2,8 @@
 pragma solidity ^0.8.21;
 
 import "./SocketUtils.sol";
+
+import {IPlug} from "../../interfaces/IPlug.sol";
 import {PlugDisconnected, InvalidAppGateway} from "../utils/common/Errors.sol";
 
 /**
@@ -37,35 +39,6 @@ contract Socket is SocketUtils {
         address owner_,
         string memory version_
     ) SocketUtils(chainSlug_, owner_, version_) {}
-
-    ////////////////////////////////////////////////////////
-    ////////////////////// OPERATIONS //////////////////////////
-    ////////////////////////////////////////////////////////
-    /**
-     * @notice To send message to a connected remote chain. Should only be called by a plug.
-     * @param payload bytes to be delivered to the Plug on the siblingChainSlug_
-     * @param params a 32 bytes param to add details for execution, for eg: fees to be paid for execution
-     */
-    function callAppGateway(
-        bytes calldata payload,
-        bytes32 params
-    ) external returns (bytes32 callId) {
-        PlugConfig memory plugConfig = _plugConfigs[msg.sender];
-
-        // if no sibling plug is found for the given chain slug, revert
-        if (plugConfig.appGateway == address(0)) revert PlugDisconnected();
-
-        // creates a unique ID for the message
-        callId = _encodeCallId(plugConfig.appGateway);
-        emit AppGatewayCallRequested(
-            callId,
-            chainSlug,
-            msg.sender,
-            plugConfig.appGateway,
-            params,
-            payload
-        );
-    }
 
     /**
      * @notice Executes a payload that has been delivered by transmitters and authenticated by switchboards
@@ -136,5 +109,35 @@ contract Socket is SocketUtils {
         if (payloadExecuted[payloadId_] != ExecutionStatus.NotExecuted)
             revert PayloadAlreadyExecuted(payloadExecuted[payloadId_]);
         payloadExecuted[payloadId_] = ExecutionStatus.Executed;
+    }
+
+    ////////////////////////////////////////////////////////
+    ////////////////////// OPERATIONS //////////////////////////
+    ////////////////////////////////////////////////////////
+    /**
+     * @notice To send message to a connected remote chain. Should only be called by a plug.
+     * @param payload_ bytes to be delivered on EVMx
+     * @param overrides_ a bytes param to add details for execution, for eg: fees to be paid for execution
+     */
+    function _callAppGateway(
+        address plug_,
+        bytes memory overrides_,
+        bytes memory payload_
+    ) internal returns (bytes32 triggerId) {
+        PlugConfig memory plugConfig = _plugConfigs[plug_];
+
+        // if no sibling plug is found for the given chain slug, revert
+        if (plugConfig.appGateway == address(0)) revert PlugDisconnected();
+
+        // creates a unique ID for the message
+        triggerId = _encodeTriggerId(plugConfig.appGateway);
+        emit AppGatewayCallRequested(triggerId, chainSlug, plug_, overrides_, payload_);
+    }
+
+    /// @notice Fallback function that forwards all calls to Socket's callAppGateway
+    /// @dev The calldata is passed as-is to the gateways
+    fallback(bytes calldata) external returns (bytes memory) {
+        bytes memory overrides = IPlug(msg.sender).overrides();
+        return abi.encode(_callAppGateway(msg.sender, overrides, msg.data));
     }
 }

@@ -22,7 +22,7 @@ error CallFailed();
 error PlugDisconnected();
 error InvalidAppGateway();
 error AppGatewayAlreadyCalled();
-error InvalidInboxCaller();
+error InvalidCallerTriggered();
 error PromisesNotResolved();
 error InvalidPromise();
 error InvalidIndex();

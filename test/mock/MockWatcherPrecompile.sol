@@ -5,9 +5,9 @@ import "../../contracts/interfaces/IAppGateway.sol";
 import "../../contracts/interfaces/IWatcherPrecompile.sol";
 import "../../contracts/interfaces/IPromise.sol";
 
-import {TimeoutRequest, CallFromChainParams, PlugConfig, ResolvedPromises, AppGatewayConfig} from "../../contracts/protocol/utils/common/Structs.sol";
+import {TimeoutRequest, TriggerParams, PlugConfig, ResolvedPromises, AppGatewayConfig} from "../../contracts/protocol/utils/common/Structs.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/protocol/utils/common/Constants.sol";
-import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../../contracts/protocol/utils/common/Errors.sol";
+import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../../contracts/protocol/utils/common/Errors.sol";
 import "solady/utils/ERC1967Factory.sol";
 
 /// @title WatcherPrecompile
@@ -28,14 +28,7 @@ contract MockWatcherPrecompile {
     error InvalidChainSlug();
     error InvalidTransmitter();
 
-    event CalledAppGateway(
-        bytes32 callId,
-        uint32 chainSlug,
-        address plug,
-        address appGateway,
-        bytes32 params,
-        bytes payload
-    );
+    event CalledAppGateway(bytes32 triggerId);
 
     /// @notice Emitted when a new query is requested
     /// @param chainSlug The identifier of the destination chain
@@ -154,18 +147,11 @@ contract MockWatcherPrecompile {
         }
     }
 
-    // ================== On-Chain Inbox ==================
+    // ================== On-Chain Trigger ==================
 
-    function callAppGateways(CallFromChainParams[] calldata params_) external {
+    function callAppGateways(TriggerParams[] calldata params_) external {
         for (uint256 i = 0; i < params_.length; i++) {
-            emit CalledAppGateway(
-                params_[i].callId,
-                params_[i].chainSlug,
-                params_[i].plug,
-                params_[i].appGateway,
-                params_[i].params,
-                params_[i].payload
-            );
+            emit CalledAppGateway(params_[i].triggerId);
         }
     }
 
