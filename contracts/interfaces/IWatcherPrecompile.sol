@@ -17,6 +17,8 @@ interface IWatcherPrecompile {
         bytes payload
     );
 
+    event AppGatewayCallFailed(bytes32 triggerId);
+
     /// @notice Emitted when a new query is requested
     event QueryRequested(PayloadParams params);
 
