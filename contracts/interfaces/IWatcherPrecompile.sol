@@ -9,13 +9,7 @@ import {IWatcherPrecompileConfig} from "./IWatcherPrecompileConfig.sol";
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
 /// @dev Defines core functionality for payload processing and promise resolution
 interface IWatcherPrecompile {
-    event CalledAppGateway(
-        bytes32 triggerId,
-        uint32 chainSlug,
-        address plug,
-        bytes32 params,
-        bytes payload
-    );
+    event CalledAppGateway(bytes32 triggerId);
 
     event AppGatewayCallFailed(bytes32 triggerId);
 

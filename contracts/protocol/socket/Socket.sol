@@ -131,13 +131,7 @@ contract Socket is SocketUtils {
 
         // creates a unique ID for the message
         triggerId = _encodeTriggerId(plugConfig.appGateway);
-        emit AppGatewayCallRequested(
-            triggerId,
-            chainSlug,
-            plug_,
-            overrides_,
-            payload_
-        );
+        emit AppGatewayCallRequested(triggerId, chainSlug, plug_, overrides_, payload_);
     }
 
     /// @notice Fallback function that forwards all calls to Socket's callAppGateway

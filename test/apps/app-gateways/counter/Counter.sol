@@ -22,7 +22,7 @@ contract Counter is Ownable, PlugBase {
     }
 
     function increaseOnGateway(uint256 value_) external returns (bytes32) {
-        // can set trigger params here: _setOverrides(params_);
+        // can set overrides here: _setOverrides(params_);
         return ICounterAppGateway(address(socket__)).increase(value_);
     }
 }

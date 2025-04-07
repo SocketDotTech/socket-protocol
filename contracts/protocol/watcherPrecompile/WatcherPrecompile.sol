@@ -266,13 +266,7 @@ contract WatcherPrecompile is RequestHandler {
             if (!success) {
                 emit AppGatewayCallFailed(params_[i].triggerId);
             } else {
-                emit CalledAppGateway(
-                    params_[i].triggerId,
-                    params_[i].chainSlug,
-                    params_[i].plug,
-                    params_[i].params,
-                    params_[i].payload
-                );
+                emit CalledAppGateway(params_[i].triggerId);
             }
         }
 

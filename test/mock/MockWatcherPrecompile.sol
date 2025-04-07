@@ -28,13 +28,7 @@ contract MockWatcherPrecompile {
     error InvalidChainSlug();
     error InvalidTransmitter();
 
-    event CalledAppGateway(
-        bytes32 triggerId,
-        uint32 chainSlug,
-        address plug,
-        bytes32 params,
-        bytes payload
-    );
+    event CalledAppGateway(bytes32 triggerId);
 
     /// @notice Emitted when a new query is requested
     /// @param chainSlug The identifier of the destination chain
@@ -157,13 +151,7 @@ contract MockWatcherPrecompile {
 
     function callAppGateways(TriggerParams[] calldata params_) external {
         for (uint256 i = 0; i < params_.length; i++) {
-            emit CalledAppGateway(
-                params_[i].triggerId,
-                params_[i].chainSlug,
-                params_[i].plug,
-                params_[i].params,
-                params_[i].payload
-            );
+            emit CalledAppGateway(params_[i].triggerId);
         }
     }
 
