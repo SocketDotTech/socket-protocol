@@ -136,11 +136,8 @@ contract Socket is SocketUtils {
 
     /// @notice Fallback function that forwards all calls to Socket's callAppGateway
     /// @dev The calldata is passed as-is to the gateways
-    fallback(bytes calldata) external payable returns (bytes memory) {
+    fallback(bytes calldata) external returns (bytes memory) {
         bytes memory overrides = IPlug(msg.sender).overrides();
         return abi.encode(_callAppGateway(msg.sender, overrides, msg.data));
     }
-
-    /// @notice Receive function to accept ETH payments
-    receive() external payable {}
 }
