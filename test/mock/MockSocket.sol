@@ -89,17 +89,15 @@ contract MockSocket is ISocket {
 
     /**
      * @notice To send message to a connected remote chain. Should only be called by a plug.
-     * @param payload bytes to be delivered to the Plug on the siblingChainSlug_
-     * @param params a 32 bytes param to add details for execution, for eg: fees to be paid for execution
      */
     function callAppGateway(
         bytes calldata payload,
-        bytes calldata params
+        bytes calldata overrides
     ) external returns (bytes32 triggerId) {
         PlugConfig memory plugConfig = _plugConfigs[msg.sender];
         // creates a unique ID for the message
         triggerId = _encodeTriggerId(plugConfig.appGateway);
-        emit AppGatewayCallRequested(triggerId, chainSlug, msg.sender, params, payload);
+        emit AppGatewayCallRequested(triggerId, chainSlug, msg.sender, overrides, payload);
     }
 
     /**

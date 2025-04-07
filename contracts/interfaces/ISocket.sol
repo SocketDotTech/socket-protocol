@@ -37,14 +37,14 @@ interface ISocket {
      * @param triggerId call id
      * @param chainSlug local chain slug
      * @param plug local plug address
-     * @param params params, for specifying details like fee pool chain, fee pool token and max fees if required
+     * @param overrides params, for specifying details like fee pool chain, fee pool token and max fees if required
      * @param payload the data which will be used by contracts on chain
      */
     event AppGatewayCallRequested(
         bytes32 triggerId,
         uint32 chainSlug,
         address plug,
-        bytes params,
+        bytes overrides,
         bytes payload
     );
 

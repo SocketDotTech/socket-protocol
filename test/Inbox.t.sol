@@ -14,7 +14,7 @@ contract TriggerTest is DeliveryHelperTest {
         bytes32 triggerId,
         uint32 chainSlug,
         address plug,
-        bytes params,
+        bytes overrides,
         bytes payload
     );
 
