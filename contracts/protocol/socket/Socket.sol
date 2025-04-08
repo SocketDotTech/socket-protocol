@@ -2,9 +2,10 @@
 pragma solidity ^0.8.21;
 
 import "./SocketUtils.sol";
-
+import {LibCall} from "solady/utils/LibCall.sol";
 import {IPlug} from "../../interfaces/IPlug.sol";
 import {PlugDisconnected, InvalidAppGateway} from "../utils/common/Errors.sol";
+import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
 
 /**
  * @title SocketDst
@@ -15,6 +16,8 @@ import {PlugDisconnected, InvalidAppGateway} from "../utils/common/Errors.sol";
  * It also includes functions for payload execution and verification
  */
 contract Socket is SocketUtils {
+    using LibCall for address;
+
     ////////////////////////////////////////////////////////
     ////////////////////// ERRORS //////////////////////////
     ////////////////////////////////////////////////////////
@@ -93,10 +96,12 @@ contract Socket is SocketUtils {
         if (gasleft() < executeParams_.gasLimit) revert LowGasLimit();
 
         // NOTE: external un-trusted call
-        (bool success, bytes memory returnData) = executeParams_.target.call{
-            gas: executeParams_.gasLimit,
-            value: msg.value
-        }(executeParams_.payload);
+        (bool success, , bytes memory returnData) = executeParams_.target.tryCall(
+            msg.value,
+            executeParams_.gasLimit,
+            maxCopyBytes,
+            executeParams_.payload
+        );
 
         if (!success) {
             payloadExecuted[payloadId_] = ExecutionStatus.Reverted;
