@@ -7,7 +7,7 @@ import {IAppGateway} from "../interfaces/IAppGateway.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
 import {AsyncPromiseState} from "./utils/common/Structs.sol";
 import {MAX_COPY_BYTES} from "./utils/common/Constants.sol";
-import "./utils/ExcessivelySafeCall.sol";
+import {LibCall} from "solady/utils/LibCall.sol";
 
 abstract contract AsyncPromiseStorage is IPromise {
     // slots [0-49] reserved for gap
@@ -46,7 +46,7 @@ abstract contract AsyncPromiseStorage is IPromise {
 /// @notice this contract stores the callback address and data to be executed once the previous call is executed
 /// This promise expires once the callback is executed
 contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil {
-    using ExcessivelySafeCall for address;
+    using LibCall for address;
     /// @notice Error thrown when attempting to resolve an already resolved promise.
     error PromiseAlreadyResolved();
     /// @notice Only the forwarder or local invoker can set then's promise callback
@@ -96,7 +96,7 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
             abi.encode(callbackData, returnData_)
         );
         // setting max_copy_bytes to 0 as not using returnData right now
-        (success, ) = localInvoker.excessivelySafeCall(gasleft(), 0, 0, combinedCalldata);
+        (success, , ) = localInvoker.tryCall(0, gasleft(), 0, combinedCalldata);
         if (success) return success;
 
         _handleRevert(requestCount_, payloadId_, AsyncPromiseState.CALLBACK_REVERTING);

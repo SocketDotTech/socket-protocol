@@ -2,14 +2,14 @@
 pragma solidity ^0.8.21;
 
 import "./RequestHandler.sol";
-import "../utils/ExcessivelySafeCall.sol";
+import {LibCall} from "solady/utils/LibCall.sol";
 import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
 contract WatcherPrecompile is RequestHandler {
     using DumpDecoder for bytes32;
-    using ExcessivelySafeCall for address;
+    using LibCall for address;
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -65,9 +65,9 @@ contract WatcherPrecompile is RequestHandler {
         if (timeoutRequest_.isResolved) revert TimeoutAlreadyResolved();
         if (block.timestamp < timeoutRequest_.executeAt) revert ResolvingTimeoutTooEarly();
 
-        (bool success, ) = timeoutRequest_.target.excessivelySafeCall(
-            gasleft(),
+        (bool success, , ) = timeoutRequest_.target.tryCall(
             0,
+            gasleft(),
             0, // setting max_copy_bytes to 0 as not using returnData right now
             timeoutRequest_.payload
         );
@@ -271,9 +271,9 @@ contract WatcherPrecompile is RequestHandler {
             appGatewayCaller = appGateway;
             appGatewayCalled[params_[i].triggerId] = true;
 
-            (bool success, ) = appGateway.excessivelySafeCall(
-                gasleft(),
+            (bool success, , ) = appGateway.tryCall(
                 0,
+                gasleft(),
                 0, // setting max_copy_bytes to 0 as not using returnData right now
                 params_[i].payload
             );

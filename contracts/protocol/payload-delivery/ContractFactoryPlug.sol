@@ -7,13 +7,13 @@ import "../utils/RescueFundsLib.sol";
 import {NotSocket} from "../utils/common/Errors.sol";
 import "../../base/PlugBase.sol";
 import "../../interfaces/IContractFactoryPlug.sol";
-import "../utils/ExcessivelySafeCall.sol";
+import {LibCall} from "solady/utils/LibCall.sol";
 import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
 
 /// @title ContractFactory
 /// @notice Abstract contract for deploying contracts
 contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
-    using ExcessivelySafeCall for address;
+    using LibCall for address;
 
     event Deployed(address addr, bytes32 salt, bytes returnData);
 
@@ -52,9 +52,9 @@ contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
         bytes memory returnData;
         if (initCallData_.length > 0) {
             // Capture more detailed error information
-            (bool success, bytes memory returnData_) = addr.excessivelySafeCall(
-                gasleft(),
+            (bool success, , bytes memory returnData_) = addr.tryCall(
                 0,
+                gasleft(),
                 MAX_COPY_BYTES,
                 initCallData_
             );
