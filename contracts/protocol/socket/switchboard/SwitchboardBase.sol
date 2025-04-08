@@ -4,7 +4,7 @@ pragma solidity ^0.8.21;
 import "../../../interfaces/ISwitchboard.sol";
 import "../../../interfaces/ISocket.sol";
 import "../../utils/AccessControl.sol";
-import {RESCUE_ROLE} from "../../utils/common/AccessRoles.sol";
+import {RESCUE_ROLE, WATCHER_ROLE} from "../../utils/common/AccessRoles.sol";
 import "../../utils/RescueFundsLib.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
 
@@ -13,20 +13,7 @@ abstract contract SwitchboardBase is ISwitchboard, AccessControl {
 
     // chain slug of deployed chain
     uint32 public immutable chainSlug;
-
-    // incrementing nonce for each signer
-    // watcher => nextNonce
-    mapping(address => uint256) public nextNonce;
-
-    // destinationChainSlug => initialPacketCount - packets with packetCount after this will be accepted at the switchboard.
-    // This is to prevent attacks with sending payloads for chain slugs before the switchboard is registered for them.
-    mapping(uint32 => uint256) public initialPacketCount;
-
-    // Error hit when a signature with unexpected nonce is received
-    error InvalidNonce();
-
-    bytes32 constant WATCHER_ROLE = keccak256("WATCHER_ROLE");
-
+    
     /**
      * @dev Constructor of SwitchboardBase
      * @param chainSlug_ Chain slug of deployment chain

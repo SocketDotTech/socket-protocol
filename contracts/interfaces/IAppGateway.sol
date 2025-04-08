@@ -9,7 +9,7 @@ interface IAppGateway {
     function getOverrideParams()
         external
         view
-        returns (Read, Parallel, WriteFinality, uint256, uint256, bytes32);
+        returns (Read, Parallel, WriteFinality, uint256, uint256, uint256, bytes32);
 
     function onRequestComplete(uint40 requestCount_, bytes calldata onCompleteData_) external;
 

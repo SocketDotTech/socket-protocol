@@ -5,7 +5,7 @@ import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
 import "./DeliveryUtils.sol";
-
+import {PAYLOAD_SIZE_LIMIT, REQUEST_PAYLOAD_COUNT_LIMIT} from "../../utils/common/Constants.sol";
 /// @notice Abstract contract for managing asynchronous payloads
 abstract contract RequestQueue is DeliveryUtils {
     // slots [0-108] reserved for delivery helper storage and [109-159] reserved for addr resolver util
@@ -20,6 +20,8 @@ abstract contract RequestQueue is DeliveryUtils {
     /// @notice Queues a new payload
     /// @param queuePayloadParams_ The call parameters
     function queue(QueuePayloadParams memory queuePayloadParams_) external {
+        if (queuePayloadParams.length > REQUEST_PAYLOAD_COUNT_LIMIT)
+            revert RequestPayloadCountLimitExceeded();
         queuePayloadParams.push(queuePayloadParams_);
     }
 
@@ -43,7 +45,6 @@ abstract contract RequestQueue is DeliveryUtils {
         bytes memory onCompleteData_
     ) internal returns (uint40 requestCount) {
         if (queuePayloadParams.length == 0) return 0;
-
         if (!IFeesManager(addressResolver__.feesManager()).isFeesEnough(appGateway_, fees_))
             revert InsufficientFees();
 
@@ -144,10 +145,12 @@ abstract contract RequestQueue is DeliveryUtils {
                 queuePayloadParams_.initCallData
             );
 
-            if (payload_.length > 24.5 * 1024) revert PayloadTooLarge();
             target = getDeliveryHelperPlugAddress(queuePayloadParams_.chainSlug);
         }
 
+        if (payload_.length > PAYLOAD_SIZE_LIMIT) revert PayloadTooLarge();
+        if (queuePayloadParams_.value > chainMaxMsgValueLimit[queuePayloadParams_.chainSlug])
+            revert MaxMsgValueLimitExceeded();
         return
             PayloadSubmitParams({
                 levelNumber: level_,

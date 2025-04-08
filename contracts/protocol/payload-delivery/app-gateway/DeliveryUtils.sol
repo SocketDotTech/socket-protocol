@@ -35,6 +35,11 @@ abstract contract DeliveryUtils is
     /// @notice Error thrown when a request contains only reads
     error ReadOnlyRequests();
 
+    /// @notice Error thrown when a request contains more than 10 payloads
+    error RequestPayloadCountLimitExceeded();
+    /// @notice Error thrown when a maximum message value limit is exceeded
+    error MaxMsgValueLimitExceeded();
+
     event CallBackReverted(uint40 requestCount_, bytes32 payloadId_);
     event RequestCancelled(uint40 indexed requestCount);
     event BidTimeoutUpdated(uint256 newBidTimeout);
@@ -70,5 +75,19 @@ abstract contract DeliveryUtils is
     function updateBidTimeout(uint128 newBidTimeout_) external onlyOwner {
         bidTimeout = newBidTimeout_;
         emit BidTimeoutUpdated(newBidTimeout_);
+    }
+
+    /// @notice Updates the maximum message value limit for multiple chains
+    /// @param chainSlugs_ Array of chain identifiers
+    /// @param maxMsgValueLimits_ Array of corresponding maximum message value limits
+    function updateChainMaxMsgValueLimits(
+        uint32[] calldata chainSlugs_,
+        uint256[] calldata maxMsgValueLimits_
+    ) external onlyOwner {
+        if (chainSlugs_.length != maxMsgValueLimits_.length) revert InvalidIndex();
+
+        for (uint256 i = 0; i < chainSlugs_.length; i++) {
+            chainMaxMsgValueLimit[chainSlugs_[i]] = maxMsgValueLimits_[i];
+        }
     }
 }
