@@ -119,18 +119,11 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         // to update the state in case selector is bytes(0) but reverting onchain
         resolved = false;
         state = state_;
-        bytes memory combinedCalldata = abi.encodeWithSelector(
-            IAppGateway.handleRevert.selector,
-            requestCount_,
-            payloadId_
-        );
-        (bool success, ) = localInvoker.excessivelySafeCall(
-            gasleft(),
-            0,
-            0, // setting max_copy_bytes to 0 as not using returnData right now
-            combinedCalldata
-        );
-        if (!success) revert PromiseRevertFailed();
+        try IAppGateway(localInvoker).handleRevert(requestCount_, payloadId_) {
+            // Successfully handled revert
+        } catch {
+            revert PromiseRevertFailed();
+        }
     }
 
     /// @notice Sets the callback selector and data for the promise.

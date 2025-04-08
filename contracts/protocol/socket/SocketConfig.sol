@@ -20,7 +20,7 @@ abstract contract SocketConfig is ISocket, AccessControl {
     // plug => (appGateway, switchboard__)
     mapping(address => PlugConfig) internal _plugConfigs;
 
-    uint16 public maxCopyBytes = 256;
+    uint16 public maxCopyBytes = 2048; // 2KB
     // Error triggered when a connection is invalid
     error InvalidConnection();
     error InvalidSwitchboard();

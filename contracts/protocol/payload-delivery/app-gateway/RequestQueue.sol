@@ -20,6 +20,8 @@ abstract contract RequestQueue is DeliveryUtils {
     /// @notice Queues a new payload
     /// @param queuePayloadParams_ The call parameters
     function queue(QueuePayloadParams memory queuePayloadParams_) external {
+        if (queuePayloadParams.length > REQUEST_PAYLOAD_COUNT_LIMIT)
+            revert RequestPayloadCountLimitExceeded();
         queuePayloadParams.push(queuePayloadParams_);
     }
 
@@ -43,9 +45,6 @@ abstract contract RequestQueue is DeliveryUtils {
         bytes memory onCompleteData_
     ) internal returns (uint40 requestCount) {
         if (queuePayloadParams.length == 0) return 0;
-        if (queuePayloadParams.length > REQUEST_PAYLOAD_COUNT_LIMIT)
-            revert RequestPayloadCountLimitExceeded();
-
         if (!IFeesManager(addressResolver__.feesManager()).isFeesEnough(appGateway_, fees_))
             revert InsufficientFees();
 

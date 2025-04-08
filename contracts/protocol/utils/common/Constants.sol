@@ -19,4 +19,4 @@ uint256 constant DEPLOY_GAS_LIMIT = 5_000_000;
 uint256 constant CONFIGURE_GAS_LIMIT = 1_000_000;
 uint256 constant PAYLOAD_SIZE_LIMIT = 24_500;
 uint256 constant REQUEST_PAYLOAD_COUNT_LIMIT = 10;
-uint16 constant MAX_COPY_BYTES = 256;
+uint16 constant MAX_COPY_BYTES = 2048; // 2KB

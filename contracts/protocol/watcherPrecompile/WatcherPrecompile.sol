@@ -65,7 +65,7 @@ contract WatcherPrecompile is RequestHandler {
         if (timeoutRequest_.isResolved) revert TimeoutAlreadyResolved();
         if (block.timestamp < timeoutRequest_.executeAt) revert ResolvingTimeoutTooEarly();
 
-        (bool success, ) = address(timeoutRequest_.target).excessivelySafeCall(
+        (bool success, ) = timeoutRequest_.target.excessivelySafeCall(
             gasleft(),
             0,
             0, // setting max_copy_bytes to 0 as not using returnData right now
@@ -271,7 +271,7 @@ contract WatcherPrecompile is RequestHandler {
             appGatewayCaller = appGateway;
             appGatewayCalled[params_[i].triggerId] = true;
 
-            (bool success, ) = address(appGateway).excessivelySafeCall(
+            (bool success, ) = appGateway.excessivelySafeCall(
                 gasleft(),
                 0,
                 0, // setting max_copy_bytes to 0 as not using returnData right now
