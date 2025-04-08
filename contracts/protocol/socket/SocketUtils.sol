@@ -65,13 +65,14 @@ abstract contract SocketUtils is SocketConfig {
         return
             keccak256(
                 abi.encode(
+                    version,
                     transmitter_,
                     payloadId_,
                     executeParams_.deadline,
                     executeParams_.callType,
                     executeParams_.writeFinality,
                     executeParams_.gasLimit,
-                    msg.value,
+                    executeParams_.msgValue,
                     executeParams_.readAt,
                     executeParams_.payload,
                     executeParams_.target,
