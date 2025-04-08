@@ -29,6 +29,7 @@ abstract contract DeliveryHelperStorage is IMiddleware {
 
     mapping(uint40 => RequestMetadata) public requests;
 
+    mapping(uint32 => uint256) public chainMaxMsgValueLimit;
     // slots [59-108] reserved for gap
-    uint256[50] _gap_after;
+    uint256[49] _gap_after;
 }
