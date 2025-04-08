@@ -51,7 +51,7 @@ contract Socket is SocketUtils {
         PlugConfig memory plugConfig = _plugConfigs[executeParams_.target];
         if (plugConfig.appGateway == address(0)) revert PlugDisconnected();
 
-        if (msg.value < executeParams_.msgValue) revert InsufficientMsgValue();
+        if (msg.value < executeParams_.value) revert InsufficientMsgValue();
         bytes32 payloadId = _createPayloadId(plugConfig.switchboard, executeParams_);
         _validateExecutionStatus(payloadId);
 

@@ -96,6 +96,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
             WriteFinality writeFinality,
             uint256 readAt,
             uint256 gasLimit,
+            uint256 value,
             bytes32 sbType
         ) = IAppGateway(msg.sender).getOverrideParams();
         address switchboard = watcherPrecompileConfig().switchboards(chainSlug, sbType);
@@ -113,7 +114,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
                 target: onChainAddress,
                 appGateway: msg.sender,
                 gasLimit: gasLimit,
-                value: 0,
+                value: value,
                 readAt: readAt,
                 payload: msg.data,
                 initCallData: bytes("")

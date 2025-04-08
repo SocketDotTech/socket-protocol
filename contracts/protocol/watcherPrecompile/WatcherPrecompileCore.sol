@@ -49,9 +49,10 @@ abstract contract WatcherPrecompileCore is
         PayloadParams memory params_,
         address transmitter_
     ) internal returns (bytes32 digest) {
+        uint32 chainSlug = params_.dump.getChainSlug();
         // Verify that the app gateway is properly configured for this chain and target
         watcherPrecompileConfig__.verifyConnections(
-            params_.dump.getChainSlug(),
+            chainSlug,
             params_.target,
             params_.appGateway,
             params_.switchboard
@@ -69,6 +70,7 @@ abstract contract WatcherPrecompileCore is
 
         // Construct parameters for digest calculation
         DigestParams memory digestParams_ = DigestParams(
+            watcherPrecompileConfig__.sockets(chainSlug),
             transmitter_,
             params_.payloadId,
             deadline,
@@ -116,6 +118,7 @@ abstract contract WatcherPrecompileCore is
     function getDigest(DigestParams memory params_) public pure returns (bytes32 digest) {
         digest = keccak256(
             abi.encode(
+                params_.socket,
                 params_.transmitter,
                 params_.payloadId,
                 params_.deadline,
@@ -149,6 +152,7 @@ abstract contract WatcherPrecompileCore is
         for (uint40 i = 0; i < previousPayloads.length; i++) {
             PayloadParams memory p = payloads[previousPayloads[i].payloadId];
             DigestParams memory digestParams = DigestParams(
+                watcherPrecompileConfig__.sockets(p.dump.getChainSlug()),
                 p.finalizedTransmitter,
                 p.payloadId,
                 p.deadline,

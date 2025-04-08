@@ -119,6 +119,7 @@ struct OverrideParams {
     Parallel isParallelCall;
     WriteFinality writeFinality;
     uint256 gasLimit;
+    uint256 value;
     uint256 readAt;
 }
 
@@ -131,6 +132,7 @@ struct Fees {
 
 // digest:
 struct DigestParams {
+    address socket;
     address transmitter;
     bytes32 payloadId;
     uint256 deadline;
@@ -227,6 +229,7 @@ struct ExecuteParams {
     CallType callType;
     WriteFinality writeFinality;
     uint256 gasLimit;
+    uint256 value;
     uint256 readAt;
     bytes payload;
     address target;
