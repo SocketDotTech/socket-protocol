@@ -212,6 +212,8 @@ contract WatcherPrecompile is RequestHandler {
         );
 
         PayloadParams storage payloadParams = payloads[payloadId_];
+        if (payloadParams.deadline > block.timestamp) revert DeadlineNotPassedForOnChainRevert();
+
         RequestParams storage currentRequestParams = requestParams[
             payloadParams.dump.getRequestCount()
         ];

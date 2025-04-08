@@ -75,7 +75,7 @@ interface IWatcherPrecompile {
     error RequestCancelled();
     error AlreadyStarted();
     error InvalidLevelNumber();
-
+    error DeadlineNotPassedForOnChainRevert();
     /// @notice Calculates the digest hash of payload parameters
     /// @param params_ The payload parameters
     /// @return digest The calculated digest
