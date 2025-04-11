@@ -18,12 +18,15 @@ contract SocketFeeManager is ISocketFeeManager, AccessControl {
     error InsufficientFees();
     error FeeTooLow();
 
+    event SocketFeesUpdated(uint256 oldFees, uint256 newFees);
+
     /**
      * @notice Initializes the SocketFeeManager contract
      * @param owner_ The owner of the contract with GOVERNANCE_ROLE
      * @param socketFees_ Initial socket fees amount
      */
     constructor(address owner_, uint256 socketFees_) {
+        emit SocketFeesUpdated(0, socketFees_);
         socketFees = socketFees_;
         _grantRole(GOVERNANCE_ROLE, owner_);
         _grantRole(RESCUE_ROLE, owner_);
@@ -54,6 +57,7 @@ contract SocketFeeManager is ISocketFeeManager, AccessControl {
      * @param socketFees_ New socket fees amount
      */
     function setSocketFees(uint256 socketFees_) external onlyRole(GOVERNANCE_ROLE) {
+        emit SocketFeesUpdated(socketFees, socketFees_);
         socketFees = socketFees_;
     }
 

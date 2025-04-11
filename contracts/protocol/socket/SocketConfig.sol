@@ -14,7 +14,9 @@ import "../../interfaces/ISocketFeeManager.sol";
  * @dev This contract is meant to be inherited by other contracts that require socket configuration functionality
  */
 abstract contract SocketConfig is ISocket, AccessControl {
+    // socket fee manager
     ISocketFeeManager public socketFeeManager;
+    
     // Error triggered when a switchboard already exists
     mapping(address => SwitchboardStatus) public isValidSwitchboard;
 
@@ -31,6 +33,7 @@ abstract contract SocketConfig is ISocket, AccessControl {
     // Event triggered when a new switchboard is added
     event SwitchboardAdded(address switchboard);
     event SwitchboardDisabled(address switchboard);
+    event SocketFeeManagerUpdated(address oldSocketFeeManager, address newSocketFeeManager);
 
     function registerSwitchboard() external {
         if (isValidSwitchboard[msg.sender] != SwitchboardStatus.NOT_REGISTERED)
@@ -45,7 +48,9 @@ abstract contract SocketConfig is ISocket, AccessControl {
         emit SwitchboardDisabled(msg.sender);
     }
 
+
     function setSocketFeeManager(address socketFeeManager_) external onlyRole(GOVERNANCE_ROLE) {
+        emit SocketFeeManagerUpdated(address(socketFeeManager), socketFeeManager_);
         socketFeeManager = ISocketFeeManager(socketFeeManager_);
     }
 
