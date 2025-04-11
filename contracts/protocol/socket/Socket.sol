@@ -48,20 +48,30 @@ contract Socket is SocketUtils {
      */
     function execute(
         ExecuteParams memory executeParams_,
-        bytes memory transmitterSignature_
+        TransmissionParams memory transmissionParams_
     ) external payable returns (bytes memory) {
         if (executeParams_.deadline < block.timestamp) revert DeadlinePassed();
         PlugConfig memory plugConfig = _plugConfigs[executeParams_.target];
         if (plugConfig.appGatewayId == bytes32(0)) revert PlugDisconnected();
 
-        if (msg.value < executeParams_.value) revert InsufficientMsgValue();
+        if (msg.value < executeParams_.value + transmissionParams_.socketFees)
+            revert InsufficientMsgValue();
         bytes32 payloadId = _createPayloadId(plugConfig.switchboard, executeParams_);
         _validateExecutionStatus(payloadId);
 
-        address transmitter = transmitterSignature_.length > 0
-            ? _recoverSigner(keccak256(abi.encode(address(this), payloadId)), transmitterSignature_)
+        address transmitter = transmissionParams_.transmitterSignature.length > 0
+            ? _recoverSigner(
+                keccak256(abi.encode(address(this), payloadId)),
+                transmissionParams_.transmitterSignature
+            )
             : address(0);
 
+        if (address(socketFeeManager) != address(0)) {
+            socketFeeManager.payAndCheckFees{value: transmissionParams_.socketFees}(
+                executeParams_,
+                transmissionParams_
+            );
+        }
         bytes32 digest = _createDigest(
             transmitter,
             payloadId,
@@ -96,7 +106,7 @@ contract Socket is SocketUtils {
 
         // NOTE: external un-trusted call
         (bool success, , bytes memory returnData) = executeParams_.target.tryCall(
-            msg.value,
+            executeParams_.value,
             executeParams_.gasLimit,
             maxCopyBytes,
             executeParams_.payload

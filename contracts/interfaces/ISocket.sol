@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {ExecuteParams} from "../protocol/utils/common/Structs.sol";
+import {ExecuteParams, TransmissionParams} from "../protocol/utils/common/Structs.sol";
 
 /**
  * @title ISocket
@@ -53,7 +53,7 @@ interface ISocket {
      */
     function execute(
         ExecuteParams memory executeParams_,
-        bytes memory transmitterSignature_
+        TransmissionParams memory transmissionParams_
     ) external payable returns (bytes memory);
 
     /**
