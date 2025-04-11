@@ -71,8 +71,8 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
         if (latestRequestCount != watcherPrecompile__().nextRequestCount())
             revert("Forwarder: request count mismatch");
 
-        promise_ = IPromise(latestAsyncPromise).then(selector_, data_);
         latestAsyncPromise = address(0);
+        promise_ = IPromise(latestAsyncPromise).then(selector_, data_);
     }
 
     /// @notice Returns the on-chain address associated with this forwarder.
@@ -100,10 +100,12 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
 
         // Deploy a new async promise contract.
         latestAsyncPromise = addressResolver__.deployAsyncPromiseContract(msg.sender);
+
+        // set the latest promise caller and request count for validating if the future .then call is valid
         latestPromiseCaller = msg.sender;
         latestRequestCount = watcherPrecompile__().nextRequestCount();
 
-        // fetch the override params
+        // fetch the override params from app gateway
         (
             Read isReadCall,
             Parallel isParallelCall,
@@ -112,6 +114,8 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
             uint256 gasLimit,
             bytes32 sbType
         ) = IAppGateway(msg.sender).getOverrideParams();
+
+        // get the switchboard address from the watcher precompile config
         address switchboard = watcherPrecompileConfig().switchboards(chainSlug, sbType);
 
         // Queue the call in the middleware.
