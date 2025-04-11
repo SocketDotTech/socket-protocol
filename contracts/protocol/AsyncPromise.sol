@@ -27,7 +27,7 @@ abstract contract AsyncPromiseStorage is IPromise {
     address public localInvoker;
 
     // slot 51
-    /// @notice The forwarder address which can call the callback
+    /// @notice The forwarder address which can set the callback selector and data
     address public forwarder;
 
     // slot 52
@@ -41,7 +41,7 @@ abstract contract AsyncPromiseStorage is IPromise {
 }
 
 /// @title AsyncPromise
-/// @notice this contract stores the callback address and data to be executed once the previous call is executed
+/// @notice this contract stores the callback selector and data to be executed once the on-chain call is executed
 /// This promise expires once the callback is executed
 contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil {
     /// @notice Error thrown when attempting to resolve an already resolved promise.
@@ -57,25 +57,24 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         _disableInitializers(); // disable for implementation
     }
 
-    /// @notice Initializer to replace constructor for upgradeable contracts
-    /// @param invoker_ The address of the local invoker.
-    /// @param forwarder_ The address of the forwarder.
-    /// @param addressResolver_ The address resolver contract address.
+    /// @notice Initialize promise states
+    /// @param invoker_ The address of the local invoker
+    /// @param forwarder_ The address of the forwarder
+    /// @param addressResolver_ The address resolver contract address
     function initialize(
         address invoker_,
         address forwarder_,
         address addressResolver_
     ) public initializer {
-        _setAddressResolver(addressResolver_);
         localInvoker = invoker_;
         forwarder = forwarder_;
-        state = AsyncPromiseState.WAITING_FOR_SET_CALLBACK_SELECTOR;
-        resolved = false;
+
+        _setAddressResolver(addressResolver_);
     }
 
     /// @notice Marks the promise as resolved and executes the callback if set.
-    /// @param returnData_ The data returned from the async payload execution.
     /// @dev Only callable by the watcher precompile.
+    /// @param returnData_ The data returned from the async payload execution.
     function markResolved(
         uint40 requestCount_,
         bytes32 payloadId_,
@@ -88,6 +87,7 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
 
         // Call callback to app gateway
         if (callbackSelector == bytes4(0)) return true;
+
         bytes memory combinedCalldata = abi.encodePacked(
             callbackSelector,
             abi.encode(callbackData, returnData_)
@@ -113,9 +113,10 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         AsyncPromiseState state_
     ) internal {
         // to update the state in case selector is bytes(0) but reverting onchain
-        resolved = false;
+        resolved = true;
         state = state_;
 
+        // call handleRevert on app gateway to inform that the promise or execution is reverting onchain
         (bool success, ) = localInvoker.call(
             abi.encodeWithSelector(IAppGateway.handleRevert.selector, requestCount_, payloadId_)
         );
@@ -130,14 +131,17 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         bytes4 selector_,
         bytes memory data_
     ) external override returns (address promise_) {
+        // allows forwarder or local invoker to set the callback selector and data
         if (msg.sender != forwarder && msg.sender != localInvoker) {
             revert OnlyForwarderOrLocalInvoker();
         }
 
+        // if the promise is already set up, revert
         if (state == AsyncPromiseState.WAITING_FOR_CALLBACK_EXECUTION) {
             revert PromiseAlreadySetUp();
         }
 
+        // if the promise is waiting for the callback selector, set it and update the state
         if (state == AsyncPromiseState.WAITING_FOR_SET_CALLBACK_SELECTOR) {
             callbackSelector = selector_;
             callbackData = data_;
