@@ -71,8 +71,10 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
         if (latestRequestCount != watcherPrecompile__().nextRequestCount())
             revert("Forwarder: request count mismatch");
 
+        address latestAsyncPromise_ = latestAsyncPromise;
         latestAsyncPromise = address(0);
-        promise_ = IPromise(latestAsyncPromise).then(selector_, data_);
+
+        promise_ = IPromise(latestAsyncPromise_).then(selector_, data_);
     }
 
     /// @notice Returns the on-chain address associated with this forwarder.

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-// contains role hashes used in socket for various different operations
-
+// contains role hashes used in socket for various different operation
 // used to rescue funds
 bytes32 constant RESCUE_ROLE = keccak256("RESCUE_ROLE");
 // used by governance

@@ -9,7 +9,7 @@ import {IFeesPlug} from "../../interfaces/IFeesPlug.sol";
 import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
-import {NotAuctionManager} from "../utils/common/Errors.sol";
+import {NotAuctionManager, InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
 import {Bid, Fees, CallType, Parallel, WriteFinality, TokenBalance, QueuePayloadParams, IsPlug, PayloadSubmitParams, RequestParams, RequestMetadata} from "../utils/common/Structs.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
@@ -110,10 +110,6 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     error NoFeesForTransmitter();
     /// @notice Error thrown when no fees was blocked
     error NoFeesBlocked();
-    /// @notice Error thrown when watcher signature is invalid
-    error InvalidWatcherSignature();
-    /// @notice Error thrown when nonce is used
-    error NonceUsed();
     /// @notice Error thrown when caller is invalid
     error InvalidCaller();
 

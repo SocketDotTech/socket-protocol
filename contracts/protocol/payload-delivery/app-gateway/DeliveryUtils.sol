@@ -21,8 +21,6 @@ abstract contract DeliveryUtils is
     error AllPayloadsExecuted();
     /// @notice Error thrown request did not come from Forwarder address
     error NotFromForwarder();
-    /// @notice Error thrown when a payload call fails
-    error CallFailed(bytes32 payloadId);
     /// @notice Error thrown if payload is too large
     error PayloadTooLarge();
     /// @notice Error thrown if trying to cancel a batch without being the application gateway

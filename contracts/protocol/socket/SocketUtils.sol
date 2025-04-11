@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 import "../utils/RescueFundsLib.sol";
 import "./SocketConfig.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
+import {InvalidTransmitter} from "../utils/common/Errors.sol";
 
 /**
  * @title SocketUtils
@@ -38,15 +39,6 @@ abstract contract SocketUtils is SocketConfig {
         version = keccak256(bytes(version_));
         _initializeOwner(owner_);
     }
-
-    ////////////////////////////////////////////////////////
-    ////////////////////// ERRORS //////////////////////////
-    ////////////////////////////////////////////////////////
-
-    /**
-     * @dev Error thrown when non-transmitter tries to execute
-     */
-    error InvalidTransmitter();
 
     /**
      * @notice creates the digest for the payload

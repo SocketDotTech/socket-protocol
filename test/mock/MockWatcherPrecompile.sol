@@ -26,7 +26,6 @@ contract MockWatcherPrecompile {
 
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
-    error InvalidTransmitter();
 
     event CalledAppGateway(
         bytes32 callId,

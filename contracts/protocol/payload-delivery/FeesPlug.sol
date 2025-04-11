@@ -7,7 +7,7 @@ import "../utils/AccessControl.sol";
 import {RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
 import "../utils/RescueFundsLib.sol";
 import {ETH_ADDRESS} from "../utils/common/Constants.sol";
-import {InvalidTokenAddress} from "../utils/common/Errors.sol";
+import {InvalidTokenAddress, FeesAlreadyPaid} from "../utils/common/Errors.sol";
 
 /// @title FeesManager
 /// @notice Abstract contract for managing fees
@@ -16,8 +16,6 @@ contract FeesPlug is PlugBase, AccessControl {
     mapping(bytes32 => bool) public feesRedeemed;
     mapping(address => bool) public whitelistedTokens;
 
-    /// @notice Error thrown when attempting to pay fees again
-    error FeesAlreadyPaid();
     /// @notice Error thrown when balance is not enough to cover fees
     error InsufficientTokenBalance(address token_);
     /// @notice Error thrown when deposit amount does not match msg.value

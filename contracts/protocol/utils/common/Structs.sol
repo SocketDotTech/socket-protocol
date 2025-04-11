@@ -64,6 +64,7 @@ struct UpdateLimitParams {
     uint256 maxLimit;
     uint256 ratePerSecond;
 }
+
 struct AppGatewayConfig {
     address plug;
     address appGateway;
@@ -94,13 +95,7 @@ struct TimeoutRequest {
     bool isResolved;
     bytes payload;
 }
-struct QueryResults {
-    address target;
-    uint256 queryCounter;
-    bytes functionSelector;
-    bytes returnData;
-    bytes callback;
-}
+
 struct ResolvedPromises {
     bytes32 payloadId;
     bytes returnData;
@@ -235,14 +230,6 @@ struct ExecuteParams {
     uint40 payloadCount;
     bytes32 prevDigestsHash; // should be id? hash of hashes
     address switchboard;
-}
-
-struct PayloadIdParams {
-    uint40 requestCount;
-    uint40 batchCount;
-    uint40 payloadCount;
-    address switchboard;
-    uint32 chainSlug;
 }
 
 /// @notice Struct containing fee amounts and status

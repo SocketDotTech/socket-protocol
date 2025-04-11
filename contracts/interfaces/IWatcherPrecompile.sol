@@ -62,8 +62,6 @@ interface IWatcherPrecompile {
     error InvalidChainSlug();
     /// @notice Error thrown when an invalid app gateway reaches a plug
     error InvalidConnection();
-    /// @notice Error thrown if winning bid is assigned to an invalid transmitter
-    error InvalidTransmitter();
     /// @notice Error thrown when a timeout request is invalid
     error InvalidTimeoutRequest();
     /// @notice Error thrown when a payload id is invalid

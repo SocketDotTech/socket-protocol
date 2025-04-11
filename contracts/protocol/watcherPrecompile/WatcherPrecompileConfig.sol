@@ -6,6 +6,7 @@ import {ECDSA} from "solady/utils/ECDSA.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
 import "../../interfaces/IWatcherPrecompileConfig.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
+import {InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
 
 /// @title WatcherPrecompileConfig
 /// @notice Configuration contract for the Watcher Precompile system
@@ -85,8 +86,6 @@ contract WatcherPrecompileConfig is
 
     error InvalidGateway();
     error InvalidSwitchboard();
-    error NonceUsed();
-    error InvalidWatcherSignature();
 
     /// @notice Initial initialization (version 1)
     function initialize(
