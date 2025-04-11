@@ -303,7 +303,7 @@ contract SetupTest is Test {
             params_.readAt,
             params_.payload,
             params_.target,
-            params_.appGateway,
+            _encodeAppGatewayId(params_.appGateway),
             params_.prevDigestsHash
         );
         bytes32 digest = watcherPrecompile.getDigest(digestParams_);
@@ -400,5 +400,13 @@ contract SetupTest is Test {
             mstore(add(sig, 32), sigR)
             mstore(add(sig, 64), sigS)
         }
+    }
+
+    function _encodeAppGatewayId(address appGateway_) internal pure returns (bytes32) {
+        return bytes32(uint256(uint160(appGateway_)));
+    }
+
+    function _decodeAppGatewayId(bytes32 appGatewayId_) internal pure returns (address) {
+        return address(uint160(uint256(appGatewayId_)));
     }
 }

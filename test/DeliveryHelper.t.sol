@@ -116,23 +116,23 @@ contract DeliveryHelperTest is SetupTest {
     function connectDeliveryHelper() internal {
         vm.startPrank(owner);
         arbConfig.contractFactoryPlug.initSocket(
-            address(deliveryHelper),
+            _encodeAppGatewayId(address(deliveryHelper)),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
         optConfig.contractFactoryPlug.initSocket(
-            address(deliveryHelper),
+            _encodeAppGatewayId(address(deliveryHelper)),
             address(optConfig.socket),
             address(optConfig.switchboard)
         );
 
         arbConfig.feesPlug.initSocket(
-            address(feesManager),
+            _encodeAppGatewayId(address(feesManager)),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
         optConfig.feesPlug.initSocket(
-            address(feesManager),
+            _encodeAppGatewayId(address(feesManager)),
             address(optConfig.socket),
             address(optConfig.switchboard)
         );
@@ -142,25 +142,25 @@ contract DeliveryHelperTest is SetupTest {
         gateways[0] = AppGatewayConfig({
             plug: address(arbConfig.contractFactoryPlug),
             chainSlug: arbChainSlug,
-            appGateway: address(deliveryHelper),
+            appGatewayId: _encodeAppGatewayId(address(deliveryHelper)),
             switchboard: address(arbConfig.switchboard)
         });
         gateways[1] = AppGatewayConfig({
             plug: address(optConfig.contractFactoryPlug),
             chainSlug: optChainSlug,
-            appGateway: address(deliveryHelper),
+            appGatewayId: _encodeAppGatewayId(address(deliveryHelper)),
             switchboard: address(optConfig.switchboard)
         });
         gateways[2] = AppGatewayConfig({
             plug: address(arbConfig.feesPlug),
             chainSlug: arbChainSlug,
-            appGateway: address(feesManager),
+            appGatewayId: _encodeAppGatewayId(address(feesManager)),
             switchboard: address(arbConfig.switchboard)
         });
         gateways[3] = AppGatewayConfig({
             plug: address(optConfig.feesPlug),
             chainSlug: optChainSlug,
-            appGateway: address(feesManager),
+            appGatewayId: _encodeAppGatewayId(address(feesManager)),
             switchboard: address(optConfig.switchboard)
         });
 
@@ -250,7 +250,7 @@ contract DeliveryHelperTest is SetupTest {
             gateways[i] = AppGatewayConfig({
                 plug: plug,
                 chainSlug: chainSlug_,
-                appGateway: address(appGateway_),
+                appGatewayId: _encodeAppGatewayId(address(appGateway_)),
                 switchboard: address(socketConfig.switchboard)
             });
         }
@@ -279,7 +279,11 @@ contract DeliveryHelperTest is SetupTest {
 
     function endAuction(uint40 requestCount_) internal {
         if (auctionEndDelaySeconds == 0) return;
-        bytes32 timeoutId = _encodeTimeoutId(evmxSlug, address(watcherPrecompile), timeoutIdCounter++);
+        bytes32 timeoutId = _encodeTimeoutId(
+            evmxSlug,
+            address(watcherPrecompile),
+            timeoutIdCounter++
+        );
 
         bytes memory watcherSignature = _createWatcherSignature(
             address(watcherPrecompile),

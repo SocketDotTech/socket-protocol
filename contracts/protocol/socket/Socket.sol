@@ -52,21 +52,20 @@ contract Socket is SocketUtils {
     ) external payable returns (bytes memory) {
         if (executeParams_.deadline < block.timestamp) revert DeadlinePassed();
         PlugConfig memory plugConfig = _plugConfigs[executeParams_.target];
-        if (plugConfig.appGateway == address(0)) revert PlugDisconnected();
+        if (plugConfig.appGatewayId == bytes32(0)) revert PlugDisconnected();
 
         if (msg.value < executeParams_.value) revert InsufficientMsgValue();
         bytes32 payloadId = _createPayloadId(plugConfig.switchboard, executeParams_);
         _validateExecutionStatus(payloadId);
 
-        address transmitter = _recoverSigner(
-            keccak256(abi.encode(address(this), payloadId)),
-            transmitterSignature_
-        );
+        address transmitter = transmitterSignature_.length > 0
+            ? _recoverSigner(keccak256(abi.encode(address(this), payloadId)), transmitterSignature_)
+            : address(0);
 
         bytes32 digest = _createDigest(
             transmitter,
             payloadId,
-            plugConfig.appGateway,
+            plugConfig.appGatewayId,
             executeParams_
         );
         _verify(digest, payloadId, plugConfig.switchboard);
@@ -135,10 +134,10 @@ contract Socket is SocketUtils {
         PlugConfig memory plugConfig = _plugConfigs[plug_];
 
         // if no sibling plug is found for the given chain slug, revert
-        if (plugConfig.appGateway == address(0)) revert PlugDisconnected();
+        if (plugConfig.appGatewayId == bytes32(0)) revert PlugDisconnected();
 
         // creates a unique ID for the message
-        triggerId = _encodeTriggerId(plugConfig.appGateway);
+        triggerId = _encodeTriggerId(plugConfig.appGatewayId);
         emit AppGatewayCallRequested(triggerId, chainSlug, plug_, overrides_, payload_);
     }
 

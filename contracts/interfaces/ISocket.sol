@@ -27,10 +27,10 @@ interface ISocket {
     /**
      * @notice emits the config set by a plug for a remoteChainSlug
      * @param plug address of plug on current chain
-     * @param appGateway address of plug on sibling chain
+     * @param appGatewayId address of plug on sibling chain
      * @param switchboard outbound switchboard (select from registered options)
      */
-    event PlugConnected(address plug, address appGateway, address switchboard);
+    event PlugConnected(address plug, bytes32 appGatewayId, address switchboard);
 
     /**
      * @notice emits the message details when a new message arrives at outbound
@@ -58,10 +58,10 @@ interface ISocket {
 
     /**
      * @notice sets the config specific to the plug
-     * @param appGateway_ address of plug present at sibling chain
+     * @param appGatewayId_ address of plug present at sibling chain
      * @param switchboard_ the address of switchboard to use for executing payloads
      */
-    function connect(address appGateway_, address switchboard_) external;
+    function connect(bytes32 appGatewayId_, address switchboard_) external;
 
     function registerSwitchboard() external;
 
@@ -71,5 +71,5 @@ interface ISocket {
      */
     function getPlugConfig(
         address plugAddress_
-    ) external view returns (address appGateway, address switchboard);
+    ) external view returns (bytes32 appGatewayId, address switchboard);
 }

@@ -31,7 +31,7 @@ contract TriggerTest is DeliveryHelperTest {
 
         // Connect the counter to the gateway and socket
         counter.initSocket(
-            address(gateway),
+            _encodeAppGatewayId(address(gateway)),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
@@ -41,7 +41,7 @@ contract TriggerTest is DeliveryHelperTest {
         gateways[0] = AppGatewayConfig({
             plug: address(counter),
             chainSlug: arbChainSlug,
-            appGateway: address(gateway),
+            appGatewayId: _encodeAppGatewayId(address(gateway)),
             switchboard: address(arbConfig.switchboard)
         });
 
@@ -76,7 +76,7 @@ contract TriggerTest is DeliveryHelperTest {
         params[0] = TriggerParams({
             triggerId: triggerId,
             chainSlug: arbChainSlug,
-            appGateway: address(gateway),
+            appGatewayId: _encodeAppGatewayId(address(gateway)),
             plug: address(counter),
             payload: payload,
             params: bytes32(0)

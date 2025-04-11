@@ -103,11 +103,11 @@ contract FeesPlug is PlugBase, AccessControl {
     }
 
     function connectSocket(
-        address appGateway_,
+        bytes32 appGatewayId_,
         address socket_,
         address switchboard_
     ) external onlyOwner {
-        _connectSocket(appGateway_, socket_, switchboard_);
+        _connectSocket(appGatewayId_, socket_, switchboard_);
     }
 
     /// @notice Adds a token to the whitelist
