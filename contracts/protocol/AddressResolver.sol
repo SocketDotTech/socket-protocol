@@ -58,16 +58,13 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
     /// @notice Error thrown if AppGateway contract was already set by a different address
     error InvalidAppGateway(address contractAddress_);
 
-    event PlugAdded(address appGateway, uint32 chainSlug, address plug);
-    event ForwarderDeployed(address newForwarder, bytes32 salt);
-    event AsyncPromiseDeployed(address newAsyncPromise, bytes32 salt);
-    event ImplementationUpdated(string contractName, address newImplementation);
-
     constructor() {
         _disableInitializers(); // disable for implementation
     }
 
     /// @notice Initializer to replace constructor for upgradeable contracts
+    /// @dev it deploys the forwarder and async promise implementations and beacons for them
+    /// @dev this contract is owner of the beacons for upgrading later
     /// @param owner_ The address of the contract owner
     function initialize(address owner_) public reinitializer(1) {
         version = 1;
@@ -82,6 +79,7 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
     }
 
     /// @notice Gets or deploys a Forwarder proxy contract
+    /// @dev it checks if the forwarder is already deployed, if yes, it returns the address
     /// @param chainContractAddress_ The address of the chain contract
     /// @param chainSlug_ The chain slug
     /// @return newForwarder The address of the deployed Forwarder proxy contract
@@ -92,18 +90,25 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
     ) public returns (address newForwarder) {
         // predict address
         address forwarderAddress = getForwarderAddress(chainContractAddress_, chainSlug_);
+        
         // check if addr has code, if yes, return
         if (forwarderAddress.code.length > 0) {
             return forwarderAddress;
         }
 
+        // creates init data and salt
         (bytes32 salt, bytes memory initData) = _createForwarderParams(
             chainContractAddress_,
             chainSlug_
         );
 
+        // deploys the proxy
         newForwarder = _deployProxy(salt, address(forwarderBeacon), initData);
+
+        // sets the config
         _setConfig(appGateway_, newForwarder);
+
+        // emits the event
         emit ForwarderDeployed(newForwarder, salt);
     }
 
@@ -118,6 +123,8 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
             chainContractAddress_,
             address(this)
         );
+
+        // creates salt with constructor args
         salt = keccak256(constructorArgs);
     }
 
@@ -125,6 +132,8 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
         address invoker_
     ) internal view returns (bytes32 salt, bytes memory initData) {
         bytes memory constructorArgs = abi.encode(invoker_, msg.sender, address(this));
+
+        // creates init data
         initData = abi.encodeWithSelector(
             AsyncPromise.initialize.selector,
             invoker_,
@@ -132,6 +141,7 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
             address(this)
         );
 
+        // creates salt with a counter
         salt = keccak256(abi.encodePacked(constructorArgs, asyncPromiseCounter));
     }
 
@@ -141,9 +151,11 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
     function deployAsyncPromiseContract(
         address invoker_
     ) external returns (address newAsyncPromise) {
+        // creates init data and salt
         (bytes32 salt, bytes memory initData) = _createAsyncPromiseParams(invoker_);
         asyncPromiseCounter++;
 
+        // deploys the proxy
         newAsyncPromise = _deployProxy(salt, address(asyncPromiseBeacon), initData);
         _promises.push(newAsyncPromise);
 
@@ -155,10 +167,10 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
         address beacon_,
         bytes memory initData_
     ) internal returns (address) {
-        // 1. Deploy proxy without initialization args
+        // Deploy proxy without initialization args
         address proxy = LibClone.deployDeterministicERC1967BeaconProxy(beacon_, salt_);
 
-        // 2. Explicitly initialize after deployment
+        // Explicitly initialize after deployment
         (bool success, ) = proxy.call(initData_);
         require(success, "Initialization failed");
 
