@@ -6,16 +6,18 @@ import "../interfaces/IMiddleware.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
 import "../interfaces/IForwarder.sol";
-
 import {AddressResolverUtil} from "./utils/AddressResolverUtil.sol";
+import {AsyncModifierNotUsed} from "./utils/common/Errors.sol";
 import "solady/utils/Initializable.sol";
 
+/// @title Forwarder Storage
+/// @notice Storage contract for the Forwarder contract that contains the state variables
 abstract contract ForwarderStorage is IForwarder {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
     // slot 50
-    /// @notice chain id
+    /// @notice chain slug on which the contract is deployed
     uint32 public chainSlug;
     /// @notice on-chain address associated with this forwarder
     address public onChainAddress;
@@ -24,25 +26,29 @@ abstract contract ForwarderStorage is IForwarder {
     /// @notice caches the latest async promise address for the last call
     address public latestAsyncPromise;
 
-    // slots [52-101] reserved for gap
+    // slot 52
+    /// @notice the address of the contract that called the latest async promise
+    address public latestPromiseCaller;
+    /// @notice the request count of the latest async promise
+    uint40 public latestRequestCount;
+
+    // slots [53-102] reserved for gap
     uint256[50] _gap_after;
 
-    // slots 102-153 (51) reserved for addr resolver util
+    // slots 103-154 (51) reserved for addr resolver util
 }
 
 /// @title Forwarder Contract
 /// @notice This contract acts as a forwarder for async calls to the on-chain contracts.
 contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
-    error AsyncModifierNotUsed();
-
     constructor() {
         _disableInitializers(); // disable for implementation
     }
 
     /// @notice Initializer to replace constructor for upgradeable contracts
-    /// @param chainSlug_ chain id
-    /// @param onChainAddress_ on-chain address
-    /// @param addressResolver_ address resolver contract address
+    /// @param chainSlug_ chain slug on which the contract is deployed
+    /// @param onChainAddress_ on-chain address associated with this forwarder
+    /// @param addressResolver_ address resolver contract
     function initialize(
         uint32 chainSlug_,
         address onChainAddress_,
@@ -55,11 +61,16 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
 
     /// @notice Stores the callback address and data to be executed once the promise is resolved.
     /// @dev This function should not be called before the fallback function.
+    /// @dev It resets the latest async promise address
     /// @param selector_ The function selector for callback
     /// @param data_ The data to be passed to callback
     /// @return promise_ The address of the new promise
     function then(bytes4 selector_, bytes memory data_) external returns (address promise_) {
         if (latestAsyncPromise == address(0)) revert("Forwarder: no async promise found");
+        if (latestPromiseCaller != msg.sender) revert("Forwarder: promise caller mismatch");
+        if (latestRequestCount != watcherPrecompile__().nextRequestCount())
+            revert("Forwarder: request count mismatch");
+
         promise_ = IPromise(latestAsyncPromise).then(selector_, data_);
         latestAsyncPromise = address(0);
     }
@@ -70,27 +81,29 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
         return onChainAddress;
     }
 
-    /// @notice Returns the chain id
-    /// @return chain id
+    /// @notice Returns the chain slug on which the contract is deployed.
+    /// @return chain slug
     function getChainSlug() external view returns (uint32) {
         return chainSlug;
     }
 
     /// @notice Fallback function to process the contract calls to onChainAddress
-    /// @dev It queues the calls in the auction house and deploys the promise contract
-    fallback() external payable {
-        // Retrieve the auction house address from the address resolver.
+    /// @dev It queues the calls in the middleware and deploys the promise contract
+    fallback() external {
         if (address(deliveryHelper__()) == address(0)) {
             revert("Forwarder: deliveryHelper not found");
         }
 
+        // validates if the async modifier is set
         bool isAsyncModifierSet = IAppGateway(msg.sender).isAsyncModifierSet();
         if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
 
         // Deploy a new async promise contract.
         latestAsyncPromise = addressResolver__.deployAsyncPromiseContract(msg.sender);
+        latestPromiseCaller = msg.sender;
+        latestRequestCount = watcherPrecompile__().nextRequestCount();
 
-        // Determine if the call is a read or write operation.
+        // fetch the override params
         (
             Read isReadCall,
             Parallel isParallelCall,
@@ -101,7 +114,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
         ) = IAppGateway(msg.sender).getOverrideParams();
         address switchboard = watcherPrecompileConfig().switchboards(chainSlug, sbType);
 
-        // Queue the call in the auction house.
+        // Queue the call in the middleware.
         deliveryHelper__().queue(
             QueuePayloadParams({
                 chainSlug: chainSlug,
@@ -121,6 +134,4 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
             })
         );
     }
-
-    receive() external payable {}
 }

@@ -166,4 +166,6 @@ interface IWatcherPrecompile {
     function watcherPrecompileLimits__() external view returns (IWatcherPrecompileLimits);
 
     function getRequestParams(uint40 requestCount) external view returns (RequestParams memory);
+
+    function nextRequestCount() external view returns (uint40);
 }
