@@ -76,9 +76,9 @@ struct PlugConfig {
     address appGateway;
     address switchboard;
 }
-//inbox:
-struct CallFromChainParams {
-    bytes32 callId;
+//trigger:
+struct TriggerParams {
+    bytes32 triggerId;
     bytes32 params;
     address plug;
     address appGateway;
@@ -114,6 +114,7 @@ struct OverrideParams {
     Parallel isParallelCall;
     WriteFinality writeFinality;
     uint256 gasLimit;
+    uint256 value;
     uint256 readAt;
 }
 
@@ -126,6 +127,7 @@ struct Fees {
 
 // digest:
 struct DigestParams {
+    address socket;
     address transmitter;
     bytes32 payloadId;
     uint256 deadline;
@@ -222,6 +224,7 @@ struct ExecuteParams {
     CallType callType;
     WriteFinality writeFinality;
     uint256 gasLimit;
+    uint256 value;
     uint256 readAt;
     bytes payload;
     address target;

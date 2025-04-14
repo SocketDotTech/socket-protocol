@@ -44,6 +44,7 @@ contract SetupTest is Test {
     uint256 public signatureNonce;
     uint256 public payloadIdCounter;
     uint256 public timeoutIdCounter;
+    uint256 public triggerCounter;
     uint256 public defaultLimit = 1000;
 
     bytes public asyncPromiseBytecode = type(AsyncPromise).creationCode;
@@ -291,6 +292,7 @@ contract SetupTest is Test {
     ) internal view returns (bytes memory, bytes32) {
         SocketContracts memory socketConfig = getSocketConfig(params_.dump.getChainSlug());
         DigestParams memory digestParams_ = DigestParams(
+            address(socketConfig.socket),
             transmitterEOA,
             params_.payloadId,
             params_.deadline,
@@ -348,6 +350,7 @@ contract SetupTest is Test {
             callType: payloadParams.dump.getCallType(),
             writeFinality: payloadParams.dump.getWriteFinality(),
             gasLimit: payloadParams.gasLimit,
+            value: payloadParams.value,
             readAt: payloadParams.readAt,
             payload: payloadParams.payload,
             target: payloadParams.target,

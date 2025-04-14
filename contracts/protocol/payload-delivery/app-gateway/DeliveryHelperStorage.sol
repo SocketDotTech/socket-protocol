@@ -12,7 +12,7 @@ import {IAuctionManager} from "../../../interfaces/IAuctionManager.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 
 import {QueuePayloadParams, Fees, CallType, Bid, Parallel, IsPlug, WriteFinality, RequestMetadata} from "../../utils/common/Structs.sol";
-import {NotAuctionManager, InvalidTransmitter} from "../../utils/common/Errors.sol";
+import {NotAuctionManager, InvalidTransmitter, InvalidIndex} from "../../utils/common/Errors.sol";
 import {FORWARD_CALL, DISTRIBUTE_FEE, DEPLOY, QUERY, FINALIZE} from "../../utils/common/Constants.sol";
 
 /// @title DeliveryHelperStorage
@@ -33,8 +33,11 @@ abstract contract DeliveryHelperStorage is IMiddleware {
     // slot 53
     mapping(uint40 => RequestMetadata) public requests;
 
-    // slots [54-103] reserved for gap
-    uint256[50] _gap_after;
+    // slot 54
+    mapping(uint32 => uint256) public chainMaxMsgValueLimit;
+
+    // slots [55-103] reserved for gap
+    uint256[49] _gap_after;
 
     // slots 104-154 (51) reserved for addr resolver util
 }

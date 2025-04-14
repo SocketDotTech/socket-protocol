@@ -97,19 +97,13 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         }
     }
 
-    // INBOX
+    // trigger from a chain
     function setIsValidPlug(uint32 chainSlug_, address plug_) public {
         watcherPrecompileConfig().setIsValidPlug(chainSlug_, plug_, true);
     }
 
-    function callFromChain(
-        uint32,
-        address,
-        bytes32,
-        bytes calldata payload_
-    ) external override onlyWatcherPrecompile {
-        uint256 value = abi.decode(payload_, (uint256));
-        counterVal += value;
+    function increase(uint256 value_) external onlyWatcherPrecompile {
+        counterVal += value_;
     }
 
     // TIMEOUT

@@ -279,7 +279,7 @@ contract DeliveryHelperTest is SetupTest {
 
     function endAuction(uint40 requestCount_) internal {
         if (auctionEndDelaySeconds == 0) return;
-        bytes32 timeoutId = _encodeId(evmxSlug, address(watcherPrecompile), timeoutIdCounter++);
+        bytes32 timeoutId = _encodeTimeoutId(evmxSlug, address(watcherPrecompile), timeoutIdCounter++);
 
         bytes memory watcherSignature = _createWatcherSignature(
             address(watcherPrecompile),
@@ -300,7 +300,7 @@ contract DeliveryHelperTest is SetupTest {
     }
 
     //////////////////////////////////// Utils ///////////////////////////////////
-    function _encodeId(
+    function _encodeTimeoutId(
         uint32 chainSlug_,
         address sbOrWatcher_,
         uint256 counter_

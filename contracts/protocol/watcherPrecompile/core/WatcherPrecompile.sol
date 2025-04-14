@@ -2,12 +2,13 @@
 pragma solidity ^0.8.21;
 
 import "./RequestHandler.sol";
+import {LibCall} from "solady/utils/LibCall.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
 contract WatcherPrecompile is RequestHandler {
     using DumpDecoder for bytes32;
-
+    using LibCall for address;
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -63,7 +64,12 @@ contract WatcherPrecompile is RequestHandler {
         if (timeoutRequest_.isResolved) revert TimeoutAlreadyResolved();
         if (block.timestamp < timeoutRequest_.executeAt) revert ResolvingTimeoutTooEarly();
 
-        (bool success, ) = address(timeoutRequest_.target).call(timeoutRequest_.payload);
+        (bool success, , ) = timeoutRequest_.target.tryCall(
+            0,
+            gasleft(),
+            0, // setting max_copy_bytes to 0 as not using returnData right now
+            timeoutRequest_.payload
+        );
         if (!success) revert CallFailed();
 
         timeoutRequest_.isResolved = true;
@@ -212,6 +218,8 @@ contract WatcherPrecompile is RequestHandler {
         );
 
         PayloadParams storage payloadParams = payloads[payloadId_];
+        if (payloadParams.deadline > block.timestamp) revert DeadlineNotPassedForOnChainRevert();
+
         RequestParams storage currentRequestParams = requestParams[
             payloadParams.dump.getRequestCount()
         ];
@@ -234,10 +242,10 @@ contract WatcherPrecompile is RequestHandler {
         maxTimeoutDelayInSeconds = maxTimeoutDelayInSeconds_;
     }
 
-    // ================== On-Chain Inbox ==================
+    // ================== On-Chain Trigger ==================
 
     function callAppGateways(
-        CallFromChainParams[] calldata params_,
+        TriggerParams[] calldata params_,
         uint256 signatureNonce_,
         bytes calldata signature_
     ) external {
@@ -248,32 +256,34 @@ contract WatcherPrecompile is RequestHandler {
         );
 
         for (uint256 i = 0; i < params_.length; i++) {
-            if (appGatewayCalled[params_[i].callId]) revert AppGatewayAlreadyCalled();
+            if (appGatewayCalled[params_[i].triggerId]) revert AppGatewayAlreadyCalled();
+
+            address appGateway = _decodeAppGateway(params_[i].triggerId);
             if (
                 !watcherPrecompileConfig__.isValidPlug(
-                    params_[i].appGateway,
+                    appGateway,
                     params_[i].chainSlug,
                     params_[i].plug
                 )
-            ) revert InvalidInboxCaller();
+            ) revert InvalidCallerTriggered();
 
-            appGatewayCalled[params_[i].callId] = true;
-            IAppGateway(params_[i].appGateway).callFromChain(
-                params_[i].chainSlug,
-                params_[i].plug,
-                params_[i].params,
+            appGatewayCaller = appGateway;
+            appGatewayCalled[params_[i].triggerId] = true;
+
+            (bool success, , ) = appGateway.tryCall(
+                0,
+                gasleft(),
+                0, // setting max_copy_bytes to 0 as not using returnData right now
                 params_[i].payload
             );
-
-            emit CalledAppGateway(
-                params_[i].callId,
-                params_[i].chainSlug,
-                params_[i].plug,
-                params_[i].appGateway,
-                params_[i].params,
-                params_[i].payload
-            );
+            if (!success) {
+                emit AppGatewayCallFailed(params_[i].triggerId);
+            } else {
+                emit CalledAppGateway(params_[i].triggerId);
+            }
         }
+
+        appGatewayCaller = address(0);
     }
 
     // ================== Helper functions ==================
@@ -284,5 +294,9 @@ contract WatcherPrecompile is RequestHandler {
 
     function getRequestParams(uint40 requestCount) external view returns (RequestParams memory) {
         return requestParams[requestCount];
+    }
+
+    function _decodeAppGateway(bytes32 triggerId_) internal pure returns (address) {
+        return address(uint160(uint256(triggerId_) >> 64));
     }
 }

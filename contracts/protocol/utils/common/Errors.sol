@@ -14,6 +14,8 @@ error PlugDisconnected();
 error InvalidAppGateway();
 error AppGatewayAlreadyCalled();
 error InvalidInboxCaller();
+error InvalidCallerTriggered();
+error PromisesNotResolved();
 error InvalidPromise();
 error InvalidTransmitter();
 error FeesNotSet();
@@ -29,3 +31,4 @@ error BidExceedsMaxFees();
 /// @notice Error thrown if a lower bid already exists
 error LowerBidAlreadyExists();
 error AsyncModifierNotUsed();
+error InvalidIndex();

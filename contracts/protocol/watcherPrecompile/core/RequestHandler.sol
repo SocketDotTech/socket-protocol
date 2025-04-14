@@ -6,7 +6,7 @@ import "./WatcherPrecompileCore.sol";
 abstract contract RequestHandler is WatcherPrecompileCore {
     using DumpDecoder for bytes32;
 
-    // slots [266-316] reserved for gap
+    // slots [266-315] reserved for gap
     uint256[50] _request_handler_gap;
 
     function submitRequest(

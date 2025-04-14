@@ -190,6 +190,7 @@
 | `AuctionAlreadyStarted()`    | `0x628e3883` |
 | `BidExceedsMaxFees()`        | `0x4c923f3c` |
 | `LowerBidAlreadyExists()`    | `0xaaa1f709` |
+| `AsyncModifierNotUsed()`     | `0xb9521e1a` |
 
 ## protocol/watcherPrecompile/WatcherPrecompileConfig.sol
 

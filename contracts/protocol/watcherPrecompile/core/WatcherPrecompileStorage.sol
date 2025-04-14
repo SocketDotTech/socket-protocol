@@ -8,9 +8,9 @@ import {IPromise} from "../../../interfaces/IPromise.sol";
 import "../DumpDecoder.sol";
 
 import {IMiddleware} from "../../../interfaces/IMiddleware.sol";
-import {QUERY, FINALIZE, SCHEDULE} from "../../utils/common/Constants.sol";
-import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed} from "../../utils/common/Errors.sol";
-import {ResolvedPromises, AppGatewayConfig, LimitParams, WriteFinality, UpdateLimitParams, PlugConfig, DigestParams, TimeoutRequest, CallFromChainParams, QueuePayloadParams, PayloadParams, RequestParams} from "../../utils/common/Structs.sol";
+import {QUERY, FINALIZE, SCHEDULE, MAX_COPY_BYTES} from "../../utils/common/Constants.sol";
+import {InvalidCallerTriggered, TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed} from "../../utils/common/Errors.sol";
+import {ResolvedPromises, AppGatewayConfig, LimitParams, WriteFinality, UpdateLimitParams, PlugConfig, DigestParams, TimeoutRequest, QueuePayloadParams, PayloadParams, RequestParams} from "../../utils/common/Structs.sol";
 
 abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     // slots [0-49]: gap for future storage variables
@@ -37,49 +37,53 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     uint256 public maxTimeoutDelayInSeconds;
 
     // slot 53
+    /// @notice stores temporary address of the app gateway caller from a chain
+    address public appGatewayCaller;
+
+    // slot 54
     /// @notice Maps nonce to whether it has been used
     /// @dev signatureNonce => isValid
     mapping(uint256 => bool) public isNonceUsed;
 
-    // slot 54
+    // slot 55
     /// @notice Mapping to store timeout requests
     /// @dev timeoutId => TimeoutRequest struct
     mapping(bytes32 => TimeoutRequest) public timeoutRequests;
 
-    // slot 55
+    // slot 56
     /// @notice Mapping to store watcher proofs
     /// @dev payloadId => proof bytes
     mapping(bytes32 => bytes) public watcherProofs;
 
-    // slot 56
+    // slot 57
     /// @notice Mapping to store if appGateway has been called with trigger from on-chain Inbox
     /// @dev callId => bool
     mapping(bytes32 => bool) public appGatewayCalled;
 
-    // slot 57
+    // slot 58
     mapping(uint40 => RequestParams) public requestParams;
 
-    // slot 58
+    // slot 59
     mapping(uint40 => bytes32[]) public batchPayloadIds;
 
-    // slot 59
+    // slot 60
     mapping(uint40 => uint40[]) public requestBatchIds;
 
-    // slot 60
+    // slot 61
     mapping(bytes32 => PayloadParams) public payloads;
 
-    // slot 61
+    // slot 62
     mapping(bytes32 => bool) public isPromiseExecuted;
 
-    // slot 62
+    // slot 63
     IWatcherPrecompileLimits public watcherPrecompileLimits__;
 
-    // slot 63
+    // slot 64
     IWatcherPrecompileConfig public watcherPrecompileConfig__;
 
-    // slots [64-113]: gap for future storage variables
+    // slots [65-114]: gap for future storage variables
     uint256[50] _gap_after;
 
-    // slots 114-164 (51) reserved for access control
-    // slots 165-215 (51) reserved for addr resolver util
+    // slots 115-165 (51) reserved for access control
+    // slots 166-216 (51) reserved for addr resolver util
 }

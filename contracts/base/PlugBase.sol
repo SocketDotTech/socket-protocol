@@ -11,6 +11,7 @@ abstract contract PlugBase is IPlug {
     ISocket public socket__;
     address public appGateway;
     uint256 public isSocketInitialized;
+    bytes public overrides;
 
     error SocketAlreadyInitialized();
     event ConnectorPlugDisconnected();
@@ -40,7 +41,7 @@ abstract contract PlugBase is IPlug {
     }
 
     /// @notice Disconnects the plug from the socket
-    function _disconnect() internal {
+    function _disconnectSocket() internal {
         (, address switchboard) = socket__.getPlugConfig(address(this));
         socket__.connect(address(0), switchboard);
         emit ConnectorPlugDisconnected();
@@ -52,8 +53,10 @@ abstract contract PlugBase is IPlug {
         socket__ = ISocket(socket_);
     }
 
-    function _callAppGateway(bytes memory payload_, bytes32 params_) internal returns (bytes32) {
-        return socket__.callAppGateway(payload_, params_);
+    /// @notice Sets the overrides needed for the trigger
+    /// @param overrides_ The overrides
+    function _setOverrides(bytes memory overrides_) internal {
+        overrides = overrides_;
     }
 
     function initSocket(

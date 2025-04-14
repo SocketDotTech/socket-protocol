@@ -18,7 +18,7 @@ abstract contract WatcherPrecompileCore is
 {
     using DumpDecoder for bytes32;
 
-    // slots [215-265] reserved for gap
+    // slots [216-265] reserved for gap
     uint256[50] _core_gap;
 
     // ================== Timeout functions ==================
@@ -35,7 +35,7 @@ abstract contract WatcherPrecompileCore is
         // from auction manager
         watcherPrecompileLimits__.consumeLimit(_getCoreAppGateway(msg.sender), SCHEDULE, 1);
         uint256 executeAt = block.timestamp + delayInSeconds_;
-        timeoutId = _encodeId(evmxSlug, address(this));
+        timeoutId = _encodeTimeoutId(evmxSlug, address(this));
         timeoutRequests[timeoutId] = TimeoutRequest(
             timeoutId,
             msg.sender,
@@ -52,9 +52,10 @@ abstract contract WatcherPrecompileCore is
         PayloadParams memory params_,
         address transmitter_
     ) internal returns (bytes32 digest) {
+        uint32 chainSlug = params_.dump.getChainSlug();
         // Verify that the app gateway is properly configured for this chain and target
         watcherPrecompileConfig__.verifyConnections(
-            params_.dump.getChainSlug(),
+            chainSlug,
             params_.target,
             params_.appGateway,
             params_.switchboard
@@ -69,6 +70,7 @@ abstract contract WatcherPrecompileCore is
 
         // Construct parameters for digest calculation
         DigestParams memory digestParams_ = DigestParams(
+            watcherPrecompileConfig__.sockets(chainSlug),
             transmitter_,
             params_.payloadId,
             deadline,
@@ -113,6 +115,7 @@ abstract contract WatcherPrecompileCore is
     function getDigest(DigestParams memory params_) public pure returns (bytes32 digest) {
         digest = keccak256(
             abi.encode(
+                params_.socket,
                 params_.transmitter,
                 params_.payloadId,
                 params_.deadline,
@@ -137,6 +140,7 @@ abstract contract WatcherPrecompileCore is
             PayloadParams memory p = payloads[payloadIds[i]];
 
             DigestParams memory digestParams = DigestParams(
+                watcherPrecompileConfig__.sockets(p.dump.getChainSlug()),
                 p.finalizedTransmitter,
                 p.payloadId,
                 p.deadline,
@@ -180,18 +184,12 @@ abstract contract WatcherPrecompileCore is
         if (switchboard != switchboard_) revert InvalidSwitchboard();
     }
 
-    // todo: revisit when we do timeout precompile
-    function _encodeId(
-        uint32 chainSlug_,
-        address switchboardOrWatcher_
-    ) internal returns (bytes32) {
-        // Encode payload ID by bit-shifting and combining:
+    function _encodeTimeoutId(uint32 chainSlug_, address watcher_) internal returns (bytes32) {
+        // Encode timeout ID by bit-shifting and combining:
         // chainSlug (32 bits) | switchboard or watcher precompile address (160 bits) | counter (64 bits)
         return
             bytes32(
-                (uint256(chainSlug_) << 224) |
-                    (uint256(uint160(switchboardOrWatcher_)) << 64) |
-                    payloadCounter++
+                (uint256(chainSlug_) << 224) | (uint256(uint160(watcher_)) << 64) | timeoutCounter++
             );
     }
 

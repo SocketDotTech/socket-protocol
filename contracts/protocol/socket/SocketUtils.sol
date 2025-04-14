@@ -21,7 +21,7 @@ abstract contract SocketUtils is SocketConfig {
     // ChainSlug for this deployed socket instance
     uint32 public immutable chainSlug;
 
-    uint64 public callCounter;
+    uint64 public triggerCounter;
 
     /**
      * @dev keeps track of whether a payload has been executed or not using payload id
@@ -57,13 +57,14 @@ abstract contract SocketUtils is SocketConfig {
         return
             keccak256(
                 abi.encode(
+                    address(this),
                     transmitter_,
                     payloadId_,
                     executeParams_.deadline,
                     executeParams_.callType,
                     executeParams_.writeFinality,
                     executeParams_.gasLimit,
-                    msg.value,
+                    executeParams_.value,
                     executeParams_.readAt,
                     executeParams_.payload,
                     executeParams_.target,
@@ -105,12 +106,14 @@ abstract contract SocketUtils is SocketConfig {
     }
 
     // Packs the local plug, local chain slug, remote chain slug and nonce
-    // callCount++ will take care of call id overflow as well
-    // callId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
-    function _encodeCallId(address appGateway_) internal returns (bytes32) {
+    // triggerCounter++ will take care of call id overflow as well
+    // triggerId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
+    function _encodeTriggerId(address appGateway_) internal returns (bytes32) {
         return
             bytes32(
-                (uint256(chainSlug) << 224) | (uint256(uint160(appGateway_)) << 64) | callCounter++
+                (uint256(chainSlug) << 224) |
+                    (uint256(uint160(appGateway_)) << 64) |
+                    triggerCounter++
             );
     }
 

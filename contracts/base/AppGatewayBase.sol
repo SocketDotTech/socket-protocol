@@ -94,6 +94,16 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         return watcherPrecompileConfig().sockets(chainSlug_);
     }
 
+    /// @notice Sets the validity of an onchain contract (plug) to authorize it to send information to a specific AppGateway
+    /// @param chainSlug_ The unique identifier of the chain where the contract resides
+    /// @param contractId The bytes32 identifier of the contract to be validated
+    /// @param isValid Boolean flag indicating whether the contract is authorized (true) or not (false)
+    /// @dev This function retrieves the onchain address using the contractId and chainSlug, then calls the watcher precompile to update the plug's validity status
+    function _setValidPlug(uint32 chainSlug_, bytes32 contractId, bool isValid) internal {
+        address onchainAddress = getOnChainAddress(contractId, chainSlug_);
+        watcherPrecompileConfig().setIsValidPlug(chainSlug_, onchainAddress, isValid);
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////   DEPLOY HELPERS ///////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -133,7 +143,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             target: address(0),
             appGateway: address(this),
             gasLimit: overrideParams.gasLimit,
-            value: 0,
+            value: overrideParams.value,
             readAt: overrideParams.readAt,
             payload: creationCodeWithArgs[contractId_],
             initCallData: initCallData_
@@ -197,6 +207,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         overrideParams.isReadCall = Read.OFF;
         overrideParams.isParallelCall = Parallel.OFF;
         overrideParams.gasLimit = 0;
+        overrideParams.value = 0;
         overrideParams.readAt = 0;
         overrideParams.writeFinality = WriteFinality.LOW;
     }
@@ -259,6 +270,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         overrideParams.gasLimit = gasLimit_;
     }
 
+    function _setMsgValue(uint256 value_) internal {
+        overrideParams.value = value_;
+    }
+
     /// @notice Sets fees overrides
     /// @param fees_ The fees configuration
     function _setOverrides(Fees memory fees_) internal {
@@ -268,7 +283,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     function getOverrideParams()
         public
         view
-        returns (Read, Parallel, WriteFinality, uint256, uint256, bytes32)
+        returns (Read, Parallel, WriteFinality, uint256, uint256, uint256, bytes32)
     {
         return (
             overrideParams.isReadCall,
@@ -276,6 +291,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             overrideParams.writeFinality,
             overrideParams.readAt,
             overrideParams.gasLimit,
+            overrideParams.value,
             sbType
         );
     }
@@ -333,13 +349,6 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             initialize(chainSlug);
         }
     }
-
-    function callFromChain(
-        uint32 chainSlug_,
-        address plug_,
-        bytes32 params_,
-        bytes calldata payload_
-    ) external virtual onlyWatcherPrecompile {}
 
     /// @notice Initializes the contract
     /// @param chainSlug_ The chain slug

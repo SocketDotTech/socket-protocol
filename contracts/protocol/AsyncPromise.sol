@@ -5,7 +5,9 @@ import {AddressResolverUtil} from "./utils/AddressResolverUtil.sol";
 import {IPromise} from "../interfaces/IPromise.sol";
 import {IAppGateway} from "../interfaces/IAppGateway.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
-import {AsyncPromiseState} from "../protocol/utils/common/Structs.sol";
+import {AsyncPromiseState} from "./utils/common/Structs.sol";
+import {MAX_COPY_BYTES} from "./utils/common/Constants.sol";
+import {LibCall} from "solady/utils/LibCall.sol";
 
 abstract contract AsyncPromiseStorage is IPromise {
     // slots [0-49] reserved for gap
@@ -44,6 +46,7 @@ abstract contract AsyncPromiseStorage is IPromise {
 /// @notice this contract stores the callback selector and data to be executed once the on-chain call is executed
 /// This promise expires once the callback is executed
 contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil {
+    using LibCall for address;
     /// @notice Error thrown when attempting to resolve an already resolved promise.
     error PromiseAlreadyResolved();
     /// @notice Only the forwarder or local invoker can set then's promise callback
@@ -92,7 +95,8 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
             callbackSelector,
             abi.encode(callbackData, returnData_)
         );
-        (success, ) = localInvoker.call(combinedCalldata);
+        // setting max_copy_bytes to 0 as not using returnData right now
+        (success, , ) = localInvoker.tryCall(0, gasleft(), 0, combinedCalldata);
         if (success) return success;
 
         _handleRevert(requestCount_, payloadId_, AsyncPromiseState.CALLBACK_REVERTING);
@@ -115,12 +119,11 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         // to update the state in case selector is bytes(0) but reverting onchain
         resolved = true;
         state = state_;
-
-        // call handleRevert on app gateway to inform that the promise or execution is reverting onchain
-        (bool success, ) = localInvoker.call(
-            abi.encodeWithSelector(IAppGateway.handleRevert.selector, requestCount_, payloadId_)
-        );
-        if (!success) revert PromiseRevertFailed();
+        try IAppGateway(localInvoker).handleRevert(requestCount_, payloadId_) {
+            // Successfully handled revert
+        } catch {
+            revert PromiseRevertFailed();
+        }
     }
 
     /// @notice Sets the callback selector and data for the promise.
