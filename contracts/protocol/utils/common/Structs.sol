@@ -203,9 +203,11 @@ struct PayloadParams {
 struct RequestParams {
     bool isRequestCancelled;
     uint40 currentBatch;
+    // updated while processing request
     uint256 currentBatchPayloadsLeft;
     uint256 payloadsRemaining;
     address middleware;
+    // updated after auction
     address transmitter;
     PayloadParams[] payloadParamsArray;
 }
