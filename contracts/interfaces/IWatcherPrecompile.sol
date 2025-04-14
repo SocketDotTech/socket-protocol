@@ -72,6 +72,10 @@ interface IWatcherPrecompile {
 
     event ExpiryTimeSet(uint256 expiryTime);
 
+    event WatcherPrecompileLimitsSet(address watcherPrecompileLimits);
+
+    event WatcherPrecompileConfigSet(address watcherPrecompileConfig);
+
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
     /// @notice Error thrown when an invalid app gateway reaches a plug
@@ -91,8 +95,10 @@ interface IWatcherPrecompile {
 
     error RequestCancelled();
     error AlreadyStarted();
+    error RequestNotProcessing();
     error InvalidLevelNumber();
     error DeadlineNotPassedForOnChainRevert();
+
     /// @notice Calculates the digest hash of payload parameters
     /// @param params_ The payload parameters
     /// @return digest The calculated digest
