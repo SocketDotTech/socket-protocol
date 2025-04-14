@@ -6,11 +6,16 @@ import "./RequestQueue.sol";
 /// @title RequestAsync
 /// @notice Abstract contract for managing asynchronous payload batches
 abstract contract FeesHelpers is RequestQueue {
-    // slots [256-306] reserved for gap
+    // slots [258-308] reserved for gap
     uint256[50] _gap_batch_async;
 
+    /// @notice Increases the fees for a request if no bid is placed
+    /// @param requestCount_ The ID of the request
+    /// @param newMaxFees_ The new maximum fees
     function increaseFees(uint40 requestCount_, uint256 newMaxFees_) external override {
         address appGateway = _getCoreAppGateway(msg.sender);
+
+        // todo: should we allow core app gateway too?
         if (appGateway != requests[requestCount_].appGateway) {
             revert OnlyAppGateway();
         }
@@ -45,6 +50,9 @@ abstract contract FeesHelpers is RequestQueue {
         return _batch(msg.sender, auctionManager_, fees_, bytes(""));
     }
 
+    /// @notice Returns the fees for a request
+    /// @param requestCount_ The ID of the request
+    /// @return fees The fees data
     function getFees(uint40 requestCount_) external view returns (Fees memory) {
         return requests[requestCount_].fees;
     }

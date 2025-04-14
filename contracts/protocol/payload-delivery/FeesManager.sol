@@ -187,7 +187,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         return availableFees >= fees_.amount;
     }
 
-    /// @notice Blocks fees for transmitter
+    /// @notice Blocks fees for a request count
     /// @param originAppGateway_ The app gateway address
     /// @param feesGivenByApp_ The fees data struct given by the app gateway
     /// @param requestCount_ The batch identifier
