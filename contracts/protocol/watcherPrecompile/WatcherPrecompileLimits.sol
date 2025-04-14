@@ -8,6 +8,8 @@ import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import "../../interfaces/IWatcherPrecompileLimits.sol";
 import {SCHEDULE, QUERY, FINALIZE} from "../utils/common/Constants.sol";
 
+/// @title WatcherPrecompileLimits
+/// @notice Contract for managing watcher precompile limits
 contract WatcherPrecompileLimits is
     IWatcherPrecompileLimits,
     Initializable,
@@ -40,6 +42,9 @@ contract WatcherPrecompileLimits is
     // slot 155: _activeAppGateways
     // Mapping to track active app gateways
     mapping(address => bool) internal _activeAppGateways;
+
+    /// @notice Emitted when the default limit and rate per second are set
+    event DefaultLimitAndRatePerSecondSet(uint256 defaultLimit, uint256 defaultRatePerSecond);
 
     /// @notice Initial initialization (version 1)
     function initialize(
@@ -120,7 +125,7 @@ contract WatcherPrecompileLimits is
     ) external override onlyWatcherPrecompile {
         LimitParams storage limitParams = _limitParams[appGateway_][limitType_];
 
-        // Initialize limit if not active
+        // Initialize limit if not active, give default limit and rate per second
         if (!_activeAppGateways[appGateway_]) {
             LimitParams memory limitParam = LimitParams({
                 maxLimit: defaultLimit,
@@ -145,15 +150,10 @@ contract WatcherPrecompileLimits is
      * @notice Set the default limit value
      * @param defaultLimit_ The new default limit value
      */
-    function setDefaultLimit(uint256 defaultLimit_) external onlyOwner {
+    function setDefaultLimitAndRatePerSecond(uint256 defaultLimit_) external onlyOwner {
         defaultLimit = defaultLimit_;
-    }
+        defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
 
-    /**
-     * @notice Set the rate at which limit replenishes
-     * @param defaultRatePerSecond_ The new rate per second
-     */
-    function setDefaultRatePerSecond(uint256 defaultRatePerSecond_) external onlyOwner {
-        defaultRatePerSecond = defaultRatePerSecond_;
+        emit DefaultLimitAndRatePerSecondSet(defaultLimit, defaultRatePerSecond);
     }
 }

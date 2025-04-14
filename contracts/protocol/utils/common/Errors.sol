@@ -32,3 +32,4 @@ error BidExceedsMaxFees();
 error LowerBidAlreadyExists();
 error AsyncModifierNotUsed();
 error InvalidIndex();
+error RequestAlreadyExecuted();

@@ -31,11 +31,7 @@ interface IWatcherPrecompileLimits {
 
     /// @notice Set the default limit value
     /// @param defaultLimit_ The new default limit value
-    function setDefaultLimit(uint256 defaultLimit_) external;
-
-    /// @notice Set the rate at which limit replenishes
-    /// @param defaultRatePerSecond_ The new rate per second
-    function setDefaultRatePerSecond(uint256 defaultRatePerSecond_) external;
+    function setDefaultLimitAndRatePerSecond(uint256 defaultLimit_) external;
 
     /// @notice Number of decimals used in limit calculations
     function limitDecimals() external view returns (uint256);
@@ -46,6 +42,10 @@ interface IWatcherPrecompileLimits {
     /// @notice Rate at which limit replenishes per second
     function defaultRatePerSecond() external view returns (uint256);
 
+    /// @notice Consumes a limit for an app gateway
+    /// @param appGateway_ The app gateway address
+    /// @param limitType_ The type of limit to consume
+    /// @param consumeLimit_ The amount of limit to consume
     function consumeLimit(address appGateway_, bytes32 limitType_, uint256 consumeLimit_) external;
 
     /// @notice Emitted when limit parameters are updated
@@ -53,13 +53,4 @@ interface IWatcherPrecompileLimits {
 
     /// @notice Emitted when an app gateway is activated with default limits
     event AppGatewayActivated(address indexed appGateway, uint256 maxLimit, uint256 ratePerSecond);
-
-    error ActionNotSupported(address appGateway_, bytes32 limitType_);
-    error NotDeliveryHelper();
-    error LimitExceeded(
-        address appGateway,
-        bytes32 limitType,
-        uint256 requested,
-        uint256 available
-    );
 }
