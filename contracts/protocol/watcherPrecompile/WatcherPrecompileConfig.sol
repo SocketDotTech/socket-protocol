@@ -99,12 +99,10 @@ contract WatcherPrecompileConfig is
         evmxSlug = evmxSlug_;
     }
 
-    /// @notice Emitted when a plug is set as valid for an app gateway
-
     /// @notice Configures app gateways with their respective plugs and switchboards
-    /// @param configs_ Array of configurations containing app gateway, network, plug, and switchboard details
-    /// @dev Only callable by the contract owner
+    /// @dev Only callable by the watcher
     /// @dev This helps in verifying that plugs are called by respective app gateways
+    /// @param configs_ Array of configurations containing app gateway, network, plug, and switchboard details
     function setAppGateways(
         AppGatewayConfig[] calldata configs_,
         uint256 signatureNonce_,
@@ -127,7 +125,7 @@ contract WatcherPrecompileConfig is
         }
     }
 
-    /// @notice Sets the switchboard for a network
+    /// @notice Sets the socket, contract factory plug, and fees plug for a network
     /// @param chainSlug_ The identifier of the network
     function setOnChainContracts(
         uint32 chainSlug_,
@@ -144,6 +142,7 @@ contract WatcherPrecompileConfig is
 
     /// @notice Sets the switchboard for a network
     /// @param chainSlug_ The identifier of the network
+    /// @param sbType_ The type of switchboard, hash of a string
     /// @param switchboard_ The address of the switchboard
     function setSwitchboard(
         uint32 chainSlug_,
@@ -154,16 +153,21 @@ contract WatcherPrecompileConfig is
         emit SwitchboardSet(chainSlug_, sbType_, switchboard_);
     }
 
-    // @dev app gateway can set the valid plugs for each chain slug
+    /// @notice Sets the valid plugs for an app gateway
+    /// @dev Only callable by the app gateway
+    /// @dev This helps in verifying that app gateways are called by respective plugs
+    /// @param chainSlug_ The identifier of the network
+    /// @param plug_ The address of the plug
+    /// @param isValid_ Whether the plug is valid
     function setIsValidPlug(uint32 chainSlug_, address plug_, bool isValid_) external {
         isValidPlug[msg.sender][chainSlug_][plug_] = isValid_;
     }
 
     /// @notice Retrieves the configuration for a specific plug on a network
+    /// @dev Returns zero addresses if configuration doesn't exist
     /// @param chainSlug_ The identifier of the network
     /// @param plug_ The address of the plug
     /// @return The app gateway address and switchboard address for the plug
-    /// @dev Returns zero addresses if configuration doesn't exist
     function getPlugConfigs(
         uint32 chainSlug_,
         address plug_
@@ -174,15 +178,24 @@ contract WatcherPrecompileConfig is
         );
     }
 
+    /// @notice Verifies the connections between the target, app gateway, and switchboard
+    /// @dev Only callable by the watcher
+    /// @param chainSlug_ The identifier of the network
+    /// @param target_ The address of the target
+    /// @param appGateway_ The address of the app gateway
+    /// @param switchboard_ The address of the switchboard
     function verifyConnections(
         uint32 chainSlug_,
         address target_,
         address appGateway_,
-        address switchboard_
+        address switchboard_,
+        address middleware_
     ) external view {
-        // todo: revisit this
         // if target is contractFactoryPlug, return
-        if (target_ == contractFactoryPlug[chainSlug_]) return;
+        // as connection is with middleware delivery helper and not app gateway
+        if (
+            middleware_ == address(deliveryHelper__()) && target_ == contractFactoryPlug[chainSlug_]
+        ) return;
 
         (address appGateway, address switchboard) = getPlugConfigs(chainSlug_, target_);
         if (appGateway != appGateway_) revert InvalidGateway();

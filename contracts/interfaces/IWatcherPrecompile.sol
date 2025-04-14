@@ -9,8 +9,12 @@ import {IWatcherPrecompileConfig} from "./IWatcherPrecompileConfig.sol";
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
 /// @dev Defines core functionality for payload processing and promise resolution
 interface IWatcherPrecompile {
+    /// @notice Emitted when a new call is made to an app gateway
+    /// @param triggerId The unique identifier for the trigger
     event CalledAppGateway(bytes32 triggerId);
 
+    /// @notice Emitted when a call to an app gateway fails
+    /// @param triggerId The unique identifier for the trigger
     event AppGatewayCallFailed(bytes32 triggerId);
 
     /// @notice Emitted when a new query is requested
@@ -32,26 +36,41 @@ interface IWatcherPrecompile {
     /// @param payloadId The unique identifier for the not resolved promise
     event PromiseNotResolved(bytes32 indexed payloadId, address asyncPromise);
 
+    /// @notice Emitted when a payload is marked as revert
+    /// @param payloadId The unique identifier for the payload
+    /// @param isRevertingOnchain Whether the payload is reverting onchain
     event MarkedRevert(bytes32 indexed payloadId, bool isRevertingOnchain);
-    event TimeoutRequested(
-        bytes32 timeoutId,
-        address target,
-        bytes payload,
-        uint256 executeAt // Epoch time when the task should execute
-    );
+
+    /// @notice Emitted when a timeout is requested
+    /// @param timeoutId The unique identifier for the timeout
+    /// @param target The target address for the timeout callback
+    /// @param payload The payload data
+    /// @param executeAt The epoch time when the task should execute
+    event TimeoutRequested(bytes32 timeoutId, address target, bytes payload, uint256 executeAt);
 
     /// @notice Emitted when a timeout is resolved
     /// @param timeoutId The unique identifier for the timeout
-    /// @param target The target address for the timeout
+    /// @param target The target address for the callback
     /// @param payload The payload data
     /// @param executedAt The epoch time when the task was executed
-    event TimeoutResolved(bytes32 timeoutId, address target, bytes payload, uint256 executedAt);
+    /// @param returnData The return data from the callback
+    event TimeoutResolved(
+        bytes32 timeoutId,
+        address target,
+        bytes payload,
+        uint256 executedAt,
+        bytes returnData
+    );
 
     event RequestSubmitted(
         address middleware,
         uint40 requestCount,
         PayloadParams[] payloadParamsArray
     );
+
+    event MaxTimeoutDelayInSecondsSet(uint256 maxTimeoutDelayInSeconds);
+
+    event ExpiryTimeSet(uint256 expiryTime);
 
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();

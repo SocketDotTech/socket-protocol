@@ -80,6 +80,7 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
 
     /// @notice Gets or deploys a Forwarder proxy contract
     /// @dev it checks if the forwarder is already deployed, if yes, it returns the address
+    /// @dev it maps the forwarder with the app gateway which is used for verifying if they are linked
     /// @param chainContractAddress_ The address of the chain contract
     /// @param chainSlug_ The chain slug
     /// @return newForwarder The address of the deployed Forwarder proxy contract

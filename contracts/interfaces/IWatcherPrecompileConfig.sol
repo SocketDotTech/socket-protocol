@@ -50,7 +50,8 @@ interface IWatcherPrecompileConfig {
         uint32 chainSlug_,
         address target_,
         address appGateway_,
-        address switchboard_
+        address switchboard_,
+        address middleware_
     ) external view;
 
     function setAppGateways(
