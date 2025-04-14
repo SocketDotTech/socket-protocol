@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.3;
 
-import {Bid, Fees} from "../protocol/utils/common/Structs.sol";
+import {Bid, Fees, RequestMetadata, RequestParams} from "../protocol/utils/common/Structs.sol";
 
 interface IAuctionManager {
+    /// @notice Bids for an auction
+    /// @param requestCount_ The request count
+    /// @param fee_ The fee
+    /// @param transmitterSignature_ The transmitter signature
+    /// @param extraData_ The extra data
     function bid(
         uint40 requestCount_,
         uint256 fee_,
@@ -11,9 +16,17 @@ interface IAuctionManager {
         bytes memory extraData_
     ) external;
 
+    /// @notice Ends an auction
+    /// @param requestCount_ The request count
     function endAuction(uint40 requestCount_) external;
 
+    /// @notice Checks if an auction is closed
+    /// @param requestCount_ The request count
+    /// @return isClosed_ Whether the auction is closed
     function auctionClosed(uint40 requestCount_) external view returns (bool);
 
+    /// @notice Checks if an auction is started
+    /// @param requestCount_ The request count
+    /// @return isStarted_ Whether the auction is started
     function auctionStarted(uint40 requestCount_) external view returns (bool);
 }
