@@ -7,6 +7,7 @@ import "../../interfaces/ISwitchboard.sol";
 import "../utils/RescueFundsLib.sol";
 import {ExecuteParams} from "../../protocol/utils/common/Structs.sol";
 import "../../interfaces/ISocketBatcher.sol";
+import {OpInteropSwitchboard} from "./switchboard/OpInteropSwitchboard.sol";
 
 /**
  * @title SocketBatcher
@@ -34,6 +35,40 @@ contract SocketBatcher is ISocketBatcher, Ownable {
     ) external payable returns (bytes memory) {
         ISwitchboard(executeParams_.switchboard).attest(digest_, proof_);
         return socket__.execute{value: msg.value}(executeParams_, transmitterSignature_);
+    }
+
+    function attestOPProveAndExecute(
+        ExecuteParams calldata executeParams_,
+        bytes32[] calldata previousPayloadIds_,
+        bytes32 digest_,
+        bytes calldata proof_,
+        bytes calldata transmitterSignature_
+    ) external payable returns (bytes memory) {
+        OpInteropSwitchboard(executeParams_.switchboard).attest(
+            _createPayloadId(executeParams_),
+            digest_,
+            proof_
+        );
+        OpInteropSwitchboard(executeParams_.switchboard).proveRemoteExecutions(
+            previousPayloadIds_,
+            _createPayloadId(executeParams_),
+            transmitterSignature_,
+            executeParams_
+        );
+        return socket__.execute{value: msg.value}(executeParams_, transmitterSignature_);
+    }
+
+    function _createPayloadId(ExecuteParams memory executeParams_) internal view returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(
+                    executeParams_.requestCount,
+                    executeParams_.batchCount,
+                    executeParams_.payloadCount,
+                    executeParams_.switchboard,
+                    socket__.chainSlug()
+                )
+            );
     }
 
     function rescueFunds(address token_, address to_, uint256 amount_) external onlyOwner {

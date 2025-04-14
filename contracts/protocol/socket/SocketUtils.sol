@@ -18,7 +18,7 @@ abstract contract SocketUtils is SocketConfig {
     // Version string for this socket instance
     bytes32 public immutable version;
     // ChainSlug for this deployed socket instance
-    uint32 public immutable chainSlug;
+    uint32 public immutable override chainSlug;
 
     uint64 public callCounter;
 

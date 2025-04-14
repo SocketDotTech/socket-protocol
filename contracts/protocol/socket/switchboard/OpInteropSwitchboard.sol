@@ -40,7 +40,7 @@ contract OpInteropSwitchboard is FastSwitchboard {
         address owner_
     ) FastSwitchboard(chainSlug_, socket_, owner_) {}
 
-    function attest(bytes32 /*digest_*/, bytes calldata /*proof_*/) external override {
+    function attest(bytes32 /*digest_*/, bytes calldata /*proof_*/) external pure override {
         revert("Not implemented");
     }
 
@@ -109,7 +109,7 @@ contract OpInteropSwitchboard is FastSwitchboard {
     function proveRemoteExecutions(
         bytes32[] calldata previousPayloadIds_,
         bytes32 currentPayloadId_,
-        address transmitter_,
+        bytes calldata transmitterSignature_,
         ExecuteParams memory executeParams_
     ) external {
         // Calculate previousDigestsHash from stored remoteExecutedDigests
@@ -121,22 +121,26 @@ contract OpInteropSwitchboard is FastSwitchboard {
                 abi.encodePacked(previousDigestsHash, remoteExecutedDigests[previousPayloadIds_[i]])
             );
         }
-
         // Check if the calculated previousDigestsHash matches the one in executeParams_
         if (previousDigestsHash != executeParams_.prevDigestsHash)
             revert PreviousDigestsHashMismatch();
 
+        address transmitter = _recoverSigner(
+            keccak256(abi.encode(address(socket__), currentPayloadId_)),
+            transmitterSignature_
+        );
+
         // Construct current digest
         (address appGateway, ) = socket__.getPlugConfig(executeParams_.target);
         bytes32 constructedDigest = _createDigest(
-            transmitter_,
+            transmitter,
             currentPayloadId_,
             appGateway,
             executeParams_
         );
 
-        // Verify the constructed digest matches the stored one
         bytes32 storedDigest = payloadIdToDigest[currentPayloadId_];
+        // Verify the constructed digest matches the stored one
         if (storedDigest == bytes32(0) || !isAttested[storedDigest]) revert NotAttested();
         if (constructedDigest != storedDigest) revert DigestMismatch();
 

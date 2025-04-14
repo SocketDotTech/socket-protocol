@@ -77,6 +77,8 @@ interface ISocket {
 
     function registerSwitchboard() external;
 
+    function chainSlug() external view returns (uint32);
+
     /**
      * @notice returns the config for given `plugAddress_` and `siblingChainSlug_`
      * @param plugAddress_ address of plug present at current chain
