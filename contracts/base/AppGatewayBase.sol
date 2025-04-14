@@ -181,7 +181,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
+            .getOnChainAddress();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

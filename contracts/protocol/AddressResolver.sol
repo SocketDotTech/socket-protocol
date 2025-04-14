@@ -91,7 +91,7 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
     ) public returns (address newForwarder) {
         // predict address
         address forwarderAddress = getForwarderAddress(chainContractAddress_, chainSlug_);
-        
+
         // check if addr has code, if yes, return
         if (forwarderAddress.code.length > 0) {
             return forwarderAddress;

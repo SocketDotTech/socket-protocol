@@ -12,7 +12,7 @@ interface IAddressResolver {
     /// @param newAddress The new address of the contract
     event AddressSet(bytes32 indexed name, address oldAddress, address newAddress);
 
-    /// @notice Emitted when a new plug is added to the resolver    
+    /// @notice Emitted when a new plug is added to the resolver
     /// @param appGateway The address of the app gateway
     /// @param chainSlug The chain slug
     /// @param plug The address of the plug
@@ -22,7 +22,7 @@ interface IAddressResolver {
     /// @param newForwarder The address of the new forwarder
     /// @param salt The salt used to deploy the forwarder
     event ForwarderDeployed(address newForwarder, bytes32 salt);
-    
+
     /// @notice Emitted when a new async promise is deployed
     /// @param newAsyncPromise The address of the new async promise
     /// @param salt The salt used to deploy the async promise

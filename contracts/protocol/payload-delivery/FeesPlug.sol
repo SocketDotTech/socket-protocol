@@ -92,7 +92,11 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
     /// @param token_ The token address
     /// @param amount_ The amount
     /// @param appGateway_ The app gateway address
-    function deposit(address token_, address appGateway_, uint256 amount_) external payable override{
+    function deposit(
+        address token_,
+        address appGateway_,
+        uint256 amount_
+    ) external payable override {
         if (!whitelistedTokens[token_]) revert TokenNotWhitelisted(token_);
 
         if (token_ == ETH_ADDRESS) {

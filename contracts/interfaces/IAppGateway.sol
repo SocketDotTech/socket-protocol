@@ -24,7 +24,7 @@ interface IAppGateway {
         returns (Read, Parallel, WriteFinality, uint256, uint256, uint256, bytes32);
 
     /// @notice Handles the request complete event
-    /// @param requestCount_ The request count  
+    /// @param requestCount_ The request count
     /// @param onCompleteData_ The on complete data
     function onRequestComplete(uint40 requestCount_, bytes calldata onCompleteData_) external;
 
