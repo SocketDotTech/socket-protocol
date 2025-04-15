@@ -66,13 +66,13 @@ struct UpdateLimitParams {
 }
 struct AppGatewayConfig {
     address plug;
-    address appGateway;
+    bytes32 appGatewayId;
     address switchboard;
     uint32 chainSlug;
 }
 // Plug config:
 struct PlugConfig {
-    address appGateway;
+    bytes32 appGatewayId;
     address switchboard;
 }
 //trigger:
@@ -80,7 +80,7 @@ struct TriggerParams {
     bytes32 triggerId;
     bytes32 params;
     address plug;
-    address appGateway;
+    bytes32 appGatewayId;
     uint32 chainSlug;
     bytes payload;
 }
@@ -143,7 +143,7 @@ struct DigestParams {
     uint256 readAt;
     bytes payload;
     address target;
-    address appGateway;
+    bytes32 appGatewayId;
     bytes32 prevDigestsHash; // should be id? hash of hashes
 }
 

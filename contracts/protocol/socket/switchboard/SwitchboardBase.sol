@@ -13,7 +13,7 @@ abstract contract SwitchboardBase is ISwitchboard, AccessControl {
 
     // chain slug of deployed chain
     uint32 public immutable chainSlug;
-    
+
     /**
      * @dev Constructor of SwitchboardBase
      * @param chainSlug_ Chain slug of deployment chain

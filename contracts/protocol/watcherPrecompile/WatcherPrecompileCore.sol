@@ -6,6 +6,7 @@ import {ECDSA} from "solady/utils/ECDSA.sol";
 import {AccessControl} from "../utils/AccessControl.sol";
 import "solady/utils/Initializable.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
+import "./WatcherPrecompileUtils.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
@@ -14,7 +15,8 @@ abstract contract WatcherPrecompileCore is
     WatcherPrecompileStorage,
     Initializable,
     AccessControl,
-    AddressResolverUtil
+    AddressResolverUtil,
+    WatcherPrecompileUtils
 {
     using DumpDecoder for bytes32;
 
@@ -81,7 +83,7 @@ abstract contract WatcherPrecompileCore is
             params_.readAt,
             params_.payload,
             params_.target,
-            params_.appGateway,
+            _encodeAppGatewayId(params_.appGateway),
             prevDigestsHash
         );
 
@@ -129,7 +131,7 @@ abstract contract WatcherPrecompileCore is
                 params_.readAt,
                 params_.payload,
                 params_.target,
-                params_.appGateway,
+                params_.appGatewayId,
                 params_.prevDigestsHash
             )
         );
@@ -163,7 +165,7 @@ abstract contract WatcherPrecompileCore is
                 p.readAt,
                 p.payload,
                 p.target,
-                p.appGateway,
+                _encodeAppGatewayId(p.appGateway),
                 p.prevDigestsHash
             );
             prevDigestsHash = keccak256(abi.encodePacked(prevDigestsHash, getDigest(digestParams)));
@@ -188,11 +190,11 @@ abstract contract WatcherPrecompileCore is
         // if target is contractFactoryPlug, return
         if (target_ == watcherPrecompileConfig__.contractFactoryPlug(chainSlug_)) return;
 
-        (address appGateway, address switchboard) = watcherPrecompileConfig__.getPlugConfigs(
+        (bytes32 appGatewayId, address switchboard) = watcherPrecompileConfig__.getPlugConfigs(
             chainSlug_,
             target_
         );
-        if (appGateway != appGateway_) revert InvalidGateway();
+        if (appGatewayId != _encodeAppGatewayId(appGateway_)) revert InvalidGateway();
         if (switchboard != switchboard_) revert InvalidSwitchboard();
     }
 

@@ -52,14 +52,14 @@ abstract contract SocketUtils is SocketConfig {
      * @notice creates the digest for the payload
      * @param transmitter_ The address of the transmitter
      * @param payloadId_ The ID of the payload
-     * @param appGateway_ The address of the app gateway
+     * @param appGatewayId_ The id of the app gateway
      * @param executeParams_ The parameters of the payload
      * @return The packed payload as a bytes32 hash
      */
     function _createDigest(
         address transmitter_,
         bytes32 payloadId_,
-        address appGateway_,
+        bytes32 appGatewayId_,
         ExecuteParams memory executeParams_
     ) internal view returns (bytes32) {
         return
@@ -76,7 +76,7 @@ abstract contract SocketUtils is SocketConfig {
                     executeParams_.readAt,
                     executeParams_.payload,
                     executeParams_.target,
-                    appGateway_,
+                    appGatewayId_,
                     executeParams_.prevDigestsHash
                 )
             );
@@ -116,11 +116,11 @@ abstract contract SocketUtils is SocketConfig {
     // Packs the local plug, local chain slug, remote chain slug and nonce
     // triggerCounter++ will take care of call id overflow as well
     // triggerId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
-    function _encodeTriggerId(address appGateway_) internal returns (bytes32) {
+    function _encodeTriggerId() internal returns (bytes32) {
         return
             bytes32(
                 (uint256(chainSlug) << 224) |
-                    (uint256(uint160(appGateway_)) << 64) |
+                    (uint256(uint160(address(this))) << 64) |
                     triggerCounter++
             );
     }

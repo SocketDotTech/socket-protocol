@@ -47,16 +47,16 @@ abstract contract SocketConfig is ISocket, AccessControl {
     /**
      * @notice connects Plug to Socket and sets the config for given `siblingChainSlug_`
      */
-    function connect(address appGateway_, address switchboard_) external override {
+    function connect(bytes32 appGatewayId_, address switchboard_) external override {
         if (isValidSwitchboard[switchboard_] != SwitchboardStatus.REGISTERED)
             revert InvalidSwitchboard();
 
         PlugConfig storage _plugConfig = _plugConfigs[msg.sender];
 
-        _plugConfig.appGateway = appGateway_;
+        _plugConfig.appGatewayId = appGatewayId_;
         _plugConfig.switchboard = switchboard_;
 
-        emit PlugConnected(msg.sender, appGateway_, switchboard_);
+        emit PlugConnected(msg.sender, appGatewayId_, switchboard_);
     }
 
     function setMaxCopyBytes(uint16 maxCopyBytes_) external onlyRole(GOVERNANCE_ROLE) {
@@ -64,13 +64,13 @@ abstract contract SocketConfig is ISocket, AccessControl {
     }
 
     /**
-     * @notice returns the config for given `plugAddress_` and `siblingChainSlug_`
+     * @notice returns the config for given `plugAddress_`
      * @param plugAddress_ address of plug present at current chain
      */
     function getPlugConfig(
         address plugAddress_
-    ) external view returns (address appGateway, address switchboard) {
+    ) external view returns (bytes32 appGatewayId, address switchboard) {
         PlugConfig memory _plugConfig = _plugConfigs[plugAddress_];
-        return (_plugConfig.appGateway, _plugConfig.switchboard);
+        return (_plugConfig.appGatewayId, _plugConfig.switchboard);
     }
 }

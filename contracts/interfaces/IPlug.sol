@@ -6,7 +6,7 @@ pragma solidity ^0.8.21;
  * @notice Interface for a plug contract that executes the payload received from a source chain.
  */
 interface IPlug {
-    function initSocket(address appGateway_, address socket_, address switchboard_) external;
+    function initSocket(bytes32 appGatewayId_, address socket_, address switchboard_) external;
 
     function overrides() external view returns (bytes memory);
 }
