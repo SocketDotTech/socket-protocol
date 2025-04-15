@@ -8,7 +8,7 @@ import "./WatcherPrecompileCore.sol";
 /// @dev This contract extends WatcherPrecompileCore to provide request handling functionality
 /// @dev It manages the submission of payload requests and their processing
 abstract contract RequestHandler is WatcherPrecompileCore {
-    using DumpDecoder for bytes32;
+    using PayloadHeaderDecoder for bytes32;
 
     // slots [266-315] reserved for gap
     uint256[50] _request_handler_gap;
@@ -21,11 +21,11 @@ abstract contract RequestHandler is WatcherPrecompileCore {
     function submitRequest(
         PayloadSubmitParams[] calldata payloadSubmitParams
     ) public returns (uint40 requestCount) {
+        address appGateway = _checkAppGateways(payloadSubmitParams);
+
         requestCount = nextRequestCount++;
         uint40 batchCount = nextBatchCount;
         uint40 currentBatch = batchCount;
-
-        address appGateway = _checkAppGateways(payloadSubmitParams);
 
         uint256 readCount;
         uint256 writeCount;
@@ -59,16 +59,16 @@ abstract contract RequestHandler is WatcherPrecompileCore {
             );
             batchPayloadIds[batchCount].push(payloadId);
 
-            bytes32 dump;
-            dump = dump.setRequestCount(requestCount);
-            dump = dump.setBatchCount(batchCount);
-            dump = dump.setPayloadCount(localPayloadCount);
-            dump = dump.setChainSlug(p.chainSlug);
-            dump = dump.setCallType(p.callType);
-            dump = dump.setIsParallel(p.isParallel);
-            dump = dump.setWriteFinality(p.writeFinality);
+            bytes32 payloadHeader;
+            payloadHeader = payloadHeader.setRequestCount(requestCount);
+            payloadHeader = payloadHeader.setBatchCount(batchCount);
+            payloadHeader = payloadHeader.setPayloadCount(localPayloadCount);
+            payloadHeader = payloadHeader.setChainSlug(p.chainSlug);
+            payloadHeader = payloadHeader.setCallType(p.callType);
+            payloadHeader = payloadHeader.setIsParallel(p.isParallel);
+            payloadHeader = payloadHeader.setWriteFinality(p.writeFinality);
 
-            payloads[payloadId].dump = dump;
+            payloads[payloadId].payloadHeader = payloadHeader;
             payloads[payloadId].asyncPromise = p.asyncPromise;
             payloads[payloadId].switchboard = p.switchboard;
             payloads[payloadId].target = p.target;
@@ -138,7 +138,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         if (r.transmitter != address(0)) revert AlreadyStarted();
         if (r.currentBatchPayloadsLeft > 0) revert AlreadyStarted();
 
-        uint40 batchCount = r.payloadParamsArray[0].dump.getBatchCount();
+        uint40 batchCount = r.payloadParamsArray[0].payloadHeader.getBatchCount();
         r.transmitter = transmitter;
         r.currentBatch = batchCount;
 
@@ -160,7 +160,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
             if (isPromiseExecuted[payloadParamsArray[i].payloadId]) continue;
             totalPayloads++;
 
-            if (payloadParamsArray[i].dump.getCallType() != CallType.READ) {
+            if (payloadParamsArray[i].payloadHeader.getCallType() != CallType.READ) {
                 _finalize(payloadParamsArray[i], r.transmitter);
             } else {
                 _query(payloadParamsArray[i]);

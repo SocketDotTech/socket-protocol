@@ -9,7 +9,7 @@ import {LibCall} from "solady/utils/LibCall.sol";
 /// @dev This contract extends RequestHandler to provide the main functionality for the WatcherPrecompile system
 /// @dev It handles timeout requests, finalization, queries, and promise resolution
 contract WatcherPrecompile is RequestHandler {
-    using DumpDecoder for bytes32;
+    using PayloadHeaderDecoder for bytes32;
     using LibCall for address;
 
     /// @notice Constructor that disables initializers for the implementation
@@ -175,6 +175,8 @@ contract WatcherPrecompile is RequestHandler {
         if (r.middleware != msg.sender) revert InvalidCaller();
 
         r.isRequestCancelled = true;
+
+        emit RequestCancelledFromGateway(requestCount);
     }
 
     /// @notice Resolves multiple promises with their return data
@@ -200,10 +202,11 @@ contract WatcherPrecompile is RequestHandler {
             PayloadParams memory payloadParams = payloads[resolvedPromises_[i].payloadId];
             address asyncPromise = payloadParams.asyncPromise;
 
+            // todo: non trusted call
             if (asyncPromise != address(0)) {
                 // Resolve each promise with its corresponding return data
                 bool success = IPromise(asyncPromise).markResolved(
-                    payloadParams.dump.getRequestCount(),
+                    payloadParams.payloadHeader.getRequestCount(),
                     resolvedPromises_[i].payloadId,
                     resolvedPromises_[i].returnData
                 );
@@ -215,9 +218,8 @@ contract WatcherPrecompile is RequestHandler {
             }
 
             isPromiseExecuted[resolvedPromises_[i].payloadId] = true;
-
             RequestParams storage requestParams_ = requestParams[
-                payloadParams.dump.getRequestCount()
+                payloadParams.payloadHeader.getRequestCount()
             ];
             requestParams_.currentBatchPayloadsLeft--;
             requestParams_.payloadsRemaining--;
@@ -226,13 +228,16 @@ contract WatcherPrecompile is RequestHandler {
             if (
                 requestParams_.currentBatchPayloadsLeft == 0 && requestParams_.payloadsRemaining > 0
             ) {
-                _processBatch(payloadParams.dump.getRequestCount(), ++requestParams_.currentBatch);
+                _processBatch(
+                    payloadParams.payloadHeader.getRequestCount(),
+                    ++requestParams_.currentBatch
+                );
             }
 
             // if all payloads of a request are executed, finish the request
             if (requestParams_.payloadsRemaining == 0) {
                 IMiddleware(requestParams_.middleware).finishRequest(
-                    payloadParams.dump.getRequestCount()
+                    payloadParams.payloadHeader.getRequestCount()
                 );
             }
             emit PromiseResolved(resolvedPromises_[i].payloadId, asyncPromise);
@@ -263,19 +268,19 @@ contract WatcherPrecompile is RequestHandler {
         if (payloadParams.deadline > block.timestamp) revert DeadlineNotPassedForOnChainRevert();
 
         RequestParams storage currentRequestParams = requestParams[
-            payloadParams.dump.getRequestCount()
+            payloadParams.payloadHeader.getRequestCount()
         ];
         currentRequestParams.isRequestCancelled = true;
 
+        IMiddleware(currentRequestParams.middleware).handleRequestReverts(
+            payloadParams.payloadHeader.getRequestCount()
+        );
+
         if (isRevertingOnchain_ && payloadParams.asyncPromise != address(0))
             IPromise(payloadParams.asyncPromise).markOnchainRevert(
-                payloadParams.dump.getRequestCount(),
+                payloadParams.payloadHeader.getRequestCount(),
                 payloadId_
             );
-
-        IMiddleware(currentRequestParams.middleware).handleRequestReverts(
-            payloadParams.dump.getRequestCount()
-        );
 
         emit MarkedRevert(payloadId_, isRevertingOnchain_);
     }

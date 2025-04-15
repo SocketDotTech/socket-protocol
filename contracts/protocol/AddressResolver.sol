@@ -58,6 +58,17 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
     /// @notice Error thrown if AppGateway contract was already set by a different address
     error InvalidAppGateway(address contractAddress_);
 
+    /// @notice Event emitted when the delivery helper is updated
+    event DeliveryHelperUpdated(address deliveryHelper_);
+    /// @notice Event emitted when the fees manager is updated
+    event FeesManagerUpdated(address feesManager_);
+    /// @notice Event emitted when the default auction manager is updated
+    event DefaultAuctionManagerUpdated(address defaultAuctionManager_);
+    /// @notice Event emitted when the watcher precompile is updated
+    event WatcherPrecompileUpdated(address watcherPrecompile_);
+    /// @notice Event emitted when the contracts to gateways mapping is updated
+    event ContractsToGatewaysUpdated(address contractAddress_, address appGateway_);
+
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -200,6 +211,7 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
             revert InvalidAppGateway(contractAddress_);
         }
         contractsToGateways[contractAddress_] = msg.sender;
+        emit ContractsToGatewaysUpdated(contractAddress_, msg.sender);
     }
 
     /// @notice Gets the predicted address of a Forwarder proxy contract
@@ -254,23 +266,27 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
     /// @param deliveryHelper_ The address of the delivery helper
     function setDeliveryHelper(address deliveryHelper_) external onlyOwner {
         deliveryHelper = deliveryHelper_;
+        emit DeliveryHelperUpdated(deliveryHelper_);
     }
 
     /// @notice Updates the address of the fees manager
     /// @param feesManager_ The address of the fees manager
     function setFeesManager(address feesManager_) external onlyOwner {
         feesManager = feesManager_;
+        emit FeesManagerUpdated(feesManager_);
     }
 
     /// @notice Updates the address of the default auction manager
     /// @param defaultAuctionManager_ The address of the default auction manager
     function setDefaultAuctionManager(address defaultAuctionManager_) external onlyOwner {
         defaultAuctionManager = defaultAuctionManager_;
+        emit DefaultAuctionManagerUpdated(defaultAuctionManager_);
     }
 
     /// @notice Updates the address of the watcher precompile contract
     /// @param watcherPrecompile_ The address of the watcher precompile contract
     function setWatcherPrecompile(address watcherPrecompile_) external onlyOwner {
         watcherPrecompile__ = IWatcherPrecompile(watcherPrecompile_);
+        emit WatcherPrecompileUpdated(watcherPrecompile_);
     }
 }

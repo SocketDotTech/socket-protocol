@@ -7,7 +7,7 @@ import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
 import "../interfaces/IForwarder.sol";
 import {AddressResolverUtil} from "./utils/AddressResolverUtil.sol";
-import {AsyncModifierNotUsed} from "./utils/common/Errors.sol";
+import {AsyncModifierNotUsed, NoAsyncPromiseFound, PromiseCallerMismatch, RequestCountMismatch, DeliveryHelperNotSet} from "./utils/common/Errors.sol";
 import "solady/utils/Initializable.sol";
 
 /// @title Forwarder Storage
@@ -66,10 +66,10 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
     /// @param data_ The data to be passed to callback
     /// @return promise_ The address of the new promise
     function then(bytes4 selector_, bytes memory data_) external returns (address promise_) {
-        if (latestAsyncPromise == address(0)) revert("Forwarder: no async promise found");
-        if (latestPromiseCaller != msg.sender) revert("Forwarder: promise caller mismatch");
+        if (latestAsyncPromise == address(0)) revert NoAsyncPromiseFound();
+        if (latestPromiseCaller != msg.sender) revert PromiseCallerMismatch();
         if (latestRequestCount != watcherPrecompile__().nextRequestCount())
-            revert("Forwarder: request count mismatch");
+            revert RequestCountMismatch();
 
         address latestAsyncPromise_ = latestAsyncPromise;
         latestAsyncPromise = address(0);
@@ -93,7 +93,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
     /// @dev It queues the calls in the middleware and deploys the promise contract
     fallback() external {
         if (address(deliveryHelper__()) == address(0)) {
-            revert("Forwarder: deliveryHelper not found");
+            revert DeliveryHelperNotSet();
         }
 
         // validates if the async modifier is set

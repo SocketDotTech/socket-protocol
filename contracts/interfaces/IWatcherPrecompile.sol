@@ -76,6 +76,8 @@ interface IWatcherPrecompile {
 
     event WatcherPrecompileConfigSet(address watcherPrecompileConfig);
 
+    event RequestCancelledFromGateway(uint40 requestCount);
+
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
     /// @notice Error thrown when an invalid app gateway reaches a plug
