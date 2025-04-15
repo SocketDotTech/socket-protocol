@@ -5,7 +5,7 @@ import "../../../interfaces/IWatcherPrecompile.sol";
 import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 import {IPromise} from "../../../interfaces/IPromise.sol";
-import "../DumpDecoder.sol";
+import "../PayloadHeaderDecoder.sol";
 
 import {IMiddleware} from "../../../interfaces/IMiddleware.sol";
 import {QUERY, FINALIZE, SCHEDULE, MAX_COPY_BYTES} from "../../utils/common/Constants.sol";

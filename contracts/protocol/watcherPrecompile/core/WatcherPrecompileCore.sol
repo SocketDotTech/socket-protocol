@@ -18,7 +18,7 @@ abstract contract WatcherPrecompileCore is
     AccessControl,
     AddressResolverUtil
 {
-    using DumpDecoder for bytes32;
+    using PayloadHeaderDecoder for bytes32;
 
     // slots [216-265] reserved for gap
     uint256[50] _core_gap;
@@ -63,7 +63,7 @@ abstract contract WatcherPrecompileCore is
         PayloadParams memory params_,
         address transmitter_
     ) internal returns (bytes32 digest) {
-        uint32 chainSlug = params_.dump.getChainSlug();
+        uint32 chainSlug = params_.payloadHeader.getChainSlug();
 
         // Verify that the app gateway is properly configured for this chain and target
         watcherPrecompileConfig__.verifyConnections(
@@ -71,14 +71,14 @@ abstract contract WatcherPrecompileCore is
             params_.target,
             params_.appGateway,
             params_.switchboard,
-            requestParams[params_.dump.getRequestCount()].middleware
+            requestParams[params_.payloadHeader.getRequestCount()].middleware
         );
 
         uint256 deadline = block.timestamp + expiryTime;
         payloads[params_.payloadId].deadline = deadline;
         payloads[params_.payloadId].finalizedTransmitter = transmitter_;
 
-        bytes32 prevDigestsHash = _getPreviousDigestsHash(params_.dump.getBatchCount());
+        bytes32 prevDigestsHash = _getPreviousDigestsHash(params_.payloadHeader.getBatchCount());
         payloads[params_.payloadId].prevDigestsHash = prevDigestsHash;
 
         // Construct parameters for digest calculation
@@ -87,8 +87,8 @@ abstract contract WatcherPrecompileCore is
             transmitter_,
             params_.payloadId,
             deadline,
-            params_.dump.getCallType(),
-            params_.dump.getWriteFinality(),
+            params_.payloadHeader.getCallType(),
+            params_.payloadHeader.getWriteFinality(),
             params_.gasLimit,
             params_.value,
             params_.readAt,
@@ -109,7 +109,7 @@ abstract contract WatcherPrecompileCore is
     /// @param params_ The payload parameters for the query
     /// @dev This function sets up a query request and emits a QueryRequested event
     function _query(PayloadParams memory params_) internal {
-        bytes32 prevDigestsHash = _getPreviousDigestsHash(params_.dump.getBatchCount());
+        bytes32 prevDigestsHash = _getPreviousDigestsHash(params_.payloadHeader.getBatchCount());
         payloads[params_.payloadId].prevDigestsHash = prevDigestsHash;
         emit QueryRequested(params_);
     }
@@ -150,12 +150,12 @@ abstract contract WatcherPrecompileCore is
         for (uint40 i = 0; i < payloadIds.length; i++) {
             PayloadParams memory p = payloads[payloadIds[i]];
             DigestParams memory digestParams = DigestParams(
-                watcherPrecompileConfig__.sockets(p.dump.getChainSlug()),
+                watcherPrecompileConfig__.sockets(p.payloadHeader.getChainSlug()),
                 p.finalizedTransmitter,
                 p.payloadId,
                 p.deadline,
-                p.dump.getCallType(),
-                p.dump.getWriteFinality(),
+                p.payloadHeader.getCallType(),
+                p.payloadHeader.getWriteFinality(),
                 p.gasLimit,
                 p.value,
                 p.readAt,
