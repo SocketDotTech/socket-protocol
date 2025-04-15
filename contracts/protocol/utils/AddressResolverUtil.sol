@@ -26,8 +26,8 @@ abstract contract AddressResolverUtil {
     /// @notice Error thrown when an invalid address attempts to call the Watcher precompile or delivery helper
     error OnlyWatcherPrecompileOrDeliveryHelper();
 
-    /// @notice Restricts function access to the auction house contract
-    /// @dev Validates that msg.sender matches the registered auction house address
+    /// @notice Restricts function access to the delivery helper contract
+    /// @dev Validates that msg.sender matches the registered delivery helper address
     modifier onlyDeliveryHelper() {
         if (msg.sender != addressResolver__.deliveryHelper()) {
             revert OnlyPayloadDelivery();
@@ -59,9 +59,9 @@ abstract contract AddressResolverUtil {
         _;
     }
 
-    /// @notice Gets the auction house contract interface
-    /// @return IMiddleware interface of the registered auction house
-    /// @dev Resolves and returns the auction house contract for interaction
+    /// @notice Gets the delivery helper contract interface
+    /// @return IMiddleware interface of the registered delivery helper
+    /// @dev Resolves and returns the delivery helper contract for interaction
     function deliveryHelper__() public view returns (IMiddleware) {
         return IMiddleware(addressResolver__.deliveryHelper());
     }

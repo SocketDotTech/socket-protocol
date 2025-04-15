@@ -9,7 +9,6 @@ import {ETH_ADDRESS} from "./common/Constants.sol";
  * @title RescueFundsLib
  * @dev A library that provides a function to rescue funds from a contract.
  */
-
 library RescueFundsLib {
     /**
      * @dev Rescues funds from a contract.

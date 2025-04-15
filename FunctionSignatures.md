@@ -419,7 +419,6 @@
 | `completeOwnershipHandover`  | `0xf04e283e` |
 | `grantRole`                  | `0x2f2ff15d` |
 | `hasRole`                    | `0x91d14854` |
-| `initialPacketCount`         | `0x7c138814` |
 | `isAttested`                 | `0xc13c2396` |
 | `nextNonce`                  | `0x0cd55abf` |
 | `owner`                      | `0x8da5cb5b` |

@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
+import {ECDSA} from "solady/utils/ECDSA.sol";
 import "../../../interfaces/ISwitchboard.sol";
 import "../../../interfaces/ISocket.sol";
 import "../../utils/AccessControl.sol";
-import {RESCUE_ROLE, WATCHER_ROLE} from "../../utils/common/AccessRoles.sol";
 import "../../utils/RescueFundsLib.sol";
-import {ECDSA} from "solady/utils/ECDSA.sol";
+import {RESCUE_ROLE} from "../../utils/common/AccessRoles.sol";
 
+/// @title SwitchboardBase
+/// @notice Base contract for switchboards, contains common and util functions for all switchboards
 abstract contract SwitchboardBase is ISwitchboard, AccessControl {
     ISocket public immutable socket__;
 
     // chain slug of deployed chain
     uint32 public immutable chainSlug;
-    
+
     /**
      * @dev Constructor of SwitchboardBase
      * @param chainSlug_ Chain slug of deployment chain
@@ -25,6 +27,10 @@ abstract contract SwitchboardBase is ISwitchboard, AccessControl {
         _initializeOwner(owner_);
     }
 
+    /// @notice Recovers the signer from the signature
+    /// @param digest_ The digest of the payload
+    /// @param signature_ The signature of the watcher
+    /// @return signer The address of the signer
     function _recoverSigner(
         bytes32 digest_,
         bytes memory signature_

@@ -13,12 +13,13 @@ import {FAST} from "../protocol/utils/common/Constants.sol";
 
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway
+/// @dev This contract contains helpers for contract deployment, overrides, hooks and request processing
 abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin {
     OverrideParams public overrideParams;
-    address public auctionManager;
-    bytes public onCompleteData;
-    bytes32 public sbType;
     bool public isAsyncModifierSet;
+    address public auctionManager;
+    bytes32 public sbType;
+    bytes public onCompleteData;
 
     mapping(address => bool) public isValidPromise;
     mapping(bytes32 => mapping(uint32 => address)) public override forwarderAddresses;
@@ -27,11 +28,14 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @notice Modifier to treat functions async
     modifier async() {
         if (fees.feePoolChain == 0) revert FeesNotSet();
+
         isAsyncModifierSet = true;
         deliveryHelper__().clearQueue();
         addressResolver__.clearPromises();
         _clearOverrides();
+
         _;
+
         isAsyncModifierSet = false;
         deliveryHelper__().batch(fees, auctionManager, onCompleteData);
         _markValidPromises();
@@ -87,13 +91,6 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         }
     }
 
-    /// @notice Gets the socket address
-    /// @param chainSlug_ The chain slug
-    /// @return socketAddress_ The socket address
-    function getSocketAddress(uint32 chainSlug_) public view returns (address) {
-        return watcherPrecompileConfig().sockets(chainSlug_);
-    }
-
     /// @notice Sets the validity of an onchain contract (plug) to authorize it to send information to a specific AppGateway
     /// @param chainSlug_ The unique identifier of the chain where the contract resides
     /// @param contractId The bytes32 identifier of the contract to be validated
@@ -127,9 +124,9 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
 
         address asyncPromise = addressResolver__.deployAsyncPromiseContract(address(this));
-        isValidPromise[asyncPromise] = true;
         IPromise(asyncPromise).then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
 
+        isValidPromise[asyncPromise] = true;
         onCompleteData = abi.encode(chainSlug_, true);
 
         QueuePayloadParams memory queuePayloadParams = QueuePayloadParams({
@@ -156,7 +153,6 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @param returnData_ The return data
     function setAddress(bytes memory data_, bytes memory returnData_) external onlyPromises {
         (uint32 chainSlug, bytes32 contractId) = abi.decode(data_, (uint32, bytes32));
-
         address forwarderContractAddress = addressResolver__.getOrDeployForwarderContract(
             address(this),
             abi.decode(returnData_, (address)),
@@ -164,6 +160,13 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         );
 
         forwarderAddresses[contractId][chainSlug] = forwarderContractAddress;
+    }
+
+    /// @notice Gets the socket address
+    /// @param chainSlug_ The chain slug
+    /// @return socketAddress_ The socket address
+    function getSocketAddress(uint32 chainSlug_) public view returns (address) {
+        return watcherPrecompileConfig().sockets(chainSlug_);
     }
 
     /// @notice Gets the on-chain address
@@ -342,7 +345,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     /// @param onCompleteData_ The on complete data
     /// @dev only payload delivery can call this
     /// @dev callback in pd promise to be called after all contracts are deployed
-    function onRequestComplete(uint40, bytes calldata onCompleteData_) external override {
+    function onRequestComplete(
+        uint40,
+        bytes calldata onCompleteData_
+    ) external override onlyDeliveryHelper {
         if (onCompleteData_.length == 0) return;
         (uint32 chainSlug, bool isDeploy) = abi.decode(onCompleteData_, (uint32, bool));
         if (isDeploy) {
@@ -350,7 +356,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         }
     }
 
-    /// @notice Initializes the contract
+    /// @notice Initializes the contract after deployment
+    /// @dev can be overridden by the app gateway to add custom logic
     /// @param chainSlug_ The chain slug
     function initialize(uint32 chainSlug_) public virtual {}
 

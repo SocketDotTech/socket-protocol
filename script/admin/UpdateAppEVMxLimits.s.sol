@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import {WatcherPrecompile} from "../../contracts/protocol/watcherPrecompile/WatcherPrecompile.sol";
+import {WatcherPrecompile} from "../../contracts/protocol/watcherPrecompile/core/WatcherPrecompile.sol";
 import {UpdateLimitParams} from "../../contracts/protocol/utils/common/Structs.sol";
 import {SCHEDULE, QUERY, FINALIZE} from "../../contracts/protocol/utils/common/Constants.sol";
 

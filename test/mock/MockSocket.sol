@@ -54,9 +54,6 @@ contract MockSocket is ISocket {
      */
     error VerificationFailed();
     /**
-     * @dev Error emitted when source slugs deduced from packet id and msg id don't match
-     */
-    /**
      * @dev Error emitted when less gas limit is provided for execution than expected
      */
     error LowGasLimit();
@@ -127,7 +124,7 @@ contract MockSocket is ISocket {
         ISwitchboard switchboard__
     ) internal view {
         // NOTE: is the the first un-trusted call in the system, another one is Plug.call
-        if (!switchboard__.allowPacket(digest_, payloadId_)) revert VerificationFailed();
+        if (!switchboard__.allowPayload(digest_, payloadId_)) revert VerificationFailed();
     }
 
     /**
@@ -148,7 +145,7 @@ contract MockSocket is ISocket {
 
     /**
      * @dev Decodes the switchboard address from a given payload id.
-     * @param id_ The ID of the msg to decode the switchboard from.
+     * @param id_ The ID of the payload to decode the switchboard from.
      * @return switchboard_ The address of switchboard decoded from the payload ID.
      */
     function _decodeSwitchboard(bytes32 id_) internal pure returns (address switchboard_) {
@@ -156,9 +153,9 @@ contract MockSocket is ISocket {
     }
 
     /**
-     * @dev Decodes the chain ID from a given packet/payload ID.
-     * @param id_ The ID of the packet/msg to decode the chain slug from.
-     * @return chainSlug_ The chain slug decoded from the packet/payload ID.
+     * @dev Decodes the chain ID from a given payload ID.
+     * @param id_ The ID of the payload to decode the chain slug from.
+     * @return chainSlug_ The chain slug decoded from the payload ID.
      */
     function _decodeChainSlug(bytes32 id_) internal pure returns (uint32 chainSlug_) {
         chainSlug_ = uint32(uint256(id_) >> 224);

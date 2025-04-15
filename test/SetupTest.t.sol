@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "../contracts/protocol/utils/common/Structs.sol";
 import "../contracts/protocol/utils/common/Errors.sol";
 import "../contracts/protocol/utils/common/Constants.sol";
-import "../contracts/protocol/watcherPrecompile/WatcherPrecompile.sol";
+import "../contracts/protocol/watcherPrecompile/core/WatcherPrecompile.sol";
 import "../contracts/protocol/watcherPrecompile/WatcherPrecompileConfig.sol";
 import "../contracts/protocol/watcherPrecompile/WatcherPrecompileLimits.sol";
 import "../contracts/protocol/watcherPrecompile/DumpDecoder.sol";

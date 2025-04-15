@@ -1,15 +1,11 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
 
-import {Ownable} from "solady/auth/Ownable.sol";
-import "solady/utils/Initializable.sol";
-import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
 import "./DeliveryUtils.sol";
-import {PAYLOAD_SIZE_LIMIT, REQUEST_PAYLOAD_COUNT_LIMIT} from "../../utils/common/Constants.sol";
+
 /// @notice Abstract contract for managing asynchronous payloads
 abstract contract RequestQueue is DeliveryUtils {
-    // slots [0-108] reserved for delivery helper storage and [109-159] reserved for addr resolver util
-    // slots [160-209] reserved for gap
+    // slots [207-257] reserved for gap
     uint256[50] _gap_queue_async;
 
     /// @notice Clears the call parameters array
@@ -20,8 +16,6 @@ abstract contract RequestQueue is DeliveryUtils {
     /// @notice Queues a new payload
     /// @param queuePayloadParams_ The call parameters
     function queue(QueuePayloadParams memory queuePayloadParams_) external {
-        if (queuePayloadParams.length > REQUEST_PAYLOAD_COUNT_LIMIT)
-            revert RequestPayloadCountLimitExceeded();
         queuePayloadParams.push(queuePayloadParams_);
     }
 
@@ -38,6 +32,27 @@ abstract contract RequestQueue is DeliveryUtils {
         return _batch(appGateway, auctionManager_, fees_, onCompleteData_);
     }
 
+    function _checkBatch(
+        address appGateway_,
+        address auctionManager_,
+        Fees memory fees_
+    ) internal view returns (address) {
+        if (queuePayloadParams.length > REQUEST_PAYLOAD_COUNT_LIMIT)
+            revert RequestPayloadCountLimitExceeded();
+
+        if (!IFeesManager(addressResolver__.feesManager()).isFeesEnough(appGateway_, fees_))
+            revert InsufficientFees();
+
+        return
+            auctionManager_ == address(0)
+                ? IAddressResolver(addressResolver__).defaultAuctionManager()
+                : auctionManager_;
+    }
+
+    /// @notice Initiates a batch of payloads
+    /// @dev it checks fees, payload limits and creates the payload submit params array after assigning proper levels
+    /// @dev It also modifies the deploy payloads as needed by contract factory plug
+    /// @dev Stores request metadata and submits the request to watcher precompile
     function _batch(
         address appGateway_,
         address auctionManager_,
@@ -45,16 +60,13 @@ abstract contract RequestQueue is DeliveryUtils {
         bytes memory onCompleteData_
     ) internal returns (uint40 requestCount) {
         if (queuePayloadParams.length == 0) return 0;
-        if (!IFeesManager(addressResolver__.feesManager()).isFeesEnough(appGateway_, fees_))
-            revert InsufficientFees();
+        auctionManager_ = _checkBatch(appGateway_, auctionManager_, fees_);
 
+        // create the payload submit params array in desired format
         (
             PayloadSubmitParams[] memory payloadSubmitParamsArray,
-            ,
             bool onlyReadRequests
         ) = _createPayloadSubmitParamsArray();
-        if (auctionManager_ == address(0))
-            auctionManager_ = IAddressResolver(addressResolver__).defaultAuctionManager();
 
         RequestMetadata memory requestMetadata = RequestMetadata({
             appGateway: appGateway_,
@@ -64,7 +76,7 @@ abstract contract RequestQueue is DeliveryUtils {
             onCompleteData: onCompleteData_,
             onlyReadRequests: onlyReadRequests
         });
-
+        // process and submit the queue of payloads to watcher precompile
         requestCount = watcherPrecompile__().submitRequest(payloadSubmitParamsArray);
         requests[requestCount] = requestMetadata;
 
@@ -87,32 +99,48 @@ abstract contract RequestQueue is DeliveryUtils {
     /// @return payloadDetailsArray An array of payload details
     function _createPayloadSubmitParamsArray()
         internal
-        returns (
-            PayloadSubmitParams[] memory payloadDetailsArray,
-            uint256 totalLevels,
-            bool onlyReadRequests
-        )
+        returns (PayloadSubmitParams[] memory payloadDetailsArray, bool onlyReadRequests)
     {
-        if (queuePayloadParams.length == 0)
-            return (payloadDetailsArray, totalLevels, onlyReadRequests);
         payloadDetailsArray = new PayloadSubmitParams[](queuePayloadParams.length);
-
-        totalLevels = 0;
         onlyReadRequests = queuePayloadParams[0].callType == CallType.READ;
+
+        uint256 currentLevel = 0;
         for (uint256 i = 0; i < queuePayloadParams.length; i++) {
             if (queuePayloadParams[i].callType != CallType.READ) {
                 onlyReadRequests = false;
             }
 
-            // Update level for sequential calls
+            // Update level for calls
             if (i > 0 && queuePayloadParams[i].isParallel != Parallel.ON) {
-                totalLevels = totalLevels + 1;
+                currentLevel = currentLevel + 1;
             }
 
-            payloadDetailsArray[i] = _createPayloadDetails(totalLevels, queuePayloadParams[i]);
+            payloadDetailsArray[i] = _createPayloadDetails(currentLevel, queuePayloadParams[i]);
         }
 
         clearQueue();
+    }
+
+    function _createDeployPayloadDetails(
+        QueuePayloadParams memory queuePayloadParams_
+    ) internal returns (bytes memory payload, address target) {
+        bytes32 salt = keccak256(
+            abi.encode(queuePayloadParams_.appGateway, queuePayloadParams_.chainSlug, saltCounter++)
+        );
+
+        // app gateway is set in the plug deployed on chain
+        payload = abi.encodeWithSelector(
+            IContractFactoryPlug.deployContract.selector,
+            queuePayloadParams_.isPlug,
+            salt,
+            queuePayloadParams_.appGateway,
+            queuePayloadParams_.switchboard,
+            queuePayloadParams_.payload,
+            queuePayloadParams_.initCallData
+        );
+
+        // getting app gateway for deployer as the plug is connected to the app gateway
+        target = getDeliveryHelperPlugAddress(queuePayloadParams_.chainSlug);
     }
 
     /// @notice Creates the payload details for a given call parameters
@@ -122,35 +150,16 @@ abstract contract RequestQueue is DeliveryUtils {
         uint256 level_,
         QueuePayloadParams memory queuePayloadParams_
     ) internal returns (PayloadSubmitParams memory) {
-        bytes memory payload_ = queuePayloadParams_.payload;
+        bytes memory payload = queuePayloadParams_.payload;
         address target = queuePayloadParams_.target;
         if (queuePayloadParams_.callType == CallType.DEPLOY) {
-            // getting app gateway for deployer as the plug is connected to the app gateway
-            bytes32 salt_ = keccak256(
-                abi.encode(
-                    queuePayloadParams_.appGateway,
-                    queuePayloadParams_.chainSlug,
-                    saltCounter++
-                )
-            );
-
-            // app gateway is set in the plug deployed on chain
-            payload_ = abi.encodeWithSelector(
-                IContractFactoryPlug.deployContract.selector,
-                queuePayloadParams_.isPlug,
-                salt_,
-                queuePayloadParams_.appGateway,
-                queuePayloadParams_.switchboard,
-                payload_,
-                queuePayloadParams_.initCallData
-            );
-
-            target = getDeliveryHelperPlugAddress(queuePayloadParams_.chainSlug);
+            (payload, target) = _createDeployPayloadDetails(queuePayloadParams_);
         }
 
-        if (payload_.length > PAYLOAD_SIZE_LIMIT) revert PayloadTooLarge();
+        if (payload.length > PAYLOAD_SIZE_LIMIT) revert PayloadTooLarge();
         if (queuePayloadParams_.value > chainMaxMsgValueLimit[queuePayloadParams_.chainSlug])
             revert MaxMsgValueLimitExceeded();
+
         return
             PayloadSubmitParams({
                 levelNumber: level_,
@@ -167,7 +176,7 @@ abstract contract RequestQueue is DeliveryUtils {
                     : queuePayloadParams_.gasLimit,
                 value: queuePayloadParams_.value,
                 readAt: queuePayloadParams_.readAt,
-                payload: payload_
+                payload: payload
             });
     }
 }
