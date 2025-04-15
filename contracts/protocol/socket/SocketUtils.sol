@@ -116,10 +116,12 @@ abstract contract SocketUtils is SocketConfig {
     // Packs the local plug, local chain slug, remote chain slug and nonce
     // triggerCounter++ will take care of call id overflow as well
     // triggerId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
-    function _encodeTriggerId(bytes32 appGatewayId_) internal returns (bytes32) {
+    function _encodeTriggerId() internal returns (bytes32) {
         return
             bytes32(
-                (uint256(chainSlug) << 224) | (uint256(appGatewayId_) << 64) | triggerCounter++
+                (uint256(chainSlug) << 224) |
+                    (uint256(uint160(address(this))) << 64) |
+                    triggerCounter++
             );
     }
 
