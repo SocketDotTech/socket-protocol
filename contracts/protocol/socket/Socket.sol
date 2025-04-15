@@ -39,10 +39,6 @@ contract Socket is SocketUtils {
      * @dev Error emitted when the message value is insufficient
      */
     error InsufficientMsgValue();
-    /**
-     * @dev Error emitted when the plug is disconnected
-     */
-    error PlugDisconnected();
 
     /**
      * @notice Constructor for the Socket contract

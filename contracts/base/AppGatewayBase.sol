@@ -124,9 +124,9 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
 
         address asyncPromise = addressResolver__.deployAsyncPromiseContract(address(this));
-        isValidPromise[asyncPromise] = true;
         IPromise(asyncPromise).then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
 
+        isValidPromise[asyncPromise] = true;
         onCompleteData = abi.encode(chainSlug_, true);
 
         QueuePayloadParams memory queuePayloadParams = QueuePayloadParams({

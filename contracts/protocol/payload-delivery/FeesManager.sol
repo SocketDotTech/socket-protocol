@@ -396,6 +396,9 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
             });
     }
 
+    /// @notice hook called by watcher precompile when request is finished
+    function finishRequest(uint40) external {}
+
     function _queue(uint32 chainSlug_, bytes memory payload_) internal {
         QueuePayloadParams memory queuePayloadParams = _createQueuePayloadParams(
             chainSlug_,

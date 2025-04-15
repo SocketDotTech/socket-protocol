@@ -244,9 +244,9 @@ contract WatcherPrecompile is RequestHandler {
     /// @param payloadId_ The unique identifier of the payload
     /// @param signatureNonce_ The nonce of the signature
     /// @param signature_ The signature of the watcher
-    /// @dev This function marks a request as reverting
-    /// @dev It verifies that the signature is valid
-    /// @dev It also handles onchain reverts if specified
+    /// @dev Only valid watcher can mark a request as reverting
+    /// @dev This function marks a request as reverting if callback or payload is reverting on chain
+    /// @dev Request is marked cancelled for both cases.
     function markRevert(
         bool isRevertingOnchain_,
         bytes32 payloadId_,
