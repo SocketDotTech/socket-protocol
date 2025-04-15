@@ -109,8 +109,9 @@ abstract contract WatcherPrecompileCore is
     /// @param params_ The payload parameters for the query
     /// @dev This function sets up a query request and emits a QueryRequested event
     function _query(PayloadParams memory params_) internal {
-        bytes32 prevDigestsHash = _getPreviousDigestsHash(params_.payloadHeader.getBatchCount());
-        payloads[params_.payloadId].prevDigestsHash = prevDigestsHash;
+        payloads[params_.payloadId].prevDigestsHash = _getPreviousDigestsHash(
+            params_.payloadHeader.getBatchCount()
+        );
         emit QueryRequested(params_);
     }
 

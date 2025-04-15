@@ -331,6 +331,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         uint256 amount_,
         address receiver_
     ) public {
+        if (msg.sender != address(deliveryHelper__())) originAppGateway_ = msg.sender;
         address appGateway = _getCoreAppGateway(originAppGateway_);
 
         // Check if amount is available in fees plug
@@ -366,6 +367,8 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
             payload: payload_
         });
         requestCount = watcherPrecompile__().submitRequest(payloadSubmitParamsArray);
+
+        // same transmitter can execute requests without auction
         watcherPrecompile__().startProcessingRequest(requestCount, transmitter_);
     }
 

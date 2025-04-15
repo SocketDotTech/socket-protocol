@@ -175,6 +175,8 @@ contract WatcherPrecompile is RequestHandler {
         if (r.middleware != msg.sender) revert InvalidCaller();
 
         r.isRequestCancelled = true;
+
+        emit RequestCancelledFromGateway(requestCount);
     }
 
     /// @notice Resolves multiple promises with their return data
@@ -200,6 +202,7 @@ contract WatcherPrecompile is RequestHandler {
             PayloadParams memory payloadParams = payloads[resolvedPromises_[i].payloadId];
             address asyncPromise = payloadParams.asyncPromise;
 
+            // todo: non trusted call
             if (asyncPromise != address(0)) {
                 // Resolve each promise with its corresponding return data
                 bool success = IPromise(asyncPromise).markResolved(
@@ -215,7 +218,6 @@ contract WatcherPrecompile is RequestHandler {
             }
 
             isPromiseExecuted[resolvedPromises_[i].payloadId] = true;
-
             RequestParams storage requestParams_ = requestParams[
                 payloadParams.payloadHeader.getRequestCount()
             ];
@@ -270,15 +272,15 @@ contract WatcherPrecompile is RequestHandler {
         ];
         currentRequestParams.isRequestCancelled = true;
 
+        IMiddleware(currentRequestParams.middleware).handleRequestReverts(
+            payloadParams.payloadHeader.getRequestCount()
+        );
+
         if (isRevertingOnchain_ && payloadParams.asyncPromise != address(0))
             IPromise(payloadParams.asyncPromise).markOnchainRevert(
                 payloadParams.payloadHeader.getRequestCount(),
                 payloadId_
             );
-
-        IMiddleware(currentRequestParams.middleware).handleRequestReverts(
-            payloadParams.payloadHeader.getRequestCount()
-        );
 
         emit MarkedRevert(payloadId_, isRevertingOnchain_);
     }

@@ -30,9 +30,9 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         if (fees.feePoolChain == 0) revert FeesNotSet();
 
         isAsyncModifierSet = true;
+        _clearOverrides();
         deliveryHelper__().clearQueue();
         addressResolver__.clearPromises();
-        _clearOverrides();
 
         _;
 

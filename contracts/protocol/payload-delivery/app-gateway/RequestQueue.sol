@@ -76,6 +76,7 @@ abstract contract RequestQueue is DeliveryUtils {
             onCompleteData: onCompleteData_,
             onlyReadRequests: onlyReadRequests
         });
+
         // process and submit the queue of payloads to watcher precompile
         requestCount = watcherPrecompile__().submitRequest(payloadSubmitParamsArray);
         requests[requestCount] = requestMetadata;

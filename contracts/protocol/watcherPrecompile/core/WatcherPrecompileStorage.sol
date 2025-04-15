@@ -3,7 +3,6 @@ pragma solidity ^0.8.21;
 
 import "../../../interfaces/IWatcherPrecompile.sol";
 import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
-import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 import {IPromise} from "../../../interfaces/IPromise.sol";
 import "../PayloadHeaderDecoder.sol";
 
