@@ -5,7 +5,7 @@ import "solady/auth/Ownable.sol";
 import "../../interfaces/ISocket.sol";
 import "../../interfaces/ISwitchboard.sol";
 import "../utils/RescueFundsLib.sol";
-import {ExecuteParams} from "../../protocol/utils/common/Structs.sol";
+import {ExecuteParams, TransmissionParams} from "../../protocol/utils/common/Structs.sol";
 import "../../interfaces/ISocketBatcher.sol";
 
 /**
@@ -33,7 +33,15 @@ contract SocketBatcher is ISocketBatcher, Ownable {
         bytes calldata transmitterSignature_
     ) external payable returns (bytes memory) {
         ISwitchboard(executeParams_.switchboard).attest(digest_, proof_);
-        return socket__.execute{value: msg.value}(executeParams_, transmitterSignature_);
+        return
+            socket__.execute{value: msg.value}(
+                executeParams_,
+                TransmissionParams({
+                    transmitterSignature: transmitterSignature_,
+                    socketFees: 0,
+                    extraData: ""
+                })
+            );
     }
 
     function rescueFunds(address token_, address to_, uint256 amount_) external onlyOwner {

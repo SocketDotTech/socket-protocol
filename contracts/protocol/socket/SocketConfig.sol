@@ -6,7 +6,7 @@ import "../../interfaces/ISwitchboard.sol";
 import "../utils/AccessControl.sol";
 import {GOVERNANCE_ROLE, RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
 import {PlugConfig, SwitchboardStatus, ExecutionStatus} from "../utils/common/Structs.sol";
-
+import "../../interfaces/ISocketFeeManager.sol";
 /**
  * @title SocketConfig
  * @notice An abstract contract for configuring socket connections for plugs between different chains,
@@ -14,6 +14,9 @@ import {PlugConfig, SwitchboardStatus, ExecutionStatus} from "../utils/common/St
  * @dev This contract is meant to be inherited by other contracts that require socket configuration functionality
  */
 abstract contract SocketConfig is ISocket, AccessControl {
+    // socket fee manager
+    ISocketFeeManager public socketFeeManager;
+    
     // Error triggered when a switchboard already exists
     mapping(address => SwitchboardStatus) public isValidSwitchboard;
 
@@ -30,6 +33,7 @@ abstract contract SocketConfig is ISocket, AccessControl {
     // Event triggered when a new switchboard is added
     event SwitchboardAdded(address switchboard);
     event SwitchboardDisabled(address switchboard);
+    event SocketFeeManagerUpdated(address oldSocketFeeManager, address newSocketFeeManager);
 
     function registerSwitchboard() external {
         if (isValidSwitchboard[msg.sender] != SwitchboardStatus.NOT_REGISTERED)
@@ -42,6 +46,12 @@ abstract contract SocketConfig is ISocket, AccessControl {
     function disableSwitchboard() external onlyRole(GOVERNANCE_ROLE) {
         isValidSwitchboard[msg.sender] = SwitchboardStatus.DISABLED;
         emit SwitchboardDisabled(msg.sender);
+    }
+
+
+    function setSocketFeeManager(address socketFeeManager_) external onlyRole(GOVERNANCE_ROLE) {
+        emit SocketFeeManagerUpdated(address(socketFeeManager), socketFeeManager_);
+        socketFeeManager = ISocketFeeManager(socketFeeManager_);
     }
 
     /**
