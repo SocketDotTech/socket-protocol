@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.3;
+// SPDX-License-Identifier: GPL-3.0-only
+pragma solidity ^0.8.21;
 import {PayloadSubmitParams, QueuePayloadParams, Bid, Fees, WriteFinality, CallType, Parallel, IsPlug, RequestMetadata} from "../protocol/utils/common/Structs.sol";
 
 /// @title IMiddleware
