@@ -6,7 +6,7 @@ pragma solidity ^0.8.21;
 bytes32 constant RESCUE_ROLE = keccak256("RESCUE_ROLE");
 // used by governance
 bytes32 constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
-// used by transmitters who seal and propose packets in socket
+// used by transmitters who execute payloads in socket
 bytes32 constant TRANSMITTER_ROLE = keccak256("TRANSMITTER_ROLE");
 // used by switchboard watchers who work against transmitters
 bytes32 constant WATCHER_ROLE = keccak256("WATCHER_ROLE");
