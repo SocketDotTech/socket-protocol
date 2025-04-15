@@ -66,12 +66,6 @@ contract Socket is SocketUtils {
             )
             : address(0);
 
-        if (address(socketFeeManager) != address(0)) {
-            socketFeeManager.payAndCheckFees{value: transmissionParams_.socketFees}(
-                executeParams_,
-                transmissionParams_
-            );
-        }
         bytes32 digest = _createDigest(
             transmitter,
             payloadId,
@@ -79,7 +73,7 @@ contract Socket is SocketUtils {
             executeParams_
         );
         _verify(digest, payloadId, plugConfig.switchboard);
-        return _execute(payloadId, executeParams_);
+        return _execute(payloadId, executeParams_, transmissionParams_);
     }
 
     ////////////////////////////////////////////////////////
@@ -100,7 +94,8 @@ contract Socket is SocketUtils {
      */
     function _execute(
         bytes32 payloadId_,
-        ExecuteParams memory executeParams_
+        ExecuteParams memory executeParams_,
+        TransmissionParams memory transmissionParams_
     ) internal returns (bytes memory) {
         if (gasleft() < executeParams_.gasLimit) revert LowGasLimit();
 
@@ -112,11 +107,17 @@ contract Socket is SocketUtils {
             executeParams_.payload
         );
 
-        if (!success) {
+        if (success) {
+            emit ExecutionSuccess(payloadId_, returnData);
+            if (address(socketFeeManager) != address(0)) {
+                socketFeeManager.payAndCheckFees{value: transmissionParams_.socketFees}(
+                    executeParams_,
+                    transmissionParams_
+                );
+            }
+        } else {
             payloadExecuted[payloadId_] = ExecutionStatus.Reverted;
             emit ExecutionFailed(payloadId_, returnData);
-        } else {
-            emit ExecutionSuccess(payloadId_, returnData);
         }
 
         return returnData;
