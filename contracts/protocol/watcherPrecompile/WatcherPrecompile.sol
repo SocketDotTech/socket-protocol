@@ -296,8 +296,4 @@ contract WatcherPrecompile is RequestHandler {
     function getRequestParams(uint40 requestCount) external view returns (RequestParams memory) {
         return requestParams[requestCount];
     }
-
-    function _decodeAppGateway(bytes32 triggerId_) internal pure returns (address) {
-        return address(uint160(uint256(triggerId_) >> 64));
-    }
 }

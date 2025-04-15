@@ -137,7 +137,7 @@ contract Socket is SocketUtils {
         if (plugConfig.appGatewayId == bytes32(0)) revert PlugDisconnected();
 
         // creates a unique ID for the message
-        triggerId = _encodeTriggerId(plugConfig.appGatewayId);
+        triggerId = _encodeTriggerId();
         emit AppGatewayCallRequested(triggerId, chainSlug, plug_, overrides_, payload_);
     }
 
