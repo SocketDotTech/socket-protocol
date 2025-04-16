@@ -27,9 +27,11 @@ abstract contract FeesManagerStorage is IFeesManager {
 
     // slot 53
     /// @notice Master mapping tracking all fee information
-    /// @dev appGateway => chainSlug => token => TokenBalance
-    mapping(address => mapping(uint32 => mapping(address => TokenBalance)))
-        public appGatewayFeeBalances;
+    /// @dev userAddress => chainSlug => token => TokenBalance
+    mapping(address => mapping(uint32 => mapping(address => TokenBalance))) public userFeeBalances;
+
+    // userAddress => appGateway => isWhitelisted
+    mapping(address => mapping(address => bool)) public isAppGatewayWhitelisted;
 
     // slot 54
     /// @notice Mapping to track blocked fees for each async id
@@ -40,6 +42,9 @@ abstract contract FeesManagerStorage is IFeesManager {
     /// @notice Mapping to track fees to be distributed to transmitters
     /// @dev transmitter => chainSlug => token => amount
     mapping(address => mapping(uint32 => mapping(address => uint256))) public transmitterFees;
+
+    // @dev chainSlug => token => amount
+    mapping(uint32 => mapping(address => uint256)) public watcherPrecompileFees;
 
     // slot 56
     /// @notice Mapping to track nonce to whether it has been used
@@ -76,7 +81,12 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         address indexed transmitter,
         uint256 amount
     );
-
+    event WatcherPrecompileFeesAssigned(
+        uint32 chainSlug,
+        address token,
+        uint256 amount,
+        address consumeFrom
+    );
     /// @notice Emitted when fees deposited are updated
     /// @param chainSlug The chain identifier
     /// @param appGateway The app gateway address
@@ -104,6 +114,12 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @param appGateway The app gateway address
     event FeesUnblocked(uint40 indexed requestCount, address indexed appGateway);
 
+    /// @notice Emitted when insufficient watcher precompile fees are available
+    event InsufficientWatcherPrecompileFeesAvailable(
+        uint32 chainSlug,
+        address token,
+        address consumeFrom
+    );
     /// @notice Error thrown when insufficient fees are available
     error InsufficientFeesAvailable();
     /// @notice Error thrown when no fees are available for a transmitter
@@ -140,10 +156,10 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @return The available fee amount
     function getAvailableFees(
         uint32 chainSlug_,
-        address appGateway_,
+        address consumeFrom_,
         address token_
     ) public view returns (uint256) {
-        TokenBalance memory tokenBalance = appGatewayFeeBalances[appGateway_][chainSlug_][token_];
+        TokenBalance memory tokenBalance = userFeeBalances[consumeFrom_][chainSlug_][token_];
         if (tokenBalance.deposited == 0 || tokenBalance.deposited <= tokenBalance.blocked) return 0;
         return tokenBalance.deposited - tokenBalance.blocked;
     }
@@ -169,24 +185,35 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
 
         address appGateway = _getCoreAppGateway(originAppGateway_);
 
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][chainSlug_][token_];
+        TokenBalance storage tokenBalance = userFeeBalances[appGateway][chainSlug_][token_];
         tokenBalance.deposited += amount_;
         emit FeesDepositedUpdated(chainSlug_, appGateway, token_, amount_);
     }
 
     function isFeesEnough(
         address originAppGateway_,
+        address consumeFrom_,
         Fees memory fees_
     ) external view returns (bool) {
         address appGateway = _getCoreAppGateway(originAppGateway_);
+        address consumeFromCore = _getCoreAppGateway(consumeFrom_);
+        if (appGateway != consumeFromCore && !isAppGatewayWhitelisted[consumeFromCore][appGateway])
+            return false;
         uint256 availableFees = getAvailableFees(
             fees_.feePoolChain,
-            appGateway,
+            consumeFrom_,
             fees_.feePoolToken
         );
         return availableFees >= fees_.amount;
     }
 
+    /// @notice Whitelists multiple app gateways for the caller
+    /// @param appGateways_ Array of app gateway addresses to whitelist
+    function whitelistApps(address[] calldata appGateways_) external {
+        for (uint256 i = 0; i < appGateways_.length; i++) {
+            isAppGatewayWhitelisted[msg.sender][appGateways_[i]] = true;
+        }
+    }
     /// @notice Blocks fees for a request count
     /// @param originAppGateway_ The app gateway address
     /// @param feesGivenByApp_ The fees data struct given by the app gateway
@@ -213,7 +240,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
             availableFees += requestCountBlockedFees[requestCount_].amount;
 
         if (availableFees < winningBid_.fee) revert InsufficientFeesAvailable();
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][
+        TokenBalance storage tokenBalance = userFeeBalances[appGateway][
             feesGivenByApp_.feePoolChain
         ][feesGivenByApp_.feePoolToken];
 
@@ -248,7 +275,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         if (fees.amount == 0) return;
 
         address appGateway = _getCoreAppGateway(originAppGateway_);
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][fees.feePoolChain][
+        TokenBalance storage tokenBalance = userFeeBalances[appGateway][fees.feePoolChain][
             fees.feePoolToken
         ];
 
@@ -264,6 +291,21 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         emit FeesUnblockedAndAssigned(requestCount_, transmitter_, fees.amount);
     }
 
+    function assignWatcherPrecompileFees(
+        uint32 chainSlug_,
+        address token_,
+        uint256 amount_,
+        address consumeFrom_
+    ) external onlyWatcherPrecompile {
+        address appGateway = _getCoreAppGateway(consumeFrom_);
+        TokenBalance storage tokenBalance = userFeeBalances[appGateway][chainSlug_][token_];
+        if (tokenBalance.deposited < amount_)
+            revert InsufficientWatcherPrecompileFeesAvailable(chainSlug_, token_, consumeFrom_);
+        tokenBalance.deposited -= amount_;
+        watcherPrecompileFees[chainSlug_][token_] += amount_;
+        emit WatcherPrecompileFeesAssigned(chainSlug_, token_, amount_, consumeFrom_);
+    }
+
     function unblockFees(uint40 requestCount_) external {
         RequestMetadata memory requestMetadata = deliveryHelper__().getRequestMetadata(
             requestCount_
@@ -277,7 +319,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         Fees memory fees = requestCountBlockedFees[requestCount_];
         if (fees.amount == 0) return;
 
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[requestMetadata.appGateway][
+        TokenBalance storage tokenBalance = userFeeBalances[requestMetadata.appGateway][
             fees.feePoolChain
         ][fees.feePoolToken];
 
@@ -325,20 +367,20 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @param amount_ The amount of tokens to withdraw
     /// @param receiver_ The address of the receiver
     function withdrawFees(
-        address originAppGateway_,
+        address originAppGatewayOrUser_,
         uint32 chainSlug_,
         address token_,
         uint256 amount_,
         address receiver_
     ) public {
-        if (msg.sender != address(deliveryHelper__())) originAppGateway_ = msg.sender;
-        address appGateway = _getCoreAppGateway(originAppGateway_);
+        if (msg.sender != address(deliveryHelper__())) originAppGatewayOrUser_ = msg.sender;
+        address source = _getCoreAppGateway(originAppGatewayOrUser_);
 
         // Check if amount is available in fees plug
-        uint256 availableAmount = getAvailableFees(chainSlug_, appGateway, token_);
+        uint256 availableAmount = getAvailableFees(chainSlug_, source, token_);
         if (availableAmount < amount_) revert InsufficientFeesAvailable();
 
-        TokenBalance storage tokenBalance = appGatewayFeeBalances[appGateway][chainSlug_][token_];
+        TokenBalance storage tokenBalance = userFeeBalances[source][chainSlug_][token_];
         tokenBalance.deposited -= amount_;
 
         // Add it to the queue and submit request

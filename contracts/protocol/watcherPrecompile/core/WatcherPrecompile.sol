@@ -109,9 +109,15 @@ contract WatcherPrecompile is RequestHandler {
     /// @return The digest hash of the finalized payload
     /// @dev This function finalizes a payload request and requests the watcher to release the proofs
     function finalize(
-        PayloadParams memory params_,
+        PayloadParams memory params_,`
         address transmitter_
     ) external returns (bytes32) {
+        IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileFees(
+            evmxSlug,
+            params_.payloadHeader.getToken(),
+            watcherPrecompileLimits__.finalizeFees(params_.payloadHeader.getToken()),
+            msg.sender
+        );
         return _finalize(params_, transmitter_);
     }
 

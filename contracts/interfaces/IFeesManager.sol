@@ -13,7 +13,11 @@ interface IFeesManager {
 
     function unblockFees(uint40 requestCount_) external;
 
-    function isFeesEnough(address appGateway_, Fees memory fees_) external view returns (bool);
+    function isFeesEnough(
+        address appGateway_,
+        address consumeFrom_,
+        Fees memory fees_
+    ) external view returns (bool);
 
     function unblockAndAssignFees(
         uint40 requestCount_,
@@ -27,5 +31,12 @@ interface IFeesManager {
         address token_,
         uint256 amount_,
         address receiver_
+    ) external;
+
+    function assignWatcherPrecompileFees(
+        uint32 chainSlug_,
+        address token_,
+        uint256 amount_,
+        address consumeFrom_
     ) external;
 }

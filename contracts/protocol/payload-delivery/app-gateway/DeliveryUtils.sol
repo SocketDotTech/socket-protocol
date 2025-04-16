@@ -39,6 +39,7 @@ abstract contract DeliveryUtils is
         PayloadSubmitParams[] payloadSubmitParams,
         Fees fees,
         address auctionManager,
+        address consumeFrom,
         bool onlyReadRequests
     );
     /// @notice Emitted when fees are increased

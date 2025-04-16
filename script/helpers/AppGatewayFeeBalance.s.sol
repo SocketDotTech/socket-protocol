@@ -14,7 +14,7 @@ contract CheckDepositedFees is Script {
         address appGateway = vm.envAddress("APP_GATEWAY");
         uint32 chain = 421614;
         address token = ETH_ADDRESS;
-        (uint256 deposited, uint256 blocked) = feesManager.appGatewayFeeBalances(
+        (uint256 deposited, uint256 blocked) = feesManager.userFeeBalances(
             appGateway,
             chain,
             token

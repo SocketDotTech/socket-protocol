@@ -215,6 +215,7 @@ struct RequestParams {
 struct RequestMetadata {
     address appGateway;
     address auctionManager;
+    address consumeFrom;
     Fees fees;
     Bid winningBid;
     bytes onCompleteData;

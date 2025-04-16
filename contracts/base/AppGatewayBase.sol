@@ -26,9 +26,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     mapping(bytes32 => bytes) public creationCodeWithArgs;
 
     /// @notice Modifier to treat functions async
-    modifier async() {
+    modifier async(address consumeFrom_) {
         if (fees.feePoolChain == 0) revert FeesNotSet();
-
         isAsyncModifierSet = true;
         _clearOverrides();
         deliveryHelper__().clearQueue();
@@ -37,7 +36,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         _;
 
         isAsyncModifierSet = false;
-        deliveryHelper__().batch(fees, auctionManager, onCompleteData);
+        deliveryHelper__().batch(fees, auctionManager, consumeFrom_, onCompleteData);
         _markValidPromises();
         onCompleteData = bytes("");
     }
@@ -181,7 +180,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
+            .getOnChainAddress();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

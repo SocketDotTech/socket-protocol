@@ -30,7 +30,7 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
     error TokenNotWhitelisted(address token_);
 
     /// @notice Event emitted when fees are deposited
-    event FeesDeposited(address appGateway, address token, uint256 amount);
+    event FeesDeposited(address receiver, address token, uint256 feeAmount, uint256 nativeAmount);
     /// @notice Event emitted when fees are withdrawn
     event FeesWithdrawn(address token, uint256 amount, address receiver);
     /// @notice Event emitted when a token is whitelisted
@@ -88,30 +88,59 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
         emit FeesWithdrawn(token_, amount_, receiver_);
     }
 
+    function depositToFee(
+        address token_,
+        uint256 amount_,
+        address receiver_
+    ) external payable override {
+        _deposit(token_, receiver_, amount_, 0);
+    }
+
+    function depositToFeeAndNative(
+        address token_,
+        uint256 amount_,
+        address receiver_
+    ) external payable override {
+        uint256 nativeAmount_ = amount_ / 10;
+        uint256 feeAmount_ = amount_ - nativeAmount_;
+        _deposit(token_, receiver_, feeAmount_, nativeAmount_);
+    }
+
+    function depositToNative(
+        address token_,
+        uint256 amount_,
+        address receiver_
+    ) external payable override {
+        _deposit(token_, receiver_, 0, amount_);
+    }
+
     /// @notice Deposits funds
     /// @param token_ The token address
-    /// @param amount_ The amount
+    /// @param feeAmount_ The amount of fees
+    /// @param nativeAmount_ The amount of native tokens
     /// @param appGateway_ The app gateway address
-    function deposit(
+    function _deposit(
         address token_,
-        address appGateway_,
-        uint256 amount_
-    ) external payable override {
+        address receiver_,
+        uint256 feeAmount_,
+        uint256 nativeAmount_
+    ) internal override {
+        uint256 totalAmount_ = feeAmount_ + nativeAmount_;
         if (!whitelistedTokens[token_]) revert TokenNotWhitelisted(token_);
 
         if (token_ == ETH_ADDRESS) {
-            if (msg.value != amount_) revert InvalidDepositAmount();
+            if (msg.value != totalAmount_) revert InvalidDepositAmount();
         } else {
             if (token_.code.length == 0) revert InvalidTokenAddress();
         }
 
-        balanceOf[token_] += amount_;
+        balanceOf[token_] += totalAmount_;
 
         if (token_ != ETH_ADDRESS) {
-            SafeTransferLib.safeTransferFrom(token_, msg.sender, address(this), amount_);
+            SafeTransferLib.safeTransferFrom(token_, msg.sender, address(this), totalAmount_);
         }
 
-        emit FeesDeposited(appGateway_, token_, amount_);
+        emit FeesDeposited(receiver_, token_, feeAmount_, nativeAmount_);
     }
 
     /// @notice Transfers tokens

@@ -26,23 +26,40 @@ abstract contract RequestQueue is DeliveryUtils {
     function batch(
         Fees memory fees_,
         address auctionManager_,
+        address consumeFrom_,
         bytes memory onCompleteData_
     ) external returns (uint40 requestCount) {
         address appGateway = _getCoreAppGateway(msg.sender);
-        return _batch(appGateway, auctionManager_, fees_, onCompleteData_);
+        return _batch(appGateway, auctionManager_, consumeFrom_, fees_, onCompleteData_);
     }
 
     function _checkBatch(
         address appGateway_,
-        address auctionManager_,
-        Fees memory fees_
-    ) internal view returns (address) {
+        address consumeFrom_,
+        Fees memory fees_,
+        uint readCount,
+        uint writeCount
+    ) internal view {
         if (queuePayloadParams.length > REQUEST_PAYLOAD_COUNT_LIMIT)
             revert RequestPayloadCountLimitExceeded();
 
-        if (!IFeesManager(addressResolver__.feesManager()).isFeesEnough(appGateway_, fees_))
-            revert InsufficientFees();
+        uint256 totalWatcherPrecompileFeesRequired = watcherPrecompileLimits__.getTotalFeesRequired(
+            fees_.feePoolToken,
+            readCount,
+            writeCount,
+            0
+        );
+        fees_.amount += totalWatcherPrecompileFeesRequired;
+        if (
+            !IFeesManager(addressResolver__.feesManager()).isFeesEnough(
+                appGateway_,
+                consumeFrom_,
+                fees_
+            )
+        ) revert InsufficientFees();
+    }
 
+    function _getAuctionManager(address auctionManager_) internal view returns (address) {
         return
             auctionManager_ == address(0)
                 ? IAddressResolver(addressResolver__).defaultAuctionManager()
@@ -56,21 +73,26 @@ abstract contract RequestQueue is DeliveryUtils {
     function _batch(
         address appGateway_,
         address auctionManager_,
+        address consumeFrom_,
         Fees memory fees_,
         bytes memory onCompleteData_
     ) internal returns (uint40 requestCount) {
         if (queuePayloadParams.length == 0) return 0;
-        auctionManager_ = _checkBatch(appGateway_, auctionManager_, fees_);
+        address auctionManager = _getAuctionManager(auctionManager_);
 
         // create the payload submit params array in desired format
         (
             PayloadSubmitParams[] memory payloadSubmitParamsArray,
+            uint readCount,
+            uint writeCount,
             bool onlyReadRequests
         ) = _createPayloadSubmitParamsArray();
 
+        _checkBatch(appGateway_, consumeFrom_, fees_, readCount, writeCount);
         RequestMetadata memory requestMetadata = RequestMetadata({
             appGateway: appGateway_,
-            auctionManager: auctionManager_,
+            auctionManager: auctionManager,
+            consumeFrom: consumeFrom_,
             fees: fees_,
             winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
             onCompleteData: onCompleteData_,
@@ -92,6 +114,7 @@ abstract contract RequestQueue is DeliveryUtils {
             payloadSubmitParamsArray,
             fees_,
             auctionManager_,
+            consumeFrom_,
             onlyReadRequests
         );
     }
@@ -100,7 +123,12 @@ abstract contract RequestQueue is DeliveryUtils {
     /// @return payloadDetailsArray An array of payload details
     function _createPayloadSubmitParamsArray()
         internal
-        returns (PayloadSubmitParams[] memory payloadDetailsArray, bool onlyReadRequests)
+        returns (
+            PayloadSubmitParams[] memory payloadDetailsArray,
+            uint readCount,
+            uint writeCount,
+            bool onlyReadRequests
+        )
     {
         payloadDetailsArray = new PayloadSubmitParams[](queuePayloadParams.length);
         onlyReadRequests = queuePayloadParams[0].callType == CallType.READ;
@@ -109,7 +137,8 @@ abstract contract RequestQueue is DeliveryUtils {
         for (uint256 i = 0; i < queuePayloadParams.length; i++) {
             if (queuePayloadParams[i].callType != CallType.READ) {
                 onlyReadRequests = false;
-            }
+                writeCount++;
+            } else readCount++;
 
             // Update level for calls
             if (i > 0 && queuePayloadParams[i].isParallel != Parallel.ON) {

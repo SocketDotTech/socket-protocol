@@ -43,9 +43,14 @@ contract WatcherPrecompileLimits is
     // Mapping to track active app gateways
     mapping(address => bool) internal _activeAppGateways;
 
+    // token => fee amount
+    mapping(address => uint256) public queryFees;
+    mapping(address => uint256) public finalizeFees;
+    mapping(address => uint256) public scheduleFees;
+
     /// @notice Emitted when the default limit and rate per second are set
     event DefaultLimitAndRatePerSecondSet(uint256 defaultLimit, uint256 defaultRatePerSecond);
-
+    event WatcherFeesNotSetForToken(address token_);
     /// @notice Initial initialization (version 1)
     function initialize(
         address owner_,
@@ -155,5 +160,51 @@ contract WatcherPrecompileLimits is
         defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
 
         emit DefaultLimitAndRatePerSecondSet(defaultLimit, defaultRatePerSecond);
+    }
+
+    function setQueryFees(
+        address[] calldata tokens_,
+        uint256[] calldata amounts_
+    ) external onlyOwner {
+        require(tokens_.length == amounts_.length, "Length mismatch");
+        for (uint256 i = 0; i < tokens_.length; i++) {
+            queryFees[tokens_[i]] = amounts_[i];
+        }
+    }
+
+    function setFinalizeFees(
+        address[] calldata tokens_,
+        uint256[] calldata amounts_
+    ) external onlyOwner {
+        require(tokens_.length == amounts_.length, "Length mismatch");
+        for (uint256 i = 0; i < tokens_.length; i++) {
+            finalizeFees[tokens_[i]] = amounts_[i];
+        }
+    }
+
+    function setScheduleFees(
+        address[] calldata tokens_,
+        uint256[] calldata amounts_
+    ) external onlyOwner {
+        require(tokens_.length == amounts_.length, "Length mismatch");
+        for (uint256 i = 0; i < tokens_.length; i++) {
+            scheduleFees[tokens_[i]] = amounts_[i];
+        }
+    }
+
+    function getTotalFeesRequired(
+        address token_,
+        uint queryCount,
+        uint finalizeCount,
+        uint scheduleCount
+    ) external view returns (uint256) {
+        uint256 totalFees = 0;
+        if (queryFees[token_] == 0 || finalizeFees[token_] == 0 || scheduleFees[token_] == 0) {
+            revert WatcherFeesNotSetForToken(token_);
+        }
+        totalFees += queryCount * queryFees[token_];
+        totalFees += finalizeCount * finalizeFees[token_];
+        totalFees += scheduleCount * scheduleFees[token_];
+        return totalFees;
     }
 }
