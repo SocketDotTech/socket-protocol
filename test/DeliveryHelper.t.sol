@@ -10,6 +10,10 @@ import "../contracts/interfaces/IAppGateway.sol";
 
 import "./SetupTest.t.sol";
 
+interface IAppGatewayDeployer {
+    function deployContracts(uint32 chainSlug_) external;
+}
+
 contract DeliveryHelperTest is SetupTest {
     uint256 public maxFees = 0.0001 ether;
     uint256 public bidAmount = maxFees / 100;
@@ -209,7 +213,7 @@ contract DeliveryHelperTest is SetupTest {
         bytes32[] memory contractIds_
     ) internal returns (uint40 requestCount) {
         requestCount = watcherPrecompile.nextRequestCount();
-        appGateway_.deployContracts(chainSlug_);
+        IAppGatewayDeployer(address(appGateway_)).deployContracts(chainSlug_);
 
         finalizeRequest(requestCount, new bytes[](0));
         setupGatewayAndPlugs(chainSlug_, appGateway_, contractIds_);
