@@ -26,19 +26,27 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     mapping(bytes32 => bytes) public creationCodeWithArgs;
 
     /// @notice Modifier to treat functions async
-    modifier async(address consumeFrom_) {
+    modifier async(bytes memory feesApprovalData_) {
+        _preAsync();
+        _;
+        _postAsync();
+    }
+
+    function _postAsync() internal {
+        isAsyncModifierSet = false;
+
+        // todo: cache the feesApprovalData for next async in same request
+        deliveryHelper__().batch(fees, auctionManager, feesApprovalData_, onCompleteData);
+        _markValidPromises();
+        onCompleteData = bytes("");
+    }
+
+    function _preAsync() internal {
         if (fees.feePoolChain == 0) revert FeesNotSet();
         isAsyncModifierSet = true;
         _clearOverrides();
         deliveryHelper__().clearQueue();
         addressResolver__.clearPromises();
-
-        _;
-
-        isAsyncModifierSet = false;
-        deliveryHelper__().batch(fees, auctionManager, consumeFrom_, onCompleteData);
-        _markValidPromises();
-        onCompleteData = bytes("");
     }
 
     /// @notice Modifier to ensure only valid promises can call the function
@@ -180,8 +188,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
-            .getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

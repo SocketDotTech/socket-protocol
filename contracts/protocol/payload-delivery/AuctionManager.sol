@@ -112,14 +112,9 @@ contract AuctionManager is
         );
         if (!_hasRole(TRANSMITTER_ROLE, transmitter)) revert InvalidTransmitter();
 
-        // get the request metadata
-        RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
-            .getRequestMetadata(requestCount_);
-
-        // check if the bid is for this auction manager
-        if (requestMetadata.auctionManager != address(this)) revert InvalidBid();
-        // check if the bid exceeds the max fees quoted by app gateway
-        if (fee > requestMetadata.fees.amount) revert BidExceedsMaxFees();
+        // check if the bid exceeds the max fees quoted by app gateway subtracting the watcher fees
+        if (fee > getTransmitterMaxFeesRequired(requestMetadata.fees.token, requestCount_))
+            revert BidExceedsMaxFees();
 
         // check if the bid is lower than the existing bid
         if (
@@ -149,6 +144,7 @@ contract AuctionManager is
             requestMetadata.appGateway,
             requestMetadata.fees,
             newBid,
+            watcherPrecompile__().getTotalFeesRequired(requestMetadata.fees.token, requestCount_),
             requestCount_
         );
 
@@ -209,6 +205,22 @@ contract AuctionManager is
 
         auctionStarted[requestCount_] = true;
         emit AuctionStarted(requestCount_);
+    }
+
+    function getTransmitterMaxFeesRequired(
+        address token_,
+        uint40 requestCount_
+    ) public view returns (uint256) {
+        // check if the bid is for this auction manager
+        if (requestMetadata.auctionManager != address(this)) revert InvalidBid();
+
+        // get the request metadata
+        RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
+            .getRequestMetadata(requestCount_);
+
+        // get the total fees required for the watcher precompile ops
+        uint256 watcherFees = watcherPrecompile__().getTotalFeesRequired(token_, requestCount_);
+        return requestMetadata.fees.amount - watcherFees;
     }
 
     function _recoverSigner(

@@ -67,6 +67,7 @@ abstract contract SocketUtils is SocketConfig {
                     executeParams_.target,
                     appGateway_,
                     executeParams_.prevDigestsHash
+                    // can keep bytes here?
                 )
             );
     }

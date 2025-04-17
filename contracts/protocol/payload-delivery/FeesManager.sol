@@ -214,6 +214,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
             isAppGatewayWhitelisted[msg.sender][appGateways_[i]] = true;
         }
     }
+
     /// @notice Blocks fees for a request count
     /// @param originAppGateway_ The app gateway address
     /// @param feesGivenByApp_ The fees data struct given by the app gateway
@@ -223,6 +224,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         address originAppGateway_,
         Fees memory feesGivenByApp_,
         Bid memory winningBid_,
+        uint256 watcherFees_,
         uint40 requestCount_
     ) external {
         if (msg.sender != deliveryHelper__().getRequestMetadata(requestCount_).auctionManager)
@@ -239,27 +241,29 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         if (requestCountBlockedFees[requestCount_].amount > 0)
             availableFees += requestCountBlockedFees[requestCount_].amount;
 
-        if (availableFees < winningBid_.fee) revert InsufficientFeesAvailable();
+        uint256 feesNeeded = winningBid_.fee + watcherFees_;
+        if (availableFees < feesNeeded) revert InsufficientFeesAvailable();
+
         TokenBalance storage tokenBalance = userFeeBalances[appGateway][
             feesGivenByApp_.feePoolChain
         ][feesGivenByApp_.feePoolToken];
 
         tokenBalance.blocked =
             tokenBalance.blocked +
-            winningBid_.fee -
+            feesNeeded -
             requestCountBlockedFees[requestCount_].amount;
 
         requestCountBlockedFees[requestCount_] = Fees({
             feePoolChain: feesGivenByApp_.feePoolChain,
             feePoolToken: feesGivenByApp_.feePoolToken,
-            amount: winningBid_.fee
+            amount: feesNeeded
         });
 
         emit FeesBlocked(
             requestCount_,
             feesGivenByApp_.feePoolChain,
             feesGivenByApp_.feePoolToken,
-            winningBid_.fee
+            feesNeeded
         );
     }
 

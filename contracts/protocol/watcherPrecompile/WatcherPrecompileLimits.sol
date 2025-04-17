@@ -51,6 +51,7 @@ contract WatcherPrecompileLimits is
     /// @notice Emitted when the default limit and rate per second are set
     event DefaultLimitAndRatePerSecondSet(uint256 defaultLimit, uint256 defaultRatePerSecond);
     event WatcherFeesNotSetForToken(address token_);
+
     /// @notice Initial initialization (version 1)
     function initialize(
         address owner_,
@@ -124,6 +125,7 @@ contract WatcherPrecompileLimits is
      * @param consumeLimit_ The amount of limit to consume
      */
     function consumeLimit(
+        uint40 requestCount_,
         address appGateway_,
         bytes32 limitType_,
         uint256 consumeLimit_
@@ -148,6 +150,8 @@ contract WatcherPrecompileLimits is
         }
 
         // Update the limit
+        precompileCount[limitType_][requestCount_] += consumeLimit_;
+
         _consumeFullLimit(consumeLimit_ * 10 ** limitDecimals, limitParams);
     }
 
@@ -194,17 +198,16 @@ contract WatcherPrecompileLimits is
 
     function getTotalFeesRequired(
         address token_,
-        uint queryCount,
-        uint finalizeCount,
-        uint scheduleCount
+        uint40 requestCount_
     ) external view returns (uint256) {
         uint256 totalFees = 0;
         if (queryFees[token_] == 0 || finalizeFees[token_] == 0 || scheduleFees[token_] == 0) {
             revert WatcherFeesNotSetForToken(token_);
         }
-        totalFees += queryCount * queryFees[token_];
-        totalFees += finalizeCount * finalizeFees[token_];
-        totalFees += scheduleCount * scheduleFees[token_];
+
+        totalFees += precompileCount[QUERY][requestCount_] * queryFees[token_];
+        totalFees += precompileCount[FINALIZE][requestCount_] * finalizeFees[token_];
+        totalFees += precompileCount[SCHEDULE][requestCount_] * scheduleFees[token_];
         return totalFees;
     }
 }

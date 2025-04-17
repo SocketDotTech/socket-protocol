@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
-import {PayloadSubmitParams, QueuePayloadParams, Bid, Fees, WriteFinality, CallType, Parallel, IsPlug, RequestMetadata} from "../protocol/utils/common/Structs.sol";
+import {PayloadSubmitParams, QueuePayloadParams, Bid, Fees, WriteFinality, CallType, Parallel, IsPlug, RequestMetadata, } from "../protocol/utils/common/Structs.sol";
 
 /// @title IMiddleware
 /// @notice Interface for the Middleware contract
@@ -25,13 +25,13 @@ interface IMiddleware {
     /// @notice Batches a request
     /// @param fees_ The fees for the request
     /// @param auctionManager_ The address of the auction manager
-    /// @param consumeFrom_ The address of the consumeFrom
+    /// @param feesApprovalData_ the data to be passed to the fees manager
     /// @param onCompleteData_ The data to be passed to the onComplete callback
     /// @return requestCount The request id
     function batch(
         Fees memory fees_,
         address auctionManager_,
-        address consumeFrom_,
+        bytes memory feesApprovalData_,
         bytes memory onCompleteData_
     ) external returns (uint40 requestCount);
 

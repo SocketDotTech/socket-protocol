@@ -26,34 +26,25 @@ abstract contract RequestQueue is DeliveryUtils {
     function batch(
         Fees memory fees_,
         address auctionManager_,
-        address consumeFrom_,
+        bytes memory feesApprovalData_,
         bytes memory onCompleteData_
     ) external returns (uint40 requestCount) {
         address appGateway = _getCoreAppGateway(msg.sender);
-        return _batch(appGateway, auctionManager_, consumeFrom_, fees_, onCompleteData_);
+        return _batch(appGateway, auctionManager_, feesApprovalData_, onCompleteData_);
     }
 
     function _checkBatch(
         address appGateway_,
-        address consumeFrom_,
-        Fees memory fees_,
-        uint readCount,
-        uint writeCount
+        bytes memory feesApprovalData_,
+        Fees memory fees_
     ) internal view {
         if (queuePayloadParams.length > REQUEST_PAYLOAD_COUNT_LIMIT)
             revert RequestPayloadCountLimitExceeded();
 
-        uint256 totalWatcherPrecompileFeesRequired = watcherPrecompileLimits__.getTotalFeesRequired(
-            fees_.feePoolToken,
-            readCount,
-            writeCount,
-            0
-        );
-        fees_.amount += totalWatcherPrecompileFeesRequired;
         if (
             !IFeesManager(addressResolver__.feesManager()).isFeesEnough(
                 appGateway_,
-                consumeFrom_,
+                feesApprovalData_,
                 fees_
             )
         ) revert InsufficientFees();
@@ -73,8 +64,8 @@ abstract contract RequestQueue is DeliveryUtils {
     function _batch(
         address appGateway_,
         address auctionManager_,
-        address consumeFrom_,
         Fees memory fees_,
+        bytes memory feesApprovalData_,
         bytes memory onCompleteData_
     ) internal returns (uint40 requestCount) {
         if (queuePayloadParams.length == 0) return 0;
@@ -83,16 +74,14 @@ abstract contract RequestQueue is DeliveryUtils {
         // create the payload submit params array in desired format
         (
             PayloadSubmitParams[] memory payloadSubmitParamsArray,
-            uint readCount,
-            uint writeCount,
             bool onlyReadRequests
         ) = _createPayloadSubmitParamsArray();
 
-        _checkBatch(appGateway_, consumeFrom_, fees_, readCount, writeCount);
+        _checkBatch(appGateway_, feesApprovalData_, fees_);
         RequestMetadata memory requestMetadata = RequestMetadata({
             appGateway: appGateway_,
             auctionManager: auctionManager,
-            consumeFrom: consumeFrom_,
+            feesApprovalData: feesApprovalData_,
             fees: fees_,
             winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
             onCompleteData: onCompleteData_,
@@ -108,13 +97,16 @@ abstract contract RequestQueue is DeliveryUtils {
         if (onlyReadRequests)
             watcherPrecompile__().startProcessingRequest(requestCount, address(0));
 
+        // to save extra calls from transmitter
+        uint256 maxTransmitterFees = fees_.amount -
+            watcherPrecompile__().getTotalFeesRequired(fees_.token, requestCount);
+
         emit PayloadSubmitted(
             requestCount,
             appGateway_,
             payloadSubmitParamsArray,
-            fees_,
+            Fees({token: fees_.token, amount: fees_.amount - maxTransmitterFees}),
             auctionManager_,
-            consumeFrom_,
             onlyReadRequests
         );
     }
@@ -123,12 +115,7 @@ abstract contract RequestQueue is DeliveryUtils {
     /// @return payloadDetailsArray An array of payload details
     function _createPayloadSubmitParamsArray()
         internal
-        returns (
-            PayloadSubmitParams[] memory payloadDetailsArray,
-            uint readCount,
-            uint writeCount,
-            bool onlyReadRequests
-        )
+        returns (PayloadSubmitParams[] memory payloadDetailsArray, bool onlyReadRequests)
     {
         payloadDetailsArray = new PayloadSubmitParams[](queuePayloadParams.length);
         onlyReadRequests = queuePayloadParams[0].callType == CallType.READ;
@@ -137,8 +124,7 @@ abstract contract RequestQueue is DeliveryUtils {
         for (uint256 i = 0; i < queuePayloadParams.length; i++) {
             if (queuePayloadParams[i].callType != CallType.READ) {
                 onlyReadRequests = false;
-                writeCount++;
-            } else readCount++;
+            }
 
             // Update level for calls
             if (i > 0 && queuePayloadParams[i].isParallel != Parallel.ON) {
