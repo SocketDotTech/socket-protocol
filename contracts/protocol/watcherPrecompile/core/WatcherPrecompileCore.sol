@@ -33,6 +33,11 @@ abstract contract WatcherPrecompileCore is
     ) internal returns (bytes32 timeoutId) {
         if (delayInSeconds_ > maxTimeoutDelayInSeconds) revert TimeoutDelayTooLarge();
 
+        _consumeFees(
+            requestCount_,
+            watcherPrecompileLimits__.scheduleFees(requestMetadata_.fees.feePoolToken)
+        );
+
         uint256 executeAt = block.timestamp + delayInSeconds_;
         timeoutId = _encodeTimeoutId();
 
@@ -74,6 +79,11 @@ abstract contract WatcherPrecompileCore is
             requestParams[params_.payloadHeader.getRequestCount()].middleware
         );
 
+        _consumeFees(
+            params_.payloadHeader.getRequestCount(),
+            watcherPrecompileLimits__.finalizeFees(params_.payloadHeader.getChainSlug())
+        );
+
         uint256 deadline = block.timestamp + expiryTime;
         payloads[params_.payloadId].deadline = deadline;
         payloads[params_.payloadId].finalizedTransmitter = transmitter_;
@@ -109,6 +119,11 @@ abstract contract WatcherPrecompileCore is
     /// @param params_ The payload parameters for the query
     /// @dev This function sets up a query request and emits a QueryRequested event
     function _query(PayloadParams memory params_) internal {
+        _consumeFees(
+            params_.payloadHeader.getRequestCount(),
+            watcherPrecompileLimits__.queryFees(params_.payloadHeader.getChainSlug())
+        );
+
         payloads[params_.payloadId].prevDigestsHash = _getPreviousDigestsHash(
             params_.payloadHeader.getBatchCount()
         );
@@ -237,6 +252,16 @@ abstract contract WatcherPrecompileCore is
         // recovered signer is checked for the valid roles later
         address signer = ECDSA.recover(digest, signature_);
         if (signer != owner()) revert InvalidWatcherSignature();
+    }
+
+    function _consumeFees(uint40 requestCount_, uint256 fees_) internal {
+        RequestMetadata memory requestMetadata_ = requestMetadata[requestCount_];
+        IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileFees(
+            requestMetadata_.fees.feePoolChain,
+            requestMetadata_.fees.feePoolToken,
+            fees_,
+            requestCount_
+        );
     }
 
     /// @notice Gets the batch IDs for a request

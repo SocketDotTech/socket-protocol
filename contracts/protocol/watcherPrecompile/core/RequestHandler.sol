@@ -19,7 +19,8 @@ abstract contract RequestHandler is WatcherPrecompileCore {
     /// @dev This function processes a batch of payload requests and assigns them to batches
     /// @dev It also consumes limits for the app gateway based on the number of reads and writes
     function submitRequest(
-        PayloadSubmitParams[] calldata payloadSubmitParams
+        PayloadSubmitParams[] calldata payloadSubmitParams,
+        RequestMetadata calldata requestMetadata
     ) public returns (uint40 requestCount) {
         address appGateway = _checkAppGateways(payloadSubmitParams);
 
@@ -96,6 +97,8 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         requestParams[requestCount].payloadsRemaining = payloadSubmitParams.length;
         requestParams[requestCount].middleware = msg.sender;
 
+        requestMetadata[requestCount] = requestMetadata;
+
         emit RequestSubmitted(
             msg.sender,
             requestCount,
@@ -129,17 +132,17 @@ abstract contract RequestHandler is WatcherPrecompileCore {
 
     /// @notice Starts processing a request with a specified transmitter
     /// @param requestCount The request count to start processing
-    /// @param transmitter The address of the transmitter
+    /// @param winningBid The winning bid, contains fees, transmitter and extra data
     /// @dev This function initiates the processing of a request by a transmitter
     /// @dev It verifies that the caller is the middleware and that the request hasn't been started yet
-    function startProcessingRequest(uint40 requestCount, address transmitter) public {
+    function startProcessingRequest(uint40 requestCount, Bid memory winningBid) public {
         RequestParams storage r = requestParams[requestCount];
         if (r.middleware != msg.sender) revert InvalidCaller();
         if (r.transmitter != address(0)) revert AlreadyStarted();
         if (r.currentBatchPayloadsLeft > 0) revert AlreadyStarted();
 
         uint40 batchCount = r.payloadParamsArray[0].payloadHeader.getBatchCount();
-        r.transmitter = transmitter;
+        r.transmitter = winningBid.transmitter;
         r.currentBatch = batchCount;
 
         _processBatch(requestCount, batchCount);

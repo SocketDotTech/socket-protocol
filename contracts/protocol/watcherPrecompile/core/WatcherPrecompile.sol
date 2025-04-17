@@ -112,12 +112,6 @@ contract WatcherPrecompile is RequestHandler {
         PayloadParams memory params_,`
         address transmitter_
     ) external returns (bytes32) {
-        IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileFees(
-            evmxSlug,
-            params_.payloadHeader.getToken(),
-            watcherPrecompileLimits__.finalizeFees(params_.payloadHeader.getToken()),
-            msg.sender
-        );
         return _finalize(params_, transmitter_);
     }
 
@@ -208,13 +202,23 @@ contract WatcherPrecompile is RequestHandler {
             PayloadParams memory payloadParams = payloads[resolvedPromises_[i].payloadId];
             address asyncPromise = payloadParams.asyncPromise;
 
+            uint40 requestCount = payloadParams.payloadHeader.getRequestCount();
+
             // todo: non trusted call
             if (asyncPromise != address(0)) {
                 // Resolve each promise with its corresponding return data
+
+                uint256 initialGas = gasleft();
                 bool success = IPromise(asyncPromise).markResolved(
-                    payloadParams.payloadHeader.getRequestCount(),
+                    requestCount,
                     resolvedPromises_[i].payloadId,
                     resolvedPromises_[i].returnData
+                );
+
+                uint256 gasUsed = initialGas - gasleft();
+                _consumeFees(
+                    requestCount,
+                    gasUsed * tx.gasprice
                 );
 
                 if (!success) {
@@ -224,9 +228,7 @@ contract WatcherPrecompile is RequestHandler {
             }
 
             isPromiseExecuted[resolvedPromises_[i].payloadId] = true;
-            RequestParams storage requestParams_ = requestParams[
-                payloadParams.payloadHeader.getRequestCount()
-            ];
+            RequestParams storage requestParams_ = requestParams[requestCount];
             requestParams_.currentBatchPayloadsLeft--;
             requestParams_.payloadsRemaining--;
 
@@ -234,17 +236,12 @@ contract WatcherPrecompile is RequestHandler {
             if (
                 requestParams_.currentBatchPayloadsLeft == 0 && requestParams_.payloadsRemaining > 0
             ) {
-                _processBatch(
-                    payloadParams.payloadHeader.getRequestCount(),
-                    ++requestParams_.currentBatch
-                );
+                _processBatch(requestCount, ++requestParams_.currentBatch);
             }
 
             // if all payloads of a request are executed, finish the request
             if (requestParams_.payloadsRemaining == 0) {
-                IMiddleware(requestParams_.middleware).finishRequest(
-                    payloadParams.payloadHeader.getRequestCount()
-                );
+                IMiddleware(requestParams_.middleware).finishRequest(requestCount);
             }
             emit PromiseResolved(resolvedPromises_[i].payloadId, asyncPromise);
         }

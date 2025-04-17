@@ -51,6 +51,8 @@ abstract contract FeesManagerStorage is IFeesManager {
     /// @dev signatureNonce => isNonceUsed
     mapping(uint256 => bool) public isNonceUsed;
 
+    mapping(uint40 => address) public requestCountConsumeFrom;
+
     // slots [57-106] reserved for gap
     uint256[50] _gap_after;
 
@@ -299,15 +301,14 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         uint32 chainSlug_,
         address token_,
         uint256 amount_,
-        address consumeFrom_
+        uint40 requestCount_
     ) external onlyWatcherPrecompile {
-        address appGateway = _getCoreAppGateway(consumeFrom_);
-        TokenBalance storage tokenBalance = userFeeBalances[appGateway][chainSlug_][token_];
-        if (tokenBalance.deposited < amount_)
-            revert InsufficientWatcherPrecompileFeesAvailable(chainSlug_, token_, consumeFrom_);
-        tokenBalance.deposited -= amount_;
+        Fees storage fees = requestCountBlockedFees[requestCount_];
+        if (fees.amount == 0) revert NoFeesBlocked();
+
+        fees.amount -= amount_;
         watcherPrecompileFees[chainSlug_][token_] += amount_;
-        emit WatcherPrecompileFeesAssigned(chainSlug_, token_, amount_, consumeFrom_);
+        emit WatcherPrecompileFeesAssigned(chainSlug_, token_, amount_, requestCount_);
     }
 
     function unblockFees(uint40 requestCount_) external {
@@ -412,7 +413,18 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
             readAt: 0,
             payload: payload_
         });
-        requestCount = watcherPrecompile__().submitRequest(payloadSubmitParamsArray);
+
+        RequestMetadata memory requestMetadata = RequestMetadata({
+            appGateway: address(this),
+            auctionManager: address(0),
+            feesApprovalData: bytes(""),
+            fees: Fees({token: token_, amount: amount_}),
+            winningBid: Bid({transmitter: transmitter_, fee: 0, extraData: new bytes(0)})
+        });
+        requestCount = watcherPrecompile__().submitRequest(
+            payloadSubmitParamsArray,
+            requestMetadata
+        );
 
         // same transmitter can execute requests without auction
         watcherPrecompile__().startProcessingRequest(requestCount, transmitter_);

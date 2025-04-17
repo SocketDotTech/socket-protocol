@@ -41,7 +41,7 @@ contract DeliveryHelper is FeesHelpers {
         requestMetadata_.winningBid.transmitter = winningBid_.transmitter;
 
         if (!isRestarted) {
-            watcherPrecompile__().startProcessingRequest(requestCount_, winningBid_.transmitter);
+            watcherPrecompile__().startProcessingRequest(requestCount_, winningBid_);
         } else {
             watcherPrecompile__().updateTransmitter(requestCount_, winningBid_.transmitter);
         }
@@ -52,6 +52,7 @@ contract DeliveryHelper is FeesHelpers {
     function finishRequest(uint40 requestCount_) external onlyWatcherPrecompile {
         RequestMetadata storage requestMetadata_ = requests[requestCount_];
 
+        // todo: move it to watcher precompile
         if (requestMetadata_.winningBid.transmitter != address(0))
             IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
                 requestCount_,
