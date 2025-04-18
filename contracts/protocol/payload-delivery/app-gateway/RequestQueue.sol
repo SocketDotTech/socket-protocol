@@ -89,7 +89,7 @@ abstract contract RequestQueue is DeliveryUtils {
         });
 
         // process and submit the queue of payloads to watcher precompile
-        requestCount = watcherPrecompile__().submitRequest(payloadSubmitParamsArray);
+        requestCount = watcherPrecompile__().submitRequest(payloadSubmitParamsArray, requestMetadata);
         requests[requestCount] = requestMetadata;
 
         // send query directly if request contains only reads
