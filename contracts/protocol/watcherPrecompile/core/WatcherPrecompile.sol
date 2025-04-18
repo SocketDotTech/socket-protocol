@@ -312,6 +312,14 @@ contract WatcherPrecompile is RequestHandler {
                 )
             ) revert InvalidCallerTriggered();
 
+            IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileFees(
+                address(0),
+                uint32(0),
+                watcherPrecompileLimits__().callBackFees(params_[i].payload),
+                uint40(0),
+                appGateway
+            );
+
             appGatewayCaller = appGateway;
             appGatewayCalled[params_[i].triggerId] = true;
 
