@@ -258,7 +258,7 @@ abstract contract WatcherPrecompileCore is
         RequestMetadata memory requestMetadata_ = requestMetadata[requestCount_];
 
         // for callbacks in all precompiles
-        uint256 feesToConsume = fees_ + tx.gasprice * callBackGasLimit;
+        uint256 feesToConsume = fees_ + watcherPrecompileLimits__().callBackFees();
         IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileFees(
             requestMetadata_.fees.feePoolChain,
             requestMetadata_.fees.feePoolToken,

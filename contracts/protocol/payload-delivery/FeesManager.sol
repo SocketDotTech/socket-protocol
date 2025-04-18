@@ -223,7 +223,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @param requestCount_ The batch identifier
     /// @dev Only callable by delivery helper
     function blockFees(
-        address originAppGateway_,
+        address consumeFrom_,
         Fees memory feesGivenByApp_,
         Bid memory winningBid_,
         uint256 watcherFees_,
@@ -232,11 +232,10 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         if (msg.sender != deliveryHelper__().getRequestMetadata(requestCount_).auctionManager)
             revert NotAuctionManager();
 
-        address appGateway = _getCoreAppGateway(originAppGateway_);
         // Block fees
         uint256 availableFees = getAvailableFees(
             feesGivenByApp_.feePoolChain,
-            appGateway,
+            consumeFrom_,
             feesGivenByApp_.feePoolToken
         );
 
@@ -246,7 +245,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         uint256 feesNeeded = winningBid_.fee + watcherFees_;
         if (availableFees < feesNeeded) revert InsufficientFeesAvailable();
 
-        TokenBalance storage tokenBalance = userFeeBalances[appGateway][
+        TokenBalance storage tokenBalance = userFeeBalances[consumeFrom_][
             feesGivenByApp_.feePoolChain
         ][feesGivenByApp_.feePoolToken];
 
@@ -260,6 +259,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
             feePoolToken: feesGivenByApp_.feePoolToken,
             amount: feesNeeded
         });
+        requestCountConsumeFrom[requestCount_] = consumeFrom_;
 
         emit FeesBlocked(
             requestCount_,
@@ -274,23 +274,29 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @param transmitter_ The address of the transmitter who executed the batch
     function unblockAndAssignFees(
         uint40 requestCount_,
-        address transmitter_,
-        address originAppGateway_
+        address transmitter_
     ) external override onlyDeliveryHelper {
         Fees memory fees = requestCountBlockedFees[requestCount_];
         if (fees.amount == 0) return;
 
-        address appGateway = _getCoreAppGateway(originAppGateway_);
-        TokenBalance storage tokenBalance = userFeeBalances[appGateway][fees.feePoolChain][
+        RequestMetadata memory requestMetadata = deliveryHelper__().getRequestMetadata(
+            requestCount_
+        );
+
+        TokenBalance storage tokenBalance = userFeeBalances[consumeFrom][fees.feePoolChain][
             fees.feePoolToken
         ];
 
+        uint256 transmitterBid = requestMetadata.winningBid.fee;
+        uint256 remainingFees = fees.amount - transmitterBid;
+
         // Unblock fees from deposit
         tokenBalance.blocked -= fees.amount;
-        tokenBalance.deposited -= fees.amount;
+        tokenBalance.deposited -= transmitterBid;
+        tokenBalance.deposited -= remainingFees;
 
         // Assign fees to transmitter
-        transmitterFees[transmitter_][fees.feePoolChain][fees.feePoolToken] += fees.amount;
+        transmitterFees[transmitter_][fees.feePoolChain][fees.feePoolToken] += transmitterBid;
 
         // Clean up storage
         delete requestCountBlockedFees[requestCount_];

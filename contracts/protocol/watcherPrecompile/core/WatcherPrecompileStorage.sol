@@ -100,9 +100,6 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     /// @notice Mapping to store the request metadata for each request count
     mapping(uint40 => RequestMetadata) public requestMetadata;
 
-    // slot 66
-    uint256 public callBackGasLimit;
-
     // slots [67-114]: gap for future storage variables
     uint256[48] _gap_after;
 

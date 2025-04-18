@@ -42,7 +42,6 @@ contract WatcherPrecompile is RequestHandler {
         expiryTime = expiryTime_;
 
         evmxSlug = evmxSlug_;
-        callBackGasLimit = 5000000;
     }
 
     // ================== Timeout functions ==================
