@@ -39,10 +39,11 @@ abstract contract DeliveryUtils is
         uint40 indexed requestCount,
         address indexed appGateway,
         PayloadSubmitParams[] payloadSubmitParams,
-        Fees fees,
+        uint256 fees,
         address auctionManager,
         bool onlyReadRequests
     );
+
     /// @notice Emitted when fees are increased
     event FeesIncreased(
         address indexed appGateway,

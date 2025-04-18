@@ -107,7 +107,7 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
     /// @param token_ The token address
     /// @param feeAmount_ The amount of fees
     /// @param nativeAmount_ The amount of native tokens
-    /// @param appGateway_ The app gateway address
+    /// @param receiver_ The receiver address
     function _deposit(
         address token_,
         address receiver_,

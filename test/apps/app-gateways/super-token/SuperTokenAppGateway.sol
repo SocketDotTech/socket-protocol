@@ -29,7 +29,7 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
     constructor(
         address addressResolver_,
         address owner_,
-        Fees memory fees_,
+        uint256 fees_,
         ConstructorParams memory params_
     ) AppGatewayBase(addressResolver_) {
         creationCodeWithArgs[superToken] = abi.encodePacked(

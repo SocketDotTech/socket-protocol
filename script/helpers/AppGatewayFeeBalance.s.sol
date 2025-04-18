@@ -4,7 +4,6 @@ pragma solidity ^0.8.21;
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {FeesManager} from "../../contracts/protocol/payload-delivery/FeesManager.sol";
-import {Fees} from "../../contracts/protocol/utils/common/Structs.sol";
 import {ETH_ADDRESS} from "../../contracts/protocol/utils/common/Constants.sol";
 
 contract CheckDepositedFees is Script {

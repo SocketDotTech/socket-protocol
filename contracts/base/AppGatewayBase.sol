@@ -7,19 +7,19 @@ import "../interfaces/IForwarder.sol";
 import "../interfaces/IMiddleware.sol";
 import "../interfaces/IPromise.sol";
 
-import {FeesPlugin} from "../protocol/utils/FeesPlugin.sol";
 import {InvalidPromise, FeesNotSet, AsyncModifierNotUsed} from "../protocol/utils/common/Errors.sol";
 import {FAST} from "../protocol/utils/common/Constants.sol";
 
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway
 /// @dev This contract contains helpers for contract deployment, overrides, hooks and request processing
-abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin {
+abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     OverrideParams public overrideParams;
     bool public isAsyncModifierSet;
     address public auctionManager;
     bytes32 public sbType;
     bytes public onCompleteData;
+    uint256 public fees;
 
     mapping(address => bool) public isValidPromise;
     mapping(bytes32 => mapping(uint32 => address)) public override forwarderAddresses;
@@ -29,10 +29,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     modifier async(bytes memory feesApprovalData_) {
         _preAsync();
         _;
-        _postAsync();
+        _postAsync(feesApprovalData_);
     }
 
-    function _postAsync() internal {
+    function _postAsync(bytes memory feesApprovalData_) internal {
         isAsyncModifierSet = false;
 
         // todo: cache the feesApprovalData for next async in same request
@@ -204,7 +204,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         Read isReadCall_,
         Parallel isParallelCall_,
         uint256 gasLimit_,
-        Fees memory fees_
+        uint256 fees_
     ) internal {
         overrideParams.isReadCall = isReadCall_;
         overrideParams.isParallelCall = isParallelCall_;
@@ -285,7 +285,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
 
     /// @notice Sets fees overrides
     /// @param fees_ The fees configuration
-    function _setOverrides(Fees memory fees_) internal {
+    function _setOverrides(uint256 fees_) internal {
         fees = fees_;
     }
 

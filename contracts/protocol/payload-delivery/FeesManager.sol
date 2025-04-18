@@ -13,7 +13,6 @@ import {NotAuctionManager, InvalidWatcherSignature, NonceUsed} from "../utils/co
 import {Bid, CallType, Parallel, WriteFinality, QueuePayloadParams, IsPlug, PayloadSubmitParams, RequestMetadata, RequestFee, UserCredits} from "../utils/common/Structs.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
-
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
@@ -201,7 +200,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
 
     /// @notice Blocks fees for a request count
     /// @param consumeFrom_ The fees payer address
-    /// @param totalFees_ The total fees to block
+    /// @param transmitterFees_ The total fees to block
     /// @param requestCount_ The batch identifier
     /// @dev Only callable by delivery helper
     function blockFees(
@@ -327,7 +326,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
 
     /// @notice Withdraws funds to a specified receiver
     /// @dev This function is used to withdraw fees from the fees plug
-    /// @param originAppGateway_ The address of the app gateway
+    /// @param originAppGatewayOrUser_ The address of the app gateway
     /// @param chainSlug_ The chain identifier
     /// @param token_ The address of the token
     /// @param amount_ The amount of tokens to withdraw
@@ -378,9 +377,10 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
             appGateway: address(this),
             auctionManager: address(0),
             feesApprovalData: bytes(""),
-            fees: Fees({token: token_, amount: amount_}),
+            fees: amount_,
             winningBid: Bid({transmitter: transmitter_, fee: 0, extraData: new bytes(0)})
         });
+
         requestCount = watcherPrecompile__().submitRequest(
             payloadSubmitParamsArray,
             requestMetadata

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {Fees, Bid, QueuePayloadParams} from "../protocol/utils/common/Structs.sol";
+import {Bid, QueuePayloadParams} from "../protocol/utils/common/Structs.sol";
 
 interface IFeesManager {
     function blockFees(
         address appGateway_,
-        Fees memory fees_,
+        uint256 fees_,
         Bid memory winningBid_,
         uint40 requestCount_
     ) external;
@@ -16,7 +16,7 @@ interface IFeesManager {
     function isFeesEnough(
         address appGateway_,
         address consumeFrom_,
-        Fees memory fees_
+        uint256 fees_
     ) external view returns (bool);
 
     function unblockAndAssignFees(

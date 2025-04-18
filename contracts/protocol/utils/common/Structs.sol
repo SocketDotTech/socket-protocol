@@ -219,7 +219,7 @@ struct RequestParams {
 struct RequestMetadata {
     address appGateway;
     address auctionManager;
-    Fees fees;
+    uint256 fees;
     Bid winningBid;
     bytes onCompleteData;
     bool onlyReadRequests;

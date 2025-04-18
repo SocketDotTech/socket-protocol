@@ -37,7 +37,7 @@ abstract contract FeesHelpers is RequestQueue {
         uint256 amount_,
         address receiver_,
         address auctionManager_,
-        Fees memory fees_
+        uint256 fees_
     ) external returns (uint40) {
         IFeesManager(addressResolver__.feesManager()).withdrawFees(
             msg.sender,
@@ -53,7 +53,7 @@ abstract contract FeesHelpers is RequestQueue {
     /// @notice Returns the fees for a request
     /// @param requestCount_ The ID of the request
     /// @return fees The fees data
-    function getFees(uint40 requestCount_) external view returns (Fees memory) {
-        return requests[requestCount_].fees;
+    function getFees(uint40 requestCount_) external view returns (uint256) {
+        return requests[requestCount_].fees.amount;
     }
 }
