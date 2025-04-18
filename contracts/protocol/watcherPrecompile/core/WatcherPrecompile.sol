@@ -42,6 +42,7 @@ contract WatcherPrecompile is RequestHandler {
         expiryTime = expiryTime_;
 
         evmxSlug = evmxSlug_;
+        callBackGasLimit = 5000000;
     }
 
     // ================== Timeout functions ==================
@@ -206,19 +207,12 @@ contract WatcherPrecompile is RequestHandler {
 
             // todo: non trusted call
             if (asyncPromise != address(0)) {
+                // todo: limit the gas used for promise resolution
                 // Resolve each promise with its corresponding return data
-
-                uint256 initialGas = gasleft();
                 bool success = IPromise(asyncPromise).markResolved(
                     requestCount,
                     resolvedPromises_[i].payloadId,
                     resolvedPromises_[i].returnData
-                );
-
-                uint256 gasUsed = initialGas - gasleft();
-                _consumeFees(
-                    requestCount,
-                    gasUsed * tx.gasprice
                 );
 
                 if (!success) {
