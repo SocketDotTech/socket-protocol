@@ -27,8 +27,8 @@ abstract contract FeesManagerStorage is IFeesManager {
 
     // slot 53
     /// @notice Master mapping tracking all fee information
-    /// @dev userAddress => chainSlug => token => TokenBalance
-    mapping(address => mapping(uint32 => mapping(address => TokenBalance))) public userFeeBalances;
+    /// @dev userAddress => chainSlug => TokenBalance
+    mapping(address => mapping(uint32 => TokenBalance)) public userFeeBalances;
 
     // userAddress => appGateway => isWhitelisted
     mapping(address => mapping(address => bool)) public isAppGatewayWhitelisted;
