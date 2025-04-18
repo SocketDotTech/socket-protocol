@@ -13,6 +13,16 @@ import {NotAuctionManager, InvalidWatcherSignature, NonceUsed} from "../utils/co
 import {Bid, Fees, CallType, Parallel, WriteFinality, TokenBalance, QueuePayloadParams, IsPlug, PayloadSubmitParams, RequestParams, RequestMetadata} from "../utils/common/Structs.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
+    struct RequestFee {
+        uint256 blockedCredits;
+        address consumeFrom;
+    }
+
+    struct UserCredits {
+        uint256 totalCredits;
+        uint256 blockedCredits;
+    }
+
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
@@ -25,33 +35,34 @@ abstract contract FeesManagerStorage is IFeesManager {
     // slot 52
     bytes32 public sbType;
 
-    // slot 53
-    /// @notice Master mapping tracking all fee information
-    /// @dev userAddress => chainSlug => TokenBalance
-    mapping(address => mapping(uint32 => TokenBalance)) public userFeeBalances;
+    // user credits
+    mapping(address => UserCredits) public userCredits;
 
+    // token pool balances
+    // token address => chainSlug => amount
+    mapping(address => mapping(uint32 => uint256)) public tokenPoolBalances;
+
+    // user approved app gateways
     // userAddress => appGateway => isWhitelisted
     mapping(address => mapping(address => bool)) public isAppGatewayWhitelisted;
 
     // slot 54
-    /// @notice Mapping to track blocked fees for each async id
-    /// @dev requestCount => Fees
-    mapping(uint40 => Fees) public requestCountBlockedFees;
+    /// @notice Mapping to track request credits details for each request count
+    /// @dev requestCount => RequestFee
+    mapping(uint40 => RequestFee) public requestCountCredits;
 
     // slot 55
-    /// @notice Mapping to track fees to be distributed to transmitters
-    /// @dev transmitter => chainSlug => token => amount
-    mapping(address => mapping(uint32 => mapping(address => uint256))) public transmitterFees;
+    /// @notice Mapping to track credits to be distributed to transmitters
+    /// @dev transmitter => amount
+    mapping(address => uint256) public transmitterCredits;
 
-    // @dev chainSlug => token => amount
-    mapping(uint32 => mapping(address => uint256)) public watcherPrecompileFees;
+    // @dev amount
+    uint256 public watcherPrecompileCredits;
 
     // slot 56
     /// @notice Mapping to track nonce to whether it has been used
     /// @dev signatureNonce => isNonceUsed
     mapping(uint256 => bool) public isNonceUsed;
-
-    mapping(uint40 => address) public requestCountConsumeFrom;
 
     // slots [57-106] reserved for gap
     uint256[50] _gap_after;
@@ -152,61 +163,41 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     }
 
     /// @notice Returns available (unblocked) fees for a gateway
-    /// @param chainSlug_ The chain identifier
-    /// @param appGateway_ The app gateway address
-    /// @param token_ The token address
+    /// @param consumeFrom_ The app gateway address
     /// @return The available fee amount
-    function getAvailableFees(
-        uint32 chainSlug_,
-        address consumeFrom_,
-        address token_
-    ) public view returns (uint256) {
-        TokenBalance memory tokenBalance = userFeeBalances[consumeFrom_][chainSlug_][token_];
-        if (tokenBalance.deposited == 0 || tokenBalance.deposited <= tokenBalance.blocked) return 0;
-        return tokenBalance.deposited - tokenBalance.blocked;
+    function getAvailableFees(address consumeFrom_) public view returns (uint256) {
+        UserCredits memory userCredit = userCredits[consumeFrom_];
+        if (userCredit.totalCredits == 0 || userCredit.totalCredits <= userCredit.blockedCredits)
+            return 0;
+        return userCredit.totalCredits - userCredit.blockedCredits;
     }
 
     /// @notice Adds the fees deposited for an app gateway on a chain
-    /// @param chainSlug_ The chain identifier
-    /// @param originAppGateway_ The app gateway address
-    /// @param token_ The token address
+    /// @param consumeFrom_ The app gateway address
     /// @param amount_ The amount deposited
     function incrementFeesDeposited(
-        uint32 chainSlug_,
-        address originAppGateway_,
-        address token_,
+        address consumeFrom_,
         uint256 amount_,
         uint256 signatureNonce_,
         bytes memory signature_
     ) external {
-        _isWatcherSignatureValid(
-            abi.encode(chainSlug_, originAppGateway_, token_, amount_),
-            signatureNonce_,
-            signature_
-        );
+        _isWatcherSignatureValid(abi.encode(consumeFrom_, amount_), signatureNonce_, signature_);
 
-        address appGateway = _getCoreAppGateway(originAppGateway_);
+        UserCredits storage userCredit = userCredits[consumeFrom_];
+        userCredit.totalCredits += amount_;
+        tokenPoolBalances[token_][chainSlug_] += amount_;
 
-        TokenBalance storage tokenBalance = userFeeBalances[appGateway][chainSlug_][token_];
-        tokenBalance.deposited += amount_;
-        emit FeesDepositedUpdated(chainSlug_, appGateway, token_, amount_);
+        emit FeesDepositedUpdated(consumeFrom_, amount_);
     }
 
     function isFeesEnough(
-        address originAppGateway_,
+        address appGateway_,
         address consumeFrom_,
-        Fees memory fees_
+        uint256 amount_
     ) external view returns (bool) {
-        address appGateway = _getCoreAppGateway(originAppGateway_);
-        address consumeFromCore = _getCoreAppGateway(consumeFrom_);
-        if (appGateway != consumeFromCore && !isAppGatewayWhitelisted[consumeFromCore][appGateway])
-            return false;
-        uint256 availableFees = getAvailableFees(
-            fees_.feePoolChain,
-            consumeFrom_,
-            fees_.feePoolToken
-        );
-        return availableFees >= fees_.amount;
+        address appGateway = _getCoreAppGateway(consumeFrom_);
+        if (!isAppGatewayWhitelisted[consumeFrom_][appGateway]) return false;
+        return getAvailableFees(consumeFrom_) >= amount_;
     }
 
     /// @notice Whitelists multiple app gateways for the caller
@@ -218,55 +209,30 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     }
 
     /// @notice Blocks fees for a request count
-    /// @param originAppGateway_ The app gateway address
-    /// @param feesGivenByApp_ The fees data struct given by the app gateway
+    /// @param consumeFrom_ The fees payer address
+    /// @param totalFees_ The total fees to block
     /// @param requestCount_ The batch identifier
     /// @dev Only callable by delivery helper
     function blockFees(
         address consumeFrom_,
-        Fees memory feesGivenByApp_,
-        Bid memory winningBid_,
-        uint256 watcherFees_,
+        uint256 transmitterFees_,
         uint40 requestCount_
     ) external {
         if (msg.sender != deliveryHelper__().getRequestMetadata(requestCount_).auctionManager)
             revert NotAuctionManager();
 
         // Block fees
-        uint256 availableFees = getAvailableFees(
-            feesGivenByApp_.feePoolChain,
-            consumeFrom_,
-            feesGivenByApp_.feePoolToken
-        );
+        if (getAvailableFees(consumeFrom_) < transmitterFees_) revert InsufficientFeesAvailable();
 
-        if (requestCountBlockedFees[requestCount_].amount > 0)
-            availableFees += requestCountBlockedFees[requestCount_].amount;
+        UserCredits storage userCredit = userCredits[consumeFrom_];
+        userCredit.blockedCredits += transmitterFees_;
 
-        uint256 feesNeeded = winningBid_.fee + watcherFees_;
-        if (availableFees < feesNeeded) revert InsufficientFeesAvailable();
-
-        TokenBalance storage tokenBalance = userFeeBalances[consumeFrom_][
-            feesGivenByApp_.feePoolChain
-        ][feesGivenByApp_.feePoolToken];
-
-        tokenBalance.blocked =
-            tokenBalance.blocked +
-            feesNeeded -
-            requestCountBlockedFees[requestCount_].amount;
-
-        requestCountBlockedFees[requestCount_] = Fees({
-            feePoolChain: feesGivenByApp_.feePoolChain,
-            feePoolToken: feesGivenByApp_.feePoolToken,
-            amount: feesNeeded
+        requestCountCredits[requestCount_] = RequestFee({
+            blockedCredits: transmitterFees_,
+            consumeFrom: consumeFrom_
         });
-        requestCountConsumeFrom[requestCount_] = consumeFrom_;
 
-        emit FeesBlocked(
-            requestCount_,
-            feesGivenByApp_.feePoolChain,
-            feesGivenByApp_.feePoolToken,
-            feesNeeded
-        );
+        emit FeesBlocked(requestCount_, transmitterFees_);
     }
 
     /// @notice Unblocks fees after successful execution and assigns them to the transmitter
@@ -276,45 +242,45 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         uint40 requestCount_,
         address transmitter_
     ) external override onlyDeliveryHelper {
-        Fees memory fees = requestCountBlockedFees[requestCount_];
-        if (fees.amount == 0) return;
+        RequestFee memory requestFee = requestCountCredits[requestCount_];
+        if (requestFee.blockedCredits == 0) return;
 
-        RequestMetadata memory requestMetadata = deliveryHelper__().getRequestMetadata(
-            requestCount_
-        );
-
-        TokenBalance storage tokenBalance = userFeeBalances[consumeFrom][fees.feePoolChain][
-            fees.feePoolToken
-        ];
-
-        uint256 transmitterBid = requestMetadata.winningBid.fee;
-        uint256 remainingFees = fees.amount - transmitterBid;
+        uint256 fees = deliveryHelper__().getRequestMetadata(requestCount_).winningBid.fee;
 
         // Unblock fees from deposit
-        tokenBalance.blocked -= fees.amount;
-        tokenBalance.deposited -= transmitterBid;
-        tokenBalance.deposited -= remainingFees;
+        _useBlockedUserCredits(requestFee.consumeFrom, fees, fees);
 
         // Assign fees to transmitter
-        transmitterFees[transmitter_][fees.feePoolChain][fees.feePoolToken] += transmitterBid;
+        transmitterFees[transmitter_] += fees;
 
         // Clean up storage
-        delete requestCountBlockedFees[requestCount_];
-        emit FeesUnblockedAndAssigned(requestCount_, transmitter_, fees.amount);
+        delete requestCountCredits[requestCount_];
+        emit FeesUnblockedAndAssigned(requestCount_, transmitter_, fees);
+    }
+
+    function _useBlockedUserCredits(
+        address consumeFrom_,
+        uint256 toBlock_,
+        uint256 toConsume_
+    ) internal {
+        UserCredits storage userCredit = userCredits[consumeFrom_];
+        userCredit.blockedCredits -= toBlock_;
+        userCredit.totalCredits -= toConsume_;
     }
 
     function assignWatcherPrecompileFees(
-        uint32 chainSlug_,
-        address token_,
         uint256 amount_,
         uint40 requestCount_
     ) external onlyWatcherPrecompile {
-        Fees storage fees = requestCountBlockedFees[requestCount_];
-        if (fees.amount == 0) revert NoFeesBlocked();
+        RequestFee memory requestFee = requestCountCredits[requestCount_];
+        if (requestFee.blockedCredits == 0) revert NoFeesBlocked();
 
-        fees.amount -= amount_;
-        watcherPrecompileFees[chainSlug_][token_] += amount_;
-        emit WatcherPrecompileFeesAssigned(chainSlug_, token_, amount_, requestCount_);
+        // deduct the fees from the user
+        _useBlockedUserCredits(requestFee.consumeFrom, 0, amount_);
+
+        // add the fees to the watcher precompile
+        watcherPrecompileCredits += amount_;
+        emit WatcherPrecompileFeesAssigned(requestCount_, amount_);
     }
 
     function unblockFees(uint40 requestCount_) external {
@@ -327,19 +293,15 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
             msg.sender != address(deliveryHelper__())
         ) revert InvalidCaller();
 
-        Fees memory fees = requestCountBlockedFees[requestCount_];
-        if (fees.amount == 0) return;
-
-        TokenBalance storage tokenBalance = userFeeBalances[requestMetadata.appGateway][
-            fees.feePoolChain
-        ][fees.feePoolToken];
+        RequestFee memory requestFee = requestCountCredits[requestCount_];
+        if (requestFee.blockedCredits == 0) return;
 
         // Unblock fees from deposit
-        tokenBalance.blocked -= fees.amount;
-        tokenBalance.deposited += fees.amount;
+        UserCredits storage userCredit = userCredits[requestFee.consumeFrom];
+        userCredit.blockedCredits -= requestFee.blockedCredits;
 
-        delete requestCountBlockedFees[requestCount_];
-        emit FeesUnblocked(requestCount_, requestMetadata.appGateway);
+        delete requestCountCredits[requestCount_];
+        emit FeesUnblocked(requestCount_, requestFee.consumeFrom);
     }
 
     /// @notice Withdraws fees to a specified receiver
@@ -349,21 +311,23 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     function withdrawTransmitterFees(
         uint32 chainSlug_,
         address token_,
-        address receiver_
+        address receiver_,
+        uint256 amount_
     ) external returns (uint40 requestCount) {
         address transmitter = msg.sender;
         // Get total fees for the transmitter in given chain and token
-        uint256 totalFees = transmitterFees[transmitter][chainSlug_][token_];
-        if (totalFees == 0) revert NoFeesForTransmitter();
+        uint256 totalFees = transmitterFees[transmitter];
+        if (totalFees >= amount_) revert InsufficientFeesAvailable();
 
         // Clean up storage
-        transmitterFees[transmitter][chainSlug_][token_] = 0;
+        transmitterFees[transmitter] -= amount_;
+        tokenPoolBalances[token_][chainSlug_] -= amount_;
 
         // Create fee distribution payload
         bytes32 feesId = _encodeFeesId(feesCounter++);
         bytes memory payload = abi.encodeCall(
             IFeesPlug.distributeFee,
-            (token_, totalFees, receiver_, feesId)
+            (token_, amount_, receiver_, feesId)
         );
 
         // finalize for plug contract
@@ -388,11 +352,10 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         address source = _getCoreAppGateway(originAppGatewayOrUser_);
 
         // Check if amount is available in fees plug
-        uint256 availableAmount = getAvailableFees(chainSlug_, source, token_);
+        uint256 availableAmount = getAvailableFees(source);
         if (availableAmount < amount_) revert InsufficientFeesAvailable();
 
-        TokenBalance storage tokenBalance = userFeeBalances[source][chainSlug_][token_];
-        tokenBalance.deposited -= amount_;
+        tokenPoolBalances[token_][chainSlug_] -= amount_;
 
         // Add it to the queue and submit request
         _queue(chainSlug_, abi.encodeCall(IFeesPlug.withdrawFees, (token_, amount_, receiver_)));

@@ -50,9 +50,6 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
     constructor(address socket_, address owner_) {
         _setSocket(socket_);
         _initializeOwner(owner_);
-
-        // ETH is whitelisted by default
-        whitelistedTokens[ETH_ADDRESS] = true;
     }
 
     /// @notice Distributes fees to the transmitter
@@ -88,11 +85,7 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
         emit FeesWithdrawn(token_, amount_, receiver_);
     }
 
-    function depositToFee(
-        address token_,
-        uint256 amount_,
-        address receiver_
-    ) external payable override {
+    function depositToFee(address token_, uint256 amount_, address receiver_) external override {
         _deposit(token_, receiver_, amount_, 0);
     }
 
@@ -100,17 +93,13 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
         address token_,
         uint256 amount_,
         address receiver_
-    ) external payable override {
+    ) external override {
         uint256 nativeAmount_ = amount_ / 10;
         uint256 feeAmount_ = amount_ - nativeAmount_;
         _deposit(token_, receiver_, feeAmount_, nativeAmount_);
     }
 
-    function depositToNative(
-        address token_,
-        uint256 amount_,
-        address receiver_
-    ) external payable override {
+    function depositToNative(address token_, uint256 amount_, address receiver_) external override {
         _deposit(token_, receiver_, 0, amount_);
     }
 
@@ -127,19 +116,9 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
     ) internal override {
         uint256 totalAmount_ = feeAmount_ + nativeAmount_;
         if (!whitelistedTokens[token_]) revert TokenNotWhitelisted(token_);
-
-        if (token_ == ETH_ADDRESS) {
-            if (msg.value != totalAmount_) revert InvalidDepositAmount();
-        } else {
-            if (token_.code.length == 0) revert InvalidTokenAddress();
-        }
+        if (token_.code.length == 0) revert InvalidTokenAddress();
 
         balanceOf[token_] += totalAmount_;
-
-        if (token_ != ETH_ADDRESS) {
-            SafeTransferLib.safeTransferFrom(token_, msg.sender, address(this), totalAmount_);
-        }
-
         emit FeesDeposited(receiver_, token_, feeAmount_, nativeAmount_);
     }
 
@@ -148,11 +127,7 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
     /// @param amount_ The amount
     /// @param receiver_ The receiver address
     function _transferTokens(address token_, uint256 amount_, address receiver_) internal {
-        if (token_ == ETH_ADDRESS) {
-            SafeTransferLib.forceSafeTransferETH(receiver_, amount_);
-        } else {
-            SafeTransferLib.safeTransfer(token_, receiver_, amount_);
-        }
+        SafeTransferLib.safeTransfer(token_, receiver_, amount_);
     }
 
     function connectSocket(
@@ -173,7 +148,6 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
     /// @notice Removes a token from the whitelist
     /// @param token_ The token address to remove
     function removeTokenFromWhitelist(address token_) external onlyOwner {
-        if (token_ == ETH_ADDRESS) revert(); // Cannot remove ETH from whitelist
         whitelistedTokens[token_] = false;
         emit TokenRemovedFromWhitelist(token_);
     }
@@ -192,6 +166,4 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
     ) external onlyRole(RESCUE_ROLE) {
         RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
-
-    receive() external payable {}
 }
