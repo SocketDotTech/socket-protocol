@@ -10,18 +10,9 @@ import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {NotAuctionManager, InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
-import {Bid, Fees, CallType, Parallel, WriteFinality, TokenBalance, QueuePayloadParams, IsPlug, PayloadSubmitParams, RequestParams, RequestMetadata} from "../utils/common/Structs.sol";
+import {Bid, CallType, Parallel, WriteFinality, QueuePayloadParams, IsPlug, PayloadSubmitParams, RequestMetadata, RequestFee, UserCredits} from "../utils/common/Structs.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
-    struct RequestFee {
-        uint256 blockedCredits;
-        address consumeFrom;
-    }
-
-    struct UserCredits {
-        uint256 totalCredits;
-        uint256 blockedCredits;
-    }
 
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
