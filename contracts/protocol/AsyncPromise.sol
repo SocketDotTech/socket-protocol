@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 import {AddressResolverUtil} from "./utils/AddressResolverUtil.sol";
@@ -95,6 +95,7 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
             callbackSelector,
             abi.encode(callbackData, returnData_)
         );
+
         // setting max_copy_bytes to 0 as not using returnData right now
         (success, , ) = localInvoker.tryCall(0, gasleft(), 0, combinedCalldata);
         if (success) return success;

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 import "solady/utils/Initializable.sol";
@@ -33,6 +33,8 @@ abstract contract DeliveryUtils is
     error MaxMsgValueLimitExceeded();
 
     event BidTimeoutUpdated(uint256 newBidTimeout);
+
+    /// @notice Emitted when a payload is submitted
     event PayloadSubmitted(
         uint40 indexed requestCount,
         address indexed appGateway,

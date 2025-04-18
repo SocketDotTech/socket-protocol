@@ -1,11 +1,10 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: GPL-3.0-only
+pragma solidity ^0.8.21;
 
 import "../../../interfaces/IWatcherPrecompile.sol";
 import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
-import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 import {IPromise} from "../../../interfaces/IPromise.sol";
-import "../DumpDecoder.sol";
+import "../PayloadHeaderDecoder.sol";
 
 import {IMiddleware} from "../../../interfaces/IMiddleware.sol";
 import {QUERY, FINALIZE, SCHEDULE, MAX_COPY_BYTES} from "../../utils/common/Constants.sol";

@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: GPL-3.0-only
+pragma solidity ^0.8.21;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
@@ -14,7 +14,7 @@ contract CheckDepositedFees is Script {
         address appGateway = vm.envAddress("APP_GATEWAY");
         uint32 chain = 421614;
         address token = ETH_ADDRESS;
-        (uint256 deposited, uint256 blocked) = feesManager.appGatewayFeeBalances(
+        (uint256 deposited, uint256 blocked) = feesManager.userFeeBalances(
             appGateway,
             chain,
             token

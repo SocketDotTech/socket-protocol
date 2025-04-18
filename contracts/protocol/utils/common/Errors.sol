@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 error NotSocket();
@@ -33,3 +33,11 @@ error LowerBidAlreadyExists();
 error AsyncModifierNotUsed();
 error InvalidIndex();
 error RequestAlreadyExecuted();
+/// @notice Error thrown when no async promise is found
+error NoAsyncPromiseFound();
+/// @notice Error thrown when promise caller mismatch
+error PromiseCallerMismatch();
+/// @notice Error thrown when request count mismatch
+error RequestCountMismatch();
+/// @notice Error thrown when delivery helper is not set
+error DeliveryHelperNotSet();

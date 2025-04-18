@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 import {DigestParams, ResolvedPromises, PayloadParams, TriggerParams, PayloadSubmitParams, RequestParams} from "../protocol/utils/common/Structs.sol";
@@ -75,6 +75,8 @@ interface IWatcherPrecompile {
     event WatcherPrecompileLimitsSet(address watcherPrecompileLimits);
 
     event WatcherPrecompileConfigSet(address watcherPrecompileConfig);
+
+    event RequestCancelledFromGateway(uint40 requestCount);
 
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();

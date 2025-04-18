@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 //// ENUMS ////
@@ -178,7 +178,7 @@ struct PayloadSubmitParams {
 struct PayloadParams {
     // uint40 requestCount + uint40 batchCount + uint40 payloadCount + uint32 chainSlug
     // CallType callType + Parallel isParallel + WriteFinality writeFinality
-    bytes32 dump;
+    bytes32 payloadHeader;
     // uint40 requestCount;
     // uint40 batchCount;
     // uint40 payloadCount;
@@ -219,6 +219,7 @@ struct RequestMetadata {
     Bid winningBid;
     bytes onCompleteData;
     bool onlyReadRequests;
+    bytes feesApprovalData;
 }
 
 struct ExecuteParams {

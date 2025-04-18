@@ -76,6 +76,7 @@ contract Socket is SocketUtils {
         // validate the execution status
         _validateExecutionStatus(payloadId);
 
+        // should we move this to a separate contract?
         // recover the signer
         address transmitter = _recoverSigner(
             keccak256(abi.encode(address(this), payloadId)),

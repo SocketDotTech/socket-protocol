@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 import "solady/auth/Ownable.sol";
@@ -60,7 +60,7 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         return;
     }
 
-    function transfer(bytes memory order_) external async {
+    function transfer(bytes memory order_) external async createFeePool {
         TransferOrder memory order = abi.decode(order_, (TransferOrder));
         ISuperToken(order.srcToken).burn(order.user, order.srcAmount);
         ISuperToken(order.dstToken).mint(order.user, order.srcAmount);

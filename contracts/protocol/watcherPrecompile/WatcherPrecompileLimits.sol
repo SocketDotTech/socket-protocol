@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 import "solady/utils/Initializable.sol";
@@ -43,8 +43,14 @@ contract WatcherPrecompileLimits is
     // Mapping to track active app gateways
     mapping(address => bool) internal _activeAppGateways;
 
+    // token => fee amount
+    mapping(address => uint256) public queryFees;
+    mapping(address => uint256) public finalizeFees;
+    mapping(address => uint256) public scheduleFees;
+
     /// @notice Emitted when the default limit and rate per second are set
     event DefaultLimitAndRatePerSecondSet(uint256 defaultLimit, uint256 defaultRatePerSecond);
+    event WatcherFeesNotSetForToken(address token_);
 
     /// @notice Initial initialization (version 1)
     function initialize(
@@ -119,6 +125,7 @@ contract WatcherPrecompileLimits is
      * @param consumeLimit_ The amount of limit to consume
      */
     function consumeLimit(
+        uint40 requestCount_,
         address appGateway_,
         bytes32 limitType_,
         uint256 consumeLimit_
@@ -143,6 +150,8 @@ contract WatcherPrecompileLimits is
         }
 
         // Update the limit
+        precompileCount[limitType_][requestCount_] += consumeLimit_;
+
         _consumeFullLimit(consumeLimit_ * 10 ** limitDecimals, limitParams);
     }
 
@@ -155,5 +164,50 @@ contract WatcherPrecompileLimits is
         defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
 
         emit DefaultLimitAndRatePerSecondSet(defaultLimit, defaultRatePerSecond);
+    }
+
+    function setQueryFees(
+        address[] calldata tokens_,
+        uint256[] calldata amounts_
+    ) external onlyOwner {
+        require(tokens_.length == amounts_.length, "Length mismatch");
+        for (uint256 i = 0; i < tokens_.length; i++) {
+            queryFees[tokens_[i]] = amounts_[i];
+        }
+    }
+
+    function setFinalizeFees(
+        address[] calldata tokens_,
+        uint256[] calldata amounts_
+    ) external onlyOwner {
+        require(tokens_.length == amounts_.length, "Length mismatch");
+        for (uint256 i = 0; i < tokens_.length; i++) {
+            finalizeFees[tokens_[i]] = amounts_[i];
+        }
+    }
+
+    function setScheduleFees(
+        address[] calldata tokens_,
+        uint256[] calldata amounts_
+    ) external onlyOwner {
+        require(tokens_.length == amounts_.length, "Length mismatch");
+        for (uint256 i = 0; i < tokens_.length; i++) {
+            scheduleFees[tokens_[i]] = amounts_[i];
+        }
+    }
+
+    function getTotalFeesRequired(
+        address token_,
+        uint40 requestCount_
+    ) external view returns (uint256) {
+        uint256 totalFees = 0;
+        if (queryFees[token_] == 0 || finalizeFees[token_] == 0 || scheduleFees[token_] == 0) {
+            revert WatcherFeesNotSetForToken(token_);
+        }
+
+        totalFees += precompileCount[QUERY][requestCount_] * queryFees[token_];
+        totalFees += precompileCount[FINALIZE][requestCount_] * finalizeFees[token_];
+        totalFees += precompileCount[SCHEDULE][requestCount_] * scheduleFees[token_];
+        return totalFees;
     }
 }

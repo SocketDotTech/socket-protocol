@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: GPL-3.0-only
+pragma solidity ^0.8.21;
 
 import {ECDSA} from "solady/utils/ECDSA.sol";
 import "solady/utils/Initializable.sol";
@@ -112,16 +112,9 @@ contract AuctionManager is
         );
         if (!_hasRole(TRANSMITTER_ROLE, transmitter)) revert InvalidTransmitter();
 
-        // create a new bid
-        Bid memory newBid = Bid({fee: fee, transmitter: transmitter, extraData: extraData});
-        // get the request metadata
-        RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
-            .getRequestMetadata(requestCount_);
-
-        // check if the bid is for this auction manager
-        if (requestMetadata.auctionManager != address(this)) revert InvalidBid();
-        // check if the bid exceeds the max fees quoted by app gateway
-        if (fee > requestMetadata.fees.amount) revert BidExceedsMaxFees();
+        // check if the bid exceeds the max fees quoted by app gateway subtracting the watcher fees
+        if (fee > getTransmitterMaxFeesRequired(requestMetadata.fees.token, requestCount_))
+            revert BidExceedsMaxFees();
 
         // check if the bid is lower than the existing bid
         if (
@@ -129,16 +122,11 @@ contract AuctionManager is
             fee >= winningBids[requestCount_].fee
         ) revert LowerBidAlreadyExists();
 
+        // create a new bid
+        Bid memory newBid = Bid({fee: fee, transmitter: transmitter, extraData: extraData});
+
         // update the winning bid
         winningBids[requestCount_] = newBid;
-
-        // block the fees
-        IFeesManager(addressResolver__.feesManager()).blockFees(
-            requestMetadata.appGateway,
-            requestMetadata.fees,
-            newBid,
-            requestCount_
-        );
 
         // end the auction if the no auction end delay
         if (auctionEndDelaySeconds > 0) {
@@ -150,6 +138,15 @@ contract AuctionManager is
         } else {
             _endAuction(requestCount_);
         }
+
+        // block the fees
+        IFeesManager(addressResolver__.feesManager()).blockFees(
+            requestMetadata.appGateway,
+            requestMetadata.fees,
+            newBid,
+            watcherPrecompile__().getTotalFeesRequired(requestMetadata.fees.token, requestCount_),
+            requestCount_
+        );
 
         emit BidPlaced(requestCount_, newBid);
     }
@@ -208,6 +205,22 @@ contract AuctionManager is
 
         auctionStarted[requestCount_] = true;
         emit AuctionStarted(requestCount_);
+    }
+
+    function getTransmitterMaxFeesRequired(
+        address token_,
+        uint40 requestCount_
+    ) public view returns (uint256) {
+        // check if the bid is for this auction manager
+        if (requestMetadata.auctionManager != address(this)) revert InvalidBid();
+
+        // get the request metadata
+        RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
+            .getRequestMetadata(requestCount_);
+
+        // get the total fees required for the watcher precompile ops
+        uint256 watcherFees = watcherPrecompile__().getTotalFeesRequired(token_, requestCount_);
+        return requestMetadata.fees.amount - watcherFees;
     }
 
     function _recoverSigner(
