@@ -62,7 +62,7 @@ contract TriggerTest is DeliveryHelperTest {
 
         // Simulate a message from another chain through the watcher
         uint256 incrementValue = 5;
-        bytes32 triggerId = _encodeTriggerId(address(gateway), arbChainSlug);
+        bytes32 triggerId = _encodeTriggerId(address(arbConfig.socket), arbChainSlug);
         bytes memory payload = abi.encodeWithSelector(
             CounterAppGateway.increase.selector,
             incrementValue
