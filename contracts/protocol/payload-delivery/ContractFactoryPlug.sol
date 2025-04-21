@@ -21,11 +21,22 @@ contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
     error DeploymentFailed();
     error ExecutionFailed();
 
+    /// @notice Constructor for the ContractFactoryPlug
+    /// @param socket_ The socket address
+    /// @param owner_ The owner address
     constructor(address socket_, address owner_) {
         _initializeOwner(owner_);
         _setSocket(socket_);
     }
 
+    /// @notice Deploys a contract
+    /// @param isPlug_ Whether the contract to be deployed is a plug
+    /// @param salt_ The salt used for create 2
+    /// @param appGatewayId_ The app gateway id
+    /// @param switchboard_ The switchboard address
+    /// @param creationCode_ The creation code
+    /// @param initCallData_ The init call data
+    /// @return addr The address of the deployed contract
     function deployContract(
         IsPlug isPlug_,
         bytes32 salt_,
@@ -33,12 +44,7 @@ contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
         address switchboard_,
         bytes memory creationCode_,
         bytes memory initCallData_
-    ) public override returns (address) {
-        if (msg.sender != address(socket__)) {
-            revert NotSocket();
-        }
-
-        address addr;
+    ) public override onlySocket returns (address addr) {
         assembly {
             addr := create2(callvalue(), add(creationCode_, 0x20), mload(creationCode_), salt_)
             if iszero(addr) {
@@ -73,7 +79,6 @@ contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
         }
 
         emit Deployed(addr, salt_, returnData);
-        return addr;
     }
 
     /// @notice Gets the address for a deployed contract

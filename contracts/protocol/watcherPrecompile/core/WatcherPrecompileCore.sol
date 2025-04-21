@@ -3,13 +3,15 @@ pragma solidity ^0.8.21;
 
 import "./WatcherPrecompileStorage.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
-import {AccessControl} from "../utils/AccessControl.sol";
+import {AccessControl} from "../../utils/AccessControl.sol";
 import "solady/utils/Initializable.sol";
-import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
+import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
 import "./WatcherPrecompileUtils.sol";
 
-/// @title WatcherPrecompile
-/// @notice Contract that handles payload verification, execution and app configurations
+/// @title WatcherPrecompileCore
+/// @notice Core functionality for the WatcherPrecompile system
+/// @dev This contract implements the core functionality for payload verification, execution, and app configurations
+/// @dev It is inherited by WatcherPrecompile and provides the base implementation for request handling
 abstract contract WatcherPrecompileCore is
     IWatcherPrecompile,
     WatcherPrecompileStorage,
@@ -20,21 +22,23 @@ abstract contract WatcherPrecompileCore is
 {
     using DumpDecoder for bytes32;
 
+    // slots [216-265] reserved for gap
+    uint256[50] _core_gap;
+
     // ================== Timeout functions ==================
 
     /// @notice Sets a timeout for a payload execution on app gateway
-    /// @param payload_ The payload data
-    /// @param delayInSeconds_ The delay in seconds
+    /// @return timeoutId The unique identifier for the timeout request
     function _setTimeout(
-        bytes calldata payload_,
-        uint256 delayInSeconds_
+        uint256 delayInSeconds_,
+        bytes calldata payload_
     ) internal returns (bytes32 timeoutId) {
         if (delayInSeconds_ > maxTimeoutDelayInSeconds) revert TimeoutDelayTooLarge();
 
-        // from auction manager
-        watcherPrecompileLimits__.consumeLimit(_getCoreAppGateway(msg.sender), SCHEDULE, 1);
         uint256 executeAt = block.timestamp + delayInSeconds_;
-        timeoutId = _encodeTimeoutId(evmxSlug, address(this));
+        timeoutId = _encodeTimeoutId();
+
+        // stores timeout request for watcher to track and resolve when timeout is reached
         timeoutRequests[timeoutId] = TimeoutRequest(
             timeoutId,
             msg.sender,
@@ -44,30 +48,39 @@ abstract contract WatcherPrecompileCore is
             false,
             payload_
         );
+
+        // consumes limit for SCHEDULE precompile
+        watcherPrecompileLimits__.consumeLimit(_getCoreAppGateway(msg.sender), SCHEDULE, 1);
+
+        // emits event for watcher to track timeout and resolve when timeout is reached
         emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);
     }
 
+    /// @notice Finalizes a payload request and requests the watcher to release the proofs
+    /// @param params_ The payload parameters to be finalized
+    /// @param transmitter_ The address of the transmitter
+    /// @return digest The digest hash of the finalized payload
+    /// @dev This function verifies the app gateway configuration and creates a digest for the payload
     function _finalize(
         PayloadParams memory params_,
         address transmitter_
     ) internal returns (bytes32 digest) {
         uint32 chainSlug = params_.dump.getChainSlug();
+
         // Verify that the app gateway is properly configured for this chain and target
         watcherPrecompileConfig__.verifyConnections(
             chainSlug,
             params_.target,
             params_.appGateway,
-            params_.switchboard
+            params_.switchboard,
+            requestParams[params_.dump.getRequestCount()].middleware
         );
 
         uint256 deadline = block.timestamp + expiryTime;
         payloads[params_.payloadId].deadline = deadline;
         payloads[params_.payloadId].finalizedTransmitter = transmitter_;
 
-        bytes32 prevDigestsHash = _getPreviousDigestsHash(
-            params_.dump.getRequestCount(),
-            params_.dump.getBatchCount()
-        );
+        bytes32 prevDigestsHash = _getPreviousDigestsHash(params_.dump.getBatchCount());
         payloads[params_.payloadId].prevDigestsHash = prevDigestsHash;
 
         // Construct parameters for digest calculation
@@ -92,31 +105,23 @@ abstract contract WatcherPrecompileCore is
         emit FinalizeRequested(digest, payloads[params_.payloadId]);
     }
 
-    function _getBatch(uint40 batchCount) internal view returns (PayloadParams[] memory) {
-        bytes32[] memory payloadIds = batchPayloadIds[batchCount];
-        PayloadParams[] memory payloadParamsArray = new PayloadParams[](payloadIds.length);
-
-        for (uint40 i = 0; i < payloadIds.length; i++) {
-            payloadParamsArray[i] = payloads[payloadIds[i]];
-        }
-        return payloadParamsArray;
-    }
-
     // ================== Query functions ==================
+
     /// @notice Creates a new query request
-    /// @param params_ The payload parameters
+    /// @param params_ The payload parameters for the query
+    /// @dev This function sets up a query request and emits a QueryRequested event
     function _query(PayloadParams memory params_) internal {
-        bytes32 prevDigestsHash = _getPreviousDigestsHash(
-            params_.dump.getRequestCount(),
-            params_.dump.getBatchCount()
-        );
+        bytes32 prevDigestsHash = _getPreviousDigestsHash(params_.dump.getBatchCount());
         payloads[params_.payloadId].prevDigestsHash = prevDigestsHash;
         emit QueryRequested(params_);
     }
 
+    // ================== Helper functions ==================
+
     /// @notice Calculates the digest hash of payload parameters
-    /// @param params_ The payload parameters
-    /// @return digest The calculated digest
+    /// @param params_ The payload parameters to calculate the digest for
+    /// @return digest The calculated digest hash
+    /// @dev This function creates a keccak256 hash of the payload parameters
     function getDigest(DigestParams memory params_) public pure returns (bytes32 digest) {
         digest = keccak256(
             abi.encode(
@@ -137,22 +142,15 @@ abstract contract WatcherPrecompileCore is
         );
     }
 
-    function _getPreviousDigestsHash(
-        uint40 requestCount_,
-        uint40 batchCount_
-    ) internal view returns (bytes32) {
-        RequestParams memory r = requestParams[requestCount_];
-
-        // If this is the first batch of the request, return 0 bytes
-        if (batchCount_ == r.payloadParamsArray[0].dump.getBatchCount()) {
-            return bytes32(0);
-        }
-
-        PayloadParams[] memory previousPayloads = _getBatch(batchCount_ - 1);
+    /// @notice Gets the hash of previous batch digests
+    /// @param batchCount_ The batch count to get the previous digests hash
+    /// @return The hash of all digests in the previous batch
+    function _getPreviousDigestsHash(uint40 batchCount_) internal view returns (bytes32) {
+        bytes32[] memory payloadIds = batchPayloadIds[batchCount_];
         bytes32 prevDigestsHash = bytes32(0);
 
-        for (uint40 i = 0; i < previousPayloads.length; i++) {
-            PayloadParams memory p = payloads[previousPayloads[i].payloadId];
+        for (uint40 i = 0; i < payloadIds.length; i++) {
+            PayloadParams memory p = payloads[payloadIds[i]];
             DigestParams memory digestParams = DigestParams(
                 watcherPrecompileConfig__.sockets(p.dump.getChainSlug()),
                 p.finalizedTransmitter,
@@ -173,52 +171,59 @@ abstract contract WatcherPrecompileCore is
         return prevDigestsHash;
     }
 
-    // ================== Helper functions ==================
+    /// @notice Gets the batch of payload parameters for a given batch count
+    /// @param batchCount The batch count to get the payload parameters for
+    /// @return An array of PayloadParams for the given batch
+    /// @dev This function retrieves all payload parameters for a specific batch
+    function _getBatch(uint40 batchCount) internal view returns (PayloadParams[] memory) {
+        bytes32[] memory payloadIds = batchPayloadIds[batchCount];
+        PayloadParams[] memory payloadParamsArray = new PayloadParams[](payloadIds.length);
 
-    /// @notice Verifies the connection between chain slug, target, and app gateway
-    /// @param chainSlug_ The identifier of the chain
-    /// @param target_ The target address
-    /// @param appGateway_ The app gateway address to verify
-    /// @dev Internal function to validate connections
-    function _verifyConnections(
-        uint32 chainSlug_,
-        address target_,
-        address appGateway_,
-        address switchboard_
-    ) internal view {
-        // todo: revisit this
-        // if target is contractFactoryPlug, return
-        if (target_ == watcherPrecompileConfig__.contractFactoryPlug(chainSlug_)) return;
-
-        (bytes32 appGatewayId, address switchboard) = watcherPrecompileConfig__.getPlugConfigs(
-            chainSlug_,
-            target_
-        );
-        if (appGatewayId != _encodeAppGatewayId(appGateway_)) revert InvalidGateway();
-        if (switchboard != switchboard_) revert InvalidSwitchboard();
+        for (uint40 i = 0; i < payloadIds.length; i++) {
+            payloadParamsArray[i] = payloads[payloadIds[i]];
+        }
+        return payloadParamsArray;
     }
 
-    function _encodeTimeoutId(uint32 chainSlug_, address watcher_) internal returns (bytes32) {
+    /// @notice Encodes an ID for a timeout or payload
+    /// @return The encoded ID
+    /// @dev This function creates a unique ID by combining the chain slug, address, and a counter
+    function _encodeTimeoutId() internal returns (bytes32) {
         // Encode timeout ID by bit-shifting and combining:
-        // chainSlug (32 bits) | switchboard or watcher precompile address (160 bits) | counter (64 bits)
+        // EVMx chainSlug (32 bits) | watcher precompile address (160 bits) | counter (64 bits)
         return
             bytes32(
-                (uint256(chainSlug_) << 224) | (uint256(uint160(watcher_)) << 64) | timeoutCounter++
+                (uint256(evmxSlug) << 224) |
+                    (uint256(uint160(address(this))) << 64) |
+                    payloadCounter++
             );
     }
 
+    /// @notice Creates a payload ID from the given parameters
+    /// @param requestCount_ The request count
+    /// @param batchCount_ The batch count
+    /// @param payloadCount_ The payload count
+    /// @param switchboard_ The switchboard address
+    /// @param chainSlug_ The chain slug
+    /// @return The created payload ID
     function _createPayloadId(
-        PayloadSubmitParams memory p_,
         uint40 requestCount_,
         uint40 batchCount_,
-        uint40 payloadCount_
+        uint40 payloadCount_,
+        address switchboard_,
+        uint32 chainSlug_
     ) internal pure returns (bytes32) {
         return
             keccak256(
-                abi.encode(requestCount_, batchCount_, payloadCount_, p_.switchboard, p_.chainSlug)
+                abi.encode(requestCount_, batchCount_, payloadCount_, switchboard_, chainSlug_)
             );
     }
 
+    /// @notice Verifies that a watcher signature is valid
+    /// @param digest_ The digest to verify
+    /// @param signatureNonce_ The nonce of the signature
+    /// @param signature_ The signature to verify
+    /// @dev This function verifies that the signature was created by the watcher and that the nonce has not been used before
     function _isWatcherSignatureValid(
         bytes memory digest_,
         uint256 signatureNonce_,
@@ -235,14 +240,23 @@ abstract contract WatcherPrecompileCore is
         if (signer != owner()) revert InvalidWatcherSignature();
     }
 
+    /// @notice Gets the batch IDs for a request
+    /// @param requestCount_ The request count to get the batch IDs for
+    /// @return An array of batch IDs for the given request
     function getBatches(uint40 requestCount_) external view returns (uint40[] memory) {
         return requestBatchIds[requestCount_];
     }
 
+    /// @notice Gets the payload IDs for a batch
+    /// @param batchCount_ The batch count to get the payload IDs for
+    /// @return An array of payload IDs for the given batch
     function getBatchPayloadIds(uint40 batchCount_) external view returns (bytes32[] memory) {
         return batchPayloadIds[batchCount_];
     }
 
+    /// @notice Gets the payload parameters for a payload ID
+    /// @param payloadId_ The payload ID to get the parameters for
+    /// @return The payload parameters for the given payload ID
     function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory) {
         return payloads[payloadId_];
     }

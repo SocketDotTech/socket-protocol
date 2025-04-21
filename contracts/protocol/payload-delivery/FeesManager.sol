@@ -9,7 +9,7 @@ import {IFeesPlug} from "../../interfaces/IFeesPlug.sol";
 import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
-import {NotAuctionManager} from "../utils/common/Errors.sol";
+import {NotAuctionManager, InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
 import {Bid, Fees, CallType, Parallel, WriteFinality, TokenBalance, QueuePayloadParams, IsPlug, PayloadSubmitParams, RequestParams, RequestMetadata} from "../utils/common/Structs.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
@@ -49,7 +49,7 @@ abstract contract FeesManagerStorage is IFeesManager {
     // slots [57-106] reserved for gap
     uint256[50] _gap_after;
 
-    // slots 107-157 reserved for addr resolver util
+    // slots 107-157 (51) reserved for addr resolver util
 }
 
 /// @title FeesManager
@@ -110,10 +110,6 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     error NoFeesForTransmitter();
     /// @notice Error thrown when no fees was blocked
     error NoFeesBlocked();
-    /// @notice Error thrown when watcher signature is invalid
-    error InvalidWatcherSignature();
-    /// @notice Error thrown when nonce is used
-    error NonceUsed();
     /// @notice Error thrown when caller is invalid
     error InvalidCaller();
 
@@ -191,7 +187,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         return availableFees >= fees_.amount;
     }
 
-    /// @notice Blocks fees for transmitter
+    /// @notice Blocks fees for a request count
     /// @param originAppGateway_ The app gateway address
     /// @param feesGivenByApp_ The fees data struct given by the app gateway
     /// @param requestCount_ The batch identifier
@@ -399,6 +395,9 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
                 initCallData: bytes("")
             });
     }
+
+    /// @notice hook called by watcher precompile when request is finished
+    function finishRequest(uint40) external {}
 
     function _queue(uint32 chainSlug_, bytes memory payload_) internal {
         QueuePayloadParams memory queuePayloadParams = _createQueuePayloadParams(

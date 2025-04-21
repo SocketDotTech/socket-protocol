@@ -7,6 +7,7 @@ import {NotSocket} from "../protocol/utils/common/Errors.sol";
 
 /// @title PlugBase
 /// @notice Abstract contract for plugs
+/// @dev This contract contains helpers for socket connection, disconnection, and overrides
 abstract contract PlugBase is IPlug {
     ISocket public socket__;
     bytes32 public appGatewayId;
@@ -23,7 +24,7 @@ abstract contract PlugBase is IPlug {
         _;
     }
 
-    /// @notice Modifier to ensure the socket is initialized
+    /// @notice Modifier to ensure the socket is initialized and if not already initialized, it will be initialized
     modifier socketInitializer() {
         if (isSocketInitialized == 1) revert SocketAlreadyInitialized();
         isSocketInitialized = 1;

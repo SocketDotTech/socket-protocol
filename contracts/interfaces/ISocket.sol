@@ -14,13 +14,13 @@ import {ExecuteParams} from "../protocol/utils/common/Structs.sol";
 interface ISocket {
     /**
      * @notice emits the status of payload after external call
-     * @param payloadId msg id which is executed
+     * @param payloadId payload id which is executed
      */
     event ExecutionSuccess(bytes32 payloadId, bytes returnData);
 
     /**
      * @notice emits the status of payload after external call
-     * @param payloadId msg id which is executed
+     * @param payloadId payload id which is executed
      */
     event ExecutionFailed(bytes32 payloadId, bytes returnData);
 
@@ -33,8 +33,8 @@ interface ISocket {
     event PlugConnected(address plug, bytes32 appGatewayId, address switchboard);
 
     /**
-     * @notice emits the message details when a new message arrives at outbound
-     * @param triggerId call id
+     * @notice emits the payload details when a new payload arrives at outbound
+     * @param triggerId trigger id
      * @param chainSlug local chain slug
      * @param plug local plug address
      * @param overrides params, for specifying details like fee pool chain, fee pool token and max fees if required
@@ -63,6 +63,9 @@ interface ISocket {
      */
     function connect(bytes32 appGatewayId_, address switchboard_) external;
 
+    /**
+     * @notice registers a switchboard for the socket
+     */
     function registerSwitchboard() external;
 
     /**
