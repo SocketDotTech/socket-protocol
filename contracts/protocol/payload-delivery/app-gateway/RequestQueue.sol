@@ -37,7 +37,7 @@ abstract contract RequestQueue is DeliveryUtils {
         address appGateway_,
         bytes memory feesApprovalData_,
         uint256 maxFees_
-    ) internal view returns (address consumeFrom) {
+    ) internal returns (address consumeFrom) {
         if (queuePayloadParams.length > REQUEST_PAYLOAD_COUNT_LIMIT)
             revert RequestPayloadCountLimitExceeded();
         (consumeFrom, , ) = IFeesManager(addressResolver__.feesManager()).setAppGatewayWhitelist(

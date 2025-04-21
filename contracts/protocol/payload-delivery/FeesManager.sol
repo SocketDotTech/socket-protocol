@@ -191,7 +191,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
 
     function _processFeeApprovalData(
         bytes memory feeApprovalData_
-    ) internal view returns (address consumeFrom, address appGateway, bool isApproved) {
+    ) internal returns (address consumeFrom, address appGateway, bool isApproved) {
         bytes memory signature_;
         (consumeFrom, appGateway, isApproved, signature_) = abi.decode(
             feeApprovalData_,
@@ -228,11 +228,13 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
             isAppGatewayWhitelisted[msg.sender][appGateways_[i]] = true;
         }
     }
+
     modifier onlyAuctionManager(uint40 requestCount_) {
         if (msg.sender != deliveryHelper__().getRequestMetadata(requestCount_).auctionManager)
             revert NotAuctionManager();
         _;
     }
+
     /// @notice Blocks fees for a request count
     /// @param consumeFrom_ The fees payer address
     /// @param transmitterCredits_ The total fees to block

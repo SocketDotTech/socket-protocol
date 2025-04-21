@@ -47,7 +47,6 @@ interface IWatcherPrecompileLimits {
     /// @param limitType_ The type of limit to consume
     /// @param consumeLimit_ The amount of limit to consume
     function consumeLimit(
-        uint40 requestCount_,
         address appGateway_,
         bytes32 limitType_,
         uint256 consumeLimit_

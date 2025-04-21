@@ -105,7 +105,6 @@ contract AuctionManager is
     ) external {
         if (auctionClosed[requestCount_]) revert AuctionClosed();
 
-        RequestMetadata memory requestMetadata = _getRequestMetadata(requestCount_);
         // check if the transmitter is valid
         address transmitter = _recoverSigner(
             keccak256(abi.encode(address(this), evmxSlug, requestCount_, bidFees, extraData)),
@@ -113,10 +112,9 @@ contract AuctionManager is
         );
         if (!_hasRole(TRANSMITTER_ROLE, transmitter)) revert InvalidTransmitter();
 
-        (uint256 watcherFees, uint256 transmitterCredits) = getTransmitterMaxFeesRequired(
-            requestCount_
-            // check if the bid exceeds the max fees quoted by app gateway subtracting the watcher fees
-        );
+        uint256 transmitterCredits = getTransmitterMaxFeesRequired(requestCount_);
+
+        // check if the bid exceeds the max fees quoted by app gateway subtracting the watcher fees
         if (bidFees > transmitterCredits) revert BidExceedsMaxFees();
 
         // check if the bid is lower than the existing bid
@@ -210,17 +208,15 @@ contract AuctionManager is
 
     function getTransmitterMaxFeesRequired(
         uint40 requestCount_
-    ) public view returns (uint256, uint256) {
+    ) public view returns (uint256) {
         RequestMetadata memory requestMetadata = _getRequestMetadata(requestCount_);
 
         // check if the bid is for this auction manager
         if (requestMetadata.auctionManager != address(this)) revert InvalidBid();
 
-        // get the request metadata
-
         // get the total fees required for the watcher precompile ops
         uint256 watcherFees = watcherPrecompileLimits().getTotalFeesRequired(requestCount_);
-        return (watcherFees, requestMetadata.maxFees - watcherFees);
+        return requestMetadata.maxFees - watcherFees;
     }
 
     function _recoverSigner(

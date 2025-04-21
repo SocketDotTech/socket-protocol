@@ -15,13 +15,12 @@ abstract contract RequestHandler is WatcherPrecompileCore {
 
     /// @notice Submits a batch of payload requests from middleware
     /// @param payloadSubmitParams_ Array of payload submit parameters
-    /// @param requestMetadata_ Request metadata
     /// @return requestCount The unique identifier for the submitted request
     /// @dev This function processes a batch of payload requests and assigns them to batches
     /// @dev It also consumes limits for the app gateway based on the number of reads and writes
     function submitRequest(
         PayloadSubmitParams[] calldata payloadSubmitParams_,
-        RequestMetadata calldata requestMetadata_
+        RequestMetadata calldata
     ) public returns (uint40 requestCount) {
         address appGateway = _checkAppGateways(payloadSubmitParams_);
 

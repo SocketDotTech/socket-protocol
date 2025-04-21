@@ -7,6 +7,7 @@ import {AccessControl} from "../../utils/AccessControl.sol";
 import "solady/utils/Initializable.sol";
 import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
+
 /// @title WatcherPrecompileCore
 /// @notice Core functionality for the WatcherPrecompile system
 /// @dev This contract implements the core functionality for payload verification, execution, and app configurations
@@ -50,7 +51,11 @@ abstract contract WatcherPrecompileCore is
         );
 
         // consumes limit for SCHEDULE precompile
-        watcherPrecompileLimits__.consumeLimit(_getCoreAppGateway(msg.sender), SCHEDULE, 1);
+        watcherPrecompileLimits__.consumeLimit(
+            _getCoreAppGateway(msg.sender),
+            SCHEDULE,
+            1
+        );
 
         // emits event for watcher to track timeout and resolve when timeout is reached
         emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);

@@ -57,6 +57,7 @@ contract WatcherPrecompileLimits is
     event DefaultLimitAndRatePerSecondSet(uint256 defaultLimit, uint256 defaultRatePerSecond);
 
     error WatcherFeesNotSet(bytes32 limitType);
+
     /// @notice Initial initialization (version 1)
     function initialize(
         address owner_,
@@ -130,7 +131,6 @@ contract WatcherPrecompileLimits is
      * @param consumeLimit_ The amount of limit to consume
      */
     function consumeLimit(
-        uint40 requestCount_,
         address appGateway_,
         bytes32 limitType_,
         uint256 consumeLimit_
@@ -155,7 +155,7 @@ contract WatcherPrecompileLimits is
         }
 
         // Update the limit
-        precompileCount[limitType_][requestCount_] += consumeLimit_;
+        // precompileCount[limitType_][requestCount_] += consumeLimit_;
 
         _consumeFullLimit(consumeLimit_ * 10 ** limitDecimals, limitParams);
     }
