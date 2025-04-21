@@ -22,6 +22,6 @@ contract CounterSetFees is Script {
         console.log("Setting fees...");
         // Setting fee payment on Arbitrum Sepolia
         uint256 fees = 0.00001 ether;
-        appGateway.setFees(fees);
+        // appGateway.setFees(fees);
     }
 }

@@ -175,7 +175,7 @@ contract DeliveryHelperTest is SetupTest {
 
     function depositFees(address appGateway_, OnChainFees memory fees_) internal {
         SocketContracts memory socketConfig = getSocketConfig(fees_.chainSlug);
-        socketConfig.feesPlug.deposit{value: fees_.amount}(fees_.token, appGateway_, fees_.amount);
+        socketConfig.feesPlug.depositToFeeAndNative(fees_.token, fees_.amount, appGateway_);
 
         bytes memory bytesInput = abi.encode(
             fees_.chainSlug,
@@ -189,8 +189,8 @@ contract DeliveryHelperTest is SetupTest {
         );
         bytes memory sig = _createSignature(digest, watcherPrivateKey);
         feesManager.incrementFeesDeposited(
-            fees_.chainSlug,
             appGateway_,
+            fees_.chainSlug,
             fees_.token,
             fees_.amount,
             signatureNonce++,

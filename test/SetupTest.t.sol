@@ -404,7 +404,7 @@ contract SetupTest is Test {
         uint32 chainSlug_,
         address token_,
         uint256 amount_
-    ) internal returns (OnChainFees memory) {
+    ) internal pure returns (OnChainFees memory) {
         return OnChainFees({chainSlug: chainSlug_, token: token_, amount: amount_});
     }
 }

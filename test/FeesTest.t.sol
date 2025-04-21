@@ -51,7 +51,8 @@ contract FeesTest is DeliveryHelperTest {
         uint40 requestCount = feesManager.withdrawTransmitterFees(
             feesChainSlug,
             ETH_ADDRESS,
-            address(receiver)
+            address(receiver),
+            feesManager.transmitterCredits(transmitterEOA)
         );
         uint40[] memory batches = watcherPrecompile.getBatches(requestCount);
         _finalizeBatch(batches[0], new bytes[](0), 0, false);
