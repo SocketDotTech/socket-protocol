@@ -240,6 +240,13 @@ struct ExecuteParams {
     address switchboard;
 }
 
+struct TransmissionParams {
+    uint256 socketFees;
+    address refundAddress;
+    bytes extraData;
+    bytes transmitterSignature;
+}
+
 struct PayloadIdParams {
     uint40 requestCount;
     uint40 batchCount;
