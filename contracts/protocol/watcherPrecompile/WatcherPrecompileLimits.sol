@@ -43,10 +43,6 @@ contract WatcherPrecompileLimits is
     // Mapping to track active app gateways
     mapping(address => bool) internal _activeAppGateways;
 
-    // slot 156: precompileCount
-    // limitType => requestCount => count
-    mapping(bytes32 => mapping(uint40 => uint256)) public precompileCount;
-
     // slot 157: fees
     uint256 public queryFees;
     uint256 public finalizeFees;
@@ -155,8 +151,6 @@ contract WatcherPrecompileLimits is
         }
 
         // Update the limit
-        // precompileCount[limitType_][requestCount_] += consumeLimit_;
-
         _consumeFullLimit(consumeLimit_ * 10 ** limitDecimals, limitParams);
     }
 
@@ -202,14 +196,16 @@ contract WatcherPrecompileLimits is
             revert WatcherFeesNotSet(CALLBACK);
         }
 
-        uint256 totalCallbacks = precompileCount[QUERY][requestCount_] +
-            precompileCount[FINALIZE][requestCount_] +
-            precompileCount[SCHEDULE][requestCount_];
+        uint256 queryCount = watcherPrecompile__().requestParams[requestCount_].queryCount;
+        uint256 finalizeCount = watcherPrecompile__().requestParams[requestCount_].finalizeCount;
+        uint256 scheduleCount = watcherPrecompile__().requestParams[requestCount_].scheduleCount;
+
+        uint256 totalCallbacks = queryCount + finalizeCount + scheduleCount;
 
         totalFees += totalCallbacks * callBackFees;
-        totalFees += precompileCount[QUERY][requestCount_] * queryFees;
-        totalFees += precompileCount[FINALIZE][requestCount_] * finalizeFees;
-        totalFees += precompileCount[SCHEDULE][requestCount_] * scheduleFees;
+        totalFees += queryCount * queryFees;
+        totalFees += finalizeCount * finalizeFees;
+        totalFees += scheduleCount * scheduleFees;
 
         return totalFees;
     }

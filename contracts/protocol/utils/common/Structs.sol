@@ -210,6 +210,9 @@ struct RequestParams {
     // updated while processing request
     uint256 currentBatchPayloadsLeft;
     uint256 payloadsRemaining;
+    uint256 queryCount;
+    uint256 finalizeCount;
+    uint256 scheduleCount;
     address middleware;
     // updated after auction
     address transmitter;
