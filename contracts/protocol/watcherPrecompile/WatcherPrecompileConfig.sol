@@ -7,7 +7,7 @@ import {Ownable} from "solady/auth/Ownable.sol";
 import "../../interfaces/IWatcherPrecompileConfig.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
-import "./WatcherPrecompileUtils.sol";
+import "./core/WatcherPrecompileUtils.sol";
 
 /// @title WatcherPrecompileConfig
 /// @notice Configuration contract for the Watcher Precompile system

@@ -32,7 +32,7 @@ contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
     /// @notice Deploys a contract
     /// @param isPlug_ Whether the contract to be deployed is a plug
     /// @param salt_ The salt used for create 2
-    /// @param appGateway_ The app gateway address
+    /// @param appGatewayId_ The app gateway id
     /// @param switchboard_ The switchboard address
     /// @param creationCode_ The creation code
     /// @param initCallData_ The init call data

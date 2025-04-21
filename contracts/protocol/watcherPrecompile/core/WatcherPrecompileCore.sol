@@ -5,7 +5,7 @@ import "./WatcherPrecompileStorage.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
 import {AccessControl} from "../../utils/AccessControl.sol";
 import "solady/utils/Initializable.sol";
-import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
+import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
 import "./WatcherPrecompileUtils.sol";
 
 /// @title WatcherPrecompileCore
