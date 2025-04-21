@@ -43,7 +43,7 @@ interface IWatcherPrecompileConfig {
     function getPlugConfigs(
         uint32 chainSlug_,
         address plug_
-    ) external view returns (address, address);
+    ) external view returns (bytes32, address);
 
     /// @notice Verifies connections between components
     function verifyConnections(

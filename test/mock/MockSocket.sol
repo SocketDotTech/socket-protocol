@@ -16,7 +16,7 @@ import "../../contracts/interfaces/ISocket.sol";
 contract MockSocket is ISocket {
     struct PlugConfig {
         // address of the sibling plug on the remote chain
-        address appGateway;
+        bytes32 appGatewayId;
         // switchboard instance for the plug connection
         ISwitchboard switchboard__;
     }
@@ -26,12 +26,12 @@ contract MockSocket is ISocket {
 
     function getPlugConfig(
         address plugAddress_
-    ) external view returns (address appGateway, address switchboard__) {
+    ) external view returns (bytes32 appGatewayId, address switchboard__) {
         PlugConfig memory _plugConfig = _plugConfigs[plugAddress_];
-        return (_plugConfig.appGateway, address(_plugConfig.switchboard__));
+        return (_plugConfig.appGatewayId, address(_plugConfig.switchboard__));
     }
 
-    function connect(address appGateway_, address switchboard_) external override {}
+    function connect(bytes32 appGatewayId_, address switchboard_) external override {}
 
     function registerSwitchboard() external override {}
 
@@ -93,7 +93,7 @@ contract MockSocket is ISocket {
     ) external returns (bytes32 triggerId) {
         PlugConfig memory plugConfig = _plugConfigs[msg.sender];
         // creates a unique ID for the message
-        triggerId = _encodeTriggerId(plugConfig.appGateway);
+        triggerId = _encodeTriggerId(plugConfig.appGatewayId);
         emit AppGatewayCallRequested(triggerId, chainSlug, msg.sender, overrides, payload);
     }
 
@@ -164,12 +164,10 @@ contract MockSocket is ISocket {
     // Packs the local plug, local chain slug, remote chain slug and nonce
     // triggerCounter++ will take care of call id overflow as well
     // triggerId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
-    function _encodeTriggerId(address appGateway_) internal returns (bytes32) {
+    function _encodeTriggerId(bytes32 appGatewayId_) internal returns (bytes32) {
         return
             bytes32(
-                (uint256(chainSlug) << 224) |
-                    (uint256(uint160(appGateway_)) << 64) |
-                    triggerCounter++
+                (uint256(chainSlug) << 224) | (uint256(appGatewayId_) << 64) | triggerCounter++
             );
     }
 }

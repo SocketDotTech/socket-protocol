@@ -14,7 +14,7 @@ interface IContractFactoryPlug {
     function deployContract(
         IsPlug isPlug_,
         bytes32 salt_,
-        address appGateway_,
+        bytes32 appGatewayId_,
         address switchboard_,
         bytes memory creationCode_,
         bytes memory initCallData_

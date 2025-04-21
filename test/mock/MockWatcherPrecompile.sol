@@ -187,9 +187,9 @@ contract MockWatcherPrecompile {
     function getPlugConfigs(
         uint32 chainSlug_,
         address plug_
-    ) public view returns (address, address) {
+    ) public view returns (bytes32, address) {
         return (
-            _plugConfigs[chainSlug_][plug_].appGateway,
+            _plugConfigs[chainSlug_][plug_].appGatewayId,
             _plugConfigs[chainSlug_][plug_].switchboard
         );
     }

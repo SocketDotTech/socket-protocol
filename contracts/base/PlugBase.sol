@@ -10,7 +10,7 @@ import {NotSocket} from "../protocol/utils/common/Errors.sol";
 /// @dev This contract contains helpers for socket connection, disconnection, and overrides
 abstract contract PlugBase is IPlug {
     ISocket public socket__;
-    address public appGateway;
+    bytes32 public appGatewayId;
     uint256 public isSocketInitialized;
     bytes public overrides;
 
@@ -32,18 +32,20 @@ abstract contract PlugBase is IPlug {
     }
 
     /// @notice Connects the plug to the app gateway and switchboard
-    /// @param appGateway_ The app gateway address
+    /// @param appGatewayId_ The app gateway id
+    /// @param socket_ The socket address
     /// @param switchboard_ The switchboard address
-    function _connectSocket(address appGateway_, address socket_, address switchboard_) internal {
+    function _connectSocket(bytes32 appGatewayId_, address socket_, address switchboard_) internal {
         _setSocket(socket_);
-        appGateway = appGateway_;
-        socket__.connect(appGateway_, switchboard_);
+        appGatewayId = appGatewayId_;
+
+        socket__.connect(appGatewayId_, switchboard_);
     }
 
     /// @notice Disconnects the plug from the socket
     function _disconnectSocket() internal {
         (, address switchboard) = socket__.getPlugConfig(address(this));
-        socket__.connect(address(0), switchboard);
+        socket__.connect(bytes32(0), switchboard);
         emit ConnectorPlugDisconnected();
     }
 
@@ -60,10 +62,10 @@ abstract contract PlugBase is IPlug {
     }
 
     function initSocket(
-        address appGateway_,
+        bytes32 appGatewayId_,
         address socket_,
         address switchboard_
     ) external virtual socketInitializer {
-        _connectSocket(appGateway_, socket_, switchboard_);
+        _connectSocket(appGatewayId_, socket_, switchboard_);
     }
 }

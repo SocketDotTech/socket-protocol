@@ -63,9 +63,8 @@ contract Socket is SocketUtils {
         if (executeParams_.deadline < block.timestamp) revert DeadlinePassed();
 
         PlugConfig memory plugConfig = _plugConfigs[executeParams_.target];
-
         // check if the plug is disconnected
-        if (plugConfig.appGateway == address(0)) revert PlugDisconnected();
+        if (plugConfig.appGatewayId == bytes32(0)) revert PlugDisconnected();
 
         // check if the message value is insufficient
         if (msg.value < executeParams_.value) revert InsufficientMsgValue();
@@ -76,18 +75,16 @@ contract Socket is SocketUtils {
         // validate the execution status
         _validateExecutionStatus(payloadId);
 
-        // recover the signer
-        address transmitter = _recoverSigner(
-            keccak256(abi.encode(address(this), payloadId)),
-            transmitterSignature_
-        );
+        address transmitter = transmitterSignature_.length > 0
+            ? _recoverSigner(keccak256(abi.encode(address(this), payloadId)), transmitterSignature_)
+            : address(0);
 
         // create the digest
         // transmitter, payloadId, appGateway, executeParams_ and there contents are validated using digest verification from switchboard
         bytes32 digest = _createDigest(
             transmitter,
             payloadId,
-            plugConfig.appGateway,
+            plugConfig.appGatewayId,
             executeParams_
         );
 
@@ -164,10 +161,10 @@ contract Socket is SocketUtils {
 
         // if no sibling plug is found for the given chain slug, revert
         // sends the trigger to connected app gateway
-        if (plugConfig.appGateway == address(0)) revert PlugDisconnected();
+        if (plugConfig.appGatewayId == bytes32(0)) revert PlugDisconnected();
 
-        // creates a unique ID for the trigger
-        triggerId = _encodeTriggerId(plugConfig.appGateway);
+        // creates a unique ID for the message
+        triggerId = _encodeTriggerId();
         emit AppGatewayCallRequested(triggerId, chainSlug, plug_, overrides_, payload_);
     }
 

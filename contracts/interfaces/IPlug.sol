@@ -7,10 +7,10 @@ pragma solidity ^0.8.21;
  */
 interface IPlug {
     /// @notice Initializes the socket
-    /// @param appGateway_ The app gateway address
+    /// @param appGatewayId_ The app gateway id
     /// @param socket_ The socket address
     /// @param switchboard_ The switchboard address
-    function initSocket(address appGateway_, address socket_, address switchboard_) external;
+    function initSocket(bytes32 appGatewayId_, address socket_, address switchboard_) external;
 
     /// @notice Gets the overrides
     /// @return overrides_ The overrides

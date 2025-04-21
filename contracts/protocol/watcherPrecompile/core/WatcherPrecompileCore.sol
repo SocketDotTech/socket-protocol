@@ -5,7 +5,8 @@ import "./WatcherPrecompileStorage.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
 import {AccessControl} from "../../utils/AccessControl.sol";
 import "solady/utils/Initializable.sol";
-import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
+import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
+import "./WatcherPrecompileUtils.sol";
 
 /// @title WatcherPrecompileCore
 /// @notice Core functionality for the WatcherPrecompile system
@@ -16,7 +17,8 @@ abstract contract WatcherPrecompileCore is
     WatcherPrecompileStorage,
     Initializable,
     AccessControl,
-    AddressResolverUtil
+    AddressResolverUtil,
+    WatcherPrecompileUtils
 {
     using DumpDecoder for bytes32;
 
@@ -94,7 +96,7 @@ abstract contract WatcherPrecompileCore is
             params_.readAt,
             params_.payload,
             params_.target,
-            params_.appGateway,
+            _encodeAppGatewayId(params_.appGateway),
             prevDigestsHash
         );
 
@@ -134,7 +136,7 @@ abstract contract WatcherPrecompileCore is
                 params_.readAt,
                 params_.payload,
                 params_.target,
-                params_.appGateway,
+                params_.appGatewayId,
                 params_.prevDigestsHash
             )
         );
@@ -161,7 +163,7 @@ abstract contract WatcherPrecompileCore is
                 p.readAt,
                 p.payload,
                 p.target,
-                p.appGateway,
+                _encodeAppGatewayId(p.appGateway),
                 p.prevDigestsHash
             );
             prevDigestsHash = keccak256(abi.encodePacked(prevDigestsHash, getDigest(digestParams)));

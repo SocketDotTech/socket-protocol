@@ -60,18 +60,18 @@ abstract contract SocketConfig is ISocket, AccessControl {
 
     // @notice function to connect a plug to a socket
     // @dev only callable by plugs (msg.sender)
-    // @param appGateway_ address of app gateway on sibling chain
+    // @param appGatewayId_ The app gateway id
     // @param switchboard_ address of switchboard on sibling chain
-    function connect(address appGateway_, address switchboard_) external override {
+    function connect(bytes32 appGatewayId_, address switchboard_) external override {
         if (isValidSwitchboard[switchboard_] != SwitchboardStatus.REGISTERED)
             revert InvalidSwitchboard();
 
         PlugConfig storage _plugConfig = _plugConfigs[msg.sender];
 
-        _plugConfig.appGateway = appGateway_;
+        _plugConfig.appGatewayId = appGatewayId_;
         _plugConfig.switchboard = switchboard_;
 
-        emit PlugConnected(msg.sender, appGateway_, switchboard_);
+        emit PlugConnected(msg.sender, appGatewayId_, switchboard_);
     }
 
     // @notice function to set the max copy bytes for socket
@@ -81,14 +81,16 @@ abstract contract SocketConfig is ISocket, AccessControl {
         maxCopyBytes = maxCopyBytes_;
     }
 
-    // @notice function to get the config for a plug
-    // @param plugAddress_ address of plug present at current chain
-    // @return appGateway address of app gateway on sibling chain
-    // @return switchboard address of switchboard on sibling chain
+    /**
+     * @notice returns the config for given `plugAddress_`
+     * @param plugAddress_ address of plug present at current chain
+     * @return appGatewayId The app gateway id
+     * @return switchboard The switchboard address
+     */
     function getPlugConfig(
         address plugAddress_
-    ) external view returns (address appGateway, address switchboard) {
+    ) external view returns (bytes32 appGatewayId, address switchboard) {
         PlugConfig memory _plugConfig = _plugConfigs[plugAddress_];
-        return (_plugConfig.appGateway, _plugConfig.switchboard);
+        return (_plugConfig.appGatewayId, _plugConfig.switchboard);
     }
 }
