@@ -30,7 +30,8 @@ contract SocketBatcher is ISocketBatcher, Ownable {
         ExecuteParams calldata executeParams_,
         bytes32 digest_,
         bytes calldata proof_,
-        bytes calldata transmitterSignature_
+        bytes calldata transmitterSignature_,
+        address refundAddress_
     ) external payable returns (bytes memory) {
         ISwitchboard(executeParams_.switchboard).attest(digest_, proof_);
         return
@@ -39,7 +40,8 @@ contract SocketBatcher is ISocketBatcher, Ownable {
                 TransmissionParams({
                     transmitterSignature: transmitterSignature_,
                     socketFees: 0,
-                    extraData: ""
+                    extraData: "",
+                    refundAddress: refundAddress_
                 })
             );
     }

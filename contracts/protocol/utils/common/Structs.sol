@@ -241,9 +241,10 @@ struct ExecuteParams {
 }
 
 struct TransmissionParams {
-    bytes transmitterSignature;
     uint256 socketFees;
+    address refundAddress;
     bytes extraData;
+    bytes transmitterSignature;
 }
 
 struct PayloadIdParams {

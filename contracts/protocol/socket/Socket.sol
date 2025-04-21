@@ -117,6 +117,9 @@ contract Socket is SocketUtils {
             }
         } else {
             payloadExecuted[payloadId_] = ExecutionStatus.Reverted;
+            if (transmissionParams_.refundAddress != address(0)) {
+                transmissionParams_.refundAddress.call{value: msg.value}("");
+            }
             emit ExecutionFailed(payloadId_, returnData);
         }
 

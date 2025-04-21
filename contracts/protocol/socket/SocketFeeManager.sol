@@ -35,10 +35,7 @@ contract SocketFeeManager is ISocketFeeManager, AccessControl {
     /**
      * @notice Pays and validates fees for execution
      */
-    function payAndCheckFees(
-        ExecuteParams memory,
-        TransmissionParams memory
-    ) external payable {
+    function payAndCheckFees(ExecuteParams memory, TransmissionParams memory) external payable {
         if (msg.value < socketFees) revert InsufficientFees();
     }
 

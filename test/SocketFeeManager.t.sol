@@ -144,7 +144,8 @@ contract SocketFeeManagerTest is SetupTest {
         TransmissionParams memory transmissionParams = TransmissionParams({
             transmitterSignature: bytes(""),
             socketFees: socketFees,
-            extraData: bytes("")
+            extraData: bytes(""),
+            refundAddress: transmitterEOA
         });
 
         return (executeParams, transmissionParams);

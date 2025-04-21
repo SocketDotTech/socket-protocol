@@ -268,10 +268,18 @@ contract SetupTest is Test {
             ExecuteParams memory params,
             SocketBatcher socketBatcher,
             ,
-            bytes memory transmitterSig
+            bytes memory transmitterSig,
+            address refundAddress
         ) = _getExecuteParams(payloadParams);
 
-        return socketBatcher.attestAndExecute(params, digest, watcherProof, transmitterSig);
+        return
+            socketBatcher.attestAndExecute(
+                params,
+                digest,
+                watcherProof,
+                transmitterSig,
+                refundAddress
+            );
     }
 
     function resolvePromises(bytes32[] memory payloadIds, bytes[] memory returnData) internal {
@@ -338,7 +346,8 @@ contract SetupTest is Test {
             ExecuteParams memory params,
             SocketBatcher socketBatcher,
             uint256 value,
-            bytes memory transmitterSig
+            bytes memory transmitterSig,
+            address refundAddress
         )
     {
         SocketContracts memory socketConfig = getSocketConfig(payloadParams.dump.getChainSlug());
@@ -365,6 +374,7 @@ contract SetupTest is Test {
 
         value = payloadParams.value;
         socketBatcher = socketConfig.socketBatcher;
+        refundAddress = transmitterEOA;
     }
 
     function _resolvePromise(bytes32 payloadId, bytes memory returnData) internal {
