@@ -25,7 +25,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     }
 
     // deploy contracts
-    function deployContracts(uint32 chainSlug_) external async {
+    function deployContracts(uint32 chainSlug_) external async(address(this)) {
         _deploy(counter, chainSlug_, IsPlug.YES);
     }
 
@@ -33,14 +33,14 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         _deploy(counter, chainSlug_, IsPlug.YES);
     }
 
-    function deployParallelContracts(uint32 chainSlug_) external async {
+    function deployParallelContracts(uint32 chainSlug_) external async(address(this)) {
         _setOverrides(Parallel.ON);
         _deploy(counter, chainSlug_, IsPlug.YES);
         _deploy(counter1, chainSlug_, IsPlug.YES);
         _setOverrides(Parallel.OFF);
     }
 
-    function deployMultiChainContracts(uint32[] memory chainSlugs_) external async {
+    function deployMultiChainContracts(uint32[] memory chainSlugs_) external async(address(this)) {
         _setOverrides(Parallel.ON);
         for (uint32 i = 0; i < chainSlugs_.length; i++) {
             _deploy(counter, chainSlugs_[i], IsPlug.YES);
@@ -53,7 +53,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         return;
     }
 
-    function incrementCounters(address[] memory instances_) public async {
+    function incrementCounters(address[] memory instances_) public async(address(this)) {
         // the increase function is called on given list of instances
         // this
         for (uint256 i = 0; i < instances_.length; i++) {
@@ -69,7 +69,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         }
     }
 
-    function readCounters(address[] memory instances_) public async {
+    function readCounters(address[] memory instances_) public async(address(this)) {
         // the increase function is called on given list of instances
         _setOverrides(Read.ON, Parallel.ON);
         for (uint256 i = 0; i < instances_.length; i++) {
@@ -80,7 +80,10 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         _setOverrides(Read.OFF, Parallel.OFF);
     }
 
-    function readCounterAtBlock(address instance_, uint256 blockNumber_) public async {
+    function readCounterAtBlock(
+        address instance_,
+        uint256 blockNumber_
+    ) public async(address(this)) {
         uint32 chainSlug = IForwarder(instance_).getChainSlug();
         _setOverrides(Read.ON, Parallel.ON, blockNumber_);
         ICounter(instance_).getCounter();
@@ -120,8 +123,8 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     }
 
     // UTILS
-    function setFees(uint256 fees_) public {
-        fees = fees_;
+    function setMaxFees(uint256 fees_) public {
+        maxFees = fees_;
     }
 
     function withdrawFeeTokens(
@@ -133,12 +136,12 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         return _withdrawFeeTokens(chainSlug_, token_, amount_, receiver_);
     }
 
-    function testOnChainRevert(uint32 chainSlug) public async {
+    function testOnChainRevert(uint32 chainSlug) public async(address(this)) {
         address instance = forwarderAddresses[counter][chainSlug];
         ICounter(instance).wrongFunction();
     }
 
-    function testCallBackRevert(uint32 chainSlug) public async {
+    function testCallBackRevert(uint32 chainSlug) public async(address(this)) {
         // the increase function is called on given list of instances
         _setOverrides(Read.ON, Parallel.ON);
         address instance = forwarderAddresses[counter][chainSlug];

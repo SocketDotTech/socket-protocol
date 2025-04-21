@@ -19,7 +19,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     address public auctionManager;
     bytes32 public sbType;
     bytes public onCompleteData;
-    uint256 public fees;
+    uint256 public maxFees;
 
     mapping(address => bool) public isValidPromise;
     mapping(bytes32 => mapping(uint32 => address)) public override forwarderAddresses;
@@ -36,13 +36,12 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         isAsyncModifierSet = false;
 
         // todo: cache the feesApprovalData for next async in same request
-        deliveryHelper__().batch(fees, auctionManager, feesApprovalData_, onCompleteData);
+        deliveryHelper__().batch(maxFees, auctionManager, feesApprovalData_, onCompleteData);
         _markValidPromises();
         onCompleteData = bytes("");
     }
 
     function _preAsync() internal {
-        if (fees.feePoolChain == 0) revert FeesNotSet();
         isAsyncModifierSet = true;
         _clearOverrides();
         deliveryHelper__().clearQueue();
@@ -188,7 +187,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
+            .getOnChainAddress();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -197,7 +197,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
 
     /// @notice Sets multiple overrides in one call
     /// @param isReadCall_ The read call flag
-    /// @param fees_ The fees configuration
+    /// @param fees_ The maxFees configuration
     /// @param gasLimit_ The gas limit
     /// @param isParallelCall_ The sequential call flag
     function _setOverrides(
@@ -209,7 +209,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         overrideParams.isReadCall = isReadCall_;
         overrideParams.isParallelCall = isParallelCall_;
         overrideParams.gasLimit = gasLimit_;
-        fees = fees_;
+        maxFees = fees_;
     }
 
     function _clearOverrides() internal {
@@ -221,7 +221,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         overrideParams.writeFinality = WriteFinality.LOW;
     }
 
-    /// @notice Sets isReadCall, fees and gasLimit overrides
+    /// @notice Sets isReadCall, maxFees and gasLimit overrides
     /// @param isReadCall_ The read call flag
     /// @param isParallelCall_ The sequential call flag
     /// @param gasLimit_ The gas limit
@@ -283,10 +283,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         overrideParams.value = value_;
     }
 
-    /// @notice Sets fees overrides
-    /// @param fees_ The fees configuration
-    function _setOverrides(uint256 fees_) internal {
-        fees = fees_;
+    /// @notice Sets maxFees overrides
+    /// @param fees_ The maxFees configuration
+    function _setMaxFees(uint256 fees_) internal {
+        maxFees = fees_;
     }
 
     function getOverrideParams()
@@ -315,7 +315,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         deliveryHelper__().cancelRequest(requestCount_);
     }
 
-    /// @notice increases the transaction fees
+    /// @notice increases the transaction maxFees
     /// @param requestCount_ The async ID
     function _increaseFees(uint40 requestCount_, uint256 newMaxFees_) internal {
         deliveryHelper__().increaseFees(requestCount_, newMaxFees_);
@@ -339,7 +339,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
                 amount_,
                 receiver_,
                 auctionManager,
-                fees
+                maxFees
             );
     }
 

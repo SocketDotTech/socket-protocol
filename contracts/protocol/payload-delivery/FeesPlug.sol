@@ -113,7 +113,7 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
         address receiver_,
         uint256 feeAmount_,
         uint256 nativeAmount_
-    ) internal override {
+    ) internal {
         uint256 totalAmount_ = feeAmount_ + nativeAmount_;
         if (!whitelistedTokens[token_]) revert TokenNotWhitelisted(token_);
         if (token_.code.length == 0) revert InvalidTokenAddress();

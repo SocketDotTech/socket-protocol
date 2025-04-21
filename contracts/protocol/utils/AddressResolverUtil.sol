@@ -6,6 +6,7 @@ import "../../interfaces/IMiddleware.sol";
 import "../../interfaces/IWatcherPrecompile.sol";
 import "../../interfaces/IWatcherPrecompileConfig.sol";
 import "../../interfaces/IWatcherPrecompileLimits.sol";
+import "../../interfaces/IFeesManager.sol";
 
 /// @title AddressResolverUtil
 /// @notice Utility contract for resolving system contract addresses

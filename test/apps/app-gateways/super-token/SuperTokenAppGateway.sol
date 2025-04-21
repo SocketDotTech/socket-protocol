@@ -60,7 +60,7 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         return;
     }
 
-    function transfer(bytes memory order_) external async createFeePool {
+    function transfer(bytes memory order_) external async {
         TransferOrder memory order = abi.decode(order_, (TransferOrder));
         ISuperToken(order.srcToken).burn(order.user, order.srcAmount);
         ISuperToken(order.dstToken).mint(order.user, order.srcAmount);

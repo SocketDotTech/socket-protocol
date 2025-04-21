@@ -95,38 +95,38 @@ contract AuctionManager is
 
     /// @notice Places a bid for an auction
     /// @param requestCount_ The ID of the auction
-    /// @param fee The bid amount
+    /// @param bidFees The bid amount
     /// @param transmitterSignature The signature of the transmitter
     function bid(
         uint40 requestCount_,
-        uint256 fee,
+        uint256 bidFees,
         bytes memory transmitterSignature,
         bytes memory extraData
     ) external {
         if (auctionClosed[requestCount_]) revert AuctionClosed();
 
+        RequestMetadata memory requestMetadata = _getRequestMetadata(requestCount_);
         // check if the transmitter is valid
         address transmitter = _recoverSigner(
-            keccak256(abi.encode(address(this), evmxSlug, requestCount_, fee, extraData)),
+            keccak256(abi.encode(address(this), evmxSlug, requestCount_, bidFees, extraData)),
             transmitterSignature
         );
         if (!_hasRole(TRANSMITTER_ROLE, transmitter)) revert InvalidTransmitter();
 
-        (uint256 watcherFees, uint256 transmitterFees) = getTransmitterMaxFeesRequired(
-            requestMetadata.fees.token,
+        (uint256 watcherFees, uint256 transmitterCredits) = getTransmitterMaxFeesRequired(
             requestCount_
+            // check if the bid exceeds the max fees quoted by app gateway subtracting the watcher fees
         );
-        // check if the bid exceeds the max fees quoted by app gateway subtracting the watcher fees
-        if (fee > transmitterFees) revert BidExceedsMaxFees();
+        if (bidFees > transmitterCredits) revert BidExceedsMaxFees();
 
         // check if the bid is lower than the existing bid
         if (
             winningBids[requestCount_].transmitter != address(0) &&
-            fee >= winningBids[requestCount_].fee
+            bidFees >= winningBids[requestCount_].fee
         ) revert LowerBidAlreadyExists();
 
         // create a new bid
-        Bid memory newBid = Bid({fee: fee, transmitter: transmitter, extraData: extraData});
+        Bid memory newBid = Bid({fee: bidFees, transmitter: transmitter, extraData: extraData});
 
         // update the winning bid
         winningBids[requestCount_] = newBid;
@@ -158,7 +158,7 @@ contract AuctionManager is
         if (winningBid.transmitter == address(0)) revert InvalidTransmitter();
 
         auctionClosed[requestCount_] = true;
-
+        RequestMetadata memory requestMetadata = _getRequestMetadata(requestCount_);
         // block the fees
         IFeesManager(addressResolver__.feesManager()).blockFees(
             requestMetadata.consumeFrom,
@@ -209,19 +209,18 @@ contract AuctionManager is
     }
 
     function getTransmitterMaxFeesRequired(
-        address token_,
         uint40 requestCount_
     ) public view returns (uint256, uint256) {
+        RequestMetadata memory requestMetadata = _getRequestMetadata(requestCount_);
+
         // check if the bid is for this auction manager
         if (requestMetadata.auctionManager != address(this)) revert InvalidBid();
 
         // get the request metadata
-        RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
-            .getRequestMetadata(requestCount_);
 
         // get the total fees required for the watcher precompile ops
-        uint256 watcherFees = watcherPrecompile__().getTotalFeesRequired(token_, requestCount_);
-        return (watcherFees, requestMetadata.fees.amount - watcherFees);
+        uint256 watcherFees = watcherPrecompileLimits().getTotalFeesRequired(requestCount_);
+        return (watcherFees, requestMetadata.maxFees - watcherFees);
     }
 
     function _recoverSigner(
@@ -231,5 +230,11 @@ contract AuctionManager is
         bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
         // recovered signer is checked for the valid roles later
         signer = ECDSA.recover(digest, signature_);
+    }
+
+    function _getRequestMetadata(
+        uint40 requestCount_
+    ) internal view returns (RequestMetadata memory) {
+        return IMiddleware(addressResolver__.deliveryHelper()).getRequestMetadata(requestCount_);
     }
 }

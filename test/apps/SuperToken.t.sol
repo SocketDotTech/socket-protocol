@@ -65,7 +65,7 @@ contract SuperTokenTest is DeliveryHelperTest {
         SuperTokenAppGateway superTokenApp = new SuperTokenAppGateway(
             address(addressResolver),
             owner,
-            createFees(maxFees),
+            maxFees,
             SuperTokenAppGateway.ConstructorParams({
                 name_: "SUPER TOKEN",
                 symbol_: "SUPER",
@@ -76,7 +76,10 @@ contract SuperTokenTest is DeliveryHelperTest {
         );
         // Enable app gateways to do all operations in the Watcher: Read, Write and Schedule on EVMx
         // Watcher sets the limits for apps in this SOCKET protocol version
-        depositFees(address(superTokenApp), createFees(1 ether));
+        depositFees(
+            address(superTokenApp),
+            OnChainFees({chainSlug: arbChainSlug, token: ETH_ADDRESS, amount: 1 ether})
+        );
 
         appContracts = AppContracts({
             superTokenApp: superTokenApp,

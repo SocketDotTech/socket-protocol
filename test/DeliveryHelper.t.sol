@@ -27,7 +27,7 @@ contract DeliveryHelperTest is SetupTest {
         uint40 indexed requestCount,
         address indexed appGateway,
         PayloadSubmitParams[] payloadSubmitParams,
-        Fees fees,
+        uint256 maxFees,
         address auctionManager,
         bool onlyReadRequests
     );
@@ -173,18 +173,14 @@ contract DeliveryHelperTest is SetupTest {
 
     //////////////////////////////////// Fees ////////////////////////////////////
 
-    function depositFees(address appGateway_, Fees memory fees_) internal {
-        SocketContracts memory socketConfig = getSocketConfig(fees_.feePoolChain);
-        socketConfig.feesPlug.deposit{value: fees_.amount}(
-            fees_.feePoolToken,
-            appGateway_,
-            fees_.amount
-        );
+    function depositFees(address appGateway_, OnChainFees memory fees_) internal {
+        SocketContracts memory socketConfig = getSocketConfig(fees_.chainSlug);
+        socketConfig.feesPlug.deposit{value: fees_.amount}(fees_.token, appGateway_, fees_.amount);
 
         bytes memory bytesInput = abi.encode(
-            fees_.feePoolChain,
+            fees_.chainSlug,
             appGateway_,
-            fees_.feePoolToken,
+            fees_.token,
             fees_.amount
         );
 
@@ -193,9 +189,9 @@ contract DeliveryHelperTest is SetupTest {
         );
         bytes memory sig = _createSignature(digest, watcherPrivateKey);
         feesManager.incrementFeesDeposited(
-            fees_.feePoolChain,
+            fees_.chainSlug,
             appGateway_,
-            fees_.feePoolToken,
+            fees_.token,
             fees_.amount,
             signatureNonce++,
             sig

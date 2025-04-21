@@ -6,7 +6,7 @@ import {Ownable} from "solady/auth/Ownable.sol";
 import {Gauge} from "../utils/Gauge.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import "../../interfaces/IWatcherPrecompileLimits.sol";
-import {SCHEDULE, QUERY, FINALIZE} from "../utils/common/Constants.sol";
+import {SCHEDULE, QUERY, FINALIZE, CALLBACK} from "../utils/common/Constants.sol";
 
 /// @title WatcherPrecompileLimits
 /// @notice Contract for managing watcher precompile limits
@@ -43,16 +43,20 @@ contract WatcherPrecompileLimits is
     // Mapping to track active app gateways
     mapping(address => bool) internal _activeAppGateways;
 
-    // token => fee amount
-    mapping(address => uint256) public queryFees;
-    mapping(address => uint256) public finalizeFees;
-    mapping(address => uint256) public scheduleFees;
-    mapping(address => uint256) public callBackFees;
+    // slot 156: precompileCount
+    // limitType => requestCount => count
+    mapping(bytes32 => mapping(uint40 => uint256)) public precompileCount;
+
+    // slot 157: fees
+    uint256 public queryFees;
+    uint256 public finalizeFees;
+    uint256 public scheduleFees;
+    uint256 public callBackFees;
 
     /// @notice Emitted when the default limit and rate per second are set
     event DefaultLimitAndRatePerSecondSet(uint256 defaultLimit, uint256 defaultRatePerSecond);
-    event WatcherFeesNotSetForToken(address token_);
 
+    error WatcherFeesNotSet(bytes32 limitType);
     /// @notice Initial initialization (version 1)
     function initialize(
         address owner_,
@@ -167,63 +171,45 @@ contract WatcherPrecompileLimits is
         emit DefaultLimitAndRatePerSecondSet(defaultLimit, defaultRatePerSecond);
     }
 
-    function setQueryFees(
-        address[] calldata tokens_,
-        uint256[] calldata amounts_
-    ) external onlyOwner {
-        require(tokens_.length == amounts_.length, "Length mismatch");
-        for (uint256 i = 0; i < tokens_.length; i++) {
-            queryFees[tokens_[i]] = amounts_[i];
-        }
+    function setQueryFees(uint256 queryFees_) external onlyOwner {
+        queryFees = queryFees_;
     }
 
-    function setFinalizeFees(
-        address[] calldata tokens_,
-        uint256[] calldata amounts_
-    ) external onlyOwner {
-        require(tokens_.length == amounts_.length, "Length mismatch");
-        for (uint256 i = 0; i < tokens_.length; i++) {
-            finalizeFees[tokens_[i]] = amounts_[i];
-        }
+    function setFinalizeFees(uint256 finalizeFees_) external onlyOwner {
+        finalizeFees = finalizeFees_;
     }
 
-    function setScheduleFees(
-        address[] calldata tokens_,
-        uint256[] calldata amounts_
-    ) external onlyOwner {
-        require(tokens_.length == amounts_.length, "Length mismatch");
-        for (uint256 i = 0; i < tokens_.length; i++) {
-            scheduleFees[tokens_[i]] = amounts_[i];
-        }
+    function setScheduleFees(uint256 scheduleFees_) external onlyOwner {
+        scheduleFees = scheduleFees_;
     }
 
-    function setCallBackFees(
-        address[] calldata tokens_,
-        uint256[] calldata amounts_
-    ) external onlyOwner {
-        require(tokens_.length == amounts_.length, "Length mismatch");
-        for (uint256 i = 0; i < tokens_.length; i++) {
-            callBackFees[tokens_[i]] = amounts_[i];
-        }
+    function setCallBackFees(uint256 callBackFees_) external onlyOwner {
+        callBackFees = callBackFees_;
     }
 
-    function getTotalFeesRequired(
-        address token_,
-        uint40 requestCount_
-    ) external view returns (uint256) {
+    function getTotalFeesRequired(uint40 requestCount_) external view returns (uint256) {
         uint256 totalFees = 0;
-        if (queryFees[token_] == 0 || finalizeFees[token_] == 0 || scheduleFees[token_] == 0) {
-            revert WatcherFeesNotSetForToken(token_);
+        if (queryFees == 0) {
+            revert WatcherFeesNotSet(QUERY);
+        }
+        if (finalizeFees == 0) {
+            revert WatcherFeesNotSet(FINALIZE);
+        }
+        if (scheduleFees == 0) {
+            revert WatcherFeesNotSet(SCHEDULE);
+        }
+        if (callBackFees == 0) {
+            revert WatcherFeesNotSet(CALLBACK);
         }
 
         uint256 totalCallbacks = precompileCount[QUERY][requestCount_] +
             precompileCount[FINALIZE][requestCount_] +
             precompileCount[SCHEDULE][requestCount_];
 
-        totalFees += totalCallbacks * callBackFees[token_];
-        totalFees += precompileCount[QUERY][requestCount_] * queryFees[token_];
-        totalFees += precompileCount[FINALIZE][requestCount_] * finalizeFees[token_];
-        totalFees += precompileCount[SCHEDULE][requestCount_] * scheduleFees[token_];
+        totalFees += totalCallbacks * callBackFees;
+        totalFees += precompileCount[QUERY][requestCount_] * queryFees;
+        totalFees += precompileCount[FINALIZE][requestCount_] * finalizeFees;
+        totalFees += precompileCount[SCHEDULE][requestCount_] * scheduleFees;
 
         return totalFees;
     }

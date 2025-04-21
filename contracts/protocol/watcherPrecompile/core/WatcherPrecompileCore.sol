@@ -6,7 +6,7 @@ import {ECDSA} from "solady/utils/ECDSA.sol";
 import {AccessControl} from "../../utils/AccessControl.sol";
 import "solady/utils/Initializable.sol";
 import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
-
+import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 /// @title WatcherPrecompileCore
 /// @notice Core functionality for the WatcherPrecompile system
 /// @dev This contract implements the core functionality for payload verification, execution, and app configurations
@@ -33,10 +33,7 @@ abstract contract WatcherPrecompileCore is
     ) internal returns (bytes32 timeoutId) {
         if (delayInSeconds_ > maxTimeoutDelayInSeconds) revert TimeoutDelayTooLarge();
 
-        _consumeFees(
-            requestCount_,
-            watcherPrecompileLimits__.scheduleFees(requestMetadata_.fees.feePoolToken)
-        );
+        _consumeCallbackFeesFromAddress(watcherPrecompileLimits__.scheduleFees(), msg.sender);
 
         uint256 executeAt = block.timestamp + delayInSeconds_;
         timeoutId = _encodeTimeoutId();
@@ -79,9 +76,9 @@ abstract contract WatcherPrecompileCore is
             requestParams[params_.payloadHeader.getRequestCount()].middleware
         );
 
-        _consumeFees(
-            params_.payloadHeader.getRequestCount(),
-            watcherPrecompileLimits__.finalizeFees(params_.payloadHeader.getChainSlug())
+        _consumeCallbackFeesFromRequestCount(
+            watcherPrecompileLimits__.finalizeFees(),
+            params_.payloadHeader.getRequestCount()
         );
 
         uint256 deadline = block.timestamp + expiryTime;
@@ -119,9 +116,9 @@ abstract contract WatcherPrecompileCore is
     /// @param params_ The payload parameters for the query
     /// @dev This function sets up a query request and emits a QueryRequested event
     function _query(PayloadParams memory params_) internal {
-        _consumeFees(
-            params_.payloadHeader.getRequestCount(),
-            watcherPrecompileLimits__.queryFees(params_.payloadHeader.getChainSlug())
+        _consumeCallbackFeesFromRequestCount(
+            watcherPrecompileLimits__.queryFees(),
+            params_.payloadHeader.getRequestCount()
         );
 
         payloads[params_.payloadId].prevDigestsHash = _getPreviousDigestsHash(
@@ -254,16 +251,21 @@ abstract contract WatcherPrecompileCore is
         if (signer != owner()) revert InvalidWatcherSignature();
     }
 
-    function _consumeFees(uint40 requestCount_, uint256 fees_) internal {
-        RequestMetadata memory requestMetadata_ = requestMetadata[requestCount_];
-
+    function _consumeCallbackFeesFromRequestCount(uint256 fees_, uint40 requestCount_) internal {
         // for callbacks in all precompiles
-        uint256 feesToConsume = fees_ + watcherPrecompileLimits__().callBackFees();
-        IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileFees(
-            requestMetadata_.fees.feePoolChain,
-            requestMetadata_.fees.feePoolToken,
+        uint256 feesToConsume = fees_ + watcherPrecompileLimits__.callBackFees();
+        IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileFeesFromRequestCount(
             feesToConsume,
             requestCount_
+        );
+    }
+
+    function _consumeCallbackFeesFromAddress(uint256 fees_, address consumeFrom_) internal {
+        // for callbacks in all precompiles
+        uint256 feesToConsume = fees_ + watcherPrecompileLimits__.callBackFees();
+        IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileFeesFromAddress(
+            feesToConsume,
+            consumeFrom_
         );
     }
 

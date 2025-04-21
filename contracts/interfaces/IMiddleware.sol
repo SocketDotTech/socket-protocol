@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
-import {PayloadSubmitParams, QueuePayloadParams, Bid, WriteFinality, CallType, Parallel, IsPlug, RequestMetadata, RequestFee} from "../protocol/utils/common/Structs.sol";
+import {PayloadSubmitParams, QueuePayloadParams, Bid, WriteFinality, CallType, Parallel, IsPlug, RequestMetadata} from "../protocol/utils/common/Structs.sol";
 
 /// @title IMiddleware
 /// @notice Interface for the Middleware contract
