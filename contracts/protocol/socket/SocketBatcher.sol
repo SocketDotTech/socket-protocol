@@ -36,11 +36,12 @@ contract SocketBatcher is ISocketBatcher, Ownable {
      */
     function attestAndExecute(
         ExecuteParams calldata executeParams_,
+        address switchboard_,
         bytes32 digest_,
         bytes calldata proof_,
         bytes calldata transmitterSignature_
     ) external payable returns (bool, bool, bytes memory) {
-        ISwitchboard(executeParams_.switchboard).attest(digest_, proof_);
+        ISwitchboard(switchboard_).attest(digest_, proof_);
         return socket__.execute{value: msg.value}(executeParams_, transmitterSignature_);
     }
 

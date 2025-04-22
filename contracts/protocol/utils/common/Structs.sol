@@ -132,10 +132,8 @@ struct DigestParams {
     bytes32 payloadId;
     uint256 deadline;
     CallType callType;
-    WriteFinality writeFinality;
     uint256 gasLimit;
     uint256 value;
-    uint256 readAt;
     bytes payload;
     address target;
     bytes32 appGatewayId;
@@ -223,7 +221,6 @@ struct RequestMetadata {
 
 struct ExecuteParams {
     uint256 deadline;
-    WriteFinality writeFinality;
     uint256 gasLimit;
     uint256 value;
     bytes payload;
@@ -232,7 +229,6 @@ struct ExecuteParams {
     uint40 batchCount;
     uint40 payloadCount;
     bytes32 prevDigestsHash; // should be id? hash of hashes
-    address switchboard;
 }
 
 /// @notice Struct containing fee amounts and status

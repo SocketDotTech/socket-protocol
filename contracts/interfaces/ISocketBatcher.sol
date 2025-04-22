@@ -18,6 +18,7 @@ interface ISocketBatcher {
      */
     function attestAndExecute(
         ExecuteParams calldata executeParams_,
+        address switchboard_,
         bytes32 digest_,
         bytes calldata proof_,
         bytes calldata transmitterSignature_

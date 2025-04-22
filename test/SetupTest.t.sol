@@ -269,7 +269,13 @@ contract SetupTest is Test {
             bytes memory transmitterSig
         ) = _getExecuteParams(payloadParams);
 
-        return socketBatcher.attestAndExecute(params, digest, watcherProof, transmitterSig);
+        return socketBatcher.attestAndExecute(
+            params,
+            payloadParams.switchboard,
+            digest,
+            watcherProof,
+            transmitterSig
+        );
     }
 
     function resolvePromises(bytes32[] memory payloadIds, bytes[] memory returnData) internal {
@@ -297,10 +303,8 @@ contract SetupTest is Test {
             params_.payloadId,
             params_.deadline,
             params_.dump.getCallType(),
-            params_.dump.getWriteFinality(),
             params_.gasLimit,
             params_.value,
-            params_.readAt,
             params_.payload,
             params_.target,
             _encodeAppGatewayId(params_.appGateway),
@@ -347,7 +351,6 @@ contract SetupTest is Test {
 
         params = ExecuteParams({
             deadline: payloadParams.deadline,
-            writeFinality: payloadParams.dump.getWriteFinality(),
             gasLimit: payloadParams.gasLimit,
             value: payloadParams.value,
             payload: payloadParams.payload,
@@ -355,8 +358,7 @@ contract SetupTest is Test {
             requestCount: payloadParams.dump.getRequestCount(),
             batchCount: payloadParams.dump.getBatchCount(),
             payloadCount: payloadParams.dump.getPayloadCount(),
-            prevDigestsHash: payloadParams.prevDigestsHash,
-            switchboard: payloadParams.switchboard
+            prevDigestsHash: payloadParams.prevDigestsHash
         });
 
         value = payloadParams.value;
