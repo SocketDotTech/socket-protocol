@@ -47,6 +47,7 @@ contract WatcherPrecompileLimits is
     mapping(address => uint256) public queryFees;
     mapping(address => uint256) public finalizeFees;
     mapping(address => uint256) public scheduleFees;
+    mapping(address => uint256) public callBackFees;
 
     /// @notice Emitted when the default limit and rate per second are set
     event DefaultLimitAndRatePerSecondSet(uint256 defaultLimit, uint256 defaultRatePerSecond);
@@ -196,6 +197,16 @@ contract WatcherPrecompileLimits is
         }
     }
 
+    function setCallBackFees(
+        address[] calldata tokens_,
+        uint256[] calldata amounts_
+    ) external onlyOwner {
+        require(tokens_.length == amounts_.length, "Length mismatch");
+        for (uint256 i = 0; i < tokens_.length; i++) {
+            callBackFees[tokens_[i]] = amounts_[i];
+        }
+    }
+
     function getTotalFeesRequired(
         address token_,
         uint40 requestCount_
@@ -205,9 +216,15 @@ contract WatcherPrecompileLimits is
             revert WatcherFeesNotSetForToken(token_);
         }
 
+        uint256 totalCallbacks = precompileCount[QUERY][requestCount_] +
+            precompileCount[FINALIZE][requestCount_] +
+            precompileCount[SCHEDULE][requestCount_];
+
+        totalFees += totalCallbacks * callBackFees[token_];
         totalFees += precompileCount[QUERY][requestCount_] * queryFees[token_];
         totalFees += precompileCount[FINALIZE][requestCount_] * finalizeFees[token_];
         totalFees += precompileCount[SCHEDULE][requestCount_] * scheduleFees[token_];
+
         return totalFees;
     }
 }

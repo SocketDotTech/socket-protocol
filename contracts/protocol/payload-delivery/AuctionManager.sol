@@ -112,9 +112,12 @@ contract AuctionManager is
         );
         if (!_hasRole(TRANSMITTER_ROLE, transmitter)) revert InvalidTransmitter();
 
+        (uint256 watcherFees, uint256 transmitterFees) = getTransmitterMaxFeesRequired(
+            requestMetadata.fees.token,
+            requestCount_
+        );
         // check if the bid exceeds the max fees quoted by app gateway subtracting the watcher fees
-        if (fee > getTransmitterMaxFeesRequired(requestMetadata.fees.token, requestCount_))
-            revert BidExceedsMaxFees();
+        if (fee > transmitterFees) revert BidExceedsMaxFees();
 
         // check if the bid is lower than the existing bid
         if (
@@ -141,10 +144,10 @@ contract AuctionManager is
 
         // block the fees
         IFeesManager(addressResolver__.feesManager()).blockFees(
-            requestMetadata.appGateway,
+            requestMetadata.consumeFrom,
             requestMetadata.fees,
             newBid,
-            watcherPrecompile__().getTotalFeesRequired(requestMetadata.fees.token, requestCount_),
+            watcherFees,
             requestCount_
         );
 
@@ -210,7 +213,7 @@ contract AuctionManager is
     function getTransmitterMaxFeesRequired(
         address token_,
         uint40 requestCount_
-    ) public view returns (uint256) {
+    ) public view returns (uint256, uint256) {
         // check if the bid is for this auction manager
         if (requestMetadata.auctionManager != address(this)) revert InvalidBid();
 
@@ -220,7 +223,7 @@ contract AuctionManager is
 
         // get the total fees required for the watcher precompile ops
         uint256 watcherFees = watcherPrecompile__().getTotalFeesRequired(token_, requestCount_);
-        return requestMetadata.fees.amount - watcherFees;
+        return (watcherFees, requestMetadata.fees.amount - watcherFees);
     }
 
     function _recoverSigner(
