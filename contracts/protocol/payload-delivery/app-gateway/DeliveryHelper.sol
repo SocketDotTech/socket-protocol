@@ -59,10 +59,12 @@ contract DeliveryHelper is FeesHelpers {
                 requestMetadata_.winningBid.transmitter
             );
 
-        IAppGateway(requestMetadata_.appGateway).onRequestComplete(
-            requestCount_,
-            requestMetadata_.onCompleteData
-        );
+        if (requestMetadata_.appGateway.code.length > 0) {
+            IAppGateway(requestMetadata_.appGateway).onRequestComplete(
+                requestCount_,
+                requestMetadata_.onCompleteData
+            );
+        }
     }
 
     /// @notice Cancels a request and settles the fees

@@ -46,8 +46,8 @@ abstract contract FeesHelpers is RequestQueue {
             amount_,
             receiver_
         );
-
-        return _batch(msg.sender, auctionManager_, fees_, bytes(""), bytes(""));
+        bytes memory feesApprovalData = abi.encode(msg.sender, msg.sender, true, bytes(""));
+        return _batch(msg.sender, auctionManager_, fees_, feesApprovalData, bytes(""));
     }
 
     /// @notice Withdraws fees to a specified receiver
@@ -73,7 +73,7 @@ abstract contract FeesHelpers is RequestQueue {
             );
 
         RequestMetadata memory requestMetadata = RequestMetadata({
-            appGateway: address(this),
+            appGateway: addressResolver__.feesManager(),
             auctionManager: address(0),
             maxFees: 0,
             winningBid: Bid({transmitter: transmitter, fee: 0, extraData: new bytes(0)}),

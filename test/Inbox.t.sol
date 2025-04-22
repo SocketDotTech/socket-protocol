@@ -59,7 +59,14 @@ contract TriggerTest is DeliveryHelperTest {
     function testIncrementAfterTrigger() public {
         // Initial counter value should be 0
         assertEq(gateway.counterVal(), 0, "Initial gateway counter should be 0");
-
+        depositUSDCFees(
+            address(gateway),
+            OnChainFees({
+                chainSlug: arbChainSlug,
+                token: address(arbConfig.feesTokenUSDC),
+                amount: 1 ether
+            })
+        );
         // Simulate a message from another chain through the watcher
         uint256 incrementValue = 5;
         bytes32 triggerId = _encodeTriggerId(address(gateway), arbChainSlug);

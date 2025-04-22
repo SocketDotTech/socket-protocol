@@ -44,10 +44,6 @@ abstract contract FeesManagerStorage is IFeesManager {
     /// @dev requestCount => RequestFee
     mapping(uint40 => uint256) public requestCountCredits;
 
-    // slot 55
-    /// @notice Mapping to track credits to be distributed to transmitters
-    /// @dev transmitter => amount
-    mapping(address => uint256) public transmitterCredits;
 
     // @dev amount
     uint256 public watcherPrecompileCredits;
@@ -284,7 +280,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         _useBlockedUserCredits(requestMetadata.consumeFrom, blockedCredits, fees);
 
         // Assign fees to transmitter
-        transmitterCredits[transmitter_] += fees;
+        userCredits[transmitter_].totalCredits += fees;
 
         // Clean up storage
         delete requestCountCredits[requestCount_];
@@ -373,7 +369,8 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         // Check if amount is available in fees plug
         uint256 availableAmount = getAvailableFees(source);
         if (availableAmount < amount_) revert InsufficientFeesAvailable();
-
+        
+        _useAvailableUserCredits(source, amount_);
         tokenPoolBalances[chainSlug_][token_] -= amount_;
 
         // Add it to the queue and submit request
@@ -395,7 +392,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         if (amount_ > maxFeesAvailableForWithdraw) revert InsufficientFeesAvailable();
 
         // Clean up storage
-        transmitterCredits[transmitter_] -= amount_;
+        _useAvailableUserCredits(transmitter_, amount_);
         tokenPoolBalances[chainSlug_][token_] -= amount_;
 
         bytes memory payload = abi.encodeCall(IFeesPlug.withdrawFees, (token_, receiver_, amount_));
@@ -420,9 +417,10 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
 
     function getMaxFeesAvailableForWithdraw(address transmitter_) public view returns (uint256) {
         uint256 watcherFees = watcherPrecompileLimits().getTotalFeesRequired(0, 1, 0, 1);
+        uint256 transmitterCredits = userCredits[transmitter_].totalCredits;
         return
-            transmitterCredits[transmitter_] > watcherFees
-                ? transmitterCredits[transmitter_] - watcherFees
+            transmitterCredits > watcherFees
+                ? transmitterCredits - watcherFees
                 : 0;
     }
 
@@ -454,7 +452,8 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     }
 
     /// @notice hook called by watcher precompile when request is finished
-    function finishRequest(uint40) external {}
+    function onRequestComplete(uint40 requestCount_, bytes memory) external {
+    }
 
     function _queue(uint32 chainSlug_, bytes memory payload_) internal {
         QueuePayloadParams memory queuePayloadParams = _createQueuePayloadParams(
