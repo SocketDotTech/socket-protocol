@@ -142,15 +142,6 @@ contract AuctionManager is
             _endAuction(requestCount_);
         }
 
-        // block the fees
-        IFeesManager(addressResolver__.feesManager()).blockFees(
-            requestMetadata.consumeFrom,
-            requestMetadata.fees,
-            newBid,
-            watcherFees,
-            requestCount_
-        );
-
         emit BidPlaced(requestCount_, newBid);
     }
 
@@ -167,6 +158,13 @@ contract AuctionManager is
         if (winningBid.transmitter == address(0)) revert InvalidTransmitter();
 
         auctionClosed[requestCount_] = true;
+
+        // block the fees
+        IFeesManager(addressResolver__.feesManager()).blockFees(
+            requestMetadata.consumeFrom,
+            winningBid.fee,
+            requestCount_
+        );
 
         // set the timeout for the bid expiration
         // useful in case a transmitter did bid but did not execute payloads

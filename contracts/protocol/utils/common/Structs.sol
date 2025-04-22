@@ -119,10 +119,14 @@ struct OverrideParams {
 }
 
 // FM:
-struct Fees {
-    uint32 feePoolChain;
-    address feePoolToken;
-    uint256 amount;
+struct RequestFee {
+    uint256 blockedCredits;
+    address consumeFrom;
+}
+
+struct UserCredits {
+    uint256 totalCredits;
+    uint256 blockedCredits;
 }
 
 // digest:
@@ -236,10 +240,4 @@ struct ExecuteParams {
     uint40 payloadCount;
     bytes32 prevDigestsHash; // should be id? hash of hashes
     address switchboard;
-}
-
-/// @notice Struct containing fee amounts and status
-struct TokenBalance {
-    uint256 deposited; // Amount deposited
-    uint256 blocked; // Amount blocked
 }
