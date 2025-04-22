@@ -152,13 +152,11 @@ contract Socket is SocketUtils {
     ////////////////////////////////////////////////////////
     /**
      * @notice To trigger to a connected remote chain. Should only be called by a plug.
-     * @param payload_ bytes to be delivered on EVMx
      * @param overrides_ a bytes param to add details for execution, for eg: fees to be paid for execution
      */
     function _triggerAppGateway(
         address plug_,
-        bytes memory overrides_,
-        bytes memory payload_
+        bytes memory overrides_
     ) internal returns (bytes32 triggerId) {
         PlugConfig memory plugConfig = _plugConfigs[plug_];
 
@@ -168,17 +166,18 @@ contract Socket is SocketUtils {
 
         // creates a unique ID for the message
         triggerId = _encodeTriggerId();
-        emit AppGatewayCallRequested(triggerId, chainSlug, plug_, overrides_, payload_);
+        emit AppGatewayCallRequested(triggerId, chainSlug, plug_, overrides_, msg.data);
     }
 
     /// @notice Fallback function that forwards all calls to Socket's callAppGateway
     /// @dev The calldata is passed as-is to the gateways
     /// @dev if ETH sent with the call, it will revert
     fallback(bytes calldata) external returns (bytes memory) {
+        address plug = msg.sender;
         // gets the overrides from the plug
-        bytes memory overrides = IPlug(msg.sender).overrides();
+        bytes memory overrides = IPlug(plug).overrides();
 
         // return the trigger id
-        return abi.encode(_triggerAppGateway(msg.sender, overrides, msg.data));
+        return abi.encode(_triggerAppGateway(plug, overrides));
     }
 }
