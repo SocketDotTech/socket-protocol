@@ -67,7 +67,7 @@ contract Socket is SocketUtils {
 
         PlugConfig memory plugConfig = _plugConfigs[executeParams_.target];
         // check if the plug is disconnected
-        if (plugConfig.appGatewayId == bytes32(0)) revert PlugDisconnected();
+        if (plugConfig.appGatewayId == bytes32(0)) revert PlugNotFound();
 
         // check if the message value is insufficient
         if (msg.value < executeParams_.value) revert InsufficientMsgValue();
@@ -162,7 +162,7 @@ contract Socket is SocketUtils {
 
         // if no sibling plug is found for the given chain slug, revert
         // sends the trigger to connected app gateway
-        if (plugConfig.appGatewayId == bytes32(0)) revert PlugDisconnected();
+        if (plugConfig.appGatewayId == bytes32(0)) revert PlugNotFound();
 
         // creates a unique ID for the message
         triggerId = _encodeTriggerId();
