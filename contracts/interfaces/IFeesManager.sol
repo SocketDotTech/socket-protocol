@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {Bid, QueuePayloadParams} from "../protocol/utils/common/Structs.sol";
+import {Bid, QueuePayloadParams, PayloadSubmitParams, AppGatewayWhitelistParams} from "../protocol/utils/common/Structs.sol";
 
 interface IFeesManager {
     function blockFees(
@@ -35,7 +35,28 @@ interface IFeesManager {
 
     function assignWatcherPrecompileFeesFromAddress(uint256 fees_, address consumeFrom_) external;
 
-    function setAppGatewayWhitelist(
+    function incrementFeesDeposited(
+        address depositTo_,
+        uint32 chainSlug_,
+        address token_,
+        uint256 amount_,
+        uint256 signatureNonce_,
+        bytes memory signature_
+    ) external;
+
+    function whitelistAppGatewayWithSignature(
         bytes memory feeApprovalData_
     ) external returns (address consumeFrom, address appGateway, bool isApproved);
+
+    function whitelistAppGateways(AppGatewayWhitelistParams[] calldata params_) external;
+
+    function getWithdrawTransmitterFeesPayloadParams(
+        address transmitter_,
+        uint32 chainSlug_,
+        address token_,
+        address receiver_,
+        uint256 amount_
+    ) external returns (PayloadSubmitParams[] memory);
+
+    function getMaxFeesAvailableForWithdraw(address transmitter_) external view returns (uint256);
 }

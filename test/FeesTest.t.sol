@@ -20,9 +20,13 @@ contract FeesTest is DeliveryHelperTest {
         feesConfig = getSocketConfig(feesChainSlug);
 
         counterGateway = new CounterAppGateway(address(addressResolver), feesAmount);
-        depositFees(
+        depositUSDCFees(
             address(counterGateway),
-            OnChainFees({chainSlug: feesChainSlug, token: ETH_ADDRESS, amount: depositAmount})
+            OnChainFees({
+                chainSlug: feesChainSlug,
+                token: address(feesConfig.feesTokenUSDC),
+                amount: depositAmount
+            })
         );
 
         bytes32[] memory contractIds = new bytes32[](1);
@@ -31,40 +35,36 @@ contract FeesTest is DeliveryHelperTest {
     }
 
     function testDistributeFee() public {
-        uint256 initialFeesPlugBalance = address(feesConfig.feesPlug).balance;
+        uint256 initialFeesPlugBalance = feesConfig.feesTokenUSDC.balanceOf(
+            address(feesConfig.feesPlug)
+        );
 
         assertEq(
             initialFeesPlugBalance,
-            address(feesConfig.feesPlug).balance,
+            feesConfig.feesTokenUSDC.balanceOf(address(feesConfig.feesPlug)),
             "FeesPlug Balance should be correct"
         );
 
-        assertEq(
-            initialFeesPlugBalance,
-            feesConfig.feesPlug.balanceOf(ETH_ADDRESS),
-            "FeesPlug balance of counterGateway should be correct"
-        );
-
-        uint256 transmitterReceiverBalanceBefore = address(receiver).balance;
-
-        hoax(transmitterEOA);
-        uint40 requestCount = feesManager.withdrawTransmitterFees(
+        uint256 transmitterReceiverBalanceBefore = feesConfig.feesTokenUSDC.balanceOf(receiver);
+        uint256 withdrawAmount = feesManager.getMaxFeesAvailableForWithdraw(transmitterEOA);
+        vm.startPrank(transmitterEOA);
+        uint40 requestCount = deliveryHelper.withdrawTransmitterFees(
             feesChainSlug,
-            ETH_ADDRESS,
+            address(feesConfig.feesTokenUSDC),
             address(receiver),
-            feesManager.transmitterCredits(transmitterEOA)
+            withdrawAmount
         );
+        vm.stopPrank();
         uint40[] memory batches = watcherPrecompile.getBatches(requestCount);
         _finalizeBatch(batches[0], new bytes[](0), 0, false);
-
         assertEq(
             transmitterReceiverBalanceBefore + bidAmount,
-            address(receiver).balance,
+            feesConfig.feesTokenUSDC.balanceOf(receiver),
             "Transmitter Balance should be correct"
         );
         assertEq(
             initialFeesPlugBalance - bidAmount,
-            address(feesConfig.feesPlug).balance,
+            feesConfig.feesTokenUSDC.balanceOf(address(feesConfig.feesPlug)),
             "FeesPlug Balance should be correct"
         );
     }
@@ -72,25 +72,30 @@ contract FeesTest is DeliveryHelperTest {
     function testWithdrawFeeTokens() public {
         assertEq(
             depositAmount,
-            feesConfig.feesPlug.balanceOf(ETH_ADDRESS),
+            feesConfig.feesTokenUSDC.balanceOf(address(feesConfig.feesPlug)),
             "Balance should be correct"
         );
 
-        uint256 receiverBalanceBefore = receiver.balance;
+        uint256 receiverBalanceBefore = feesConfig.feesTokenUSDC.balanceOf(receiver);
         uint256 withdrawAmount = 0.5 ether;
 
-        counterGateway.withdrawFeeTokens(feesChainSlug, ETH_ADDRESS, withdrawAmount, receiver);
+        counterGateway.withdrawFeeTokens(
+            feesChainSlug,
+            address(feesConfig.feesTokenUSDC),
+            withdrawAmount,
+            receiver
+        );
         executeRequest(new bytes[](0));
 
         assertEq(
             depositAmount - withdrawAmount,
-            address(feesConfig.feesPlug).balance,
+            feesConfig.feesTokenUSDC.balanceOf(address(feesConfig.feesPlug)),
             "Fees Balance should be correct"
         );
 
         assertEq(
             receiverBalanceBefore + withdrawAmount,
-            receiver.balance,
+            feesConfig.feesTokenUSDC.balanceOf(receiver),
             "Receiver Balance should be correct"
         );
     }

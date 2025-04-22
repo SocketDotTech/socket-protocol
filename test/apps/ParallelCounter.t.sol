@@ -17,9 +17,13 @@ contract ParallelCounterTest is DeliveryHelperTest {
         setUpDeliveryHelper();
 
         parallelCounterGateway = new CounterAppGateway(address(addressResolver), feesAmount);
-        depositFees(
+        depositUSDCFees(
             address(parallelCounterGateway),
-            OnChainFees({chainSlug: arbChainSlug, token: ETH_ADDRESS, amount: 1 ether})
+            OnChainFees({
+                chainSlug: arbChainSlug,
+                token: address(arbConfig.feesTokenUSDC),
+                amount: 1 ether
+            })
         );
         counterId1 = parallelCounterGateway.counter1();
         counterId2 = parallelCounterGateway.counter();

@@ -50,6 +50,44 @@ abstract contract FeesHelpers is RequestQueue {
         return _batch(msg.sender, auctionManager_, fees_, bytes(""), bytes(""));
     }
 
+    /// @notice Withdraws fees to a specified receiver
+    /// @param chainSlug_ The chain identifier
+    /// @param token_ The token address
+    /// @param receiver_ The address of the receiver
+    function withdrawTransmitterFees(
+        uint32 chainSlug_,
+        address token_,
+        address receiver_,
+        uint256 amount_
+    ) external returns (uint40 requestCount) {
+        address transmitter = msg.sender;
+
+        PayloadSubmitParams[] memory payloadSubmitParamsArray = IFeesManager(
+            addressResolver__.feesManager()
+        ).getWithdrawTransmitterFeesPayloadParams(
+                transmitter,
+                chainSlug_,
+                token_,
+                receiver_,
+                amount_
+            );
+
+        RequestMetadata memory requestMetadata = RequestMetadata({
+            appGateway: address(this),
+            auctionManager: address(0),
+            maxFees: 0,
+            winningBid: Bid({transmitter: transmitter, fee: 0, extraData: new bytes(0)}),
+            onCompleteData: bytes(""),
+            onlyReadRequests: false,
+            consumeFrom: transmitter,
+            queryCount: 0,
+            finalizeCount: 1
+        }); // finalize for plug contract
+        requestCount = watcherPrecompile__().submitRequest(payloadSubmitParamsArray);
+        requests[requestCount] = requestMetadata;
+        // same transmitter can execute requests without auction
+        watcherPrecompile__().startProcessingRequest(requestCount, transmitter);
+    }
     /// @notice Returns the fees for a request
     /// @param requestCount_ The ID of the request
     /// @return fees The fees data

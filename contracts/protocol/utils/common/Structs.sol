@@ -50,6 +50,23 @@ enum ExecutionStatus {
     Reverted
 }
 
+/// @notice Creates a struct to hold batch parameters
+struct BatchParams {
+    address appGateway;
+    address auctionManager;
+    uint256 maxFees;
+    bytes feesApprovalData;
+    bytes onCompleteData;
+    bool onlyReadRequests;
+    uint256 queryCount;
+    uint256 finalizeCount;
+}
+
+struct AppGatewayWhitelistParams {
+    address appGateway;
+    bool isApproved;
+}
+
 //// STRUCTS ////
 // plug:
 struct LimitParams {
@@ -227,6 +244,8 @@ struct RequestMetadata {
     bytes onCompleteData;
     bool onlyReadRequests;
     address consumeFrom;
+    uint256 queryCount;
+    uint256 finalizeCount;
 }
 
 struct ExecuteParams {

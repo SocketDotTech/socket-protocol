@@ -2,22 +2,11 @@
 pragma solidity ^0.8.21;
 
 interface IFeesPlug {
-    function balanceOf(address token_) external view returns (uint256);
+    function depositToFee(address token_, address receiver_, uint256 amount_) external;
 
-    function feesRedeemed(bytes32 feesId_) external view returns (bool);
+    function depositToFeeAndNative(address token_, address receiver_, uint256 amount_) external;
 
-    function depositToFee(address token_, uint256 amount_, address receiver_) external;
+    function depositToNative(address token_, address receiver_, uint256 amount_) external;
 
-    function depositToFeeAndNative(address token_, uint256 amount_, address receiver_) external;
-
-    function depositToNative(address token_, uint256 amount_, address receiver_) external;
-
-    function distributeFee(
-        address feeToken_,
-        uint256 fee_,
-        address transmitter_,
-        bytes32 feesId_
-    ) external;
-
-    function withdrawFees(address token_, uint256 amount_, address receiver_) external;
+    function withdrawFees(address token_, address receiver_, uint256 amount_) external;
 }

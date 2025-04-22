@@ -51,12 +51,7 @@ abstract contract WatcherPrecompileCore is
         );
 
         // consumes limit for SCHEDULE precompile
-        watcherPrecompileLimits__.consumeLimit(
-            _getCoreAppGateway(msg.sender),
-            SCHEDULE,
-            1
-        );
-        
+        watcherPrecompileLimits__.consumeLimit(_getCoreAppGateway(msg.sender), SCHEDULE, 1);
 
         // emits event for watcher to track timeout and resolve when timeout is reached
         emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);
@@ -237,19 +232,21 @@ abstract contract WatcherPrecompileCore is
     }
 
     /// @notice Verifies that a watcher signature is valid
-    /// @param digest_ The digest to verify
+    /// @param inputData_ The input data to verify
     /// @param signatureNonce_ The nonce of the signature
     /// @param signature_ The signature to verify
     /// @dev This function verifies that the signature was created by the watcher and that the nonce has not been used before
     function _isWatcherSignatureValid(
-        bytes memory digest_,
+        bytes memory inputData_,
         uint256 signatureNonce_,
         bytes memory signature_
     ) internal {
         if (isNonceUsed[signatureNonce_]) revert NonceUsed();
         isNonceUsed[signatureNonce_] = true;
 
-        bytes32 digest = keccak256(abi.encode(address(this), evmxSlug, signatureNonce_, digest_));
+        bytes32 digest = keccak256(
+            abi.encode(address(this), evmxSlug, signatureNonce_, inputData_)
+        );
         digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
 
         // recovered signer is checked for the valid roles later

@@ -111,6 +111,15 @@ contract DeliveryHelperTest is SetupTest {
         arbConfig = deploySocket(arbChainSlug);
         optConfig = deploySocket(optChainSlug);
         connectDeliveryHelper();
+
+        depositUSDCFees(
+            address(auctionManager),
+            OnChainFees({
+                chainSlug: arbChainSlug,
+                token: address(arbConfig.feesTokenUSDC),
+                amount: 1 ether
+            })
+        );
     }
 
     function connectDeliveryHelper() internal {
@@ -173,13 +182,17 @@ contract DeliveryHelperTest is SetupTest {
 
     //////////////////////////////////// Fees ////////////////////////////////////
 
-    function depositFees(address appGateway_, OnChainFees memory fees_) internal {
+    function depositUSDCFees(address appGateway_, OnChainFees memory fees_) internal {
         SocketContracts memory socketConfig = getSocketConfig(fees_.chainSlug);
-        socketConfig.feesPlug.depositToFeeAndNative(fees_.token, fees_.amount, appGateway_);
+        vm.startPrank(owner);
+        ERC20(fees_.token).approve(address(socketConfig.feesPlug), fees_.amount);
+        socketConfig.feesPlug.depositToFeeAndNative(fees_.token, appGateway_, fees_.amount);
+        vm.stopPrank();
 
         bytes memory bytesInput = abi.encode(
-            fees_.chainSlug,
+            IFeesManager.incrementFeesDeposited.selector,
             appGateway_,
+            fees_.chainSlug,
             fees_.token,
             fees_.amount
         );
@@ -196,6 +209,35 @@ contract DeliveryHelperTest is SetupTest {
             signatureNonce++,
             sig
         );
+    }
+
+    function whitelistAppGateway(
+        address appGateway_,
+        address user_,
+        uint256 userPrivateKey_,
+        uint32 chainSlug_
+    ) internal {
+        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
+        // Create fee approval data with signature
+        bytes32 digest = keccak256(
+            abi.encode(
+                address(feesManager),
+                evmxSlug,
+                user_,
+                appGateway_,
+                feesManager.userNonce(user_),
+                true
+            )
+        );
+
+        // Sign with consumeFrom's private key
+        bytes memory signature = _createSignature(digest, userPrivateKey_);
+
+        // Encode approval data
+        bytes memory feeApprovalData = abi.encode(user_, appGateway_, true, signature);
+
+        // Call whitelistAppGatewayWithSignature with approval data
+        feesManager.whitelistAppGatewayWithSignature(feeApprovalData);
     }
 
     ////////////////////////////////// Deployment helpers ////////////////////////////////////

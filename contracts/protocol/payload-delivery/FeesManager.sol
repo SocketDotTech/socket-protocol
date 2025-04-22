@@ -6,12 +6,12 @@ import "solady/utils/Initializable.sol";
 import "solady/utils/ECDSA.sol";
 
 import {IFeesPlug} from "../../interfaces/IFeesPlug.sol";
-import {IFeesManager} from "../../interfaces/IFeesManager.sol";
+import "../../interfaces/IFeesManager.sol";
 
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {NotAuctionManager, InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
 import {Bid, CallType, Parallel, WriteFinality, QueuePayloadParams, IsPlug, PayloadSubmitParams, RequestMetadata, UserCredits} from "../utils/common/Structs.sol";
-
+import {console} from "forge-std/console.sol";
 abstract contract FeesManagerStorage is IFeesManager {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
@@ -32,8 +32,8 @@ abstract contract FeesManagerStorage is IFeesManager {
     mapping(address => uint256) public userNonce;
 
     // token pool balances
-    // token address => chainSlug => amount
-    mapping(address => mapping(uint32 => uint256)) public tokenPoolBalances;
+    //  chainSlug => token address  => amount
+    mapping(uint32 => mapping(address => uint256)) public tokenPoolBalances;
 
     // user approved app gateways
     // userAddress => appGateway => isWhitelisted
@@ -123,7 +123,8 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     error NoFeesBlocked();
     /// @notice Error thrown when caller is invalid
     error InvalidCaller();
-
+    /// @notice Error thrown when user signature is invalid
+    error InvalidUserSignature();
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -168,14 +169,20 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         bytes memory signature_
     ) external {
         _isWatcherSignatureValid(
-            abi.encode(depositTo_, chainSlug_, token_, amount_),
+            abi.encode(
+                this.incrementFeesDeposited.selector,
+                depositTo_,
+                chainSlug_,
+                token_,
+                amount_
+            ),
             signatureNonce_,
             signature_
         );
 
         UserCredits storage userCredit = userCredits[depositTo_];
         userCredit.totalCredits += amount_;
-        tokenPoolBalances[token_][chainSlug_] += amount_;
+        tokenPoolBalances[chainSlug_][token_] += amount_;
 
         emit FeesDepositedUpdated(chainSlug_, depositTo_, token_, amount_);
     }
@@ -185,19 +192,21 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         address appGateway_,
         uint256 amount_
     ) external view returns (bool) {
-        if (!isAppGatewayWhitelisted[consumeFrom_][appGateway_]) return false;
+        // If consumeFrom is not appGateway, check if it is whitelisted
+        if (consumeFrom_ != appGateway_ && !isAppGatewayWhitelisted[consumeFrom_][appGateway_])
+            return false;
         return getAvailableFees(consumeFrom_) >= amount_;
     }
 
     function _processFeeApprovalData(
         bytes memory feeApprovalData_
-    ) internal returns (address consumeFrom, address appGateway, bool isApproved) {
-        bytes memory signature_;
-        (consumeFrom, appGateway, isApproved, signature_) = abi.decode(
-            feeApprovalData_,
-            (address, address, bool, bytes)
-        );
-        if (signature_.length == 0) return (consumeFrom, appGateway, isApproved);
+    ) internal returns (address, address, bool) {
+        (address consumeFrom, address appGateway, bool isApproved, bytes memory signature_) = abi
+            .decode(feeApprovalData_, (address, address, bool, bytes));
+        if (signature_.length == 0) {
+            // If no signature, consumeFrom is appGateway
+            return (appGateway, appGateway, isApproved);
+        }
         bytes32 digest = keccak256(
             abi.encode(
                 address(this),
@@ -208,24 +217,24 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
                 isApproved
             )
         );
-        if (ECDSA.recover(digest, signature_) != consumeFrom) revert InvalidWatcherSignature();
+        if (ECDSA.recover(digest, signature_) != consumeFrom) revert InvalidUserSignature();
 
         isAppGatewayWhitelisted[consumeFrom][appGateway] = isApproved;
         userNonce[consumeFrom]++;
         return (consumeFrom, appGateway, isApproved);
     }
 
-    function setAppGatewayWhitelist(
+    function whitelistAppGatewayWithSignature(
         bytes memory feeApprovalData_
     ) external returns (address consumeFrom, address appGateway, bool isApproved) {
         return _processFeeApprovalData(feeApprovalData_);
     }
 
     /// @notice Whitelists multiple app gateways for the caller
-    /// @param appGateways_ Array of app gateway addresses to whitelist
-    function whitelistApps(address[] calldata appGateways_) external {
-        for (uint256 i = 0; i < appGateways_.length; i++) {
-            isAppGatewayWhitelisted[msg.sender][appGateways_[i]] = true;
+    /// @param params_ Array of app gateway addresses to whitelist
+    function whitelistAppGateways(AppGatewayWhitelistParams[] calldata params_) external {
+        for (uint256 i = 0; i < params_.length; i++) {
+            isAppGatewayWhitelisted[msg.sender][params_[i].appGateway] = params_[i].isApproved;
         }
     }
 
@@ -294,6 +303,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
 
     function _useAvailableUserCredits(address consumeFrom_, uint256 toConsume_) internal {
         UserCredits storage userCredit = userCredits[consumeFrom_];
+        if (userCredit.totalCredits < toConsume_) revert InsufficientFeesAvailable();
         userCredit.totalCredits -= toConsume_;
     }
 
@@ -301,7 +311,6 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         uint256 fees_,
         uint40 requestCount_
     ) external onlyWatcherPrecompile {
-        require(requestCount_ != 0, "Request count cannot be 0");
         RequestMetadata memory requestMetadata = deliveryHelper__().getRequestMetadata(
             requestCount_
         );
@@ -365,37 +374,31 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         uint256 availableAmount = getAvailableFees(source);
         if (availableAmount < amount_) revert InsufficientFeesAvailable();
 
-        tokenPoolBalances[token_][chainSlug_] -= amount_;
+        tokenPoolBalances[chainSlug_][token_] -= amount_;
 
         // Add it to the queue and submit request
-        _queue(chainSlug_, abi.encodeCall(IFeesPlug.withdrawFees, (token_, amount_, receiver_)));
+        _queue(chainSlug_, abi.encodeCall(IFeesPlug.withdrawFees, (token_, receiver_, amount_)));
     }
 
     /// @notice Withdraws fees to a specified receiver
     /// @param chainSlug_ The chain identifier
     /// @param token_ The token address
     /// @param receiver_ The address of the receiver
-    function withdrawTransmitterFees(
+    function getWithdrawTransmitterFeesPayloadParams(
+        address transmitter_,
         uint32 chainSlug_,
         address token_,
         address receiver_,
         uint256 amount_
-    ) external returns (uint40 requestCount) {
-        address transmitter = msg.sender;
-        // Get total fees for the transmitter in given chain and token
-        uint256 totalFees = transmitterCredits[transmitter];
-        if (totalFees >= amount_) revert InsufficientFeesAvailable();
+    ) external onlyDeliveryHelper returns (PayloadSubmitParams[] memory) {
+        uint256 maxFeesAvailableForWithdraw = getMaxFeesAvailableForWithdraw(transmitter_);
+        if (amount_ > maxFeesAvailableForWithdraw) revert InsufficientFeesAvailable();
 
         // Clean up storage
-        transmitterCredits[transmitter] -= amount_;
-        tokenPoolBalances[token_][chainSlug_] -= amount_;
+        transmitterCredits[transmitter_] -= amount_;
+        tokenPoolBalances[chainSlug_][token_] -= amount_;
 
-        // Create fee distribution payload
-        bytes32 feesId = _encodeFeesId(feesCounter++);
-        bytes memory payload = abi.encodeCall(
-            IFeesPlug.distributeFee,
-            (token_, amount_, receiver_, feesId)
-        );
+        bytes memory payload = abi.encodeCall(IFeesPlug.withdrawFees, (token_, receiver_, amount_));
         PayloadSubmitParams[] memory payloadSubmitParamsArray = new PayloadSubmitParams[](1);
         payloadSubmitParamsArray[0] = PayloadSubmitParams({
             levelNumber: 0,
@@ -412,31 +415,15 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
             readAt: 0,
             payload: payload
         });
-
-        RequestMetadata memory requestMetadata = RequestMetadata({
-            appGateway: address(this),
-            auctionManager: address(0),
-            maxFees: 0,
-            winningBid: Bid({transmitter: transmitter, fee: 0, extraData: new bytes(0)}),
-            onCompleteData: bytes(""),
-            onlyReadRequests: false,
-            consumeFrom: address(0)
-        }); // finalize for plug contract
-        return _submitAndStartProcessing(payloadSubmitParamsArray, requestMetadata, transmitter);
+        return payloadSubmitParamsArray;
     }
 
-    function _submitAndStartProcessing(
-        PayloadSubmitParams[] memory payloadSubmitParamsArray_,
-        RequestMetadata memory requestMetadata_,
-        address transmitter_
-    ) internal returns (uint40 requestCount) {
-        requestCount = watcherPrecompile__().submitRequest(
-            payloadSubmitParamsArray_,
-            requestMetadata_
-        );
-
-        // same transmitter can execute requests without auction
-        watcherPrecompile__().startProcessingRequest(requestCount, transmitter_);
+    function getMaxFeesAvailableForWithdraw(address transmitter_) public view returns (uint256) {
+        uint256 watcherFees = watcherPrecompileLimits().getTotalFeesRequired(0, 1, 0, 1);
+        return
+            transmitterCredits[transmitter_] > watcherFees
+                ? transmitterCredits[transmitter_] - watcherFees
+                : 0;
     }
 
     function _getSwitchboard(uint32 chainSlug_) internal view returns (address) {
@@ -487,14 +474,16 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     }
 
     function _isWatcherSignatureValid(
-        bytes memory digest_,
+        bytes memory inputData_,
         uint256 signatureNonce_,
         bytes memory signature_
     ) internal {
         if (isNonceUsed[signatureNonce_]) revert NonceUsed();
         isNonceUsed[signatureNonce_] = true;
 
-        bytes32 digest = keccak256(abi.encode(address(this), evmxSlug, signatureNonce_, digest_));
+        bytes32 digest = keccak256(
+            abi.encode(address(this), evmxSlug, signatureNonce_, inputData_)
+        );
         digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
         // recovered signer is checked for the valid roles later
         address signer = ECDSA.recover(digest, signature_);

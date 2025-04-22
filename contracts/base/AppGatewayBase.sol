@@ -34,7 +34,9 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
 
     function _postAsync(bytes memory feesApprovalData_) internal {
         isAsyncModifierSet = false;
-
+        if (feesApprovalData_.length == 0) {
+            feesApprovalData_ = abi.encode(address(this), address(this), true, new bytes(0));
+        }
         // todo: cache the feesApprovalData for next async in same request
         deliveryHelper__().batch(maxFees, auctionManager, feesApprovalData_, onCompleteData);
         _markValidPromises();

@@ -33,34 +33,6 @@ abstract contract RequestQueue is DeliveryUtils {
         return _batch(appGateway, auctionManager_, maxFees_, feesApprovalData_, onCompleteData_);
     }
 
-    function _checkBatch(
-        address appGateway_,
-        bytes memory feesApprovalData_,
-        uint256 maxFees_
-    ) internal returns (address consumeFrom) {
-        if (queuePayloadParams.length > REQUEST_PAYLOAD_COUNT_LIMIT)
-            revert RequestPayloadCountLimitExceeded();
-        (consumeFrom, , ) = IFeesManager(addressResolver__.feesManager()).setAppGatewayWhitelist(
-            feesApprovalData_
-        );
-        if (
-            !IFeesManager(addressResolver__.feesManager()).isFeesEnough(
-                consumeFrom,
-                appGateway_,
-                maxFees_
-            )
-        ) revert InsufficientFees();
-
-        return consumeFrom;
-    }
-
-    function _getAuctionManager(address auctionManager_) internal view returns (address) {
-        return
-            auctionManager_ == address(0)
-                ? IAddressResolver(addressResolver__).defaultAuctionManager()
-                : auctionManager_;
-    }
-
     /// @notice Initiates a batch of payloads
     /// @dev it checks fees, payload limits and creates the payload submit params array after assigning proper levels
     /// @dev It also modifies the deploy payloads as needed by contract factory plug
@@ -73,64 +45,129 @@ abstract contract RequestQueue is DeliveryUtils {
         bytes memory onCompleteData_
     ) internal returns (uint40 requestCount) {
         if (queuePayloadParams.length == 0) return 0;
-        address auctionManager = _getAuctionManager(auctionManager_);
 
-        // create the payload submit params array in desired format
-        (
-            PayloadSubmitParams[] memory payloadSubmitParamsArray,
-            bool onlyReadRequests
-        ) = _createPayloadSubmitParamsArray();
-
-        address consumeFrom = _checkBatch(appGateway_, feesApprovalData_, maxFees_);
-        RequestMetadata memory requestMetadata = RequestMetadata({
+        BatchParams memory params = BatchParams({
             appGateway: appGateway_,
-            auctionManager: auctionManager,
+            auctionManager: _getAuctionManager(auctionManager_),
             maxFees: maxFees_,
-            winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
+            feesApprovalData: feesApprovalData_,
             onCompleteData: onCompleteData_,
-            onlyReadRequests: onlyReadRequests,
-            consumeFrom: consumeFrom
+            onlyReadRequests: false,
+            queryCount: 0,
+            finalizeCount: 0
         });
 
-        // process and submit the queue of payloads to watcher precompile
-        requestCount = watcherPrecompile__().submitRequest(
-            payloadSubmitParamsArray,
-            requestMetadata
+        // Split the function into smaller parts
+        (
+            PayloadSubmitParams[] memory payloadSubmitParamsArray,
+            bool onlyReadRequests,
+            uint256 queryCount,
+            uint256 finalizeCount
+        ) = _createPayloadSubmitParamsArray();
+
+        params.onlyReadRequests = onlyReadRequests;
+        params.queryCount = queryCount;
+        params.finalizeCount = finalizeCount;
+
+        address consumeFrom = _checkBatch(
+            params.appGateway,
+            params.feesApprovalData,
+            params.maxFees
         );
+
+        return _submitBatchRequest(payloadSubmitParamsArray, consumeFrom, params);
+    }
+
+    function _submitBatchRequest(
+        PayloadSubmitParams[] memory payloadSubmitParamsArray,
+        address consumeFrom,
+        BatchParams memory params
+    ) internal returns (uint40 requestCount) {
+        RequestMetadata memory requestMetadata = RequestMetadata({
+            appGateway: params.appGateway,
+            auctionManager: params.auctionManager,
+            maxFees: params.maxFees,
+            winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
+            onCompleteData: params.onCompleteData,
+            onlyReadRequests: params.onlyReadRequests,
+            consumeFrom: consumeFrom,
+            queryCount: params.queryCount,
+            finalizeCount: params.finalizeCount
+        });
+
+        requestCount = watcherPrecompile__().submitRequest(payloadSubmitParamsArray);
         requests[requestCount] = requestMetadata;
 
-        // send query directly if request contains only reads
-        // transmitter should ignore the batch for auction, the transaction will also revert if someone bids
-        if (onlyReadRequests)
+        if (params.onlyReadRequests) {
             watcherPrecompile__().startProcessingRequest(requestCount, address(0));
+        }
 
-        // to save extra calls from transmitter
-        uint256 maxTransmitterFees = maxFees_ -
-            watcherPrecompileLimits().getTotalFeesRequired(requestCount);
+        uint256 watcherFees = watcherPrecompileLimits().getTotalFeesRequired(
+            params.queryCount,
+            params.finalizeCount,
+            0,
+            0
+        );
+        if (watcherFees > params.maxFees) revert InsufficientFees();
+        uint256 maxTransmitterFees = params.maxFees - watcherFees;
 
         emit PayloadSubmitted(
             requestCount,
-            appGateway_,
+            params.appGateway,
             payloadSubmitParamsArray,
-            maxFees_ - maxTransmitterFees,
-            auctionManager_,
-            onlyReadRequests
+            maxTransmitterFees,
+            params.auctionManager,
+            params.onlyReadRequests
         );
+    }
+
+    function _getAuctionManager(address auctionManager_) internal view returns (address) {
+        return
+            auctionManager_ == address(0)
+                ? IAddressResolver(addressResolver__).defaultAuctionManager()
+                : auctionManager_;
+    }
+    function _checkBatch(
+        address appGateway_,
+        bytes memory feesApprovalData_,
+        uint256 maxFees_
+    ) internal returns (address consumeFrom) {
+        if (queuePayloadParams.length > REQUEST_PAYLOAD_COUNT_LIMIT)
+            revert RequestPayloadCountLimitExceeded();
+        (consumeFrom, , ) = IFeesManager(addressResolver__.feesManager())
+            .whitelistAppGatewayWithSignature(feesApprovalData_);
+        if (
+            !IFeesManager(addressResolver__.feesManager()).isFeesEnough(
+                consumeFrom,
+                appGateway_,
+                maxFees_
+            )
+        ) revert InsufficientFees();
+
+        return consumeFrom;
     }
 
     /// @notice Creates an array of payload details
     /// @return payloadDetailsArray An array of payload details
     function _createPayloadSubmitParamsArray()
         internal
-        returns (PayloadSubmitParams[] memory payloadDetailsArray, bool onlyReadRequests)
+        returns (
+            PayloadSubmitParams[] memory payloadDetailsArray,
+            bool onlyReadRequests,
+            uint256 queryCount,
+            uint256 finalizeCount
+        )
     {
         payloadDetailsArray = new PayloadSubmitParams[](queuePayloadParams.length);
         onlyReadRequests = queuePayloadParams[0].callType == CallType.READ;
 
         uint256 currentLevel = 0;
         for (uint256 i = 0; i < queuePayloadParams.length; i++) {
-            if (queuePayloadParams[i].callType != CallType.READ) {
+            if (queuePayloadParams[i].callType == CallType.READ) {
+                queryCount++;
+            } else {
                 onlyReadRequests = false;
+                finalizeCount++;
             }
 
             // Update level for calls

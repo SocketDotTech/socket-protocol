@@ -38,7 +38,7 @@ contract DeliveryHelper is FeesHelpers {
         RequestMetadata storage requestMetadata_ = requests[requestCount_];
         // if a transmitter was already assigned, it means the request was restarted
         bool isRestarted = requestMetadata_.winningBid.transmitter != address(0);
-        requestMetadata_.winningBid.transmitter = winningBid_.transmitter;
+        requestMetadata_.winningBid = winningBid_;
 
         if (!isRestarted) {
             watcherPrecompile__().startProcessingRequest(requestCount_, winningBid_.transmitter);

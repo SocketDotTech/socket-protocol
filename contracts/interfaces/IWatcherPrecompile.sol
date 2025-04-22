@@ -174,8 +174,7 @@ interface IWatcherPrecompile {
     function setExpiryTime(uint256 expiryTime_) external;
 
     function submitRequest(
-        PayloadSubmitParams[] calldata payloadSubmitParams,
-        RequestMetadata memory requestMetadata
+        PayloadSubmitParams[] calldata payloadSubmitParams
     ) external returns (uint40 requestCount);
 
     function startProcessingRequest(uint40 requestCount, address transmitter) external;

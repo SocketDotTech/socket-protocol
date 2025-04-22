@@ -22,7 +22,7 @@ import {ETH_ADDRESS} from "../contracts/protocol/utils/common/Constants.sol";
 import {ResolvedPromises, OnChainFees} from "../contracts/protocol/utils/common/Structs.sol";
 
 import "solady/utils/ERC1967Factory.sol";
-
+import "./apps/app-gateways/USDC.sol";
 contract SetupTest is Test {
     using PayloadHeaderDecoder for bytes32;
     uint public c = 1;
@@ -57,6 +57,7 @@ contract SetupTest is Test {
         SocketBatcher socketBatcher;
         ContractFactoryPlug contractFactoryPlug;
         FeesPlug feesPlug;
+        ERC20 feesTokenUSDC;
     }
 
     AddressResolver public addressResolver;
@@ -84,10 +85,12 @@ contract SetupTest is Test {
         SocketBatcher socketBatcher = new SocketBatcher(owner, socket);
         FastSwitchboard switchboard = new FastSwitchboard(chainSlug_, socket, owner);
 
+        ERC20 feesTokenUSDC = new USDC("USDC", "USDC", 6, owner, 1000000000000000000000000);
         FeesPlug feesPlug = new FeesPlug(address(socket), owner);
         ContractFactoryPlug contractFactoryPlug = new ContractFactoryPlug(address(socket), owner);
-
         vm.startPrank(owner);
+        // feePlug whitelist token
+        feesPlug.whitelistToken(address(feesTokenUSDC));
         // socket
         socket.grantRole(GOVERNANCE_ROLE, address(owner));
 
@@ -114,7 +117,8 @@ contract SetupTest is Test {
                 switchboard: switchboard,
                 socketBatcher: socketBatcher,
                 contractFactoryPlug: contractFactoryPlug,
-                feesPlug: feesPlug
+                feesPlug: feesPlug,
+                feesTokenUSDC: feesTokenUSDC
             });
     }
 
@@ -192,6 +196,11 @@ contract SetupTest is Test {
 
         vm.startPrank(watcherEOA);
         addressResolver.setWatcherPrecompile(address(watcherPrecompile));
+        watcherPrecompileLimits.setCallBackFees(1);
+        watcherPrecompileLimits.setFinalizeFees(1);
+        watcherPrecompileLimits.setQueryFees(1);
+        watcherPrecompileLimits.setScheduleFees(1);
+
         vm.stopPrank();
     }
 

@@ -17,9 +17,13 @@ contract CounterTest is DeliveryHelperTest {
         setUpDeliveryHelper();
 
         counterGateway = new CounterAppGateway(address(addressResolver), feesAmount);
-        depositFees(
+        depositUSDCFees(
             address(counterGateway),
-            OnChainFees({chainSlug: arbChainSlug, token: ETH_ADDRESS, amount: 1 ether})
+            OnChainFees({
+                chainSlug: arbChainSlug,
+                token: address(arbConfig.feesTokenUSDC),
+                amount: 1 ether
+            })
         );
 
         counterId = counterGateway.counter();

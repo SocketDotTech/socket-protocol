@@ -112,7 +112,7 @@ contract AuctionManager is
         );
         if (!_hasRole(TRANSMITTER_ROLE, transmitter)) revert InvalidTransmitter();
 
-        uint256 transmitterCredits = getTransmitterMaxFeesRequired(requestCount_);
+        uint256 transmitterCredits = getTransmitterMaxFeesAvailable(requestCount_);
 
         // check if the bid exceeds the max fees quoted by app gateway subtracting the watcher fees
         if (bidFees > transmitterCredits) revert BidExceedsMaxFees();
@@ -141,6 +141,22 @@ contract AuctionManager is
         }
 
         emit BidPlaced(requestCount_, newBid);
+    }
+
+    function getTransmitterMaxFeesAvailable(uint40 requestCount_) public view returns (uint256) {
+        RequestMetadata memory requestMetadata = _getRequestMetadata(requestCount_);
+
+        // check if the bid is for this auction manager
+        if (requestMetadata.auctionManager != address(this)) revert InvalidBid();
+
+        // get the total fees required for the watcher precompile ops
+        uint256 watcherFees = watcherPrecompileLimits().getTotalFeesRequired(
+            requestMetadata.queryCount,
+            requestMetadata.finalizeCount,
+            0,
+            0
+        );
+        return requestMetadata.maxFees - watcherFees;
     }
 
     /// @notice Ends an auction
@@ -204,19 +220,6 @@ contract AuctionManager is
 
         auctionStarted[requestCount_] = true;
         emit AuctionStarted(requestCount_);
-    }
-
-    function getTransmitterMaxFeesRequired(
-        uint40 requestCount_
-    ) public view returns (uint256) {
-        RequestMetadata memory requestMetadata = _getRequestMetadata(requestCount_);
-
-        // check if the bid is for this auction manager
-        if (requestMetadata.auctionManager != address(this)) revert InvalidBid();
-
-        // get the total fees required for the watcher precompile ops
-        uint256 watcherFees = watcherPrecompileLimits().getTotalFeesRequired(requestCount_);
-        return requestMetadata.maxFees - watcherFees;
     }
 
     function _recoverSigner(
