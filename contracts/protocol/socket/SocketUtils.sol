@@ -22,9 +22,6 @@ abstract contract SocketUtils is SocketConfig {
     // @notice counter for trigger id
     uint64 public triggerCounter;
 
-    // @notice mapping of payload id to execution status
-    mapping(bytes32 => ExecutionStatus) public payloadExecuted;
-
     /*
      * @notice constructor for creating a new Socket contract instance.
      * @param chainSlug_ The unique identifier of the chain this socket is deployed on.

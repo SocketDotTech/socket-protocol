@@ -6,7 +6,7 @@ import "../../interfaces/ISwitchboard.sol";
 import {IPlug} from "../../interfaces/IPlug.sol";
 
 import "../utils/AccessControl.sol";
-import {GOVERNANCE_ROLE, RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
+import {GOVERNANCE_ROLE, RESCUE_ROLE, SWITCHBOARD_DISABLER_ROLE} from "../utils/common/AccessRoles.sol";
 import {PlugConfig, SwitchboardStatus, ExecutionStatus} from "../utils/common/Structs.sol";
 import {PlugDisconnected, InvalidAppGateway, InvalidTransmitter} from "../utils/common/Errors.sol";
 import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
@@ -40,6 +40,8 @@ abstract contract SocketConfig is ISocket, AccessControl {
     event SwitchboardAdded(address switchboard);
     // @notice event triggered when a switchboard is disabled
     event SwitchboardDisabled(address switchboard);
+    // @notice event triggered when a switchboard is enabled
+    event SwitchboardEnabled(address switchboard);
 
     // @notice function to register a switchboard
     // @dev only callable by switchboards
@@ -53,9 +55,16 @@ abstract contract SocketConfig is ISocket, AccessControl {
 
     // @notice function to disable a switchboard
     // @dev only callable by governance role
-    function disableSwitchboard() external onlyRole(GOVERNANCE_ROLE) {
+    function disableSwitchboard() external onlyRole(SWITCHBOARD_DISABLER_ROLE) {
         isValidSwitchboard[msg.sender] = SwitchboardStatus.DISABLED;
         emit SwitchboardDisabled(msg.sender);
+    }
+
+    // @notice function to enable a switchboard
+    // @dev only callable by governance role
+    function enableSwitchboard() external onlyRole(GOVERNANCE_ROLE) {
+        isValidSwitchboard[msg.sender] = SwitchboardStatus.REGISTERED;
+        emit SwitchboardEnabled(msg.sender);
     }
 
     // @notice function to connect a plug to a socket

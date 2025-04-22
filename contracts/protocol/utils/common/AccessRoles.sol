@@ -10,3 +10,5 @@ bytes32 constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 bytes32 constant TRANSMITTER_ROLE = keccak256("TRANSMITTER_ROLE");
 // used by switchboard watchers who work against transmitters
 bytes32 constant WATCHER_ROLE = keccak256("WATCHER_ROLE");
+// used to disable switchboard
+bytes32 constant SWITCHBOARD_DISABLER_ROLE = keccak256("SWITCHBOARD_DISABLER_ROLE");

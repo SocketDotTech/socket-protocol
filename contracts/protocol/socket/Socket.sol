@@ -12,6 +12,9 @@ import "./SocketUtils.sol";
 contract Socket is SocketUtils {
     using LibCall for address;
 
+    // @notice mapping of payload id to execution status
+    mapping(bytes32 => ExecutionStatus) public payloadExecuted;
+
     ////////////////////////////////////////////////////////
     ////////////////////// ERRORS //////////////////////////
     ////////////////////////////////////////////////////////
