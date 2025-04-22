@@ -109,7 +109,7 @@ contract MockSocket is ISocket {
     function execute(
         ExecuteParams memory executeParams_,
         bytes memory transmitterSignature_
-    ) external payable override returns (bytes memory) {
+    ) external payable override returns (bool, bool, bytes memory) {
         // execute payload
         // return
         //     _execute(
@@ -145,7 +145,7 @@ contract MockSocket is ISocket {
         bytes memory
     ) internal returns (bytes memory) {
         bytes memory returnData = hex"00010203";
-        emit ExecutionSuccess(payloadId_, returnData);
+        emit ExecutionSuccess(payloadId_, false, returnData);
         return returnData;
     }
 

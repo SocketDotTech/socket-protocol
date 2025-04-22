@@ -61,7 +61,7 @@ contract Socket is SocketUtils {
     function execute(
         ExecuteParams memory executeParams_,
         bytes memory transmitterSignature_
-    ) external payable returns (bytes memory) {
+    ) external payable returns (bool, bool, bytes memory) {
         // check if the deadline has passed
         if (executeParams_.deadline < block.timestamp) revert DeadlinePassed();
 
@@ -118,27 +118,24 @@ contract Socket is SocketUtils {
     function _execute(
         bytes32 payloadId_,
         ExecuteParams memory executeParams_
-    ) internal returns (bytes memory) {
+    ) internal returns (bool, bool, bytes memory) {
         // check if the gas limit is sufficient
         if (gasleft() < executeParams_.gasLimit) revert LowGasLimit();
 
         // NOTE: external un-trusted call
-        (bool success, , bytes memory returnData) = executeParams_.target.tryCall(
-            msg.value,
-            executeParams_.gasLimit,
-            maxCopyBytes,
-            executeParams_.payload
-        );
+        (bool success, bool exceededMaxCopy, bytes memory returnData) = executeParams_
+            .target
+            .tryCall(msg.value, executeParams_.gasLimit, maxCopyBytes, executeParams_.payload);
 
         // if the execution failed, set the execution status to reverted
         if (!success) {
             payloadExecuted[payloadId_] = ExecutionStatus.Reverted;
-            emit ExecutionFailed(payloadId_, returnData);
+            emit ExecutionFailed(payloadId_, exceededMaxCopy, returnData);
         } else {
-            emit ExecutionSuccess(payloadId_, returnData);
+            emit ExecutionSuccess(payloadId_, exceededMaxCopy, returnData);
         }
 
-        return returnData;
+        return (success, exceededMaxCopy, returnData);
     }
 
     function _validateExecutionStatus(bytes32 payloadId_) internal {
