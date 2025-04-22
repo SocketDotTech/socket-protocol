@@ -223,11 +223,9 @@ struct RequestMetadata {
 
 struct ExecuteParams {
     uint256 deadline;
-    CallType callType;
     WriteFinality writeFinality;
     uint256 gasLimit;
     uint256 value;
-    uint256 readAt;
     bytes payload;
     address target;
     uint40 requestCount;

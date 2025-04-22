@@ -347,11 +347,9 @@ contract SetupTest is Test {
 
         params = ExecuteParams({
             deadline: payloadParams.deadline,
-            callType: payloadParams.dump.getCallType(),
             writeFinality: payloadParams.dump.getWriteFinality(),
             gasLimit: payloadParams.gasLimit,
             value: payloadParams.value,
-            readAt: payloadParams.readAt,
             payload: payloadParams.payload,
             target: payloadParams.target,
             requestCount: payloadParams.dump.getRequestCount(),
