@@ -41,7 +41,7 @@ contract DeliveryHelper is FeesHelpers {
         requestMetadata_.winningBid.transmitter = winningBid_.transmitter;
 
         if (!isRestarted) {
-            watcherPrecompile__().startProcessingRequest(requestCount_, winningBid_);
+            watcherPrecompile__().startProcessingRequest(requestCount_, winningBid_.transmitter);
         } else {
             watcherPrecompile__().updateTransmitter(requestCount_, winningBid_.transmitter);
         }
@@ -56,8 +56,7 @@ contract DeliveryHelper is FeesHelpers {
         if (requestMetadata_.winningBid.transmitter != address(0))
             IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
                 requestCount_,
-                requestMetadata_.winningBid.transmitter,
-                requestMetadata_.appGateway
+                requestMetadata_.winningBid.transmitter
             );
 
         IAppGateway(requestMetadata_.appGateway).onRequestComplete(
@@ -95,8 +94,7 @@ contract DeliveryHelper is FeesHelpers {
         if (requests[requestCount_].winningBid.transmitter != address(0)) {
             IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
                 requestCount_,
-                requests[requestCount_].winningBid.transmitter,
-                requests[requestCount_].appGateway
+                requests[requestCount_].winningBid.transmitter
             );
         } else {
             // If the request has no winning bid, ie. transmitter not assigned, unblock fees

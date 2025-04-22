@@ -6,7 +6,11 @@ interface IFeesPlug {
 
     function feesRedeemed(bytes32 feesId_) external view returns (bool);
 
-    function deposit(address token_, address appGateway_, uint256 amount_) external payable;
+    function depositToFee(address token_, uint256 amount_, address receiver_) external;
+
+    function depositToFeeAndNative(address token_, uint256 amount_, address receiver_) external;
+
+    function depositToNative(address token_, uint256 amount_, address receiver_) external;
 
     function distributeFee(
         address feeToken_,

@@ -109,7 +109,7 @@ contract WatcherPrecompile is RequestHandler {
     /// @return The digest hash of the finalized payload
     /// @dev This function finalizes a payload request and requests the watcher to release the proofs
     function finalize(
-        PayloadParams memory params_,`
+        PayloadParams memory params_,
         address transmitter_
     ) external returns (bytes32) {
         return _finalize(params_, transmitter_);
@@ -312,11 +312,8 @@ contract WatcherPrecompile is RequestHandler {
                 )
             ) revert InvalidCallerTriggered();
 
-            IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileFees(
-                address(0),
-                uint32(0),
-                watcherPrecompileLimits__().callBackFees(params_[i].payload),
-                uint40(0),
+            IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileFeesFromAddress(
+                watcherPrecompileLimits__.callBackFees(),
                 appGateway
             );
 

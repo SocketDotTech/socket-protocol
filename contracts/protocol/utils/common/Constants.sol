@@ -9,6 +9,7 @@ bytes32 constant DEPLOY = keccak256("DEPLOY");
 bytes32 constant QUERY = keccak256("QUERY");
 bytes32 constant FINALIZE = keccak256("FINALIZE");
 bytes32 constant SCHEDULE = keccak256("SCHEDULE");
+bytes32 constant CALLBACK = keccak256("CALLBACK");
 bytes32 constant FAST = keccak256("FAST");
 uint256 constant REQUEST_PAYLOAD_COUNT_LIMIT = 10;
 uint256 constant PAYLOAD_SIZE_LIMIT = 24_500;

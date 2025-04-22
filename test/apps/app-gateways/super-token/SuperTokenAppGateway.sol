@@ -29,7 +29,7 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
     constructor(
         address addressResolver_,
         address owner_,
-        Fees memory fees_,
+        uint256 fees_,
         ConstructorParams memory params_
     ) AppGatewayBase(addressResolver_) {
         creationCodeWithArgs[superToken] = abi.encodePacked(
@@ -49,7 +49,7 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         _initializeOwner(owner_);
     }
 
-    function deployContracts(uint32 chainSlug_) external async {
+    function deployContracts(uint32 chainSlug_) external async(bytes("")) {
         bytes memory initData = abi.encodeWithSelector(SuperToken.setOwner.selector, owner());
         _deploy(superToken, chainSlug_, IsPlug.YES, initData);
     }
@@ -60,7 +60,7 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         return;
     }
 
-    function transfer(bytes memory order_) external async createFeePool {
+    function transfer(bytes memory order_) external async(bytes("")) {
         TransferOrder memory order = abi.decode(order_, (TransferOrder));
         ISuperToken(order.srcToken).burn(order.user, order.srcAmount);
         ISuperToken(order.dstToken).mint(order.user, order.srcAmount);

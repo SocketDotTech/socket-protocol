@@ -107,13 +107,13 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
     /// @param token_ The token address
     /// @param feeAmount_ The amount of fees
     /// @param nativeAmount_ The amount of native tokens
-    /// @param appGateway_ The app gateway address
+    /// @param receiver_ The receiver address
     function _deposit(
         address token_,
         address receiver_,
         uint256 feeAmount_,
         uint256 nativeAmount_
-    ) internal override {
+    ) internal {
         uint256 totalAmount_ = feeAmount_ + nativeAmount_;
         if (!whitelistedTokens[token_]) revert TokenNotWhitelisted(token_);
         if (token_.code.length == 0) revert InvalidTokenAddress();

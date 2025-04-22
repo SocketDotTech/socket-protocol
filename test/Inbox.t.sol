@@ -26,7 +26,7 @@ contract TriggerTest is DeliveryHelperTest {
         counter = new Counter();
 
         // Deploy the gateway with fees
-        gateway = new CounterAppGateway(address(addressResolver), createFees(feesAmount));
+        gateway = new CounterAppGateway(address(addressResolver), feesAmount);
         gateway.setIsValidPlug(arbChainSlug, address(counter));
 
         // Connect the counter to the gateway and socket

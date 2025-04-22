@@ -19,8 +19,11 @@ contract FeesTest is DeliveryHelperTest {
         setUpDeliveryHelper();
         feesConfig = getSocketConfig(feesChainSlug);
 
-        counterGateway = new CounterAppGateway(address(addressResolver), createFees(feesAmount));
-        depositFees(address(counterGateway), createFees(depositAmount));
+        counterGateway = new CounterAppGateway(address(addressResolver), feesAmount);
+        depositFees(
+            address(counterGateway),
+            OnChainFees({chainSlug: feesChainSlug, token: ETH_ADDRESS, amount: depositAmount})
+        );
 
         bytes32[] memory contractIds = new bytes32[](1);
         contractIds[0] = counterGateway.counter();
@@ -48,7 +51,8 @@ contract FeesTest is DeliveryHelperTest {
         uint40 requestCount = feesManager.withdrawTransmitterFees(
             feesChainSlug,
             ETH_ADDRESS,
-            address(receiver)
+            address(receiver),
+            feesManager.transmitterCredits(transmitterEOA)
         );
         uint40[] memory batches = watcherPrecompile.getBatches(requestCount);
         _finalizeBatch(batches[0], new bytes[](0), 0, false);

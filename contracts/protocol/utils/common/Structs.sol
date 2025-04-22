@@ -108,6 +108,12 @@ struct Bid {
     bytes extraData;
 }
 
+struct OnChainFees {
+    uint32 chainSlug;
+    address token;
+    uint256 amount;
+}
+
 // App gateway base:
 struct OverrideParams {
     Read isReadCall;
@@ -116,12 +122,6 @@ struct OverrideParams {
     uint256 gasLimit;
     uint256 value;
     uint256 readAt;
-}
-
-// FM:
-struct RequestFee {
-    uint256 blockedCredits;
-    address consumeFrom;
 }
 
 struct UserCredits {
@@ -210,6 +210,9 @@ struct RequestParams {
     // updated while processing request
     uint256 currentBatchPayloadsLeft;
     uint256 payloadsRemaining;
+    uint256 queryCount;
+    uint256 finalizeCount;
+    uint256 scheduleCount;
     address middleware;
     // updated after auction
     address transmitter;
@@ -219,11 +222,11 @@ struct RequestParams {
 struct RequestMetadata {
     address appGateway;
     address auctionManager;
-    Fees fees;
+    uint256 maxFees;
     Bid winningBid;
     bytes onCompleteData;
     bool onlyReadRequests;
-    bytes feesApprovalData;
+    address consumeFrom;
 }
 
 struct ExecuteParams {

@@ -169,7 +169,7 @@
 | `requestOwnershipHandover`   | `0x25692962` |
 | `sbType`                     | `0x745de344` |
 | `transferOwnership`          | `0xf2fde38b` |
-| `transmitterFees`            | `0xefb4cdea` |
+| `transmitterCredits`         | `0xefb4cdea` |
 | `unblockAndAssignFees`       | `0x3c5366a2` |
 | `unblockFees`                | `0xc1867a4b` |
 | `watcherPrecompileConfig`    | `0x8618a912` |

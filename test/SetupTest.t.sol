@@ -19,7 +19,7 @@ import {ContractFactoryPlug} from "../contracts/protocol/payload-delivery/Contra
 import {FeesPlug} from "../contracts/protocol/payload-delivery/FeesPlug.sol";
 
 import {ETH_ADDRESS} from "../contracts/protocol/utils/common/Constants.sol";
-import {ResolvedPromises} from "../contracts/protocol/utils/common/Structs.sol";
+import {ResolvedPromises, OnChainFees} from "../contracts/protocol/utils/common/Structs.sol";
 
 import "solady/utils/ERC1967Factory.sol";
 
@@ -283,10 +283,6 @@ contract SetupTest is Test {
         return chainSlug_ == arbChainSlug ? arbConfig : optConfig;
     }
 
-    function createFees(uint256 maxFees_) internal view returns (Fees memory) {
-        return Fees({feePoolChain: arbChainSlug, feePoolToken: ETH_ADDRESS, amount: maxFees_});
-    }
-
     function _generateWatcherProof(
         PayloadParams memory params_
     ) internal view returns (bytes memory, bytes32) {
@@ -402,5 +398,13 @@ contract SetupTest is Test {
             mstore(add(sig, 32), sigR)
             mstore(add(sig, 64), sigS)
         }
+    }
+
+    function _createOnChainFees(
+        uint32 chainSlug_,
+        address token_,
+        uint256 amount_
+    ) internal pure returns (OnChainFees memory) {
+        return OnChainFees({chainSlug: chainSlug_, token: token_, amount: amount_});
     }
 }

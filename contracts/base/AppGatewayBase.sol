@@ -7,19 +7,19 @@ import "../interfaces/IForwarder.sol";
 import "../interfaces/IMiddleware.sol";
 import "../interfaces/IPromise.sol";
 
-import {FeesPlugin} from "../protocol/utils/FeesPlugin.sol";
 import {InvalidPromise, FeesNotSet, AsyncModifierNotUsed} from "../protocol/utils/common/Errors.sol";
 import {FAST} from "../protocol/utils/common/Constants.sol";
 
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway
 /// @dev This contract contains helpers for contract deployment, overrides, hooks and request processing
-abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin {
+abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     OverrideParams public overrideParams;
     bool public isAsyncModifierSet;
     address public auctionManager;
     bytes32 public sbType;
     bytes public onCompleteData;
+    uint256 public maxFees;
 
     mapping(address => bool) public isValidPromise;
     mapping(bytes32 => mapping(uint32 => address)) public override forwarderAddresses;
@@ -29,20 +29,19 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
     modifier async(bytes memory feesApprovalData_) {
         _preAsync();
         _;
-        _postAsync();
+        _postAsync(feesApprovalData_);
     }
 
-    function _postAsync() internal {
+    function _postAsync(bytes memory feesApprovalData_) internal {
         isAsyncModifierSet = false;
 
         // todo: cache the feesApprovalData for next async in same request
-        deliveryHelper__().batch(fees, auctionManager, feesApprovalData_, onCompleteData);
+        deliveryHelper__().batch(maxFees, auctionManager, feesApprovalData_, onCompleteData);
         _markValidPromises();
         onCompleteData = bytes("");
     }
 
     function _preAsync() internal {
-        if (fees.feePoolChain == 0) revert FeesNotSet();
         isAsyncModifierSet = true;
         _clearOverrides();
         deliveryHelper__().clearQueue();
@@ -188,7 +187,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
+            .getOnChainAddress();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -197,19 +197,19 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
 
     /// @notice Sets multiple overrides in one call
     /// @param isReadCall_ The read call flag
-    /// @param fees_ The fees configuration
+    /// @param fees_ The maxFees configuration
     /// @param gasLimit_ The gas limit
     /// @param isParallelCall_ The sequential call flag
     function _setOverrides(
         Read isReadCall_,
         Parallel isParallelCall_,
         uint256 gasLimit_,
-        Fees memory fees_
+        uint256 fees_
     ) internal {
         overrideParams.isReadCall = isReadCall_;
         overrideParams.isParallelCall = isParallelCall_;
         overrideParams.gasLimit = gasLimit_;
-        fees = fees_;
+        maxFees = fees_;
     }
 
     function _clearOverrides() internal {
@@ -221,7 +221,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         overrideParams.writeFinality = WriteFinality.LOW;
     }
 
-    /// @notice Sets isReadCall, fees and gasLimit overrides
+    /// @notice Sets isReadCall, maxFees and gasLimit overrides
     /// @param isReadCall_ The read call flag
     /// @param isParallelCall_ The sequential call flag
     /// @param gasLimit_ The gas limit
@@ -283,10 +283,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         overrideParams.value = value_;
     }
 
-    /// @notice Sets fees overrides
-    /// @param fees_ The fees configuration
-    function _setOverrides(Fees memory fees_) internal {
-        fees = fees_;
+    /// @notice Sets maxFees overrides
+    /// @param fees_ The maxFees configuration
+    function _setMaxFees(uint256 fees_) internal {
+        maxFees = fees_;
     }
 
     function getOverrideParams()
@@ -315,7 +315,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
         deliveryHelper__().cancelRequest(requestCount_);
     }
 
-    /// @notice increases the transaction fees
+    /// @notice increases the transaction maxFees
     /// @param requestCount_ The async ID
     function _increaseFees(uint40 requestCount_, uint256 newMaxFees_) internal {
         deliveryHelper__().increaseFees(requestCount_, newMaxFees_);
@@ -339,7 +339,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway, FeesPlugin
                 amount_,
                 receiver_,
                 auctionManager,
-                fees
+                maxFees
             );
     }
 

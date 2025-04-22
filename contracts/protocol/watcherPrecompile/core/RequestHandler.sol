@@ -14,15 +14,15 @@ abstract contract RequestHandler is WatcherPrecompileCore {
     uint256[50] _request_handler_gap;
 
     /// @notice Submits a batch of payload requests from middleware
-    /// @param payloadSubmitParams Array of payload submit parameters
+    /// @param payloadSubmitParams_ Array of payload submit parameters
     /// @return requestCount The unique identifier for the submitted request
     /// @dev This function processes a batch of payload requests and assigns them to batches
     /// @dev It also consumes limits for the app gateway based on the number of reads and writes
     function submitRequest(
-        PayloadSubmitParams[] calldata payloadSubmitParams,
-        RequestMetadata calldata requestMetadata
+        PayloadSubmitParams[] calldata payloadSubmitParams_,
+        RequestMetadata calldata requestMetadata_
     ) public returns (uint40 requestCount) {
-        address appGateway = _checkAppGateways(payloadSubmitParams);
+        address appGateway = _checkAppGateways(payloadSubmitParams_);
 
         requestCount = nextRequestCount++;
         uint40 batchCount = nextBatchCount;
@@ -32,8 +32,8 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         uint256 writeCount;
         PayloadSubmitParams memory lastP;
 
-        for (uint256 i = 0; i < payloadSubmitParams.length; i++) {
-            PayloadSubmitParams memory p = payloadSubmitParams[i];
+        for (uint256 i = 0; i < payloadSubmitParams_.length; i++) {
+            PayloadSubmitParams memory p = payloadSubmitParams_[i];
 
             // Count reads and writes for checking limits
             if (p.callType == CallType.READ) {
@@ -93,11 +93,12 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         watcherPrecompileLimits__.consumeLimit(appGateway, QUERY, readCount);
         watcherPrecompileLimits__.consumeLimit(appGateway, FINALIZE, writeCount);
 
+        requestParams[requestCount].queryCount = readCount;
+        requestParams[requestCount].finalizeCount = writeCount;
+        
         requestParams[requestCount].currentBatch = currentBatch;
-        requestParams[requestCount].payloadsRemaining = payloadSubmitParams.length;
+        requestParams[requestCount].payloadsRemaining = payloadSubmitParams_.length;
         requestParams[requestCount].middleware = msg.sender;
-
-        requestMetadata[requestCount] = requestMetadata;
 
         emit RequestSubmitted(
             msg.sender,
@@ -132,17 +133,17 @@ abstract contract RequestHandler is WatcherPrecompileCore {
 
     /// @notice Starts processing a request with a specified transmitter
     /// @param requestCount The request count to start processing
-    /// @param winningBid The winning bid, contains fees, transmitter and extra data
+    /// @param transmitter_ The winning bid, contains fees, transmitter and extra data
     /// @dev This function initiates the processing of a request by a transmitter
     /// @dev It verifies that the caller is the middleware and that the request hasn't been started yet
-    function startProcessingRequest(uint40 requestCount, Bid memory winningBid) public {
+    function startProcessingRequest(uint40 requestCount, address transmitter_) public {
         RequestParams storage r = requestParams[requestCount];
         if (r.middleware != msg.sender) revert InvalidCaller();
         if (r.transmitter != address(0)) revert AlreadyStarted();
         if (r.currentBatchPayloadsLeft > 0) revert AlreadyStarted();
 
         uint40 batchCount = r.payloadParamsArray[0].payloadHeader.getBatchCount();
-        r.transmitter = winningBid.transmitter;
+        r.transmitter = transmitter_;
         r.currentBatch = batchCount;
 
         _processBatch(requestCount, batchCount);
