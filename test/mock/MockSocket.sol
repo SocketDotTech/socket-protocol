@@ -94,7 +94,13 @@ contract MockSocket is ISocket {
         PlugConfig memory plugConfig = _plugConfigs[msg.sender];
         // creates a unique ID for the message
         triggerId = _encodeTriggerId(plugConfig.appGatewayId);
-        emit AppGatewayCallRequested(triggerId, chainSlug, msg.sender, overrides, payload);
+        emit AppGatewayCallRequested(
+            triggerId,
+            address(plugConfig.switchboard__),
+            msg.sender,
+            overrides,
+            payload
+        );
     }
 
     /**
