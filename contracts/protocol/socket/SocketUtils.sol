@@ -18,6 +18,8 @@ abstract contract SocketUtils is SocketConfig {
     bytes32 public immutable version;
     // ChainSlug for this deployed socket instance
     uint32 public immutable chainSlug;
+    // Prefix for trigger ID containing chain slug and address bits
+    uint256 private immutable triggerPrefix;
 
     // @notice counter for trigger id
     uint64 public triggerCounter;
@@ -31,6 +33,8 @@ abstract contract SocketUtils is SocketConfig {
     constructor(uint32 chainSlug_, address owner_, string memory version_) {
         chainSlug = chainSlug_;
         version = keccak256(bytes(version_));
+        triggerPrefix = (uint256(chainSlug_) << 224) | (uint256(uint160(address(this))) << 64);
+
         _initializeOwner(owner_);
     }
 
@@ -107,12 +111,7 @@ abstract contract SocketUtils is SocketConfig {
      * @return The trigger ID
      */
     function _encodeTriggerId() internal returns (bytes32) {
-        return
-            bytes32(
-                (uint256(chainSlug) << 224) |
-                    (uint256(uint160(address(this))) << 64) |
-                    triggerCounter++
-            );
+        return bytes32(triggerPrefix | triggerCounter++);
     }
 
     //////////////////////////////////////////////
