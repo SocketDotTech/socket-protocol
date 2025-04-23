@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 import {AppGatewayConfig, PlugConfig} from "../protocol/utils/common/Structs.sol";
@@ -50,7 +50,8 @@ interface IWatcherPrecompileConfig {
         uint32 chainSlug_,
         address target_,
         address appGateway_,
-        address switchboard_
+        address switchboard_,
+        address middleware_
     ) external view;
 
     function setAppGateways(

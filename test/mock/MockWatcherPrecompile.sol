@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 import "../../contracts/interfaces/IAppGateway.sol";
@@ -16,8 +16,6 @@ contract MockWatcherPrecompile {
     uint256 public maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
     /// @notice Counter for tracking payload execution requests
     uint256 public payloadCounter;
-    /// @notice Counter for tracking timeout requests
-    uint256 public timeoutCounter;
     /// @notice Mapping to store timeout requests
     /// @dev timeoutId => TimeoutRequest struct
     mapping(bytes32 => TimeoutRequest) public timeoutRequests;
@@ -26,7 +24,6 @@ contract MockWatcherPrecompile {
 
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
-    error InvalidTransmitter();
 
     event CalledAppGateway(bytes32 triggerId);
 
@@ -74,7 +71,7 @@ contract MockWatcherPrecompile {
     /// @param delayInSeconds_ The delay in seconds
     function setTimeout(bytes calldata payload_, uint256 delayInSeconds_) external {
         uint256 executeAt = block.timestamp + delayInSeconds_;
-        bytes32 timeoutId = _encodeTimeoutId(timeoutCounter++);
+        bytes32 timeoutId = _encodeTimeoutId();
         timeoutRequests[timeoutId] = TimeoutRequest(
             timeoutId,
             msg.sender,
@@ -177,9 +174,9 @@ contract MockWatcherPrecompile {
             );
     }
 
-    function _encodeTimeoutId(uint256 timeoutCounter_) internal view returns (bytes32) {
+    function _encodeTimeoutId() internal returns (bytes32) {
         // watcher address (160 bits) | counter (64 bits)
-        return bytes32((uint256(uint160(address(this))) << 64) | timeoutCounter_);
+        return bytes32((uint256(uint160(address(this))) << 64) | payloadCounter++);
     }
 
     /// @notice Retrieves the configuration for a specific plug on a network

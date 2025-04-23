@@ -1,11 +1,10 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
 import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
 import "./DeliveryHelperStorage.sol";
-import {PayloadSubmitParams} from "../../utils/common/Structs.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
 abstract contract DeliveryUtils is
@@ -14,16 +13,9 @@ abstract contract DeliveryUtils is
     Ownable,
     AddressResolverUtil
 {
-    // slots [0-108] reserved for delivery helper storage and [109-159] reserved for addr resolver util
-    // slots [160-209] reserved for gap
+    // slots [156-206] reserved for gap
     uint256[50] _gap_delivery_utils;
 
-    /// @notice Error thrown when attempting to executed payloads after all have been executed
-    error AllPayloadsExecuted();
-    /// @notice Error thrown request did not come from Forwarder address
-    error NotFromForwarder();
-    /// @notice Error thrown when a payload call fails
-    error CallFailed(bytes32 payloadId);
     /// @notice Error thrown if payload is too large
     error PayloadTooLarge();
     /// @notice Error thrown if trying to cancel a batch without being the application gateway
@@ -40,8 +32,6 @@ abstract contract DeliveryUtils is
     /// @notice Error thrown when a maximum message value limit is exceeded
     error MaxMsgValueLimitExceeded();
 
-    event CallBackReverted(uint40 requestCount_, bytes32 payloadId_);
-    event RequestCancelled(uint40 indexed requestCount);
     event BidTimeoutUpdated(uint256 newBidTimeout);
     event PayloadSubmitted(
         uint40 indexed requestCount,
@@ -57,6 +47,10 @@ abstract contract DeliveryUtils is
         uint40 indexed requestCount,
         uint256 newMaxFees
     );
+    /// @notice Emitted when chain max message value limits are updated
+    event ChainMaxMsgValueLimitsUpdated(uint32[] chainSlugs, uint256[] maxMsgValueLimits);
+    /// @notice Emitted when a request is cancelled
+    event RequestCancelled(uint40 indexed requestCount);
 
     modifier onlyAuctionManager(uint40 requestCount_) {
         if (msg.sender != requests[requestCount_].auctionManager) revert NotAuctionManager();
@@ -89,5 +83,7 @@ abstract contract DeliveryUtils is
         for (uint256 i = 0; i < chainSlugs_.length; i++) {
             chainMaxMsgValueLimit[chainSlugs_[i]] = maxMsgValueLimits_[i];
         }
+
+        emit ChainMaxMsgValueLimitsUpdated(chainSlugs_, maxMsgValueLimits_);
     }
 }

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 import {Fees} from "../utils/common/Structs.sol";
@@ -8,7 +8,7 @@ import {Fees} from "../utils/common/Structs.sol";
 /// @dev Provides base functionality for fee management in the system
 abstract contract FeesPlugin {
     /// @notice Storage for the current fee configuration
-    /// @dev Contains fee parameters like rates, limits, and recipient addresses
+    /// @dev Contains fee parameters like chain slug, token address, and amount
     Fees public fees;
 
     /// @notice Retrieves the current fee configuration

@@ -2,24 +2,24 @@
 pragma solidity ^0.8.21;
 
 import "./SwitchboardBase.sol";
+import {WATCHER_ROLE} from "../../utils/common/AccessRoles.sol";
 
 /**
  * @title FastSwitchboard contract
  * @dev This contract implements a fast version of the SwitchboardBase contract
- * that enables packet attestations
+ * that enables payload attestations from watchers
  */
 contract FastSwitchboard is SwitchboardBase {
-    // used to track if watcher have attested a digest
-    // digest => isAttested
+    // used to track if watcher have attested a payload
+    // payloadId => isAttested
     mapping(bytes32 => bool) public isAttested;
 
-    // Error emitted when a digest is already attested by watcher.
+    // Error emitted when a payload is already attested by watcher.
     error AlreadyAttested();
     // Error emitted when watcher is not valid
     error WatcherNotFound();
-
-    // Event emitted when watcher attests a digest
-    event Attested(bytes32 digest_, address watcher);
+    // Event emitted when watcher attests a payload
+    event Attested(bytes32 payloadId_, address watcher);
 
     /**
      * @dev Constructor function for the FastSwitchboard contract
@@ -34,25 +34,25 @@ contract FastSwitchboard is SwitchboardBase {
     ) SwitchboardBase(chainSlug_, socket_, owner_) {}
 
     /**
-     * @dev Function to attest a packet
+     * @dev Function to attest a payload
      * @param digest_ digest of the payload to be executed
      * @param proof_ proof from watcher
-     * @notice we are attesting a digest uniquely identified with payloadId.
+     * @notice we are attesting a payload uniquely identified with digest.
      */
     function attest(bytes32 digest_, bytes calldata proof_) external {
-        address watcher = _recoverSigner(keccak256(abi.encode(address(this), digest_)), proof_);
-
         if (isAttested[digest_]) revert AlreadyAttested();
-        if (!_hasRole(WATCHER_ROLE, watcher)) revert WatcherNotFound();
-        isAttested[digest_] = true;
 
+        address watcher = _recoverSigner(keccak256(abi.encode(address(this), digest_)), proof_);
+        if (!_hasRole(WATCHER_ROLE, watcher)) revert WatcherNotFound();
+
+        isAttested[digest_] = true;
         emit Attested(digest_, watcher);
     }
 
     /**
      * @inheritdoc ISwitchboard
      */
-    function allowPacket(bytes32 digest_, bytes32) external view returns (bool) {
+    function allowPayload(bytes32 digest_, bytes32) external view returns (bool) {
         // digest has enough attestations
         return isAttested[digest_];
     }

@@ -1,20 +1,30 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 import "./RequestHandler.sol";
 import {LibCall} from "solady/utils/LibCall.sol";
-import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
 
 /// @title WatcherPrecompile
-/// @notice Contract that handles payload verification, execution and app configurations
+/// @notice Contract that handles request submission, iteration and execution
+/// @dev This contract extends RequestHandler to provide the main functionality for the WatcherPrecompile system
+/// @dev It handles timeout requests, finalization, queries, and promise resolution
 contract WatcherPrecompile is RequestHandler {
     using DumpDecoder for bytes32;
     using LibCall for address;
+
+    /// @notice Constructor that disables initializers for the implementation
     constructor() {
-        _disableInitializers(); // disable for implementation
+        _disableInitializers();
     }
 
-    /// @notice Initial initialization (version 1)
+    /// @notice Initializes the contract with the required parameters
+    /// @param owner_ The address of the owner
+    /// @param addressResolver_ The address of the address resolver
+    /// @param expiryTime_ The expiry time for payload execution
+    /// @param evmxSlug_ The EVM chain slug
+    /// @param watcherPrecompileLimits_ The address of the watcher precompile limits contract
+    /// @param watcherPrecompileConfig_ The address of the watcher precompile config contract
+    /// @dev This function initializes the contract with the required parameters and sets up the initial state
     function initialize(
         address owner_,
         address addressResolver_,
@@ -37,18 +47,24 @@ contract WatcherPrecompile is RequestHandler {
     // ================== Timeout functions ==================
 
     /// @notice Sets a timeout for a payload execution on app gateway
-    /// @param payload_ The payload data
-    /// @param delayInSeconds_ The delay in seconds
+    /// @dev This function creates a timeout request that will be executed after the specified `delayInSeconds_`
+    /// @dev request is executed on msg.sender
+    /// @dev msg sender needs SCHEDULE precompile limit
+    /// @param delayInSeconds_ The delay in seconds before the timeout executes
+    /// @param payload_ The payload data to be executed after the timeout
+    /// @return The unique identifier for the timeout request
     function setTimeout(
         uint256 delayInSeconds_,
         bytes calldata payload_
     ) external returns (bytes32) {
-        return _setTimeout(payload_, delayInSeconds_);
+        return _setTimeout(delayInSeconds_, payload_);
     }
 
     /// @notice Ends the timeouts and calls the target address with the callback payload
     /// @param timeoutId_ The unique identifier for the timeout
-    /// @dev Only callable by the contract owner
+    /// @param signatureNonce_ The nonce used in the watcher's signature
+    /// @param signature_ The watcher's signature
+    /// @dev It verifies if the signature is valid and the timeout hasn't been resolved yet
     function resolveTimeout(
         bytes32 timeoutId_,
         uint256 signatureNonce_,
@@ -65,7 +81,7 @@ contract WatcherPrecompile is RequestHandler {
         if (timeoutRequest_.isResolved) revert TimeoutAlreadyResolved();
         if (block.timestamp < timeoutRequest_.executeAt) revert ResolvingTimeoutTooEarly();
 
-        (bool success, , ) = timeoutRequest_.target.tryCall(
+        (bool success, , bytes memory returnData) = timeoutRequest_.target.tryCall(
             0,
             gasleft(),
             0, // setting max_copy_bytes to 0 as not using returnData right now
@@ -80,7 +96,8 @@ contract WatcherPrecompile is RequestHandler {
             timeoutId_,
             timeoutRequest_.target,
             timeoutRequest_.payload,
-            block.timestamp
+            block.timestamp,
+            returnData
         );
     }
 
@@ -89,16 +106,20 @@ contract WatcherPrecompile is RequestHandler {
     /// @notice Finalizes a payload request, requests the watcher to release the proofs to execute on chain
     /// @param params_ The payload parameters
     /// @param transmitter_ The address of the transmitter
+    /// @return The digest hash of the finalized payload
+    /// @dev This function finalizes a payload request and requests the watcher to release the proofs
     function finalize(
         PayloadParams memory params_,
         address transmitter_
-    ) external returns (bytes32 digest) {
-        digest = _finalize(params_, transmitter_);
+    ) external returns (bytes32) {
+        return _finalize(params_, transmitter_);
     }
 
     // ================== Query functions ==================
+
     /// @notice Creates a new query request
     /// @param params_ The payload parameters
+    /// @dev This function creates a new query request
     function query(PayloadParams memory params_) external {
         _query(params_);
     }
@@ -108,7 +129,8 @@ contract WatcherPrecompile is RequestHandler {
     /// @param proof_ The watcher's proof
     /// @param signatureNonce_ The nonce of the signature
     /// @param signature_ The signature of the watcher
-    /// @dev Only callable by the contract owner
+    /// @dev This function marks a request as finalized with a proof
+    /// @dev It verifies that the signature is valid
     /// @dev Watcher signs on following digest for validation on switchboard:
     /// @dev keccak256(abi.encode(switchboard, digest))
     function finalized(
@@ -127,17 +149,26 @@ contract WatcherPrecompile is RequestHandler {
         emit Finalized(payloadId_, proof_);
     }
 
+    /// @notice Updates the transmitter for a request
+    /// @param requestCount The request count to update
+    /// @param transmitter The new transmitter address
+    /// @dev This function updates the transmitter for a request
+    /// @dev It verifies that the caller is the middleware and that the request hasn't been started yet
     function updateTransmitter(uint40 requestCount, address transmitter) public {
         RequestParams storage r = requestParams[requestCount];
         if (r.isRequestCancelled) revert RequestCancelled();
+        if (r.payloadsRemaining == 0) revert RequestAlreadyExecuted();
         if (r.middleware != msg.sender) revert InvalidCaller();
-        if (r.transmitter != address(0)) revert AlreadyStarted();
-
+        if (r.transmitter != address(0)) revert RequestNotProcessing();
         r.transmitter = transmitter;
-        /// todo: recheck limits
+
         _processBatch(requestCount, r.currentBatch);
     }
 
+    /// @notice Cancels a request
+    /// @param requestCount The request count to cancel
+    /// @dev This function cancels a request
+    /// @dev It verifies that the caller is the middleware and that the request hasn't been cancelled yet
     function cancelRequest(uint40 requestCount) external {
         RequestParams storage r = requestParams[requestCount];
         if (r.isRequestCancelled) revert RequestAlreadyCancelled();
@@ -148,7 +179,11 @@ contract WatcherPrecompile is RequestHandler {
 
     /// @notice Resolves multiple promises with their return data
     /// @param resolvedPromises_ Array of resolved promises and their return data
-    /// @dev Only callable by the contract owner
+    /// @param signatureNonce_ The nonce of the signature
+    /// @param signature_ The signature of the watcher
+    /// @dev This function resolves multiple promises with their return data
+    /// @dev It verifies that the signature is valid
+    /// @dev It also processes the next batch if the current batch is complete
     function resolvePromises(
         ResolvedPromises[] calldata resolvedPromises_,
         uint256 signatureNonce_,
@@ -164,38 +199,37 @@ contract WatcherPrecompile is RequestHandler {
             // Get the array of promise addresses for this payload
             PayloadParams memory payloadParams = payloads[resolvedPromises_[i].payloadId];
             address asyncPromise = payloadParams.asyncPromise;
-            if (asyncPromise == address(0)) continue;
 
-            // Resolve each promise with its corresponding return data
-            bool success = IPromise(asyncPromise).markResolved(
-                payloadParams.dump.getRequestCount(),
-                resolvedPromises_[i].payloadId,
-                resolvedPromises_[i].returnData
-            );
+            if (asyncPromise != address(0)) {
+                // Resolve each promise with its corresponding return data
+                bool success = IPromise(asyncPromise).markResolved(
+                    payloadParams.dump.getRequestCount(),
+                    resolvedPromises_[i].payloadId,
+                    resolvedPromises_[i].returnData
+                );
+
+                if (!success) {
+                    emit PromiseNotResolved(resolvedPromises_[i].payloadId, asyncPromise);
+                    continue;
+                }
+            }
 
             isPromiseExecuted[resolvedPromises_[i].payloadId] = true;
-            if (!success) {
-                emit PromiseNotResolved(resolvedPromises_[i].payloadId, asyncPromise);
-                continue;
-            }
 
             RequestParams storage requestParams_ = requestParams[
                 payloadParams.dump.getRequestCount()
             ];
-
             requestParams_.currentBatchPayloadsLeft--;
             requestParams_.payloadsRemaining--;
 
+            // if all payloads of a batch are executed, process the next batch
             if (
                 requestParams_.currentBatchPayloadsLeft == 0 && requestParams_.payloadsRemaining > 0
             ) {
-                uint256 totalPayloadsLeft = _processBatch(
-                    payloadParams.dump.getRequestCount(),
-                    ++requestParams_.currentBatch
-                );
-                requestParams_.currentBatchPayloadsLeft = totalPayloadsLeft;
+                _processBatch(payloadParams.dump.getRequestCount(), ++requestParams_.currentBatch);
             }
 
+            // if all payloads of a request are executed, finish the request
             if (requestParams_.payloadsRemaining == 0) {
                 IMiddleware(requestParams_.middleware).finishRequest(
                     payloadParams.dump.getRequestCount()
@@ -205,7 +239,14 @@ contract WatcherPrecompile is RequestHandler {
         }
     }
 
-    // wait till expiry time to assign fees
+    /// @notice Marks a request as reverting
+    /// @param isRevertingOnchain_ Whether the request is reverting onchain
+    /// @param payloadId_ The unique identifier of the payload
+    /// @param signatureNonce_ The nonce of the signature
+    /// @param signature_ The signature of the watcher
+    /// @dev Only valid watcher can mark a request as reverting
+    /// @dev This function marks a request as reverting if callback or payload is reverting on chain
+    /// @dev Request is marked cancelled for both cases.
     function markRevert(
         bool isRevertingOnchain_,
         bytes32 payloadId_,
@@ -218,7 +259,7 @@ contract WatcherPrecompile is RequestHandler {
             signature_
         );
 
-        PayloadParams storage payloadParams = payloads[payloadId_];
+        PayloadParams memory payloadParams = payloads[payloadId_];
         if (payloadParams.deadline > block.timestamp) revert DeadlineNotPassedForOnChainRevert();
 
         RequestParams storage currentRequestParams = requestParams[
@@ -226,7 +267,7 @@ contract WatcherPrecompile is RequestHandler {
         ];
         currentRequestParams.isRequestCancelled = true;
 
-        if (isRevertingOnchain_)
+        if (isRevertingOnchain_ && payloadParams.asyncPromise != address(0))
             IPromise(payloadParams.asyncPromise).markOnchainRevert(
                 payloadParams.dump.getRequestCount(),
                 payloadId_
@@ -239,12 +280,14 @@ contract WatcherPrecompile is RequestHandler {
         emit MarkedRevert(payloadId_, isRevertingOnchain_);
     }
 
-    function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external onlyOwner {
-        maxTimeoutDelayInSeconds = maxTimeoutDelayInSeconds_;
-    }
+    // ================== On-Chain Inbox ==================
 
-    // ================== On-Chain Trigger ==================
-
+    /// @notice Calls app gateways with the specified parameters
+    /// @param params_ Array of call from chain parameters
+    /// @param signatureNonce_ The nonce of the signature
+    /// @param signature_ The signature of the watcher
+    /// @dev This function calls app gateways with the specified parameters
+    /// @dev It verifies that the signature is valid and that the app gateway hasn't been called yet
     function callAppGateways(
         TriggerParams[] calldata params_,
         uint256 signatureNonce_,
@@ -289,10 +332,45 @@ contract WatcherPrecompile is RequestHandler {
 
     // ================== Helper functions ==================
 
-    function setExpiryTime(uint256 expiryTime_) external onlyOwner {
-        expiryTime = expiryTime_;
+    /// @notice Sets the maximum timeout delay in seconds
+    /// @param maxTimeoutDelayInSeconds_ The maximum timeout delay in seconds
+    /// @dev This function sets the maximum timeout delay in seconds
+    /// @dev Only callable by the contract owner
+    function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external onlyOwner {
+        maxTimeoutDelayInSeconds = maxTimeoutDelayInSeconds_;
+        emit MaxTimeoutDelayInSecondsSet(maxTimeoutDelayInSeconds_);
     }
 
+    /// @notice Sets the expiry time for payload execution
+    /// @param expiryTime_ The expiry time in seconds
+    /// @dev This function sets the expiry time for payload execution
+    /// @dev Only callable by the contract owner
+    function setExpiryTime(uint256 expiryTime_) external onlyOwner {
+        expiryTime = expiryTime_;
+        emit ExpiryTimeSet(expiryTime_);
+    }
+
+    /// @notice Sets the watcher precompile limits contract
+    /// @param watcherPrecompileLimits_ The address of the watcher precompile limits contract
+    /// @dev This function sets the watcher precompile limits contract
+    /// @dev Only callable by the contract owner
+    function setWatcherPrecompileLimits(address watcherPrecompileLimits_) external onlyOwner {
+        watcherPrecompileLimits__ = IWatcherPrecompileLimits(watcherPrecompileLimits_);
+        emit WatcherPrecompileLimitsSet(watcherPrecompileLimits_);
+    }
+
+    /// @notice Sets the watcher precompile config contract
+    /// @param watcherPrecompileConfig_ The address of the watcher precompile config contract
+    /// @dev This function sets the watcher precompile config contract
+    /// @dev Only callable by the contract owner
+    function setWatcherPrecompileConfig(address watcherPrecompileConfig_) external onlyOwner {
+        watcherPrecompileConfig__ = IWatcherPrecompileConfig(watcherPrecompileConfig_);
+        emit WatcherPrecompileConfigSet(watcherPrecompileConfig_);
+    }
+
+    /// @notice Gets the request parameters for a request
+    /// @param requestCount The request count to get the parameters for
+    /// @return The request parameters for the given request count
     function getRequestParams(uint40 requestCount) external view returns (RequestParams memory) {
         return requestParams[requestCount];
     }

@@ -25,7 +25,7 @@ contract MockFastSwitchboard is ISwitchboard {
         // TODO: implement
     }
 
-    function allowPacket(bytes32 , bytes32) external pure returns (bool) {
+    function allowPayload(bytes32 , bytes32) external pure returns (bool) {
         // digest has enough attestations
         return true;
     }
