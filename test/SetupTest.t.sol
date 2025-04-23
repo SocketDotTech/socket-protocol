@@ -269,13 +269,14 @@ contract SetupTest is Test {
             bytes memory transmitterSig
         ) = _getExecuteParams(payloadParams);
 
-        return socketBatcher.attestAndExecute(
-            params,
-            payloadParams.switchboard,
-            digest,
-            watcherProof,
-            transmitterSig
-        );
+        return
+            socketBatcher.attestAndExecute(
+                params,
+                payloadParams.switchboard,
+                digest,
+                watcherProof,
+                transmitterSig
+            );
     }
 
     function resolvePromises(bytes32[] memory payloadIds, bytes[] memory returnData) internal {
@@ -312,7 +313,9 @@ contract SetupTest is Test {
         );
         bytes32 digest = watcherPrecompile.getDigest(digestParams_);
 
-        bytes32 sigDigest = keccak256(abi.encode(address(socketConfig.switchboard), digest));
+        bytes32 sigDigest = keccak256(
+            abi.encode(address(socketConfig.switchboard), socketConfig.chainSlug, digest)
+        );
         bytes memory proof = _createSignature(sigDigest, watcherPrivateKey);
         return (proof, digest);
     }

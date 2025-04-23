@@ -153,12 +153,8 @@ contract Socket is SocketUtils {
     ////////////////////////////////////////////////////////
     /**
      * @notice To trigger to a connected remote chain. Should only be called by a plug.
-     * @param overrides_ a bytes param to add details for execution, for eg: fees to be paid for execution
      */
-    function _triggerAppGateway(
-        address plug_,
-        bytes memory overrides_
-    ) internal returns (bytes32 triggerId) {
+    function _triggerAppGateway(address plug_) internal returns (bytes32 triggerId) {
         PlugConfig storage plugConfig = _plugConfigs[plug_];
 
         // if no sibling plug is found for the given chain slug, revert
@@ -182,6 +178,6 @@ contract Socket is SocketUtils {
     /// @dev if ETH sent with the call, it will revert
     fallback(bytes calldata) external returns (bytes memory) {
         // return the trigger id
-        return abi.encode(_triggerAppGateway(plug, msg.sender));
+        return abi.encode(_triggerAppGateway(msg.sender));
     }
 }
