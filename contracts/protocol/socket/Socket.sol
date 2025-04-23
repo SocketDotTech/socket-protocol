@@ -15,6 +15,9 @@ contract Socket is SocketUtils {
     // @notice mapping of payload id to execution status
     mapping(bytes32 => ExecutionStatus) public payloadExecuted;
 
+    // @notice mapping of payload id to execution status
+    mapping(bytes32 => bytes32) public payloadIdToDigest;
+
     // @notice buffer to account for gas used by current contract execution
     uint256 public constant GAS_LIMIT_BUFFER = 105;
 
@@ -93,6 +96,7 @@ contract Socket is SocketUtils {
             plugConfig.appGatewayId,
             executeParams_
         );
+        payloadIdToDigest[payloadId] = digest;
 
         // verify the digest
         _verify(digest, payloadId, plugConfig.switchboard);
