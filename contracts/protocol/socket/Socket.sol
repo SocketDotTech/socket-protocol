@@ -155,7 +155,7 @@ contract Socket is SocketUtils {
         address plug_,
         bytes memory overrides_
     ) internal returns (bytes32 triggerId) {
-        PlugConfig memory plugConfig = _plugConfigs[plug_];
+        PlugConfig storage plugConfig = _plugConfigs[plug_];
 
         // if no sibling plug is found for the given chain slug, revert
         // sends the trigger to connected app gateway
@@ -167,7 +167,8 @@ contract Socket is SocketUtils {
             triggerId,
             plugConfig.switchboard,
             plug_,
-            overrides_,
+            // gets the overrides from the plug
+            IPlug(plug_).overrides(),
             msg.data
         );
     }
@@ -176,11 +177,7 @@ contract Socket is SocketUtils {
     /// @dev The calldata is passed as-is to the gateways
     /// @dev if ETH sent with the call, it will revert
     fallback(bytes calldata) external returns (bytes memory) {
-        address plug = msg.sender;
-        // gets the overrides from the plug
-        bytes memory overrides = IPlug(plug).overrides();
-
         // return the trigger id
-        return abi.encode(_triggerAppGateway(plug, overrides));
+        return abi.encode(_triggerAppGateway(plug, msg.sender));
     }
 }
