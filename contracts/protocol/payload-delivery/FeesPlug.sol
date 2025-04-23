@@ -114,11 +114,11 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
     }
 
     function connectSocket(
-        address appGateway_,
+        bytes32 appGatewayId_,
         address socket_,
         address switchboard_
     ) external onlyOwner {
-        _connectSocket(appGateway_, socket_, switchboard_);
+        _connectSocket(appGatewayId_, socket_, switchboard_);
     }
     /**
      * @notice Rescues funds from the contract if they are locked by mistake. This contract does not

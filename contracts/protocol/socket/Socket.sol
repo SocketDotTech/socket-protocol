@@ -57,46 +57,41 @@ contract Socket is SocketUtils {
      */
     function execute(
         ExecuteParams memory executeParams_,
-        bytes memory transmitterSignature_
+        TransmissionParams memory transmissionParams_
     ) external payable returns (bytes memory) {
         // check if the deadline has passed
         if (executeParams_.deadline < block.timestamp) revert DeadlinePassed();
 
         PlugConfig memory plugConfig = _plugConfigs[executeParams_.target];
-
         // check if the plug is disconnected
-        if (plugConfig.appGateway == address(0)) revert PlugDisconnected();
+        if (plugConfig.appGatewayId == bytes32(0)) revert PlugDisconnected();
 
-        // check if the message value is insufficient
-        if (msg.value < executeParams_.value) revert InsufficientMsgValue();
-
-        // create the payload id
+        if (msg.value < executeParams_.value + transmissionParams_.socketFees)
+            revert InsufficientMsgValue();
         bytes32 payloadId = _createPayloadId(plugConfig.switchboard, executeParams_);
 
         // validate the execution status
         _validateExecutionStatus(payloadId);
 
-        // should we move this to a separate contract?
-        // recover the signer
-        address transmitter = _recoverSigner(
-            keccak256(abi.encode(address(this), payloadId)),
-            transmitterSignature_
-        );
+        address transmitter = transmissionParams_.transmitterSignature.length > 0
+            ? _recoverSigner(
+                keccak256(abi.encode(address(this), payloadId)),
+                transmissionParams_.transmitterSignature
+            )
+            : address(0);
 
         // create the digest
         // transmitter, payloadId, appGateway, executeParams_ and there contents are validated using digest verification from switchboard
         bytes32 digest = _createDigest(
             transmitter,
             payloadId,
-            plugConfig.appGateway,
+            plugConfig.appGatewayId,
             executeParams_
         );
 
         // verify the digest
         _verify(digest, payloadId, plugConfig.switchboard);
-
-        // execute the payload and return the data
-        return _execute(payloadId, executeParams_);
+        return _execute(payloadId, executeParams_, transmissionParams_);
     }
 
     ////////////////////////////////////////////////////////
@@ -118,25 +113,34 @@ contract Socket is SocketUtils {
      */
     function _execute(
         bytes32 payloadId_,
-        ExecuteParams memory executeParams_
+        ExecuteParams memory executeParams_,
+        TransmissionParams memory transmissionParams_
     ) internal returns (bytes memory) {
         // check if the gas limit is sufficient
         if (gasleft() < executeParams_.gasLimit) revert LowGasLimit();
 
         // NOTE: external un-trusted call
         (bool success, , bytes memory returnData) = executeParams_.target.tryCall(
-            msg.value,
+            executeParams_.value,
             executeParams_.gasLimit,
             maxCopyBytes,
             executeParams_.payload
         );
 
-        // if the execution failed, set the execution status to reverted
-        if (!success) {
-            payloadExecuted[payloadId_] = ExecutionStatus.Reverted;
-            emit ExecutionFailed(payloadId_, returnData);
-        } else {
+        if (success) {
             emit ExecutionSuccess(payloadId_, returnData);
+            if (address(socketFeeManager) != address(0)) {
+                socketFeeManager.payAndCheckFees{value: transmissionParams_.socketFees}(
+                    executeParams_,
+                    transmissionParams_
+                );
+            }
+        } else {
+            payloadExecuted[payloadId_] = ExecutionStatus.Reverted;
+            address receiver = transmissionParams_.refundAddress == address(0) ? msg.sender : transmissionParams_.refundAddress;
+            SafeTransferLib.forceSafeTransferETH(receiver, msg.value);
+            
+            emit ExecutionFailed(payloadId_, returnData);
         }
 
         return returnData;
@@ -165,10 +169,10 @@ contract Socket is SocketUtils {
 
         // if no sibling plug is found for the given chain slug, revert
         // sends the trigger to connected app gateway
-        if (plugConfig.appGateway == address(0)) revert PlugDisconnected();
+        if (plugConfig.appGatewayId == bytes32(0)) revert PlugDisconnected();
 
-        // creates a unique ID for the trigger
-        triggerId = _encodeTriggerId(plugConfig.appGateway);
+        // creates a unique ID for the message
+        triggerId = _encodeTriggerId();
         emit AppGatewayCallRequested(triggerId, chainSlug, plug_, overrides_, payload_);
     }
 

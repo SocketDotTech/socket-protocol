@@ -17,12 +17,13 @@ import "../contracts/protocol/socket/SocketBatcher.sol";
 import "../contracts/protocol/AddressResolver.sol";
 import {ContractFactoryPlug} from "../contracts/protocol/payload-delivery/ContractFactoryPlug.sol";
 import {FeesPlug} from "../contracts/protocol/payload-delivery/FeesPlug.sol";
-
+import {SocketFeeManager} from "../contracts/protocol/socket/SocketFeeManager.sol";
 import {ETH_ADDRESS} from "../contracts/protocol/utils/common/Constants.sol";
 import {ResolvedPromises, OnChainFees} from "../contracts/protocol/utils/common/Structs.sol";
 
 import "solady/utils/ERC1967Factory.sol";
 import "./apps/app-gateways/USDC.sol";
+
 contract SetupTest is Test {
     using PayloadHeaderDecoder for bytes32;
     uint public c = 1;
@@ -40,7 +41,7 @@ contract SetupTest is Test {
     uint32 evmxSlug = 1;
     uint256 expiryTime = 10000000;
     uint256 maxReAuctionCount = 10;
-
+    uint256 socketFees = 0.01 ether;
     uint256 public signatureNonce;
     uint256 public payloadIdCounter;
     uint256 public timeoutIdCounter;
@@ -53,6 +54,7 @@ contract SetupTest is Test {
     struct SocketContracts {
         uint32 chainSlug;
         Socket socket;
+        SocketFeeManager socketFeeManager;
         FastSwitchboard switchboard;
         SocketBatcher socketBatcher;
         ContractFactoryPlug contractFactoryPlug;
@@ -106,7 +108,7 @@ contract SetupTest is Test {
             address(contractFactoryPlug),
             address(feesPlug)
         );
-
+        SocketFeeManager socketFeeManager = new SocketFeeManager(owner, socketFees);
         hoax(watcherEOA);
         watcherPrecompileConfig.setSwitchboard(chainSlug_, FAST, address(switchboard));
 
@@ -114,6 +116,7 @@ contract SetupTest is Test {
             SocketContracts({
                 chainSlug: chainSlug_,
                 socket: socket,
+                socketFeeManager: socketFeeManager,
                 switchboard: switchboard,
                 socketBatcher: socketBatcher,
                 contractFactoryPlug: contractFactoryPlug,
@@ -275,10 +278,18 @@ contract SetupTest is Test {
             ExecuteParams memory params,
             SocketBatcher socketBatcher,
             ,
-            bytes memory transmitterSig
+            bytes memory transmitterSig,
+            address refundAddress
         ) = _getExecuteParams(payloadParams);
 
-        return socketBatcher.attestAndExecute(params, digest, watcherProof, transmitterSig);
+        return
+            socketBatcher.attestAndExecute(
+                params,
+                digest,
+                watcherProof,
+                transmitterSig,
+                refundAddress
+            );
     }
 
     function resolvePromises(bytes32[] memory payloadIds, bytes[] memory returnData) internal {
@@ -308,7 +319,7 @@ contract SetupTest is Test {
             params_.readAt,
             params_.payload,
             params_.target,
-            params_.appGateway,
+            _encodeAppGatewayId(params_.appGateway),
             params_.prevDigestsHash
         );
         bytes32 digest = watcherPrecompile.getDigest(digestParams_);
@@ -341,7 +352,8 @@ contract SetupTest is Test {
             ExecuteParams memory params,
             SocketBatcher socketBatcher,
             uint256 value,
-            bytes memory transmitterSig
+            bytes memory transmitterSig,
+            address refundAddress
         )
     {
         SocketContracts memory socketConfig = getSocketConfig(
@@ -370,6 +382,7 @@ contract SetupTest is Test {
 
         value = payloadParams.value;
         socketBatcher = socketConfig.socketBatcher;
+        refundAddress = transmitterEOA;
     }
 
     function _resolvePromise(bytes32 payloadId, bytes memory returnData) internal {
@@ -409,11 +422,11 @@ contract SetupTest is Test {
         }
     }
 
-    function _createOnChainFees(
-        uint32 chainSlug_,
-        address token_,
-        uint256 amount_
-    ) internal pure returns (OnChainFees memory) {
-        return OnChainFees({chainSlug: chainSlug_, token: token_, amount: amount_});
+    function _encodeAppGatewayId(address appGateway_) internal pure returns (bytes32) {
+        return bytes32(uint256(uint160(appGateway_)));
+    }
+
+    function _decodeAppGatewayId(bytes32 appGatewayId_) internal pure returns (address) {
+        return address(uint160(uint256(appGatewayId_)));
     }
 }
