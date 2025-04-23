@@ -42,7 +42,10 @@ contract FastSwitchboard is SwitchboardBase {
     function attest(bytes32 digest_, bytes calldata proof_) external {
         if (isAttested[digest_]) revert AlreadyAttested();
 
-        address watcher = _recoverSigner(keccak256(abi.encode(address(this), digest_)), proof_);
+        address watcher = _recoverSigner(
+            keccak256(abi.encode(address(this), chainSlug, digest_)),
+            proof_
+        );
         if (!_hasRole(WATCHER_ROLE, watcher)) revert WatcherNotFound();
 
         isAttested[digest_] = true;
