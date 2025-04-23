@@ -117,6 +117,7 @@ abstract contract WatcherPrecompileCore is
     // ================== Helper functions ==================
 
     /// @notice Calculates the digest hash of payload parameters
+    /// @dev extraData is empty for now, not needed for this EVMx
     /// @param params_ The payload parameters to calculate the digest for
     /// @return digest The calculated digest hash
     /// @dev This function creates a keccak256 hash of the payload parameters
@@ -134,7 +135,6 @@ abstract contract WatcherPrecompileCore is
                 params_.target,
                 params_.appGatewayId,
                 params_.prevDigestsHash,
-                // later can take it form app gateway in forwarder, no use right now
                 bytes("")
             )
         );
