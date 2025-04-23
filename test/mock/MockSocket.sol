@@ -102,7 +102,7 @@ contract MockSocket is ISocket {
      */
     function execute(
         ExecuteParams memory executeParams_,
-        bytes memory transmitterSignature_
+        TransmissionParams memory transmissionParams_
     ) external payable override returns (bytes memory) {
         // execute payload
         // return

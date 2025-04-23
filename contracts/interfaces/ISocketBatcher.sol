@@ -20,6 +20,7 @@ interface ISocketBatcher {
         ExecuteParams calldata executeParams_,
         bytes32 digest_,
         bytes calldata proof_,
-        bytes calldata transmitterSignature_
+        bytes calldata transmitterSignature_,
+        address refundAddress_
     ) external payable returns (bytes memory);
 }

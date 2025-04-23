@@ -237,6 +237,21 @@ struct ExecuteParams {
     address switchboard;
 }
 
+struct TransmissionParams {
+    uint256 socketFees;
+    address refundAddress;
+    bytes extraData;
+    bytes transmitterSignature;
+}
+
+struct PayloadIdParams {
+    uint40 requestCount;
+    uint40 batchCount;
+    uint40 payloadCount;
+    address switchboard;
+    uint32 chainSlug;
+}
+
 /// @notice Struct containing fee amounts and status
 struct TokenBalance {
     uint256 deposited; // Amount deposited

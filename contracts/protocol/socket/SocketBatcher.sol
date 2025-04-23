@@ -4,9 +4,9 @@ pragma solidity ^0.8.21;
 import "solady/auth/Ownable.sol";
 import "../../interfaces/ISocket.sol";
 import "../../interfaces/ISwitchboard.sol";
-import "../../interfaces/ISocketBatcher.sol";
 import "../utils/RescueFundsLib.sol";
-import {ExecuteParams} from "../../protocol/utils/common/Structs.sol";
+import {ExecuteParams, TransmissionParams} from "../../protocol/utils/common/Structs.sol";
+import "../../interfaces/ISocketBatcher.sol";
 
 /**
  * @title SocketBatcher
@@ -38,10 +38,20 @@ contract SocketBatcher is ISocketBatcher, Ownable {
         ExecuteParams calldata executeParams_,
         bytes32 digest_,
         bytes calldata proof_,
-        bytes calldata transmitterSignature_
+        bytes calldata transmitterSignature_,
+        address refundAddress_
     ) external payable returns (bytes memory) {
         ISwitchboard(executeParams_.switchboard).attest(digest_, proof_);
-        return socket__.execute{value: msg.value}(executeParams_, transmitterSignature_);
+        return
+            socket__.execute{value: msg.value}(
+                executeParams_,
+                TransmissionParams({
+                    transmitterSignature: transmitterSignature_,
+                    socketFees: 0,
+                    extraData: "",
+                    refundAddress: refundAddress_
+                })
+            );
     }
 
     /**

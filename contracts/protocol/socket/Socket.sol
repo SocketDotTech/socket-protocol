@@ -57,7 +57,7 @@ contract Socket is SocketUtils {
      */
     function execute(
         ExecuteParams memory executeParams_,
-        bytes memory transmitterSignature_
+        TransmissionParams memory transmissionParams_
     ) external payable returns (bytes memory) {
         // check if the deadline has passed
         if (executeParams_.deadline < block.timestamp) revert DeadlinePassed();
@@ -66,17 +66,18 @@ contract Socket is SocketUtils {
         // check if the plug is disconnected
         if (plugConfig.appGatewayId == bytes32(0)) revert PlugDisconnected();
 
-        // check if the message value is insufficient
-        if (msg.value < executeParams_.value) revert InsufficientMsgValue();
-
-        // create the payload id
+        if (msg.value < executeParams_.value + transmissionParams_.socketFees)
+            revert InsufficientMsgValue();
         bytes32 payloadId = _createPayloadId(plugConfig.switchboard, executeParams_);
 
         // validate the execution status
         _validateExecutionStatus(payloadId);
 
-        address transmitter = transmitterSignature_.length > 0
-            ? _recoverSigner(keccak256(abi.encode(address(this), payloadId)), transmitterSignature_)
+        address transmitter = transmissionParams_.transmitterSignature.length > 0
+            ? _recoverSigner(
+                keccak256(abi.encode(address(this), payloadId)),
+                transmissionParams_.transmitterSignature
+            )
             : address(0);
 
         // create the digest
@@ -90,9 +91,7 @@ contract Socket is SocketUtils {
 
         // verify the digest
         _verify(digest, payloadId, plugConfig.switchboard);
-
-        // execute the payload and return the data
-        return _execute(payloadId, executeParams_);
+        return _execute(payloadId, executeParams_, transmissionParams_);
     }
 
     ////////////////////////////////////////////////////////
@@ -114,25 +113,34 @@ contract Socket is SocketUtils {
      */
     function _execute(
         bytes32 payloadId_,
-        ExecuteParams memory executeParams_
+        ExecuteParams memory executeParams_,
+        TransmissionParams memory transmissionParams_
     ) internal returns (bytes memory) {
         // check if the gas limit is sufficient
         if (gasleft() < executeParams_.gasLimit) revert LowGasLimit();
 
         // NOTE: external un-trusted call
         (bool success, , bytes memory returnData) = executeParams_.target.tryCall(
-            msg.value,
+            executeParams_.value,
             executeParams_.gasLimit,
             maxCopyBytes,
             executeParams_.payload
         );
 
-        // if the execution failed, set the execution status to reverted
-        if (!success) {
-            payloadExecuted[payloadId_] = ExecutionStatus.Reverted;
-            emit ExecutionFailed(payloadId_, returnData);
-        } else {
+        if (success) {
             emit ExecutionSuccess(payloadId_, returnData);
+            if (address(socketFeeManager) != address(0)) {
+                socketFeeManager.payAndCheckFees{value: transmissionParams_.socketFees}(
+                    executeParams_,
+                    transmissionParams_
+                );
+            }
+        } else {
+            payloadExecuted[payloadId_] = ExecutionStatus.Reverted;
+            address receiver = transmissionParams_.refundAddress == address(0) ? msg.sender : transmissionParams_.refundAddress;
+            SafeTransferLib.forceSafeTransferETH(receiver, msg.value);
+            
+            emit ExecutionFailed(payloadId_, returnData);
         }
 
         return returnData;
