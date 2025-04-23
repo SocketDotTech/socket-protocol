@@ -75,7 +75,7 @@ contract SetupTest is Test {
     ERC1967Factory public proxyFactory;
 
     event Initialized(uint64 version);
-    event FinalizeRequested(bytes32 payloadId, PayloadParams payloadParams);
+    event FinalizeRequested(bytes32 digest, PayloadParams payloadParams);
 
     //////////////////////////////////// Setup ////////////////////////////////////
 

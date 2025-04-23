@@ -133,7 +133,7 @@ abstract contract RequestQueue is DeliveryUtils {
             IContractFactoryPlug.deployContract.selector,
             queuePayloadParams_.isPlug,
             salt,
-            queuePayloadParams_.appGateway,
+            bytes32(uint256(uint160(queuePayloadParams_.appGateway))),
             queuePayloadParams_.switchboard,
             queuePayloadParams_.payload,
             queuePayloadParams_.initCallData
