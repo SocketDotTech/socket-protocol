@@ -11,7 +11,7 @@ import "../../interfaces/IFeesManager.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {NotAuctionManager, InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
 import {Bid, CallType, Parallel, WriteFinality, QueuePayloadParams, IsPlug, PayloadSubmitParams, RequestMetadata, UserCredits} from "../utils/common/Structs.sol";
-import {console} from "forge-std/console.sol";
+
 abstract contract FeesManagerStorage is IFeesManager {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
@@ -43,7 +43,6 @@ abstract contract FeesManagerStorage is IFeesManager {
     /// @notice Mapping to track request credits details for each request count
     /// @dev requestCount => RequestFee
     mapping(uint40 => uint256) public requestCountCredits;
-
 
     // @dev amount
     uint256 public watcherPrecompileCredits;
@@ -125,6 +124,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     error AppGatewayNotWhitelisted();
 
     error InvalidAmount();
+
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -171,6 +171,23 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         userCredit.totalCredits += amount_;
         tokenPoolBalances[chainSlug_][token_] += amount_;
         emit CreditsDepositedUpdated(chainSlug_, depositTo_, token_, amount_);
+    }
+
+    function wrap() external payable {
+        UserCredits storage userCredit = userCredits[msg.sender];
+        userCredit.totalCredits += msg.value;
+        emit CreditsWrapped(msg.sender, msg.value);
+    }
+
+    function unwrap(uint256 amount_) external {
+        UserCredits storage userCredit = userCredits[msg.sender];
+        if (userCredit.totalCredits < amount_) revert InsufficientCreditsAvailable();
+        userCredit.totalCredits -= amount_;
+
+        // todo: if contract balance not enough, take from our pool?
+        if (address(this).balance < amount_) revert InsufficientBalance();
+        payable(msg.sender).transfer(amount_);
+        emit CreditsUnwrapped(msg.sender, amount_);
     }
 
     function isUserCreditsEnough(
@@ -408,10 +425,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     function getMaxCreditsAvailableForWithdraw(address transmitter_) public view returns (uint256) {
         uint256 watcherFees = watcherPrecompileLimits().getTotalFeesRequired(0, 1, 0, 1);
         uint256 transmitterCredits = userCredits[transmitter_].totalCredits;
-        return
-            transmitterCredits > watcherFees
-                ? transmitterCredits - watcherFees
-                : 0;
+        return transmitterCredits > watcherFees ? transmitterCredits - watcherFees : 0;
     }
 
     function _getSwitchboard(uint32 chainSlug_) internal view returns (address) {
@@ -442,8 +456,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     }
 
     /// @notice hook called by watcher precompile when request is finished
-    function onRequestComplete(uint40 requestCount_, bytes memory) external {
-    }
+    function onRequestComplete(uint40 requestCount_, bytes memory) external {}
 
     function _queue(uint32 chainSlug_, bytes memory payload_) internal {
         QueuePayloadParams memory queuePayloadParams = _createQueuePayloadParams(
@@ -452,6 +465,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         );
         deliveryHelper__().queue(queuePayloadParams);
     }
+
     function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (address) {
         return watcherPrecompileConfig().feesPlug(chainSlug_);
     }

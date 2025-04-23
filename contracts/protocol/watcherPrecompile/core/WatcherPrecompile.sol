@@ -175,7 +175,6 @@ contract WatcherPrecompile is RequestHandler {
         if (r.middleware != msg.sender) revert InvalidCaller();
 
         r.isRequestCancelled = true;
-
         emit RequestCancelledFromGateway(requestCount);
     }
 
@@ -313,9 +312,9 @@ contract WatcherPrecompile is RequestHandler {
             ) revert InvalidCallerTriggered();
 
             IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileCreditsFromAddress(
-                watcherPrecompileLimits__.callBackFees(),
-                appGateway
-            );
+                    watcherPrecompileLimits__.callBackFees(),
+                    appGateway
+                );
 
             appGatewayCaller = appGateway;
             appGatewayCalled[params_[i].triggerId] = true;
