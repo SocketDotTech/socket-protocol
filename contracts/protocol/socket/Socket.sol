@@ -15,6 +15,9 @@ contract Socket is SocketUtils {
     // @notice mapping of payload id to execution status
     mapping(bytes32 => ExecutionStatus) public payloadExecuted;
 
+    // @notice buffer to account for gas used by current contract execution
+    uint256 public constant GAS_LIMIT_BUFFER = 105;
+
     ////////////////////////////////////////////////////////
     ////////////////////// ERRORS //////////////////////////
     ////////////////////////////////////////////////////////
@@ -120,7 +123,8 @@ contract Socket is SocketUtils {
         ExecuteParams memory executeParams_
     ) internal returns (bool, bool, bytes memory) {
         // check if the gas limit is sufficient
-        if (gasleft() < executeParams_.gasLimit) revert LowGasLimit();
+        // bump by 5% to account for gas used by current contract execution
+        if (gasleft() < (executeParams_.gasLimit * GAS_LIMIT_BUFFER) / 100) revert LowGasLimit();
 
         // NOTE: external un-trusted call
         (bool success, bool exceededMaxCopy, bytes memory returnData) = executeParams_
