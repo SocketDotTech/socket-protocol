@@ -257,7 +257,7 @@ abstract contract WatcherPrecompileCore is
     function _consumeCallbackFeesFromRequestCount(uint256 fees_, uint40 requestCount_) internal {
         // for callbacks in all precompiles
         uint256 feesToConsume = fees_ + watcherPrecompileLimits__.callBackFees();
-        IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileFeesFromRequestCount(
+        IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileCreditsFromRequestCount(
             feesToConsume,
             requestCount_
         );
@@ -266,7 +266,7 @@ abstract contract WatcherPrecompileCore is
     function _consumeCallbackFeesFromAddress(uint256 fees_, address consumeFrom_) internal {
         // for callbacks in all precompiles
         uint256 feesToConsume = fees_ + watcherPrecompileLimits__.callBackFees();
-        IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileFeesFromAddress(
+        IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileCreditsFromAddress(
             feesToConsume,
             consumeFrom_
         );

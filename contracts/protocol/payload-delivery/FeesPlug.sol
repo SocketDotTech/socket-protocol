@@ -36,7 +36,7 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
     event TokenRemovedFromWhitelist(address token);
 
     /// @notice Modifier to check if the balance of a token is enough to withdraw
-    modifier isFeesEnough(address feeToken_, uint256 fee_) {
+    modifier isUserCreditsEnough(address feeToken_, uint256 fee_) {
         uint balance_ = ERC20(feeToken_).balanceOf(address(this));
         if (balance_ < fee_) revert InsufficientTokenBalance(feeToken_, balance_, fee_);
         _;
@@ -58,7 +58,7 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
         address token_,
         address receiver_,
         uint256 amount_
-    ) external override onlySocket isFeesEnough(token_, amount_) {
+    ) external override onlySocket isUserCreditsEnough(token_, amount_) {
         SafeTransferLib.safeTransfer(token_, receiver_, amount_);
         emit FeesWithdrawn(token_, receiver_, amount_);
     }

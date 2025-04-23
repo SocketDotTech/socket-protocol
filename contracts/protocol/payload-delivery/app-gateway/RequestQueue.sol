@@ -137,7 +137,7 @@ abstract contract RequestQueue is DeliveryUtils {
         (consumeFrom, , ) = IFeesManager(addressResolver__.feesManager())
             .whitelistAppGatewayWithSignature(feesApprovalData_);
         if (
-            !IFeesManager(addressResolver__.feesManager()).isFeesEnough(
+            !IFeesManager(addressResolver__.feesManager()).isUserCreditsEnough(
                 consumeFrom,
                 appGateway_,
                 maxFees_

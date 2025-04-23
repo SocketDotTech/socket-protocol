@@ -9,18 +9,18 @@ abstract contract FeesHelpers is RequestQueue {
     // slots [258-308] reserved for gap
     uint256[50] _gap_batch_async;
 
+    error NewMaxFeesLowerThanCurrent(uint256 current, uint256 new_);
     /// @notice Increases the fees for a request if no bid is placed
     /// @param requestCount_ The ID of the request
     /// @param newMaxFees_ The new maximum fees
     function increaseFees(uint40 requestCount_, uint256 newMaxFees_) external override {
         address appGateway = _getCoreAppGateway(msg.sender);
-
         // todo: should we allow core app gateway too?
         if (appGateway != requests[requestCount_].appGateway) {
             revert OnlyAppGateway();
         }
-
         if (requests[requestCount_].winningBid.transmitter != address(0)) revert WinningBidExists();
+        if (requests[requestCount_].maxFees >= newMaxFees_) revert NewMaxFeesLowerThanCurrent(requests[requestCount_].maxFees, newMaxFees_);
         requests[requestCount_].maxFees = newMaxFees_;
         emit FeesIncreased(appGateway, requestCount_, newMaxFees_);
     }
@@ -64,7 +64,7 @@ abstract contract FeesHelpers is RequestQueue {
 
         PayloadSubmitParams[] memory payloadSubmitParamsArray = IFeesManager(
             addressResolver__.feesManager()
-        ).getWithdrawTransmitterFeesPayloadParams(
+        ).getWithdrawTransmitterCreditsPayloadParams(
                 transmitter,
                 chainSlug_,
                 token_,

@@ -4,21 +4,21 @@ pragma solidity ^0.8.21;
 import {Bid, QueuePayloadParams, PayloadSubmitParams, AppGatewayWhitelistParams} from "../protocol/utils/common/Structs.sol";
 
 interface IFeesManager {
-    function blockFees(
+    function blockCredits(
         address consumeFrom_,
         uint256 transmitterCredits_,
         uint40 requestCount_
     ) external;
 
-    function unblockFees(uint40 requestCount_) external;
+    function unblockCredits(uint40 requestCount_) external;
 
-    function isFeesEnough(
+    function isUserCreditsEnough(
         address consumeFrom_,
         address appGateway_,
         uint256 amount_
     ) external view returns (bool);
 
-    function unblockAndAssignFees(uint40 requestCount_, address transmitter_) external;
+    function unblockAndAssignCredits(uint40 requestCount_, address transmitter_) external;
 
     function withdrawFees(
         address appGateway_,
@@ -28,14 +28,14 @@ interface IFeesManager {
         address receiver_
     ) external;
 
-    function assignWatcherPrecompileFeesFromRequestCount(
+    function assignWatcherPrecompileCreditsFromRequestCount(
         uint256 fees_,
         uint40 requestCount_
     ) external;
 
-    function assignWatcherPrecompileFeesFromAddress(uint256 fees_, address consumeFrom_) external;
+    function assignWatcherPrecompileCreditsFromAddress(uint256 fees_, address consumeFrom_) external;
 
-    function incrementFeesDeposited(
+    function incrementCreditsDeposited(
         address depositTo_,
         uint32 chainSlug_,
         address token_,
@@ -50,7 +50,7 @@ interface IFeesManager {
 
     function whitelistAppGateways(AppGatewayWhitelistParams[] calldata params_) external;
 
-    function getWithdrawTransmitterFeesPayloadParams(
+    function getWithdrawTransmitterCreditsPayloadParams(
         address transmitter_,
         uint32 chainSlug_,
         address token_,
@@ -58,5 +58,5 @@ interface IFeesManager {
         uint256 amount_
     ) external returns (PayloadSubmitParams[] memory);
 
-    function getMaxFeesAvailableForWithdraw(address transmitter_) external view returns (uint256);
+    function getMaxCreditsAvailableForWithdraw(address transmitter_) external view returns (uint256);
 }

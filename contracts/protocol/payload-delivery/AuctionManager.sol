@@ -174,7 +174,7 @@ contract AuctionManager is
         auctionClosed[requestCount_] = true;
         RequestMetadata memory requestMetadata = _getRequestMetadata(requestCount_);
         // block the fees
-        IFeesManager(addressResolver__.feesManager()).blockFees(
+        IFeesManager(addressResolver__.feesManager()).blockCredits(
             requestMetadata.consumeFrom,
             winningBid.fee,
             requestCount_
@@ -210,7 +210,7 @@ contract AuctionManager is
         auctionClosed[requestCount_] = false;
         reAuctionCount[requestCount_]++;
 
-        IFeesManager(addressResolver__.feesManager()).unblockFees(requestCount_);
+        IFeesManager(addressResolver__.feesManager()).unblockCredits(requestCount_);
         emit AuctionRestarted(requestCount_);
     }
 

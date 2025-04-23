@@ -46,7 +46,7 @@ contract FeesTest is DeliveryHelperTest {
         );
 
         uint256 transmitterReceiverBalanceBefore = feesConfig.feesTokenUSDC.balanceOf(receiver);
-        uint256 withdrawAmount = feesManager.getMaxFeesAvailableForWithdraw(transmitterEOA);
+        uint256 withdrawAmount = feesManager.getMaxCreditsAvailableForWithdraw(transmitterEOA);
         vm.startPrank(transmitterEOA);
         uint40 requestCount = deliveryHelper.withdrawTransmitterFees(
             feesChainSlug,

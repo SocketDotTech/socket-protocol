@@ -312,7 +312,7 @@ contract WatcherPrecompile is RequestHandler {
                 )
             ) revert InvalidCallerTriggered();
 
-            IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileFeesFromAddress(
+            IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileCreditsFromAddress(
                 watcherPrecompileLimits__.callBackFees(),
                 appGateway
             );

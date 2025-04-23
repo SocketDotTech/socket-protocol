@@ -66,24 +66,24 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @param requestCount The batch identifier
     /// @param consumeFrom The consume from address
     /// @param amount The blocked amount
-    event FeesBlocked(uint40 indexed requestCount, address indexed consumeFrom, uint256 amount);
+    event CreditsBlocked(uint40 indexed requestCount, address indexed consumeFrom, uint256 amount);
 
     /// @notice Emitted when transmitter fees are updated
     /// @param requestCount The batch identifier
     /// @param transmitter The transmitter address
     /// @param amount The new amount deposited
-    event TransmitterFeesUpdated(
+    event TransmitterCreditsUpdated(
         uint40 indexed requestCount,
         address indexed transmitter,
         uint256 amount
     );
-    event WatcherPrecompileFeesAssigned(uint256 amount, address consumeFrom);
+    event WatcherPrecompileCreditsAssigned(uint256 amount, address consumeFrom);
     /// @notice Emitted when fees deposited are updated
     /// @param chainSlug The chain identifier
     /// @param appGateway The app gateway address
     /// @param token The token address
     /// @param amount The new amount deposited
-    event FeesDepositedUpdated(
+    event CreditsDepositedUpdated(
         uint32 indexed chainSlug,
         address indexed appGateway,
         address indexed token,
@@ -94,7 +94,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @param requestCount The batch identifier
     /// @param transmitter The transmitter address
     /// @param amount The unblocked amount
-    event FeesUnblockedAndAssigned(
+    event CreditsUnblockedAndAssigned(
         uint40 indexed requestCount,
         address indexed transmitter,
         uint256 amount
@@ -103,24 +103,28 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @notice Emitted when fees are unblocked
     /// @param requestCount The batch identifier
     /// @param appGateway The app gateway address
-    event FeesUnblocked(uint40 indexed requestCount, address indexed appGateway);
+    event CreditsUnblocked(uint40 indexed requestCount, address indexed appGateway);
 
     /// @notice Emitted when insufficient watcher precompile fees are available
-    event InsufficientWatcherPrecompileFeesAvailable(
+    event InsufficientWatcherPrecompileCreditsAvailable(
         uint32 chainSlug,
         address token,
         address consumeFrom
     );
     /// @notice Error thrown when insufficient fees are available
-    error InsufficientFeesAvailable();
+    error InsufficientCreditsAvailable();
     /// @notice Error thrown when no fees are available for a transmitter
     error NoFeesForTransmitter();
     /// @notice Error thrown when no fees was blocked
-    error NoFeesBlocked();
+    error NoCreditsBlocked();
     /// @notice Error thrown when caller is invalid
     error InvalidCaller();
     /// @notice Error thrown when user signature is invalid
     error InvalidUserSignature();
+    /// @notice Error thrown when app gateway is not whitelisted
+    error AppGatewayNotWhitelisted();
+
+    error InvalidAmount();
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -144,7 +148,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @notice Returns available (unblocked) fees for a gateway
     /// @param consumeFrom_ The app gateway address
     /// @return The available fee amount
-    function getAvailableFees(address consumeFrom_) public view returns (uint256) {
+    function getAvailableCredits(address consumeFrom_) public view returns (uint256) {
         UserCredits memory userCredit = userCredits[consumeFrom_];
         if (userCredit.totalCredits == 0 || userCredit.totalCredits <= userCredit.blockedCredits)
             return 0;
@@ -156,42 +160,28 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @param amount_ The amount deposited
     // @dev only callable by watcher precompile
     // @dev will need tokenAmount_ and creditAmount_ when introduce tokens except stables
-    function incrementFeesDeposited(
+    function depositCredits(
         address depositTo_,
         uint32 chainSlug_,
         address token_,
-        uint256 amount_,
-        uint256 signatureNonce_,
-        bytes memory signature_
-    ) external {
-        _isWatcherSignatureValid(
-            abi.encode(
-                this.incrementFeesDeposited.selector,
-                depositTo_,
-                chainSlug_,
-                token_,
-                amount_
-            ),
-            signatureNonce_,
-            signature_
-        );
-
+        uint256 amount_
+    ) external payable {
+        if (msg.value != amount_) revert InvalidAmount();
         UserCredits storage userCredit = userCredits[depositTo_];
         userCredit.totalCredits += amount_;
         tokenPoolBalances[chainSlug_][token_] += amount_;
-
-        emit FeesDepositedUpdated(chainSlug_, depositTo_, token_, amount_);
+        emit CreditsDepositedUpdated(chainSlug_, depositTo_, token_, amount_);
     }
 
-    function isFeesEnough(
+    function isUserCreditsEnough(
         address consumeFrom_,
         address appGateway_,
         uint256 amount_
     ) external view returns (bool) {
         // If consumeFrom is not appGateway, check if it is whitelisted
         if (consumeFrom_ != appGateway_ && !isAppGatewayWhitelisted[consumeFrom_][appGateway_])
-            return false;
-        return getAvailableFees(consumeFrom_) >= amount_;
+            revert AppGatewayNotWhitelisted();
+        return getAvailableCredits(consumeFrom_) >= amount_;
     }
 
     function _processFeeApprovalData(
@@ -245,27 +235,27 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @param transmitterCredits_ The total fees to block
     /// @param requestCount_ The batch identifier
     /// @dev Only callable by delivery helper
-    function blockFees(
+    function blockCredits(
         address consumeFrom_,
         uint256 transmitterCredits_,
         uint40 requestCount_
     ) external onlyAuctionManager(requestCount_) {
         // Block fees
-        if (getAvailableFees(consumeFrom_) < transmitterCredits_)
-            revert InsufficientFeesAvailable();
+        if (getAvailableCredits(consumeFrom_) < transmitterCredits_)
+            revert InsufficientCreditsAvailable();
 
         UserCredits storage userCredit = userCredits[consumeFrom_];
         userCredit.blockedCredits += transmitterCredits_;
 
         requestCountCredits[requestCount_] = transmitterCredits_;
 
-        emit FeesBlocked(requestCount_, consumeFrom_, transmitterCredits_);
+        emit CreditsBlocked(requestCount_, consumeFrom_, transmitterCredits_);
     }
 
     /// @notice Unblocks fees after successful execution and assigns them to the transmitter
     /// @param requestCount_ The async ID of the executed batch
     /// @param transmitter_ The address of the transmitter who executed the batch
-    function unblockAndAssignFees(
+    function unblockAndAssignCredits(
         uint40 requestCount_,
         address transmitter_
     ) external override onlyDeliveryHelper {
@@ -284,7 +274,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
 
         // Clean up storage
         delete requestCountCredits[requestCount_];
-        emit FeesUnblockedAndAssigned(requestCount_, transmitter_, fees);
+        emit CreditsUnblockedAndAssigned(requestCount_, transmitter_, fees);
     }
 
     function _useBlockedUserCredits(
@@ -299,36 +289,36 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
 
     function _useAvailableUserCredits(address consumeFrom_, uint256 toConsume_) internal {
         UserCredits storage userCredit = userCredits[consumeFrom_];
-        if (userCredit.totalCredits < toConsume_) revert InsufficientFeesAvailable();
+        if (userCredit.totalCredits < toConsume_) revert InsufficientCreditsAvailable();
         userCredit.totalCredits -= toConsume_;
     }
 
-    function assignWatcherPrecompileFeesFromRequestCount(
-        uint256 fees_,
+    function assignWatcherPrecompileCreditsFromRequestCount(
+        uint256 amount_,
         uint40 requestCount_
     ) external onlyWatcherPrecompile {
         RequestMetadata memory requestMetadata = deliveryHelper__().getRequestMetadata(
             requestCount_
         );
-        _assignWatcherPrecompileFees(fees_, requestMetadata.consumeFrom);
+        _assignWatcherPrecompileCredits(amount_, requestMetadata.consumeFrom);
     }
 
-    function assignWatcherPrecompileFeesFromAddress(
-        uint256 fees_,
+    function assignWatcherPrecompileCreditsFromAddress(
+        uint256 amount_,
         address consumeFrom_
     ) external onlyWatcherPrecompile {
-        _assignWatcherPrecompileFees(fees_, consumeFrom_);
+        _assignWatcherPrecompileCredits(amount_, consumeFrom_);
     }
 
-    function _assignWatcherPrecompileFees(uint256 fees_, address consumeFrom_) internal {
+    function _assignWatcherPrecompileCredits(uint256 amount_, address consumeFrom_) internal {
         // deduct the fees from the user
-        _useAvailableUserCredits(consumeFrom_, fees_);
+        _useAvailableUserCredits(consumeFrom_, amount_);
         // add the fees to the watcher precompile
-        watcherPrecompileCredits += fees_;
-        emit WatcherPrecompileFeesAssigned(fees_, consumeFrom_);
+        watcherPrecompileCredits += amount_;
+        emit WatcherPrecompileCreditsAssigned(amount_, consumeFrom_);
     }
 
-    function unblockFees(uint40 requestCount_) external {
+    function unblockCredits(uint40 requestCount_) external {
         RequestMetadata memory requestMetadata = deliveryHelper__().getRequestMetadata(
             requestCount_
         );
@@ -346,7 +336,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         userCredit.blockedCredits -= blockedCredits;
 
         delete requestCountCredits[requestCount_];
-        emit FeesUnblocked(requestCount_, requestMetadata.consumeFrom);
+        emit CreditsUnblocked(requestCount_, requestMetadata.consumeFrom);
     }
 
     /// @notice Withdraws funds to a specified receiver
@@ -356,7 +346,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @param token_ The address of the token
     /// @param amount_ The amount of tokens to withdraw
     /// @param receiver_ The address of the receiver
-    function withdrawFees(
+    function withdrawCredits(
         address originAppGatewayOrUser_,
         uint32 chainSlug_,
         address token_,
@@ -367,9 +357,9 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         address source = _getCoreAppGateway(originAppGatewayOrUser_);
 
         // Check if amount is available in fees plug
-        uint256 availableAmount = getAvailableFees(source);
-        if (availableAmount < amount_) revert InsufficientFeesAvailable();
-        
+        uint256 availableAmount = getAvailableCredits(source);
+        if (availableAmount < amount_) revert InsufficientCreditsAvailable();
+
         _useAvailableUserCredits(source, amount_);
         tokenPoolBalances[chainSlug_][token_] -= amount_;
 
@@ -381,15 +371,15 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @param chainSlug_ The chain identifier
     /// @param token_ The token address
     /// @param receiver_ The address of the receiver
-    function getWithdrawTransmitterFeesPayloadParams(
+    function getWithdrawTransmitterCreditsPayloadParams(
         address transmitter_,
         uint32 chainSlug_,
         address token_,
         address receiver_,
         uint256 amount_
     ) external onlyDeliveryHelper returns (PayloadSubmitParams[] memory) {
-        uint256 maxFeesAvailableForWithdraw = getMaxFeesAvailableForWithdraw(transmitter_);
-        if (amount_ > maxFeesAvailableForWithdraw) revert InsufficientFeesAvailable();
+        uint256 maxCreditsAvailableForWithdraw = getMaxCreditsAvailableForWithdraw(transmitter_);
+        if (amount_ > maxCreditsAvailableForWithdraw) revert InsufficientCreditsAvailable();
 
         // Clean up storage
         _useAvailableUserCredits(transmitter_, amount_);
@@ -415,7 +405,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         return payloadSubmitParamsArray;
     }
 
-    function getMaxFeesAvailableForWithdraw(address transmitter_) public view returns (uint256) {
+    function getMaxCreditsAvailableForWithdraw(address transmitter_) public view returns (uint256) {
         uint256 watcherFees = watcherPrecompileLimits().getTotalFeesRequired(0, 1, 0, 1);
         uint256 transmitterCredits = userCredits[transmitter_].totalCredits;
         return
@@ -462,30 +452,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         );
         deliveryHelper__().queue(queuePayloadParams);
     }
-
-    function _encodeFeesId(uint256 feesCounter_) internal view returns (bytes32) {
-        // watcher address (160 bits) | counter (64 bits)
-        return bytes32((uint256(uint160(address(this))) << 64) | feesCounter_);
-    }
-
     function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (address) {
         return watcherPrecompileConfig().feesPlug(chainSlug_);
-    }
-
-    function _isWatcherSignatureValid(
-        bytes memory inputData_,
-        uint256 signatureNonce_,
-        bytes memory signature_
-    ) internal {
-        if (isNonceUsed[signatureNonce_]) revert NonceUsed();
-        isNonceUsed[signatureNonce_] = true;
-
-        bytes32 digest = keccak256(
-            abi.encode(address(this), evmxSlug, signatureNonce_, inputData_)
-        );
-        digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
-        // recovered signer is checked for the valid roles later
-        address signer = ECDSA.recover(digest, signature_);
-        if (signer != owner()) revert InvalidWatcherSignature();
     }
 }

@@ -190,7 +190,7 @@ contract DeliveryHelperTest is SetupTest {
         vm.stopPrank();
 
         bytes memory bytesInput = abi.encode(
-            IFeesManager.incrementFeesDeposited.selector,
+            IFeesManager.incrementCreditsDeposited.selector,
             appGateway_,
             fees_.chainSlug,
             fees_.token,
@@ -201,7 +201,7 @@ contract DeliveryHelperTest is SetupTest {
             abi.encode(address(feesManager), evmxSlug, signatureNonce, bytesInput)
         );
         bytes memory sig = _createSignature(digest, watcherPrivateKey);
-        feesManager.incrementFeesDeposited(
+        feesManager.incrementCreditsDeposited(
             appGateway_,
             fees_.chainSlug,
             fees_.token,
