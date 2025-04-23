@@ -59,7 +59,7 @@ abstract contract SocketUtils is SocketConfig {
                     transmitter_,
                     payloadId_,
                     executeParams_.deadline,
-                    CallType.WRITE,
+                    executeParams_.callType,
                     executeParams_.gasLimit,
                     executeParams_.value,
                     executeParams_.payload,

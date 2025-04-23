@@ -220,6 +220,7 @@ struct RequestMetadata {
 }
 
 struct ExecuteParams {
+    CallType callType;
     uint256 deadline;
     uint256 gasLimit;
     uint256 value;

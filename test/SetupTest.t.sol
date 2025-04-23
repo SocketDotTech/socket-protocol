@@ -353,6 +353,7 @@ contract SetupTest is Test {
         transmitterSig = _createSignature(transmitterDigest, transmitterPrivateKey);
 
         params = ExecuteParams({
+            callType: payloadParams.dump.getCallType(),
             deadline: payloadParams.deadline,
             gasLimit: payloadParams.gasLimit,
             value: payloadParams.value,

@@ -48,6 +48,10 @@ contract Socket is SocketUtils {
      * @dev Error emitted when the message value is insufficient
      */
     error InsufficientMsgValue();
+    /**
+     * @dev Error emitted when the call type is read
+     */
+    error ReadOnlyCall();
 
     /**
      * @notice Constructor for the Socket contract
@@ -70,6 +74,8 @@ contract Socket is SocketUtils {
     ) external payable returns (bool, bool, bytes memory) {
         // check if the deadline has passed
         if (executeParams_.deadline < block.timestamp) revert DeadlinePassed();
+        // check if the call type is valid
+        if (executeParams_.callType == CallType.READ) revert ReadOnlyCall();
 
         PlugConfig memory plugConfig = _plugConfigs[executeParams_.target];
         // check if the plug is disconnected
