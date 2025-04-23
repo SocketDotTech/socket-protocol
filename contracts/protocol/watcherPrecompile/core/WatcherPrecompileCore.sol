@@ -133,7 +133,9 @@ abstract contract WatcherPrecompileCore is
                 params_.payload,
                 params_.target,
                 params_.appGatewayId,
-                params_.prevDigestsHash
+                params_.prevDigestsHash,
+                // later can take it form app gateway in forwarder, no use right now
+                bytes("")
             )
         );
     }

@@ -361,7 +361,8 @@ contract SetupTest is Test {
             requestCount: payloadParams.dump.getRequestCount(),
             batchCount: payloadParams.dump.getBatchCount(),
             payloadCount: payloadParams.dump.getPayloadCount(),
-            prevDigestsHash: payloadParams.prevDigestsHash
+            prevDigestsHash: payloadParams.prevDigestsHash,
+            extraData: bytes("")
         });
 
         value = payloadParams.value;

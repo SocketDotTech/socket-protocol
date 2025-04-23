@@ -229,6 +229,7 @@ struct ExecuteParams {
     uint40 batchCount;
     uint40 payloadCount;
     bytes32 prevDigestsHash; // should be id? hash of hashes
+    bytes extraData;
 }
 
 /// @notice Struct containing fee amounts and status
