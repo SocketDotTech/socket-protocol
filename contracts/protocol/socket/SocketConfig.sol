@@ -21,7 +21,7 @@ import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
 abstract contract SocketConfig is ISocket, AccessControl {
     // socket fee manager
     ISocketFeeManager public socketFeeManager;
-    
+
     // @notice mapping of switchboard address to its status, helps socket to block invalid switchboards
     mapping(address => SwitchboardStatus) public isValidSwitchboard;
 
@@ -62,7 +62,6 @@ abstract contract SocketConfig is ISocket, AccessControl {
         isValidSwitchboard[msg.sender] = SwitchboardStatus.DISABLED;
         emit SwitchboardDisabled(msg.sender);
     }
-
 
     function setSocketFeeManager(address socketFeeManager_) external onlyRole(GOVERNANCE_ROLE) {
         emit SocketFeeManagerUpdated(address(socketFeeManager), socketFeeManager_);

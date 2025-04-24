@@ -57,7 +57,7 @@ interface IWatcherPrecompileLimits {
 
     function queryFees() external view returns (uint256);
     function finalizeFees() external view returns (uint256);
-    function scheduleFees() external view returns (uint256);
+    function timeoutFees() external view returns (uint256);
     function callBackFees() external view returns (uint256);
 
     /// @notice Emitted when limit parameters are updated

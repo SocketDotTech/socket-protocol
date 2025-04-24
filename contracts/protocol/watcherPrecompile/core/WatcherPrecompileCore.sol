@@ -36,7 +36,7 @@ abstract contract WatcherPrecompileCore is
     ) internal returns (bytes32 timeoutId) {
         if (delayInSeconds_ > maxTimeoutDelayInSeconds) revert TimeoutDelayTooLarge();
 
-        _consumeCallbackFeesFromAddress(watcherPrecompileLimits__.scheduleFees(), msg.sender);
+        _consumeCallbackFeesFromAddress(watcherPrecompileLimits__.timeoutFees(), msg.sender);
 
         uint256 executeAt = block.timestamp + delayInSeconds_;
         timeoutId = _encodeTimeoutId();
@@ -259,10 +259,8 @@ abstract contract WatcherPrecompileCore is
     function _consumeCallbackFeesFromRequestCount(uint256 fees_, uint40 requestCount_) internal {
         // for callbacks in all precompiles
         uint256 feesToConsume = fees_ + watcherPrecompileLimits__.callBackFees();
-        IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileCreditsFromRequestCount(
-            feesToConsume,
-            requestCount_
-        );
+        IFeesManager(addressResolver__.feesManager())
+            .assignWatcherPrecompileCreditsFromRequestCount(feesToConsume, requestCount_);
     }
 
     function _consumeCallbackFeesFromAddress(uint256 fees_, address consumeFrom_) internal {

@@ -20,28 +20,14 @@ interface IFeesManager {
 
     function unblockAndAssignCredits(uint40 requestCount_, address transmitter_) external;
 
-    function withdrawFees(
-        address appGateway_,
-        uint32 chainSlug_,
-        address token_,
-        uint256 amount_,
-        address receiver_
-    ) external;
-
     function assignWatcherPrecompileCreditsFromRequestCount(
         uint256 fees_,
         uint40 requestCount_
     ) external;
 
-    function assignWatcherPrecompileCreditsFromAddress(uint256 fees_, address consumeFrom_) external;
-
-    function incrementCreditsDeposited(
-        address depositTo_,
-        uint32 chainSlug_,
-        address token_,
-        uint256 amount_,
-        uint256 signatureNonce_,
-        bytes memory signature_
+    function assignWatcherPrecompileCreditsFromAddress(
+        uint256 fees_,
+        address consumeFrom_
     ) external;
 
     function whitelistAppGatewayWithSignature(
@@ -58,5 +44,24 @@ interface IFeesManager {
         uint256 amount_
     ) external returns (PayloadSubmitParams[] memory);
 
-    function getMaxCreditsAvailableForWithdraw(address transmitter_) external view returns (uint256);
+    function getMaxCreditsAvailableForWithdraw(
+        address transmitter_
+    ) external view returns (uint256);
+
+    function withdrawCredits(
+        address originAppGatewayOrUser_,
+        uint32 chainSlug_,
+        address token_,
+        uint256 amount_,
+        address receiver_
+    ) external;
+
+    function depositCredits(
+        address depositTo_,
+        uint32 chainSlug_,
+        address token_,
+        uint256 amount_,
+        uint256 signatureNonce_,
+        bytes memory signature_
+    ) external;
 }

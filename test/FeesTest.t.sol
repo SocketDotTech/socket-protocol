@@ -70,7 +70,6 @@ contract FeesTest is DeliveryHelperTest {
     }
 
     function testWithdrawFeeTokensAppGateway() public {
-
         uint256 receiverBalanceBefore = feesConfig.feesTokenUSDC.balanceOf(receiver);
         uint256 withdrawAmount = 0.5 ether;
 
@@ -82,7 +81,6 @@ contract FeesTest is DeliveryHelperTest {
         );
         executeRequest(new bytes[](0));
 
-
         assertEq(
             receiverBalanceBefore + withdrawAmount,
             feesConfig.feesTokenUSDC.balanceOf(receiver),
@@ -90,9 +88,7 @@ contract FeesTest is DeliveryHelperTest {
         );
     }
 
-
-        function testWithdrawFeeTokensUser() public {
-
+    function testWithdrawFeeTokensUser() public {
         depositUSDCFees(
             user,
             OnChainFees({
@@ -111,11 +107,10 @@ contract FeesTest is DeliveryHelperTest {
             address(feesConfig.feesTokenUSDC),
             withdrawAmount,
             user,
-            address(auctionManager), 
+            address(auctionManager),
             maxFees
         );
         executeRequest(new bytes[](0));
-
 
         assertEq(
             receiverBalanceBefore + withdrawAmount,

@@ -20,7 +20,8 @@ abstract contract FeesHelpers is RequestQueue {
             revert OnlyAppGateway();
         }
         if (requests[requestCount_].winningBid.transmitter != address(0)) revert WinningBidExists();
-        if (requests[requestCount_].maxFees >= newMaxFees_) revert NewMaxFeesLowerThanCurrent(requests[requestCount_].maxFees, newMaxFees_);
+        if (requests[requestCount_].maxFees >= newMaxFees_)
+            revert NewMaxFeesLowerThanCurrent(requests[requestCount_].maxFees, newMaxFees_);
         requests[requestCount_].maxFees = newMaxFees_;
         emit FeesIncreased(appGateway, requestCount_, newMaxFees_);
     }
@@ -39,7 +40,7 @@ abstract contract FeesHelpers is RequestQueue {
         address auctionManager_,
         uint256 fees_
     ) external returns (uint40) {
-        IFeesManager(addressResolver__.feesManager()).withdrawFees(
+        IFeesManager(addressResolver__.feesManager()).withdrawCredits(
             msg.sender,
             chainSlug_,
             token_,

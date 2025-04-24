@@ -202,7 +202,7 @@ contract SetupTest is Test {
         watcherPrecompileLimits.setCallBackFees(1);
         watcherPrecompileLimits.setFinalizeFees(1);
         watcherPrecompileLimits.setQueryFees(1);
-        watcherPrecompileLimits.setScheduleFees(1);
+        watcherPrecompileLimits.setTimeoutFees(1);
 
         vm.stopPrank();
     }

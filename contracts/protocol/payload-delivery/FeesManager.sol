@@ -4,10 +4,8 @@ pragma solidity ^0.8.21;
 import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 import "solady/utils/ECDSA.sol";
-
 import {IFeesPlug} from "../../interfaces/IFeesPlug.sol";
 import "../../interfaces/IFeesManager.sol";
-
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {NotAuctionManager, InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
 import {Bid, CallType, Parallel, WriteFinality, QueuePayloadParams, IsPlug, PayloadSubmitParams, RequestMetadata, UserCredits} from "../utils/common/Structs.sol";
@@ -82,7 +80,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @param appGateway The app gateway address
     /// @param token The token address
     /// @param amount The new amount deposited
-    event CreditsDepositedUpdated(
+    event CreditsDeposited(
         uint32 indexed chainSlug,
         address indexed appGateway,
         address indexed token,
@@ -110,6 +108,13 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         address token,
         address consumeFrom
     );
+
+    /// @notice Emitted when credits are wrapped
+    event CreditsWrapped(address indexed consumeFrom, uint256 amount);
+
+    /// @notice Emitted when credits are unwrapped
+    event CreditsUnwrapped(address indexed consumeFrom, uint256 amount);
+
     /// @notice Error thrown when insufficient fees are available
     error InsufficientCreditsAvailable();
     /// @notice Error thrown when no fees are available for a transmitter
@@ -124,6 +129,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     error AppGatewayNotWhitelisted();
 
     error InvalidAmount();
+    error InsufficientBalance();
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -164,13 +170,32 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         address depositTo_,
         uint32 chainSlug_,
         address token_,
-        uint256 amount_
-    ) external payable {
-        if (msg.value != amount_) revert InvalidAmount();
+        uint256 amount_,
+        uint256 signatureNonce_,
+        bytes memory signature_
+    ) external {
+        if (isNonceUsed[signatureNonce_]) revert NonceUsed();
+        isNonceUsed[signatureNonce_] = true;
+
+        // check signature
+        bytes32 digest = keccak256(
+            abi.encode(
+                depositTo_,
+                chainSlug_,
+                token_,
+                amount_,
+                address(this),
+                evmxSlug,
+                signatureNonce_
+            )
+        );
+
+        if (_recoverSigner(digest, signature_) != owner()) revert InvalidWatcherSignature();
+
         UserCredits storage userCredit = userCredits[depositTo_];
         userCredit.totalCredits += amount_;
         tokenPoolBalances[chainSlug_][token_] += amount_;
-        emit CreditsDepositedUpdated(chainSlug_, depositTo_, token_, amount_);
+        emit CreditsDeposited(chainSlug_, depositTo_, token_, amount_);
     }
 
     function wrap() external payable {
@@ -220,7 +245,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
                 isApproved
             )
         );
-        if (ECDSA.recover(digest, signature_) != consumeFrom) revert InvalidUserSignature();
+        if (_recoverSigner(digest, signature_) != consumeFrom) revert InvalidUserSignature();
 
         isAppGatewayWhitelisted[consumeFrom][appGateway] = isApproved;
         userNonce[consumeFrom]++;
@@ -468,5 +493,14 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
 
     function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (address) {
         return watcherPrecompileConfig().feesPlug(chainSlug_);
+    }
+
+    function _recoverSigner(
+        bytes32 digest_,
+        bytes memory signature_
+    ) internal view returns (address signer) {
+        bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
+        // recovered signer is checked for the valid roles later
+        signer = ECDSA.recover(digest, signature_);
     }
 }

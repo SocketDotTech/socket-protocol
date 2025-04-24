@@ -137,9 +137,11 @@ contract Socket is SocketUtils {
             }
         } else {
             payloadExecuted[payloadId_] = ExecutionStatus.Reverted;
-            address receiver = transmissionParams_.refundAddress == address(0) ? msg.sender : transmissionParams_.refundAddress;
+            address receiver = transmissionParams_.refundAddress == address(0)
+                ? msg.sender
+                : transmissionParams_.refundAddress;
             SafeTransferLib.forceSafeTransferETH(receiver, msg.value);
-            
+
             emit ExecutionFailed(payloadId_, returnData);
         }
 

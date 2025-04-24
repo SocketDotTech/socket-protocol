@@ -189,25 +189,25 @@ contract DeliveryHelperTest is SetupTest {
         socketConfig.feesPlug.depositToFeeAndNative(fees_.token, appGateway_, fees_.amount);
         vm.stopPrank();
 
-        bytes memory bytesInput = abi.encode(
-            IFeesManager.incrementCreditsDeposited.selector,
-            appGateway_,
-            fees_.chainSlug,
-            fees_.token,
-            fees_.amount
+        bytes32 digest = keccak256(
+            abi.encode(
+                appGateway_,
+                fees_.chainSlug,
+                fees_.token,
+                fees_.amount,
+                address(feesManager),
+                evmxSlug,
+                signatureNonce
+            )
         );
 
-        bytes32 digest = keccak256(
-            abi.encode(address(feesManager), evmxSlug, signatureNonce, bytesInput)
-        );
-        bytes memory sig = _createSignature(digest, watcherPrivateKey);
-        feesManager.incrementCreditsDeposited(
+        feesManager.depositCredits(
             appGateway_,
             fees_.chainSlug,
             fees_.token,
             fees_.amount,
             signatureNonce++,
-            sig
+            _createSignature(digest, watcherPrivateKey)
         );
     }
 
