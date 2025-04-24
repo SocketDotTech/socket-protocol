@@ -34,6 +34,15 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         _postAsync();
     }
 
+    // todo: can't overload modifier with same name, can rename later
+    /// @notice Modifier to treat functions async with consume from address
+    modifier asyncWithConsume(address consumeFrom_) {
+        _preAsync(new bytes(0));
+        consumeFrom = consumeFrom_;
+        _;
+        _postAsync();
+    }
+
     function _postAsync() internal {
         isAsyncModifierSet = false;
 
@@ -48,6 +57,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         deliveryHelper__().clearQueue();
         addressResolver__.clearPromises();
 
+        _handleFeesApproval(feesApprovalData_);
+    }
+
+    function _handleFeesApproval(bytes memory feesApprovalData_) internal {
         if (feesApprovalData_.length > 0) {
             (consumeFrom, , ) = IFeesManager(addressResolver__.feesManager())
                 .whitelistAppGatewayWithSignature(feesApprovalData_);
