@@ -246,9 +246,9 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
             )
         );
         if (_recoverSigner(digest, signature_) != consumeFrom) revert InvalidUserSignature();
-
         isAppGatewayWhitelisted[consumeFrom][appGateway] = isApproved;
         userNonce[consumeFrom]++;
+
         return (consumeFrom, appGateway, isApproved);
     }
 

@@ -55,7 +55,6 @@ struct BatchParams {
     address appGateway;
     address auctionManager;
     uint256 maxFees;
-    bytes feesApprovalData;
     bytes onCompleteData;
     bool onlyReadRequests;
     uint256 queryCount;

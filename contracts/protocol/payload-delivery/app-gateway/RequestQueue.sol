@@ -26,11 +26,11 @@ abstract contract RequestQueue is DeliveryUtils {
     function batch(
         uint256 maxFees_,
         address auctionManager_,
-        bytes memory feesApprovalData_,
+        address consumeFrom_,
         bytes memory onCompleteData_
     ) external returns (uint40 requestCount) {
         address appGateway = _getCoreAppGateway(msg.sender);
-        return _batch(appGateway, auctionManager_, maxFees_, feesApprovalData_, onCompleteData_);
+        return _batch(appGateway, auctionManager_, consumeFrom_, maxFees_, onCompleteData_);
     }
 
     /// @notice Initiates a batch of payloads
@@ -40,8 +40,8 @@ abstract contract RequestQueue is DeliveryUtils {
     function _batch(
         address appGateway_,
         address auctionManager_,
+        address consumeFrom_,
         uint256 maxFees_,
-        bytes memory feesApprovalData_,
         bytes memory onCompleteData_
     ) internal returns (uint40 requestCount) {
         if (queuePayloadParams.length == 0) return 0;
@@ -50,7 +50,6 @@ abstract contract RequestQueue is DeliveryUtils {
             appGateway: appGateway_,
             auctionManager: _getAuctionManager(auctionManager_),
             maxFees: maxFees_,
-            feesApprovalData: feesApprovalData_,
             onCompleteData: onCompleteData_,
             onlyReadRequests: false,
             queryCount: 0,
@@ -69,18 +68,14 @@ abstract contract RequestQueue is DeliveryUtils {
         params.queryCount = queryCount;
         params.finalizeCount = finalizeCount;
 
-        address consumeFrom = _checkBatch(
-            params.appGateway,
-            params.feesApprovalData,
-            params.maxFees
-        );
+        _checkBatch(consumeFrom_, params.appGateway, params.maxFees);
 
-        return _submitBatchRequest(payloadSubmitParamsArray, consumeFrom, params);
+        return _submitBatchRequest(payloadSubmitParamsArray, consumeFrom_, params);
     }
 
     function _submitBatchRequest(
         PayloadSubmitParams[] memory payloadSubmitParamsArray,
-        address consumeFrom,
+        address consumeFrom_,
         BatchParams memory params
     ) internal returns (uint40 requestCount) {
         RequestMetadata memory requestMetadata = RequestMetadata({
@@ -90,7 +85,7 @@ abstract contract RequestQueue is DeliveryUtils {
             winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
             onCompleteData: params.onCompleteData,
             onlyReadRequests: params.onlyReadRequests,
-            consumeFrom: consumeFrom,
+            consumeFrom: consumeFrom_,
             queryCount: params.queryCount,
             finalizeCount: params.finalizeCount
         });
@@ -127,24 +122,22 @@ abstract contract RequestQueue is DeliveryUtils {
                 ? IAddressResolver(addressResolver__).defaultAuctionManager()
                 : auctionManager_;
     }
+
     function _checkBatch(
+        address consumeFrom_,
         address appGateway_,
-        bytes memory feesApprovalData_,
         uint256 maxFees_
-    ) internal returns (address consumeFrom) {
+    ) internal view {
         if (queuePayloadParams.length > REQUEST_PAYLOAD_COUNT_LIMIT)
             revert RequestPayloadCountLimitExceeded();
-        (consumeFrom, , ) = IFeesManager(addressResolver__.feesManager())
-            .whitelistAppGatewayWithSignature(feesApprovalData_);
+
         if (
             !IFeesManager(addressResolver__.feesManager()).isUserCreditsEnough(
-                consumeFrom,
+                consumeFrom_,
                 appGateway_,
                 maxFees_
             )
         ) revert InsufficientFees();
-
-        return consumeFrom;
     }
 
     /// @notice Creates an array of payload details

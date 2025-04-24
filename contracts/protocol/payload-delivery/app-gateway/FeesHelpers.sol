@@ -10,6 +10,7 @@ abstract contract FeesHelpers is RequestQueue {
     uint256[50] _gap_batch_async;
 
     error NewMaxFeesLowerThanCurrent(uint256 current, uint256 new_);
+
     /// @notice Increases the fees for a request if no bid is placed
     /// @param requestCount_ The ID of the request
     /// @param newMaxFees_ The new maximum fees
@@ -47,8 +48,7 @@ abstract contract FeesHelpers is RequestQueue {
             amount_,
             receiver_
         );
-        bytes memory feesApprovalData = abi.encode(msg.sender, msg.sender, true, bytes(""));
-        return _batch(msg.sender, auctionManager_, fees_, feesApprovalData, bytes(""));
+        return _batch(msg.sender, auctionManager_, msg.sender, fees_, bytes(""));
     }
 
     /// @notice Withdraws fees to a specified receiver
@@ -89,6 +89,7 @@ abstract contract FeesHelpers is RequestQueue {
         // same transmitter can execute requests without auction
         watcherPrecompile__().startProcessingRequest(requestCount, transmitter);
     }
+
     /// @notice Returns the fees for a request
     /// @param requestCount_ The ID of the request
     /// @return fees The fees data

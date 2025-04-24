@@ -25,29 +25,33 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     mapping(bytes32 => mapping(uint32 => address)) public override forwarderAddresses;
     mapping(bytes32 => bytes) public creationCodeWithArgs;
 
+    address public consumeFrom;
+
     /// @notice Modifier to treat functions async
     modifier async(bytes memory feesApprovalData_) {
-        _preAsync();
+        _preAsync(feesApprovalData_);
         _;
-        _postAsync(feesApprovalData_);
+        _postAsync();
     }
 
-    function _postAsync(bytes memory feesApprovalData_) internal {
+    function _postAsync() internal {
         isAsyncModifierSet = false;
-        if (feesApprovalData_.length == 0) {
-            feesApprovalData_ = abi.encode(address(this), address(this), true, new bytes(0));
-        }
-        // todo: cache the feesApprovalData for next async in same request
-        deliveryHelper__().batch(maxFees, auctionManager, feesApprovalData_, onCompleteData);
+
+        deliveryHelper__().batch(maxFees, auctionManager, consumeFrom, onCompleteData);
         _markValidPromises();
         onCompleteData = bytes("");
     }
 
-    function _preAsync() internal {
+    function _preAsync(bytes memory feesApprovalData_) internal {
         isAsyncModifierSet = true;
         _clearOverrides();
         deliveryHelper__().clearQueue();
         addressResolver__.clearPromises();
+
+        if (feesApprovalData_.length > 0) {
+            (consumeFrom, , ) = IFeesManager(addressResolver__.feesManager())
+                .whitelistAppGatewayWithSignature(feesApprovalData_);
+        } else consumeFrom = address(this);
     }
 
     /// @notice Modifier to ensure only valid promises can call the function
@@ -189,8 +193,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
-            .getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

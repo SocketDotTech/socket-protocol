@@ -25,13 +25,12 @@ interface IMiddleware {
     /// @notice Batches a request
     /// @param fees_ The fees for the request
     /// @param auctionManager_ The address of the auction manager
-    /// @param feesApprovalData_ the data to be passed to the fees manager
     /// @param onCompleteData_ The data to be passed to the onComplete callback
     /// @return requestCount The request id
     function batch(
         uint256 fees_,
         address auctionManager_,
-        bytes memory feesApprovalData_,
+        address consumeFrom_,
         bytes memory onCompleteData_
     ) external returns (uint40 requestCount);
 
