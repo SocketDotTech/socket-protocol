@@ -8,7 +8,7 @@ import "../contracts/protocol/utils/common/Constants.sol";
 import "../contracts/protocol/watcherPrecompile/core/WatcherPrecompile.sol";
 import "../contracts/protocol/watcherPrecompile/WatcherPrecompileConfig.sol";
 import "../contracts/protocol/watcherPrecompile/WatcherPrecompileLimits.sol";
-import "../contracts/protocol/watcherPrecompile/DumpDecoder.sol";
+import "../contracts/protocol/watcherPrecompile/PayloadHeaderDecoder.sol";
 import "../contracts/interfaces/IForwarder.sol";
 import "../contracts/protocol/utils/common/AccessRoles.sol";
 import {Socket} from "../contracts/protocol/socket/Socket.sol";
@@ -24,7 +24,7 @@ import {ResolvedPromises} from "../contracts/protocol/utils/common/Structs.sol";
 import "solady/utils/ERC1967Factory.sol";
 
 contract SetupTest is Test {
-    using DumpDecoder for bytes32;
+    using PayloadHeaderDecoder for bytes32;
     uint public c = 1;
     address owner = address(uint160(c++));
 
@@ -204,7 +204,7 @@ contract SetupTest is Test {
 
         for (uint i = 0; i < payloadIds.length; i++) {
             PayloadParams memory payloadParams = watcherPrecompile.getPayloadParams(payloadIds[i]);
-            if (payloadParams.dump.getCallType() != CallType.READ) {
+            if (payloadParams.payloadHeader.getCallType() != CallType.READ) {
                 return false;
             }
         }
@@ -238,7 +238,7 @@ contract SetupTest is Test {
             PayloadParams memory payloadParams = watcherPrecompile.getPayloadParams(payloadIds[i]);
             bool isLastPayload = i == payloadIds.length - 1 && hasMoreBatches;
 
-            if (payloadParams.dump.getCallType() == CallType.READ) {
+            if (payloadParams.payloadHeader.getCallType() == CallType.READ) {
                 _resolveAndExpectFinalizeRequested(
                     payloadParams.payloadId,
                     payloadParams,
@@ -300,14 +300,14 @@ contract SetupTest is Test {
     function _generateWatcherProof(
         PayloadParams memory params_
     ) internal view returns (bytes memory, bytes32) {
-        SocketContracts memory socketConfig = getSocketConfig(params_.dump.getChainSlug());
+        SocketContracts memory socketConfig = getSocketConfig(params_.payloadHeader.getChainSlug());
         DigestParams memory digestParams_ = DigestParams(
             address(socketConfig.socket),
             transmitterEOA,
             params_.payloadId,
             params_.deadline,
-            params_.dump.getCallType(),
-            params_.dump.getWriteFinality(),
+            params_.payloadHeader.getCallType(),
+            params_.payloadHeader.getWriteFinality(),
             params_.gasLimit,
             params_.value,
             params_.readAt,
@@ -350,7 +350,9 @@ contract SetupTest is Test {
             address refundAddress
         )
     {
-        SocketContracts memory socketConfig = getSocketConfig(payloadParams.dump.getChainSlug());
+        SocketContracts memory socketConfig = getSocketConfig(
+            payloadParams.payloadHeader.getChainSlug()
+        );
         bytes32 transmitterDigest = keccak256(
             abi.encode(address(socketConfig.socket), payloadParams.payloadId)
         );
@@ -358,16 +360,16 @@ contract SetupTest is Test {
 
         params = ExecuteParams({
             deadline: payloadParams.deadline,
-            callType: payloadParams.dump.getCallType(),
-            writeFinality: payloadParams.dump.getWriteFinality(),
+            callType: payloadParams.payloadHeader.getCallType(),
+            writeFinality: payloadParams.payloadHeader.getWriteFinality(),
             gasLimit: payloadParams.gasLimit,
             value: payloadParams.value,
             readAt: payloadParams.readAt,
             payload: payloadParams.payload,
             target: payloadParams.target,
-            requestCount: payloadParams.dump.getRequestCount(),
-            batchCount: payloadParams.dump.getBatchCount(),
-            payloadCount: payloadParams.dump.getPayloadCount(),
+            requestCount: payloadParams.payloadHeader.getRequestCount(),
+            batchCount: payloadParams.payloadHeader.getBatchCount(),
+            payloadCount: payloadParams.payloadHeader.getPayloadCount(),
             prevDigestsHash: payloadParams.prevDigestsHash,
             switchboard: payloadParams.switchboard
         });

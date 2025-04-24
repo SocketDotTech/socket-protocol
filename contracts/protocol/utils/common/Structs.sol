@@ -178,7 +178,7 @@ struct PayloadSubmitParams {
 struct PayloadParams {
     // uint40 requestCount + uint40 batchCount + uint40 payloadCount + uint32 chainSlug
     // CallType callType + Parallel isParallel + WriteFinality writeFinality
-    bytes32 dump;
+    bytes32 payloadHeader;
     // uint40 requestCount;
     // uint40 batchCount;
     // uint40 payloadCount;

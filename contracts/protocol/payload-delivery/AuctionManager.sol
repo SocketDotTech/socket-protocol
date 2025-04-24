@@ -112,8 +112,6 @@ contract AuctionManager is
         );
         if (!_hasRole(TRANSMITTER_ROLE, transmitter)) revert InvalidTransmitter();
 
-        // create a new bid
-        Bid memory newBid = Bid({fee: fee, transmitter: transmitter, extraData: extraData});
         // get the request metadata
         RequestMetadata memory requestMetadata = IMiddleware(addressResolver__.deliveryHelper())
             .getRequestMetadata(requestCount_);
@@ -129,16 +127,11 @@ contract AuctionManager is
             fee >= winningBids[requestCount_].fee
         ) revert LowerBidAlreadyExists();
 
+        // create a new bid
+        Bid memory newBid = Bid({fee: fee, transmitter: transmitter, extraData: extraData});
+
         // update the winning bid
         winningBids[requestCount_] = newBid;
-
-        // block the fees
-        IFeesManager(addressResolver__.feesManager()).blockFees(
-            requestMetadata.appGateway,
-            requestMetadata.fees,
-            newBid,
-            requestCount_
-        );
 
         // end the auction if the no auction end delay
         if (auctionEndDelaySeconds > 0) {
@@ -150,6 +143,14 @@ contract AuctionManager is
         } else {
             _endAuction(requestCount_);
         }
+
+        // block the fees
+        IFeesManager(addressResolver__.feesManager()).blockFees(
+            requestMetadata.appGateway,
+            requestMetadata.fees,
+            newBid,
+            requestCount_
+        );
 
         emit BidPlaced(requestCount_, newBid);
     }
