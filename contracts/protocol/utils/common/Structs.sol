@@ -176,7 +176,7 @@ struct PayloadSubmitParams {
 struct PayloadParams {
     // uint40 requestCount + uint40 batchCount + uint40 payloadCount + uint32 chainSlug
     // CallType callType + Parallel isParallel + WriteFinality writeFinality
-    bytes32 dump;
+    bytes32 payloadHeader;
     // uint40 requestCount;
     // uint40 batchCount;
     // uint40 payloadCount;
@@ -231,6 +231,21 @@ struct ExecuteParams {
     uint40 payloadCount;
     bytes32 prevDigestsHash;
     bytes extraData;
+}
+
+struct TransmissionParams {
+    uint256 socketFees;
+    address refundAddress;
+    bytes extraData;
+    bytes transmitterSignature;
+}
+
+struct PayloadIdParams {
+    uint40 requestCount;
+    uint40 batchCount;
+    uint40 payloadCount;
+    address switchboard;
+    uint32 chainSlug;
 }
 
 /// @notice Struct containing fee amounts and status

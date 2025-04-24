@@ -8,7 +8,7 @@ import "../contracts/protocol/utils/common/Constants.sol";
 import "../contracts/protocol/watcherPrecompile/core/WatcherPrecompile.sol";
 import "../contracts/protocol/watcherPrecompile/WatcherPrecompileConfig.sol";
 import "../contracts/protocol/watcherPrecompile/WatcherPrecompileLimits.sol";
-import "../contracts/protocol/watcherPrecompile/DumpDecoder.sol";
+import "../contracts/protocol/watcherPrecompile/PayloadHeaderDecoder.sol";
 import "../contracts/interfaces/IForwarder.sol";
 import "../contracts/protocol/utils/common/AccessRoles.sol";
 import {Socket} from "../contracts/protocol/socket/Socket.sol";
@@ -17,14 +17,14 @@ import "../contracts/protocol/socket/SocketBatcher.sol";
 import "../contracts/protocol/AddressResolver.sol";
 import {ContractFactoryPlug} from "../contracts/protocol/payload-delivery/ContractFactoryPlug.sol";
 import {FeesPlug} from "../contracts/protocol/payload-delivery/FeesPlug.sol";
-
+import {SocketFeeManager} from "../contracts/protocol/socket/SocketFeeManager.sol";
 import {ETH_ADDRESS} from "../contracts/protocol/utils/common/Constants.sol";
 import {ResolvedPromises} from "../contracts/protocol/utils/common/Structs.sol";
 
 import "solady/utils/ERC1967Factory.sol";
 
 contract SetupTest is Test {
-    using DumpDecoder for bytes32;
+    using PayloadHeaderDecoder for bytes32;
     uint public c = 1;
     address owner = address(uint160(c++));
 
@@ -40,7 +40,7 @@ contract SetupTest is Test {
     uint32 evmxSlug = 1;
     uint256 expiryTime = 10000000;
     uint256 maxReAuctionCount = 10;
-
+    uint256 socketFees = 0.01 ether;
     uint256 public signatureNonce;
     uint256 public payloadIdCounter;
     uint256 public timeoutIdCounter;
@@ -53,6 +53,7 @@ contract SetupTest is Test {
     struct SocketContracts {
         uint32 chainSlug;
         Socket socket;
+        SocketFeeManager socketFeeManager;
         FastSwitchboard switchboard;
         SocketBatcher socketBatcher;
         ContractFactoryPlug contractFactoryPlug;
@@ -103,7 +104,7 @@ contract SetupTest is Test {
             address(contractFactoryPlug),
             address(feesPlug)
         );
-
+        SocketFeeManager socketFeeManager = new SocketFeeManager(owner, socketFees);
         hoax(watcherEOA);
         watcherPrecompileConfig.setSwitchboard(chainSlug_, FAST, address(switchboard));
 
@@ -111,6 +112,7 @@ contract SetupTest is Test {
             SocketContracts({
                 chainSlug: chainSlug_,
                 socket: socket,
+                socketFeeManager: socketFeeManager,
                 switchboard: switchboard,
                 socketBatcher: socketBatcher,
                 contractFactoryPlug: contractFactoryPlug,
@@ -202,7 +204,7 @@ contract SetupTest is Test {
 
         for (uint i = 0; i < payloadIds.length; i++) {
             PayloadParams memory payloadParams = watcherPrecompile.getPayloadParams(payloadIds[i]);
-            if (payloadParams.dump.getCallType() != CallType.READ) {
+            if (payloadParams.payloadHeader.getCallType() != CallType.READ) {
                 return false;
             }
         }
@@ -236,7 +238,7 @@ contract SetupTest is Test {
             PayloadParams memory payloadParams = watcherPrecompile.getPayloadParams(payloadIds[i]);
             bool isLastPayload = i == payloadIds.length - 1 && hasMoreBatches;
 
-            if (payloadParams.dump.getCallType() == CallType.READ) {
+            if (payloadParams.payloadHeader.getCallType() == CallType.READ) {
                 _resolveAndExpectFinalizeRequested(
                     payloadParams.payloadId,
                     payloadParams,
@@ -266,7 +268,8 @@ contract SetupTest is Test {
             ExecuteParams memory params,
             SocketBatcher socketBatcher,
             ,
-            bytes memory transmitterSig
+            bytes memory transmitterSig,
+            address refundAddress
         ) = _getExecuteParams(payloadParams);
 
         return
@@ -275,7 +278,8 @@ contract SetupTest is Test {
                 payloadParams.switchboard,
                 digest,
                 watcherProof,
-                transmitterSig
+                transmitterSig,
+                refundAddress
             );
     }
 
@@ -297,13 +301,13 @@ contract SetupTest is Test {
     function _generateWatcherProof(
         PayloadParams memory params_
     ) internal view returns (bytes memory, bytes32) {
-        SocketContracts memory socketConfig = getSocketConfig(params_.dump.getChainSlug());
+        SocketContracts memory socketConfig = getSocketConfig(params_.payloadHeader.getChainSlug());
         DigestParams memory digestParams_ = DigestParams(
             address(socketConfig.socket),
             transmitterEOA,
             params_.payloadId,
             params_.deadline,
-            params_.dump.getCallType(),
+            params_.payloadHeader.getCallType(),
             params_.gasLimit,
             params_.value,
             params_.payload,
@@ -343,31 +347,35 @@ contract SetupTest is Test {
             ExecuteParams memory params,
             SocketBatcher socketBatcher,
             uint256 value,
-            bytes memory transmitterSig
+            bytes memory transmitterSig,
+            address refundAddress
         )
     {
-        SocketContracts memory socketConfig = getSocketConfig(payloadParams.dump.getChainSlug());
+        SocketContracts memory socketConfig = getSocketConfig(
+            payloadParams.payloadHeader.getChainSlug()
+        );
         bytes32 transmitterDigest = keccak256(
             abi.encode(address(socketConfig.socket), payloadParams.payloadId)
         );
         transmitterSig = _createSignature(transmitterDigest, transmitterPrivateKey);
 
         params = ExecuteParams({
-            callType: payloadParams.dump.getCallType(),
+            callType: payloadParams.payloadHeader.getCallType(),
             deadline: payloadParams.deadline,
             gasLimit: payloadParams.gasLimit,
             value: payloadParams.value,
             payload: payloadParams.payload,
             target: payloadParams.target,
-            requestCount: payloadParams.dump.getRequestCount(),
-            batchCount: payloadParams.dump.getBatchCount(),
-            payloadCount: payloadParams.dump.getPayloadCount(),
+            requestCount: payloadParams.payloadHeader.getRequestCount(),
+            batchCount: payloadParams.payloadHeader.getBatchCount(),
+            payloadCount: payloadParams.payloadHeader.getPayloadCount(),
             prevDigestsHash: payloadParams.prevDigestsHash,
             extraData: bytes("")
         });
 
         value = payloadParams.value;
         socketBatcher = socketConfig.socketBatcher;
+        refundAddress = transmitterEOA;
     }
 
     function _resolvePromise(bytes32 payloadId, bytes memory returnData) internal {

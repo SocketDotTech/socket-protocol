@@ -21,6 +21,7 @@ interface ISocketBatcher {
         address switchboard_,
         bytes32 digest_,
         bytes calldata proof_,
-        bytes calldata transmitterSignature_
+        bytes calldata transmitterSignature_,
+        address refundAddress_
     ) external payable returns (bool, bool, bytes memory);
 }

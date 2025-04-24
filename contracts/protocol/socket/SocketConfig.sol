@@ -9,6 +9,7 @@ import "../utils/AccessControl.sol";
 import {GOVERNANCE_ROLE, RESCUE_ROLE, SWITCHBOARD_DISABLER_ROLE} from "../utils/common/AccessRoles.sol";
 import {CallType, PlugConfig, SwitchboardStatus, ExecutionStatus} from "../utils/common/Structs.sol";
 import {PlugNotFound, InvalidAppGateway, InvalidTransmitter} from "../utils/common/Errors.sol";
+import "../../interfaces/ISocketFeeManager.sol";
 import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
 
 /**
@@ -18,6 +19,9 @@ import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
  * @dev This contract is meant to be inherited by other contracts that require socket configuration functionality
  */
 abstract contract SocketConfig is ISocket, AccessControl {
+    // socket fee manager
+    ISocketFeeManager public socketFeeManager;
+
     // @notice mapping of switchboard address to its status, helps socket to block invalid switchboards
     mapping(address => SwitchboardStatus) public isValidSwitchboard;
 
@@ -42,6 +46,7 @@ abstract contract SocketConfig is ISocket, AccessControl {
     event SwitchboardDisabled(address switchboard);
     // @notice event triggered when a switchboard is enabled
     event SwitchboardEnabled(address switchboard);
+    event SocketFeeManagerUpdated(address oldSocketFeeManager, address newSocketFeeManager);
 
     // @notice function to register a switchboard
     // @dev only callable by switchboards
@@ -67,10 +72,14 @@ abstract contract SocketConfig is ISocket, AccessControl {
         emit SwitchboardEnabled(msg.sender);
     }
 
-    // @notice function to connect a plug to a socket
-    // @dev only callable by plugs (msg.sender)
-    // @param appGatewayId_ The app gateway id
-    // @param switchboard_ address of switchboard on sibling chain
+    function setSocketFeeManager(address socketFeeManager_) external onlyRole(GOVERNANCE_ROLE) {
+        emit SocketFeeManagerUpdated(address(socketFeeManager), socketFeeManager_);
+        socketFeeManager = ISocketFeeManager(socketFeeManager_);
+    }
+
+    /**
+     * @notice connects Plug to Socket and sets the config for given `siblingChainSlug_`
+     */
     function connect(bytes32 appGatewayId_, address switchboard_) external override {
         if (isValidSwitchboard[switchboard_] != SwitchboardStatus.REGISTERED)
             revert InvalidSwitchboard();
