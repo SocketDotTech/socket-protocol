@@ -201,11 +201,10 @@ contract DeliveryHelperTest is SetupTest {
             )
         );
 
-        feesManager.depositCredits(
+        feesManager.depositCredits{value: fees_.amount}(
             appGateway_,
             fees_.chainSlug,
             fees_.token,
-            fees_.amount,
             signatureNonce++,
             _createSignature(digest, watcherPrivateKey)
         );

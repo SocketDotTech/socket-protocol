@@ -60,8 +60,7 @@ interface IFeesManager {
         address depositTo_,
         uint32 chainSlug_,
         address token_,
-        uint256 amount_,
         uint256 signatureNonce_,
         bytes memory signature_
-    ) external;
+    ) external payable;
 }

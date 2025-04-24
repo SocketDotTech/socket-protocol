@@ -163,19 +163,19 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
 
     /// @notice Adds the fees deposited for an app gateway on a chain
     /// @param depositTo_ The app gateway address
-    /// @param amount_ The amount deposited
     // @dev only callable by watcher precompile
     // @dev will need tokenAmount_ and creditAmount_ when introduce tokens except stables
     function depositCredits(
         address depositTo_,
         uint32 chainSlug_,
         address token_,
-        uint256 amount_,
         uint256 signatureNonce_,
         bytes memory signature_
-    ) external {
+    ) external payable {
         if (isNonceUsed[signatureNonce_]) revert NonceUsed();
         isNonceUsed[signatureNonce_] = true;
+
+        uint256 amount = msg.value;
 
         // check signature
         bytes32 digest = keccak256(
@@ -183,7 +183,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
                 depositTo_,
                 chainSlug_,
                 token_,
-                amount_,
+                amount,
                 address(this),
                 evmxSlug,
                 signatureNonce_
@@ -193,9 +193,9 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         if (_recoverSigner(digest, signature_) != owner()) revert InvalidWatcherSignature();
 
         UserCredits storage userCredit = userCredits[depositTo_];
-        userCredit.totalCredits += amount_;
-        tokenPoolBalances[chainSlug_][token_] += amount_;
-        emit CreditsDeposited(chainSlug_, depositTo_, token_, amount_);
+        userCredit.totalCredits += amount;
+        tokenPoolBalances[chainSlug_][token_] += amount;
+        emit CreditsDeposited(chainSlug_, depositTo_, token_, amount);
     }
 
     function wrap() external payable {
