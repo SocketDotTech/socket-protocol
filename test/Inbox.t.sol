@@ -31,7 +31,7 @@ contract TriggerTest is DeliveryHelperTest {
 
         // Connect the counter to the gateway and socket
         counter.initSocket(
-            address(gateway),
+            _encodeAppGatewayId(address(gateway)),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
@@ -41,7 +41,7 @@ contract TriggerTest is DeliveryHelperTest {
         gateways[0] = AppGatewayConfig({
             plug: address(counter),
             chainSlug: arbChainSlug,
-            appGateway: address(gateway),
+            appGatewayId: _encodeAppGatewayId(address(gateway)),
             switchboard: address(arbConfig.switchboard)
         });
 
@@ -59,10 +59,17 @@ contract TriggerTest is DeliveryHelperTest {
     function testIncrementAfterTrigger() public {
         // Initial counter value should be 0
         assertEq(gateway.counterVal(), 0, "Initial gateway counter should be 0");
-
+        depositUSDCFees(
+            address(gateway),
+            OnChainFees({
+                chainSlug: arbChainSlug,
+                token: address(arbConfig.feesTokenUSDC),
+                amount: 1 ether
+            })
+        );
         // Simulate a message from another chain through the watcher
         uint256 incrementValue = 5;
-        bytes32 triggerId = _encodeTriggerId(address(gateway), arbChainSlug);
+        bytes32 triggerId = _encodeTriggerId(address(arbConfig.socket), arbChainSlug);
         bytes memory payload = abi.encodeWithSelector(
             CounterAppGateway.increase.selector,
             incrementValue
@@ -76,7 +83,7 @@ contract TriggerTest is DeliveryHelperTest {
         params[0] = TriggerParams({
             triggerId: triggerId,
             chainSlug: arbChainSlug,
-            appGateway: address(gateway),
+            appGatewayId: _encodeAppGatewayId(address(gateway)),
             plug: address(counter),
             payload: payload,
             params: bytes32(0)
@@ -91,12 +98,10 @@ contract TriggerTest is DeliveryHelperTest {
         assertEq(gateway.counterVal(), incrementValue, "Gateway counter should be incremented");
     }
 
-    function _encodeTriggerId(address appGateway_, uint256 chainSlug_) internal returns (bytes32) {
+    function _encodeTriggerId(address socket_, uint256 chainSlug_) internal returns (bytes32) {
         return
             bytes32(
-                (uint256(chainSlug_) << 224) |
-                    (uint256(uint160(appGateway_)) << 64) |
-                    triggerCounter++
+                (uint256(chainSlug_) << 224) | (uint256(uint160(socket_)) << 64) | triggerCounter++
             );
     }
 }

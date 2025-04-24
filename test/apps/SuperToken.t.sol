@@ -76,9 +76,13 @@ contract SuperTokenTest is DeliveryHelperTest {
         );
         // Enable app gateways to do all operations in the Watcher: Read, Write and Schedule on EVMx
         // Watcher sets the limits for apps in this SOCKET protocol version
-        depositFees(
+        depositUSDCFees(
             address(superTokenApp),
-            OnChainFees({chainSlug: arbChainSlug, token: ETH_ADDRESS, amount: 1 ether})
+            OnChainFees({
+                chainSlug: arbChainSlug,
+                token: address(arbConfig.feesTokenUSDC),
+                amount: 1 ether
+            })
         );
 
         appContracts = AppContracts({

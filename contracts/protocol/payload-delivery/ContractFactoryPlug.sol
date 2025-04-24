@@ -32,7 +32,7 @@ contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
     /// @notice Deploys a contract
     /// @param isPlug_ Whether the contract to be deployed is a plug
     /// @param salt_ The salt used for create 2
-    /// @param appGateway_ The app gateway address
+    /// @param appGatewayId_ The app gateway id
     /// @param switchboard_ The switchboard address
     /// @param creationCode_ The creation code
     /// @param initCallData_ The init call data
@@ -40,7 +40,7 @@ contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
     function deployContract(
         IsPlug isPlug_,
         bytes32 salt_,
-        address appGateway_,
+        bytes32 appGatewayId_,
         address switchboard_,
         bytes memory creationCode_,
         bytes memory initCallData_
@@ -53,7 +53,7 @@ contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
             }
         }
 
-        if (isPlug_ == IsPlug.YES) IPlug(addr).initSocket(appGateway_, msg.sender, switchboard_);
+        if (isPlug_ == IsPlug.YES) IPlug(addr).initSocket(appGatewayId_, msg.sender, switchboard_);
 
         bytes memory returnData;
         if (initCallData_.length > 0) {
@@ -94,11 +94,11 @@ contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
     }
 
     function connectSocket(
-        address appGateway_,
+        bytes32 appGatewayId_,
         address socket_,
         address switchboard_
     ) external onlyOwner {
-        _connectSocket(appGateway_, socket_, switchboard_);
+        _connectSocket(appGatewayId_, socket_, switchboard_);
     }
 
     /**

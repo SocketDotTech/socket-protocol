@@ -38,7 +38,7 @@ contract DeliveryHelper is FeesHelpers {
         RequestMetadata storage requestMetadata_ = requests[requestCount_];
         // if a transmitter was already assigned, it means the request was restarted
         bool isRestarted = requestMetadata_.winningBid.transmitter != address(0);
-        requestMetadata_.winningBid.transmitter = winningBid_.transmitter;
+        requestMetadata_.winningBid = winningBid_;
 
         if (!isRestarted) {
             watcherPrecompile__().startProcessingRequest(requestCount_, winningBid_.transmitter);
@@ -54,15 +54,17 @@ contract DeliveryHelper is FeesHelpers {
 
         // todo: move it to watcher precompile
         if (requestMetadata_.winningBid.transmitter != address(0))
-            IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
+            IFeesManager(addressResolver__.feesManager()).unblockAndAssignCredits(
                 requestCount_,
                 requestMetadata_.winningBid.transmitter
             );
 
-        IAppGateway(requestMetadata_.appGateway).onRequestComplete(
-            requestCount_,
-            requestMetadata_.onCompleteData
-        );
+        if (requestMetadata_.appGateway.code.length > 0) {
+            IAppGateway(requestMetadata_.appGateway).onRequestComplete(
+                requestCount_,
+                requestMetadata_.onCompleteData
+            );
+        }
     }
 
     /// @notice Cancels a request and settles the fees
@@ -92,13 +94,13 @@ contract DeliveryHelper is FeesHelpers {
     function _settleFees(uint40 requestCount_) internal {
         // If the request has a winning bid, ie. transmitter already assigned, unblock and assign fees
         if (requests[requestCount_].winningBid.transmitter != address(0)) {
-            IFeesManager(addressResolver__.feesManager()).unblockAndAssignFees(
+            IFeesManager(addressResolver__.feesManager()).unblockAndAssignCredits(
                 requestCount_,
                 requests[requestCount_].winningBid.transmitter
             );
         } else {
             // If the request has no winning bid, ie. transmitter not assigned, unblock fees
-            IFeesManager(addressResolver__.feesManager()).unblockFees(requestCount_);
+            IFeesManager(addressResolver__.feesManager()).unblockCredits(requestCount_);
         }
     }
 

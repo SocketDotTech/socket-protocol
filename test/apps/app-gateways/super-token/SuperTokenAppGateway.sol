@@ -45,7 +45,7 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
 
         // sets the fees data like max fees, chain and token for all transfers
         // they can be updated for each transfer as well
-        _setOverrides(fees_);
+        _setMaxFees(fees_);
         _initializeOwner(owner_);
     }
 

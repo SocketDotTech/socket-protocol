@@ -17,9 +17,13 @@ contract CounterTest is DeliveryHelperTest {
         setUpDeliveryHelper();
 
         counterGateway = new CounterAppGateway(address(addressResolver), feesAmount);
-        depositFees(
+        depositUSDCFees(
             address(counterGateway),
-            OnChainFees({chainSlug: arbChainSlug, token: ETH_ADDRESS, amount: 1 ether})
+            OnChainFees({
+                chainSlug: arbChainSlug,
+                token: address(arbConfig.feesTokenUSDC),
+                amount: 1 ether
+            })
         );
 
         counterId = counterGateway.counter();
@@ -30,7 +34,7 @@ contract CounterTest is DeliveryHelperTest {
         requestCount = _deploy(chainSlug, IAppGateway(counterGateway), contractIds);
     }
 
-    function testCounterDeployment() external {
+    function testCounterDeployment1() external {
         deploySetup();
         deployCounterApp(arbChainSlug);
 

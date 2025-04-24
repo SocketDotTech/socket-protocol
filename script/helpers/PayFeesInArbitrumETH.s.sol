@@ -23,6 +23,6 @@ contract DepositFees is Script {
         console.log("App Gateway:", appGateway);
         console.log("Fees Plug:", address(feesPlug));
         uint feesAmount = 0.001 ether;
-        feesPlug.depositToFeeAndNative(ETH_ADDRESS, feesAmount, appGateway);
+        feesPlug.depositToFeeAndNative(ETH_ADDRESS, appGateway, feesAmount);
     }
 }

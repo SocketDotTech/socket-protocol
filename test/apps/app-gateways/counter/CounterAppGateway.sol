@@ -20,7 +20,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     constructor(address addressResolver_, uint256 fees_) AppGatewayBase(addressResolver_) {
         creationCodeWithArgs[counter] = abi.encodePacked(type(Counter).creationCode);
         creationCodeWithArgs[counter1] = abi.encodePacked(type(Counter).creationCode);
-        _setOverrides(fees_);
+        _setMaxFees(fees_);
         _initializeOwner(msg.sender);
     }
 
@@ -80,10 +80,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         _setOverrides(Read.OFF, Parallel.OFF);
     }
 
-    function readCounterAtBlock(
-        address instance_,
-        uint256 blockNumber_
-    ) public async(bytes("")) {
+    function readCounterAtBlock(address instance_, uint256 blockNumber_) public async(bytes("")) {
         uint32 chainSlug = IForwarder(instance_).getChainSlug();
         _setOverrides(Read.ON, Parallel.ON, blockNumber_);
         ICounter(instance_).getCounter();

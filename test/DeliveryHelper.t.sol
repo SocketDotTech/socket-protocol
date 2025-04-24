@@ -111,28 +111,37 @@ contract DeliveryHelperTest is SetupTest {
         arbConfig = deploySocket(arbChainSlug);
         optConfig = deploySocket(optChainSlug);
         connectDeliveryHelper();
+
+        depositUSDCFees(
+            address(auctionManager),
+            OnChainFees({
+                chainSlug: arbChainSlug,
+                token: address(arbConfig.feesTokenUSDC),
+                amount: 1 ether
+            })
+        );
     }
 
     function connectDeliveryHelper() internal {
         vm.startPrank(owner);
         arbConfig.contractFactoryPlug.initSocket(
-            address(deliveryHelper),
+            _encodeAppGatewayId(address(deliveryHelper)),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
         optConfig.contractFactoryPlug.initSocket(
-            address(deliveryHelper),
+            _encodeAppGatewayId(address(deliveryHelper)),
             address(optConfig.socket),
             address(optConfig.switchboard)
         );
 
         arbConfig.feesPlug.initSocket(
-            address(feesManager),
+            _encodeAppGatewayId(address(feesManager)),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
         optConfig.feesPlug.initSocket(
-            address(feesManager),
+            _encodeAppGatewayId(address(feesManager)),
             address(optConfig.socket),
             address(optConfig.switchboard)
         );
@@ -142,25 +151,25 @@ contract DeliveryHelperTest is SetupTest {
         gateways[0] = AppGatewayConfig({
             plug: address(arbConfig.contractFactoryPlug),
             chainSlug: arbChainSlug,
-            appGateway: address(deliveryHelper),
+            appGatewayId: _encodeAppGatewayId(address(deliveryHelper)),
             switchboard: address(arbConfig.switchboard)
         });
         gateways[1] = AppGatewayConfig({
             plug: address(optConfig.contractFactoryPlug),
             chainSlug: optChainSlug,
-            appGateway: address(deliveryHelper),
+            appGatewayId: _encodeAppGatewayId(address(deliveryHelper)),
             switchboard: address(optConfig.switchboard)
         });
         gateways[2] = AppGatewayConfig({
             plug: address(arbConfig.feesPlug),
             chainSlug: arbChainSlug,
-            appGateway: address(feesManager),
+            appGatewayId: _encodeAppGatewayId(address(feesManager)),
             switchboard: address(arbConfig.switchboard)
         });
         gateways[3] = AppGatewayConfig({
             plug: address(optConfig.feesPlug),
             chainSlug: optChainSlug,
-            appGateway: address(feesManager),
+            appGatewayId: _encodeAppGatewayId(address(feesManager)),
             switchboard: address(optConfig.switchboard)
         });
 
@@ -173,29 +182,61 @@ contract DeliveryHelperTest is SetupTest {
 
     //////////////////////////////////// Fees ////////////////////////////////////
 
-    function depositFees(address appGateway_, OnChainFees memory fees_) internal {
+    function depositUSDCFees(address appGateway_, OnChainFees memory fees_) internal {
         SocketContracts memory socketConfig = getSocketConfig(fees_.chainSlug);
-        socketConfig.feesPlug.depositToFeeAndNative(fees_.token, fees_.amount, appGateway_);
-
-        bytes memory bytesInput = abi.encode(
-            fees_.chainSlug,
-            appGateway_,
-            fees_.token,
-            fees_.amount
-        );
+        vm.startPrank(owner);
+        ERC20(fees_.token).approve(address(socketConfig.feesPlug), fees_.amount);
+        socketConfig.feesPlug.depositToFeeAndNative(fees_.token, appGateway_, fees_.amount);
+        vm.stopPrank();
 
         bytes32 digest = keccak256(
-            abi.encode(address(feesManager), evmxSlug, signatureNonce, bytesInput)
+            abi.encode(
+                appGateway_,
+                fees_.chainSlug,
+                fees_.token,
+                fees_.amount,
+                address(feesManager),
+                evmxSlug,
+                signatureNonce
+            )
         );
-        bytes memory sig = _createSignature(digest, watcherPrivateKey);
-        feesManager.incrementFeesDeposited(
+
+        feesManager.depositCredits{value: fees_.amount}(
             appGateway_,
             fees_.chainSlug,
             fees_.token,
-            fees_.amount,
             signatureNonce++,
-            sig
+            _createSignature(digest, watcherPrivateKey)
         );
+    }
+
+    function whitelistAppGateway(
+        address appGateway_,
+        address user_,
+        uint256 userPrivateKey_,
+        uint32 chainSlug_
+    ) internal {
+        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
+        // Create fee approval data with signature
+        bytes32 digest = keccak256(
+            abi.encode(
+                address(feesManager),
+                evmxSlug,
+                user_,
+                appGateway_,
+                feesManager.userNonce(user_),
+                true
+            )
+        );
+
+        // Sign with consumeFrom's private key
+        bytes memory signature = _createSignature(digest, userPrivateKey_);
+
+        // Encode approval data
+        bytes memory feeApprovalData = abi.encode(user_, appGateway_, true, signature);
+
+        // Call whitelistAppGatewayWithSignature with approval data
+        feesManager.whitelistAppGatewayWithSignature(feeApprovalData);
     }
 
     ////////////////////////////////// Deployment helpers ////////////////////////////////////
@@ -246,7 +287,7 @@ contract DeliveryHelperTest is SetupTest {
             gateways[i] = AppGatewayConfig({
                 plug: plug,
                 chainSlug: chainSlug_,
-                appGateway: address(appGateway_),
+                appGatewayId: _encodeAppGatewayId(address(appGateway_)),
                 switchboard: address(socketConfig.switchboard)
             });
         }

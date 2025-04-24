@@ -8,6 +8,7 @@ import {IPlug} from "../../interfaces/IPlug.sol";
 import "../utils/AccessControl.sol";
 import {GOVERNANCE_ROLE, RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
 import {PlugConfig, SwitchboardStatus, ExecutionStatus} from "../utils/common/Structs.sol";
+import "../../interfaces/ISocketFeeManager.sol";
 import {PlugDisconnected, InvalidAppGateway, InvalidTransmitter} from "../utils/common/Errors.sol";
 import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
 
@@ -18,6 +19,9 @@ import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
  * @dev This contract is meant to be inherited by other contracts that require socket configuration functionality
  */
 abstract contract SocketConfig is ISocket, AccessControl {
+    // socket fee manager
+    ISocketFeeManager public socketFeeManager;
+
     // @notice mapping of switchboard address to its status, helps socket to block invalid switchboards
     mapping(address => SwitchboardStatus) public isValidSwitchboard;
 
@@ -40,6 +44,7 @@ abstract contract SocketConfig is ISocket, AccessControl {
     event SwitchboardAdded(address switchboard);
     // @notice event triggered when a switchboard is disabled
     event SwitchboardDisabled(address switchboard);
+    event SocketFeeManagerUpdated(address oldSocketFeeManager, address newSocketFeeManager);
 
     // @notice function to register a switchboard
     // @dev only callable by switchboards
@@ -58,20 +63,28 @@ abstract contract SocketConfig is ISocket, AccessControl {
         emit SwitchboardDisabled(msg.sender);
     }
 
+    function setSocketFeeManager(address socketFeeManager_) external onlyRole(GOVERNANCE_ROLE) {
+        emit SocketFeeManagerUpdated(address(socketFeeManager), socketFeeManager_);
+        socketFeeManager = ISocketFeeManager(socketFeeManager_);
+    }
+
+    /**
+     * @notice connects Plug to Socket and sets the config for given `siblingChainSlug_`
+     */
     // @notice function to connect a plug to a socket
     // @dev only callable by plugs (msg.sender)
-    // @param appGateway_ address of app gateway on sibling chain
+    // @param appGatewayId_ The app gateway id
     // @param switchboard_ address of switchboard on sibling chain
-    function connect(address appGateway_, address switchboard_) external override {
+    function connect(bytes32 appGatewayId_, address switchboard_) external override {
         if (isValidSwitchboard[switchboard_] != SwitchboardStatus.REGISTERED)
             revert InvalidSwitchboard();
 
         PlugConfig storage _plugConfig = _plugConfigs[msg.sender];
 
-        _plugConfig.appGateway = appGateway_;
+        _plugConfig.appGatewayId = appGatewayId_;
         _plugConfig.switchboard = switchboard_;
 
-        emit PlugConnected(msg.sender, appGateway_, switchboard_);
+        emit PlugConnected(msg.sender, appGatewayId_, switchboard_);
     }
 
     // @notice function to set the max copy bytes for socket
@@ -81,14 +94,16 @@ abstract contract SocketConfig is ISocket, AccessControl {
         maxCopyBytes = maxCopyBytes_;
     }
 
-    // @notice function to get the config for a plug
-    // @param plugAddress_ address of plug present at current chain
-    // @return appGateway address of app gateway on sibling chain
-    // @return switchboard address of switchboard on sibling chain
+    /**
+     * @notice returns the config for given `plugAddress_`
+     * @param plugAddress_ address of plug present at current chain
+     * @return appGatewayId The app gateway id
+     * @return switchboard The switchboard address
+     */
     function getPlugConfig(
         address plugAddress_
-    ) external view returns (address appGateway, address switchboard) {
+    ) external view returns (bytes32 appGatewayId, address switchboard) {
         PlugConfig memory _plugConfig = _plugConfigs[plugAddress_];
-        return (_plugConfig.appGateway, _plugConfig.switchboard);
+        return (_plugConfig.appGatewayId, _plugConfig.switchboard);
     }
 }

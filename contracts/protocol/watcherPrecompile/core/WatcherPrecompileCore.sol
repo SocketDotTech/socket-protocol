@@ -7,6 +7,7 @@ import {AccessControl} from "../../utils/AccessControl.sol";
 import "solady/utils/Initializable.sol";
 import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
+import "./WatcherPrecompileUtils.sol";
 
 /// @title WatcherPrecompileCore
 /// @notice Core functionality for the WatcherPrecompile system
@@ -17,7 +18,8 @@ abstract contract WatcherPrecompileCore is
     WatcherPrecompileStorage,
     Initializable,
     AccessControl,
-    AddressResolverUtil
+    AddressResolverUtil,
+    WatcherPrecompileUtils
 {
     using PayloadHeaderDecoder for bytes32;
 
@@ -34,7 +36,7 @@ abstract contract WatcherPrecompileCore is
     ) internal returns (bytes32 timeoutId) {
         if (delayInSeconds_ > maxTimeoutDelayInSeconds) revert TimeoutDelayTooLarge();
 
-        _consumeCallbackFeesFromAddress(watcherPrecompileLimits__.scheduleFees(), msg.sender);
+        _consumeCallbackFeesFromAddress(watcherPrecompileLimits__.timeoutFees(), msg.sender);
 
         uint256 executeAt = block.timestamp + delayInSeconds_;
         timeoutId = _encodeTimeoutId();
@@ -51,12 +53,7 @@ abstract contract WatcherPrecompileCore is
         );
 
         // consumes limit for SCHEDULE precompile
-        watcherPrecompileLimits__.consumeLimit(
-            _getCoreAppGateway(msg.sender),
-            SCHEDULE,
-            1
-        );
-        
+        watcherPrecompileLimits__.consumeLimit(_getCoreAppGateway(msg.sender), SCHEDULE, 1);
 
         // emits event for watcher to track timeout and resolve when timeout is reached
         emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);
@@ -107,7 +104,7 @@ abstract contract WatcherPrecompileCore is
             params_.readAt,
             params_.payload,
             params_.target,
-            params_.appGateway,
+            _encodeAppGatewayId(params_.appGateway),
             prevDigestsHash
         );
 
@@ -153,7 +150,7 @@ abstract contract WatcherPrecompileCore is
                 params_.readAt,
                 params_.payload,
                 params_.target,
-                params_.appGateway,
+                params_.appGatewayId,
                 params_.prevDigestsHash
             )
         );
@@ -180,7 +177,7 @@ abstract contract WatcherPrecompileCore is
                 p.readAt,
                 p.payload,
                 p.target,
-                p.appGateway,
+                _encodeAppGatewayId(p.appGateway),
                 p.prevDigestsHash
             );
             prevDigestsHash = keccak256(abi.encodePacked(prevDigestsHash, getDigest(digestParams)));
@@ -237,19 +234,21 @@ abstract contract WatcherPrecompileCore is
     }
 
     /// @notice Verifies that a watcher signature is valid
-    /// @param digest_ The digest to verify
+    /// @param inputData_ The input data to verify
     /// @param signatureNonce_ The nonce of the signature
     /// @param signature_ The signature to verify
     /// @dev This function verifies that the signature was created by the watcher and that the nonce has not been used before
     function _isWatcherSignatureValid(
-        bytes memory digest_,
+        bytes memory inputData_,
         uint256 signatureNonce_,
         bytes memory signature_
     ) internal {
         if (isNonceUsed[signatureNonce_]) revert NonceUsed();
         isNonceUsed[signatureNonce_] = true;
 
-        bytes32 digest = keccak256(abi.encode(address(this), evmxSlug, signatureNonce_, digest_));
+        bytes32 digest = keccak256(
+            abi.encode(address(this), evmxSlug, signatureNonce_, inputData_)
+        );
         digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
 
         // recovered signer is checked for the valid roles later
@@ -260,16 +259,14 @@ abstract contract WatcherPrecompileCore is
     function _consumeCallbackFeesFromRequestCount(uint256 fees_, uint40 requestCount_) internal {
         // for callbacks in all precompiles
         uint256 feesToConsume = fees_ + watcherPrecompileLimits__.callBackFees();
-        IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileFeesFromRequestCount(
-            feesToConsume,
-            requestCount_
-        );
+        IFeesManager(addressResolver__.feesManager())
+            .assignWatcherPrecompileCreditsFromRequestCount(feesToConsume, requestCount_);
     }
 
     function _consumeCallbackFeesFromAddress(uint256 fees_, address consumeFrom_) internal {
         // for callbacks in all precompiles
         uint256 feesToConsume = fees_ + watcherPrecompileLimits__.callBackFees();
-        IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileFeesFromAddress(
+        IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileCreditsFromAddress(
             feesToConsume,
             consumeFrom_
         );

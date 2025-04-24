@@ -46,7 +46,7 @@ contract WatcherPrecompileLimits is
     // slot 157: fees
     uint256 public queryFees;
     uint256 public finalizeFees;
-    uint256 public scheduleFees;
+    uint256 public timeoutFees;
     uint256 public callBackFees;
 
     /// @notice Emitted when the default limit and rate per second are set
@@ -173,39 +173,25 @@ contract WatcherPrecompileLimits is
         finalizeFees = finalizeFees_;
     }
 
-    function setScheduleFees(uint256 scheduleFees_) external onlyOwner {
-        scheduleFees = scheduleFees_;
+    function setTimeoutFees(uint256 timeoutFees_) external onlyOwner {
+        timeoutFees = timeoutFees_;
     }
 
     function setCallBackFees(uint256 callBackFees_) external onlyOwner {
         callBackFees = callBackFees_;
     }
 
-    function getTotalFeesRequired(uint40 requestCount_) external view returns (uint256) {
+    function getTotalFeesRequired(
+        uint256 queryCount_,
+        uint256 finalizeCount_,
+        uint256 scheduleCount_,
+        uint256 callbackCount_
+    ) external view returns (uint256) {
         uint256 totalFees = 0;
-        if (queryFees == 0) {
-            revert WatcherFeesNotSet(QUERY);
-        }
-        if (finalizeFees == 0) {
-            revert WatcherFeesNotSet(FINALIZE);
-        }
-        if (scheduleFees == 0) {
-            revert WatcherFeesNotSet(SCHEDULE);
-        }
-        if (callBackFees == 0) {
-            revert WatcherFeesNotSet(CALLBACK);
-        }
-
-        uint256 queryCount = watcherPrecompile__().requestParams[requestCount_].queryCount;
-        uint256 finalizeCount = watcherPrecompile__().requestParams[requestCount_].finalizeCount;
-        uint256 scheduleCount = watcherPrecompile__().requestParams[requestCount_].scheduleCount;
-
-        uint256 totalCallbacks = queryCount + finalizeCount + scheduleCount;
-
-        totalFees += totalCallbacks * callBackFees;
-        totalFees += queryCount * queryFees;
-        totalFees += finalizeCount * finalizeFees;
-        totalFees += scheduleCount * scheduleFees;
+        totalFees += callbackCount_ * callBackFees;
+        totalFees += queryCount_ * queryFees;
+        totalFees += finalizeCount_ * finalizeFees;
+        totalFees += scheduleCount_ * timeoutFees;
 
         return totalFees;
     }

@@ -50,6 +50,22 @@ enum ExecutionStatus {
     Reverted
 }
 
+/// @notice Creates a struct to hold batch parameters
+struct BatchParams {
+    address appGateway;
+    address auctionManager;
+    uint256 maxFees;
+    bytes onCompleteData;
+    bool onlyReadRequests;
+    uint256 queryCount;
+    uint256 finalizeCount;
+}
+
+struct AppGatewayWhitelistParams {
+    address appGateway;
+    bool isApproved;
+}
+
 //// STRUCTS ////
 // plug:
 struct LimitParams {
@@ -67,13 +83,13 @@ struct UpdateLimitParams {
 
 struct AppGatewayConfig {
     address plug;
-    address appGateway;
+    bytes32 appGatewayId;
     address switchboard;
     uint32 chainSlug;
 }
 // Plug config:
 struct PlugConfig {
-    address appGateway;
+    bytes32 appGatewayId;
     address switchboard;
 }
 //trigger:
@@ -81,7 +97,7 @@ struct TriggerParams {
     bytes32 triggerId;
     bytes32 params;
     address plug;
-    address appGateway;
+    bytes32 appGatewayId;
     uint32 chainSlug;
     bytes payload;
 }
@@ -142,7 +158,7 @@ struct DigestParams {
     uint256 readAt;
     bytes payload;
     address target;
-    address appGateway;
+    bytes32 appGatewayId;
     bytes32 prevDigestsHash; // should be id? hash of hashes
 }
 
@@ -227,6 +243,8 @@ struct RequestMetadata {
     bytes onCompleteData;
     bool onlyReadRequests;
     address consumeFrom;
+    uint256 queryCount;
+    uint256 finalizeCount;
 }
 
 struct ExecuteParams {
@@ -243,4 +261,19 @@ struct ExecuteParams {
     uint40 payloadCount;
     bytes32 prevDigestsHash; // should be id? hash of hashes
     address switchboard;
+}
+
+struct TransmissionParams {
+    uint256 socketFees;
+    address refundAddress;
+    bytes extraData;
+    bytes transmitterSignature;
+}
+
+struct PayloadIdParams {
+    uint40 requestCount;
+    uint40 batchCount;
+    uint40 payloadCount;
+    address switchboard;
+    uint32 chainSlug;
 }

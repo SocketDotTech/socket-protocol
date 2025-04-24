@@ -46,17 +46,18 @@ interface IWatcherPrecompileLimits {
     /// @param appGateway_ The app gateway address
     /// @param limitType_ The type of limit to consume
     /// @param consumeLimit_ The amount of limit to consume
-    function consumeLimit(
-        address appGateway_,
-        bytes32 limitType_,
-        uint256 consumeLimit_
-    ) external;
+    function consumeLimit(address appGateway_, bytes32 limitType_, uint256 consumeLimit_) external;
 
-    function getTotalFeesRequired(uint40 requestCount_) external view returns (uint256);
+    function getTotalFeesRequired(
+        uint256 queryCount_,
+        uint256 finalizeCount_,
+        uint256 scheduleCount_,
+        uint256 callbackCount_
+    ) external view returns (uint256);
 
     function queryFees() external view returns (uint256);
     function finalizeFees() external view returns (uint256);
-    function scheduleFees() external view returns (uint256);
+    function timeoutFees() external view returns (uint256);
     function callBackFees() external view returns (uint256);
 
     /// @notice Emitted when limit parameters are updated

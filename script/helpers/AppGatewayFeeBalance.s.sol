@@ -18,7 +18,7 @@ contract CheckDepositedFees is Script {
         console.log("totalCredits fees:", totalCredits);
         console.log("blockedCredits fees:", blockedCredits);
 
-        uint256 availableFees = feesManager.getAvailableFees(appGateway);
+        uint256 availableFees = feesManager.getAvailableCredits(appGateway);
         console.log("Available fees:", availableFees);
     }
 }

@@ -7,6 +7,7 @@ import {Ownable} from "solady/auth/Ownable.sol";
 import "../../interfaces/IWatcherPrecompileConfig.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
+import "./core/WatcherPrecompileUtils.sol";
 
 /// @title WatcherPrecompileConfig
 /// @notice Configuration contract for the Watcher Precompile system
@@ -15,7 +16,8 @@ contract WatcherPrecompileConfig is
     IWatcherPrecompileConfig,
     Initializable,
     Ownable,
-    AddressResolverUtil
+    AddressResolverUtil,
+    WatcherPrecompileUtils
 {
     // slots 0-50 (51) reserved for addr resolver util
 
@@ -61,10 +63,10 @@ contract WatcherPrecompileConfig is
     mapping(address => mapping(uint32 => mapping(address => bool))) public isValidPlug;
 
     /// @notice Emitted when a new plug is configured for an app gateway
-    /// @param appGateway The address of the app gateway
+    /// @param appGatewayId The id of the app gateway
     /// @param chainSlug The identifier of the destination network
     /// @param plug The address of the plug
-    event PlugAdded(address appGateway, uint32 chainSlug, address plug);
+    event PlugAdded(bytes32 appGatewayId, uint32 chainSlug, address plug);
 
     /// @notice Emitted when a switchboard is set for a network
     /// @param chainSlug The identifier of the network
@@ -117,11 +119,11 @@ contract WatcherPrecompileConfig is
         for (uint256 i = 0; i < configs_.length; i++) {
             // Store the plug configuration for this network and plug
             _plugConfigs[configs_[i].chainSlug][configs_[i].plug] = PlugConfig({
-                appGateway: configs_[i].appGateway,
+                appGatewayId: configs_[i].appGatewayId,
                 switchboard: configs_[i].switchboard
             });
 
-            emit PlugAdded(configs_[i].appGateway, configs_[i].chainSlug, configs_[i].plug);
+            emit PlugAdded(configs_[i].appGatewayId, configs_[i].chainSlug, configs_[i].plug);
         }
     }
 
@@ -167,13 +169,14 @@ contract WatcherPrecompileConfig is
     /// @dev Returns zero addresses if configuration doesn't exist
     /// @param chainSlug_ The identifier of the network
     /// @param plug_ The address of the plug
-    /// @return The app gateway address and switchboard address for the plug
+    /// @return The app gateway id and switchboard address for the plug
+    /// @dev Returns zero addresses if configuration doesn't exist
     function getPlugConfigs(
         uint32 chainSlug_,
         address plug_
-    ) public view returns (address, address) {
+    ) public view returns (bytes32, address) {
         return (
-            _plugConfigs[chainSlug_][plug_].appGateway,
+            _plugConfigs[chainSlug_][plug_].appGatewayId,
             _plugConfigs[chainSlug_][plug_].switchboard
         );
     }
@@ -197,20 +200,22 @@ contract WatcherPrecompileConfig is
             middleware_ == address(deliveryHelper__()) && target_ == contractFactoryPlug[chainSlug_]
         ) return;
 
-        (address appGateway, address switchboard) = getPlugConfigs(chainSlug_, target_);
-        if (appGateway != appGateway_) revert InvalidGateway();
+        (bytes32 appGatewayId, address switchboard) = getPlugConfigs(chainSlug_, target_);
+        if (appGatewayId != _encodeAppGatewayId(appGateway_)) revert InvalidGateway();
         if (switchboard != switchboard_) revert InvalidSwitchboard();
     }
 
     function _isWatcherSignatureValid(
-        bytes memory digest_,
+        bytes memory inputData_,
         uint256 signatureNonce_,
         bytes memory signature_
     ) internal {
         if (isNonceUsed[signatureNonce_]) revert NonceUsed();
         isNonceUsed[signatureNonce_] = true;
 
-        bytes32 digest = keccak256(abi.encode(address(this), evmxSlug, signatureNonce_, digest_));
+        bytes32 digest = keccak256(
+            abi.encode(address(this), evmxSlug, signatureNonce_, inputData_)
+        );
         digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
 
         // recovered signer is checked for the valid roles later
