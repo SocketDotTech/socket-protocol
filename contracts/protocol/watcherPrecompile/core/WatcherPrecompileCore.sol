@@ -32,10 +32,9 @@ abstract contract WatcherPrecompileCore is
     /// @return timeoutId The unique identifier for the timeout request
     function _setTimeout(
         uint256 delayInSeconds_,
-        bytes calldata payload_
+        bytes memory payload_
     ) internal returns (bytes32 timeoutId) {
         if (delayInSeconds_ > maxTimeoutDelayInSeconds) revert TimeoutDelayTooLarge();
-
         _consumeCallbackFeesFromAddress(watcherPrecompileLimits__.timeoutFees(), msg.sender);
 
         uint256 executeAt = block.timestamp + delayInSeconds_;
@@ -51,9 +50,6 @@ abstract contract WatcherPrecompileCore is
             false,
             payload_
         );
-
-        // consumes limit for SCHEDULE precompile
-        watcherPrecompileLimits__.consumeLimit(_getCoreAppGateway(msg.sender), SCHEDULE, 1);
 
         // emits event for watcher to track timeout and resolve when timeout is reached
         emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);
@@ -201,12 +197,7 @@ abstract contract WatcherPrecompileCore is
     function _encodeTimeoutId() internal returns (bytes32) {
         // Encode timeout ID by bit-shifting and combining:
         // EVMx chainSlug (32 bits) | watcher precompile address (160 bits) | counter (64 bits)
-        return
-            bytes32(
-                (uint256(evmxSlug) << 224) |
-                    (uint256(uint160(address(this))) << 64) |
-                    payloadCounter++
-            );
+        return bytes32(timeoutIdPrefix | payloadCounter++);
     }
 
     /// @notice Creates a payload ID from the given parameters
