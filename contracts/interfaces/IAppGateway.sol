@@ -37,10 +37,6 @@ interface IAppGateway {
     /// @param chainSlug_ The chain slug
     function initialize(uint32 chainSlug_) external;
 
-    /// @notice deploy contracts to chain
-    /// @param chainSlug_ The chain slug
-    function deployContracts(uint32 chainSlug_) external;
-
     /// @notice get the on-chain address of a contract
     /// @param contractId_ The contract id
     /// @param chainSlug_ The chain slug
