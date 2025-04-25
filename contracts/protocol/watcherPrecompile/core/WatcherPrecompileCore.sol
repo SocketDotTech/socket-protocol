@@ -98,10 +98,8 @@ abstract contract WatcherPrecompileCore is
             params_.payloadId,
             deadline,
             params_.payloadHeader.getCallType(),
-            params_.payloadHeader.getWriteFinality(),
             params_.gasLimit,
             params_.value,
-            params_.readAt,
             params_.payload,
             params_.target,
             _encodeAppGatewayId(params_.appGateway),
@@ -133,6 +131,7 @@ abstract contract WatcherPrecompileCore is
     // ================== Helper functions ==================
 
     /// @notice Calculates the digest hash of payload parameters
+    /// @dev extraData is empty for now, not needed for this EVMx
     /// @param params_ The payload parameters to calculate the digest for
     /// @return digest The calculated digest hash
     /// @dev This function creates a keccak256 hash of the payload parameters
@@ -144,14 +143,13 @@ abstract contract WatcherPrecompileCore is
                 params_.payloadId,
                 params_.deadline,
                 params_.callType,
-                params_.writeFinality,
                 params_.gasLimit,
                 params_.value,
-                params_.readAt,
                 params_.payload,
                 params_.target,
                 params_.appGatewayId,
-                params_.prevDigestsHash
+                params_.prevDigestsHash,
+                bytes("")
             )
         );
     }
@@ -171,10 +169,8 @@ abstract contract WatcherPrecompileCore is
                 p.payloadId,
                 p.deadline,
                 p.payloadHeader.getCallType(),
-                p.payloadHeader.getWriteFinality(),
                 p.gasLimit,
                 p.value,
-                p.readAt,
                 p.payload,
                 p.target,
                 _encodeAppGatewayId(p.appGateway),

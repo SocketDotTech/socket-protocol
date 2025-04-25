@@ -6,10 +6,10 @@ import "../../interfaces/ISwitchboard.sol";
 import {IPlug} from "../../interfaces/IPlug.sol";
 
 import "../utils/AccessControl.sol";
-import {GOVERNANCE_ROLE, RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
-import {PlugConfig, SwitchboardStatus, ExecutionStatus} from "../utils/common/Structs.sol";
+import {GOVERNANCE_ROLE, RESCUE_ROLE, SWITCHBOARD_DISABLER_ROLE} from "../utils/common/AccessRoles.sol";
+import {CallType, PlugConfig, SwitchboardStatus, ExecutionStatus} from "../utils/common/Structs.sol";
+import {PlugNotFound, InvalidAppGateway, InvalidTransmitter} from "../utils/common/Errors.sol";
 import "../../interfaces/ISocketFeeManager.sol";
-import {PlugDisconnected, InvalidAppGateway, InvalidTransmitter} from "../utils/common/Errors.sol";
 import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
 
 /**
@@ -44,6 +44,8 @@ abstract contract SocketConfig is ISocket, AccessControl {
     event SwitchboardAdded(address switchboard);
     // @notice event triggered when a switchboard is disabled
     event SwitchboardDisabled(address switchboard);
+    // @notice event triggered when a switchboard is enabled
+    event SwitchboardEnabled(address switchboard);
     event SocketFeeManagerUpdated(address oldSocketFeeManager, address newSocketFeeManager);
 
     // @notice function to register a switchboard
@@ -58,9 +60,16 @@ abstract contract SocketConfig is ISocket, AccessControl {
 
     // @notice function to disable a switchboard
     // @dev only callable by governance role
-    function disableSwitchboard() external onlyRole(GOVERNANCE_ROLE) {
+    function disableSwitchboard() external onlyRole(SWITCHBOARD_DISABLER_ROLE) {
         isValidSwitchboard[msg.sender] = SwitchboardStatus.DISABLED;
         emit SwitchboardDisabled(msg.sender);
+    }
+
+    // @notice function to enable a switchboard
+    // @dev only callable by governance role
+    function enableSwitchboard() external onlyRole(GOVERNANCE_ROLE) {
+        isValidSwitchboard[msg.sender] = SwitchboardStatus.REGISTERED;
+        emit SwitchboardEnabled(msg.sender);
     }
 
     function setSocketFeeManager(address socketFeeManager_) external onlyRole(GOVERNANCE_ROLE) {
@@ -71,10 +80,6 @@ abstract contract SocketConfig is ISocket, AccessControl {
     /**
      * @notice connects Plug to Socket and sets the config for given `siblingChainSlug_`
      */
-    // @notice function to connect a plug to a socket
-    // @dev only callable by plugs (msg.sender)
-    // @param appGatewayId_ The app gateway id
-    // @param switchboard_ address of switchboard on sibling chain
     function connect(bytes32 appGatewayId_, address switchboard_) external override {
         if (isValidSwitchboard[switchboard_] != SwitchboardStatus.REGISTERED)
             revert InvalidSwitchboard();

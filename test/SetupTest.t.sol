@@ -78,7 +78,7 @@ contract SetupTest is Test {
     ERC1967Factory public proxyFactory;
 
     event Initialized(uint64 version);
-    event FinalizeRequested(bytes32 payloadId, PayloadParams payloadParams);
+    event FinalizeRequested(bytes32 digest, PayloadParams payloadParams);
 
     //////////////////////////////////// Setup ////////////////////////////////////
 
@@ -256,7 +256,7 @@ contract SetupTest is Test {
                     isLastPayload
                 );
             } else {
-                bytes memory returnData = _uploadProofAndExecute(payloadParams);
+                (, , bytes memory returnData) = _uploadProofAndExecute(payloadParams);
                 _resolveAndExpectFinalizeRequested(
                     payloadParams.payloadId,
                     payloadParams,
@@ -270,7 +270,7 @@ contract SetupTest is Test {
 
     function _uploadProofAndExecute(
         PayloadParams memory payloadParams
-    ) internal returns (bytes memory) {
+    ) internal returns (bool, bool, bytes memory) {
         (bytes memory watcherProof, bytes32 digest) = _generateWatcherProof(payloadParams);
         _writeProof(payloadParams.payloadId, watcherProof);
 
@@ -285,6 +285,7 @@ contract SetupTest is Test {
         return
             socketBatcher.attestAndExecute(
                 params,
+                payloadParams.switchboard,
                 digest,
                 watcherProof,
                 transmitterSig,
@@ -313,10 +314,8 @@ contract SetupTest is Test {
             params_.payloadId,
             params_.deadline,
             params_.payloadHeader.getCallType(),
-            params_.payloadHeader.getWriteFinality(),
             params_.gasLimit,
             params_.value,
-            params_.readAt,
             params_.payload,
             params_.target,
             _encodeAppGatewayId(params_.appGateway),
@@ -324,7 +323,9 @@ contract SetupTest is Test {
         );
         bytes32 digest = watcherPrecompile.getDigest(digestParams_);
 
-        bytes32 sigDigest = keccak256(abi.encode(address(socketConfig.switchboard), digest));
+        bytes32 sigDigest = keccak256(
+            abi.encode(address(socketConfig.switchboard), socketConfig.chainSlug, digest)
+        );
         bytes memory proof = _createSignature(sigDigest, watcherPrivateKey);
         return (proof, digest);
     }
@@ -365,19 +366,17 @@ contract SetupTest is Test {
         transmitterSig = _createSignature(transmitterDigest, transmitterPrivateKey);
 
         params = ExecuteParams({
-            deadline: payloadParams.deadline,
             callType: payloadParams.payloadHeader.getCallType(),
-            writeFinality: payloadParams.payloadHeader.getWriteFinality(),
+            deadline: payloadParams.deadline,
             gasLimit: payloadParams.gasLimit,
             value: payloadParams.value,
-            readAt: payloadParams.readAt,
             payload: payloadParams.payload,
             target: payloadParams.target,
             requestCount: payloadParams.payloadHeader.getRequestCount(),
             batchCount: payloadParams.payloadHeader.getBatchCount(),
             payloadCount: payloadParams.payloadHeader.getPayloadCount(),
             prevDigestsHash: payloadParams.prevDigestsHash,
-            switchboard: payloadParams.switchboard
+            extraData: bytes("")
         });
 
         value = payloadParams.value;

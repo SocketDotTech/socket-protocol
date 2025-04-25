@@ -16,13 +16,13 @@ interface ISocket {
      * @notice emits the status of payload after external call
      * @param payloadId payload id which is executed
      */
-    event ExecutionSuccess(bytes32 payloadId, bytes returnData);
+    event ExecutionSuccess(bytes32 payloadId, bool exceededMaxCopy, bytes returnData);
 
     /**
      * @notice emits the status of payload after external call
      * @param payloadId payload id which is executed
      */
-    event ExecutionFailed(bytes32 payloadId, bytes returnData);
+    event ExecutionFailed(bytes32 payloadId, bool exceededMaxCopy, bytes returnData);
 
     /**
      * @notice emits the config set by a plug for a remoteChainSlug
@@ -35,14 +35,14 @@ interface ISocket {
     /**
      * @notice emits the payload details when a new payload arrives at outbound
      * @param triggerId trigger id
-     * @param chainSlug local chain slug
+     * @param switchboard switchboard address
      * @param plug local plug address
      * @param overrides params, for specifying details like fee pool chain, fee pool token and max fees if required
      * @param payload the data which will be used by contracts on chain
      */
     event AppGatewayCallRequested(
         bytes32 triggerId,
-        uint32 chainSlug,
+        address switchboard,
         address plug,
         bytes overrides,
         bytes payload
@@ -54,7 +54,7 @@ interface ISocket {
     function execute(
         ExecuteParams memory executeParams_,
         TransmissionParams memory transmissionParams_
-    ) external payable returns (bytes memory);
+    ) external payable returns (bool, bool, bytes memory);
 
     /**
      * @notice sets the config specific to the plug

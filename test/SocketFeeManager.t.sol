@@ -126,19 +126,17 @@ contract SocketFeeManagerTest is SetupTest {
         bytes memory payload
     ) internal view returns (ExecuteParams memory, TransmissionParams memory) {
         ExecuteParams memory executeParams = ExecuteParams({
-            deadline: block.timestamp + 1 days,
             callType: CallType.WRITE,
-            writeFinality: WriteFinality.HIGH,
+            deadline: block.timestamp + 1 days,
             gasLimit: 100000,
             value: 0,
-            readAt: 0,
             payload: payload,
             target: address(counter),
             requestCount: 0,
             batchCount: 0,
             payloadCount: 0,
             prevDigestsHash: bytes32(0),
-            switchboard: address(mockSwitchboard)
+            extraData: bytes("")
         });
 
         TransmissionParams memory transmissionParams = TransmissionParams({

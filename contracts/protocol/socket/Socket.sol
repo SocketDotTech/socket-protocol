@@ -12,6 +12,15 @@ import "./SocketUtils.sol";
 contract Socket is SocketUtils {
     using LibCall for address;
 
+    // @notice mapping of payload id to execution status
+    mapping(bytes32 => ExecutionStatus) public payloadExecuted;
+
+    // @notice mapping of payload id to execution status
+    mapping(bytes32 => bytes32) public payloadIdToDigest;
+
+    // @notice buffer to account for gas used by current contract execution
+    uint256 public constant GAS_LIMIT_BUFFER = 105;
+
     ////////////////////////////////////////////////////////
     ////////////////////// ERRORS //////////////////////////
     ////////////////////////////////////////////////////////
@@ -39,6 +48,10 @@ contract Socket is SocketUtils {
      * @dev Error emitted when the message value is insufficient
      */
     error InsufficientMsgValue();
+    /**
+     * @dev Error emitted when the call type is read
+     */
+    error ReadOnlyCall();
 
     /**
      * @notice Constructor for the Socket contract
@@ -58,13 +71,15 @@ contract Socket is SocketUtils {
     function execute(
         ExecuteParams memory executeParams_,
         TransmissionParams memory transmissionParams_
-    ) external payable returns (bytes memory) {
+    ) external payable returns (bool, bool, bytes memory) {
         // check if the deadline has passed
         if (executeParams_.deadline < block.timestamp) revert DeadlinePassed();
+        // check if the call type is valid
+        if (executeParams_.callType == CallType.READ) revert ReadOnlyCall();
 
         PlugConfig memory plugConfig = _plugConfigs[executeParams_.target];
         // check if the plug is disconnected
-        if (plugConfig.appGatewayId == bytes32(0)) revert PlugDisconnected();
+        if (plugConfig.appGatewayId == bytes32(0)) revert PlugNotFound();
 
         if (msg.value < executeParams_.value + transmissionParams_.socketFees)
             revert InsufficientMsgValue();
@@ -88,6 +103,7 @@ contract Socket is SocketUtils {
             plugConfig.appGatewayId,
             executeParams_
         );
+        payloadIdToDigest[payloadId] = digest;
 
         // verify the digest
         _verify(digest, payloadId, plugConfig.switchboard);
@@ -115,20 +131,23 @@ contract Socket is SocketUtils {
         bytes32 payloadId_,
         ExecuteParams memory executeParams_,
         TransmissionParams memory transmissionParams_
-    ) internal returns (bytes memory) {
+    ) internal returns (bool, bool, bytes memory) {
         // check if the gas limit is sufficient
-        if (gasleft() < executeParams_.gasLimit) revert LowGasLimit();
+        // bump by 5% to account for gas used by current contract execution
+        if (gasleft() < (executeParams_.gasLimit * GAS_LIMIT_BUFFER) / 100) revert LowGasLimit();
 
         // NOTE: external un-trusted call
-        (bool success, , bytes memory returnData) = executeParams_.target.tryCall(
-            executeParams_.value,
-            executeParams_.gasLimit,
-            maxCopyBytes,
-            executeParams_.payload
-        );
+        (bool success, bool exceededMaxCopy, bytes memory returnData) = executeParams_
+            .target
+            .tryCall(
+                executeParams_.value,
+                executeParams_.gasLimit,
+                maxCopyBytes,
+                executeParams_.payload
+            );
 
         if (success) {
-            emit ExecutionSuccess(payloadId_, returnData);
+            emit ExecutionSuccess(payloadId_, exceededMaxCopy, returnData);
             if (address(socketFeeManager) != address(0)) {
                 socketFeeManager.payAndCheckFees{value: transmissionParams_.socketFees}(
                     executeParams_,
@@ -142,10 +161,10 @@ contract Socket is SocketUtils {
                 : transmissionParams_.refundAddress;
             SafeTransferLib.forceSafeTransferETH(receiver, msg.value);
 
-            emit ExecutionFailed(payloadId_, returnData);
+            emit ExecutionFailed(payloadId_, exceededMaxCopy, returnData);
         }
 
-        return returnData;
+        return (success, exceededMaxCopy, returnData);
     }
 
     function _validateExecutionStatus(bytes32 payloadId_) internal {
@@ -159,33 +178,31 @@ contract Socket is SocketUtils {
     ////////////////////////////////////////////////////////
     /**
      * @notice To trigger to a connected remote chain. Should only be called by a plug.
-     * @param payload_ bytes to be delivered on EVMx
-     * @param overrides_ a bytes param to add details for execution, for eg: fees to be paid for execution
      */
-    function _triggerAppGateway(
-        address plug_,
-        bytes memory overrides_,
-        bytes memory payload_
-    ) internal returns (bytes32 triggerId) {
-        PlugConfig memory plugConfig = _plugConfigs[plug_];
+    function _triggerAppGateway(address plug_) internal returns (bytes32 triggerId) {
+        PlugConfig storage plugConfig = _plugConfigs[plug_];
 
         // if no sibling plug is found for the given chain slug, revert
         // sends the trigger to connected app gateway
-        if (plugConfig.appGatewayId == bytes32(0)) revert PlugDisconnected();
+        if (plugConfig.appGatewayId == bytes32(0)) revert PlugNotFound();
 
         // creates a unique ID for the message
         triggerId = _encodeTriggerId();
-        emit AppGatewayCallRequested(triggerId, chainSlug, plug_, overrides_, payload_);
+        emit AppGatewayCallRequested(
+            triggerId,
+            plugConfig.switchboard,
+            plug_,
+            // gets the overrides from the plug
+            IPlug(plug_).overrides(),
+            msg.data
+        );
     }
 
     /// @notice Fallback function that forwards all calls to Socket's callAppGateway
     /// @dev The calldata is passed as-is to the gateways
     /// @dev if ETH sent with the call, it will revert
     fallback(bytes calldata) external returns (bytes memory) {
-        // gets the overrides from the plug
-        bytes memory overrides = IPlug(msg.sender).overrides();
-
         // return the trigger id
-        return abi.encode(_triggerAppGateway(msg.sender, overrides, msg.data));
+        return abi.encode(_triggerAppGateway(msg.sender));
     }
 }
