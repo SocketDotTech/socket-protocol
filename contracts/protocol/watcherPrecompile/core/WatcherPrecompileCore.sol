@@ -40,16 +40,10 @@ abstract contract WatcherPrecompileCore is
         uint256 executeAt = block.timestamp + delayInSeconds_;
         timeoutId = _encodeTimeoutId();
 
-        // stores timeout request for watcher to track and resolve when timeout is reached
-        timeoutRequests[timeoutId] = TimeoutRequest(
-            timeoutId,
-            msg.sender,
-            delayInSeconds_,
-            executeAt,
-            0,
-            false,
-            payload_
-        );
+        timeoutRequests[timeoutId].target = msg.sender;
+        timeoutRequests[timeoutId].delayInSeconds = delayInSeconds_;
+        timeoutRequests[timeoutId].executeAt = executeAt;
+        timeoutRequests[timeoutId].payload = payload_;
 
         // emits event for watcher to track timeout and resolve when timeout is reached
         emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);

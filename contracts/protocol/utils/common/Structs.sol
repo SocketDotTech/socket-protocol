@@ -103,7 +103,6 @@ struct TriggerParams {
 }
 // timeout:
 struct TimeoutRequest {
-    bytes32 timeoutId;
     address target;
     uint256 delayInSeconds;
     uint256 executeAt;
