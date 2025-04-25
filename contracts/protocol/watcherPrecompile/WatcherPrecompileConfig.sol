@@ -7,7 +7,7 @@ import {Ownable} from "solady/auth/Ownable.sol";
 import "../../interfaces/IWatcherPrecompileConfig.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import {InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
-import "./core/WatcherPrecompileUtils.sol";
+import "./core/WatcherIdUtils.sol";
 
 /// @title WatcherPrecompileConfig
 /// @notice Configuration contract for the Watcher Precompile system
@@ -16,8 +16,7 @@ contract WatcherPrecompileConfig is
     IWatcherPrecompileConfig,
     Initializable,
     Ownable,
-    AddressResolverUtil,
-    WatcherPrecompileUtils
+    AddressResolverUtil
 {
     // slots 0-50 (51) reserved for addr resolver util
 
@@ -201,7 +200,7 @@ contract WatcherPrecompileConfig is
         ) return;
 
         (bytes32 appGatewayId, address switchboard) = getPlugConfigs(chainSlug_, target_);
-        if (appGatewayId != _encodeAppGatewayId(appGateway_)) revert InvalidGateway();
+        if (appGatewayId != WatcherIdUtils.encodeAppGatewayId(appGateway_)) revert InvalidGateway();
         if (switchboard != switchboard_) revert InvalidSwitchboard();
     }
 

@@ -50,7 +50,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
             }
 
             uint40 localPayloadCount = payloadCounter++;
-            bytes32 payloadId = _createPayloadId(
+            bytes32 payloadId = WatcherIdUtils.createPayloadId(
                 requestCount,
                 batchCount,
                 localPayloadCount,
