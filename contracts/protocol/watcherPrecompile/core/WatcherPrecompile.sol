@@ -40,8 +40,9 @@ contract WatcherPrecompile is RequestHandler {
         watcherPrecompileConfig__ = IWatcherPrecompileConfig(watcherPrecompileConfig_);
         maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
         expiryTime = expiryTime_;
-
         evmxSlug = evmxSlug_;
+
+        timeoutIdPrefix = (uint256(evmxSlug_) << 224) | (uint256(uint160(address(this))) << 64);
     }
 
     // ================== Timeout functions ==================
@@ -53,10 +54,7 @@ contract WatcherPrecompile is RequestHandler {
     /// @param delayInSeconds_ The delay in seconds before the timeout executes
     /// @param payload_ The payload data to be executed after the timeout
     /// @return The unique identifier for the timeout request
-    function setTimeout(
-        uint256 delayInSeconds_,
-        bytes calldata payload_
-    ) external returns (bytes32) {
+    function setTimeout(uint256 delayInSeconds_, bytes memory payload_) external returns (bytes32) {
         return _setTimeout(delayInSeconds_, payload_);
     }
 
@@ -68,7 +66,7 @@ contract WatcherPrecompile is RequestHandler {
     function resolveTimeout(
         bytes32 timeoutId_,
         uint256 signatureNonce_,
-        bytes calldata signature_
+        bytes memory signature_
     ) external {
         _isWatcherSignatureValid(
             abi.encode(this.resolveTimeout.selector, timeoutId_),
@@ -135,9 +133,9 @@ contract WatcherPrecompile is RequestHandler {
     /// @dev keccak256(abi.encode(switchboard, digest))
     function finalized(
         bytes32 payloadId_,
-        bytes calldata proof_,
+        bytes memory proof_,
         uint256 signatureNonce_,
-        bytes calldata signature_
+        bytes memory signature_
     ) external {
         _isWatcherSignatureValid(
             abi.encode(this.finalized.selector, payloadId_, proof_),
@@ -186,9 +184,9 @@ contract WatcherPrecompile is RequestHandler {
     /// @dev It verifies that the signature is valid
     /// @dev It also processes the next batch if the current batch is complete
     function resolvePromises(
-        ResolvedPromises[] calldata resolvedPromises_,
+        ResolvedPromises[] memory resolvedPromises_,
         uint256 signatureNonce_,
-        bytes calldata signature_
+        bytes memory signature_
     ) external {
         _isWatcherSignatureValid(
             abi.encode(this.resolvePromises.selector, resolvedPromises_),
@@ -197,45 +195,13 @@ contract WatcherPrecompile is RequestHandler {
         );
 
         for (uint256 i = 0; i < resolvedPromises_.length; i++) {
-            // Get the array of promise addresses for this payload
-            PayloadParams memory payloadParams = payloads[resolvedPromises_[i].payloadId];
-            address asyncPromise = payloadParams.asyncPromise;
-
-            uint40 requestCount = payloadParams.payloadHeader.getRequestCount();
-
-            // todo: non trusted call
-            if (asyncPromise != address(0)) {
-                // todo: limit the gas used for promise resolution
-                // Resolve each promise with its corresponding return data
-                bool success = IPromise(asyncPromise).markResolved(
-                    requestCount,
-                    resolvedPromises_[i].payloadId,
-                    resolvedPromises_[i].returnData
-                );
-
-                if (!success) {
-                    emit PromiseNotResolved(resolvedPromises_[i].payloadId, asyncPromise);
-                    continue;
-                }
-            }
-
-            isPromiseExecuted[resolvedPromises_[i].payloadId] = true;
+            uint40 requestCount = payloads[resolvedPromises_[i].payloadId]
+                .payloadHeader
+                .getRequestCount();
             RequestParams storage requestParams_ = requestParams[requestCount];
-            requestParams_.currentBatchPayloadsLeft--;
-            requestParams_.payloadsRemaining--;
 
-            // if all payloads of a batch are executed, process the next batch
-            if (
-                requestParams_.currentBatchPayloadsLeft == 0 && requestParams_.payloadsRemaining > 0
-            ) {
-                _processBatch(requestCount, ++requestParams_.currentBatch);
-            }
-
-            // if all payloads of a request are executed, finish the request
-            if (requestParams_.payloadsRemaining == 0) {
-                IMiddleware(requestParams_.middleware).finishRequest(requestCount);
-            }
-            emit PromiseResolved(resolvedPromises_[i].payloadId, asyncPromise);
+            _processPromiseResolution(resolvedPromises_[i], requestParams_);
+            _checkAndProcessBatch(requestParams_, requestCount);
         }
     }
 
@@ -251,7 +217,7 @@ contract WatcherPrecompile is RequestHandler {
         bool isRevertingOnchain_,
         bytes32 payloadId_,
         uint256 signatureNonce_,
-        bytes calldata signature_
+        bytes memory signature_
     ) external {
         _isWatcherSignatureValid(
             abi.encode(this.markRevert.selector, isRevertingOnchain_, payloadId_),
@@ -289,9 +255,9 @@ contract WatcherPrecompile is RequestHandler {
     /// @dev This function calls app gateways with the specified parameters
     /// @dev It verifies that the signature is valid and that the app gateway hasn't been called yet
     function callAppGateways(
-        TriggerParams[] calldata params_,
+        TriggerParams[] memory params_,
         uint256 signatureNonce_,
-        bytes calldata signature_
+        bytes memory signature_
     ) external {
         _isWatcherSignatureValid(
             abi.encode(this.callAppGateways.selector, params_),
@@ -302,7 +268,7 @@ contract WatcherPrecompile is RequestHandler {
         for (uint256 i = 0; i < params_.length; i++) {
             if (appGatewayCalled[params_[i].triggerId]) revert AppGatewayAlreadyCalled();
 
-            address appGateway = _decodeAppGatewayId(params_[i].appGatewayId);
+            address appGateway = WatcherIdUtils.decodeAppGatewayId(params_[i].appGatewayId);
             if (
                 !watcherPrecompileConfig__.isValidPlug(
                     appGateway,
@@ -312,9 +278,9 @@ contract WatcherPrecompile is RequestHandler {
             ) revert InvalidCallerTriggered();
 
             IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileCreditsFromAddress(
-                watcherPrecompileLimits__.callBackFees(),
-                appGateway
-            );
+                    watcherPrecompileLimits__.callBackFees(),
+                    appGateway
+                );
 
             appGatewayCaller = appGateway;
             appGatewayCalled[params_[i].triggerId] = true;
@@ -378,5 +344,46 @@ contract WatcherPrecompile is RequestHandler {
     /// @return The request parameters for the given request count
     function getRequestParams(uint40 requestCount) external view returns (RequestParams memory) {
         return requestParams[requestCount];
+    }
+
+    function _processPromiseResolution(
+        ResolvedPromises memory resolvedPromise_,
+        RequestParams storage requestParams_
+    ) internal {
+        PayloadParams memory payloadParams = payloads[resolvedPromise_.payloadId];
+        address asyncPromise = payloadParams.asyncPromise;
+        uint40 requestCount = payloadParams.payloadHeader.getRequestCount();
+
+        if (asyncPromise != address(0)) {
+            bool success = IPromise(asyncPromise).markResolved(
+                requestCount,
+                resolvedPromise_.payloadId,
+                resolvedPromise_.returnData
+            );
+
+            if (!success) {
+                emit PromiseNotResolved(resolvedPromise_.payloadId, asyncPromise);
+                return;
+            }
+        }
+
+        isPromiseExecuted[resolvedPromise_.payloadId] = true;
+        requestParams_.currentBatchPayloadsLeft--;
+        requestParams_.payloadsRemaining--;
+
+        emit PromiseResolved(resolvedPromise_.payloadId, asyncPromise);
+    }
+
+    function _checkAndProcessBatch(
+        RequestParams storage requestParams_,
+        uint40 requestCount
+    ) internal {
+        if (requestParams_.currentBatchPayloadsLeft == 0 && requestParams_.payloadsRemaining > 0) {
+            _processBatch(requestCount, ++requestParams_.currentBatch);
+        }
+
+        if (requestParams_.payloadsRemaining == 0) {
+            IMiddleware(requestParams_.middleware).finishRequest(requestCount);
+        }
     }
 }

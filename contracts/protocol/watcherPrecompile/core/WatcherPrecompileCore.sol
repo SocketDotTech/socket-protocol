@@ -3,11 +3,12 @@ pragma solidity ^0.8.21;
 
 import "./WatcherPrecompileStorage.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
-import {AccessControl} from "../../utils/AccessControl.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
+
 import "solady/utils/Initializable.sol";
 import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
-import "./WatcherPrecompileUtils.sol";
+import "./WatcherIdUtils.sol";
 
 /// @title WatcherPrecompileCore
 /// @notice Core functionality for the WatcherPrecompile system
@@ -17,9 +18,8 @@ abstract contract WatcherPrecompileCore is
     IWatcherPrecompile,
     WatcherPrecompileStorage,
     Initializable,
-    AccessControl,
-    AddressResolverUtil,
-    WatcherPrecompileUtils
+    Ownable,
+    AddressResolverUtil
 {
     using PayloadHeaderDecoder for bytes32;
 
@@ -32,28 +32,18 @@ abstract contract WatcherPrecompileCore is
     /// @return timeoutId The unique identifier for the timeout request
     function _setTimeout(
         uint256 delayInSeconds_,
-        bytes calldata payload_
+        bytes memory payload_
     ) internal returns (bytes32 timeoutId) {
         if (delayInSeconds_ > maxTimeoutDelayInSeconds) revert TimeoutDelayTooLarge();
-
         _consumeCallbackFeesFromAddress(watcherPrecompileLimits__.timeoutFees(), msg.sender);
 
         uint256 executeAt = block.timestamp + delayInSeconds_;
         timeoutId = _encodeTimeoutId();
 
-        // stores timeout request for watcher to track and resolve when timeout is reached
-        timeoutRequests[timeoutId] = TimeoutRequest(
-            timeoutId,
-            msg.sender,
-            delayInSeconds_,
-            executeAt,
-            0,
-            false,
-            payload_
-        );
-
-        // consumes limit for SCHEDULE precompile
-        watcherPrecompileLimits__.consumeLimit(_getCoreAppGateway(msg.sender), SCHEDULE, 1);
+        timeoutRequests[timeoutId].target = msg.sender;
+        timeoutRequests[timeoutId].delayInSeconds = delayInSeconds_;
+        timeoutRequests[timeoutId].executeAt = executeAt;
+        timeoutRequests[timeoutId].payload = payload_;
 
         // emits event for watcher to track timeout and resolve when timeout is reached
         emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);
@@ -102,7 +92,7 @@ abstract contract WatcherPrecompileCore is
             params_.value,
             params_.payload,
             params_.target,
-            _encodeAppGatewayId(params_.appGateway),
+            WatcherIdUtils.encodeAppGatewayId(params_.appGateway),
             prevDigestsHash
         );
 
@@ -173,7 +163,7 @@ abstract contract WatcherPrecompileCore is
                 p.value,
                 p.payload,
                 p.target,
-                _encodeAppGatewayId(p.appGateway),
+                WatcherIdUtils.encodeAppGatewayId(p.appGateway),
                 p.prevDigestsHash
             );
             prevDigestsHash = keccak256(abi.encodePacked(prevDigestsHash, getDigest(digestParams)));
@@ -201,32 +191,7 @@ abstract contract WatcherPrecompileCore is
     function _encodeTimeoutId() internal returns (bytes32) {
         // Encode timeout ID by bit-shifting and combining:
         // EVMx chainSlug (32 bits) | watcher precompile address (160 bits) | counter (64 bits)
-        return
-            bytes32(
-                (uint256(evmxSlug) << 224) |
-                    (uint256(uint160(address(this))) << 64) |
-                    payloadCounter++
-            );
-    }
-
-    /// @notice Creates a payload ID from the given parameters
-    /// @param requestCount_ The request count
-    /// @param batchCount_ The batch count
-    /// @param payloadCount_ The payload count
-    /// @param switchboard_ The switchboard address
-    /// @param chainSlug_ The chain slug
-    /// @return The created payload ID
-    function _createPayloadId(
-        uint40 requestCount_,
-        uint40 batchCount_,
-        uint40 payloadCount_,
-        address switchboard_,
-        uint32 chainSlug_
-    ) internal pure returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(requestCount_, batchCount_, payloadCount_, switchboard_, chainSlug_)
-            );
+        return bytes32(timeoutIdPrefix | payloadCounter++);
     }
 
     /// @notice Verifies that a watcher signature is valid

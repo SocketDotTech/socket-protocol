@@ -73,7 +73,6 @@ contract MockWatcherPrecompile {
         uint256 executeAt = block.timestamp + delayInSeconds_;
         bytes32 timeoutId = _encodeTimeoutId();
         timeoutRequests[timeoutId] = TimeoutRequest(
-            timeoutId,
             msg.sender,
             delayInSeconds_,
             executeAt,

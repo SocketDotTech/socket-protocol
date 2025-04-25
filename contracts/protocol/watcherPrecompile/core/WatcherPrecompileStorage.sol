@@ -47,6 +47,10 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     address public appGatewayCaller;
 
     // slot 54
+    /// @notice The prefix for timeout IDs
+    uint256 public timeoutIdPrefix;
+
+    // slot 55
     /// @notice Maps nonce to whether it has been used
     /// @dev Used to prevent replay attacks with signature nonces
     /// @dev signatureNonce => isValid
