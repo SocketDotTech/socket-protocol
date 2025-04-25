@@ -6,7 +6,7 @@ import {Ownable} from "solady/auth/Ownable.sol";
 import {Gauge} from "../utils/Gauge.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
 import "../../interfaces/IWatcherPrecompileLimits.sol";
-import {SCHEDULE, QUERY, FINALIZE} from "../utils/common/Constants.sol";
+import {SCHEDULE, QUERY, FINALIZE, CALLBACK} from "../utils/common/Constants.sol";
 
 /// @title WatcherPrecompileLimits
 /// @notice Contract for managing watcher precompile limits
@@ -43,8 +43,16 @@ contract WatcherPrecompileLimits is
     // Mapping to track active app gateways
     mapping(address => bool) internal _activeAppGateways;
 
+    // slot 157: fees
+    uint256 public queryFees;
+    uint256 public finalizeFees;
+    uint256 public timeoutFees;
+    uint256 public callBackFees;
+
     /// @notice Emitted when the default limit and rate per second are set
     event DefaultLimitAndRatePerSecondSet(uint256 defaultLimit, uint256 defaultRatePerSecond);
+
+    error WatcherFeesNotSet(bytes32 limitType);
 
     /// @notice Initial initialization (version 1)
     function initialize(
@@ -155,5 +163,36 @@ contract WatcherPrecompileLimits is
         defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
 
         emit DefaultLimitAndRatePerSecondSet(defaultLimit, defaultRatePerSecond);
+    }
+
+    function setQueryFees(uint256 queryFees_) external onlyOwner {
+        queryFees = queryFees_;
+    }
+
+    function setFinalizeFees(uint256 finalizeFees_) external onlyOwner {
+        finalizeFees = finalizeFees_;
+    }
+
+    function setTimeoutFees(uint256 timeoutFees_) external onlyOwner {
+        timeoutFees = timeoutFees_;
+    }
+
+    function setCallBackFees(uint256 callBackFees_) external onlyOwner {
+        callBackFees = callBackFees_;
+    }
+
+    function getTotalFeesRequired(
+        uint256 queryCount_,
+        uint256 finalizeCount_,
+        uint256 scheduleCount_,
+        uint256 callbackCount_
+    ) external view returns (uint256) {
+        uint256 totalFees = 0;
+        totalFees += callbackCount_ * callBackFees;
+        totalFees += queryCount_ * queryFees;
+        totalFees += finalizeCount_ * finalizeFees;
+        totalFees += scheduleCount_ * timeoutFees;
+
+        return totalFees;
     }
 }

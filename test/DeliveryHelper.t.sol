@@ -27,7 +27,7 @@ contract DeliveryHelperTest is SetupTest {
         uint40 indexed requestCount,
         address indexed appGateway,
         PayloadSubmitParams[] payloadSubmitParams,
-        Fees fees,
+        uint256 maxFees,
         address auctionManager,
         bool onlyReadRequests
     );
@@ -111,6 +111,15 @@ contract DeliveryHelperTest is SetupTest {
         arbConfig = deploySocket(arbChainSlug);
         optConfig = deploySocket(optChainSlug);
         connectDeliveryHelper();
+
+        depositUSDCFees(
+            address(auctionManager),
+            OnChainFees({
+                chainSlug: arbChainSlug,
+                token: address(arbConfig.feesTokenUSDC),
+                amount: 1 ether
+            })
+        );
     }
 
     function connectDeliveryHelper() internal {
@@ -173,33 +182,61 @@ contract DeliveryHelperTest is SetupTest {
 
     //////////////////////////////////// Fees ////////////////////////////////////
 
-    function depositFees(address appGateway_, Fees memory fees_) internal {
-        SocketContracts memory socketConfig = getSocketConfig(fees_.feePoolChain);
-        socketConfig.feesPlug.deposit{value: fees_.amount}(
-            fees_.feePoolToken,
-            appGateway_,
-            fees_.amount
-        );
-
-        bytes memory bytesInput = abi.encode(
-            fees_.feePoolChain,
-            appGateway_,
-            fees_.feePoolToken,
-            fees_.amount
-        );
+    function depositUSDCFees(address appGateway_, OnChainFees memory fees_) internal {
+        SocketContracts memory socketConfig = getSocketConfig(fees_.chainSlug);
+        vm.startPrank(owner);
+        ERC20(fees_.token).approve(address(socketConfig.feesPlug), fees_.amount);
+        socketConfig.feesPlug.depositToFeeAndNative(fees_.token, appGateway_, fees_.amount);
+        vm.stopPrank();
 
         bytes32 digest = keccak256(
-            abi.encode(address(feesManager), evmxSlug, signatureNonce, bytesInput)
+            abi.encode(
+                appGateway_,
+                fees_.chainSlug,
+                fees_.token,
+                fees_.amount,
+                address(feesManager),
+                evmxSlug,
+                signatureNonce
+            )
         );
-        bytes memory sig = _createSignature(digest, watcherPrivateKey);
-        feesManager.incrementFeesDeposited(
-            fees_.feePoolChain,
+
+        feesManager.depositCredits{value: fees_.amount}(
             appGateway_,
-            fees_.feePoolToken,
-            fees_.amount,
+            fees_.chainSlug,
+            fees_.token,
             signatureNonce++,
-            sig
+            _createSignature(digest, watcherPrivateKey)
         );
+    }
+
+    function whitelistAppGateway(
+        address appGateway_,
+        address user_,
+        uint256 userPrivateKey_,
+        uint32 chainSlug_
+    ) internal {
+        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
+        // Create fee approval data with signature
+        bytes32 digest = keccak256(
+            abi.encode(
+                address(feesManager),
+                evmxSlug,
+                user_,
+                appGateway_,
+                feesManager.userNonce(user_),
+                true
+            )
+        );
+
+        // Sign with consumeFrom's private key
+        bytes memory signature = _createSignature(digest, userPrivateKey_);
+
+        // Encode approval data
+        bytes memory feeApprovalData = abi.encode(user_, appGateway_, true, signature);
+
+        // Call whitelistAppGatewayWithSignature with approval data
+        feesManager.whitelistAppGatewayWithSignature(feeApprovalData);
     }
 
     ////////////////////////////////// Deployment helpers ////////////////////////////////////

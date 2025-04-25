@@ -17,11 +17,7 @@ contract WithdrawFees is Script {
         address appGatewayAddress = vm.envAddress("APP_GATEWAY");
 
         CounterAppGateway appGateway = CounterAppGateway(appGatewayAddress);
-        uint256 availableFees = feesManager.getAvailableFees(
-            421614,
-            appGatewayAddress,
-            ETH_ADDRESS
-        );
+        uint256 availableFees = feesManager.getMaxCreditsAvailableForWithdraw(appGatewayAddress);
         console.log("Available fees:", availableFees);
 
         if (availableFees > 0) {

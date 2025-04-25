@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
-import {PayloadSubmitParams, QueuePayloadParams, Bid, Fees, WriteFinality, CallType, Parallel, IsPlug, RequestMetadata} from "../protocol/utils/common/Structs.sol";
+import {PayloadSubmitParams, QueuePayloadParams, Bid, WriteFinality, BatchParams, CallType, Parallel, IsPlug, RequestMetadata} from "../protocol/utils/common/Structs.sol";
 
 /// @title IMiddleware
 /// @notice Interface for the Middleware contract
@@ -28,8 +28,9 @@ interface IMiddleware {
     /// @param onCompleteData_ The data to be passed to the onComplete callback
     /// @return requestCount The request id
     function batch(
-        Fees memory fees_,
+        uint256 fees_,
         address auctionManager_,
+        address consumeFrom_,
         bytes memory onCompleteData_
     ) external returns (uint40 requestCount);
 
@@ -46,7 +47,7 @@ interface IMiddleware {
         uint256 amount_,
         address receiver_,
         address auctionManager_,
-        Fees memory fees_
+        uint256 fees_
     ) external returns (uint40);
 
     /// @notice Cancels a request
@@ -64,7 +65,7 @@ interface IMiddleware {
     function startRequestProcessing(uint40 requestCount_, Bid memory winningBid_) external;
 
     /// @notice Returns the fees for a request
-    function getFees(uint40 requestCount_) external view returns (Fees memory);
+    function getFees(uint40 requestCount_) external view returns (uint256);
 
     /// @notice Finishes a request by assigning fees and calling the onComplete callback
     /// @param requestCount_ The request id

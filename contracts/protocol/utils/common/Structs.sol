@@ -50,6 +50,22 @@ enum ExecutionStatus {
     Reverted
 }
 
+/// @notice Creates a struct to hold batch parameters
+struct BatchParams {
+    address appGateway;
+    address auctionManager;
+    uint256 maxFees;
+    bytes onCompleteData;
+    bool onlyReadRequests;
+    uint256 queryCount;
+    uint256 finalizeCount;
+}
+
+struct AppGatewayWhitelistParams {
+    address appGateway;
+    bool isApproved;
+}
+
 //// STRUCTS ////
 // plug:
 struct LimitParams {
@@ -108,6 +124,12 @@ struct Bid {
     bytes extraData;
 }
 
+struct OnChainFees {
+    uint32 chainSlug;
+    address token;
+    uint256 amount;
+}
+
 // App gateway base:
 struct OverrideParams {
     Read isReadCall;
@@ -118,11 +140,9 @@ struct OverrideParams {
     uint256 readAt;
 }
 
-// FM:
-struct Fees {
-    uint32 feePoolChain;
-    address feePoolToken;
-    uint256 amount;
+struct UserCredits {
+    uint256 totalCredits;
+    uint256 blockedCredits;
 }
 
 // digest:
@@ -204,6 +224,9 @@ struct RequestParams {
     // updated while processing request
     uint256 currentBatchPayloadsLeft;
     uint256 payloadsRemaining;
+    uint256 queryCount;
+    uint256 finalizeCount;
+    uint256 scheduleCount;
     address middleware;
     // updated after auction
     address transmitter;
@@ -213,10 +236,13 @@ struct RequestParams {
 struct RequestMetadata {
     address appGateway;
     address auctionManager;
-    Fees fees;
+    uint256 maxFees;
     Bid winningBid;
     bytes onCompleteData;
     bool onlyReadRequests;
+    address consumeFrom;
+    uint256 queryCount;
+    uint256 finalizeCount;
 }
 
 struct ExecuteParams {
@@ -246,10 +272,4 @@ struct PayloadIdParams {
     uint40 payloadCount;
     address switchboard;
     uint32 chainSlug;
-}
-
-/// @notice Struct containing fee amounts and status
-struct TokenBalance {
-    uint256 deposited; // Amount deposited
-    uint256 blocked; // Amount blocked
 }

@@ -21,11 +21,11 @@ contract MockFastSwitchboard is ISwitchboard {
         owner = owner_;
     }
 
-    function attest(bytes32 , bytes calldata ) external {
+    function attest(bytes32, bytes calldata) external {
         // TODO: implement
     }
 
-    function allowPayload(bytes32 , bytes32) external pure returns (bool) {
+    function allowPayload(bytes32, bytes32) external pure returns (bool) {
         // digest has enough attestations
         return true;
     }

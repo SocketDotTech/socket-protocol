@@ -6,6 +6,7 @@ import {ECDSA} from "solady/utils/ECDSA.sol";
 import {AccessControl} from "../../utils/AccessControl.sol";
 import "solady/utils/Initializable.sol";
 import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
+import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 import "./WatcherPrecompileUtils.sol";
 
 /// @title WatcherPrecompileCore
@@ -34,6 +35,8 @@ abstract contract WatcherPrecompileCore is
         bytes calldata payload_
     ) internal returns (bytes32 timeoutId) {
         if (delayInSeconds_ > maxTimeoutDelayInSeconds) revert TimeoutDelayTooLarge();
+
+        _consumeCallbackFeesFromAddress(watcherPrecompileLimits__.timeoutFees(), msg.sender);
 
         uint256 executeAt = block.timestamp + delayInSeconds_;
         timeoutId = _encodeTimeoutId();
@@ -76,6 +79,11 @@ abstract contract WatcherPrecompileCore is
             requestParams[params_.payloadHeader.getRequestCount()].middleware
         );
 
+        _consumeCallbackFeesFromRequestCount(
+            watcherPrecompileLimits__.finalizeFees(),
+            params_.payloadHeader.getRequestCount()
+        );
+
         uint256 deadline = block.timestamp + expiryTime;
         payloads[params_.payloadId].deadline = deadline;
         payloads[params_.payloadId].finalizedTransmitter = transmitter_;
@@ -109,6 +117,11 @@ abstract contract WatcherPrecompileCore is
     /// @param params_ The payload parameters for the query
     /// @dev This function sets up a query request and emits a QueryRequested event
     function _query(PayloadParams memory params_) internal {
+        _consumeCallbackFeesFromRequestCount(
+            watcherPrecompileLimits__.queryFees(),
+            params_.payloadHeader.getRequestCount()
+        );
+
         payloads[params_.payloadId].prevDigestsHash = _getPreviousDigestsHash(
             params_.payloadHeader.getBatchCount()
         );
@@ -217,24 +230,42 @@ abstract contract WatcherPrecompileCore is
     }
 
     /// @notice Verifies that a watcher signature is valid
-    /// @param digest_ The digest to verify
+    /// @param inputData_ The input data to verify
     /// @param signatureNonce_ The nonce of the signature
     /// @param signature_ The signature to verify
     /// @dev This function verifies that the signature was created by the watcher and that the nonce has not been used before
     function _isWatcherSignatureValid(
-        bytes memory digest_,
+        bytes memory inputData_,
         uint256 signatureNonce_,
         bytes memory signature_
     ) internal {
         if (isNonceUsed[signatureNonce_]) revert NonceUsed();
         isNonceUsed[signatureNonce_] = true;
 
-        bytes32 digest = keccak256(abi.encode(address(this), evmxSlug, signatureNonce_, digest_));
+        bytes32 digest = keccak256(
+            abi.encode(address(this), evmxSlug, signatureNonce_, inputData_)
+        );
         digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
 
         // recovered signer is checked for the valid roles later
         address signer = ECDSA.recover(digest, signature_);
         if (signer != owner()) revert InvalidWatcherSignature();
+    }
+
+    function _consumeCallbackFeesFromRequestCount(uint256 fees_, uint40 requestCount_) internal {
+        // for callbacks in all precompiles
+        uint256 feesToConsume = fees_ + watcherPrecompileLimits__.callBackFees();
+        IFeesManager(addressResolver__.feesManager())
+            .assignWatcherPrecompileCreditsFromRequestCount(feesToConsume, requestCount_);
+    }
+
+    function _consumeCallbackFeesFromAddress(uint256 fees_, address consumeFrom_) internal {
+        // for callbacks in all precompiles
+        uint256 feesToConsume = fees_ + watcherPrecompileLimits__.callBackFees();
+        IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileCreditsFromAddress(
+            feesToConsume,
+            consumeFrom_
+        );
     }
 
     /// @notice Gets the batch IDs for a request

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {DigestParams, ResolvedPromises, PayloadParams, TriggerParams, PayloadSubmitParams, RequestParams} from "../protocol/utils/common/Structs.sol";
+import {DigestParams, ResolvedPromises, PayloadParams, TriggerParams, PayloadSubmitParams, Bid, RequestParams, RequestMetadata} from "../protocol/utils/common/Structs.sol";
 import {IWatcherPrecompileLimits} from "./IWatcherPrecompileLimits.sol";
 import {IWatcherPrecompileConfig} from "./IWatcherPrecompileConfig.sol";
 

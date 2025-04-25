@@ -16,8 +16,15 @@ contract CounterTest is DeliveryHelperTest {
     function deploySetup() internal {
         setUpDeliveryHelper();
 
-        counterGateway = new CounterAppGateway(address(addressResolver), createFees(feesAmount));
-        depositFees(address(counterGateway), createFees(1 ether));
+        counterGateway = new CounterAppGateway(address(addressResolver), feesAmount);
+        depositUSDCFees(
+            address(counterGateway),
+            OnChainFees({
+                chainSlug: arbChainSlug,
+                token: address(arbConfig.feesTokenUSDC),
+                amount: 1 ether
+            })
+        );
 
         counterId = counterGateway.counter();
         contractIds[0] = counterId;

@@ -206,14 +206,16 @@ contract WatcherPrecompileConfig is
     }
 
     function _isWatcherSignatureValid(
-        bytes memory digest_,
+        bytes memory inputData_,
         uint256 signatureNonce_,
         bytes memory signature_
     ) internal {
         if (isNonceUsed[signatureNonce_]) revert NonceUsed();
         isNonceUsed[signatureNonce_] = true;
 
-        bytes32 digest = keccak256(abi.encode(address(this), evmxSlug, signatureNonce_, digest_));
+        bytes32 digest = keccak256(
+            abi.encode(address(this), evmxSlug, signatureNonce_, inputData_)
+        );
         digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
 
         // recovered signer is checked for the valid roles later
