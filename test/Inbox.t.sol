@@ -12,7 +12,7 @@ contract TriggerTest is DeliveryHelperTest {
 
     event AppGatewayCallRequested(
         bytes32 triggerId,
-        uint32 chainSlug,
+        address switchboard,
         address plug,
         bytes overrides,
         bytes payload
@@ -69,7 +69,13 @@ contract TriggerTest is DeliveryHelperTest {
         );
 
         vm.expectEmit(true, true, true, true);
-        emit AppGatewayCallRequested(triggerId, arbChainSlug, address(counter), bytes(""), payload);
+        emit AppGatewayCallRequested(
+            triggerId,
+            address(arbConfig.switchboard),
+            address(counter),
+            bytes(""),
+            payload
+        );
         counter.increaseOnGateway(incrementValue);
 
         TriggerParams[] memory params = new TriggerParams[](1);

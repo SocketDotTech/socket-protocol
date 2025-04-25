@@ -132,14 +132,12 @@ struct DigestParams {
     bytes32 payloadId;
     uint256 deadline;
     CallType callType;
-    WriteFinality writeFinality;
     uint256 gasLimit;
     uint256 value;
-    uint256 readAt;
     bytes payload;
     address target;
     bytes32 appGatewayId;
-    bytes32 prevDigestsHash; // should be id? hash of hashes
+    bytes32 prevDigestsHash;
 }
 
 struct QueuePayloadParams {
@@ -222,19 +220,17 @@ struct RequestMetadata {
 }
 
 struct ExecuteParams {
-    uint256 deadline;
     CallType callType;
-    WriteFinality writeFinality;
+    uint256 deadline;
     uint256 gasLimit;
     uint256 value;
-    uint256 readAt;
     bytes payload;
     address target;
     uint40 requestCount;
     uint40 batchCount;
     uint40 payloadCount;
-    bytes32 prevDigestsHash; // should be id? hash of hashes
-    address switchboard;
+    bytes32 prevDigestsHash;
+    bytes extraData;
 }
 
 struct TransmissionParams {

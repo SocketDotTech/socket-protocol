@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {PlugDisconnected, InvalidAppGateway} from "../../contracts/protocol/utils/common/Errors.sol";
+import {InvalidAppGateway} from "../../contracts/protocol/utils/common/Errors.sol";
 import "../../contracts/interfaces/ISwitchboard.sol";
 import "../../contracts/interfaces/ISocket.sol";
 
@@ -94,7 +94,13 @@ contract MockSocket is ISocket {
         PlugConfig memory plugConfig = _plugConfigs[msg.sender];
         // creates a unique ID for the message
         triggerId = _encodeTriggerId(plugConfig.appGatewayId);
-        emit AppGatewayCallRequested(triggerId, chainSlug, msg.sender, overrides, payload);
+        emit AppGatewayCallRequested(
+            triggerId,
+            address(plugConfig.switchboard__),
+            msg.sender,
+            overrides,
+            payload
+        );
     }
 
     /**
@@ -103,7 +109,7 @@ contract MockSocket is ISocket {
     function execute(
         ExecuteParams memory executeParams_,
         TransmissionParams memory transmissionParams_
-    ) external payable override returns (bytes memory) {
+    ) external payable override returns (bool, bool, bytes memory) {
         // execute payload
         // return
         //     _execute(
@@ -139,7 +145,7 @@ contract MockSocket is ISocket {
         bytes memory
     ) internal returns (bytes memory) {
         bytes memory returnData = hex"00010203";
-        emit ExecutionSuccess(payloadId_, returnData);
+        emit ExecutionSuccess(payloadId_, false, returnData);
         return returnData;
     }
 
