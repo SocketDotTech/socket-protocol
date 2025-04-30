@@ -118,8 +118,8 @@ struct ResolvedPromises {
 
 // AM
 struct Bid {
-    address transmitter;
     uint256 fee;
+    address transmitter;
     bytes extraData;
 }
 
@@ -233,28 +233,28 @@ struct RequestParams {
 }
 
 struct RequestMetadata {
+    bool onlyReadRequests;
+    address consumeFrom;
     address appGateway;
     address auctionManager;
     uint256 maxFees;
-    Bid winningBid;
-    bytes onCompleteData;
-    bool onlyReadRequests;
-    address consumeFrom;
     uint256 queryCount;
     uint256 finalizeCount;
+    Bid winningBid;
+    bytes onCompleteData;
 }
 
 struct ExecuteParams {
     CallType callType;
-    uint256 deadline;
-    uint256 gasLimit;
-    uint256 value;
-    bytes payload;
-    address target;
     uint40 requestCount;
     uint40 batchCount;
     uint40 payloadCount;
+    uint256 deadline;
+    uint256 gasLimit;
+    uint256 value;
     bytes32 prevDigestsHash;
+    address target;
+    bytes payload;
     bytes extraData;
 }
 
@@ -269,6 +269,6 @@ struct PayloadIdParams {
     uint40 requestCount;
     uint40 batchCount;
     uint40 payloadCount;
-    address switchboard;
     uint32 chainSlug;
+    address switchboard;
 }

@@ -41,7 +41,7 @@ contract SocketBatcher is ISocketBatcher, Ownable {
         bytes calldata proof_,
         bytes calldata transmitterSignature_,
         address refundAddress_
-    ) external payable returns (bool, bool, bytes memory) {
+    ) external payable returns (bool, bytes memory) {
         ISwitchboard(switchboard_).attest(digest_, proof_);
         return
             socket__.execute{value: msg.value}(

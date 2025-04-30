@@ -256,7 +256,7 @@ contract SetupTest is Test {
                     isLastPayload
                 );
             } else {
-                (, , bytes memory returnData) = _uploadProofAndExecute(payloadParams);
+                (, bytes memory returnData) = _uploadProofAndExecute(payloadParams);
                 _resolveAndExpectFinalizeRequested(
                     payloadParams.payloadId,
                     payloadParams,
@@ -270,7 +270,7 @@ contract SetupTest is Test {
 
     function _uploadProofAndExecute(
         PayloadParams memory payloadParams
-    ) internal returns (bool, bool, bytes memory) {
+    ) internal returns (bool, bytes memory) {
         (bytes memory watcherProof, bytes32 digest) = _generateWatcherProof(payloadParams);
         _writeProof(payloadParams.payloadId, watcherProof);
 

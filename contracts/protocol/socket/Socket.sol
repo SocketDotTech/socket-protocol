@@ -19,7 +19,7 @@ contract Socket is SocketUtils {
     mapping(bytes32 => bytes32) public payloadIdToDigest;
 
     // @notice buffer to account for gas used by current contract execution
-    uint256 public constant GAS_LIMIT_BUFFER = 105;
+    uint256 private constant GAS_LIMIT_BUFFER = 105;
 
     ////////////////////////////////////////////////////////
     ////////////////////// ERRORS //////////////////////////
@@ -69,9 +69,9 @@ contract Socket is SocketUtils {
      * @notice Executes a payload that has been delivered by transmitters and authenticated by switchboards
      */
     function execute(
-        ExecuteParams memory executeParams_,
-        TransmissionParams memory transmissionParams_
-    ) external payable returns (bool, bool, bytes memory) {
+        ExecuteParams calldata executeParams_,
+        TransmissionParams calldata transmissionParams_
+    ) external payable returns (bool, bytes memory) {
         // check if the deadline has passed
         if (executeParams_.deadline < block.timestamp) revert DeadlinePassed();
         // check if the call type is valid
@@ -83,6 +83,7 @@ contract Socket is SocketUtils {
 
         if (msg.value < executeParams_.value + transmissionParams_.socketFees)
             revert InsufficientMsgValue();
+
         bytes32 payloadId = _createPayloadId(plugConfig.switchboard, executeParams_);
 
         // validate the execution status
@@ -107,6 +108,7 @@ contract Socket is SocketUtils {
 
         // verify the digest
         _verify(digest, payloadId, plugConfig.switchboard);
+
         return _execute(payloadId, executeParams_, transmissionParams_);
     }
 
@@ -129,15 +131,16 @@ contract Socket is SocketUtils {
      */
     function _execute(
         bytes32 payloadId_,
-        ExecuteParams memory executeParams_,
-        TransmissionParams memory transmissionParams_
-    ) internal returns (bool, bool, bytes memory) {
+        ExecuteParams calldata executeParams_,
+        TransmissionParams calldata transmissionParams_
+    ) internal returns (bool success, bytes memory returnData) {
         // check if the gas limit is sufficient
         // bump by 5% to account for gas used by current contract execution
         if (gasleft() < (executeParams_.gasLimit * GAS_LIMIT_BUFFER) / 100) revert LowGasLimit();
 
         // NOTE: external un-trusted call
-        (bool success, bool exceededMaxCopy, bytes memory returnData) = executeParams_
+        bool exceededMaxCopy;
+        (success, exceededMaxCopy, returnData) = executeParams_
             .target
             .tryCall(
                 executeParams_.value,
@@ -148,6 +151,7 @@ contract Socket is SocketUtils {
 
         if (success) {
             emit ExecutionSuccess(payloadId_, exceededMaxCopy, returnData);
+
             if (address(socketFeeManager) != address(0)) {
                 socketFeeManager.payAndCheckFees{value: transmissionParams_.socketFees}(
                     executeParams_,
@@ -156,20 +160,20 @@ contract Socket is SocketUtils {
             }
         } else {
             payloadExecuted[payloadId_] = ExecutionStatus.Reverted;
+
             address receiver = transmissionParams_.refundAddress == address(0)
                 ? msg.sender
                 : transmissionParams_.refundAddress;
             SafeTransferLib.forceSafeTransferETH(receiver, msg.value);
-
             emit ExecutionFailed(payloadId_, exceededMaxCopy, returnData);
         }
-
-        return (success, exceededMaxCopy, returnData);
+        return (success, returnData);
     }
 
     function _validateExecutionStatus(bytes32 payloadId_) internal {
         if (payloadExecuted[payloadId_] == ExecutionStatus.Executed)
             revert PayloadAlreadyExecuted(payloadExecuted[payloadId_]);
+
         payloadExecuted[payloadId_] = ExecutionStatus.Executed;
     }
 
@@ -180,7 +184,7 @@ contract Socket is SocketUtils {
      * @notice To trigger to a connected remote chain. Should only be called by a plug.
      */
     function _triggerAppGateway(address plug_) internal returns (bytes32 triggerId) {
-        PlugConfig storage plugConfig = _plugConfigs[plug_];
+        PlugConfig memory plugConfig = _plugConfigs[plug_];
 
         // if no sibling plug is found for the given chain slug, revert
         // sends the trigger to connected app gateway

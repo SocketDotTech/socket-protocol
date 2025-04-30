@@ -107,9 +107,9 @@ contract MockSocket is ISocket {
      * @notice Executes a payload that has been delivered by transmitters and authenticated by switchboards
      */
     function execute(
-        ExecuteParams memory executeParams_,
-        TransmissionParams memory transmissionParams_
-    ) external payable override returns (bool, bool, bytes memory) {
+        ExecuteParams calldata executeParams_,
+        TransmissionParams calldata transmissionParams_
+    ) external payable override returns (bool, bytes memory) {
         // execute payload
         // return
         //     _execute(
