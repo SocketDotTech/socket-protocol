@@ -115,21 +115,6 @@ abstract contract WatcherPrecompileCore is
         payloads[params_.payloadId].prevDigestsHash = _getPreviousDigestsHash(
             params_.payloadHeader.getBatchCount()
         );
-        payloads[params_.payloadId].digest = getDigest(
-            DigestParams(
-                watcherPrecompileConfig__.sockets(params_.payloadHeader.getChainSlug()),
-                params_.transmitter,
-                params_.payloadId,
-                params_.deadline,
-                params_.payloadHeader.getCallType(),
-                params_.gasLimit,
-                params_.value,
-                params_.payload,
-                params_.target,
-                WatcherIdUtils.encodeAppGatewayId(params_.appGateway),
-                payloads[params_.payloadId].prevDigestsHash
-            )
-        );
         emit QueryRequested(params_);
     }
 
