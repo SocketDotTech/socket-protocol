@@ -85,6 +85,13 @@ contract WatcherPrecompileConfig is
         address feesPlug
     );
 
+    /// @notice Emitted when a valid plug is set for an app gateway
+    /// @param appGateway The address of the app gateway
+    /// @param chainSlug The identifier of the network
+    /// @param plug The address of the plug
+    /// @param isValid Whether the plug is valid
+    event IsValidPlugSet(address appGateway, uint32 chainSlug, address plug, bool isValid);
+
     error InvalidGateway();
     error InvalidSwitchboard();
 
@@ -162,6 +169,7 @@ contract WatcherPrecompileConfig is
     /// @param isValid_ Whether the plug is valid
     function setIsValidPlug(uint32 chainSlug_, address plug_, bool isValid_) external {
         isValidPlug[msg.sender][chainSlug_][plug_] = isValid_;
+        emit IsValidPlugSet(msg.sender, chainSlug_, plug_, isValid_);
     }
 
     /// @notice Retrieves the configuration for a specific plug on a network

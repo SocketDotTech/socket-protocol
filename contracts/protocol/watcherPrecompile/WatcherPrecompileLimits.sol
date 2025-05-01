@@ -51,6 +51,14 @@ contract WatcherPrecompileLimits is
 
     /// @notice Emitted when the default limit and rate per second are set
     event DefaultLimitAndRatePerSecondSet(uint256 defaultLimit, uint256 defaultRatePerSecond);
+    /// @notice Emitted when the query fees are set
+    event QueryFeesSet(uint256 queryFees);
+    /// @notice Emitted when the finalize fees are set
+    event FinalizeFeesSet(uint256 finalizeFees);
+    /// @notice Emitted when the timeout fees are set
+    event TimeoutFeesSet(uint256 timeoutFees);
+    /// @notice Emitted when the call back fees are set
+    event CallBackFeesSet(uint256 callBackFees);
 
     error WatcherFeesNotSet(bytes32 limitType);
 
@@ -167,18 +175,22 @@ contract WatcherPrecompileLimits is
 
     function setQueryFees(uint256 queryFees_) external onlyOwner {
         queryFees = queryFees_;
+        emit QueryFeesSet(queryFees_);
     }
 
     function setFinalizeFees(uint256 finalizeFees_) external onlyOwner {
         finalizeFees = finalizeFees_;
+        emit FinalizeFeesSet(finalizeFees_);
     }
 
     function setTimeoutFees(uint256 timeoutFees_) external onlyOwner {
         timeoutFees = timeoutFees_;
+        emit TimeoutFeesSet(timeoutFees_);
     }
 
     function setCallBackFees(uint256 callBackFees_) external onlyOwner {
         callBackFees = callBackFees_;
+        emit CallBackFeesSet(callBackFees_);
     }
 
     function getTotalFeesRequired(

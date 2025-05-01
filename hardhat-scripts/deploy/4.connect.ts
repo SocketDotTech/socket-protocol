@@ -16,22 +16,25 @@ import { getWatcherSigner, signWatcherMessage } from "../utils/sign";
 const plugs = [CORE_CONTRACTS.ContractFactoryPlug, CORE_CONTRACTS.FeesPlug];
 export type AppGatewayConfig = {
   plug: string;
-  appGateway: string;
+  appGatewayId: string;
   switchboard: string;
   chainSlug: number;
 };
 // Maps plug contracts to their corresponding app gateways
-export const getAppGateway = (plug: string, addresses: DeploymentAddresses) => {
+export const getAppGatewayId = (
+  plug: string,
+  addresses: DeploymentAddresses
+) => {
   let address: string = "";
   switch (plug) {
     case CORE_CONTRACTS.ContractFactoryPlug:
       address = addresses?.[EVMX_CHAIN_ID]?.[EVMxCoreContracts.DeliveryHelper];
       if (!address) throw new Error(`DeliveryHelper not found on EVMX`);
-      return address;
+      return ethers.utils.hexZeroPad(address, 32);
     case CORE_CONTRACTS.FeesPlug:
       address = addresses?.[EVMX_CHAIN_ID]?.[EVMxCoreContracts.FeesManager];
       if (!address) throw new Error(`FeesManager not found on EVMX`);
-      return address;
+      return ethers.utils.hexZeroPad(address, 32);
     default:
       throw new Error(`Unknown plug: ${plug}`);
   }
@@ -52,13 +55,13 @@ export const checkIfAddressExists = (address: string, name: string) => {
 export const isConfigSetOnSocket = async (
   plug: Contract,
   socket: Contract,
-  appGateway: string,
+  appGatewayId: string,
   switchboard: string
 ) => {
   const plugConfigRegistered = await socket.getPlugConfig(plug.address);
   return (
-    plugConfigRegistered.appGateway.toLowerCase() ===
-      appGateway.toLowerCase() &&
+    plugConfigRegistered.appGatewayId.toLowerCase() ===
+      appGatewayId.toLowerCase() &&
     plugConfigRegistered.switchboard.toLowerCase() === switchboard.toLowerCase()
   );
 };
@@ -84,22 +87,21 @@ async function connectPlug(
   // Get switchboard and app gateway addresses
   const switchboard = addr[CORE_CONTRACTS.FastSwitchboard];
   checkIfAddressExists(switchboard, "Switchboard");
-  const appGateway = getAppGateway(plugContract, addresses);
-  checkIfAddressExists(appGateway, "AppGateway");
+  const appGatewayId = getAppGatewayId(plugContract, addresses);
   // Check if config is already set
-  if (await isConfigSetOnSocket(plug, socket, appGateway, switchboard)) {
+  if (await isConfigSetOnSocket(plug, socket, appGatewayId, switchboard)) {
     console.log(`${plugContract} Socket Config  on ${chain} already set!`);
     return;
   }
 
   // Connect the plug
   const tx = await plug.functions["connectSocket"](
-    appGateway,
+    appGatewayId,
     socket.address,
     switchboard
   );
   console.log(
-    `Connecting ${plugContract} on ${chain} to ${appGateway} tx hash: ${tx.hash}`
+    `Connecting ${plugContract} on ${chain} to ${appGatewayId} tx hash: ${tx.hash}`
   );
   await tx.wait();
 }
@@ -160,17 +162,17 @@ export const updateConfigEVMx = async () => {
         const addr = addresses[chain]!;
 
         for (const plugContract of plugs) {
-          const appGateway = getAppGateway(plugContract, addresses);
+          const appGatewayId = getAppGatewayId(plugContract, addresses);
           const switchboard = addr[CORE_CONTRACTS.FastSwitchboard];
           checkIfAddressExists(switchboard, "Switchboard");
-          checkIfAddressExists(appGateway, "AppGateway");
+          checkIfAddressExists(appGatewayId, "AppGateway");
 
           if (
             await isConfigSetOnEVMx(
               watcherPrecompileConfig,
               chain,
               addr[plugContract],
-              appGateway,
+              appGatewayId,
               switchboard
             )
           ) {
@@ -179,7 +181,7 @@ export const updateConfigEVMx = async () => {
           }
           appConfigs.push({
             plug: addr[plugContract],
-            appGateway,
+            appGatewayId: appGatewayId,
             switchboard: addr[CORE_CONTRACTS.FastSwitchboard],
             chainSlug: chain,
           });
@@ -193,7 +195,7 @@ export const updateConfigEVMx = async () => {
       const encodedMessage = ethers.utils.defaultAbiCoder.encode(
         [
           "bytes4",
-          "tuple(address plug,address appGateway,address switchboard,uint32 chainSlug)[]",
+          "tuple(address plug,bytes32 appGatewayId,address switchboard,uint32 chainSlug)[]",
         ],
         [
           watcherPrecompileConfig.interface.getSighash("setAppGateways"),
