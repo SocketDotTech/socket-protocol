@@ -11,6 +11,7 @@ export enum Events {
   ExecutionFailed = "ExecutionFailed",
   PlugConnected = "PlugConnected",
   AppGatewayCallRequested = "AppGatewayCallRequested",
+  AppGatewayCallFailed = "AppGatewayCallFailed",
 
   // FeesPlug
   FeesDeposited = "FeesDeposited",

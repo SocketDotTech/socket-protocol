@@ -194,6 +194,7 @@ contract Socket is SocketUtils {
         triggerId = _encodeTriggerId();
         emit AppGatewayCallRequested(
             triggerId,
+            plugConfig.appGatewayId,
             plugConfig.switchboard,
             plug_,
             // gets the overrides from the plug

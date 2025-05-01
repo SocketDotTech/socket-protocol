@@ -200,8 +200,7 @@ contract DeliveryHelperTest is SetupTest {
                 fees_.token,
                 fees_.amount,
                 address(feesManager),
-                evmxSlug,
-                signatureNonce
+                evmxSlug
             )
         );
 

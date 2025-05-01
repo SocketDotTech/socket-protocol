@@ -12,6 +12,7 @@ contract TriggerTest is DeliveryHelperTest {
 
     event AppGatewayCallRequested(
         bytes32 triggerId,
+        bytes32 appGatewayId,
         address switchboard,
         address plug,
         bytes overrides,
@@ -78,6 +79,7 @@ contract TriggerTest is DeliveryHelperTest {
         vm.expectEmit(true, true, true, true);
         emit AppGatewayCallRequested(
             triggerId,
+            _encodeAppGatewayId(address(gateway)),
             address(arbConfig.switchboard),
             address(counter),
             bytes(""),
@@ -92,7 +94,7 @@ contract TriggerTest is DeliveryHelperTest {
             appGatewayId: _encodeAppGatewayId(address(gateway)),
             plug: address(counter),
             payload: payload,
-            params: bytes32(0)
+            overrides: bytes32(0)
         });
 
         bytes memory watcherSignature = _createWatcherSignature(

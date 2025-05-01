@@ -96,6 +96,7 @@ contract MockSocket is ISocket {
         triggerId = _encodeTriggerId(plugConfig.appGatewayId);
         emit AppGatewayCallRequested(
             triggerId,
+            plugConfig.appGatewayId,
             address(plugConfig.switchboard__),
             msg.sender,
             overrides,

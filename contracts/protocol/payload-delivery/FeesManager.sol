@@ -179,15 +179,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
 
         // check signature
         bytes32 digest = keccak256(
-            abi.encode(
-                depositTo_,
-                chainSlug_,
-                token_,
-                amount,
-                address(this),
-                evmxSlug,
-                signatureNonce_
-            )
+            abi.encode(depositTo_, chainSlug_, token_, amount, address(this), evmxSlug)
         );
 
         if (_recoverSigner(digest, signature_) != owner()) revert InvalidWatcherSignature();

@@ -11,6 +11,7 @@ export const feesPlugEvents = [Events.FeesDeposited];
 
 export const watcherPrecompileEvents = [
   Events.CalledAppGateway,
+  Events.AppGatewayCallFailed,
   Events.RequestSubmitted,
   Events.QueryRequested,
   Events.FinalizeRequested,
