@@ -26,7 +26,7 @@ library WatcherIdUtils {
     ) internal pure returns (bytes32) {
         return
             keccak256(
-                abi.encode(requestCount_, batchCount_, payloadCount_, switchboard_, chainSlug_)
+                abi.encode(requestCount_, batchCount_, payloadCount_, chainSlug_, switchboard_)
             );
     }
 }

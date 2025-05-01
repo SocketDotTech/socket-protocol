@@ -52,9 +52,9 @@ interface ISocket {
      * @notice executes a payload
      */
     function execute(
-        ExecuteParams memory executeParams_,
-        TransmissionParams memory transmissionParams_
-    ) external payable returns (bool, bool, bytes memory);
+        ExecuteParams calldata executeParams_,
+        TransmissionParams calldata transmissionParams_
+    ) external payable returns (bool, bytes memory);
 
     /**
      * @notice sets the config specific to the plug

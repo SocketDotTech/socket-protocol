@@ -50,7 +50,7 @@ abstract contract SocketUtils is SocketConfig {
         address transmitter_,
         bytes32 payloadId_,
         bytes32 appGatewayId_,
-        ExecuteParams memory executeParams_
+        ExecuteParams calldata executeParams_
     ) internal view returns (bytes32) {
         return
             keccak256(
@@ -78,7 +78,7 @@ abstract contract SocketUtils is SocketConfig {
      */
     function _createPayloadId(
         address switchboard_,
-        ExecuteParams memory executeParams_
+        ExecuteParams calldata executeParams_
     ) internal view returns (bytes32) {
         return
             keccak256(
@@ -86,8 +86,8 @@ abstract contract SocketUtils is SocketConfig {
                     executeParams_.requestCount,
                     executeParams_.batchCount,
                     executeParams_.payloadCount,
-                    switchboard_,
-                    chainSlug
+                    chainSlug,
+                    switchboard_
                 )
             );
     }
@@ -100,7 +100,7 @@ abstract contract SocketUtils is SocketConfig {
      */
     function _recoverSigner(
         bytes32 digest_,
-        bytes memory signature_
+        bytes calldata signature_
     ) internal view returns (address signer) {
         bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
         // recovered signer is checked for the valid roles later

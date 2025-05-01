@@ -34,7 +34,7 @@ contract CounterTest is DeliveryHelperTest {
         requestCount = _deploy(chainSlug, counterGateway, contractIds);
     }
 
-    function testCounterDeployment1() external {
+    function testCounterDeployment() external {
         deploySetup();
         deployCounterApp(arbChainSlug);
 
