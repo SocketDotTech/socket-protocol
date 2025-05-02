@@ -41,15 +41,36 @@
       "0x89e66357C5F101C56b4F9F97cf378Cc32A21438a",
       "Socket",
       "contracts/protocol/socket/Socket.sol",
+      [84532, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
+    ]
+  ],
+  "421614": [
+    [
+      "0x092194e4Cd90d950ED91bD216472A18cCA7cd8F7",
+      "FeesPlug",
+      "contracts/protocol/payload-delivery/FeesPlug.sol",
       [
-        84532,
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "EVMX"
+        "0xBd0436A6E0dee11e9359767142Ed6bD7B48ba258",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
+      ]
+    ],
+    [
+      "0x44f182553Ccdd82f95b592a935Bd7Dd90FF7F292",
+      "FeesPlug",
+      "contracts/protocol/payload-delivery/FeesPlug.sol",
+      [
+        "0xBd0436A6E0dee11e9359767142Ed6bD7B48ba258",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
       ]
     ]
   ],
-  "421614": [],
   "7625382": [
+    [
+      "0xe1CA4da421C52161B4EecCE6F5Cb2937554e2958",
+      "WatcherPrecompile",
+      "contracts/protocol/watcherPrecompile/core/WatcherPrecompile.sol",
+      []
+    ],
     [
       "0x23364acdd298EBB3Dfd3c1835C5ACd7f77E3E2bD",
       "AuctionManager",
@@ -207,12 +228,27 @@
       "0xF86B89B5c689c170BfD2734254228D6d2db5a672",
       "Socket",
       "contracts/protocol/socket/Socket.sol",
-      [
-        11155111,
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "EVMX"
-      ]
+      [11155111, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
     ]
   ],
-  "11155420": []
+  "11155420": [
+    [
+      "0x78775DCd56fBdb903e4d83AE51924797a74AD49d",
+      "FeesPlug",
+      "contracts/protocol/payload-delivery/FeesPlug.sol",
+      [
+        "0xE09CC429e77EE5DBeF68f3796b2A33BBDF39C03C",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
+      ]
+    ],
+    [
+      "0x8eD0cebe57236Bf85b0a74951CeE74357B1d381D",
+      "FeesPlug",
+      "contracts/protocol/payload-delivery/FeesPlug.sol",
+      [
+        "0xE09CC429e77EE5DBeF68f3796b2A33BBDF39C03C",
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
+      ]
+    ]
+  ]
 }

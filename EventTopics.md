@@ -94,18 +94,18 @@
 
 ## FeesPlug
 
-| Event                        | Arguments                                                                        | Topic                                                                |
-| ---------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `ConnectorPlugDisconnected`  | `()`                                                                             | `0xc2af098c82dba3c4b00be8bda596d62d13b98a87b42626fefa67e0bb0e198fdd` |
-| `FeesDeposited`              | `(token: address, receiver: address, feeAmount: uint256, nativeAmount: uint256)` | `0xeb4e1b24b7fe377de69f80f7380bda5ba4b43176c6a4d300a3be9009c49f4228` |
-| `FeesWithdrawn`              | `(token: address, receiver: address, amount: uint256)`                           | `0x5e110f8bc8a20b65dcc87f224bdf1cc039346e267118bae2739847f07321ffa8` |
-| `OwnershipHandoverCanceled`  | `(pendingOwner: address)`                                                        | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
-| `OwnershipHandoverRequested` | `(pendingOwner: address)`                                                        | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
-| `OwnershipTransferred`       | `(oldOwner: address, newOwner: address)`                                         | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
-| `RoleGranted`                | `(role: bytes32, grantee: address)`                                              | `0x2ae6a113c0ed5b78a53413ffbb7679881f11145ccfba4fb92e863dfcd5a1d2f3` |
-| `RoleRevoked`                | `(role: bytes32, revokee: address)`                                              | `0x155aaafb6329a2098580462df33ec4b7441b19729b9601c5fc17ae1cf99a8a52` |
-| `TokenRemovedFromWhitelist`  | `(token: address)`                                                               | `0xdd2e6d9f52cbe8f695939d018b7d4a216dc613a669876163ac548b916489d917` |
-| `TokenWhitelisted`           | `(token: address)`                                                               | `0x6a65f90b1a644d2faac467a21e07e50e3f8fa5846e26231d30ae79a417d3d262` |
+| Event                        | Arguments                                                                           | Topic                                                                |
+| ---------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `ConnectorPlugDisconnected`  | `()`                                                                                | `0xc2af098c82dba3c4b00be8bda596d62d13b98a87b42626fefa67e0bb0e198fdd` |
+| `FeesDeposited`              | `(token: address, receiver: address, creditAmount: uint256, nativeAmount: uint256)` | `0xeb4e1b24b7fe377de69f80f7380bda5ba4b43176c6a4d300a3be9009c49f4228` |
+| `FeesWithdrawn`              | `(token: address, receiver: address, amount: uint256)`                              | `0x5e110f8bc8a20b65dcc87f224bdf1cc039346e267118bae2739847f07321ffa8` |
+| `OwnershipHandoverCanceled`  | `(pendingOwner: address)`                                                           | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
+| `OwnershipHandoverRequested` | `(pendingOwner: address)`                                                           | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
+| `OwnershipTransferred`       | `(oldOwner: address, newOwner: address)`                                            | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
+| `RoleGranted`                | `(role: bytes32, grantee: address)`                                                 | `0x2ae6a113c0ed5b78a53413ffbb7679881f11145ccfba4fb92e863dfcd5a1d2f3` |
+| `RoleRevoked`                | `(role: bytes32, revokee: address)`                                                 | `0x155aaafb6329a2098580462df33ec4b7441b19729b9601c5fc17ae1cf99a8a52` |
+| `TokenRemovedFromWhitelist`  | `(token: address)`                                                                  | `0xdd2e6d9f52cbe8f695939d018b7d4a216dc613a669876163ac548b916489d917` |
+| `TokenWhitelisted`           | `(token: address)`                                                                  | `0x6a65f90b1a644d2faac467a21e07e50e3f8fa5846e26231d30ae79a417d3d262` |
 
 ## Socket
 

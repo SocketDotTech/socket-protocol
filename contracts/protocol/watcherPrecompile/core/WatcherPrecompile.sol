@@ -99,20 +99,6 @@ contract WatcherPrecompile is RequestHandler {
         );
     }
 
-    // ================== Finalize functions ==================
-
-    /// @notice Finalizes a payload request, requests the watcher to release the proofs to execute on chain
-    /// @param params_ The payload parameters
-    /// @param transmitter_ The address of the transmitter
-    /// @return The digest hash of the finalized payload
-    /// @dev This function finalizes a payload request and requests the watcher to release the proofs
-    function finalize(
-        PayloadParams memory params_,
-        address transmitter_
-    ) external returns (bytes32) {
-        return _finalize(params_, transmitter_);
-    }
-
     // ================== Query functions ==================
 
     /// @notice Creates a new query request

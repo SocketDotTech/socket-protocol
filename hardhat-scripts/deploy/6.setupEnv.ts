@@ -39,6 +39,10 @@ const updatedLines = lines.map((line) => {
     return `ARBITRUM_FEES_PLUG=${
       latestAddresses[ChainSlug.ARBITRUM_SEPOLIA]["FeesPlug"]
     }`;
+  } else if (line.startsWith("ARBITRUM_TEST_USDC=")) {
+    return `ARBITRUM_TEST_USDC=${
+      latestAddresses[ChainSlug.ARBITRUM_SEPOLIA]["TestUSDC"]
+    }`;
   }
   return line; // Return the line unchanged if it doesn't match any of the above
 });

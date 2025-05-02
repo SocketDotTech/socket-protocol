@@ -95,10 +95,10 @@ struct PlugConfig {
 //trigger:
 struct TriggerParams {
     bytes32 triggerId;
-    bytes32 overrides;
     address plug;
     bytes32 appGatewayId;
     uint32 chainSlug;
+    bytes overrides;
     bytes payload;
 }
 // timeout:

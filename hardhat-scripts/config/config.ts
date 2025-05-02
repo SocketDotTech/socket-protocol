@@ -23,12 +23,31 @@ export const logConfig = () => {
   );
 };
 
-export const chains: Array<ChainSlug> = [
-  ChainSlug.ARBITRUM_SEPOLIA,
-  ChainSlug.OPTIMISM_SEPOLIA,
-  // ChainSlug.BASE_SEPOLIA,
-  // ChainSlug.SEPOLIA,
-];
+export const getChains = () => {
+  switch (mode) {
+    case DeploymentMode.LOCAL:
+      return [ChainSlug.ARBITRUM_SEPOLIA, ChainSlug.OPTIMISM_SEPOLIA];
+    case DeploymentMode.DEV:
+      return [ChainSlug.ARBITRUM_SEPOLIA, ChainSlug.OPTIMISM_SEPOLIA];
+    case DeploymentMode.STAGE:
+      return [
+        ChainSlug.OPTIMISM_SEPOLIA,
+        ChainSlug.ARBITRUM_SEPOLIA,
+        ChainSlug.BASE_SEPOLIA,
+      ];
+    case DeploymentMode.PROD:
+      return [
+        ChainSlug.OPTIMISM_SEPOLIA,
+        ChainSlug.ARBITRUM_SEPOLIA,
+        ChainSlug.BASE_SEPOLIA,
+        ChainSlug.SEPOLIA,
+      ];
+    default:
+      throw new Error(`Invalid deployment mode: ${mode}`);
+  }
+};
+
+export const chains: Array<ChainSlug> = getChains();
 export const EVM_CHAIN_ID_MAP: Record<DeploymentMode, number> = {
   [DeploymentMode.LOCAL]: 7625382,
   [DeploymentMode.DEV]: 7625382,
@@ -48,7 +67,7 @@ export const auctionEndDelaySeconds = 0;
 export const BID_TIMEOUT = 600; // 10 minutes
 export const EXPIRY_TIME = 300; // 5 minutes
 export const MAX_RE_AUCTION_COUNT = 5;
-
+export const AUCTION_MANAGER_FUNDING_AMOUNT = ethers.utils.parseEther("100");
 // TestUSDC
 export const TEST_USDC_NAME = "testUSDC";
 export const TEST_USDC_SYMBOL = "testUSDC";

@@ -94,7 +94,7 @@ contract TriggerTest is DeliveryHelperTest {
             appGatewayId: _encodeAppGatewayId(address(gateway)),
             plug: address(counter),
             payload: payload,
-            overrides: bytes32(0)
+            overrides: bytes("")
         });
 
         bytes memory watcherSignature = _createWatcherSignature(

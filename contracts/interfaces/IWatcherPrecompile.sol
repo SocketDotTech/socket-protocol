@@ -132,11 +132,6 @@ interface IWatcherPrecompile {
         bytes calldata signature_
     ) external;
 
-    function finalize(
-        PayloadParams memory params_,
-        address transmitter_
-    ) external returns (bytes32 digest);
-
     function query(PayloadParams memory params_) external;
 
     function finalized(

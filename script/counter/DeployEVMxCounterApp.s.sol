@@ -17,7 +17,7 @@ contract CounterDeploy is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // Setting fee payment on Arbitrum Sepolia
-        uint256 fees = 0.00001 ether;
+        uint256 fees = 10 ether;
 
         CounterAppGateway gateway = new CounterAppGateway(addressResolver, fees);
 
