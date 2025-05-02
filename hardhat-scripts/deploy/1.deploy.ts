@@ -6,6 +6,7 @@ import { ethers } from "hardhat";
 import {
   CORE_CONTRACTS,
   DeploymentAddresses,
+  ETH_ADDRESS,
   EVMxCoreContracts,
   FAST_SWITCHBOARD_TYPE,
   IMPLEMENTATION_SLOT,
@@ -36,6 +37,7 @@ import {
   FINALIZE_FEES,
   TIMEOUT_FEES,
   CALLBACK_FEES,
+  AUCTION_MANAGER_FUNDING_AMOUNT,
 } from "../config/config";
 config();
 
@@ -262,6 +264,16 @@ const deployEVMxContracts = async () => {
         CALLBACK_FEES,
         deployUtils.signer
       );
+
+      const feesManager = await getInstance(
+        EVMxCoreContracts.FeesManager,
+        deployUtils.addresses[EVMxCoreContracts.FeesManager]
+      );
+      await fundAuctionManager(
+        feesManager.connect(deployUtils.signer),
+        deployUtils.addresses[EVMxCoreContracts.AuctionManager],
+        deployUtils.signer
+      );
       deployUtils.addresses.startBlock =
         (deployUtils.addresses.startBlock
           ? deployUtils.addresses.startBlock
@@ -277,6 +289,56 @@ const deployEVMxContracts = async () => {
   }
 };
 
+export const fundAuctionManager = async (
+  feesManager: Contract,
+  auctionManagerAddress: string,
+  watcherSigner: Signer
+) => {
+  const currentCredits = await feesManager.getAvailableCredits(
+    auctionManagerAddress
+  );
+  console.log("Current credits:", currentCredits.toString());
+  if (currentCredits.gte(BigNumber.from(AUCTION_MANAGER_FUNDING_AMOUNT))) {
+    console.log(
+      `Auction manager ${auctionManagerAddress} already has credits, skipping funding`
+    );
+    return;
+  }
+  const signatureNonce = Date.now();
+  const digest = ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(
+      ["address", "uint32", "address", "uint256", "address", "uint32"],
+      [
+        auctionManagerAddress,
+        EVMX_CHAIN_ID,
+        ETH_ADDRESS,
+        AUCTION_MANAGER_FUNDING_AMOUNT,
+        feesManager.address,
+        EVMX_CHAIN_ID,
+      ]
+    )
+  );
+  const signature = await watcherSigner.signMessage(
+    ethers.utils.arrayify(digest)
+  );
+  const tx = await feesManager
+    .connect(watcherSigner)
+    .depositCredits(
+      auctionManagerAddress,
+      EVMX_CHAIN_ID,
+      ETH_ADDRESS,
+      signatureNonce,
+      signature,
+      {
+        value: AUCTION_MANAGER_FUNDING_AMOUNT,
+      }
+    );
+  console.log(
+    `Funding auction manager ${auctionManagerAddress} with ${AUCTION_MANAGER_FUNDING_AMOUNT} ETH, txHash: `,
+    tx.hash
+  );
+  await tx.wait();
+};
 const deploySocketContracts = async () => {
   try {
     let addresses: DeploymentAddresses;

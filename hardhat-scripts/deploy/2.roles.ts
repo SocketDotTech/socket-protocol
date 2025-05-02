@@ -20,7 +20,11 @@ import { ROLES } from "../constants/roles";
 import { getWatcherSigner, getSocketSigner } from "../utils/sign";
 export const REQUIRED_ROLES = {
   FastSwitchboard: [ROLES.WATCHER_ROLE, ROLES.RESCUE_ROLE],
-  Socket: [ROLES.GOVERNANCE_ROLE, ROLES.RESCUE_ROLE],
+  Socket: [
+    ROLES.GOVERNANCE_ROLE,
+    ROLES.RESCUE_ROLE,
+    ROLES.SWITCHBOARD_DISABLER_ROLE,
+  ],
   FeesPlug: [ROLES.RESCUE_ROLE],
   ContractFactoryPlug: [ROLES.RESCUE_ROLE],
 };

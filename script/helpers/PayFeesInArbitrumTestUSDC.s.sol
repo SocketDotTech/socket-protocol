@@ -9,7 +9,7 @@ import {TestUSDC} from "../../contracts/helpers/TestUSDC.sol";
 // source .env && forge script script/helpers/PayFeesInArbitrumETH.s.sol --broadcast --skip-simulation
 contract DepositFees is Script {
     function run() external {
-        uint256 amount = 100000000;
+        uint256 feesAmount = 100000000;
         vm.createSelectFork(vm.envString("ARBITRUM_SEPOLIA_RPC"));
 
         uint256 privateKey = vm.envUint("SPONSOR_KEY");
@@ -19,9 +19,9 @@ contract DepositFees is Script {
         TestUSDC testUSDCContract = TestUSDC(vm.envAddress("ARBITRUM_TEST_USDC"));
 
         // mint test USDC to sender
-        testUSDCContract.mint(vm.addr(privateKey), amount);
+        testUSDCContract.mint(vm.addr(privateKey), feesAmount);
         // approve fees plug to spend test USDC
-        testUSDCContract.approve(address(feesPlug), amount);
+        testUSDCContract.approve(address(feesPlug), feesAmount);
 
         address sender = vm.addr(privateKey);
         console.log("Sender address:", sender);
@@ -29,7 +29,7 @@ contract DepositFees is Script {
         console.log("Sender balance in wei:", balance);
         console.log("App Gateway:", appGateway);
         console.log("Fees Plug:", address(feesPlug));
-        uint feesAmount = 0.001 ether;
+        console.log("Fees Amount:", feesAmount);
         feesPlug.depositToFeeAndNative(address(testUSDCContract), appGateway, feesAmount);
     }
 }
