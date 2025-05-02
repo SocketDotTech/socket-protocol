@@ -66,6 +66,12 @@
   ],
   "7625382": [
     [
+      "0xe1CA4da421C52161B4EecCE6F5Cb2937554e2958",
+      "WatcherPrecompile",
+      "contracts/protocol/watcherPrecompile/core/WatcherPrecompile.sol",
+      []
+    ],
+    [
       "0x23364acdd298EBB3Dfd3c1835C5ACd7f77E3E2bD",
       "AuctionManager",
       "contracts/protocol/payload-delivery/AuctionManager.sol",
@@ -226,15 +232,6 @@
     ]
   ],
   "11155420": [
-    [
-      "0x29b77ecEf2D163528d1F4A235c0795daDD2DA1Bf",
-      "FeesPlug",
-      "contracts/protocol/payload-delivery/FeesPlug.sol",
-      [
-        "0xE09CC429e77EE5DBeF68f3796b2A33BBDF39C03C",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
     [
       "0x78775DCd56fBdb903e4d83AE51924797a74AD49d",
       "FeesPlug",

@@ -441,14 +441,13 @@
 | `appGatewayCalled`            | `0xc6767cf1` |
 | `appGatewayCaller`            | `0x712b193a` |
 | `batchPayloadIds`             | `0x02b74f98` |
-| `callAppGateways`             | `0xaef0b33d` |
+| `callAppGateways`             | `0x5c38ded5` |
 | `cancelOwnershipHandover`     | `0x54d1f13d` |
 | `cancelRequest`               | `0x50ad0779` |
 | `completeOwnershipHandover`   | `0xf04e283e` |
 | `deliveryHelper__`            | `0xc031dfb4` |
 | `evmxSlug`                    | `0x8bae77c2` |
 | `expiryTime`                  | `0x99bc0aea` |
-| `finalize`                    | `0x7ffecf2e` |
 | `finalized`                   | `0x81c051de` |
 | `getBatchPayloadIds`          | `0xfd83cd1f` |
 | `getBatches`                  | `0xcb95b7b3` |
