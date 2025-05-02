@@ -4,6 +4,8 @@ export enum CORE_CONTRACTS {
   FastSwitchboard = "FastSwitchboard",
   FeesPlug = "FeesPlug",
   ContractFactoryPlug = "ContractFactoryPlug",
+  TestUSDC = "TestUSDC",
+  SocketFeeManager = "SocketFeeManager",
 }
 
 export enum EVMxCoreContracts {

@@ -1,11 +1,13 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 import {AddressResolverUtil} from "./utils/AddressResolverUtil.sol";
 import {IPromise} from "../interfaces/IPromise.sol";
 import {IAppGateway} from "../interfaces/IAppGateway.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
-import {AsyncPromiseState} from "../protocol/utils/common/Structs.sol";
+import {AsyncPromiseState} from "./utils/common/Structs.sol";
+import {MAX_COPY_BYTES} from "./utils/common/Constants.sol";
+import {LibCall} from "solady/utils/LibCall.sol";
 
 abstract contract AsyncPromiseStorage is IPromise {
     // slots [0-49] reserved for gap
@@ -27,7 +29,7 @@ abstract contract AsyncPromiseStorage is IPromise {
     address public localInvoker;
 
     // slot 51
-    /// @notice The forwarder address which can call the callback
+    /// @notice The forwarder address which can set the callback selector and data
     address public forwarder;
 
     // slot 52
@@ -37,13 +39,14 @@ abstract contract AsyncPromiseStorage is IPromise {
     // slots [53-102] reserved for gap
     uint256[50] _gap_after;
 
-    // slots 103-154 reserved for addr resolver util
+    // slots 103-154 (51) reserved for addr resolver util
 }
 
 /// @title AsyncPromise
-/// @notice this contract stores the callback address and data to be executed once the previous call is executed
+/// @notice this contract stores the callback selector and data to be executed once the on-chain call is executed
 /// This promise expires once the callback is executed
 contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil {
+    using LibCall for address;
     /// @notice Error thrown when attempting to resolve an already resolved promise.
     error PromiseAlreadyResolved();
     /// @notice Only the forwarder or local invoker can set then's promise callback
@@ -57,25 +60,24 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         _disableInitializers(); // disable for implementation
     }
 
-    /// @notice Initializer to replace constructor for upgradeable contracts
-    /// @param invoker_ The address of the local invoker.
-    /// @param forwarder_ The address of the forwarder.
-    /// @param addressResolver_ The address resolver contract address.
+    /// @notice Initialize promise states
+    /// @param invoker_ The address of the local invoker
+    /// @param forwarder_ The address of the forwarder
+    /// @param addressResolver_ The address resolver contract address
     function initialize(
         address invoker_,
         address forwarder_,
         address addressResolver_
     ) public initializer {
-        _setAddressResolver(addressResolver_);
         localInvoker = invoker_;
         forwarder = forwarder_;
-        state = AsyncPromiseState.WAITING_FOR_SET_CALLBACK_SELECTOR;
-        resolved = false;
+
+        _setAddressResolver(addressResolver_);
     }
 
     /// @notice Marks the promise as resolved and executes the callback if set.
-    /// @param returnData_ The data returned from the async payload execution.
     /// @dev Only callable by the watcher precompile.
+    /// @param returnData_ The data returned from the async payload execution.
     function markResolved(
         uint40 requestCount_,
         bytes32 payloadId_,
@@ -88,11 +90,14 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
 
         // Call callback to app gateway
         if (callbackSelector == bytes4(0)) return true;
+
         bytes memory combinedCalldata = abi.encodePacked(
             callbackSelector,
             abi.encode(callbackData, returnData_)
         );
-        (success, ) = localInvoker.call(combinedCalldata);
+
+        // setting max_copy_bytes to 0 as not using returnData right now
+        (success, , ) = localInvoker.tryCall(0, gasleft(), 0, combinedCalldata);
         if (success) return success;
 
         _handleRevert(requestCount_, payloadId_, AsyncPromiseState.CALLBACK_REVERTING);
@@ -113,13 +118,13 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         AsyncPromiseState state_
     ) internal {
         // to update the state in case selector is bytes(0) but reverting onchain
-        resolved = false;
+        resolved = true;
         state = state_;
-
-        (bool success, ) = localInvoker.call(
-            abi.encodeWithSelector(IAppGateway.handleRevert.selector, requestCount_, payloadId_)
-        );
-        if (!success) revert PromiseRevertFailed();
+        try IAppGateway(localInvoker).handleRevert(requestCount_, payloadId_) {
+            // Successfully handled revert
+        } catch {
+            revert PromiseRevertFailed();
+        }
     }
 
     /// @notice Sets the callback selector and data for the promise.
@@ -130,14 +135,17 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         bytes4 selector_,
         bytes memory data_
     ) external override returns (address promise_) {
+        // allows forwarder or local invoker to set the callback selector and data
         if (msg.sender != forwarder && msg.sender != localInvoker) {
             revert OnlyForwarderOrLocalInvoker();
         }
 
+        // if the promise is already set up, revert
         if (state == AsyncPromiseState.WAITING_FOR_CALLBACK_EXECUTION) {
             revert PromiseAlreadySetUp();
         }
 
+        // if the promise is waiting for the callback selector, set it and update the state
         if (state == AsyncPromiseState.WAITING_FOR_SET_CALLBACK_SELECTOR) {
             callbackSelector = selector_;
             callbackData = data_;

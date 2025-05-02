@@ -1,118 +1,112 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 import "solady/utils/SafeTransferLib.sol";
+import "solady/tokens/ERC20.sol";
 import "../../base/PlugBase.sol";
 import "../utils/AccessControl.sol";
 import {RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
+import {IFeesPlug} from "../../interfaces/IFeesPlug.sol";
 import "../utils/RescueFundsLib.sol";
 import {ETH_ADDRESS} from "../utils/common/Constants.sol";
-import {InvalidTokenAddress} from "../utils/common/Errors.sol";
+import {InvalidTokenAddress, FeesAlreadyPaid} from "../utils/common/Errors.sol";
 
 /// @title FeesManager
-/// @notice Abstract contract for managing fees
-contract FeesPlug is PlugBase, AccessControl {
-    mapping(address => uint256) public balanceOf;
-    mapping(bytes32 => bool) public feesRedeemed;
+/// @notice Contract for managing fees on a network
+/// @dev The amount deposited here is locked and updated in the EVMx for an app gateway
+/// @dev The fees are redeemed by the transmitters executing request or can be withdrawn by the owner
+contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
+    /// @notice Mapping to store if a token is whitelisted
     mapping(address => bool) public whitelistedTokens;
 
-    /// @notice Error thrown when attempting to pay fees again
-    error FeesAlreadyPaid();
     /// @notice Error thrown when balance is not enough to cover fees
-    error InsufficientTokenBalance(address token_);
+    error InsufficientTokenBalance(address token_, uint256 balance_, uint256 fee_);
     /// @notice Error thrown when deposit amount does not match msg.value
     error InvalidDepositAmount();
+    /// @notice Error thrown when token is not whitelisted
     error TokenNotWhitelisted(address token_);
 
     /// @notice Event emitted when fees are deposited
-    event FeesDeposited(address appGateway, address token, uint256 amount);
+    event FeesDeposited(
+        address token,
+        address receiver,
+        uint256 creditAmount,
+        uint256 nativeAmount
+    );
     /// @notice Event emitted when fees are withdrawn
-    event FeesWithdrawn(address token, uint256 amount, address receiver);
+    event FeesWithdrawn(address token, address receiver, uint256 amount);
     /// @notice Event emitted when a token is whitelisted
     event TokenWhitelisted(address token);
     /// @notice Event emitted when a token is removed from whitelist
     event TokenRemovedFromWhitelist(address token);
 
-    modifier isFeesEnough(uint256 fee_, address feeToken_) {
-        if (balanceOf[feeToken_] < fee_) revert InsufficientTokenBalance(feeToken_);
+    /// @notice Modifier to check if the balance of a token is enough to withdraw
+    modifier isUserCreditsEnough(address feeToken_, uint256 fee_) {
+        uint balance_ = ERC20(feeToken_).balanceOf(address(this));
+        if (balance_ < fee_) revert InsufficientTokenBalance(feeToken_, balance_, fee_);
         _;
     }
 
+    /// @notice Constructor for the FeesPlug contract
+    /// @param socket_ The socket address
+    /// @param owner_ The owner address
     constructor(address socket_, address owner_) {
         _setSocket(socket_);
         _initializeOwner(owner_);
-        whitelistedTokens[ETH_ADDRESS] = true; // ETH is whitelisted by default
     }
 
-    function distributeFee(
-        address feeToken_,
-        uint256 fee_,
-        address transmitter_,
-        bytes32 feesId_
-    ) external onlySocket isFeesEnough(fee_, feeToken_) {
-        if (feesRedeemed[feesId_]) revert FeesAlreadyPaid();
-        feesRedeemed[feesId_] = true;
-
-        balanceOf[feeToken_] -= fee_;
-        _transferTokens(feeToken_, fee_, transmitter_);
-    }
-
+    /// @notice Withdraws fees
+    /// @param token_ The token address
+    /// @param amount_ The amount
+    /// @param receiver_ The receiver address
     function withdrawFees(
         address token_,
-        uint256 amount_,
-        address receiver_
-    ) external onlySocket isFeesEnough(amount_, token_) {
-        balanceOf[token_] -= amount_;
-        _transferTokens(token_, amount_, receiver_);
+        address receiver_,
+        uint256 amount_
+    ) external override onlySocket isUserCreditsEnough(token_, amount_) {
+        SafeTransferLib.safeTransfer(token_, receiver_, amount_);
+        emit FeesWithdrawn(token_, receiver_, amount_);
+    }
 
-        emit FeesWithdrawn(token_, amount_, receiver_);
+    function depositToFee(address token_, address receiver_, uint256 amount_) external override {
+        _deposit(token_, receiver_, amount_, 0);
+    }
+
+    function depositToFeeAndNative(
+        address token_,
+        address receiver_,
+        uint256 amount_
+    ) external override {
+        uint256 nativeAmount_ = amount_ / 10;
+        uint256 creditAmount_ = amount_ - nativeAmount_;
+        _deposit(token_, receiver_, creditAmount_, nativeAmount_);
+    }
+
+    function depositToNative(address token_, address receiver_, uint256 amount_) external override {
+        _deposit(token_, receiver_, 0, amount_);
     }
 
     /// @notice Deposits funds
     /// @param token_ The token address
-    /// @param amount_ The amount
-    /// @param appGateway_ The app gateway address
-    function deposit(address token_, address appGateway_, uint256 amount_) external payable {
-        if (!whitelistedTokens[token_]) revert TokenNotWhitelisted(token_);
-
-        if (token_ == ETH_ADDRESS) {
-            if (msg.value != amount_) revert InvalidDepositAmount();
-        } else {
-            if (token_.code.length == 0) revert InvalidTokenAddress();
-        }
-
-        balanceOf[token_] += amount_;
-
-        if (token_ != ETH_ADDRESS) {
-            SafeTransferLib.safeTransferFrom(token_, msg.sender, address(this), amount_);
-        }
-
-        emit FeesDeposited(appGateway_, token_, amount_);
-    }
-
-    /// @notice Transfers tokens
-    /// @param token_ The token address
-    /// @param amount_ The amount
+    /// @param creditAmount_ The amount of fees
+    /// @param nativeAmount_ The amount of native tokens
     /// @param receiver_ The receiver address
-    function _transferTokens(address token_, uint256 amount_, address receiver_) internal {
-        if (token_ == ETH_ADDRESS) {
-            SafeTransferLib.forceSafeTransferETH(receiver_, amount_);
-        } else {
-            SafeTransferLib.safeTransfer(token_, receiver_, amount_);
-        }
-    }
-
-    function connectSocket(
-        address appGateway_,
-        address socket_,
-        address switchboard_
-    ) external onlyOwner {
-        _connectSocket(appGateway_, socket_, switchboard_);
+    function _deposit(
+        address token_,
+        address receiver_,
+        uint256 creditAmount_,
+        uint256 nativeAmount_
+    ) internal {
+        uint256 totalAmount_ = creditAmount_ + nativeAmount_;
+        if (!whitelistedTokens[token_]) revert TokenNotWhitelisted(token_);
+        SafeTransferLib.safeTransferFrom(token_, msg.sender, address(this), totalAmount_);
+        emit FeesDeposited(token_, receiver_, creditAmount_, nativeAmount_);
     }
 
     /// @notice Adds a token to the whitelist
     /// @param token_ The token address to whitelist
     function whitelistToken(address token_) external onlyOwner {
+        if (token_.code.length == 0) revert InvalidTokenAddress();
         whitelistedTokens[token_] = true;
         emit TokenWhitelisted(token_);
     }
@@ -120,11 +114,17 @@ contract FeesPlug is PlugBase, AccessControl {
     /// @notice Removes a token from the whitelist
     /// @param token_ The token address to remove
     function removeTokenFromWhitelist(address token_) external onlyOwner {
-        if (token_ == ETH_ADDRESS) revert(); // Cannot remove ETH from whitelist
         whitelistedTokens[token_] = false;
         emit TokenRemovedFromWhitelist(token_);
     }
 
+    function connectSocket(
+        bytes32 appGatewayId_,
+        address socket_,
+        address switchboard_
+    ) external onlyOwner {
+        _connectSocket(appGatewayId_, socket_, switchboard_);
+    }
     /**
      * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
      * theoretically need this function but it is added for safety.
@@ -139,8 +139,4 @@ contract FeesPlug is PlugBase, AccessControl {
     ) external onlyRole(RESCUE_ROLE) {
         RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
-
-    fallback() external payable {}
-
-    receive() external payable {}
 }

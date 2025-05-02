@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 //// ENUMS ////
@@ -50,6 +50,22 @@ enum ExecutionStatus {
     Reverted
 }
 
+/// @notice Creates a struct to hold batch parameters
+struct BatchParams {
+    address appGateway;
+    address auctionManager;
+    uint256 maxFees;
+    bytes onCompleteData;
+    bool onlyReadRequests;
+    uint256 queryCount;
+    uint256 finalizeCount;
+}
+
+struct AppGatewayWhitelistParams {
+    address appGateway;
+    bool isApproved;
+}
+
 //// STRUCTS ////
 // plug:
 struct LimitParams {
@@ -64,29 +80,29 @@ struct UpdateLimitParams {
     uint256 maxLimit;
     uint256 ratePerSecond;
 }
+
 struct AppGatewayConfig {
     address plug;
-    address appGateway;
+    bytes32 appGatewayId;
     address switchboard;
     uint32 chainSlug;
 }
 // Plug config:
 struct PlugConfig {
-    address appGateway;
+    bytes32 appGatewayId;
     address switchboard;
 }
-//inbox:
-struct CallFromChainParams {
-    bytes32 callId;
-    bytes32 params;
+//trigger:
+struct TriggerParams {
+    bytes32 triggerId;
     address plug;
-    address appGateway;
+    bytes32 appGatewayId;
     uint32 chainSlug;
+    bytes overrides;
     bytes payload;
 }
 // timeout:
 struct TimeoutRequest {
-    bytes32 timeoutId;
     address target;
     uint256 delayInSeconds;
     uint256 executeAt;
@@ -94,13 +110,7 @@ struct TimeoutRequest {
     bool isResolved;
     bytes payload;
 }
-struct QueryResults {
-    address target;
-    uint256 queryCounter;
-    bytes functionSelector;
-    bytes returnData;
-    bytes callback;
-}
+
 struct ResolvedPromises {
     bytes32 payloadId;
     bytes returnData;
@@ -108,9 +118,15 @@ struct ResolvedPromises {
 
 // AM
 struct Bid {
-    address transmitter;
     uint256 fee;
+    address transmitter;
     bytes extraData;
+}
+
+struct OnChainFees {
+    uint32 chainSlug;
+    address token;
+    uint256 amount;
 }
 
 // App gateway base:
@@ -119,30 +135,28 @@ struct OverrideParams {
     Parallel isParallelCall;
     WriteFinality writeFinality;
     uint256 gasLimit;
+    uint256 value;
     uint256 readAt;
 }
 
-// FM:
-struct Fees {
-    uint32 feePoolChain;
-    address feePoolToken;
-    uint256 amount;
+struct UserCredits {
+    uint256 totalCredits;
+    uint256 blockedCredits;
 }
 
 // digest:
 struct DigestParams {
+    address socket;
     address transmitter;
     bytes32 payloadId;
     uint256 deadline;
     CallType callType;
-    WriteFinality writeFinality;
     uint256 gasLimit;
     uint256 value;
-    uint256 readAt;
     bytes payload;
     address target;
-    address appGateway;
-    bytes32 prevDigestsHash; // should be id? hash of hashes
+    bytes32 appGatewayId;
+    bytes32 prevDigestsHash;
 }
 
 struct QueuePayloadParams {
@@ -181,7 +195,7 @@ struct PayloadSubmitParams {
 struct PayloadParams {
     // uint40 requestCount + uint40 batchCount + uint40 payloadCount + uint32 chainSlug
     // CallType callType + Parallel isParallel + WriteFinality writeFinality
-    bytes32 dump;
+    bytes32 payloadHeader;
     // uint40 requestCount;
     // uint40 batchCount;
     // uint40 payloadCount;
@@ -206,47 +220,55 @@ struct PayloadParams {
 struct RequestParams {
     bool isRequestCancelled;
     uint40 currentBatch;
+    // updated while processing request
     uint256 currentBatchPayloadsLeft;
     uint256 payloadsRemaining;
+    uint256 queryCount;
+    uint256 finalizeCount;
+    uint256 scheduleCount;
     address middleware;
+    // updated after auction
     address transmitter;
     PayloadParams[] payloadParamsArray;
 }
 
 struct RequestMetadata {
+    bool onlyReadRequests;
+    address consumeFrom;
     address appGateway;
     address auctionManager;
-    Fees fees;
+    uint256 maxFees;
+    uint256 queryCount;
+    uint256 finalizeCount;
     Bid winningBid;
     bytes onCompleteData;
-    bool onlyReadRequests;
 }
 
 struct ExecuteParams {
-    uint256 deadline;
     CallType callType;
-    WriteFinality writeFinality;
-    uint256 gasLimit;
-    uint256 readAt;
-    bytes payload;
-    address target;
     uint40 requestCount;
     uint40 batchCount;
     uint40 payloadCount;
-    bytes32 prevDigestsHash; // should be id? hash of hashes
-    address switchboard;
+    uint256 deadline;
+    uint256 gasLimit;
+    uint256 value;
+    bytes32 prevDigestsHash;
+    address target;
+    bytes payload;
+    bytes extraData;
+}
+
+struct TransmissionParams {
+    uint256 socketFees;
+    address refundAddress;
+    bytes extraData;
+    bytes transmitterSignature;
 }
 
 struct PayloadIdParams {
     uint40 requestCount;
     uint40 batchCount;
     uint40 payloadCount;
-    address switchboard;
     uint32 chainSlug;
-}
-
-/// @notice Struct containing fee amounts and status
-struct TokenBalance {
-    uint256 deposited; // Amount deposited
-    uint256 blocked; // Amount blocked
+    address switchboard;
 }

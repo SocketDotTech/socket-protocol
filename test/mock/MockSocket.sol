@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {PlugDisconnected, InvalidAppGateway} from "../../contracts/protocol/utils/common/Errors.sol";
+import {InvalidAppGateway} from "../../contracts/protocol/utils/common/Errors.sol";
 import "../../contracts/interfaces/ISwitchboard.sol";
 import "../../contracts/interfaces/ISocket.sol";
 
@@ -16,7 +16,7 @@ import "../../contracts/interfaces/ISocket.sol";
 contract MockSocket is ISocket {
     struct PlugConfig {
         // address of the sibling plug on the remote chain
-        address appGateway;
+        bytes32 appGatewayId;
         // switchboard instance for the plug connection
         ISwitchboard switchboard__;
     }
@@ -26,12 +26,12 @@ contract MockSocket is ISocket {
 
     function getPlugConfig(
         address plugAddress_
-    ) external view returns (address appGateway, address switchboard__) {
+    ) external view returns (bytes32 appGatewayId, address switchboard__) {
         PlugConfig memory _plugConfig = _plugConfigs[plugAddress_];
-        return (_plugConfig.appGateway, address(_plugConfig.switchboard__));
+        return (_plugConfig.appGatewayId, address(_plugConfig.switchboard__));
     }
 
-    function connect(address appGateway_, address switchboard_) external override {}
+    function connect(bytes32 appGatewayId_, address switchboard_) external override {}
 
     function registerSwitchboard() external override {}
 
@@ -54,9 +54,6 @@ contract MockSocket is ISocket {
      */
     error VerificationFailed();
     /**
-     * @dev Error emitted when source slugs deduced from packet id and msg id don't match
-     */
-    /**
      * @dev Error emitted when less gas limit is provided for execution than expected
      */
     error LowGasLimit();
@@ -65,7 +62,7 @@ contract MockSocket is ISocket {
     ////////////////////////////////////////////////////////////
     ////////////////////// State Vars //////////////////////////
     ////////////////////////////////////////////////////////////
-    uint64 public callCounter;
+    uint64 public triggerCounter;
     uint32 public chainSlug;
 
     enum ExecutionStatus {
@@ -89,22 +86,20 @@ contract MockSocket is ISocket {
 
     /**
      * @notice To send message to a connected remote chain. Should only be called by a plug.
-     * @param payload bytes to be delivered to the Plug on the siblingChainSlug_
-     * @param params a 32 bytes param to add details for execution, for eg: fees to be paid for execution
      */
     function callAppGateway(
         bytes calldata payload,
-        bytes32 params
-    ) external returns (bytes32 callId) {
+        bytes calldata overrides
+    ) external returns (bytes32 triggerId) {
         PlugConfig memory plugConfig = _plugConfigs[msg.sender];
         // creates a unique ID for the message
-        callId = _encodeCallId(plugConfig.appGateway);
+        triggerId = _encodeTriggerId(plugConfig.appGatewayId);
         emit AppGatewayCallRequested(
-            callId,
-            chainSlug,
+            triggerId,
+            plugConfig.appGatewayId,
+            address(plugConfig.switchboard__),
             msg.sender,
-            plugConfig.appGateway,
-            params,
+            overrides,
             payload
         );
     }
@@ -113,9 +108,9 @@ contract MockSocket is ISocket {
      * @notice Executes a payload that has been delivered by transmitters and authenticated by switchboards
      */
     function execute(
-        ExecuteParams memory executeParams_,
-        bytes memory transmitterSignature_
-    ) external payable override returns (bytes memory) {
+        ExecuteParams calldata executeParams_,
+        TransmissionParams calldata transmissionParams_
+    ) external payable override returns (bool, bytes memory) {
         // execute payload
         // return
         //     _execute(
@@ -136,7 +131,7 @@ contract MockSocket is ISocket {
         ISwitchboard switchboard__
     ) internal view {
         // NOTE: is the the first un-trusted call in the system, another one is Plug.call
-        if (!switchboard__.allowPacket(digest_, payloadId_)) revert VerificationFailed();
+        if (!switchboard__.allowPayload(digest_, payloadId_)) revert VerificationFailed();
     }
 
     /**
@@ -151,13 +146,13 @@ contract MockSocket is ISocket {
         bytes memory
     ) internal returns (bytes memory) {
         bytes memory returnData = hex"00010203";
-        emit ExecutionSuccess(payloadId_, returnData);
+        emit ExecutionSuccess(payloadId_, false, returnData);
         return returnData;
     }
 
     /**
      * @dev Decodes the switchboard address from a given payload id.
-     * @param id_ The ID of the msg to decode the switchboard from.
+     * @param id_ The ID of the payload to decode the switchboard from.
      * @return switchboard_ The address of switchboard decoded from the payload ID.
      */
     function _decodeSwitchboard(bytes32 id_) internal pure returns (address switchboard_) {
@@ -165,21 +160,21 @@ contract MockSocket is ISocket {
     }
 
     /**
-     * @dev Decodes the chain ID from a given packet/payload ID.
-     * @param id_ The ID of the packet/msg to decode the chain slug from.
-     * @return chainSlug_ The chain slug decoded from the packet/payload ID.
+     * @dev Decodes the chain ID from a given payload ID.
+     * @param id_ The ID of the payload to decode the chain slug from.
+     * @return chainSlug_ The chain slug decoded from the payload ID.
      */
     function _decodeChainSlug(bytes32 id_) internal pure returns (uint32 chainSlug_) {
         chainSlug_ = uint32(uint256(id_) >> 224);
     }
 
     // Packs the local plug, local chain slug, remote chain slug and nonce
-    // callCount++ will take care of call id overflow as well
-    // callId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
-    function _encodeCallId(address appGateway_) internal returns (bytes32) {
+    // triggerCounter++ will take care of call id overflow as well
+    // triggerId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
+    function _encodeTriggerId(bytes32 appGatewayId_) internal returns (bytes32) {
         return
             bytes32(
-                (uint256(chainSlug) << 224) | (uint256(uint160(appGateway_)) << 64) | callCounter++
+                (uint256(chainSlug) << 224) | (uint256(appGatewayId_) << 64) | triggerCounter++
             );
     }
 }

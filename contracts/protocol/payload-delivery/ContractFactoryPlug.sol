@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 import "../utils/AccessControl.sol";
@@ -7,34 +7,44 @@ import "../utils/RescueFundsLib.sol";
 import {NotSocket} from "../utils/common/Errors.sol";
 import "../../base/PlugBase.sol";
 import "../../interfaces/IContractFactoryPlug.sol";
+import {LibCall} from "solady/utils/LibCall.sol";
+import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
 
 /// @title ContractFactory
 /// @notice Abstract contract for deploying contracts
 contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
+    using LibCall for address;
+
     event Deployed(address addr, bytes32 salt, bytes returnData);
 
     /// @notice Error thrown if it failed to deploy the create2 contract
     error DeploymentFailed();
     error ExecutionFailed();
 
+    /// @notice Constructor for the ContractFactoryPlug
+    /// @param socket_ The socket address
+    /// @param owner_ The owner address
     constructor(address socket_, address owner_) {
         _initializeOwner(owner_);
         _setSocket(socket_);
     }
 
+    /// @notice Deploys a contract
+    /// @param isPlug_ Whether the contract to be deployed is a plug
+    /// @param salt_ The salt used for create 2
+    /// @param appGatewayId_ The app gateway id
+    /// @param switchboard_ The switchboard address
+    /// @param creationCode_ The creation code
+    /// @param initCallData_ The init call data
+    /// @return addr The address of the deployed contract
     function deployContract(
         IsPlug isPlug_,
         bytes32 salt_,
-        address appGateway_,
+        bytes32 appGatewayId_,
         address switchboard_,
         bytes memory creationCode_,
         bytes memory initCallData_
-    ) public override returns (address) {
-        if (msg.sender != address(socket__)) {
-            revert NotSocket();
-        }
-
-        address addr;
+    ) public override onlySocket returns (address addr) {
         assembly {
             addr := create2(callvalue(), add(creationCode_, 0x20), mload(creationCode_), salt_)
             if iszero(addr) {
@@ -43,12 +53,17 @@ contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
             }
         }
 
-        if (isPlug_ == IsPlug.YES) IPlug(addr).initSocket(appGateway_, msg.sender, switchboard_);
+        if (isPlug_ == IsPlug.YES) IPlug(addr).initSocket(appGatewayId_, msg.sender, switchboard_);
 
         bytes memory returnData;
         if (initCallData_.length > 0) {
             // Capture more detailed error information
-            (bool success, bytes memory returnData_) = addr.call(initCallData_);
+            (bool success, , bytes memory returnData_) = addr.tryCall(
+                0,
+                gasleft(),
+                MAX_COPY_BYTES,
+                initCallData_
+            );
 
             if (!success) {
                 // Additional error logging
@@ -64,7 +79,6 @@ contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
         }
 
         emit Deployed(addr, salt_, returnData);
-        return addr;
     }
 
     /// @notice Gets the address for a deployed contract
@@ -80,11 +94,11 @@ contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
     }
 
     function connectSocket(
-        address appGateway_,
+        bytes32 appGatewayId_,
         address socket_,
         address switchboard_
     ) external onlyOwner {
-        _connectSocket(appGateway_, socket_, switchboard_);
+        _connectSocket(appGatewayId_, socket_, switchboard_);
     }
 
     /**

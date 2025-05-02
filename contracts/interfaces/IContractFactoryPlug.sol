@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 import {IsPlug} from "../protocol/utils/common/Structs.sol";
@@ -14,7 +14,7 @@ interface IContractFactoryPlug {
     function deployContract(
         IsPlug isPlug_,
         bytes32 salt_,
-        address appGateway_,
+        bytes32 appGatewayId_,
         address switchboard_,
         bytes memory creationCode_,
         bytes memory initCallData_

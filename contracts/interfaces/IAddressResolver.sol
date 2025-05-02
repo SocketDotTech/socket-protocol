@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 import "./IWatcherPrecompile.sol";
 
@@ -12,24 +12,45 @@ interface IAddressResolver {
     /// @param newAddress The new address of the contract
     event AddressSet(bytes32 indexed name, address oldAddress, address newAddress);
 
+    /// @notice Emitted when a new plug is added to the resolver
+    /// @param appGateway The address of the app gateway
+    /// @param chainSlug The chain slug
+    /// @param plug The address of the plug
+    event PlugAdded(address appGateway, uint32 chainSlug, address plug);
+
+    /// @notice Emitted when a new forwarder is deployed
+    /// @param newForwarder The address of the new forwarder
+    /// @param salt The salt used to deploy the forwarder
+    event ForwarderDeployed(address newForwarder, bytes32 salt);
+
+    /// @notice Emitted when a new async promise is deployed
+    /// @param newAsyncPromise The address of the new async promise
+    /// @param salt The salt used to deploy the async promise
+    event AsyncPromiseDeployed(address newAsyncPromise, bytes32 salt);
+
+    /// @notice Emitted when an implementation is updated
+    /// @param contractName The name of the contract
+    /// @param newImplementation The new implementation address
+    event ImplementationUpdated(string contractName, address newImplementation);
+
     /// @notice Gets the address of the delivery helper contract
-    /// @return IMiddleware The delivery helper interface
-    /// @dev Returns interface pointing to zero address if not configured
+    /// @return The delivery helper contract address
+    /// @dev Returns zero address if not configured
     function deliveryHelper() external view returns (address);
 
     /// @notice Gets the address of the fees manager contract
-    /// @return IFeesManager The fees manager interface
-    /// @dev Returns interface pointing to zero address if not configured
+    /// @return The fees manager contract address
+    /// @dev Returns zero address if not configured
     function feesManager() external view returns (address);
 
     /// @notice Gets the address of the default auction manager contract
-    /// @return IAuctionManager The auction manager interface
-    /// @dev Returns interface pointing to zero address if not configured
+    /// @return The auction manager contract address
+    /// @dev Returns zero address if not configured
     function defaultAuctionManager() external view returns (address);
 
-    /// @notice Gets the watcher precompile contract interface
-    /// @return IWatcherPrecompile The watcher precompile interface
-    /// @dev Returns interface pointing to zero address if not configured
+    /// @notice Gets the watcher precompile contract instance
+    /// @return The watcher precompile contract instance
+    /// @dev Returns instance with zero address if not configured
     function watcherPrecompile__() external view returns (IWatcherPrecompile);
 
     /// @notice Maps contract addresses to their corresponding gateway addresses
@@ -41,29 +62,17 @@ interface IAddressResolver {
     /// @return Array of async promise contract addresses
     function getPromises() external view returns (address[] memory);
 
-    // State-changing functions
-    /// @notice Sets the auction house contract address
-    /// @param deliveryHelper_ The new delivery helper contract address
-    /// @dev Only callable by contract owner
-    function setDeliveryHelper(address deliveryHelper_) external;
-
-    /// @notice Sets the watcher precompile contract address
-    /// @param watcherPrecompile_ The new watcher precompile contract address
-    /// @dev Only callable by contract owner
-    function setWatcherPrecompile(address watcherPrecompile_) external;
-
     /// @notice Maps a contract address to its gateway
     /// @param contractAddress_ The contract address to map
     /// @dev Creates bidirectional mapping between contract and gateway
     function setContractsToGateways(address contractAddress_) external;
 
-    /// @notice Clears the list of deployed async promise contracts
-    /// @dev Only callable by contract owner
+    /// @notice Clears the list of deployed async promise contracts array
     function clearPromises() external;
 
-    /// @notice Deploys a new forwarder contract if not already deployed
-    /// @param chainContractAddress_ The contract address on the destination chain
-    /// @param chainSlug_ The identifier of the destination chain
+    /// @notice Deploys or returns the address of a new forwarder contract if not already deployed
+    /// @param chainContractAddress_ The contract address on the `chainSlug_`
+    /// @param chainSlug_ The identifier of the chain
     /// @return The address of the newly deployed forwarder contract
     function getOrDeployForwarderContract(
         address appGateway_,

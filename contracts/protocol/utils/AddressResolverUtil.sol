@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 import "../../interfaces/IAddressResolver.sol";
@@ -6,6 +6,7 @@ import "../../interfaces/IMiddleware.sol";
 import "../../interfaces/IWatcherPrecompile.sol";
 import "../../interfaces/IWatcherPrecompileConfig.sol";
 import "../../interfaces/IWatcherPrecompileLimits.sol";
+import "../../interfaces/IFeesManager.sol";
 
 /// @title AddressResolverUtil
 /// @notice Utility contract for resolving system contract addresses
@@ -26,8 +27,8 @@ abstract contract AddressResolverUtil {
     /// @notice Error thrown when an invalid address attempts to call the Watcher precompile or delivery helper
     error OnlyWatcherPrecompileOrDeliveryHelper();
 
-    /// @notice Restricts function access to the auction house contract
-    /// @dev Validates that msg.sender matches the registered auction house address
+    /// @notice Restricts function access to the delivery helper contract
+    /// @dev Validates that msg.sender matches the registered delivery helper address
     modifier onlyDeliveryHelper() {
         if (msg.sender != addressResolver__.deliveryHelper()) {
             revert OnlyPayloadDelivery();
@@ -59,9 +60,9 @@ abstract contract AddressResolverUtil {
         _;
     }
 
-    /// @notice Gets the auction house contract interface
-    /// @return IMiddleware interface of the registered auction house
-    /// @dev Resolves and returns the auction house contract for interaction
+    /// @notice Gets the delivery helper contract interface
+    /// @return IMiddleware interface of the registered delivery helper
+    /// @dev Resolves and returns the delivery helper contract for interaction
     function deliveryHelper__() public view returns (IMiddleware) {
         return IMiddleware(addressResolver__.deliveryHelper());
     }

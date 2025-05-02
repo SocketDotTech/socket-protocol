@@ -1,21 +1,12 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 interface IFeesPlug {
-    function balanceOf(address appGateway_, address token_) external view returns (uint256);
+    function depositToFee(address token_, address receiver_, uint256 amount_) external;
 
-    function feesRedeemed(uint256 feesCounter_) external view returns (bool);
+    function depositToFeeAndNative(address token_, address receiver_, uint256 amount_) external;
 
-    function deposit(address token_, address appGateway_, uint256 amount_) external payable;
+    function depositToNative(address token_, address receiver_, uint256 amount_) external;
 
-    function connect(address appGateway_, address switchboard_) external;
-
-    function distributeFee(
-        address feeToken_,
-        uint256 fee_,
-        address transmitter_,
-        bytes32 feesCounter_
-    ) external;
-
-    function withdrawFees(address token_, uint256 amount_, address receiver_) external;
+    function withdrawFees(address token_, address receiver_, uint256 amount_) external;
 }

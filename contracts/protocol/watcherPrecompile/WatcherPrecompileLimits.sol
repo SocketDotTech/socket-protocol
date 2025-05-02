@@ -1,46 +1,66 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {AccessControl} from "../utils/AccessControl.sol";
+import "solady/utils/Initializable.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
 import {Gauge} from "../utils/Gauge.sol";
 import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
-import {WATCHER_ROLE} from "../utils/common/AccessRoles.sol";
 import "../../interfaces/IWatcherPrecompileLimits.sol";
-import "solady/utils/Initializable.sol";
-import {SCHEDULE, QUERY, FINALIZE} from "../utils/common/Constants.sol";
+import {SCHEDULE, QUERY, FINALIZE, CALLBACK} from "../utils/common/Constants.sol";
 
+/// @title WatcherPrecompileLimits
+/// @notice Contract for managing watcher precompile limits
 contract WatcherPrecompileLimits is
     IWatcherPrecompileLimits,
     Initializable,
-    AccessControl,
+    Ownable,
     Gauge,
     AddressResolverUtil
 {
-    // Slots from parent contracts:
-    // slot 0-118: watcher precompile storage
-    // 0 slots for initializable and ownable
-    // slots 119-169: access control (gap + 1)
-    // slots 170-219: gauge (gap)
-    // slots 220-270: address resolver util (gap + 1)
-    // slots 271-320: gap for future storage variables
-    uint256[50] _gap_watcher_precompile_limits;
+    // slots 0-49 (50) reserved for gauge
+    // slots 50-100 (51) reserved for addr resolver util
 
+    // slots [101-150]: gap for future storage variables
+    uint256[50] _gap_before;
+
+    // slot 151: limitDecimals
     /// @notice Number of decimals used in limit calculations
-    uint256 public constant LIMIT_DECIMALS = 18;
-    // slot 50: defaultLimit
+    uint256 public limitDecimals;
+
+    // slot 152: defaultLimit
     /// @notice Default limit value for any app gateway
     uint256 public defaultLimit;
-    // slot 51: defaultRatePerSecond
+
+    // slot 153: defaultRatePerSecond
     /// @notice Rate at which limit replenishes per second
     uint256 public defaultRatePerSecond;
 
-    // slot 53: _limitParams
+    // slot 154: _limitParams
     // appGateway => limitType => receivingLimitParams
     mapping(address => mapping(bytes32 => LimitParams)) internal _limitParams;
 
-    // slot 54: _activeAppGateways
+    // slot 155: _activeAppGateways
     // Mapping to track active app gateways
     mapping(address => bool) internal _activeAppGateways;
+
+    // slot 157: fees
+    uint256 public queryFees;
+    uint256 public finalizeFees;
+    uint256 public timeoutFees;
+    uint256 public callBackFees;
+
+    /// @notice Emitted when the default limit and rate per second are set
+    event DefaultLimitAndRatePerSecondSet(uint256 defaultLimit, uint256 defaultRatePerSecond);
+    /// @notice Emitted when the query fees are set
+    event QueryFeesSet(uint256 queryFees);
+    /// @notice Emitted when the finalize fees are set
+    event FinalizeFeesSet(uint256 finalizeFees);
+    /// @notice Emitted when the timeout fees are set
+    event TimeoutFeesSet(uint256 timeoutFees);
+    /// @notice Emitted when the call back fees are set
+    event CallBackFeesSet(uint256 callBackFees);
+
+    error WatcherFeesNotSet(bytes32 limitType);
 
     /// @notice Initial initialization (version 1)
     function initialize(
@@ -50,9 +70,10 @@ contract WatcherPrecompileLimits is
     ) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
+        limitDecimals = 18;
 
         // limit per day
-        defaultLimit = defaultLimit_ * 10 ** LIMIT_DECIMALS;
+        defaultLimit = defaultLimit_ * 10 ** limitDecimals;
         // limit per second
         defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
     }
@@ -120,7 +141,7 @@ contract WatcherPrecompileLimits is
     ) external override onlyWatcherPrecompile {
         LimitParams storage limitParams = _limitParams[appGateway_][limitType_];
 
-        // Initialize limit if not active
+        // Initialize limit if not active, give default limit and rate per second
         if (!_activeAppGateways[appGateway_]) {
             LimitParams memory limitParam = LimitParams({
                 maxLimit: defaultLimit,
@@ -138,22 +159,52 @@ contract WatcherPrecompileLimits is
         }
 
         // Update the limit
-        _consumeFullLimit(consumeLimit_ * 10 ** LIMIT_DECIMALS, limitParams);
+        _consumeFullLimit(consumeLimit_ * 10 ** limitDecimals, limitParams);
     }
 
     /**
      * @notice Set the default limit value
      * @param defaultLimit_ The new default limit value
      */
-    function setDefaultLimit(uint256 defaultLimit_) external onlyOwner {
+    function setDefaultLimitAndRatePerSecond(uint256 defaultLimit_) external onlyOwner {
         defaultLimit = defaultLimit_;
+        defaultRatePerSecond = defaultLimit / (24 * 60 * 60);
+
+        emit DefaultLimitAndRatePerSecondSet(defaultLimit, defaultRatePerSecond);
     }
 
-    /**
-     * @notice Set the rate at which limit replenishes
-     * @param defaultRatePerSecond_ The new rate per second
-     */
-    function setDefaultRatePerSecond(uint256 defaultRatePerSecond_) external onlyOwner {
-        defaultRatePerSecond = defaultRatePerSecond_;
+    function setQueryFees(uint256 queryFees_) external onlyOwner {
+        queryFees = queryFees_;
+        emit QueryFeesSet(queryFees_);
+    }
+
+    function setFinalizeFees(uint256 finalizeFees_) external onlyOwner {
+        finalizeFees = finalizeFees_;
+        emit FinalizeFeesSet(finalizeFees_);
+    }
+
+    function setTimeoutFees(uint256 timeoutFees_) external onlyOwner {
+        timeoutFees = timeoutFees_;
+        emit TimeoutFeesSet(timeoutFees_);
+    }
+
+    function setCallBackFees(uint256 callBackFees_) external onlyOwner {
+        callBackFees = callBackFees_;
+        emit CallBackFeesSet(callBackFees_);
+    }
+
+    function getTotalFeesRequired(
+        uint256 queryCount_,
+        uint256 finalizeCount_,
+        uint256 scheduleCount_,
+        uint256 callbackCount_
+    ) external view returns (uint256) {
+        uint256 totalFees = 0;
+        totalFees += callbackCount_ * callBackFees;
+        totalFees += queryCount_ * queryFees;
+        totalFees += finalizeCount_ * finalizeFees;
+        totalFees += scheduleCount_ * timeoutFees;
+
+        return totalFees;
     }
 }
