@@ -140,14 +140,12 @@ contract Socket is SocketUtils {
 
         // NOTE: external un-trusted call
         bool exceededMaxCopy;
-        (success, exceededMaxCopy, returnData) = executeParams_
-            .target
-            .tryCall(
-                executeParams_.value,
-                executeParams_.gasLimit,
-                maxCopyBytes,
-                executeParams_.payload
-            );
+        (success, exceededMaxCopy, returnData) = executeParams_.target.tryCall(
+            executeParams_.value,
+            executeParams_.gasLimit,
+            maxCopyBytes,
+            executeParams_.payload
+        );
 
         if (success) {
             emit ExecutionSuccess(payloadId_, exceededMaxCopy, returnData);

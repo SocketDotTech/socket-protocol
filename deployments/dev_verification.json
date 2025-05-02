@@ -41,11 +41,63 @@
       "0x89e66357C5F101C56b4F9F97cf378Cc32A21438a",
       "Socket",
       "contracts/protocol/socket/Socket.sol",
-      [84532, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
+      [
+        84532,
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
+        "EVMX"
+      ]
     ]
   ],
   "421614": [],
   "7625382": [
+    [
+      "0x23364acdd298EBB3Dfd3c1835C5ACd7f77E3E2bD",
+      "AuctionManager",
+      "contracts/protocol/payload-delivery/AuctionManager.sol",
+      []
+    ],
+    [
+      "0x915eA695e03265998cd455B4df2A1EAeb1b61e74",
+      "DeliveryHelper",
+      "contracts/protocol/payload-delivery/app-gateway/DeliveryHelper.sol",
+      []
+    ],
+    [
+      "0xB577c29F7Cbb1bBB314dD8E74059Aa5BF72838b0",
+      "FeesManager",
+      "contracts/protocol/payload-delivery/FeesManager.sol",
+      []
+    ],
+    [
+      "0x1BCe40d84499Db8E7Bc65277A32f0abd56588CC7",
+      "WatcherPrecompile",
+      "contracts/protocol/watcherPrecompile/core/WatcherPrecompile.sol",
+      []
+    ],
+    [
+      "0x060b4a50EcCC9Cf329005c94406dd2886676F759",
+      "WatcherPrecompileConfig",
+      "contracts/protocol/watcherPrecompile/WatcherPrecompileConfig.sol",
+      []
+    ],
+    [
+      "0x4Fd04B0D4903e630F169BB228be52750E6B5331a",
+      "WatcherPrecompileLimits",
+      "contracts/protocol/watcherPrecompile/WatcherPrecompileLimits.sol",
+      []
+    ],
+    [
+      "0x4b067469E7865d9959E0E658BA77ec4b0F28FB15",
+      "AddressResolver",
+      "contracts/protocol/AddressResolver.sol",
+      []
+    ],
+    [
+      "0xb30eBbA571721923175751AE7aF5aC90cfb1E892",
+      "ERC1967Factory",
+      "lib/solady/src/utils/ERC1967Factory.sol",
+      []
+    ],
     [
       "0x2c50B6e519e0705A396E5c8652E5D447F37f9796",
       "FeesManager",
@@ -155,7 +207,11 @@
       "0xF86B89B5c689c170BfD2734254228D6d2db5a672",
       "Socket",
       "contracts/protocol/socket/Socket.sol",
-      [11155111, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
+      [
+        11155111,
+        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
+        "EVMX"
+      ]
     ]
   ],
   "11155420": []
