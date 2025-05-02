@@ -1,4 +1,4 @@
-import { Contract, ethers, Wallet } from "ethers";
+import { constants, Contract, ethers, Wallet } from "ethers";
 import { ChainAddressesObj, ChainSlug } from "../../src";
 import { chains, EVMX_CHAIN_ID, mode } from "../config";
 import {
@@ -47,9 +47,23 @@ export const checkIfAddressExists = (address: string, name: string) => {
     address == "0x" ||
     address.length != 42
   ) {
-    throw Error(`${name} not found`);
+    throw Error(`${name} not found : ${address}`);
   }
   return address;
+};
+export const checkIfAppGatewayIdExists = (
+  appGatewayId: string,
+  name: string
+) => {
+  if (
+    appGatewayId == constants.HashZero ||
+    !appGatewayId ||
+    appGatewayId == "0x" ||
+    appGatewayId.length != 66
+  ) {
+    throw Error(`${name} not found : ${appGatewayId}`);
+  }
+  return appGatewayId;
 };
 
 export const isConfigSetOnSocket = async (
@@ -88,6 +102,7 @@ async function connectPlug(
   const switchboard = addr[CORE_CONTRACTS.FastSwitchboard];
   checkIfAddressExists(switchboard, "Switchboard");
   const appGatewayId = getAppGatewayId(plugContract, addresses);
+  checkIfAppGatewayIdExists(appGatewayId, "AppGatewayId");
   // Check if config is already set
   if (await isConfigSetOnSocket(plug, socket, appGatewayId, switchboard)) {
     console.log(`${plugContract} Socket Config  on ${chain} already set!`);
@@ -128,12 +143,12 @@ export const isConfigSetOnEVMx = async (
   watcher: Contract,
   chain: number,
   plug: string,
-  appGateway: string,
+  appGatewayId: string,
   switchboard: string
 ) => {
   const plugConfigRegistered = await watcher.getPlugConfigs(chain, plug);
   return (
-    plugConfigRegistered[0].toLowerCase() === appGateway?.toLowerCase() &&
+    plugConfigRegistered[0].toLowerCase() === appGatewayId?.toLowerCase() &&
     plugConfigRegistered[1].toLowerCase() === switchboard.toLowerCase()
   );
 };
@@ -165,7 +180,7 @@ export const updateConfigEVMx = async () => {
           const appGatewayId = getAppGatewayId(plugContract, addresses);
           const switchboard = addr[CORE_CONTRACTS.FastSwitchboard];
           checkIfAddressExists(switchboard, "Switchboard");
-          checkIfAddressExists(appGatewayId, "AppGateway");
+          checkIfAppGatewayIdExists(appGatewayId, "AppGatewayId");
 
           if (
             await isConfigSetOnEVMx(

@@ -424,7 +424,8 @@ async function updateContractSettings(
   if (
     (typeof currentValue === "string" &&
       currentValue.toLowerCase() !== String(requiredValue).toLowerCase()) ||
-    (BigNumber.isBigNumber(currentValue) && currentValue !== requiredValue)
+    (BigNumber.isBigNumber(currentValue) &&
+      currentValue.toString() !== requiredValue.toString())
   ) {
     console.log({
       setterMethod,

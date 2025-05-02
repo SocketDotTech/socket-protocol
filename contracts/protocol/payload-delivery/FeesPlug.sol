@@ -27,7 +27,12 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
     error TokenNotWhitelisted(address token_);
 
     /// @notice Event emitted when fees are deposited
-    event FeesDeposited(address token, address receiver, uint256 feeAmount, uint256 nativeAmount);
+    event FeesDeposited(
+        address token,
+        address receiver,
+        uint256 creditAmount,
+        uint256 nativeAmount
+    );
     /// @notice Event emitted when fees are withdrawn
     event FeesWithdrawn(address token, address receiver, uint256 amount);
     /// @notice Event emitted when a token is whitelisted
@@ -73,8 +78,8 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
         uint256 amount_
     ) external override {
         uint256 nativeAmount_ = amount_ / 10;
-        uint256 feeAmount_ = amount_ - nativeAmount_;
-        _deposit(token_, receiver_, feeAmount_, nativeAmount_);
+        uint256 creditAmount_ = amount_ - nativeAmount_;
+        _deposit(token_, receiver_, creditAmount_, nativeAmount_);
     }
 
     function depositToNative(address token_, address receiver_, uint256 amount_) external override {
@@ -83,19 +88,19 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
 
     /// @notice Deposits funds
     /// @param token_ The token address
-    /// @param feeAmount_ The amount of fees
+    /// @param creditAmount_ The amount of fees
     /// @param nativeAmount_ The amount of native tokens
     /// @param receiver_ The receiver address
     function _deposit(
         address token_,
         address receiver_,
-        uint256 feeAmount_,
+        uint256 creditAmount_,
         uint256 nativeAmount_
     ) internal {
-        uint256 totalAmount_ = feeAmount_ + nativeAmount_;
+        uint256 totalAmount_ = creditAmount_ + nativeAmount_;
         if (!whitelistedTokens[token_]) revert TokenNotWhitelisted(token_);
         SafeTransferLib.safeTransferFrom(token_, msg.sender, address(this), totalAmount_);
-        emit FeesDeposited(receiver_, token_, feeAmount_, nativeAmount_);
+        emit FeesDeposited(token_, receiver_, creditAmount_, nativeAmount_);
     }
 
     /// @notice Adds a token to the whitelist
