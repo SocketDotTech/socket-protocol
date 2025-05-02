@@ -1,11 +1,12 @@
 import { ChainAddressesObj, ChainSlug } from "../../src";
 import { config } from "dotenv";
-import { Contract, Signer, utils, Wallet } from "ethers";
+import { BigNumber, Contract, Signer, utils, Wallet } from "ethers";
 import { formatEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import {
   CORE_CONTRACTS,
   DeploymentAddresses,
+  ETH_ADDRESS,
   EVMxCoreContracts,
   FAST_SWITCHBOARD_TYPE,
   IMPLEMENTATION_SLOT,
@@ -13,6 +14,7 @@ import {
 import {
   DeployParams,
   getAddresses,
+  getInstance,
   getOrDeploy,
   storeAddresses,
 } from "../utils";
@@ -27,6 +29,15 @@ import {
   DEFAULT_MAX_LIMIT,
   MAX_RE_AUCTION_COUNT,
   mode,
+  TEST_USDC_INITIAL_SUPPLY,
+  TEST_USDC_DECIMALS,
+  TEST_USDC_NAME,
+  TEST_USDC_SYMBOL,
+  QUERY_FEES,
+  FINALIZE_FEES,
+  TIMEOUT_FEES,
+  CALLBACK_FEES,
+  AUCTION_MANAGER_FUNDING_AMOUNT,
 } from "../config/config";
 config();
 
@@ -131,7 +142,7 @@ const deployEVMxContracts = async () => {
 
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.WatcherPrecompile,
-        `contracts/protocol/watcherPrecompile/WatcherPrecompile.sol`,
+        `contracts/protocol/watcherPrecompile/core/WatcherPrecompile.sol`,
         [
           EVMxOwner,
           addressResolver.address,
@@ -215,6 +226,54 @@ const deployEVMxContracts = async () => {
         deployUtils.signer
       );
 
+      let watcherPrecompileLimits = await getInstance(
+        EVMxCoreContracts.WatcherPrecompileLimits,
+        deployUtils.addresses[EVMxCoreContracts.WatcherPrecompileLimits]
+      );
+      watcherPrecompileLimits = watcherPrecompileLimits.connect(
+        deployUtils.signer
+      );
+      await updateContractSettings(
+        watcherPrecompileLimits,
+        "queryFees",
+        "setQueryFees",
+        QUERY_FEES,
+        deployUtils.signer
+      );
+
+      await updateContractSettings(
+        watcherPrecompileLimits,
+        "finalizeFees",
+        "setFinalizeFees",
+        FINALIZE_FEES,
+        deployUtils.signer
+      );
+
+      await updateContractSettings(
+        watcherPrecompileLimits,
+        "timeoutFees",
+        "setTimeoutFees",
+        TIMEOUT_FEES,
+        deployUtils.signer
+      );
+
+      await updateContractSettings(
+        watcherPrecompileLimits,
+        "callBackFees",
+        "setCallBackFees",
+        CALLBACK_FEES,
+        deployUtils.signer
+      );
+
+      const feesManager = await getInstance(
+        EVMxCoreContracts.FeesManager,
+        deployUtils.addresses[EVMxCoreContracts.FeesManager]
+      );
+      await fundAuctionManager(
+        feesManager.connect(deployUtils.signer),
+        deployUtils.addresses[EVMxCoreContracts.AuctionManager],
+        deployUtils.signer
+      );
       deployUtils.addresses.startBlock =
         (deployUtils.addresses.startBlock
           ? deployUtils.addresses.startBlock
@@ -230,6 +289,56 @@ const deployEVMxContracts = async () => {
   }
 };
 
+export const fundAuctionManager = async (
+  feesManager: Contract,
+  auctionManagerAddress: string,
+  watcherSigner: Signer
+) => {
+  const currentCredits = await feesManager.getAvailableCredits(
+    auctionManagerAddress
+  );
+  console.log("Current credits:", currentCredits.toString());
+  if (currentCredits.gte(BigNumber.from(AUCTION_MANAGER_FUNDING_AMOUNT))) {
+    console.log(
+      `Auction manager ${auctionManagerAddress} already has credits, skipping funding`
+    );
+    return;
+  }
+  const signatureNonce = Date.now();
+  const digest = ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(
+      ["address", "uint32", "address", "uint256", "address", "uint32"],
+      [
+        auctionManagerAddress,
+        EVMX_CHAIN_ID,
+        ETH_ADDRESS,
+        AUCTION_MANAGER_FUNDING_AMOUNT,
+        feesManager.address,
+        EVMX_CHAIN_ID,
+      ]
+    )
+  );
+  const signature = await watcherSigner.signMessage(
+    ethers.utils.arrayify(digest)
+  );
+  const tx = await feesManager
+    .connect(watcherSigner)
+    .depositCredits(
+      auctionManagerAddress,
+      EVMX_CHAIN_ID,
+      ETH_ADDRESS,
+      signatureNonce,
+      signature,
+      {
+        value: AUCTION_MANAGER_FUNDING_AMOUNT,
+      }
+    );
+  console.log(
+    `Funding auction manager ${auctionManagerAddress} with ${AUCTION_MANAGER_FUNDING_AMOUNT} ETH, txHash: `,
+    tx.hash
+  );
+  await tx.wait();
+};
 const deploySocketContracts = async () => {
   try {
     let addresses: DeploymentAddresses;
@@ -288,6 +397,23 @@ const deploySocketContracts = async () => {
         );
         deployUtils.addresses[contractName] = sb.address;
 
+        contractName = CORE_CONTRACTS.TestUSDC;
+
+        const testUSDC: Contract = await getOrDeploy(
+          contractName,
+          contractName,
+          `contracts/helpers/${contractName}.sol`,
+          [
+            TEST_USDC_NAME,
+            TEST_USDC_SYMBOL,
+            TEST_USDC_DECIMALS,
+            socketOwner,
+            TEST_USDC_INITIAL_SUPPLY,
+          ],
+          deployUtils
+        );
+        deployUtils.addresses[contractName] = testUSDC.address;
+
         contractName = CORE_CONTRACTS.FeesPlug;
         const feesPlug: Contract = await getOrDeploy(
           contractName,
@@ -297,6 +423,8 @@ const deploySocketContracts = async () => {
           deployUtils
         );
         deployUtils.addresses[contractName] = feesPlug.address;
+
+        await whitelistToken(feesPlug, testUSDC.address, deployUtils.signer);
 
         contractName = CORE_CONTRACTS.ContractFactoryPlug;
         const contractFactoryPlug: Contract = await getOrDeploy(
@@ -328,24 +456,20 @@ const deploySocketContracts = async () => {
   }
 };
 
-async function initializeSigVerifier(
-  contract: Contract,
-  getterMethod: string,
-  setterMethod: string,
-  requiredAddress: string,
-  initParams: any[],
+async function whitelistToken(
+  feesPlug: Contract,
+  tokenAddress: string,
   signer: Signer
 ) {
-  const currentValue = await contract.connect(signer)[getterMethod]();
-
-  if (currentValue.toLowerCase() !== requiredAddress.toLowerCase()) {
-    console.log({
-      setterMethod,
-      current: currentValue,
-      required: requiredAddress,
-    });
-    const tx = await contract.connect(signer)[setterMethod](...initParams);
-    console.log(`Setting ${getterMethod} for ${contract.address} to`, tx.hash);
+  const isWhitelisted = await feesPlug
+    .connect(signer)
+    .whitelistedTokens(tokenAddress);
+  if (!isWhitelisted) {
+    const tx = await feesPlug.connect(signer).whitelistToken(tokenAddress);
+    console.log(
+      `Whitelisting token ${tokenAddress} for ${feesPlug.address}`,
+      tx.hash
+    );
     await tx.wait();
   }
 }
@@ -354,18 +478,23 @@ async function updateContractSettings(
   contract: Contract,
   getterMethod: string,
   setterMethod: string,
-  requiredAddress: string,
+  requiredValue: string | BigNumber,
   signer: Signer
 ) {
   const currentValue = await contract.connect(signer)[getterMethod]();
 
-  if (currentValue.toLowerCase() !== requiredAddress.toLowerCase()) {
+  if (
+    (typeof currentValue === "string" &&
+      currentValue.toLowerCase() !== String(requiredValue).toLowerCase()) ||
+    (BigNumber.isBigNumber(currentValue) &&
+      currentValue.toString() !== requiredValue.toString())
+  ) {
     console.log({
       setterMethod,
       current: currentValue,
-      required: requiredAddress,
+      required: requiredValue,
     });
-    const tx = await contract.connect(signer)[setterMethod](requiredAddress);
+    const tx = await contract.connect(signer)[setterMethod](requiredValue);
     console.log(`Setting ${getterMethod} for ${contract.address} to`, tx.hash);
     await tx.wait();
   }

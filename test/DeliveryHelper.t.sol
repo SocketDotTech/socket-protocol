@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: GPL-3.0-only
+pragma solidity ^0.8.21;
 
 import "../contracts/protocol/payload-delivery/app-gateway/DeliveryHelper.sol";
 import "../contracts/protocol/payload-delivery/FeesManager.sol";
@@ -9,6 +9,10 @@ import "../contracts/protocol/Forwarder.sol";
 import "../contracts/interfaces/IAppGateway.sol";
 
 import "./SetupTest.t.sol";
+
+interface IAppGatewayDeployer {
+    function deployContracts(uint32 chainSlug_) external;
+}
 
 contract DeliveryHelperTest is SetupTest {
     uint256 public maxFees = 0.0001 ether;
@@ -27,7 +31,7 @@ contract DeliveryHelperTest is SetupTest {
         uint40 indexed requestCount,
         address indexed appGateway,
         PayloadSubmitParams[] payloadSubmitParams,
-        Fees fees,
+        uint256 maxFees,
         address auctionManager,
         bool onlyReadRequests
     );
@@ -111,28 +115,37 @@ contract DeliveryHelperTest is SetupTest {
         arbConfig = deploySocket(arbChainSlug);
         optConfig = deploySocket(optChainSlug);
         connectDeliveryHelper();
+
+        depositUSDCFees(
+            address(auctionManager),
+            OnChainFees({
+                chainSlug: arbChainSlug,
+                token: address(arbConfig.feesTokenUSDC),
+                amount: 1 ether
+            })
+        );
     }
 
     function connectDeliveryHelper() internal {
         vm.startPrank(owner);
         arbConfig.contractFactoryPlug.initSocket(
-            address(deliveryHelper),
+            _encodeAppGatewayId(address(deliveryHelper)),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
         optConfig.contractFactoryPlug.initSocket(
-            address(deliveryHelper),
+            _encodeAppGatewayId(address(deliveryHelper)),
             address(optConfig.socket),
             address(optConfig.switchboard)
         );
 
         arbConfig.feesPlug.initSocket(
-            address(feesManager),
+            _encodeAppGatewayId(address(feesManager)),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
         optConfig.feesPlug.initSocket(
-            address(feesManager),
+            _encodeAppGatewayId(address(feesManager)),
             address(optConfig.socket),
             address(optConfig.switchboard)
         );
@@ -142,25 +155,25 @@ contract DeliveryHelperTest is SetupTest {
         gateways[0] = AppGatewayConfig({
             plug: address(arbConfig.contractFactoryPlug),
             chainSlug: arbChainSlug,
-            appGateway: address(deliveryHelper),
+            appGatewayId: _encodeAppGatewayId(address(deliveryHelper)),
             switchboard: address(arbConfig.switchboard)
         });
         gateways[1] = AppGatewayConfig({
             plug: address(optConfig.contractFactoryPlug),
             chainSlug: optChainSlug,
-            appGateway: address(deliveryHelper),
+            appGatewayId: _encodeAppGatewayId(address(deliveryHelper)),
             switchboard: address(optConfig.switchboard)
         });
         gateways[2] = AppGatewayConfig({
             plug: address(arbConfig.feesPlug),
             chainSlug: arbChainSlug,
-            appGateway: address(feesManager),
+            appGatewayId: _encodeAppGatewayId(address(feesManager)),
             switchboard: address(arbConfig.switchboard)
         });
         gateways[3] = AppGatewayConfig({
             plug: address(optConfig.feesPlug),
             chainSlug: optChainSlug,
-            appGateway: address(feesManager),
+            appGatewayId: _encodeAppGatewayId(address(feesManager)),
             switchboard: address(optConfig.switchboard)
         });
 
@@ -173,33 +186,60 @@ contract DeliveryHelperTest is SetupTest {
 
     //////////////////////////////////// Fees ////////////////////////////////////
 
-    function depositFees(address appGateway_, Fees memory fees_) internal {
-        SocketContracts memory socketConfig = getSocketConfig(fees_.feePoolChain);
-        socketConfig.feesPlug.deposit{value: fees_.amount}(
-            fees_.feePoolToken,
-            appGateway_,
-            fees_.amount
-        );
-
-        bytes memory bytesInput = abi.encode(
-            fees_.feePoolChain,
-            appGateway_,
-            fees_.feePoolToken,
-            fees_.amount
-        );
+    function depositUSDCFees(address appGateway_, OnChainFees memory fees_) internal {
+        SocketContracts memory socketConfig = getSocketConfig(fees_.chainSlug);
+        vm.startPrank(owner);
+        ERC20(fees_.token).approve(address(socketConfig.feesPlug), fees_.amount);
+        socketConfig.feesPlug.depositToFeeAndNative(fees_.token, appGateway_, fees_.amount);
+        vm.stopPrank();
 
         bytes32 digest = keccak256(
-            abi.encode(address(feesManager), evmxSlug, signatureNonce, bytesInput)
+            abi.encode(
+                appGateway_,
+                fees_.chainSlug,
+                fees_.token,
+                fees_.amount,
+                address(feesManager),
+                evmxSlug
+            )
         );
-        bytes memory sig = _createSignature(digest, watcherPrivateKey);
-        feesManager.incrementFeesDeposited(
-            fees_.feePoolChain,
+
+        feesManager.depositCredits{value: fees_.amount}(
             appGateway_,
-            fees_.feePoolToken,
-            fees_.amount,
+            fees_.chainSlug,
+            fees_.token,
             signatureNonce++,
-            sig
+            _createSignature(digest, watcherPrivateKey)
         );
+    }
+
+    function whitelistAppGateway(
+        address appGateway_,
+        address user_,
+        uint256 userPrivateKey_,
+        uint32 chainSlug_
+    ) internal {
+        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
+        // Create fee approval data with signature
+        bytes32 digest = keccak256(
+            abi.encode(
+                address(feesManager),
+                evmxSlug,
+                user_,
+                appGateway_,
+                feesManager.userNonce(user_),
+                true
+            )
+        );
+
+        // Sign with consumeFrom's private key
+        bytes memory signature = _createSignature(digest, userPrivateKey_);
+
+        // Encode approval data
+        bytes memory feeApprovalData = abi.encode(user_, appGateway_, true, signature);
+
+        // Call whitelistAppGatewayWithSignature with approval data
+        feesManager.whitelistAppGatewayWithSignature(feeApprovalData);
     }
 
     ////////////////////////////////// Deployment helpers ////////////////////////////////////
@@ -209,7 +249,7 @@ contract DeliveryHelperTest is SetupTest {
         bytes32[] memory contractIds_
     ) internal returns (uint40 requestCount) {
         requestCount = watcherPrecompile.nextRequestCount();
-        appGateway_.deployContracts(chainSlug_);
+        IAppGatewayDeployer(address(appGateway_)).deployContracts(chainSlug_);
 
         finalizeRequest(requestCount, new bytes[](0));
         setupGatewayAndPlugs(chainSlug_, appGateway_, contractIds_);
@@ -250,7 +290,7 @@ contract DeliveryHelperTest is SetupTest {
             gateways[i] = AppGatewayConfig({
                 plug: plug,
                 chainSlug: chainSlug_,
-                appGateway: address(appGateway_),
+                appGatewayId: _encodeAppGatewayId(address(appGateway_)),
                 switchboard: address(socketConfig.switchboard)
             });
         }
@@ -279,7 +319,11 @@ contract DeliveryHelperTest is SetupTest {
 
     function endAuction(uint40 requestCount_) internal {
         if (auctionEndDelaySeconds == 0) return;
-        bytes32 timeoutId = _encodeId(evmxSlug, address(watcherPrecompile), timeoutIdCounter++);
+        bytes32 timeoutId = _encodeTimeoutId(
+            evmxSlug,
+            address(watcherPrecompile),
+            timeoutIdCounter++
+        );
 
         bytes memory watcherSignature = _createWatcherSignature(
             address(watcherPrecompile),
@@ -300,7 +344,7 @@ contract DeliveryHelperTest is SetupTest {
     }
 
     //////////////////////////////////// Utils ///////////////////////////////////
-    function _encodeId(
+    function _encodeTimeoutId(
         uint32 chainSlug_,
         address sbOrWatcher_,
         uint256 counter_

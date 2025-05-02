@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 import {ISocket} from "../interfaces/ISocket.sol";
@@ -7,10 +7,12 @@ import {NotSocket} from "../protocol/utils/common/Errors.sol";
 
 /// @title PlugBase
 /// @notice Abstract contract for plugs
+/// @dev This contract contains helpers for socket connection, disconnection, and overrides
 abstract contract PlugBase is IPlug {
     ISocket public socket__;
-    address public appGateway;
+    bytes32 public appGatewayId;
     uint256 public isSocketInitialized;
+    bytes public overrides;
 
     error SocketAlreadyInitialized();
     event ConnectorPlugDisconnected();
@@ -22,7 +24,7 @@ abstract contract PlugBase is IPlug {
         _;
     }
 
-    /// @notice Modifier to ensure the socket is initialized
+    /// @notice Modifier to ensure the socket is initialized and if not already initialized, it will be initialized
     modifier socketInitializer() {
         if (isSocketInitialized == 1) revert SocketAlreadyInitialized();
         isSocketInitialized = 1;
@@ -30,19 +32,20 @@ abstract contract PlugBase is IPlug {
     }
 
     /// @notice Connects the plug to the app gateway and switchboard
-    /// @param appGateway_ The app gateway address
+    /// @param appGatewayId_ The app gateway id
+    /// @param socket_ The socket address
     /// @param switchboard_ The switchboard address
-    function _connectSocket(address appGateway_, address socket_, address switchboard_) internal {
+    function _connectSocket(bytes32 appGatewayId_, address socket_, address switchboard_) internal {
         _setSocket(socket_);
-        appGateway = appGateway_;
+        appGatewayId = appGatewayId_;
 
-        socket__.connect(appGateway_, switchboard_);
+        socket__.connect(appGatewayId_, switchboard_);
     }
 
     /// @notice Disconnects the plug from the socket
     function _disconnectSocket() internal {
         (, address switchboard) = socket__.getPlugConfig(address(this));
-        socket__.connect(address(0), switchboard);
+        socket__.connect(bytes32(0), switchboard);
         emit ConnectorPlugDisconnected();
     }
 
@@ -52,15 +55,17 @@ abstract contract PlugBase is IPlug {
         socket__ = ISocket(socket_);
     }
 
-    function _callAppGateway(bytes memory payload_, bytes32 params_) internal returns (bytes32) {
-        return socket__.callAppGateway(payload_, params_);
+    /// @notice Sets the overrides needed for the trigger
+    /// @param overrides_ The overrides
+    function _setOverrides(bytes memory overrides_) internal {
+        overrides = overrides_;
     }
 
     function initSocket(
-        address appGateway_,
+        bytes32 appGatewayId_,
         address socket_,
         address switchboard_
     ) external virtual socketInitializer {
-        _connectSocket(appGateway_, socket_, switchboard_);
+        _connectSocket(appGatewayId_, socket_, switchboard_);
     }
 }

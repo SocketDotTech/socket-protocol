@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: GPL-3.0-only
+pragma solidity ^0.8.21;
 
 import {SuperTokenAppGateway} from "./app-gateways/super-token/SuperTokenAppGateway.sol";
 import {SuperToken} from "./app-gateways/super-token/SuperToken.sol";
@@ -65,7 +65,7 @@ contract SuperTokenTest is DeliveryHelperTest {
         SuperTokenAppGateway superTokenApp = new SuperTokenAppGateway(
             address(addressResolver),
             owner,
-            createFees(maxFees),
+            maxFees,
             SuperTokenAppGateway.ConstructorParams({
                 name_: "SUPER TOKEN",
                 symbol_: "SUPER",
@@ -76,7 +76,14 @@ contract SuperTokenTest is DeliveryHelperTest {
         );
         // Enable app gateways to do all operations in the Watcher: Read, Write and Schedule on EVMx
         // Watcher sets the limits for apps in this SOCKET protocol version
-        depositFees(address(superTokenApp), createFees(1 ether));
+        depositUSDCFees(
+            address(superTokenApp),
+            OnChainFees({
+                chainSlug: arbChainSlug,
+                token: address(arbConfig.feesTokenUSDC),
+                amount: 1 ether
+            })
+        );
 
         appContracts = AppContracts({
             superTokenApp: superTokenApp,

@@ -1,15 +1,11 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {Ownable} from "solady/auth/Ownable.sol";
-import "solady/utils/Initializable.sol";
-import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
 import "./DeliveryUtils.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
 abstract contract RequestQueue is DeliveryUtils {
-    // slots [0-108] reserved for delivery helper storage and [109-159] reserved for addr resolver util
-    // slots [160-209] reserved for gap
+    // slots [207-257] reserved for gap
     uint256[50] _gap_queue_async;
 
     /// @notice Clears the call parameters array
@@ -24,62 +20,124 @@ abstract contract RequestQueue is DeliveryUtils {
     }
 
     /// @notice Initiates a batch of payloads
-    /// @param fees_ The fees data
+    /// @param maxFees_ The fees data
     /// @param auctionManager_ The auction manager address
     /// @return requestCount The ID of the batch
     function batch(
-        Fees memory fees_,
+        uint256 maxFees_,
         address auctionManager_,
+        address consumeFrom_,
         bytes memory onCompleteData_
     ) external returns (uint40 requestCount) {
         address appGateway = _getCoreAppGateway(msg.sender);
-        return _batch(appGateway, auctionManager_, fees_, onCompleteData_);
+        return _batch(appGateway, auctionManager_, consumeFrom_, maxFees_, onCompleteData_);
     }
 
+    /// @notice Initiates a batch of payloads
+    /// @dev it checks fees, payload limits and creates the payload submit params array after assigning proper levels
+    /// @dev It also modifies the deploy payloads as needed by contract factory plug
+    /// @dev Stores request metadata and submits the request to watcher precompile
     function _batch(
         address appGateway_,
         address auctionManager_,
-        Fees memory fees_,
+        address consumeFrom_,
+        uint256 maxFees_,
         bytes memory onCompleteData_
     ) internal returns (uint40 requestCount) {
         if (queuePayloadParams.length == 0) return 0;
 
-        if (!IFeesManager(addressResolver__.feesManager()).isFeesEnough(appGateway_, fees_))
-            revert InsufficientFees();
+        BatchParams memory params = BatchParams({
+            appGateway: appGateway_,
+            auctionManager: _getAuctionManager(auctionManager_),
+            maxFees: maxFees_,
+            onCompleteData: onCompleteData_,
+            onlyReadRequests: false,
+            queryCount: 0,
+            finalizeCount: 0
+        });
 
+        // Split the function into smaller parts
         (
             PayloadSubmitParams[] memory payloadSubmitParamsArray,
-            ,
-            bool onlyReadRequests
+            bool onlyReadRequests,
+            uint256 queryCount,
+            uint256 finalizeCount
         ) = _createPayloadSubmitParamsArray();
-        if (auctionManager_ == address(0))
-            auctionManager_ = IAddressResolver(addressResolver__).defaultAuctionManager();
 
+        params.onlyReadRequests = onlyReadRequests;
+        params.queryCount = queryCount;
+        params.finalizeCount = finalizeCount;
+
+        _checkBatch(consumeFrom_, params.appGateway, params.maxFees);
+
+        return _submitBatchRequest(payloadSubmitParamsArray, consumeFrom_, params);
+    }
+
+    function _submitBatchRequest(
+        PayloadSubmitParams[] memory payloadSubmitParamsArray,
+        address consumeFrom_,
+        BatchParams memory params
+    ) internal returns (uint40 requestCount) {
         RequestMetadata memory requestMetadata = RequestMetadata({
-            appGateway: appGateway_,
-            auctionManager: auctionManager_,
-            fees: fees_,
+            appGateway: params.appGateway,
+            auctionManager: params.auctionManager,
+            maxFees: params.maxFees,
             winningBid: Bid({fee: 0, transmitter: address(0), extraData: new bytes(0)}),
-            onCompleteData: onCompleteData_,
-            onlyReadRequests: onlyReadRequests
+            onCompleteData: params.onCompleteData,
+            onlyReadRequests: params.onlyReadRequests,
+            consumeFrom: consumeFrom_,
+            queryCount: params.queryCount,
+            finalizeCount: params.finalizeCount
         });
 
         requestCount = watcherPrecompile__().submitRequest(payloadSubmitParamsArray);
         requests[requestCount] = requestMetadata;
 
-        // send query directly if request contains only reads
-        // transmitter should ignore the batch for auction, the transaction will also revert if someone bids
-        if (onlyReadRequests)
+        if (params.onlyReadRequests) {
             watcherPrecompile__().startProcessingRequest(requestCount, address(0));
+        }
+
+        uint256 watcherFees = watcherPrecompileLimits().getTotalFeesRequired(
+            params.queryCount,
+            params.finalizeCount,
+            0,
+            0
+        );
+        if (watcherFees > params.maxFees) revert InsufficientFees();
+        uint256 maxTransmitterFees = params.maxFees - watcherFees;
 
         emit PayloadSubmitted(
             requestCount,
-            appGateway_,
+            params.appGateway,
             payloadSubmitParamsArray,
-            fees_,
-            auctionManager_,
-            onlyReadRequests
+            maxTransmitterFees,
+            params.auctionManager,
+            params.onlyReadRequests
         );
+    }
+
+    function _getAuctionManager(address auctionManager_) internal view returns (address) {
+        return
+            auctionManager_ == address(0)
+                ? IAddressResolver(addressResolver__).defaultAuctionManager()
+                : auctionManager_;
+    }
+
+    function _checkBatch(
+        address consumeFrom_,
+        address appGateway_,
+        uint256 maxFees_
+    ) internal view {
+        if (queuePayloadParams.length > REQUEST_PAYLOAD_COUNT_LIMIT)
+            revert RequestPayloadCountLimitExceeded();
+
+        if (
+            !IFeesManager(addressResolver__.feesManager()).isUserCreditsEnough(
+                consumeFrom_,
+                appGateway_,
+                maxFees_
+            )
+        ) revert InsufficientFees();
     }
 
     /// @notice Creates an array of payload details
@@ -88,30 +146,54 @@ abstract contract RequestQueue is DeliveryUtils {
         internal
         returns (
             PayloadSubmitParams[] memory payloadDetailsArray,
-            uint256 totalLevels,
-            bool onlyReadRequests
+            bool onlyReadRequests,
+            uint256 queryCount,
+            uint256 finalizeCount
         )
     {
-        if (queuePayloadParams.length == 0)
-            return (payloadDetailsArray, totalLevels, onlyReadRequests);
         payloadDetailsArray = new PayloadSubmitParams[](queuePayloadParams.length);
-
-        totalLevels = 0;
         onlyReadRequests = queuePayloadParams[0].callType == CallType.READ;
+
+        uint256 currentLevel = 0;
         for (uint256 i = 0; i < queuePayloadParams.length; i++) {
-            if (queuePayloadParams[i].callType != CallType.READ) {
+            if (queuePayloadParams[i].callType == CallType.READ) {
+                queryCount++;
+            } else {
                 onlyReadRequests = false;
+                finalizeCount++;
             }
 
-            // Update level for sequential calls
+            // Update level for calls
             if (i > 0 && queuePayloadParams[i].isParallel != Parallel.ON) {
-                totalLevels = totalLevels + 1;
+                currentLevel = currentLevel + 1;
             }
 
-            payloadDetailsArray[i] = _createPayloadDetails(totalLevels, queuePayloadParams[i]);
+            payloadDetailsArray[i] = _createPayloadDetails(currentLevel, queuePayloadParams[i]);
         }
 
         clearQueue();
+    }
+
+    function _createDeployPayloadDetails(
+        QueuePayloadParams memory queuePayloadParams_
+    ) internal returns (bytes memory payload, address target) {
+        bytes32 salt = keccak256(
+            abi.encode(queuePayloadParams_.appGateway, queuePayloadParams_.chainSlug, saltCounter++)
+        );
+
+        // app gateway is set in the plug deployed on chain
+        payload = abi.encodeWithSelector(
+            IContractFactoryPlug.deployContract.selector,
+            queuePayloadParams_.isPlug,
+            salt,
+            bytes32(uint256(uint160(queuePayloadParams_.appGateway))),
+            queuePayloadParams_.switchboard,
+            queuePayloadParams_.payload,
+            queuePayloadParams_.initCallData
+        );
+
+        // getting app gateway for deployer as the plug is connected to the app gateway
+        target = getDeliveryHelperPlugAddress(queuePayloadParams_.chainSlug);
     }
 
     /// @notice Creates the payload details for a given call parameters
@@ -121,32 +203,15 @@ abstract contract RequestQueue is DeliveryUtils {
         uint256 level_,
         QueuePayloadParams memory queuePayloadParams_
     ) internal returns (PayloadSubmitParams memory) {
-        bytes memory payload_ = queuePayloadParams_.payload;
+        bytes memory payload = queuePayloadParams_.payload;
         address target = queuePayloadParams_.target;
         if (queuePayloadParams_.callType == CallType.DEPLOY) {
-            // getting app gateway for deployer as the plug is connected to the app gateway
-            bytes32 salt_ = keccak256(
-                abi.encode(
-                    queuePayloadParams_.appGateway,
-                    queuePayloadParams_.chainSlug,
-                    saltCounter++
-                )
-            );
-
-            // app gateway is set in the plug deployed on chain
-            payload_ = abi.encodeWithSelector(
-                IContractFactoryPlug.deployContract.selector,
-                queuePayloadParams_.isPlug,
-                salt_,
-                queuePayloadParams_.appGateway,
-                queuePayloadParams_.switchboard,
-                payload_,
-                queuePayloadParams_.initCallData
-            );
-
-            if (payload_.length > 24.5 * 1024) revert PayloadTooLarge();
-            target = getDeliveryHelperPlugAddress(queuePayloadParams_.chainSlug);
+            (payload, target) = _createDeployPayloadDetails(queuePayloadParams_);
         }
+
+        if (payload.length > PAYLOAD_SIZE_LIMIT) revert PayloadTooLarge();
+        if (queuePayloadParams_.value > chainMaxMsgValueLimit[queuePayloadParams_.chainSlug])
+            revert MaxMsgValueLimitExceeded();
 
         return
             PayloadSubmitParams({
@@ -164,7 +229,7 @@ abstract contract RequestQueue is DeliveryUtils {
                     : queuePayloadParams_.gasLimit,
                 value: queuePayloadParams_.value,
                 readAt: queuePayloadParams_.readAt,
-                payload: payload_
+                payload: payload
             });
     }
 }

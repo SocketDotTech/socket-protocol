@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {ExecuteParams} from "../protocol/utils/common/Structs.sol";
+import {ExecuteParams, TransmissionParams} from "../protocol/utils/common/Structs.sol";
+
 /**
  * @title ISocket
  * @notice An interface for a Chain Abstraction contract
@@ -13,67 +14,59 @@ import {ExecuteParams} from "../protocol/utils/common/Structs.sol";
 interface ISocket {
     /**
      * @notice emits the status of payload after external call
-     * @param payloadId msg id which is executed
+     * @param payloadId payload id which is executed
      */
-    event ExecutionSuccess(bytes32 payloadId, bytes returnData);
+    event ExecutionSuccess(bytes32 payloadId, bool exceededMaxCopy, bytes returnData);
 
     /**
      * @notice emits the status of payload after external call
-     * @param payloadId msg id which is executed
+     * @param payloadId payload id which is executed
      */
-    event ExecutionFailed(bytes32 payloadId, bytes returnData);
+    event ExecutionFailed(bytes32 payloadId, bool exceededMaxCopy, bytes returnData);
 
     /**
      * @notice emits the config set by a plug for a remoteChainSlug
      * @param plug address of plug on current chain
-     * @param appGateway address of plug on sibling chain
+     * @param appGatewayId address of plug on sibling chain
      * @param switchboard outbound switchboard (select from registered options)
      */
-    event PlugConnected(address plug, address appGateway, address switchboard);
+    event PlugConnected(address plug, bytes32 appGatewayId, address switchboard);
 
     /**
-     * @notice emits the message details when a new message arrives at outbound
-     * @param callId call id
-     * @param chainSlug local chain slug
+     * @notice emits the payload details when a new payload arrives at outbound
+     * @param triggerId trigger id
+     * @param switchboard switchboard address
      * @param plug local plug address
-     * @param appGateway appGateway address to trigger the call
-     * @param params params, for specifying details like fee pool chain, fee pool token and max fees if required
+     * @param overrides params, for specifying details like fee pool chain, fee pool token and max fees if required
      * @param payload the data which will be used by contracts on chain
      */
     event AppGatewayCallRequested(
-        bytes32 callId,
-        uint32 chainSlug,
+        bytes32 triggerId,
+        bytes32 appGatewayId,
+        address switchboard,
         address plug,
-        address appGateway,
-        bytes32 params,
+        bytes overrides,
         bytes payload
     );
-
-    /**
-     * @notice To call the appGateway on EVMx. Should only be called by a plug.
-     * @param payload_ bytes to be delivered to the Plug on EVMx
-     * @param params_ a 32 bytes param to add details for execution.
-     */
-    function callAppGateway(
-        bytes calldata payload_,
-        bytes32 params_
-    ) external returns (bytes32 callId);
 
     /**
      * @notice executes a payload
      */
     function execute(
-        ExecuteParams memory executeParams_,
-        bytes memory transmitterSignature_
-    ) external payable returns (bytes memory);
+        ExecuteParams calldata executeParams_,
+        TransmissionParams calldata transmissionParams_
+    ) external payable returns (bool, bytes memory);
 
     /**
      * @notice sets the config specific to the plug
-     * @param appGateway_ address of plug present at sibling chain
+     * @param appGatewayId_ address of plug present at sibling chain
      * @param switchboard_ the address of switchboard to use for executing payloads
      */
-    function connect(address appGateway_, address switchboard_) external;
+    function connect(bytes32 appGatewayId_, address switchboard_) external;
 
+    /**
+     * @notice registers a switchboard for the socket
+     */
     function registerSwitchboard() external;
 
     /**
@@ -82,5 +75,5 @@ interface ISocket {
      */
     function getPlugConfig(
         address plugAddress_
-    ) external view returns (address appGateway, address switchboard);
+    ) external view returns (bytes32 appGatewayId, address switchboard);
 }

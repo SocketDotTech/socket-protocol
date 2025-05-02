@@ -5,7 +5,7 @@ import "solady/auth/Ownable.sol";
 import "../../interfaces/ISocket.sol";
 import "../../interfaces/ISwitchboard.sol";
 import "../utils/RescueFundsLib.sol";
-import {ExecuteParams} from "../../protocol/utils/common/Structs.sol";
+import {ExecuteParams, TransmissionParams} from "../../protocol/utils/common/Structs.sol";
 import "../../interfaces/ISocketBatcher.sol";
 
 /**
@@ -17,25 +17,50 @@ contract SocketBatcher is ISocketBatcher, Ownable {
     ISocket public immutable socket__;
 
     /**
-     * @notice Initializes the TransmitManager contract
-     * @param socket_ The address of socket contract
+     * @notice Initializes the SocketBatcher contract
      * @param owner_ The owner of the contract with GOVERNANCE_ROLE
+     * @param socket_ The address of socket contract
      */
     constructor(address owner_, ISocket socket_) {
         socket__ = socket_;
         _initializeOwner(owner_);
     }
 
+    /**
+     * @notice Attests a payload and executes it
+     * @param executeParams_ The execution parameters
+     * @param digest_ The digest of the payload
+     * @param proof_ The proof of the payload
+     * @param transmitterSignature_ The signature of the transmitter
+     * @return The return data after execution
+     */
     function attestAndExecute(
         ExecuteParams calldata executeParams_,
+        address switchboard_,
         bytes32 digest_,
         bytes calldata proof_,
-        bytes calldata transmitterSignature_
-    ) external payable returns (bytes memory) {
-        ISwitchboard(executeParams_.switchboard).attest(digest_, proof_);
-        return socket__.execute{value: msg.value}(executeParams_, transmitterSignature_);
+        bytes calldata transmitterSignature_,
+        address refundAddress_
+    ) external payable returns (bool, bytes memory) {
+        ISwitchboard(switchboard_).attest(digest_, proof_);
+        return
+            socket__.execute{value: msg.value}(
+                executeParams_,
+                TransmissionParams({
+                    transmitterSignature: transmitterSignature_,
+                    socketFees: 0,
+                    extraData: "",
+                    refundAddress: refundAddress_
+                })
+            );
     }
 
+    /**
+     * @notice Rescues funds from the contract
+     * @param token_ The address of the token to rescue
+     * @param to_ The address to rescue the funds to
+     * @param amount_ The amount of funds to rescue
+     */
     function rescueFunds(address token_, address to_, uint256 amount_) external onlyOwner {
         RescueFundsLib._rescueFunds(token_, to_, amount_);
     }

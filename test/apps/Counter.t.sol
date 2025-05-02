@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 import {CounterAppGateway} from "./app-gateways/counter/CounterAppGateway.sol";
@@ -16,15 +16,22 @@ contract CounterTest is DeliveryHelperTest {
     function deploySetup() internal {
         setUpDeliveryHelper();
 
-        counterGateway = new CounterAppGateway(address(addressResolver), createFees(feesAmount));
-        depositFees(address(counterGateway), createFees(1 ether));
+        counterGateway = new CounterAppGateway(address(addressResolver), feesAmount);
+        depositUSDCFees(
+            address(counterGateway),
+            OnChainFees({
+                chainSlug: arbChainSlug,
+                token: address(arbConfig.feesTokenUSDC),
+                amount: 1 ether
+            })
+        );
 
         counterId = counterGateway.counter();
         contractIds[0] = counterId;
     }
 
     function deployCounterApp(uint32 chainSlug) internal returns (uint40 requestCount) {
-        requestCount = _deploy(chainSlug, IAppGateway(counterGateway), contractIds);
+        requestCount = _deploy(chainSlug, counterGateway, contractIds);
     }
 
     function testCounterDeployment() external {

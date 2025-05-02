@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
 import {AppGatewayConfig, PlugConfig} from "../protocol/utils/common/Structs.sol";
@@ -36,20 +36,22 @@ interface IWatcherPrecompileConfig {
     function setSwitchboard(uint32 chainSlug_, bytes32 sbType_, address switchboard_) external;
 
     /// @notice Sets valid plugs for each chain slug
+    /// @dev This function is used to verify if a plug deployed on a chain slug is valid connection to the app gateway
     function setIsValidPlug(uint32 chainSlug_, address plug_, bool isValid_) external;
 
     /// @notice Retrieves the configuration for a specific plug on a network
     function getPlugConfigs(
         uint32 chainSlug_,
         address plug_
-    ) external view returns (address, address);
+    ) external view returns (bytes32, address);
 
     /// @notice Verifies connections between components
     function verifyConnections(
         uint32 chainSlug_,
         address target_,
         address appGateway_,
-        address switchboard_
+        address switchboard_,
+        address middleware_
     ) external view;
 
     function setAppGateways(

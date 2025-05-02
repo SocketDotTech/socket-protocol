@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
+import {ECDSA} from "solady/utils/ECDSA.sol";
 import "../utils/RescueFundsLib.sol";
 import "./SocketConfig.sol";
-import {ECDSA} from "solady/utils/ECDSA.sol";
 
 /**
  * @title SocketUtils
- * @notice A contract that is responsible for common storage for src and dest contracts, governance
- * setters and inherits SocketConfig
+ * @notice Utility functions for socket
  */
 abstract contract SocketUtils is SocketConfig {
     ////////////////////////////////////////////////////////////
@@ -19,13 +18,11 @@ abstract contract SocketUtils is SocketConfig {
     bytes32 public immutable version;
     // ChainSlug for this deployed socket instance
     uint32 public immutable chainSlug;
+    // Prefix for trigger ID containing chain slug and address bits
+    uint256 private immutable triggerPrefix;
 
-    uint64 public callCounter;
-
-    /**
-     * @dev keeps track of whether a payload has been executed or not using payload id
-     */
-    mapping(bytes32 => ExecutionStatus) public payloadExecuted;
+    // @notice counter for trigger id
+    uint64 public triggerCounter;
 
     /*
      * @notice constructor for creating a new Socket contract instance.
@@ -36,47 +33,40 @@ abstract contract SocketUtils is SocketConfig {
     constructor(uint32 chainSlug_, address owner_, string memory version_) {
         chainSlug = chainSlug_;
         version = keccak256(bytes(version_));
+        triggerPrefix = (uint256(chainSlug_) << 224) | (uint256(uint160(address(this))) << 64);
+
         _initializeOwner(owner_);
     }
-
-    ////////////////////////////////////////////////////////
-    ////////////////////// ERRORS //////////////////////////
-    ////////////////////////////////////////////////////////
-
-    /**
-     * @dev Error thrown when non-transmitter tries to execute
-     */
-    error InvalidTransmitter();
 
     /**
      * @notice creates the digest for the payload
      * @param transmitter_ The address of the transmitter
      * @param payloadId_ The ID of the payload
-     * @param appGateway_ The address of the app gateway
+     * @param appGatewayId_ The id of the app gateway
      * @param executeParams_ The parameters of the payload
      * @return The packed payload as a bytes32 hash
      */
     function _createDigest(
         address transmitter_,
         bytes32 payloadId_,
-        address appGateway_,
-        ExecuteParams memory executeParams_
+        bytes32 appGatewayId_,
+        ExecuteParams calldata executeParams_
     ) internal view returns (bytes32) {
         return
             keccak256(
                 abi.encode(
+                    address(this),
                     transmitter_,
                     payloadId_,
                     executeParams_.deadline,
                     executeParams_.callType,
-                    executeParams_.writeFinality,
                     executeParams_.gasLimit,
-                    msg.value,
-                    executeParams_.readAt,
+                    executeParams_.value,
                     executeParams_.payload,
                     executeParams_.target,
-                    appGateway_,
-                    executeParams_.prevDigestsHash
+                    appGatewayId_,
+                    executeParams_.prevDigestsHash,
+                    executeParams_.extraData
                 )
             );
     }
@@ -88,38 +78,41 @@ abstract contract SocketUtils is SocketConfig {
      */
     function _createPayloadId(
         address switchboard_,
-        ExecuteParams memory executeParams_
+        ExecuteParams calldata executeParams_
     ) internal view returns (bytes32) {
-        // todo: match with watcher
         return
             keccak256(
                 abi.encode(
                     executeParams_.requestCount,
                     executeParams_.batchCount,
                     executeParams_.payloadCount,
-                    switchboard_,
-                    chainSlug
+                    chainSlug,
+                    switchboard_
                 )
             );
     }
 
+    /**
+     * @notice recovers the signer from the signature
+     * @param digest_ The digest of the payload
+     * @param signature_ The signature of the payload
+     * @return signer The address of the signer
+     */
     function _recoverSigner(
         bytes32 digest_,
-        bytes memory signature_
+        bytes calldata signature_
     ) internal view returns (address signer) {
         bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
         // recovered signer is checked for the valid roles later
         signer = ECDSA.recover(digest, signature_);
     }
 
-    // Packs the local plug, local chain slug, remote chain slug and nonce
-    // callCount++ will take care of call id overflow as well
-    // callId(256) = localChainSlug(32) | appGateway_(160) | nonce(64)
-    function _encodeCallId(address appGateway_) internal returns (bytes32) {
-        return
-            bytes32(
-                (uint256(chainSlug) << 224) | (uint256(uint160(appGateway_)) << 64) | callCounter++
-            );
+    /**
+     * @notice Encodes the trigger ID with the chain slug, socket address and nonce
+     * @return The trigger ID
+     */
+    function _encodeTriggerId() internal returns (bytes32) {
+        return bytes32(triggerPrefix | triggerCounter++);
     }
 
     //////////////////////////////////////////////

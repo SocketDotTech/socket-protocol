@@ -1,7 +1,7 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: GPL-3.0-only
+pragma solidity ^0.8.21;
 
-import "../../contracts/protocol/watcherPrecompile/WatcherPrecompile.sol";
+import "../../contracts/protocol/watcherPrecompile/core/WatcherPrecompile.sol";
 
 contract MockWatcherPrecompileImpl is WatcherPrecompile {
     // Mock function to test reinitialization with version 2

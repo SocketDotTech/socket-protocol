@@ -1,17 +1,8 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-error NotAuthorized();
-error NotBridge();
 error NotSocket();
-error ConnectorUnavailable();
-error InvalidTokenContract();
-error ZeroAddressReceiver();
 error ZeroAddress();
-error ZeroAmount();
-error InsufficientFunds();
-error InvalidSigner();
-error InvalidFunction();
 error TimeoutDelayTooLarge();
 error TimeoutAlreadyResolved();
 error ResolvingTimeoutTooEarly();
@@ -19,13 +10,13 @@ error LimitReached();
 error FeesAlreadyPaid();
 error NotAuctionManager();
 error CallFailed();
-error PlugDisconnected();
+error PlugNotFound();
 error InvalidAppGateway();
 error AppGatewayAlreadyCalled();
 error InvalidInboxCaller();
+error InvalidCallerTriggered();
 error PromisesNotResolved();
 error InvalidPromise();
-error InvalidIndex();
 error InvalidTransmitter();
 error FeesNotSet();
 error InvalidTokenAddress();
@@ -40,3 +31,13 @@ error BidExceedsMaxFees();
 /// @notice Error thrown if a lower bid already exists
 error LowerBidAlreadyExists();
 error AsyncModifierNotUsed();
+error InvalidIndex();
+error RequestAlreadyExecuted();
+/// @notice Error thrown when no async promise is found
+error NoAsyncPromiseFound();
+/// @notice Error thrown when promise caller mismatch
+error PromiseCallerMismatch();
+/// @notice Error thrown when request count mismatch
+error RequestCountMismatch();
+/// @notice Error thrown when delivery helper is not set
+error DeliveryHelperNotSet();

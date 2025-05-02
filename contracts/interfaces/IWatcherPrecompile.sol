@@ -1,7 +1,7 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {DigestParams, ResolvedPromises, PayloadParams, CallFromChainParams, PayloadSubmitParams, RequestParams} from "../protocol/utils/common/Structs.sol";
+import {DigestParams, ResolvedPromises, PayloadParams, TriggerParams, PayloadSubmitParams, Bid, RequestParams, RequestMetadata} from "../protocol/utils/common/Structs.sol";
 import {IWatcherPrecompileLimits} from "./IWatcherPrecompileLimits.sol";
 import {IWatcherPrecompileConfig} from "./IWatcherPrecompileConfig.sol";
 
@@ -9,14 +9,13 @@ import {IWatcherPrecompileConfig} from "./IWatcherPrecompileConfig.sol";
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
 /// @dev Defines core functionality for payload processing and promise resolution
 interface IWatcherPrecompile {
-    event CalledAppGateway(
-        bytes32 callId,
-        uint32 chainSlug,
-        address plug,
-        address appGateway,
-        bytes32 params,
-        bytes payload
-    );
+    /// @notice Emitted when a new call is made to an app gateway
+    /// @param triggerId The unique identifier for the trigger
+    event CalledAppGateway(bytes32 triggerId);
+
+    /// @notice Emitted when a call to an app gateway fails
+    /// @param triggerId The unique identifier for the trigger
+    event AppGatewayCallFailed(bytes32 triggerId);
 
     /// @notice Emitted when a new query is requested
     event QueryRequested(PayloadParams params);
@@ -37,20 +36,31 @@ interface IWatcherPrecompile {
     /// @param payloadId The unique identifier for the not resolved promise
     event PromiseNotResolved(bytes32 indexed payloadId, address asyncPromise);
 
+    /// @notice Emitted when a payload is marked as revert
+    /// @param payloadId The unique identifier for the payload
+    /// @param isRevertingOnchain Whether the payload is reverting onchain
     event MarkedRevert(bytes32 indexed payloadId, bool isRevertingOnchain);
-    event TimeoutRequested(
-        bytes32 timeoutId,
-        address target,
-        bytes payload,
-        uint256 executeAt // Epoch time when the task should execute
-    );
+
+    /// @notice Emitted when a timeout is requested
+    /// @param timeoutId The unique identifier for the timeout
+    /// @param target The target address for the timeout callback
+    /// @param payload The payload data
+    /// @param executeAt The epoch time when the task should execute
+    event TimeoutRequested(bytes32 timeoutId, address target, bytes payload, uint256 executeAt);
 
     /// @notice Emitted when a timeout is resolved
     /// @param timeoutId The unique identifier for the timeout
-    /// @param target The target address for the timeout
+    /// @param target The target address for the callback
     /// @param payload The payload data
     /// @param executedAt The epoch time when the task was executed
-    event TimeoutResolved(bytes32 timeoutId, address target, bytes payload, uint256 executedAt);
+    /// @param returnData The return data from the callback
+    event TimeoutResolved(
+        bytes32 timeoutId,
+        address target,
+        bytes payload,
+        uint256 executedAt,
+        bytes returnData
+    );
 
     event RequestSubmitted(
         address middleware,
@@ -58,12 +68,20 @@ interface IWatcherPrecompile {
         PayloadParams[] payloadParamsArray
     );
 
+    event MaxTimeoutDelayInSecondsSet(uint256 maxTimeoutDelayInSeconds);
+
+    event ExpiryTimeSet(uint256 expiryTime);
+
+    event WatcherPrecompileLimitsSet(address watcherPrecompileLimits);
+
+    event WatcherPrecompileConfigSet(address watcherPrecompileConfig);
+
+    event RequestCancelledFromGateway(uint40 requestCount);
+
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
     /// @notice Error thrown when an invalid app gateway reaches a plug
     error InvalidConnection();
-    /// @notice Error thrown if winning bid is assigned to an invalid transmitter
-    error InvalidTransmitter();
     /// @notice Error thrown when a timeout request is invalid
     error InvalidTimeoutRequest();
     /// @notice Error thrown when a payload id is invalid
@@ -79,7 +97,9 @@ interface IWatcherPrecompile {
 
     error RequestCancelled();
     error AlreadyStarted();
+    error RequestNotProcessing();
     error InvalidLevelNumber();
+    error DeadlineNotPassedForOnChainRevert();
 
     /// @notice Calculates the digest hash of payload parameters
     /// @param params_ The payload parameters
@@ -112,11 +132,6 @@ interface IWatcherPrecompile {
         bytes calldata signature_
     ) external;
 
-    function finalize(
-        PayloadParams memory params_,
-        address transmitter_
-    ) external returns (bytes32 digest);
-
     function query(PayloadParams memory params_) external;
 
     function finalized(
@@ -146,7 +161,7 @@ interface IWatcherPrecompile {
     function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external;
 
     function callAppGateways(
-        CallFromChainParams[] calldata params_,
+        TriggerParams[] calldata params_,
         uint256 signatureNonce_,
         bytes calldata signature_
     ) external;
@@ -166,4 +181,6 @@ interface IWatcherPrecompile {
     function watcherPrecompileLimits__() external view returns (IWatcherPrecompileLimits);
 
     function getRequestParams(uint40 requestCount) external view returns (RequestParams memory);
+
+    function nextRequestCount() external view returns (uint40);
 }

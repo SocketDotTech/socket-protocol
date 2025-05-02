@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+// SPDX-License-Identifier: GPL-3.0-only
+pragma solidity ^0.8.21;
 
 import "forge-std/Script.sol";
-import {WatcherPrecompile} from "../../contracts/protocol/watcherPrecompile/WatcherPrecompile.sol";
+import {WatcherPrecompile} from "../../contracts/protocol/watcherPrecompile/core/WatcherPrecompile.sol";
 import {LimitParams} from "../../contracts/protocol/utils/common/Structs.sol";
 import {SCHEDULE, QUERY, FINALIZE} from "../../contracts/protocol/utils/common/Constants.sol";
 
