@@ -2,8 +2,8 @@
 pragma solidity ^0.8.21;
 
 import {ECDSA} from "solady/utils/ECDSA.sol";
-import "../../interfaces/ISwitchboard.sol";
-import "../../interfaces/ISocket.sol";
+import "../interfaces/ISwitchboard.sol";
+import "../interfaces/ISocket.sol";
 import "../../utils/AccessControl.sol";
 import "../../utils/RescueFundsLib.sol";
 import {RESCUE_ROLE} from "../../utils/common/AccessRoles.sol";

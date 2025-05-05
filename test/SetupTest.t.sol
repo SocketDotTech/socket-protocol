@@ -9,7 +9,7 @@ import "../contracts/evmx/watcherPrecompile/core/WatcherPrecompile.sol";
 import "../contracts/evmx/watcherPrecompile/WatcherPrecompileConfig.sol";
 import "../contracts/evmx/watcherPrecompile/WatcherPrecompileLimits.sol";
 import "../contracts/evmx/watcherPrecompile/PayloadHeaderDecoder.sol";
-import "../contracts/interfaces/IForwarder.sol";
+import "../contracts/evmx/interfaces/IForwarder.sol";
 import "../contracts/utils/common/AccessRoles.sol";
 import {Socket} from "../contracts/socket/Socket.sol";
 import "../contracts/socket/switchboard/FastSwitchboard.sol";

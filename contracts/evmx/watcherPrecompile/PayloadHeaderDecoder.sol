@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {CallType, Parallel, WriteFinality} from "../../../utils/common/Structs.sol";
+import {CallType, Parallel, WriteFinality} from "../../utils/common/Structs.sol";
 
 library PayloadHeaderDecoder {
     // Corrected mapping (most significant bits on the left):

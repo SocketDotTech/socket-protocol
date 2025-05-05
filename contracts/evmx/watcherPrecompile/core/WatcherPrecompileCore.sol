@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "./WatcherPrecompileStorage.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
 
 import "solady/utils/Initializable.sol";
-import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
-import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
+import {AddressResolverUtil} from "../../AddressResolverUtil.sol";
+import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 import "./WatcherIdUtils.sol";
+import "./WatcherPrecompileStorage.sol";
 
 /// @title WatcherPrecompileCore
 /// @notice Core functionality for the WatcherPrecompile system

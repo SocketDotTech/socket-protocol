@@ -5,7 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {FeesPlug} from "../../contracts/evmx/payload-delivery/FeesPlug.sol";
 import {ETH_ADDRESS} from "../../contracts/utils/common/Constants.sol";
-import {TestUSDC} from "../../contracts/helpers/TestUSDC.sol";
+import {TestUSDC} from "../../contracts/evmx/helpers/TestUSDC.sol";
 // source .env && forge script script/helpers/PayFeesInArbitrumETH.s.sol --broadcast --skip-simulation
 contract DepositFees is Script {
     function run() external {

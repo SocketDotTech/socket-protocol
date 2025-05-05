@@ -2,8 +2,8 @@
 pragma solidity ^0.8.21;
 
 import {InvalidAppGateway} from "../../contracts/utils/common/Errors.sol";
-import "../../contracts/interfaces/ISwitchboard.sol";
-import "../../contracts/interfaces/ISocket.sol";
+import "../../contracts/socket/interfaces/ISwitchboard.sol";
+import "../../contracts/socket/interfaces/ISocket.sol";
 
 /**
  * @title SocketDst

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../protocol/utils/AddressResolverUtil.sol";
+import "../AddressResolverUtil.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IForwarder.sol";
 import "../interfaces/IMiddleware.sol";
 import "../interfaces/IPromise.sol";
 
-import {InvalidPromise, FeesNotSet, AsyncModifierNotUsed} from "../protocol/utils/common/Errors.sol";
-import {FAST} from "../protocol/utils/common/Constants.sol";
+import {InvalidPromise, FeesNotSet, AsyncModifierNotUsed} from "../../utils/common/Errors.sol";
+import {FAST} from "../../utils/common/Constants.sol";
 
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway

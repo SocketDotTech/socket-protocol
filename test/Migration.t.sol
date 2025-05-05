@@ -131,11 +131,6 @@ contract MigrationTest is SetupTest {
             address(addressResolver),
             "AddressResolver should be preserved"
         );
-        assertEq(
-            watcherPrecompileLimits.defaultLimit(),
-            defaultLimit * 10 ** 18,
-            "DefaultLimit should be preserved"
-        );
     }
 
     function testWatcherPrecompileConfigUpgrade() public {

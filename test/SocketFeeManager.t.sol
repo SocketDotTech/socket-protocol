@@ -6,7 +6,7 @@ import {Counter} from "./apps/app-gateways/counter/Counter.sol";
 import "./SetupTest.t.sol";
 import {SocketFeeManager} from "../contracts/socket/SocketFeeManager.sol";
 import {MockFastSwitchboard} from "./mock/MockFastSwitchboard.sol";
-import {ExecuteParams, TransmissionParams, CallType, WriteFinality} from "../contracts/utils/common/Structs.sol";
+import {ExecuteParams, TransmissionParams, CallType} from "../contracts/utils/common/Structs.sol";
 import {GOVERNANCE_ROLE, RESCUE_ROLE} from "../contracts/utils/common/AccessRoles.sol";
 import {Test} from "forge-std/Test.sol";
 

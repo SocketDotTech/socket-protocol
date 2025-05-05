@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../interfaces/ISocket.sol";
-import "../interfaces/ISwitchboard.sol";
-import {IPlug} from "../interfaces/IPlug.sol";
-
+import "./interfaces/ISocket.sol";
+import "./interfaces/ISwitchboard.sol";
+import {IPlug} from "./interfaces/IPlug.sol";
+import "./interfaces/ISocketFeeManager.sol";
 import "../utils/AccessControl.sol";
 import {GOVERNANCE_ROLE, RESCUE_ROLE, SWITCHBOARD_DISABLER_ROLE} from "../utils/common/AccessRoles.sol";
 import {CallType, PlugConfig, SwitchboardStatus, ExecutionStatus} from "../utils/common/Structs.sol";
 import {PlugNotFound, InvalidAppGateway, InvalidTransmitter} from "../utils/common/Errors.sol";
-import "../interfaces/ISocketFeeManager.sol";
 import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
 
 /**

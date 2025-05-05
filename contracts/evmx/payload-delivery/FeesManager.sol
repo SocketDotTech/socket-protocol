@@ -4,11 +4,11 @@ pragma solidity ^0.8.21;
 import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 import "solady/utils/ECDSA.sol";
-import {IFeesPlug} from "../../interfaces/IFeesPlug.sol";
-import "../../interfaces/IFeesManager.sol";
-import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
-import {NotAuctionManager, InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
-import {Bid, CallType, Parallel, WriteFinality, QueuePayloadParams, IsPlug, PayloadSubmitParams, RequestMetadata, UserCredits} from "../utils/common/Structs.sol";
+import {IFeesPlug} from "../interfaces/IFeesPlug.sol";
+import "../interfaces/IFeesManager.sol";
+import {AddressResolverUtil} from "../AddressResolverUtil.sol";
+import {NotAuctionManager, InvalidWatcherSignature, NonceUsed} from "../../utils/common/Errors.sol";
+import {Bid, CallType, Parallel, WriteFinality, QueuePayloadParams, IsPlug, PayloadSubmitParams, RequestMetadata, UserCredits} from "../../utils/common/Structs.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
     // slots [0-49] reserved for gap

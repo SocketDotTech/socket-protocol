@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 
 import "solady/tokens/ERC20.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
-import "../../../../contracts/base/PlugBase.sol";
+import "../../../../contracts/socket/base/PlugBase.sol";
 
 /**
  * @title SuperToken

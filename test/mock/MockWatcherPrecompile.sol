@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../../contracts/interfaces/IAppGateway.sol";
-import "../../contracts/interfaces/IWatcherPrecompile.sol";
-import "../../contracts/interfaces/IPromise.sol";
+import "../../contracts/evmx/interfaces/IAppGateway.sol";
+import "../../contracts/evmx/interfaces/IWatcherPrecompile.sol";
+import "../../contracts/evmx/interfaces/IPromise.sol";
 
 import {TimeoutRequest, TriggerParams, PlugConfig, ResolvedPromises, AppGatewayConfig} from "../../contracts/utils/common/Structs.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/utils/common/Constants.sol";

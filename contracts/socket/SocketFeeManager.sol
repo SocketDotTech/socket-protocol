@@ -4,7 +4,7 @@ pragma solidity ^0.8.21;
 import "../utils/AccessControl.sol";
 import {GOVERNANCE_ROLE, RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
 import {ExecuteParams, TransmissionParams} from "../utils/common/Structs.sol";
-import "../interfaces/ISocketFeeManager.sol";
+import "./interfaces/ISocketFeeManager.sol";
 import "../utils/RescueFundsLib.sol";
 
 /**

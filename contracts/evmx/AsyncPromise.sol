@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {AddressResolverUtil} from "./utils/AddressResolverUtil.sol";
-import {IPromise} from "../interfaces/IPromise.sol";
-import {IAppGateway} from "../interfaces/IAppGateway.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
-import {AsyncPromiseState} from "./utils/common/Structs.sol";
-import {MAX_COPY_BYTES} from "./utils/common/Constants.sol";
 import {LibCall} from "solady/utils/LibCall.sol";
+import {IPromise} from "./interfaces/IPromise.sol";
+import {IAppGateway} from "./interfaces/IAppGateway.sol";
+import {AddressResolverUtil} from "./AddressResolverUtil.sol";
+import {AsyncPromiseState} from "../utils/common/Structs.sol";
+import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
 
 abstract contract AsyncPromiseStorage is IPromise {
     // slots [0-49] reserved for gap

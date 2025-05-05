@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 
 import "solady/utils/Initializable.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
-import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
+import {AddressResolverUtil} from "../../AddressResolverUtil.sol";
 import "./DeliveryHelperStorage.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads

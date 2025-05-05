@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../../interfaces/IAddressResolver.sol";
-import "../../interfaces/IMiddleware.sol";
-import "../../interfaces/IWatcherPrecompile.sol";
-import "../../interfaces/IWatcherPrecompileConfig.sol";
-import "../../interfaces/IWatcherPrecompileLimits.sol";
-import "../../interfaces/IFeesManager.sol";
+import "./interfaces/IAddressResolver.sol";
+import "./interfaces/IMiddleware.sol";
+import "./interfaces/IWatcherPrecompile.sol";
+import "./interfaces/IWatcherPrecompileConfig.sol";
+import "./interfaces/IWatcherPrecompileLimits.sol";
+import "./interfaces/IFeesManager.sol";
 
 /// @title AddressResolverUtil
 /// @notice Utility contract for resolving system contract addresses

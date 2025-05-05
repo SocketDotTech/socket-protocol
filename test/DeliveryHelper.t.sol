@@ -6,7 +6,7 @@ import "../contracts/evmx/payload-delivery/FeesManager.sol";
 import "../contracts/evmx/payload-delivery/AuctionManager.sol";
 
 import "../contracts/evmx/Forwarder.sol";
-import "../contracts/interfaces/IAppGateway.sol";
+import "../contracts/evmx/interfaces/IAppGateway.sol";
 
 import "./SetupTest.t.sol";
 

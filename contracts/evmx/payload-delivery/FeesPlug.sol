@@ -3,13 +3,13 @@ pragma solidity ^0.8.21;
 
 import "solady/utils/SafeTransferLib.sol";
 import "solady/tokens/ERC20.sol";
-import "../../base/PlugBase.sol";
-import "../../../utils/AccessControl.sol";
-import {RESCUE_ROLE} from "../../../utils/common/AccessRoles.sol";
-import {IFeesPlug} from "../../interfaces/IFeesPlug.sol";
-import "../../../utils/RescueFundsLib.sol";
-import {ETH_ADDRESS} from "../../../utils/common/Constants.sol";
-import {InvalidTokenAddress, FeesAlreadyPaid} from "../../../utils/common/Errors.sol";
+import "../../socket/base/PlugBase.sol";
+import "../../utils/AccessControl.sol";
+import {RESCUE_ROLE} from "../../utils/common/AccessRoles.sol";
+import {IFeesPlug} from "../interfaces/IFeesPlug.sol";
+import "../../utils/RescueFundsLib.sol";
+import {ETH_ADDRESS} from "../../utils/common/Constants.sol";
+import {InvalidTokenAddress, FeesAlreadyPaid} from "../../utils/common/Errors.sol";
 
 /// @title FeesManager
 /// @notice Contract for managing fees on a network
