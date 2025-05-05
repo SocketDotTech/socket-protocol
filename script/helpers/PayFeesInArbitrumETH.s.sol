@@ -3,8 +3,8 @@ pragma solidity ^0.8.21;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {FeesPlug} from "../../contracts/protocol/payload-delivery/FeesPlug.sol";
-import {ETH_ADDRESS} from "../../contracts/protocol/utils/common/Constants.sol";
+import {FeesPlug} from "../../contracts/evmx/payload-delivery/FeesPlug.sol";
+import {ETH_ADDRESS} from "../../contracts/utils/common/Constants.sol";
 
 // source .env && forge script script/helpers/PayFeesInArbitrumETH.s.sol --broadcast --skip-simulation
 contract DepositFees is Script {
