@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 import "solady/auth/Ownable.sol";
-import "../../../../contracts/socket/base/PlugBase.sol";
+import "../../../../contracts/protocol/base/PlugBase.sol";
 
 interface ICounterAppGateway {
     function increase(uint256 value_) external returns (bytes32);

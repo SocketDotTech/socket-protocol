@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {CounterAppGateway} from "./apps/app-gateways/counter/CounterAppGateway.sol";
 import {Counter} from "./apps/app-gateways/counter/Counter.sol";
 import "./SetupTest.t.sol";
-import {SocketFeeManager} from "../contracts/socket/SocketFeeManager.sol";
+import {SocketFeeManager} from "../contracts/protocol/SocketFeeManager.sol";
 import {MockFastSwitchboard} from "./mock/MockFastSwitchboard.sol";
 import {ExecuteParams, TransmissionParams, CallType} from "../contracts/utils/common/Structs.sol";
 import {GOVERNANCE_ROLE, RESCUE_ROLE} from "../contracts/utils/common/AccessRoles.sol";

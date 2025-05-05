@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 
 import "solady/utils/SafeTransferLib.sol";
 import "solady/tokens/ERC20.sol";
-import "../../socket/base/PlugBase.sol";
+import "../../protocol/base/PlugBase.sol";
 import "../../utils/AccessControl.sol";
 import {RESCUE_ROLE} from "../../utils/common/AccessRoles.sol";
 import {IFeesPlug} from "../interfaces/IFeesPlug.sol";
@@ -125,6 +125,7 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
     ) external onlyOwner {
         _connectSocket(appGatewayId_, socket_, switchboard_);
     }
+
     /**
      * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
      * theoretically need this function but it is added for safety.

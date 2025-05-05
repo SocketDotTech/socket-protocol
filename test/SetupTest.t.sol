@@ -11,13 +11,13 @@ import "../contracts/evmx/watcherPrecompile/WatcherPrecompileLimits.sol";
 import "../contracts/evmx/watcherPrecompile/PayloadHeaderDecoder.sol";
 import "../contracts/evmx/interfaces/IForwarder.sol";
 import "../contracts/utils/common/AccessRoles.sol";
-import {Socket} from "../contracts/socket/Socket.sol";
-import "../contracts/socket/switchboard/FastSwitchboard.sol";
-import "../contracts/socket/SocketBatcher.sol";
+import {Socket} from "../contracts/protocol/Socket.sol";
+import "../contracts/protocol/switchboard/FastSwitchboard.sol";
+import "../contracts/protocol/SocketBatcher.sol";
 import "../contracts/evmx/AddressResolver.sol";
 import {ContractFactoryPlug} from "../contracts/evmx/payload-delivery/ContractFactoryPlug.sol";
 import {FeesPlug} from "../contracts/evmx/payload-delivery/FeesPlug.sol";
-import {SocketFeeManager} from "../contracts/socket/SocketFeeManager.sol";
+import {SocketFeeManager} from "../contracts/protocol/SocketFeeManager.sol";
 import {ETH_ADDRESS} from "../contracts/utils/common/Constants.sol";
 import {ResolvedPromises, OnChainFees} from "../contracts/utils/common/Structs.sol";
 

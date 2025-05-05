@@ -8,7 +8,7 @@ import "../../utils/RescueFundsLib.sol";
 import {NotSocket} from "../../utils/common/Errors.sol";
 import {MAX_COPY_BYTES} from "../../utils/common/Constants.sol";
 import "../interfaces/IContractFactoryPlug.sol";
-import "../../socket/base/PlugBase.sol";
+import "../../protocol/base/PlugBase.sol";
 
 /// @title ContractFactory
 /// @notice Abstract contract for deploying contracts
