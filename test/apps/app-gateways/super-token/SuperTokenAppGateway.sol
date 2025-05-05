@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 import "solady/auth/Ownable.sol";
-import "../../../../contracts/base/AppGatewayBase.sol";
+import "../../../../contracts/evmx/base/AppGatewayBase.sol";
 import "./ISuperToken.sol";
 import "./SuperToken.sol";
 

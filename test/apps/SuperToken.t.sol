@@ -4,7 +4,7 @@ pragma solidity ^0.8.21;
 import {SuperTokenAppGateway} from "./app-gateways/super-token/SuperTokenAppGateway.sol";
 import {SuperToken} from "./app-gateways/super-token/SuperToken.sol";
 import "../DeliveryHelper.t.sol";
-import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/protocol/utils/common/Constants.sol";
+import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/utils/common/Constants.sol";
 
 /**
  * @title SuperToken Test
