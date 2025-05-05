@@ -5,7 +5,7 @@ import "solady/auth/Ownable.sol";
 import "../../interfaces/ISocket.sol";
 import "../../interfaces/ISwitchboard.sol";
 import "../utils/RescueFundsLib.sol";
-import {ExecuteParams, TransmissionParams} from "../../protocol/utils/common/Structs.sol";
+import {ExecuteParams, TransmissionParams} from "../utils/common/Structs.sol";
 import "../../interfaces/ISocketBatcher.sol";
 
 /**
