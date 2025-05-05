@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../contracts/protocol/payload-delivery/app-gateway/DeliveryHelper.sol";
-import "../contracts/protocol/payload-delivery/FeesManager.sol";
-import "../contracts/protocol/payload-delivery/AuctionManager.sol";
+import "../contracts/evmx/payload-delivery/app-gateway/DeliveryHelper.sol";
+import "../contracts/evmx/payload-delivery/FeesManager.sol";
+import "../contracts/evmx/payload-delivery/AuctionManager.sol";
 
-import "../contracts/protocol/Forwarder.sol";
-import "../contracts/interfaces/IAppGateway.sol";
+import "../contracts/evmx/Forwarder.sol";
+import "../contracts/evmx/interfaces/IAppGateway.sol";
 
 import "./SetupTest.t.sol";
 

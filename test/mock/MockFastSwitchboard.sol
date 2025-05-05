@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../../contracts/interfaces/ISwitchboard.sol";
-import "../../contracts/interfaces/ISocket.sol";
+import "../../contracts/protocol/interfaces/ISwitchboard.sol";
+import "../../contracts/protocol/interfaces/ISocket.sol";
+
 contract MockFastSwitchboard is ISwitchboard {
     address public owner;
     ISocket public immutable socket__;

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../../../../contracts/base/AppGatewayBase.sol";
-import "../../../../contracts/interfaces/IForwarder.sol";
-import "../../../../contracts/interfaces/IPromise.sol";
+import "../../../../contracts/evmx/base/AppGatewayBase.sol";
+import "../../../../contracts/evmx/interfaces/IForwarder.sol";
+import "../../../../contracts/evmx/interfaces/IPromise.sol";
 import "./Counter.sol";
 import "./ICounter.sol";
 
