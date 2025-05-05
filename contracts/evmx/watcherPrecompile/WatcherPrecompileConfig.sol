@@ -5,8 +5,8 @@ import "solady/utils/Initializable.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
 import "../../interfaces/IWatcherPrecompileConfig.sol";
-import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
-import {InvalidWatcherSignature, NonceUsed} from "../utils/common/Errors.sol";
+import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
+import {InvalidWatcherSignature, NonceUsed} from "../../../utils/common/Errors.sol";
 import "./core/WatcherIdUtils.sol";
 
 /// @title WatcherPrecompileConfig

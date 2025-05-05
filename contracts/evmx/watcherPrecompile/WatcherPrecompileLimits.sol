@@ -3,10 +3,10 @@ pragma solidity ^0.8.21;
 
 import "solady/utils/Initializable.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
-import {Gauge} from "../utils/Gauge.sol";
-import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
+import {Gauge} from "../../../utils/Gauge.sol";
+import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
 import "../../interfaces/IWatcherPrecompileLimits.sol";
-import {SCHEDULE, QUERY, FINALIZE, CALLBACK} from "../utils/common/Constants.sol";
+import {SCHEDULE, QUERY, FINALIZE, CALLBACK} from "../../../utils/common/Constants.sol";
 
 /// @title WatcherPrecompileLimits
 /// @notice Contract for managing watcher precompile limits

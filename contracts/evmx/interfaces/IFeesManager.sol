@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {Bid, QueuePayloadParams, PayloadSubmitParams, AppGatewayWhitelistParams} from "../protocol/utils/common/Structs.sol";
+import {Bid, QueuePayloadParams, PayloadSubmitParams, AppGatewayWhitelistParams} from "../utils/common/Structs.sol";
 
 interface IFeesManager {
     function blockCredits(

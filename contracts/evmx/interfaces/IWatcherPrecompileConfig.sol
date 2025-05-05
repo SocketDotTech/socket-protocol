@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {AppGatewayConfig, PlugConfig} from "../protocol/utils/common/Structs.sol";
+import {AppGatewayConfig, PlugConfig} from "../utils/common/Structs.sol";
 
 /// @title IWatcherPrecompileConfig
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
@@ -59,4 +59,17 @@ interface IWatcherPrecompileConfig {
         uint256 signatureNonce_,
         bytes calldata signature_
     ) external;
+
+    /// @notice Maps contract to their associated gateway
+    function contractsToGateways(address contract_) external view returns (address);
+
+    /// @notice Sets the gateway for a contract
+    /// @param contract_ The address of the contract
+    /// @param gateway_ The address of the gateway
+    function setGateway(address contract_, address gateway_) external;
+
+    /// @notice Gets the gateway for a contract
+    /// @param contract_ The address of the contract
+    /// @return The address of the gateway
+    function getGateway(address contract_) external view returns (address);
 }

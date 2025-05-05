@@ -6,7 +6,7 @@ import {ECDSA} from "solady/utils/ECDSA.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
 
 import "solady/utils/Initializable.sol";
-import {AddressResolverUtil} from "../../utils/AddressResolverUtil.sol";
+import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 import "./WatcherIdUtils.sol";
 

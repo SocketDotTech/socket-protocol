@@ -2,9 +2,9 @@
 pragma solidity ^0.8.21;
 
 import "forge-std/Script.sol";
-import {WatcherPrecompile} from "../../contracts/protocol/watcherPrecompile/core/WatcherPrecompile.sol";
-import {UpdateLimitParams} from "../../contracts/protocol/utils/common/Structs.sol";
-import {SCHEDULE, QUERY, FINALIZE} from "../../contracts/protocol/utils/common/Constants.sol";
+import {WatcherPrecompile} from "../../contracts/evmx/watcherPrecompile/core/WatcherPrecompile.sol";
+import {UpdateLimitParams} from "../../contracts/utils/common/Structs.sol";
+import {SCHEDULE, QUERY, FINALIZE} from "../../contracts/utils/common/Constants.sol";
 
 contract UpdateLimitsScript is Script {
     function run() external {

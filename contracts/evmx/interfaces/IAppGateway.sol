@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {Read, Parallel, QueuePayloadParams, OverrideParams, CallType, WriteFinality, PayloadParams} from "../protocol/utils/common/Structs.sol";
+import {Read, Parallel, QueuePayloadParams, OverrideParams, CallType, WriteFinality, PayloadParams} from "../utils/common/Structs.sol";
 
 /// @title IAppGateway
 /// @notice Interface for the app gateway

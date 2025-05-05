@@ -3,13 +3,13 @@ pragma solidity ^0.8.21;
 
 import {ECDSA} from "solady/utils/ECDSA.sol";
 import "solady/utils/Initializable.sol";
-import "../utils/AccessControl.sol";
+import "../../../utils/AccessControl.sol";
 import "../../interfaces/IAuctionManager.sol";
 import {IMiddleware} from "../../interfaces/IMiddleware.sol";
 import {IFeesManager} from "../../interfaces/IFeesManager.sol";
-import {AddressResolverUtil} from "../utils/AddressResolverUtil.sol";
-import {AuctionClosed, AuctionAlreadyStarted, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter} from "../utils/common/Errors.sol";
-import {TRANSMITTER_ROLE} from "../utils/common/AccessRoles.sol";
+import {AddressResolverUtil} from "../../../utils/AddressResolverUtil.sol";
+import {AuctionClosed, AuctionAlreadyStarted, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter} from "../../utils/common/Errors.sol";
+import {TRANSMITTER_ROLE} from "../../utils/common/AccessRoles.sol";
 
 /// @title AuctionManagerStorage
 /// @notice Storage for the AuctionManager contract

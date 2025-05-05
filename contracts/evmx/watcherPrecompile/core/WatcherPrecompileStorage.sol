@@ -7,9 +7,9 @@ import {IPromise} from "../../../interfaces/IPromise.sol";
 import "../PayloadHeaderDecoder.sol";
 
 import {IMiddleware} from "../../../interfaces/IMiddleware.sol";
-import {QUERY, FINALIZE, SCHEDULE, MAX_COPY_BYTES} from "../../utils/common/Constants.sol";
-import {InvalidCallerTriggered, TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed, RequestAlreadyExecuted} from "../../utils/common/Errors.sol";
-import {ResolvedPromises, AppGatewayConfig, LimitParams, WriteFinality, UpdateLimitParams, PlugConfig, DigestParams, TimeoutRequest, QueuePayloadParams, PayloadParams, RequestParams} from "../../utils/common/Structs.sol";
+import {QUERY, FINALIZE, SCHEDULE, MAX_COPY_BYTES} from "../../../utils/common/Constants.sol";
+import {InvalidCallerTriggered, TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed, RequestAlreadyExecuted} from "../../../utils/common/Errors.sol";
+import {ResolvedPromises, AppGatewayConfig, LimitParams, WriteFinality, UpdateLimitParams, PlugConfig, DigestParams, TimeoutRequest, QueuePayloadParams, PayloadParams, RequestParams, RequestMetadata} from "../../../utils/common/Structs.sol";
 
 /// @title WatcherPrecompileStorage
 /// @notice Storage contract for the WatcherPrecompile system

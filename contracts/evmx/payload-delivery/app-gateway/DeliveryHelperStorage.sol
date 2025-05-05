@@ -8,8 +8,8 @@ import {IAppGateway} from "../../../interfaces/IAppGateway.sol";
 import {IAuctionManager} from "../../../interfaces/IAuctionManager.sol";
 import {IFeesManager} from "../../../interfaces/IFeesManager.sol";
 
-import {NotAuctionManager, InvalidTransmitter, InvalidIndex} from "../../utils/common/Errors.sol";
-import {DEPLOY, PAYLOAD_SIZE_LIMIT, REQUEST_PAYLOAD_COUNT_LIMIT} from "../../utils/common/Constants.sol";
+import {NotAuctionManager, InvalidTransmitter, InvalidIndex} from "../../../utils/common/Errors.sol";
+import {DEPLOY, PAYLOAD_SIZE_LIMIT, REQUEST_PAYLOAD_COUNT_LIMIT} from "../../../utils/common/Constants.sol";
 
 /// @title DeliveryHelperStorage
 /// @notice Storage contract for DeliveryHelper

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {LimitParams, UpdateLimitParams} from "../protocol/utils/common/Structs.sol";
+import {LimitParams, UpdateLimitParams} from "../utils/common/Structs.sol";
 
 /// @title IWatcherPrecompileLimits
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution

@@ -5,9 +5,9 @@ import "../../contracts/interfaces/IAppGateway.sol";
 import "../../contracts/interfaces/IWatcherPrecompile.sol";
 import "../../contracts/interfaces/IPromise.sol";
 
-import {TimeoutRequest, TriggerParams, PlugConfig, ResolvedPromises, AppGatewayConfig} from "../../contracts/protocol/utils/common/Structs.sol";
-import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/protocol/utils/common/Constants.sol";
-import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../../contracts/protocol/utils/common/Errors.sol";
+import {TimeoutRequest, TriggerParams, PlugConfig, ResolvedPromises, AppGatewayConfig} from "../../contracts/utils/common/Structs.sol";
+import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/utils/common/Constants.sol";
+import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../../contracts/utils/common/Errors.sol";
 import "solady/utils/ERC1967Factory.sol";
 
 /// @title WatcherPrecompile
