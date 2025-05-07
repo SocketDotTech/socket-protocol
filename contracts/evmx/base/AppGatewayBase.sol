@@ -137,56 +137,6 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         _deploy(contractId_, chainSlug_, isPlug_, new bytes(0));
     }
 
-    /// @notice Deploys a contract
-    /// @param contractId_ The contract ID
-    /// @param chainSlug_ The chain slug
-    function _deploy(
-        bytes32 contractId_,
-        uint32 chainSlug_,
-        IsPlug isPlug_,
-        bytes memory initCallData_
-    ) internal {
-        if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
-
-        address asyncPromise = addressResolver__.deployAsyncPromiseContract(address(this));
-        IPromise(asyncPromise).then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
-
-        isValidPromise[asyncPromise] = true;
-        onCompleteData = abi.encode(chainSlug_, true);
-
-        QueuePayloadParams memory queuePayloadParams = QueuePayloadParams({
-            chainSlug: chainSlug_,
-            callType: CallType.DEPLOY,
-            isParallel: overrideParams.isParallelCall,
-            isPlug: isPlug_,
-            writeFinality: overrideParams.writeFinality,
-            asyncPromise: asyncPromise,
-            switchboard: watcherPrecompileConfig().switchboards(chainSlug_, sbType),
-            target: address(0),
-            appGateway: address(this),
-            gasLimit: overrideParams.gasLimit,
-            value: overrideParams.value,
-            readAt: overrideParams.readAt,
-            payload: creationCodeWithArgs[contractId_],
-            initCallData: initCallData_
-        });
-        IMiddleware(deliveryHelper__()).queue(queuePayloadParams);
-    }
-
-    /// @notice Sets the address for a deployed contract
-    /// @param data_ The data
-    /// @param returnData_ The return data
-    function setAddress(bytes memory data_, bytes memory returnData_) external onlyPromises {
-        (uint32 chainSlug, bytes32 contractId) = abi.decode(data_, (uint32, bytes32));
-        address forwarderContractAddress = addressResolver__.getOrDeployForwarderContract(
-            address(this),
-            abi.decode(returnData_, (address)),
-            chainSlug
-        );
-
-        forwarderAddresses[contractId][chainSlug] = forwarderContractAddress;
-    }
-
     /// @notice Gets the socket address
     /// @param chainSlug_ The chain slug
     /// @return socketAddress_ The socket address

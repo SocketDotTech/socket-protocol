@@ -4,13 +4,10 @@ pragma solidity ^0.8.21;
 import {ECDSA} from "solady/utils/ECDSA.sol";
 import "solady/utils/Initializable.sol";
 import "../interfaces/IAuctionManager.sol";
-import {IMiddleware} from "../interfaces/IMiddleware.sol";
-import {IFeesManager} from "../interfaces/IFeesManager.sol";
 import "../../utils/AccessControl.sol";
-import {AddressResolverUtil} from "../AddressResolverUtil.sol";
 import {AuctionClosed, AuctionAlreadyStarted, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter} from "../../utils/common/Errors.sol";
 import {TRANSMITTER_ROLE} from "../../utils/common/AccessRoles.sol";
-
+import {AppGatewayBase} from "../base/AppGatewayBase.sol";
 /// @title AuctionManagerStorage
 /// @notice Storage for the AuctionManager contract
 abstract contract AuctionManagerStorage is IAuctionManager {
@@ -52,7 +49,7 @@ contract AuctionManager is
     AuctionManagerStorage,
     Initializable,
     AccessControl,
-    AddressResolverUtil
+    AppGatewayBase
 {
     event AuctionRestarted(uint40 requestCount);
     event AuctionStarted(uint40 requestCount);
