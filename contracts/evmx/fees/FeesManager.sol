@@ -4,7 +4,6 @@ pragma solidity ^0.8.21;
 import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 import "solady/utils/ECDSA.sol";
-import {IFeesPlug} from "../interfaces/IFeesPlug.sol";
 import "../interfaces/IFeesManager.sol";
 import {AddressResolverUtil} from "../AddressResolverUtil.sol";
 import {NotAuctionManager, InvalidWatcherSignature, NonceUsed} from "../../utils/common/Errors.sol";
@@ -14,41 +13,29 @@ abstract contract FeesManagerStorage is IFeesManager {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
-    // slot 50
-    uint256 public feesCounter;
-
-    // slot 51
-    uint32 public evmxSlug;
-
-    // slot 52
-    bytes32 public sbType;
-
-    // user credits
-    mapping(address => UserCredits) public userCredits;
-
-    // user nonce
-    mapping(address => uint256) public userNonce;
+    //===== user =====
+    // user credits => stores fees for user, app gateway, transmitters and watcher precompile
+    mapping(address => UserCredits) public userFees;
+    // user approved app gateways
+    // userAddress => appGateway => isWhitelisted
+    mapping(address => mapping(address => bool)) public isAppGatewayWhitelisted;
 
     // token pool balances
     //  chainSlug => token address  => amount
     mapping(uint32 => mapping(address => uint256)) public tokenPoolBalances;
-
-    // user approved app gateways
-    // userAddress => appGateway => isWhitelisted
-    mapping(address => mapping(address => bool)) public isAppGatewayWhitelisted;
 
     // slot 54
     /// @notice Mapping to track request credits details for each request count
     /// @dev requestCount => RequestFee
     mapping(uint40 => uint256) public requestCountCredits;
 
-    // @dev amount
-    uint256 public watcherPrecompileCredits;
-
     // slot 56
     /// @notice Mapping to track nonce to whether it has been used
-    /// @dev signatureNonce => isNonceUsed
-    mapping(uint256 => bool) public isNonceUsed;
+    /// @dev address => signatureNonce => isNonceUsed
+    /// @dev used by watchers or other users in signatures
+    mapping(address => mapping(uint256 => bool)) public isNonceUsed;
+
+    uint256 public withdrawCounter;
 
     // slots [57-106] reserved for gap
     uint256[50] _gap_after;
@@ -114,22 +101,6 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
 
     /// @notice Emitted when credits are unwrapped
     event CreditsUnwrapped(address indexed consumeFrom, uint256 amount);
-
-    /// @notice Error thrown when insufficient fees are available
-    error InsufficientCreditsAvailable();
-    /// @notice Error thrown when no fees are available for a transmitter
-    error NoFeesForTransmitter();
-    /// @notice Error thrown when no fees was blocked
-    error NoCreditsBlocked();
-    /// @notice Error thrown when caller is invalid
-    error InvalidCaller();
-    /// @notice Error thrown when user signature is invalid
-    error InvalidUserSignature();
-    /// @notice Error thrown when app gateway is not whitelisted
-    error AppGatewayNotWhitelisted();
-
-    error InvalidAmount();
-    error InsufficientBalance();
 
     constructor() {
         _disableInitializers(); // disable for implementation
