@@ -82,9 +82,8 @@ struct UpdateLimitParams {
 }
 
 struct AppGatewayConfig {
+    PlugConfig plugConfig;
     address plug;
-    bytes32 appGatewayId;
-    address switchboard;
     uint32 chainSlug;
 }
 // Plug config:

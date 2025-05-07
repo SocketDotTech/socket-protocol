@@ -2,8 +2,6 @@
 pragma solidity ^0.8.21;
 
 import {DigestParams, ResolvedPromises, PayloadParams, TriggerParams, PayloadSubmitParams, RequestParams} from "../../utils/common/Structs.sol";
-import {IWatcherPrecompileLimits} from "./IWatcherPrecompileLimits.sol";
-import {IWatcherPrecompileConfig} from "./IWatcherPrecompileConfig.sol";
 
 /// @title IWatcherPrecompile
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution

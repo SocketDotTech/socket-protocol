@@ -3,27 +3,27 @@ pragma solidity ^0.8.21;
 
 import {AppGatewayConfig, PlugConfig} from "../../utils/common/Structs.sol";
 
-/// @title IWatcherPrecompileConfig
+/// @title IConfigurations
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
 /// @dev Defines core functionality for payload processing and promise resolution
-interface IWatcherPrecompileConfig {
+interface IConfigurations {
+    struct SocketConfig {
+        address socket;
+        address contractFactoryPlug;
+        address feesPlug;
+    }
+
     /// @notice The chain slug of the watcher precompile
     function evmxSlug() external view returns (uint32);
 
-    /// @notice Maps chain slug to their associated switchboard
-    function switchboards(uint32 chainSlug, bytes32 sbType) external view returns (address);
-
     /// @notice Maps chain slug to their associated socket
-    function sockets(uint32 chainSlug) external view returns (address);
-
-    /// @notice Maps chain slug to their associated contract factory plug
-    function contractFactoryPlug(uint32 chainSlug) external view returns (address);
-
-    /// @notice Maps chain slug to their associated fees plug
-    function feesPlug(uint32 chainSlug) external view returns (address);
+    function socketConfigs(uint32 chainSlug) external view returns (SocketConfig memory);
 
     /// @notice Maps nonce to whether it has been used
     function isNonceUsed(uint256 nonce) external view returns (bool);
+
+    /// @notice Maps contract address to their associated app gateway
+    function coreAppGateways(address contractAddress) external view returns (address);
 
     /// @notice Maps app gateway, chain slug and plug to validity
     function isValidPlug(
@@ -54,9 +54,12 @@ interface IWatcherPrecompileConfig {
         address middleware_
     ) external view;
 
-    function setAppGateways(
+    function setPlugConfigs(
         AppGatewayConfig[] calldata configs_,
         uint256 signatureNonce_,
         bytes calldata signature_
     ) external;
+
+    // core app gateway is msg sender
+    function setCoreAppGateway(address appGateway_) external;
 }

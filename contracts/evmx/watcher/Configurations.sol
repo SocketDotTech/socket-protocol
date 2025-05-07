@@ -4,20 +4,15 @@ pragma solidity ^0.8.21;
 import "solady/utils/Initializable.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
-import "../interfaces/IWatcherPrecompileConfig.sol";
+import "../interfaces/IConfigurations.sol";
 import {AddressResolverUtil} from "../AddressResolverUtil.sol";
 import {InvalidWatcherSignature, NonceUsed} from "../../utils/common/Errors.sol";
 import "./core/WatcherIdUtils.sol";
 
-/// @title WatcherPrecompileConfig
+/// @title Configurations
 /// @notice Configuration contract for the Watcher Precompile system
 /// @dev Handles the mapping between networks, plugs, and app gateways for payload execution
-contract WatcherPrecompileConfig is
-    IWatcherPrecompileConfig,
-    Initializable,
-    Ownable,
-    AddressResolverUtil
-{
+contract Configurations is IConfigurations, Initializable, Ownable, AddressResolverUtil {
     // slots 0-50 (51) reserved for addr resolver util
 
     // slots [51-100]: gap for future storage variables
@@ -40,25 +35,21 @@ contract WatcherPrecompileConfig is
     // slot 104: sockets
     /// @notice Maps chain slug to their associated socket
     /// @dev chainSlug => socket address
-    mapping(uint32 => address) public sockets;
+    mapping(uint32 => SocketConfig) public socketConfigs;
 
-    // slot 105: contractFactoryPlug
-    /// @notice Maps chain slug to their associated contract factory plug
-    /// @dev chainSlug => contract factory plug address
-    mapping(uint32 => address) public contractFactoryPlug;
+    // slot 107: contractsToGateways
+    /// @notice Maps contract address to their associated app gateway
+    /// @dev contractAddress => appGateway
+    mapping(address => address) public coreAppGateways;
 
-    // slot 106: feesPlug
-    /// @notice Maps chain slug to their associated fees plug
-    /// @dev chainSlug => fees plug address
-    mapping(uint32 => address) public feesPlug;
-
-    // slot 107: isNonceUsed
+    // slot 108: isNonceUsed
     /// @notice Maps nonce to whether it has been used
     /// @dev signatureNonce => isValid
     mapping(uint256 => bool) public isNonceUsed;
 
-    // slot 108: isValidPlug
-    // appGateway => chainSlug => plug => isValid
+    // slot 109: isValidPlug
+    /// @notice Maps app gateway, chain slug, and plug to whether it is valid
+    /// @dev appGateway => chainSlug => plug => isValid
     mapping(address => mapping(uint32 => mapping(address => bool))) public isValidPlug;
 
     /// @notice Emitted when a new plug is configured for an app gateway
