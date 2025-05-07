@@ -9,24 +9,15 @@ import "./interfaces/IAddressResolver.sol";
 import {Forwarder} from "./Forwarder.sol";
 import {AsyncPromise} from "./AsyncPromise.sol";
 
-abstract contract AddressResolverStorage is IAddressResolver {
+abstract contract AsyncDeployerStorage is IAddressResolver {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
     // slot 50
-    IWatcherPrecompile public override watcherPrecompile__;
-
-    // slot 51
     UpgradeableBeacon public forwarderBeacon;
 
     // slot 52
     UpgradeableBeacon public asyncPromiseBeacon;
-
-    // slot 53
-    address public override deliveryHelper;
-
-    // slot 54
-    address public override feesManager;
 
     // slot 55
     address public forwarderImplementation;
@@ -34,41 +25,17 @@ abstract contract AddressResolverStorage is IAddressResolver {
     // slot 56
     address public asyncPromiseImplementation;
 
-    // slot 57
-    address[] internal _promises;
-
     // slot 58
     uint256 public asyncPromiseCounter;
-
-    // slot 59
-    uint64 public version;
-    address public override defaultAuctionManager;
-
-    // slot 60
-    mapping(address => address) public override contractsToGateways;
 
     // slots [61-110] reserved for gap
     uint256[50] _gap_after;
 }
 
-/// @title AddressResolver Contract
-/// @notice This contract is responsible for fetching latest core addresses and deploying Forwarder and AsyncPromise contracts.
+/// @title AsyncDeployer Contract
+/// @notice This contract is responsible for deploying Forwarder and AsyncPromise contracts.
 /// @dev Inherits the Ownable contract and implements the IAddressResolver interface.
-contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
-    /// @notice Error thrown if AppGateway contract was already set by a different address
-    error InvalidAppGateway(address contractAddress_);
-
-    /// @notice Event emitted when the delivery helper is updated
-    event DeliveryHelperUpdated(address deliveryHelper_);
-    /// @notice Event emitted when the fees manager is updated
-    event FeesManagerUpdated(address feesManager_);
-    /// @notice Event emitted when the default auction manager is updated
-    event DefaultAuctionManagerUpdated(address defaultAuctionManager_);
-    /// @notice Event emitted when the watcher precompile is updated
-    event WatcherPrecompileUpdated(address watcherPrecompile_);
-    /// @notice Event emitted when the contracts to gateways mapping is updated
-    event ContractsToGatewaysUpdated(address contractAddress_, address appGateway_);
-
+contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable {
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -201,19 +168,6 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
         return _promises;
     }
 
-    /// @notice Sets the contract to gateway mapping
-    /// @param contractAddress_ The address of the contract
-    function setContractsToGateways(address contractAddress_) external {
-        if (
-            contractsToGateways[contractAddress_] != address(0) &&
-            contractsToGateways[contractAddress_] != msg.sender
-        ) {
-            revert InvalidAppGateway(contractAddress_);
-        }
-        contractsToGateways[contractAddress_] = msg.sender;
-        emit ContractsToGatewaysUpdated(contractAddress_, msg.sender);
-    }
-
     /// @notice Gets the predicted address of a Forwarder proxy contract
     /// @param chainContractAddress_ The address of the chain contract
     /// @param chainSlug_ The chain slug
@@ -260,33 +214,5 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
     function setAsyncPromiseImplementation(address implementation_) external onlyOwner {
         asyncPromiseBeacon.upgradeTo(implementation_);
         emit ImplementationUpdated("AsyncPromise", implementation_);
-    }
-
-    /// @notice Updates the address of the delivery helper
-    /// @param deliveryHelper_ The address of the delivery helper
-    function setDeliveryHelper(address deliveryHelper_) external onlyOwner {
-        deliveryHelper = deliveryHelper_;
-        emit DeliveryHelperUpdated(deliveryHelper_);
-    }
-
-    /// @notice Updates the address of the fees manager
-    /// @param feesManager_ The address of the fees manager
-    function setFeesManager(address feesManager_) external onlyOwner {
-        feesManager = feesManager_;
-        emit FeesManagerUpdated(feesManager_);
-    }
-
-    /// @notice Updates the address of the default auction manager
-    /// @param defaultAuctionManager_ The address of the default auction manager
-    function setDefaultAuctionManager(address defaultAuctionManager_) external onlyOwner {
-        defaultAuctionManager = defaultAuctionManager_;
-        emit DefaultAuctionManagerUpdated(defaultAuctionManager_);
-    }
-
-    /// @notice Updates the address of the watcher precompile contract
-    /// @param watcherPrecompile_ The address of the watcher precompile contract
-    function setWatcherPrecompile(address watcherPrecompile_) external onlyOwner {
-        watcherPrecompile__ = IWatcherPrecompile(watcherPrecompile_);
-        emit WatcherPrecompileUpdated(watcherPrecompile_);
     }
 }
