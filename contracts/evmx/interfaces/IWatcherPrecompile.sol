@@ -99,38 +99,17 @@ interface IWatcherPrecompile {
     error InvalidLevelNumber();
     error DeadlineNotPassedForOnChainRevert();
 
-    /// @notice Calculates the digest hash of payload parameters
-    /// @param params_ The payload parameters
-    /// @return digest The calculated digest
-    function getDigest(DigestParams memory params_) external pure returns (bytes32 digest);
+    function queue(QueuePayloadParams[] calldata queuePayloadParams_) external;
 
-    /// @notice Gets the batch IDs for a request
-    /// @param requestCount_ The request count
-    /// @return Array of batch IDs
-    function getBatches(uint40 requestCount_) external view returns (uint40[] memory);
+    /// @notice Clears the temporary queue used to store payloads for a request
+    function clearQueue() external;
 
-    /// @notice Gets the payload IDs for a batch
-    /// @param batchCount_ The batch count
-    /// @return Array of payload IDs
-    function getBatchPayloadIds(uint40 batchCount_) external view returns (bytes32[] memory);
+    function request() external returns (uint40 requestCount);
 
-    /// @notice Gets the payload parameters for a payload ID
-    /// @param payloadId_ The payload ID
-    /// @return The payload parameters
-    function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory);
-
-    function setTimeout(
-        uint256 delayInSeconds_,
-        bytes calldata payload_
-    ) external returns (bytes32);
-
-    function resolveTimeout(
-        bytes32 timeoutId_,
-        uint256 signatureNonce_,
-        bytes calldata signature_
-    ) external;
-
-    function query(PayloadParams memory params_) external;
+    /// @notice Increases the fees for a request
+    /// @param requestCount_ The request id
+    /// @param fees_ The new fees
+    function increaseFees(uint40 requestCount_, uint256 fees_) external;
 
     function finalized(
         bytes32 payloadId_,
@@ -156,29 +135,9 @@ interface IWatcherPrecompile {
         bytes calldata signature_
     ) external;
 
-    function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external;
-
-    function callAppGateways(
-        TriggerParams[] calldata params_,
-        uint256 signatureNonce_,
-        bytes calldata signature_
-    ) external;
-
     function setExpiryTime(uint256 expiryTime_) external;
 
-    function submitRequest(
-        PayloadSubmitParams[] calldata payloadSubmitParams
-    ) external returns (uint40 requestCount);
-
-    function startProcessingRequest(uint40 requestCount, address transmitter) external;
-
     function getCurrentRequestCount() external view returns (uint40);
-
-    function watcherPrecompileConfig__() external view returns (IWatcherPrecompileConfig);
-
-    function watcherPrecompileLimits__() external view returns (IWatcherPrecompileLimits);
-
-    function getRequestParams(uint40 requestCount) external view returns (RequestParams memory);
 
     function nextRequestCount() external view returns (uint40);
 }
