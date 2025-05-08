@@ -129,6 +129,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         // end the auction if the no auction end delay
         if (auctionEndDelaySeconds > 0) {
             _startAuction(requestCount_);
+            // queue and create request
             watcherPrecompile__().setTimeout(
                 auctionEndDelaySeconds,
                 abi.encodeWithSelector(this.endAuction.selector, requestCount_)
@@ -147,11 +148,8 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         if (requestMetadata.auctionManager != address(this)) revert InvalidBid();
 
         // get the total fees required for the watcher precompile ops
-        uint256 watcherFees = watcherPrecompileLimits().getTotalFeesRequired(
-            requestMetadata.queryCount,
-            requestMetadata.finalizeCount,
-            0,
-            0
+        uint256 watcherFees = watcherPrecompile().getMaxFees(
+            requestCount_
         );
         return requestMetadata.maxFees - watcherFees;
     }
@@ -170,25 +168,35 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
 
         auctionClosed[requestCount_] = true;
         RequestMetadata memory requestMetadata = _getRequestMetadata(requestCount_);
+        
         // block the fees
-        IFeesManager(addressResolver__.feesManager()).blockCredits(
-            requestMetadata.consumeFrom,
-            winningBid.fee,
-            requestCount_
-        );
+        // in startRequestProcessing, block the fees from bid
+        // IFeesManager(addressResolver__.feesManager()).blockCredits(
+        //     requestMetadata.consumeFrom,
+        //     winningBid.fee,
+        //     requestCount_
+        // );
 
         // set the timeout for the bid expiration
         // useful in case a transmitter did bid but did not execute payloads
-        watcherPrecompile__().setTimeout(
-            IMiddleware(addressResolver__.deliveryHelper()).bidTimeout(),
-            abi.encodeWithSelector(this.expireBid.selector, requestCount_)
-        );
+        // todo: queue and submit timeouts
+        // watcherPrecompile__().timeout(
+        //     address(this),
+        //     abi.encodeWithSelector(this.expireBid.selector, requestCount_)
+        // );
 
         // start the request processing, it will finalize the request
-        IMiddleware(addressResolver__.deliveryHelper()).startRequestProcessing(
-            requestCount_,
-            winningBid
-        );
+        if(requestMetadata.transmitter != address(0)) {
+            IWatcherPrecompile(addressResolver__.watcherPrecompile()).updateTransmitter(
+                requestCount_,
+                winningBid
+            );
+        } else 
+            IWatcherPrecompile(addressResolver__.watcherPrecompile()).startRequestProcessing(
+                requestCount_,
+                winningBid
+            );
+        }
 
         emit AuctionEnded(requestCount_, winningBid);
     }
@@ -207,7 +215,8 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         auctionClosed[requestCount_] = false;
         reAuctionCount[requestCount_]++;
 
-        IFeesManager(addressResolver__.feesManager()).unblockCredits(requestCount_);
+        // todo: unblock credits by calling watcher for updating transmitter to addr(0)
+        // IFeesManager(addressResolver__.feesManager()).unblockCredits(requestCount_);
         emit AuctionRestarted(requestCount_);
     }
 

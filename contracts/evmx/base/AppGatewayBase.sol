@@ -46,7 +46,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     function _postAsync() internal {
         isAsyncModifierSet = false;
 
-        deliveryHelper__().batch(maxFees, auctionManager, consumeFrom, onCompleteData);
+        watcher__().submitRequest(maxFees, auctionManager, consumeFrom, onCompleteData);
         _markValidPromises();
         onCompleteData = bytes("");
     }
@@ -54,7 +54,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     function _preAsync(bytes memory feesApprovalData_) internal {
         isAsyncModifierSet = true;
         _clearOverrides();
-        deliveryHelper__().clearQueue();
+        watcher__().clearQueue();
         addressResolver__.clearPromises();
 
         _handleFeesApproval(feesApprovalData_);

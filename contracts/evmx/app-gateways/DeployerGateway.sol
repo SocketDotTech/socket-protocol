@@ -12,7 +12,7 @@ contract DeployerGateway is AppGatewayBase {
     // slot 51
     /// @notice The counter for the salt used to generate/deploy the contract address
     uint256 public saltCounter;
-    
+
     /// @notice Emitted when a new deployment request is queued
     /// @param bytecode The contract bytecode to deploy
     /// @param salt The deployment salt
@@ -26,7 +26,8 @@ contract DeployerGateway is AppGatewayBase {
         bytes32 contractId_,
         uint32 chainSlug_,
         IsPlug isPlug_,
-        bytes memory initCallData_
+        bytes memory initCallData_,
+        bytes memory payload_
     ) external {
         if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
 
@@ -49,12 +50,12 @@ contract DeployerGateway is AppGatewayBase {
             gasLimit: overrideParams.gasLimit,
             value: overrideParams.value,
             readAt: overrideParams.readAt,
-            payload: creationCodeWithArgs[contractId_],
+            payload: payload_,
             initCallData: initCallData_
         });
 
         if (queuePayloadParams.payload.length > PAYLOAD_SIZE_LIMIT) revert PayloadTooLarge();
-        IMiddleware(deliveryHelper__()).queue(queuePayloadParams);
+        IWatcher(deliveryHelper__()).queue(queuePayloadParams);
     }
 
     /// @notice Sets the address for a deployed contract
@@ -68,7 +69,7 @@ contract DeployerGateway is AppGatewayBase {
             chainSlug
         );
 
-        forwarderAddresses[contractId][chainSlug] = forwarderContractAddress;
+        forwarderAddresses[appGateway][contractId][chainSlug] = forwarderContractAddress;
     }
 
     function _createDeployPayloadDetails(

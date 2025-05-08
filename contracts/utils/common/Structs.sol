@@ -5,7 +5,7 @@ pragma solidity ^0.8.21;
 enum CallType {
     READ,
     WRITE,
-    DEPLOY
+    SCHEDULE
 }
 
 enum IsPlug {
@@ -50,8 +50,7 @@ enum ExecutionStatus {
     Reverted
 }
 
-
-// not needed 
+// not needed
 /// @notice Creates a struct to hold batch parameters
 struct BatchParams {
     address appGateway;
@@ -161,7 +160,7 @@ struct DigestParams {
 }
 // App gateway base:
 struct OverrideParams {
-    Read isReadCall;
+    CallType callType;
     Parallel isParallelCall;
     WriteFinality writeFinality;
     uint256 gasLimit;
@@ -181,40 +180,39 @@ struct DeployParam {
     bytes initCallData;
 }
 
-struct QueuePayloadParams {
+struct QueueParams {
     OverrideParams overrideParams;
-    DeployParam deployParam;
     Transaction transaction;
     address asyncPromise;
     address switchboard;
-    address target;
-    address appGateway;
 }
 
 struct PayloadParams {
-    Transaction transaction;
-    OverrideParams overrideParams;
-    TimeoutRequest timeoutRequest;
     uint40 requestCount;
     uint40 batchCount;
     uint40 payloadCount;
     address asyncPromise;
-    address switchboard;
     address appGateway;
     bytes32 payloadId;
     bytes32 prevDigestsHash;
-    uint256 deadline;
-    address finalizedTransmitter;
+    uint256 resolvedAt;
+    bytes precompileData;
+
+    // uint256 deadline;
+    // address finalizedTransmitter;
+    // Transaction transaction;
+    // OverrideParams overrideParams;
+    // TimeoutRequest timeoutRequest;
+    // address switchboard;
 }
 // timeout:
 struct TimeoutRequest {
     uint256 delayInSeconds;
     uint256 executeAt;
-    uint256 executedAt;
     bool isResolved;
 }
 
-// request 
+// request
 struct RequestTrackingParams {
     bool isRequestCancelled;
     uint40 currentBatch;
@@ -224,9 +222,7 @@ struct RequestTrackingParams {
 
 struct RequestFeesDetails {
     uint256 maxFees;
-    uint256 queryCount;
-    uint256 finalizeCount;
-    uint256 scheduleCount;
+    uint256 watcherFees;
     address consumeFrom;
     Bid winningBid;
 }
@@ -234,10 +230,9 @@ struct RequestFeesDetails {
 struct RequestParams {
     RequestTrackingParams requestTrackingParams;
     RequestFeesDetails requestFeesDetails;
-    PayloadParams[] payloadParamsArray;
     address appGateway;
     address auctionManager;
-    bool onlyReadRequests;
+    uint256 finalizeCount;
+    bool isRequestExecuted;
     bytes onCompleteData;
 }
-

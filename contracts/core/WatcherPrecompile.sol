@@ -232,61 +232,6 @@ contract WatcherPrecompile is RequestHandler {
         emit MarkedRevert(payloadId_, isRevertingOnchain_);
     }
 
-    // ================== On-Chain Inbox ==================
-
-    /// @notice Calls app gateways with the specified parameters
-    /// @param params_ Array of call from chain parameters
-    /// @param signatureNonce_ The nonce of the signature
-    /// @param signature_ The signature of the watcher
-    /// @dev This function calls app gateways with the specified parameters
-    /// @dev It verifies that the signature is valid and that the app gateway hasn't been called yet
-    function callAppGateways(
-        TriggerParams[] memory params_,
-        uint256 signatureNonce_,
-        bytes memory signature_
-    ) external {
-        _isWatcherSignatureValid(
-            abi.encode(this.callAppGateways.selector, params_),
-            signatureNonce_,
-            signature_
-        );
-
-        for (uint256 i = 0; i < params_.length; i++) {
-            if (appGatewayCalled[params_[i].triggerId]) revert AppGatewayAlreadyCalled();
-
-            address appGateway = WatcherIdUtils.decodeAppGatewayId(params_[i].appGatewayId);
-            if (
-                !watcherPrecompileConfig__.isValidPlug(
-                    appGateway,
-                    params_[i].chainSlug,
-                    params_[i].plug
-                )
-            ) revert InvalidCallerTriggered();
-
-            IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileCreditsFromAddress(
-                watcherPrecompileLimits__.callBackFees(),
-                appGateway
-            );
-
-            appGatewayCaller = appGateway;
-            appGatewayCalled[params_[i].triggerId] = true;
-
-            (bool success, , ) = appGateway.tryCall(
-                0,
-                gasleft(),
-                0, // setting max_copy_bytes to 0 as not using returnData right now
-                params_[i].payload
-            );
-            if (!success) {
-                emit AppGatewayCallFailed(params_[i].triggerId);
-            } else {
-                emit CalledAppGateway(params_[i].triggerId);
-            }
-        }
-
-        appGatewayCaller = address(0);
-    }
-
     // ================== Helper functions ==================
 
     /// @notice Sets the maximum timeout delay in seconds

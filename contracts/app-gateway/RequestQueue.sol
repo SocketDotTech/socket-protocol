@@ -69,7 +69,6 @@ abstract contract RequestQueue is DeliveryUtils {
         params.finalizeCount = finalizeCount;
 
         _checkBatch(consumeFrom_, params.appGateway, params.maxFees);
-
         return _submitBatchRequest(payloadSubmitParamsArray, consumeFrom_, params);
     }
 
@@ -209,7 +208,6 @@ abstract contract RequestQueue is DeliveryUtils {
             (payload, target) = _createDeployPayloadDetails(queuePayloadParams_);
         }
 
-        if (payload.length > PAYLOAD_SIZE_LIMIT) revert PayloadTooLarge();
         if (queuePayloadParams_.value > chainMaxMsgValueLimit[queuePayloadParams_.chainSlug])
             revert MaxMsgValueLimitExceeded();
 

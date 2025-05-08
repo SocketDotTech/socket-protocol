@@ -45,9 +45,23 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     /// @notice stores temporary address of the app gateway caller from a chain
     address public appGatewayCaller;
 
+
+    // slot 52
+    /// @notice The parameters array used to store payloads for a request
+    QueuePayloadParams[] public queuePayloadParams;
+
+    // slot 53
+    /// @notice The metadata for a request
+    mapping(uint40 => RequestMetadata) public requests;
+
     // slot 54
     /// @notice The prefix for timeout IDs
     uint256 public timeoutIdPrefix;
+
+    // slot 54
+    /// @notice The maximum message value limit for a chain
+    mapping(uint32 => uint256) public chainMaxMsgValueLimit;
+
 
     // slot 55
     /// @notice Maps nonce to whether it has been used

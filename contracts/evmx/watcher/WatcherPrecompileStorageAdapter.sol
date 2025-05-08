@@ -38,7 +38,6 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     /// @dev Maximum timeout delay in seconds
     uint256 public maxTimeoutDelayInSeconds;
 
-
     // slot 54
     /// @notice The maximum message value limit for a chain
     mapping(uint32 => uint256) public chainMaxMsgValueLimit;
@@ -62,7 +61,7 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     // slot 60
     /// @notice Mapping to store the batch IDs for each request
     mapping(uint40 => uint40[]) public requestBatchIds;
-    
+
     // slot 61
     // queue => update to payloadParams, assign id, store in payloadParams map
     /// @notice Mapping to store the payload parameters for each payload ID
@@ -71,5 +70,12 @@ abstract contract WatcherPrecompileStorage is IWatcherPrecompile {
     // slot 53
     /// @notice The metadata for a request
     mapping(uint40 => RequestParams) public requests;
+}
 
+contract WatcherPrecompileStorageAdapter is WatcherPrecompileStorage {
+
+    // all function from watcher requiring signature
+    function watcherUpdater(address[] callData contracts, bytes[] callData data_, uint256[] calldata nonces_, bytes[] callData signatures_) {
+
+    }
 }

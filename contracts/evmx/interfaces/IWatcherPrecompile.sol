@@ -99,12 +99,73 @@ interface IWatcherPrecompile {
     error InvalidLevelNumber();
     error DeadlineNotPassedForOnChainRevert();
 
-    function queue(QueuePayloadParams[] calldata queuePayloadParams_) external;
+    QueueParams[] queuePayloadParams;
 
+    function queueSubmitStart(QueueParams calldata queuePayloadParams_) external;
+
+    // queue:
+    function queue(QueueParams calldata queuePayloadParams_) external;
+    // push in queue
+
+    // validateAndGetPrecompileData:
+    // finalize: verifyConnection, max msg gas limit is under limit, 
+    // timeout: max delay 
+    // query: 
+    // return encoded data and fees
+    
     /// @notice Clears the temporary queue used to store payloads for a request
-    function clearQueue() external;
+    function clearQueueAndPrecompileFees() external;
 
-    function request() external returns (uint40 requestCount);
+    function submitRequest(address auctionManager, bytes onCompleteData) external returns (uint40 requestCount);
+    // {
+    //     (params.precompileData, fees) = IPrecompile.getPrecompileData(queuePayloadParams_);
+    // }
+    // precompileFees += fees
+    // if coreAppGateway is not set, set it else check if it is the same
+    // decide level
+    // create id and assign counts
+    // store payload struct
+
+    // set default AM if addr(0)
+    // total fees check from maxFees
+    // verify if msg sender have same core app gateway
+    // create and store req param
+    // if writeCount == 0, startProcessing else wait
+
+    function assignTransmitter(uint40 requestCount, Bid memory bid_) external;
+    // validate AM from req param
+    // update transmitter
+    // assignTransmitter
+    // - block for new transmitter
+    // refinalize payloads for new transmitter
+    // 0 => non zero 
+    // non zero => non zero
+    // - unblock credits from prev transmitter
+    // non zero => 0
+    // - just unblock credits and return
+    // if(_validateProcessBatch() == true) processBatch()
+
+    // _processBatch();
+    // if a batch is already processed or in process, reprocess it for new transmitter
+    // deduct fee with precompile call (IPrecompile.handlePayload(payloadParams) returns fees)
+    // prev digest hash create
+
+    // handlePayload:
+    // create digest, deadline
+    // emit relevant events
+
+    function _validateProcessBatch() external;
+    // if request is cancelled, return
+    // check if all payloads from last batch are executed, else return;
+    // check if all payloads are executed, if yes call _settleRequest
+
+    function _settleRequest(uint40 requestCount) external;
+    // if yes, call settleFees on FM and call onCompleteData in App gateway, if not success emit DataNotExecuted()
+
+    function markPayloadResolved(uint40 requestCount, RequestParams memory requestParams) external;
+    // update RequestTrackingParams
+    // if(_validateProcessBatch() == true) processBatch()
+
 
     /// @notice Increases the fees for a request
     /// @param requestCount_ The request id
@@ -118,24 +179,10 @@ interface IWatcherPrecompile {
         bytes calldata signature_
     ) external;
 
-    function updateTransmitter(uint40 requestCount, address transmitter) external;
-
     function cancelRequest(uint40 requestCount) external;
+    // settleFees on FM
 
-    function resolvePromises(
-        ResolvedPromises[] calldata resolvedPromises_,
-        uint256 signatureNonce_,
-        bytes calldata signature_
-    ) external;
-
-    function markRevert(
-        bool isRevertingOnchain_,
-        bytes32 payloadId_,
-        uint256 signatureNonce_,
-        bytes calldata signature_
-    ) external;
-
-    function setExpiryTime(uint256 expiryTime_) external;
+    function getMaxFees(uint40 requestCount) external view returns (uint256);
 
     function getCurrentRequestCount() external view returns (uint40);
 
