@@ -8,6 +8,7 @@ import "../../utils/AccessControl.sol";
 import {AuctionClosed, AuctionAlreadyStarted, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter} from "../../utils/common/Errors.sol";
 import {TRANSMITTER_ROLE} from "../../utils/common/AccessRoles.sol";
 import {AppGatewayBase} from "../base/AppGatewayBase.sol";
+
 /// @title AuctionManagerStorage
 /// @notice Storage for the AuctionManager contract
 abstract contract AuctionManagerStorage is IAuctionManager {
@@ -16,6 +17,10 @@ abstract contract AuctionManagerStorage is IAuctionManager {
 
     // slot 50
     uint32 public evmxSlug;
+
+    // slot 50
+    /// @notice The timeout after which a bid expires
+    uint128 public bidTimeout;
 
     // slot 51
     uint256 public maxReAuctionCount;
@@ -45,12 +50,7 @@ abstract contract AuctionManagerStorage is IAuctionManager {
 
 /// @title AuctionManager
 /// @notice Contract for managing auctions and placing bids
-contract AuctionManager is
-    AuctionManagerStorage,
-    Initializable,
-    AccessControl,
-    AppGatewayBase
-{
+contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, AppGatewayBase {
     event AuctionRestarted(uint40 requestCount);
     event AuctionStarted(uint40 requestCount);
     event AuctionEnded(uint40 requestCount, Bid winningBid);

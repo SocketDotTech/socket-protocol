@@ -8,6 +8,11 @@ import {PayloadSubmitParams, QueuePayloadParams} from "../../utils/common/Struct
 /// @notice App gateway contract responsible for handling deployment requests
 /// @dev Extends AppGatewayBase to provide deployment queueing functionality
 contract DeployerGateway is AppGatewayBase {
+
+    // slot 51
+    /// @notice The counter for the salt used to generate/deploy the contract address
+    uint256 public saltCounter;
+    
     /// @notice Emitted when a new deployment request is queued
     /// @param bytecode The contract bytecode to deploy
     /// @param salt The deployment salt
