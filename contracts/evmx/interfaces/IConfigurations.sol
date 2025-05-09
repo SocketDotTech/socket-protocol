@@ -19,9 +19,6 @@ interface IConfigurations {
     /// @notice Maps chain slug to their associated socket
     function socketConfigs(uint32 chainSlug) external view returns (SocketConfig memory);
 
-    /// @notice Maps nonce to whether it has been used
-    function isNonceUsed(uint256 nonce) external view returns (bool);
-
     /// @notice Maps contract address to their associated app gateway
     function coreAppGateways(address contractAddress) external view returns (address);
 
@@ -50,16 +47,11 @@ interface IConfigurations {
         uint32 chainSlug_,
         address target_,
         address appGateway_,
-        address switchboard_,
-        address middleware_
+        address switchboard_
     ) external view;
 
-    function setPlugConfigs(
-        AppGatewayConfig[] calldata configs_,
-        uint256 signatureNonce_,
-        bytes calldata signature_
-    ) external;
+    function setPlugConfigs(AppGatewayConfig[] calldata configs_) external;
 
-    // core app gateway is msg sender
+    /// @notice Sets the core app gateway for the watcher precompile
     function setCoreAppGateway(address appGateway_) external;
 }

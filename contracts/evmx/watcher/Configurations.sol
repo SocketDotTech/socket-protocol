@@ -102,17 +102,7 @@ contract Configurations is IConfigurations, Initializable, Ownable, AddressResol
     /// @dev Only callable by the watcher
     /// @dev This helps in verifying that plugs are called by respective app gateways
     /// @param configs_ Array of configurations containing app gateway, network, plug, and switchboard details
-    function setAppGateways(
-        AppGatewayConfig[] calldata configs_,
-        uint256 signatureNonce_,
-        bytes calldata signature_
-    ) external {
-        _isWatcherSignatureValid(
-            abi.encode(this.setAppGateways.selector, configs_),
-            signatureNonce_,
-            signature_
-        );
-
+    function setPlugConfigs(AppGatewayConfig[] calldata configs_) external onlyWatcherPrecompile {
         for (uint256 i = 0; i < configs_.length; i++) {
             // Store the plug configuration for this network and plug
             _plugConfigs[configs_[i].chainSlug][configs_[i].plug] = PlugConfig({
@@ -128,15 +118,15 @@ contract Configurations is IConfigurations, Initializable, Ownable, AddressResol
     /// @param chainSlug_ The identifier of the network
     function setOnChainContracts(
         uint32 chainSlug_,
-        address socket_,
-        address contractFactoryPlug_,
-        address feesPlug_
-    ) external onlyOwner {
-        sockets[chainSlug_] = socket_;
-        contractFactoryPlug[chainSlug_] = contractFactoryPlug_;
-        feesPlug[chainSlug_] = feesPlug_;
-
-        emit OnChainContractSet(chainSlug_, socket_, contractFactoryPlug_, feesPlug_);
+        SocketConfig memory socketConfig_
+    ) external onlyWatcherPrecompile {
+        socketConfigs[chainSlug_] = socketConfig_;
+        emit OnChainContractSet(
+            chainSlug_,
+            socketConfig_.socket,
+            socketConfig_.contractFactoryPlug,
+            socketConfig_.feesPlug
+        );
     }
 
     /// @notice Sets the switchboard for a network
@@ -147,7 +137,7 @@ contract Configurations is IConfigurations, Initializable, Ownable, AddressResol
         uint32 chainSlug_,
         bytes32 sbType_,
         address switchboard_
-    ) external onlyOwner {
+    ) external onlyWatcherPrecompile {
         switchboards[chainSlug_][sbType_] = switchboard_;
         emit SwitchboardSet(chainSlug_, sbType_, switchboard_);
     }
@@ -161,6 +151,11 @@ contract Configurations is IConfigurations, Initializable, Ownable, AddressResol
     function setIsValidPlug(uint32 chainSlug_, address plug_, bool isValid_) external {
         isValidPlug[msg.sender][chainSlug_][plug_] = isValid_;
         emit IsValidPlugSet(msg.sender, chainSlug_, plug_, isValid_);
+    }
+
+    function setCoreAppGateway(address appGateway_) external {
+        coreAppGateways[appGateway_] = msg.sender;
+        emit CoreAppGatewaySet(appGateway_, msg.sender);
     }
 
     /// @notice Retrieves the configuration for a specific plug on a network
@@ -189,35 +184,11 @@ contract Configurations is IConfigurations, Initializable, Ownable, AddressResol
         uint32 chainSlug_,
         address target_,
         address appGateway_,
-        address switchboard_,
-        address middleware_
+        address switchboard_
     ) external view {
-        // if target is contractFactoryPlug, return
-        // as connection is with middleware delivery helper and not app gateway
-        if (
-            middleware_ == address(deliveryHelper__()) && target_ == contractFactoryPlug[chainSlug_]
-        ) return;
-
         (bytes32 appGatewayId, address switchboard) = getPlugConfigs(chainSlug_, target_);
+
         if (appGatewayId != WatcherIdUtils.encodeAppGatewayId(appGateway_)) revert InvalidGateway();
         if (switchboard != switchboard_) revert InvalidSwitchboard();
-    }
-
-    function _isWatcherSignatureValid(
-        bytes memory inputData_,
-        uint256 signatureNonce_,
-        bytes memory signature_
-    ) internal {
-        if (isNonceUsed[signatureNonce_]) revert NonceUsed();
-        isNonceUsed[signatureNonce_] = true;
-
-        bytes32 digest = keccak256(
-            abi.encode(address(this), evmxSlug, signatureNonce_, inputData_)
-        );
-        digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
-
-        // recovered signer is checked for the valid roles later
-        address signer = ECDSA.recover(digest, signature_);
-        if (signer != owner()) revert InvalidWatcherSignature();
     }
 }
