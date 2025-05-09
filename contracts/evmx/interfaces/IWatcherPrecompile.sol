@@ -2,8 +2,6 @@
 pragma solidity ^0.8.21;
 
 import {DigestParams, ResolvedPromises, PayloadParams, TriggerParams, PayloadSubmitParams, RequestParams} from "../../utils/common/Structs.sol";
-import {IWatcherPrecompileLimits} from "./IWatcherPrecompileLimits.sol";
-import {IWatcherPrecompileConfig} from "./IWatcherPrecompileConfig.sol";
 
 /// @title IWatcherPrecompile
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
@@ -16,9 +14,6 @@ interface IWatcherPrecompile {
     /// @notice Emitted when a call to an app gateway fails
     /// @param triggerId The unique identifier for the trigger
     event AppGatewayCallFailed(bytes32 triggerId);
-
-    /// @notice Emitted when a new query is requested
-    event QueryRequested(PayloadParams params);
 
     /// @notice Emitted when a finalize request is made
     event FinalizeRequested(bytes32 digest, PayloadParams params);
@@ -101,38 +96,78 @@ interface IWatcherPrecompile {
     error InvalidLevelNumber();
     error DeadlineNotPassedForOnChainRevert();
 
-    /// @notice Calculates the digest hash of payload parameters
-    /// @param params_ The payload parameters
-    /// @return digest The calculated digest
-    function getDigest(DigestParams memory params_) external pure returns (bytes32 digest);
+    QueueParams[] queuePayloadParams;
 
-    /// @notice Gets the batch IDs for a request
-    /// @param requestCount_ The request count
-    /// @return Array of batch IDs
-    function getBatches(uint40 requestCount_) external view returns (uint40[] memory);
+    function queueSubmitStart(QueueParams calldata queuePayloadParams_) external;
 
-    /// @notice Gets the payload IDs for a batch
-    /// @param batchCount_ The batch count
-    /// @return Array of payload IDs
-    function getBatchPayloadIds(uint40 batchCount_) external view returns (bytes32[] memory);
+    // queue:
+    function queue(QueueParams calldata queuePayloadParams_) external;
+    // push in queue
 
-    /// @notice Gets the payload parameters for a payload ID
-    /// @param payloadId_ The payload ID
-    /// @return The payload parameters
-    function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory);
+    // validateAndGetPrecompileData:
+    // finalize: verifyConnection, max msg gas limit is under limit, 
+    // timeout: max delay 
+    // query: 
+    // return encoded data and fees
+    
+    /// @notice Clears the temporary queue used to store payloads for a request
+    function clearQueueAndPrecompileFees() external;
 
-    function setTimeout(
-        uint256 delayInSeconds_,
-        bytes calldata payload_
-    ) external returns (bytes32);
+    function submitRequest(address auctionManager, bytes onCompleteData) external returns (uint40 requestCount);
+    // {
+    //     (params.precompileData, fees) = IPrecompile.getPrecompileData(queuePayloadParams_);
+    // }
+    // precompileFees += fees
+    // if coreAppGateway is not set, set it else check if it is the same
+    // decide level
+    // create id and assign counts
+    // store payload struct
 
-    function resolveTimeout(
-        bytes32 timeoutId_,
-        uint256 signatureNonce_,
-        bytes calldata signature_
-    ) external;
+    // set default AM if addr(0)
+    // total fees check from maxFees
+    // verify if msg sender have same core app gateway
+    // create and store req param
+    // if writeCount == 0, startProcessing else wait
 
-    function query(PayloadParams memory params_) external;
+    function assignTransmitter(uint40 requestCount, Bid memory bid_) external;
+    // validate AM from req param
+    // update transmitter
+    // assignTransmitter
+    // - block for new transmitter
+    // refinalize payloads for new transmitter
+    // 0 => non zero 
+    // non zero => non zero
+    // - unblock credits from prev transmitter
+    // non zero => 0
+    // - just unblock credits and return
+    // if(_validateProcessBatch() == true) processBatch()
+
+    // _processBatch();
+    // if a batch is already processed or in process, reprocess it for new transmitter
+    // deduct fee with precompile call (IPrecompile.handlePayload(payloadParams) returns fees)
+    // prev digest hash create
+
+    // handlePayload:
+    // create digest, deadline
+    // emit relevant events
+
+    function _validateProcessBatch() external;
+    // if request is cancelled, return
+    // check if all payloads from last batch are executed, else return;
+    // check if all payloads are executed, if yes call _settleRequest
+
+    function _settleRequest(uint40 requestCount) external;
+    // if yes, call settleFees on FM and call onCompleteData in App gateway, if not success emit DataNotExecuted()
+
+    function markPayloadResolved(uint40 requestCount, RequestParams memory requestParams) external;
+    // update RequestTrackingParams
+    // if(_validateProcessBatch() == true) processBatch()
+
+
+    /// @notice Increases the fees for a request
+    /// @param requestCount_ The request id
+    /// @param fees_ The new fees
+    function increaseFees(uint40 requestCount_, uint256 fees_) external;
 
     function finalized(
         bytes32 payloadId_,
@@ -141,46 +176,12 @@ interface IWatcherPrecompile {
         bytes calldata signature_
     ) external;
 
-    function updateTransmitter(uint40 requestCount, address transmitter) external;
-
     function cancelRequest(uint40 requestCount) external;
+    // settleFees on FM
 
-    function resolvePromises(
-        ResolvedPromises[] calldata resolvedPromises_,
-        uint256 signatureNonce_,
-        bytes calldata signature_
-    ) external;
-
-    function markRevert(
-        bool isRevertingOnchain_,
-        bytes32 payloadId_,
-        uint256 signatureNonce_,
-        bytes calldata signature_
-    ) external;
-
-    function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external;
-
-    function callAppGateways(
-        TriggerParams[] calldata params_,
-        uint256 signatureNonce_,
-        bytes calldata signature_
-    ) external;
-
-    function setExpiryTime(uint256 expiryTime_) external;
-
-    function submitRequest(
-        PayloadSubmitParams[] calldata payloadSubmitParams
-    ) external returns (uint40 requestCount);
-
-    function startProcessingRequest(uint40 requestCount, address transmitter) external;
+    function getMaxFees(uint40 requestCount) external view returns (uint256);
 
     function getCurrentRequestCount() external view returns (uint40);
-
-    function watcherPrecompileConfig__() external view returns (IWatcherPrecompileConfig);
-
-    function watcherPrecompileLimits__() external view returns (IWatcherPrecompileLimits);
-
-    function getRequestParams(uint40 requestCount) external view returns (RequestParams memory);
 
     function nextRequestCount() external view returns (uint40);
 }

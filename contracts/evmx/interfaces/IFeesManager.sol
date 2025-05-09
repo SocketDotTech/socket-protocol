@@ -1,66 +1,53 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {Bid, QueuePayloadParams, PayloadSubmitParams, AppGatewayWhitelistParams} from "../../utils/common/Structs.sol";
-
 interface IFeesManager {
-    function blockCredits(
-        address consumeFrom_,
-        uint256 transmitterCredits_,
-        uint40 requestCount_
-    ) external;
+    // native to credit
+    function wrap() external payable;
 
-    function unblockCredits(uint40 requestCount_) external;
+    function unwrap(uint256 amount) external;
 
-    function isUserCreditsEnough(
-        address consumeFrom_,
-        address appGateway_,
-        uint256 amount_
-    ) external view returns (bool);
-
-    function unblockAndAssignCredits(uint40 requestCount_, address transmitter_) external;
-
-    function assignWatcherPrecompileCreditsFromRequestCount(
-        uint256 fees_,
-        uint40 requestCount_
-    ) external;
-
-    function assignWatcherPrecompileCreditsFromAddress(
-        uint256 fees_,
-        address consumeFrom_
-    ) external;
-
-    function whitelistAppGatewayWithSignature(
-        bytes memory feeApprovalData_
-    ) external returns (address consumeFrom, address appGateway, bool isApproved);
-
-    function whitelistAppGateways(AppGatewayWhitelistParams[] calldata params_) external;
-
-    function getWithdrawTransmitterCreditsPayloadParams(
-        address transmitter_,
-        uint32 chainSlug_,
-        address token_,
-        address receiver_,
-        uint256 amount_
-    ) external returns (PayloadSubmitParams[] memory);
-
-    function getMaxCreditsAvailableForWithdraw(
-        address transmitter_
-    ) external view returns (uint256);
-
-    function withdrawCredits(
-        address originAppGatewayOrUser_,
-        uint32 chainSlug_,
-        address token_,
-        uint256 amount_,
-        address receiver_
-    ) external;
-
+    // credits from vault
     function depositCredits(
-        address depositTo_,
-        uint32 chainSlug_,
-        address token_,
-        uint256 signatureNonce_,
-        bytes memory signature_
+        address token,
+        address from,
+        uint32 chainSlug,
+        bytes calldata watcherSignature
     ) external payable;
+
+    function getAvailableCredits(address user) external view returns (uint256);
+
+    // withdraw credits onchain
+    // finalize and release sign, no AM needed, can be used by watcher and transmitter
+    function withdrawCreditsTo(
+        uint32 chainSlug,
+        address to,
+        uint256 amount,
+        bool needAuction
+    ) external;
+
+    function withdrawNativeTo(
+        uint32 chainSlug,
+        address to,
+        uint256 amount,
+        bool needAuction
+    ) external;
+
+    // Fee settlement
+    // if addr(0) then settle to original user, onlyWatcherPrecompile can call
+    function settleFees(uint40 requestId, address transmitter) external;
+
+    // onlyWatcherPrecompile, request's AM can call
+    function blockCredits(uint40 requestId, address user, uint256 amount) external;
+
+    // onlyWatcherPrecompile, request's AM can call
+    function unblockCredits(uint40 requestId, address user, uint256 amount) external;
+
+    // msg sender should be user whitelisted app gateway
+    function deductCredits(address user, uint256 amount) external;
+
+    // whitelist
+    function whitelistAppGatewayWithSignature(bytes calldata signature) external;
+
+    function whitelistAppGateways(address[] calldata appGateways) external;
 }

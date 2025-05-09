@@ -8,17 +8,7 @@ abstract contract RequestQueue is DeliveryUtils {
     // slots [207-257] reserved for gap
     uint256[50] _gap_queue_async;
 
-    /// @notice Clears the call parameters array
-    function clearQueue() public {
-        delete queuePayloadParams;
-    }
-
-    /// @notice Queues a new payload
-    /// @param queuePayloadParams_ The call parameters
-    function queue(QueuePayloadParams memory queuePayloadParams_) external {
-        queuePayloadParams.push(queuePayloadParams_);
-    }
-
+   
     /// @notice Initiates a batch of payloads
     /// @param maxFees_ The fees data
     /// @param auctionManager_ The auction manager address
@@ -69,7 +59,6 @@ abstract contract RequestQueue is DeliveryUtils {
         params.finalizeCount = finalizeCount;
 
         _checkBatch(consumeFrom_, params.appGateway, params.maxFees);
-
         return _submitBatchRequest(payloadSubmitParamsArray, consumeFrom_, params);
     }
 
@@ -209,7 +198,6 @@ abstract contract RequestQueue is DeliveryUtils {
             (payload, target) = _createDeployPayloadDetails(queuePayloadParams_);
         }
 
-        if (payload.length > PAYLOAD_SIZE_LIMIT) revert PayloadTooLarge();
         if (queuePayloadParams_.value > chainMaxMsgValueLimit[queuePayloadParams_.chainSlug])
             revert MaxMsgValueLimitExceeded();
 
