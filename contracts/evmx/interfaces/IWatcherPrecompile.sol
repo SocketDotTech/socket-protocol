@@ -15,9 +15,6 @@ interface IWatcherPrecompile {
     /// @param triggerId The unique identifier for the trigger
     event AppGatewayCallFailed(bytes32 triggerId);
 
-    /// @notice Emitted when a new query is requested
-    event QueryRequested(PayloadParams params);
-
     /// @notice Emitted when a finalize request is made
     event FinalizeRequested(bytes32 digest, PayloadParams params);
 

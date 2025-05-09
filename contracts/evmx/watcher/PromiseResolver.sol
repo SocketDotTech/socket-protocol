@@ -9,7 +9,7 @@ import "../../common/Errors.sol";
 import "../../core/WatcherIdUtils.sol";
 
 interface IPromiseResolver {
-      function resolvePromises(
+    function resolvePromises(
         ResolvedPromises[] calldata resolvedPromises_,
         uint256 signatureNonce_,
         bytes calldata signature_
@@ -50,50 +50,68 @@ contract PromiseResolver {
         watcherStorage = watcherStorage_;
     }
 
-    /// @notice Resolves a promise with return data
-    /// @param resolvedPromise The resolved promise data
-    /// @param requestCount The request count associated with the promise
-    /// @return success Whether the promise was successfully resolved
-    function resolvePromise(
-        ResolvedPromises memory resolvedPromise,
-        uint40 requestCount
-    ) external onlyWatcherStorage returns (bool success) {
-        // Get payload params and request params from WatcherPrecompileStorage
-        IWatcherPrecompile watcher = IWatcherPrecompile(watcherStorage);
-        PayloadParams memory payloadParams = watcher.getPayloadParams(resolvedPromise.payloadId);
+    /// @notice Resolves multiple promises with their return data
+    /// @param resolvedPromises_ Array of resolved promises and their return data
+    /// @param signatureNonce_ The nonce of the signature
+    /// @param signature_ The signature of the watcher
+    /// @dev This function resolves multiple promises with their return data
+    /// @dev It verifies that the signature is valid
+    /// @dev It also processes the next batch if the current batch is complete
+    function resolvePromises(
+        ResolvedPromises[] memory resolvedPromises_,
+        uint256 signatureNonce_,
+        bytes memory signature_
+    ) external {
+        for (uint256 i = 0; i < resolvedPromises_.length; i++) {
+            uint40 requestCount = payloads[resolvedPromises_[i].payloadId]
+                .payloadHeader
+                .getRequestCount();
+            RequestParams storage requestParams_ = requestParams[requestCount];
 
+            _processPromiseResolution(resolvedPromises_[i], requestParams_);
+            _checkAndProcessBatch(requestParams_, requestCount);
+        }
+    }
+
+    function _processPromiseResolution(
+        ResolvedPromises memory resolvedPromise_,
+        RequestParams storage requestParams_
+    ) internal {
+        PayloadParams memory payloadParams = payloads[resolvedPromise_.payloadId];
         address asyncPromise = payloadParams.asyncPromise;
+        uint40 requestCount = payloadParams.payloadHeader.getRequestCount();
 
-        // If there's no promise contract, nothing to resolve
-        if (asyncPromise == address(0)) {
-            return false;
+        if (asyncPromise != address(0)) {
+            bool success = IPromise(asyncPromise).markResolved(
+                requestCount,
+                resolvedPromise_.payloadId,
+                resolvedPromise_.returnData
+            );
+
+            if (!success) {
+                emit PromiseNotResolved(resolvedPromise_.payloadId, asyncPromise);
+                return;
+            }
         }
 
-        // Attempt to resolve the promise through the promise contract
-        bool resolutionSuccess = IPromise(asyncPromise).markResolved(
-            requestCount,
-            resolvedPromise.payloadId,
-            resolvedPromise.returnData
-        );
+        isPromiseExecuted[resolvedPromise_.payloadId] = true;
+        requestParams_.currentBatchPayloadsLeft--;
+        requestParams_.payloadsRemaining--;
 
-        if (!resolutionSuccess) {
-            // Emit event through WatcherPrecompileStorage
-            emit IWatcherPrecompile.PromiseNotResolved(resolvedPromise.payloadId, asyncPromise);
-            return false;
+        emit PromiseResolved(resolvedPromise_.payloadId, asyncPromise);
+    }
+
+    function _checkAndProcessBatch(
+        RequestParams storage requestParams_,
+        uint40 requestCount
+    ) internal {
+        if (requestParams_.currentBatchPayloadsLeft == 0 && requestParams_.payloadsRemaining > 0) {
+            _processBatch(requestCount, ++requestParams_.currentBatch);
         }
 
-        // Update storage in WatcherPrecompileStorage
-        watcher.updateResolvedAt(resolvedPromise.payloadId, block.timestamp);
-        watcher.decrementBatchCounters(requestCount);
-        // payloadsRemaining--
-
-        // Emit event through WatcherPrecompileStorage
-        emit IWatcherPrecompile.PromiseResolved(resolvedPromise.payloadId, asyncPromise);
-
-        // Check if we need to process next batch
-        processBatch(requestCount);
-
-        return true;
+        if (requestParams_.payloadsRemaining == 0) {
+            IMiddleware(requestParams_.middleware).finishRequest(requestCount);
+        }
     }
 
     /// @notice Marks a request as reverting
@@ -107,105 +125,24 @@ contract PromiseResolver {
         uint256 currentTimestamp
     ) external onlyWatcherStorage returns (bool success) {
         // Get payload params from WatcherPrecompileStorage
-        IWatcherPrecompile watcher = IWatcherPrecompile(watcherStorage);
-        PayloadParams memory payloadParams = watcher.getPayloadParams(payloadId);
+         PayloadParams memory payloadParams = payloads[payloadId_];
+        if (payloadParams.deadline > block.timestamp) revert DeadlineNotPassedForOnChainRevert();
 
-        // Validate deadline
-        if (payloadParams.deadline > currentTimestamp) {
-            return false;
-        }
+        RequestParams storage currentRequestParams = requestParams[
+            payloadParams.payloadHeader.getRequestCount()
+        ];
+        currentRequestParams.isRequestCancelled = true;
 
-        uint40 requestCount = payloadParams.payloadHeader.getRequestCount();
+        IMiddleware(currentRequestParams.middleware).handleRequestReverts(
+            payloadParams.payloadHeader.getRequestCount()
+        );
 
-        // Mark request as cancelled directly in the watcher
-        watcher.cancelRequest(requestCount);
+        if (isRevertingOnchain_ && payloadParams.asyncPromise != address(0))
+            IPromise(payloadParams.asyncPromise).markOnchainRevert(
+                payloadParams.payloadHeader.getRequestCount(),
+                payloadId_
+            );
 
-        // Handle onchain revert if necessary
-        if (isRevertingOnchain && payloadParams.asyncPromise != address(0)) {
-            IPromise(payloadParams.asyncPromise).markOnchainRevert(requestCount, payloadId);
-        }
-
-        // Emit event through WatcherPrecompileStorage
-        emit IWatcherPrecompile.MarkedRevert(payloadId, isRevertingOnchain);
-
-        return true;
-    }
-
-    /// @notice Check if we need to process next batch
-    /// @param requestCount The request count
-    function _checkAndProcessBatch(uint40 requestCount) private {
-        IWatcherPrecompile watcher = IWatcherPrecompile(watcherStorage);
-
-        // Check if current batch is complete and there are more payloads to process
-        if (shouldProcessNextBatch(requestCount)) {
-            // Process next batch
-            watcher.processNextBatch(requestCount);
-        }
-
-        // Check if request is complete
-        if (isRequestComplete(requestCount)) {
-            // Finish request
-            watcher.finishRequest(requestCount);
-        }
-    }
-
-    /// @notice Determines if a request is complete
-    /// @param payloadsRemaining Total payloads remaining for the request
-    /// @return isComplete Whether the request is complete
-    function isRequestComplete(uint256 payloadsRemaining) public pure returns (bool isComplete) {
-        return payloadsRemaining == 0;
-    }
-
-    /// @notice Validates that a promise can be resolved
-    /// @param payloadId The unique identifier of the payload
-    /// @param requestCount The request count
-    /// @return isValid Whether the promise can be resolved
-    function validatePromiseResolution(
-        bytes32 payloadId,
-        uint40 requestCount
-    ) external view returns (bool isValid) {
-        if (payloadId == bytes32(0) || requestCount == 0) return false;
-
-        IWatcherPrecompile watcher = IWatcherPrecompile(watcherStorage);
-        // Check if the request has been cancelled
-        if (watcher.isRequestCancelled(requestCount)) return false;
-
-        // Check if the promise has already been executed
-        if (watcher.isPromiseExecuted(payloadId)) return false;
-
-        return true;
-    }
-
-    /// @notice Validates that a request can be marked as reverting
-    /// @param payloadId The unique identifier of the payload
-    /// @param deadline The deadline for the payload execution
-    /// @param currentTimestamp The current block timestamp
-    /// @return isValid Whether the request can be marked as reverting
-    function validateRevertMarking(
-        bytes32 payloadId,
-        uint256 deadline,
-        uint256 currentTimestamp
-    ) external view returns (bool isValid) {
-        if (payloadId == bytes32(0)) return false;
-        if (deadline > currentTimestamp) return false;
-
-        IWatcherPrecompile watcher = IWatcherPrecompile(watcherStorage);
-        uint40 requestCount = watcher.getRequestCountFromPayloadId(payloadId);
-
-        // Check if the request has already been cancelled
-        if (watcher.isRequestCancelled(requestCount)) return false;
-
-        return true;
-    }
-
-    /// @notice Determines if a batch should be processed next
-    /// @param currentBatchPayloadsLeft Number of payloads left in current batch
-    /// @param payloadsRemaining Total payloads remaining
-    /// @return shouldProcess Whether next batch should be processed
-    function shouldProcessNextBatch(
-        uint256 currentBatchPayloadsLeft,
-        uint256 payloadsRemaining
-    ) public pure returns (bool shouldProcess) {
-        return currentBatchPayloadsLeft == 0 && payloadsRemaining > 0;
+        emit MarkedRevert(payloadId_, isRevertingOnchain_);
     }
 }

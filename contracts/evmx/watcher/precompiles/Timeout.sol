@@ -9,6 +9,20 @@ import "../../../utils/common/Errors.sol";
 /// @notice Library that handles timeout logic for the WatcherPrecompile system
 /// @dev This library contains pure functions for timeout operations
 library Timeout {
+    // slot 52
+    /// @notice The maximum delay for a timeout
+    /// @dev Maximum timeout delay in seconds
+    uint256 public maxTimeoutDelayInSeconds;
+
+    /// @notice Sets the maximum timeout delay in seconds
+    /// @param maxTimeoutDelayInSeconds_ The maximum timeout delay in seconds
+    /// @dev This function sets the maximum timeout delay in seconds
+    /// @dev Only callable by the contract owner
+    function setMaxTimeoutDelayInSeconds(uint256 maxTimeoutDelayInSeconds_) external onlyOwner {
+        maxTimeoutDelayInSeconds = maxTimeoutDelayInSeconds_;
+        emit MaxTimeoutDelayInSecondsSet(maxTimeoutDelayInSeconds_);
+    }
+
     /// @notice Validates timeout parameters
     /// @param delayInSeconds_ The delay in seconds before the timeout executes
     /// @param maxTimeoutDelayInSeconds The maximum allowed timeout delay

@@ -170,10 +170,5 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         r.currentBatchPayloadsLeft = totalPayloads;
     }
 
-    /// @notice Gets the current request count
-    /// @return The current request count
-    /// @dev This function returns the next request count, which is the current request count
-    function getCurrentRequestCount() external view returns (uint40) {
-        return nextRequestCount;
-    }
+   
 }

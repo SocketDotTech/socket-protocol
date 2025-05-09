@@ -195,7 +195,7 @@ struct PayloadParams {
     address appGateway;
     bytes32 payloadId;
     bytes32 prevDigestsHash;
-    uint256 resolvedAt;
+    uint256 resolvedAt; // replaced isPromiseExecuted
     bytes precompileData;
 
     // uint256 deadline;

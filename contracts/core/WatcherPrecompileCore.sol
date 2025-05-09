@@ -115,7 +115,6 @@ abstract contract WatcherPrecompileCore is
         payloads[params_.payloadId].prevDigestsHash = _getPreviousDigestsHash(
             params_.payloadHeader.getBatchCount()
         );
-        emit QueryRequested(params_);
     }
 
     // ================== Helper functions ==================
@@ -185,37 +184,7 @@ abstract contract WatcherPrecompileCore is
         return payloadParamsArray;
     }
 
-    /// @notice Encodes an ID for a timeout or payload
-    /// @return The encoded ID
-    /// @dev This function creates a unique ID by combining the chain slug, address, and a counter
-    function _encodeTimeoutId() internal returns (bytes32) {
-        // Encode timeout ID by bit-shifting and combining:
-        // EVMx chainSlug (32 bits) | watcher precompile address (160 bits) | counter (64 bits)
-        return bytes32(timeoutIdPrefix | payloadCounter++);
-    }
-
-    /// @notice Verifies that a watcher signature is valid
-    /// @param inputData_ The input data to verify
-    /// @param signatureNonce_ The nonce of the signature
-    /// @param signature_ The signature to verify
-    /// @dev This function verifies that the signature was created by the watcher and that the nonce has not been used before
-    function _isWatcherSignatureValid(
-        bytes memory inputData_,
-        uint256 signatureNonce_,
-        bytes memory signature_
-    ) internal {
-        if (isNonceUsed[signatureNonce_]) revert NonceUsed();
-        isNonceUsed[signatureNonce_] = true;
-
-        bytes32 digest = keccak256(
-            abi.encode(address(this), evmxSlug, signatureNonce_, inputData_)
-        );
-        digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
-
-        // recovered signer is checked for the valid roles later
-        address signer = ECDSA.recover(digest, signature_);
-        if (signer != owner()) revert InvalidWatcherSignature();
-    }
+   
 
     function _consumeCallbackFeesFromRequestCount(uint256 fees_, uint40 requestCount_) internal {
         // for callbacks in all precompiles
@@ -233,24 +202,4 @@ abstract contract WatcherPrecompileCore is
         );
     }
 
-    /// @notice Gets the batch IDs for a request
-    /// @param requestCount_ The request count to get the batch IDs for
-    /// @return An array of batch IDs for the given request
-    function getBatches(uint40 requestCount_) external view returns (uint40[] memory) {
-        return requestBatchIds[requestCount_];
-    }
-
-    /// @notice Gets the payload IDs for a batch
-    /// @param batchCount_ The batch count to get the payload IDs for
-    /// @return An array of payload IDs for the given batch
-    function getBatchPayloadIds(uint40 batchCount_) external view returns (bytes32[] memory) {
-        return batchPayloadIds[batchCount_];
-    }
-
-    /// @notice Gets the payload parameters for a payload ID
-    /// @param payloadId_ The payload ID to get the parameters for
-    /// @return The payload parameters for the given payload ID
-    function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory) {
-        return payloads[payloadId_];
-    }
 }

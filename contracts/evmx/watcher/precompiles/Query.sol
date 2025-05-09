@@ -7,65 +7,40 @@ import "../../../utils/common/Structs.sol";
 import "../../../utils/common/Errors.sol";
 
 /// @title Query
-/// @notice Library that handles query logic for the WatcherPrecompile system
-/// @dev This library contains pure functions for query operations
-library Query {
+/// @notice Handles query precompile logic
+contract Query is IPrecompile {
     using PayloadHeaderDecoder for bytes32;
 
-    /// @notice Validates query parameters
-    /// @param params_ The payload parameters for the query
-    /// @return isValid Whether the query parameters are valid
-    function validateQueryParams(PayloadParams memory params_) public pure returns (bool isValid) {
-        // Query is valid if it has a valid payload ID and target
-        return params_.payloadId != bytes32(0) && params_.target != address(0);
+    /// @notice Emitted when a new query is requested
+    event QueryRequested(PayloadParams params);
+
+    /// @notice The watcher precompile fees manager
+    IWatcherFeesManager public immutable watcherFeesManager;
+
+    /// @notice Gets precompile data and fees for queue parameters
+    /// @param queuePayloadParams_ The queue parameters to process
+    /// @return precompileData The encoded precompile data
+    /// @return fees Estimated fees required for processing
+    function getPrecompileData(
+        QueueParams calldata queuePayloadParams_
+    ) external pure returns (bytes memory precompileData, uint256 fees) {
+        if (queuePayloadParams_.target != address(0)) revert InvalidTarget();
+
+        // For query precompile, encode the payload parameters
+        precompileData = abi.encode(
+            queuePayloadParams_.transaction,
+            queuePayloadParams_.overrideParams.readAt
+        );
+        fees = watcherFeesManager.queryFees();
     }
 
-    /// @notice Prepares the batch of payload parameters for a given batch count
-    /// @param payloadParams Array of payload parameters to process
-    /// @return An array of validated PayloadParams for the batch
-    function prepareBatch(
-        PayloadParams[] memory payloadParams
-    ) public pure returns (PayloadParams[] memory) {
-        // Batch logic would normally involve storage interactions
-        // This function provides the pure logic for preparation
-        return payloadParams;
-    }
-
-    /// @notice Creates the event data for a query request
-    /// @param params_ The payload parameters for the query
-    /// @return The encoded event data for query request
-    function createQueryRequestEventData(
-        PayloadParams memory params_
-    ) public pure returns (bytes memory) {
-        return abi.encode(params_);
-    }
-
-    /// @notice Validates batch parameters for query processing
-    /// @param batchCount The batch count to validate
-    /// @param requestCount The request count to validate
-    /// @return isValid Whether the batch parameters are valid
-    function validateBatchParams(
-        uint40 batchCount,
-        uint40 requestCount
-    ) public pure returns (bool isValid) {
-        return batchCount > 0 && requestCount > 0;
-    }
-
-    /// @notice Prepares parameters for batch processing
-    /// @param payloadParamsArray Array of payload parameters
-    /// @param batchSize The size of the batch
-    /// @return totalPayloads The number of payloads to process
-    function prepareBatchProcessing(
-        PayloadParams[] memory payloadParamsArray,
-        uint256 batchSize
-    ) public pure returns (uint256 totalPayloads) {
-        // Validate and count payloads that should be processed
-        uint256 total = 0;
-        for (uint256 i = 0; i < payloadParamsArray.length && i < batchSize; i++) {
-            if (validateQueryParams(payloadParamsArray[i])) {
-                total++;
-            }
-        }
-        return total;
+    /// @notice Handles payload processing and returns fees
+    /// @param payloadParams The payload parameters to handle
+    /// @return fees The fees required for processing
+    function handlePayload(
+        PayloadParams calldata payloadParams
+    ) external pure returns (uint256 fees) {
+        fees = watcherFeesManager.queryFees();
+        emit QueryRequested(payloadParams);
     }
 }
