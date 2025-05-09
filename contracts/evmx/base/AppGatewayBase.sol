@@ -156,8 +156,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
-            .getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -258,20 +257,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         maxFees = fees_;
     }
 
-    function getOverrideParams()
-        public
-        view
-        returns (Read, Parallel, WriteFinality, uint256, uint256, uint256, bytes32)
-    {
-        return (
-            overrideParams.isReadCall,
-            overrideParams.isParallelCall,
-            overrideParams.writeFinality,
-            overrideParams.readAt,
-            overrideParams.gasLimit,
-            overrideParams.value,
-            sbType
-        );
+    function getOverrideParams() public view returns (OverrideParams, bytes32) {
+        return (overrideParams, sbType);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

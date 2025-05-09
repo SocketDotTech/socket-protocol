@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "./interfaces/IAddressResolver.sol";
-import "./interfaces/IWatcherPrecompile.sol";
-import "./interfaces/IFeesManager.sol";
+import "../interfaces/IAddressResolver.sol";
+import "../interfaces/IWatcherPrecompile.sol";
 
 /// @title AddressResolverUtil
 /// @notice Utility contract for resolving system contract addresses
@@ -19,7 +18,7 @@ abstract contract AddressResolverUtil {
 
     /// @notice Error thrown when an invalid address attempts to call the Watcher only function
     error OnlyWatcherPrecompile();
-    
+
     /// @notice Restricts function access to the watcher precompile contract
     /// @dev Validates that msg.sender matches the registered watcher precompile address
     modifier onlyWatcherPrecompile() {
@@ -42,12 +41,5 @@ abstract contract AddressResolverUtil {
     /// @dev Should be called in the initialization of inheriting contracts
     function _setAddressResolver(address _addressResolver) internal {
         addressResolver__ = IAddressResolver(_addressResolver);
-    }
-
-    function _getCoreAppGateway(
-        address originAppGateway_
-    ) internal view returns (address appGateway) {
-        appGateway = addressResolver__.contractsToGateways(originAppGateway_);
-        if (appGateway == address(0)) appGateway = originAppGateway_;
     }
 }
