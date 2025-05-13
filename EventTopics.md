@@ -1,20 +1,5 @@
 # Event Topics
 
-## ProxyFactory
-
-| Event          | Arguments                                                   | Topic                                                                |
-| -------------- | ----------------------------------------------------------- | -------------------------------------------------------------------- |
-| `AdminChanged` | `(proxy: address, admin: address)`                          | `0x7e644d79422f17c01e4894b5f4f588d331ebfa28653d42ae832dc59e38c9798f` |
-| `Deployed`     | `(proxy: address, implementation: address, admin: address)` | `0xc95935a66d15e0da5e412aca0ad27ae891d20b2fb91cf3994b6a3bf2b8178082` |
-| `Upgraded`     | `(proxy: address, implementation: address)`                 | `0x5d611f318680d00598bb735d61bacf0c514c6b50e1e5ad30040a4df2b12791c7` |
-
-## TestUSDC
-
-| Event      | Arguments                                             | Topic                                                                |
-| ---------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
-| `Approval` | `(owner: address, spender: address, amount: uint256)` | `0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925` |
-| `Transfer` | `(from: address, to: address, amount: uint256)`       | `0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef` |
-
 ## AddressResolver
 
 | Event                          | Arguments                                                   | Topic                                                                |
@@ -45,6 +30,58 @@
 | Event         | Arguments           | Topic                                                                |
 | ------------- | ------------------- | -------------------------------------------------------------------- |
 | `Initialized` | `(version: uint64)` | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
+
+## Socket
+
+| Event                        | Arguments                                                                                                            | Topic                                                                |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `AppGatewayCallRequested`    | `(triggerId: bytes32, appGatewayId: bytes32, switchboard: address, plug: address, overrides: bytes, payload: bytes)` | `0x5c88d65ab8ba22a57e582bd8ddfa9801cc0ca6be6cb3182baaedc705a612419e` |
+| `ExecutionFailed`            | `(payloadId: bytes32, exceededMaxCopy: bool, returnData: bytes)`                                                     | `0x385334bc68a32c4d164625189adc7633e6074eb1b837fb4d11d768245151e4ce` |
+| `ExecutionSuccess`           | `(payloadId: bytes32, exceededMaxCopy: bool, returnData: bytes)`                                                     | `0x324d63a433b21a12b90e79cd2ba736b2a5238be6165e03b750fa4a7d5193d5d9` |
+| `OwnershipHandoverCanceled`  | `(pendingOwner: address)`                                                                                            | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
+| `OwnershipHandoverRequested` | `(pendingOwner: address)`                                                                                            | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
+| `OwnershipTransferred`       | `(oldOwner: address, newOwner: address)`                                                                             | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
+| `PlugConnected`              | `(plug: address, appGatewayId: bytes32, switchboard: address)`                                                       | `0x90c5924e27cfb6e3a688e729083681f30494ae2615ae14aac3bc807a0c436a88` |
+| `RoleGranted`                | `(role: bytes32, grantee: address)`                                                                                  | `0x2ae6a113c0ed5b78a53413ffbb7679881f11145ccfba4fb92e863dfcd5a1d2f3` |
+| `RoleRevoked`                | `(role: bytes32, revokee: address)`                                                                                  | `0x155aaafb6329a2098580462df33ec4b7441b19729b9601c5fc17ae1cf99a8a52` |
+| `SocketFeeManagerUpdated`    | `(oldSocketFeeManager: address, newSocketFeeManager: address)`                                                       | `0xdcb02e10d5220346a4638aa2826eaab1897306623bc40a427049e4ebd12255b4` |
+| `SwitchboardAdded`           | `(switchboard: address)`                                                                                             | `0x1595852923edfbbf906f09fc8523e4cfb022a194773c4d1509446b614146ee88` |
+| `SwitchboardDisabled`        | `(switchboard: address)`                                                                                             | `0x1b4ee41596b4e754e5665f01ed6122b356f7b36ea0a02030804fac7fa0fdddfc` |
+| `SwitchboardEnabled`         | `(switchboard: address)`                                                                                             | `0x6909a9974e3eec619bc479ba882d30a5ef1219b72ab1ce6a354516e91be317b8` |
+
+## SocketBatcher
+
+| Event                        | Arguments                                | Topic                                                                |
+| ---------------------------- | ---------------------------------------- | -------------------------------------------------------------------- |
+| `OwnershipHandoverCanceled`  | `(pendingOwner: address)`                | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
+| `OwnershipHandoverRequested` | `(pendingOwner: address)`                | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
+| `OwnershipTransferred`       | `(oldOwner: address, newOwner: address)` | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
+
+## SocketFeeManager
+
+| Event                        | Arguments                                | Topic                                                                |
+| ---------------------------- | ---------------------------------------- | -------------------------------------------------------------------- |
+| `OwnershipHandoverCanceled`  | `(pendingOwner: address)`                | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
+| `OwnershipHandoverRequested` | `(pendingOwner: address)`                | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
+| `OwnershipTransferred`       | `(oldOwner: address, newOwner: address)` | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
+| `RoleGranted`                | `(role: bytes32, grantee: address)`      | `0x2ae6a113c0ed5b78a53413ffbb7679881f11145ccfba4fb92e863dfcd5a1d2f3` |
+| `RoleRevoked`                | `(role: bytes32, revokee: address)`      | `0x155aaafb6329a2098580462df33ec4b7441b19729b9601c5fc17ae1cf99a8a52` |
+| `SocketFeesUpdated`          | `(oldFees: uint256, newFees: uint256)`   | `0xcbd4d756fb6198bbcc2e4013cce929f504ad46e9d97c543ef9a8dfea3e407053` |
+
+## ProxyFactory
+
+| Event          | Arguments                                                   | Topic                                                                |
+| -------------- | ----------------------------------------------------------- | -------------------------------------------------------------------- |
+| `AdminChanged` | `(proxy: address, admin: address)`                          | `0x7e644d79422f17c01e4894b5f4f588d331ebfa28653d42ae832dc59e38c9798f` |
+| `Deployed`     | `(proxy: address, implementation: address, admin: address)` | `0xc95935a66d15e0da5e412aca0ad27ae891d20b2fb91cf3994b6a3bf2b8178082` |
+| `Upgraded`     | `(proxy: address, implementation: address)`                 | `0x5d611f318680d00598bb735d61bacf0c514c6b50e1e5ad30040a4df2b12791c7` |
+
+## TestUSDC
+
+| Event      | Arguments                                             | Topic                                                                |
+| ---------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
+| `Approval` | `(owner: address, spender: address, amount: uint256)` | `0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925` |
+| `Transfer` | `(from: address, to: address, amount: uint256)`       | `0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef` |
 
 ## AuctionManager
 
@@ -107,43 +144,6 @@
 | `TokenRemovedFromWhitelist`  | `(token: address)`                                                                  | `0xdd2e6d9f52cbe8f695939d018b7d4a216dc613a669876163ac548b916489d917` |
 | `TokenWhitelisted`           | `(token: address)`                                                                  | `0x6a65f90b1a644d2faac467a21e07e50e3f8fa5846e26231d30ae79a417d3d262` |
 
-## Socket
-
-| Event                        | Arguments                                                                                                            | Topic                                                                |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `AppGatewayCallRequested`    | `(triggerId: bytes32, appGatewayId: bytes32, switchboard: address, plug: address, overrides: bytes, payload: bytes)` | `0x5c88d65ab8ba22a57e582bd8ddfa9801cc0ca6be6cb3182baaedc705a612419e` |
-| `ExecutionFailed`            | `(payloadId: bytes32, exceededMaxCopy: bool, returnData: bytes)`                                                     | `0x385334bc68a32c4d164625189adc7633e6074eb1b837fb4d11d768245151e4ce` |
-| `ExecutionSuccess`           | `(payloadId: bytes32, exceededMaxCopy: bool, returnData: bytes)`                                                     | `0x324d63a433b21a12b90e79cd2ba736b2a5238be6165e03b750fa4a7d5193d5d9` |
-| `OwnershipHandoverCanceled`  | `(pendingOwner: address)`                                                                                            | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
-| `OwnershipHandoverRequested` | `(pendingOwner: address)`                                                                                            | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
-| `OwnershipTransferred`       | `(oldOwner: address, newOwner: address)`                                                                             | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
-| `PlugConnected`              | `(plug: address, appGatewayId: bytes32, switchboard: address)`                                                       | `0x90c5924e27cfb6e3a688e729083681f30494ae2615ae14aac3bc807a0c436a88` |
-| `RoleGranted`                | `(role: bytes32, grantee: address)`                                                                                  | `0x2ae6a113c0ed5b78a53413ffbb7679881f11145ccfba4fb92e863dfcd5a1d2f3` |
-| `RoleRevoked`                | `(role: bytes32, revokee: address)`                                                                                  | `0x155aaafb6329a2098580462df33ec4b7441b19729b9601c5fc17ae1cf99a8a52` |
-| `SocketFeeManagerUpdated`    | `(oldSocketFeeManager: address, newSocketFeeManager: address)`                                                       | `0xdcb02e10d5220346a4638aa2826eaab1897306623bc40a427049e4ebd12255b4` |
-| `SwitchboardAdded`           | `(switchboard: address)`                                                                                             | `0x1595852923edfbbf906f09fc8523e4cfb022a194773c4d1509446b614146ee88` |
-| `SwitchboardDisabled`        | `(switchboard: address)`                                                                                             | `0x1b4ee41596b4e754e5665f01ed6122b356f7b36ea0a02030804fac7fa0fdddfc` |
-| `SwitchboardEnabled`         | `(switchboard: address)`                                                                                             | `0x6909a9974e3eec619bc479ba882d30a5ef1219b72ab1ce6a354516e91be317b8` |
-
-## SocketBatcher
-
-| Event                        | Arguments                                | Topic                                                                |
-| ---------------------------- | ---------------------------------------- | -------------------------------------------------------------------- |
-| `OwnershipHandoverCanceled`  | `(pendingOwner: address)`                | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
-| `OwnershipHandoverRequested` | `(pendingOwner: address)`                | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
-| `OwnershipTransferred`       | `(oldOwner: address, newOwner: address)` | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
-
-## SocketFeeManager
-
-| Event                        | Arguments                                | Topic                                                                |
-| ---------------------------- | ---------------------------------------- | -------------------------------------------------------------------- |
-| `OwnershipHandoverCanceled`  | `(pendingOwner: address)`                | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
-| `OwnershipHandoverRequested` | `(pendingOwner: address)`                | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
-| `OwnershipTransferred`       | `(oldOwner: address, newOwner: address)` | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
-| `RoleGranted`                | `(role: bytes32, grantee: address)`      | `0x2ae6a113c0ed5b78a53413ffbb7679881f11145ccfba4fb92e863dfcd5a1d2f3` |
-| `RoleRevoked`                | `(role: bytes32, revokee: address)`      | `0x155aaafb6329a2098580462df33ec4b7441b19729b9601c5fc17ae1cf99a8a52` |
-| `SocketFeesUpdated`          | `(oldFees: uint256, newFees: uint256)`   | `0xcbd4d756fb6198bbcc2e4013cce929f504ad46e9d97c543ef9a8dfea3e407053` |
-
 ## WatcherPrecompileConfig
 
 | Event                        | Arguments                                                                               | Topic                                                                |
@@ -159,19 +159,27 @@
 
 ## WatcherPrecompileLimits
 
-| Event                             | Arguments                                                          | Topic                                                                |
-| --------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| `AppGatewayActivated`             | `(appGateway: address, maxLimit: uint256, ratePerSecond: uint256)` | `0x44628d7d5628b9fbc2c84ea9bf3bd3987fa9cde8d2b28e2d5ceb451f916cb8b9` |
-| `CallBackFeesSet`                 | `(callBackFees: uint256)`                                          | `0x667c97afffb32265f3b4e026d31b81dc223275ff8bb9819e67012197f5799faf` |
-| `DefaultLimitAndRatePerSecondSet` | `(defaultLimit: uint256, defaultRatePerSecond: uint256)`           | `0x39def16be1ce80876ad0b0936cfdf88b8be7a1790b6c1da16ba8bdee53367e8e` |
-| `FinalizeFeesSet`                 | `(finalizeFees: uint256)`                                          | `0x0b710f92aabbdda2e8c347f802353f34ef27845d79db79efb4884e8790a0d5fb` |
-| `Initialized`                     | `(version: uint64)`                                                | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
-| `LimitParamsUpdated`              | `(updates: tuple[])`                                               | `0x81576b12f4d507fd0543afd25a86785573a595334c2c7eb8ca8ec1b0a56a55b3` |
-| `OwnershipHandoverCanceled`       | `(pendingOwner: address)`                                          | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
-| `OwnershipHandoverRequested`      | `(pendingOwner: address)`                                          | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
-| `OwnershipTransferred`            | `(oldOwner: address, newOwner: address)`                           | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
-| `QueryFeesSet`                    | `(queryFees: uint256)`                                             | `0x19569faa0df733d4b0806372423e828b05a5257eb7652da812b90f662bed5cfb` |
-| `TimeoutFeesSet`                  | `(timeoutFees: uint256)`                                           | `0xe8a5b23529bc11019d6df86a1ee0d043571d464902a3fa98e7e3e67dbd5981ca` |
+| Event                        | Arguments                                | Topic                                                                |
+| ---------------------------- | ---------------------------------------- | -------------------------------------------------------------------- |
+| `CallBackFeesSet`            | `(callBackFees: uint256)`                | `0x667c97afffb32265f3b4e026d31b81dc223275ff8bb9819e67012197f5799faf` |
+| `FinalizeFeesSet`            | `(finalizeFees: uint256)`                | `0x0b710f92aabbdda2e8c347f802353f34ef27845d79db79efb4884e8790a0d5fb` |
+| `Initialized`                | `(version: uint64)`                      | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
+| `OwnershipHandoverCanceled`  | `(pendingOwner: address)`                | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
+| `OwnershipHandoverRequested` | `(pendingOwner: address)`                | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
+| `OwnershipTransferred`       | `(oldOwner: address, newOwner: address)` | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
+| `QueryFeesSet`               | `(queryFees: uint256)`                   | `0x19569faa0df733d4b0806372423e828b05a5257eb7652da812b90f662bed5cfb` |
+| `TimeoutFeesSet`             | `(timeoutFees: uint256)`                 | `0xe8a5b23529bc11019d6df86a1ee0d043571d464902a3fa98e7e3e67dbd5981ca` |
+
+## FastSwitchboard
+
+| Event                        | Arguments                                 | Topic                                                                |
+| ---------------------------- | ----------------------------------------- | -------------------------------------------------------------------- |
+| `Attested`                   | `(payloadId_: bytes32, watcher: address)` | `0x3d83c7bc55c269e0bc853ddc0d7b9fca30216ecc43779acb4e36b7e0ad1c71e4` |
+| `OwnershipHandoverCanceled`  | `(pendingOwner: address)`                 | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
+| `OwnershipHandoverRequested` | `(pendingOwner: address)`                 | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
+| `OwnershipTransferred`       | `(oldOwner: address, newOwner: address)`  | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
+| `RoleGranted`                | `(role: bytes32, grantee: address)`       | `0x2ae6a113c0ed5b78a53413ffbb7679881f11145ccfba4fb92e863dfcd5a1d2f3` |
+| `RoleRevoked`                | `(role: bytes32, revokee: address)`       | `0x155aaafb6329a2098580462df33ec4b7441b19729b9601c5fc17ae1cf99a8a52` |
 
 ## DeliveryHelper
 
@@ -186,17 +194,6 @@
 | `OwnershipTransferred`          | `(oldOwner: address, newOwner: address)`                                                                                                    | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
 | `PayloadSubmitted`              | `(requestCount: uint40, appGateway: address, payloadSubmitParams: tuple[], fees: uint256, auctionManager: address, onlyReadRequests: bool)` | `0xc6455dba7c07a5e75c7189040ae9e3478162f333a96365b283b434fd0e32c6b3` |
 | `RequestCancelled`              | `(requestCount: uint40)`                                                                                                                    | `0xff191657769be72fc08def44c645014c60d18cb24b9ca05c9a33406a28253245` |
-
-## FastSwitchboard
-
-| Event                        | Arguments                                 | Topic                                                                |
-| ---------------------------- | ----------------------------------------- | -------------------------------------------------------------------- |
-| `Attested`                   | `(payloadId_: bytes32, watcher: address)` | `0x3d83c7bc55c269e0bc853ddc0d7b9fca30216ecc43779acb4e36b7e0ad1c71e4` |
-| `OwnershipHandoverCanceled`  | `(pendingOwner: address)`                 | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
-| `OwnershipHandoverRequested` | `(pendingOwner: address)`                 | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
-| `OwnershipTransferred`       | `(oldOwner: address, newOwner: address)`  | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
-| `RoleGranted`                | `(role: bytes32, grantee: address)`       | `0x2ae6a113c0ed5b78a53413ffbb7679881f11145ccfba4fb92e863dfcd5a1d2f3` |
-| `RoleRevoked`                | `(role: bytes32, revokee: address)`       | `0x155aaafb6329a2098580462df33ec4b7441b19729b9601c5fc17ae1cf99a8a52` |
 
 ## WatcherPrecompile
 

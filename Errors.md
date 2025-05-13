@@ -1,12 +1,29 @@
 # Custom Error Codes
 
-## base/PlugBase.sol
+## evmx/AddressResolver.sol
 
 | Error                        | Signature    |
 | ---------------------------- | ------------ |
-| `SocketAlreadyInitialized()` | `0xc9500b00` |
+| `InvalidAppGateway(address)` | `0x0e66940d` |
 
-## interfaces/IWatcherPrecompile.sol
+## evmx/AddressResolverUtil.sol
+
+| Error                                     | Signature    |
+| ----------------------------------------- | ------------ |
+| `OnlyPayloadDelivery()`                   | `0x7ccc3a43` |
+| `OnlyWatcherPrecompile()`                 | `0x663a892a` |
+| `OnlyWatcherPrecompileOrDeliveryHelper()` | `0xe93a2814` |
+
+## evmx/AsyncPromise.sol
+
+| Error                           | Signature    |
+| ------------------------------- | ------------ |
+| `PromiseAlreadyResolved()`      | `0x56b63537` |
+| `OnlyForwarderOrLocalInvoker()` | `0xa9fb0b28` |
+| `PromiseAlreadySetUp()`         | `0x927c53d5` |
+| `PromiseRevertFailed()`         | `0x0175b9de` |
+
+## evmx/interfaces/IWatcherPrecompile.sol
 
 | Error                                 | Signature    |
 | ------------------------------------- | ------------ |
@@ -24,29 +41,14 @@
 | `InvalidLevelNumber()`                | `0x5022f14b` |
 | `DeadlineNotPassedForOnChainRevert()` | `0x7006aa10` |
 
-## protocol/AddressResolver.sol
-
-| Error                        | Signature    |
-| ---------------------------- | ------------ |
-| `InvalidAppGateway(address)` | `0x0e66940d` |
-
-## protocol/AsyncPromise.sol
-
-| Error                           | Signature    |
-| ------------------------------- | ------------ |
-| `PromiseAlreadyResolved()`      | `0x56b63537` |
-| `OnlyForwarderOrLocalInvoker()` | `0xa9fb0b28` |
-| `PromiseAlreadySetUp()`         | `0x927c53d5` |
-| `PromiseRevertFailed()`         | `0x0175b9de` |
-
-## protocol/payload-delivery/AuctionManager.sol
+## evmx/payload-delivery/AuctionManager.sol
 
 | Error                        | Signature    |
 | ---------------------------- | ------------ |
 | `InvalidBid()`               | `0xc6388ef7` |
 | `MaxReAuctionCountReached()` | `0xf2b4388c` |
 
-## protocol/payload-delivery/ContractFactoryPlug.sol
+## evmx/payload-delivery/ContractFactoryPlug.sol
 
 | Error                      | Signature    |
 | -------------------------- | ------------ |
@@ -54,7 +56,7 @@
 | `ExecutionFailed()`        | `0xacfdb444` |
 | `information(bool,,bytes)` | `0x3a82a1f3` |
 
-## protocol/payload-delivery/FeesManager.sol
+## evmx/payload-delivery/FeesManager.sol
 
 | Error                            | Signature    |
 | -------------------------------- | ------------ |
@@ -67,7 +69,7 @@
 | `InvalidAmount()`                | `0x2c5211c6` |
 | `InsufficientBalance()`          | `0xf4d678b8` |
 
-## protocol/payload-delivery/FeesPlug.sol
+## evmx/payload-delivery/FeesPlug.sol
 
 | Error                                               | Signature    |
 | --------------------------------------------------- | ------------ |
@@ -75,7 +77,7 @@
 | `InvalidDepositAmount()`                            | `0xfe9ba5cd` |
 | `TokenNotWhitelisted(address)`                      | `0xea3bff2e` |
 
-## protocol/payload-delivery/app-gateway/DeliveryUtils.sol
+## evmx/payload-delivery/app-gateway/DeliveryUtils.sol
 
 | Error                                | Signature    |
 | ------------------------------------ | ------------ |
@@ -87,13 +89,26 @@
 | `RequestPayloadCountLimitExceeded()` | `0xcbef144b` |
 | `MaxMsgValueLimitExceeded()`         | `0x97b4e8ce` |
 
-## protocol/payload-delivery/app-gateway/FeesHelpers.sol
+## evmx/payload-delivery/app-gateway/FeesHelpers.sol
 
 | Error                                         | Signature    |
 | --------------------------------------------- | ------------ |
 | `NewMaxFeesLowerThanCurrent(uint256,uint256)` | `0x1345dda1` |
 
-## protocol/socket/Socket.sol
+## evmx/watcherPrecompile/WatcherPrecompileConfig.sol
+
+| Error                  | Signature    |
+| ---------------------- | ------------ |
+| `InvalidGateway()`     | `0xfc9dfe85` |
+| `InvalidSwitchboard()` | `0xf63c9e4d` |
+
+## evmx/watcherPrecompile/WatcherPrecompileLimits.sol
+
+| Error                        | Signature    |
+| ---------------------------- | ------------ |
+| `WatcherFeesNotSet(bytes32)` | `0x1ce1de3f` |
+
+## protocol/Socket.sol
 
 | Error                                     | Signature    |
 | ----------------------------------------- | ------------ |
@@ -105,7 +120,7 @@
 | `InsufficientMsgValue()`                  | `0x78f38f76` |
 | `ReadOnlyCall()`                          | `0xcf8fd6f1` |
 
-## protocol/socket/SocketConfig.sol
+## protocol/SocketConfig.sol
 
 | Error                           | Signature    |
 | ------------------------------- | ------------ |
@@ -114,35 +129,33 @@
 | `SwitchboardExists()`           | `0x2dff8555` |
 | `SwitchboardExistsOrDisabled()` | `0x1c7d2487` |
 
-## protocol/socket/SocketFeeManager.sol
+## protocol/SocketFeeManager.sol
 
 | Error                | Signature    |
 | -------------------- | ------------ |
 | `InsufficientFees()` | `0x8d53e553` |
 | `FeeTooLow()`        | `0x732f9413` |
 
-## protocol/socket/switchboard/FastSwitchboard.sol
+## protocol/base/PlugBase.sol
+
+| Error                        | Signature    |
+| ---------------------------- | ------------ |
+| `SocketAlreadyInitialized()` | `0xc9500b00` |
+
+## protocol/switchboard/FastSwitchboard.sol
 
 | Error               | Signature    |
 | ------------------- | ------------ |
 | `AlreadyAttested()` | `0x35d90805` |
 | `WatcherNotFound()` | `0xa278e4ad` |
 
-## protocol/utils/AccessControl.sol
+## utils/AccessControl.sol
 
 | Error               | Signature    |
 | ------------------- | ------------ |
 | `NoPermit(bytes32)` | `0x962f6333` |
 
-## protocol/utils/AddressResolverUtil.sol
-
-| Error                                     | Signature    |
-| ----------------------------------------- | ------------ |
-| `OnlyPayloadDelivery()`                   | `0x7ccc3a43` |
-| `OnlyWatcherPrecompile()`                 | `0x663a892a` |
-| `OnlyWatcherPrecompileOrDeliveryHelper()` | `0xe93a2814` |
-
-## protocol/utils/common/Errors.sol
+## utils/common/Errors.sol
 
 | Error                        | Signature    |
 | ---------------------------- | ------------ |
@@ -178,16 +191,3 @@
 | `PromiseCallerMismatch()`    | `0x2b87f115` |
 | `RequestCountMismatch()`     | `0x98bbcbff` |
 | `DeliveryHelperNotSet()`     | `0x07e6c946` |
-
-## protocol/watcherPrecompile/WatcherPrecompileConfig.sol
-
-| Error                  | Signature    |
-| ---------------------- | ------------ |
-| `InvalidGateway()`     | `0xfc9dfe85` |
-| `InvalidSwitchboard()` | `0xf63c9e4d` |
-
-## protocol/watcherPrecompile/WatcherPrecompileLimits.sol
-
-| Error                        | Signature    |
-| ---------------------------- | ------------ |
-| `WatcherFeesNotSet(bytes32)` | `0x1ce1de3f` |
