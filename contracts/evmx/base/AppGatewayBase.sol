@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../AddressResolverUtil.sol";
+import "../helpers/AddressResolverUtil.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IForwarder.sol";
-import "../interfaces/IMiddleware.sol";
-import "../interfaces/IPromise.sol";
 
 import {InvalidPromise, FeesNotSet, AsyncModifierNotUsed} from "../../utils/common/Errors.sol";
-import {FAST} from "../../utils/common/Constants.sol";
+import {FAST, READ, WRITE, SCHEDULE} from "../../utils/common/Constants.sol";
 
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway
@@ -28,43 +26,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     address public consumeFrom;
 
     /// @notice Modifier to treat functions async
-    modifier async(bytes memory feesApprovalData_) {
-        _preAsync(feesApprovalData_);
+    modifier async() {
+        _preAsync();
         _;
         _postAsync();
-    }
-
-    // todo: can't overload modifier with same name, can rename later
-    /// @notice Modifier to treat functions async with consume from address
-    modifier asyncWithConsume(address consumeFrom_) {
-        _preAsync(new bytes(0));
-        consumeFrom = consumeFrom_;
-        _;
-        _postAsync();
-    }
-
-    function _postAsync() internal {
-        isAsyncModifierSet = false;
-
-        watcher__().submitRequest(maxFees, auctionManager, consumeFrom, onCompleteData);
-        _markValidPromises();
-        onCompleteData = bytes("");
-    }
-
-    function _preAsync(bytes memory feesApprovalData_) internal {
-        isAsyncModifierSet = true;
-        _clearOverrides();
-        watcher__().clearQueue();
-        addressResolver__.clearPromises();
-
-        _handleFeesApproval(feesApprovalData_);
-    }
-
-    function _handleFeesApproval(bytes memory feesApprovalData_) internal {
-        if (feesApprovalData_.length > 0) {
-            (consumeFrom, , ) = IFeesManager(addressResolver__.feesManager())
-                .whitelistAppGatewayWithSignature(feesApprovalData_);
-        } else consumeFrom = address(this);
     }
 
     /// @notice Modifier to ensure only valid promises can call the function
@@ -81,6 +46,34 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     constructor(address addressResolver_) {
         _setAddressResolver(addressResolver_);
         sbType = FAST;
+    }
+
+    function _postAsync() internal {
+        isAsyncModifierSet = false;
+
+        (uint40 requestCount, address[] memory promises) = watcherPrecompile__().submitRequest(
+            maxFees,
+            auctionManager,
+            consumeFrom,
+            onCompleteData
+        );
+        _markValidPromises(promises);
+    }
+
+    function _preAsync() internal {
+        isAsyncModifierSet = true;
+        _clearOverrides();
+        watcherPrecompile__().clearQueue();
+    }
+
+    function _approveFeesWithSignature(bytes memory feesApprovalData_) internal {
+        _handleFeesApproval(feesApprovalData_);
+    }
+
+    function _handleFeesApproval(bytes memory feesApprovalData_) internal {
+        if (feesApprovalData_.length > 0) {
+            (consumeFrom, , ) = feesManager__().whitelistAppGatewayWithSignature(feesApprovalData_);
+        }
     }
 
     /// @notice Sets the switchboard type
@@ -109,10 +102,9 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     }
 
     /// @notice Marks the promises as valid
-    function _markValidPromises() internal {
-        address[] memory promises = addressResolver__.getPromises();
-        for (uint256 i = 0; i < promises.length; i++) {
-            isValidPromise[promises[i]] = true;
+    function _markValidPromises(address[] memory promises_) internal {
+        for (uint256 i = 0; i < promises_.length; i++) {
+            isValidPromise[promises_[i]] = true;
         }
     }
 
@@ -137,11 +129,33 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         _deploy(contractId_, chainSlug_, isPlug_, new bytes(0));
     }
 
+    function _schedule(uint256 delayInSeconds_, bytes memory payload_) internal {
+        if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
+        overrideParams.callType = SCHEDULE;
+        overrideParams.delayInSeconds = delayInSeconds_;
+
+        (address promise_, ) = watcherPrecompile__().queue(
+            QueuePayloadParams({
+                overrideParams: overrideParams,
+                transaction: Transaction({
+                    chainSlug: uint32(0),
+                    target: address(this),
+                    payload: payload_
+                }),
+                asyncPromise: address(0),
+                switchboardType: sbType
+            }),
+            address(this)
+        );
+
+        watcher__().then(promise_);
+    }
+
     /// @notice Gets the socket address
     /// @param chainSlug_ The chain slug
     /// @return socketAddress_ The socket address
     function getSocketAddress(uint32 chainSlug_) public view returns (address) {
-        return watcherPrecompileConfig().sockets(chainSlug_);
+        return watcherPrecompile__().sockets(chainSlug_);
     }
 
     /// @notice Gets the on-chain address
@@ -156,7 +170,12 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
+            .getOnChainAddress();
+    }
+
+    function _setCallType(Read isReadCall_) internal {
+        overrideParams.callType = isReadCall_ ? READ : WRITE;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -174,19 +193,27 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         uint256 gasLimit_,
         uint256 fees_
     ) internal {
-        overrideParams.isReadCall = isReadCall_;
+        _setCallType(isReadCall_);
         overrideParams.isParallelCall = isParallelCall_;
         overrideParams.gasLimit = gasLimit_;
         maxFees = fees_;
     }
 
     function _clearOverrides() internal {
-        overrideParams.isReadCall = Read.OFF;
+        overrideParams.callType = WRITE;
         overrideParams.isParallelCall = Parallel.OFF;
         overrideParams.gasLimit = 0;
         overrideParams.value = 0;
-        overrideParams.readAt = 0;
+        overrideParams.readAtBlockNumber = 0;
         overrideParams.writeFinality = WriteFinality.LOW;
+        overrideParams.delayInSeconds = 0;
+        consumeFrom = address(this);
+        onCompleteData = bytes("");
+    }
+
+    /// @notice Modifier to treat functions async with consume from address
+    function _setOverrides(address consumeFrom_) internal {
+        consumeFrom = consumeFrom_;
     }
 
     /// @notice Sets isReadCall, maxFees and gasLimit overrides
@@ -194,7 +221,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /// @param isParallelCall_ The sequential call flag
     /// @param gasLimit_ The gas limit
     function _setOverrides(Read isReadCall_, Parallel isParallelCall_, uint256 gasLimit_) internal {
-        overrideParams.isReadCall = isReadCall_;
+        _setCallType(isReadCall_);
         overrideParams.isParallelCall = isParallelCall_;
         overrideParams.gasLimit = gasLimit_;
     }
@@ -203,7 +230,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /// @param isReadCall_ The read call flag
     /// @param isParallelCall_ The sequential call flag
     function _setOverrides(Read isReadCall_, Parallel isParallelCall_) internal {
-        overrideParams.isReadCall = isReadCall_;
+        _setCallType(isReadCall_);
         overrideParams.isParallelCall = isParallelCall_;
     }
 
@@ -221,24 +248,24 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
 
     /// @notice Sets isParallelCall overrides
     /// @param isParallelCall_ The sequential call flag
-    /// @param readAt_ The read anchor value. Currently block number.
-    function _setOverrides(Parallel isParallelCall_, uint256 readAt_) internal {
+    /// @param readAtBlockNumber_ The read anchor value. Currently block number.
+    function _setOverrides(Parallel isParallelCall_, uint256 readAtBlockNumber_) internal {
         overrideParams.isParallelCall = isParallelCall_;
-        overrideParams.readAt = readAt_;
+        overrideParams.readAtBlockNumber = readAtBlockNumber_;
     }
 
     /// @notice Sets isReadCall overrides
     /// @param isReadCall_ The read call flag
     function _setOverrides(Read isReadCall_) internal {
-        overrideParams.isReadCall = isReadCall_;
+        _setCallType(isReadCall_);
     }
 
     /// @notice Sets isReadCall overrides
     /// @param isReadCall_ The read call flag
-    /// @param readAt_ The read anchor value. Currently block number.
-    function _setOverrides(Read isReadCall_, uint256 readAt_) internal {
-        overrideParams.isReadCall = isReadCall_;
-        overrideParams.readAt = readAt_;
+    /// @param readAtBlockNumber_ The read anchor value. Currently block number.
+    function _setOverrides(Read isReadCall_, uint256 readAtBlockNumber_) internal {
+        _setCallType(isReadCall_);
+        overrideParams.readAtBlockNumber = readAtBlockNumber_;
     }
 
     /// @notice Sets gasLimit overrides
