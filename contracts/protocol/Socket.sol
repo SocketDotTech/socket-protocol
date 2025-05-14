@@ -84,7 +84,7 @@ contract Socket is SocketUtils {
         if (msg.value < executeParams_.value + transmissionParams_.socketFees)
             revert InsufficientMsgValue();
 
-        bytes32 payloadId = _createPayloadId(plugConfig.switchboard, executeParams_);
+        bytes32 payloadId = _createPayloadId(fromBytes32Format(plugConfig.switchboard), executeParams_);
 
         // validate the execution status
         _validateExecutionStatus(payloadId);
@@ -107,7 +107,7 @@ contract Socket is SocketUtils {
         payloadIdToDigest[payloadId] = digest;
 
         // verify the digest
-        _verify(digest, payloadId, plugConfig.switchboard);
+        _verify(digest, payloadId, fromBytes32Format(plugConfig.switchboard));
 
         return _execute(payloadId, executeParams_, transmissionParams_);
     }
@@ -193,7 +193,7 @@ contract Socket is SocketUtils {
         emit AppGatewayCallRequested(
             triggerId,
             plugConfig.appGatewayId,
-            plugConfig.switchboard,
+            fromBytes32Format(plugConfig.switchboard),
             plug_,
             // gets the overrides from the plug
             IPlug(plug_).overrides(),

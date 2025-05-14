@@ -21,7 +21,7 @@ library WatcherIdUtils {
         uint40 requestCount_,
         uint40 batchCount_,
         uint40 payloadCount_,
-        address switchboard_,
+        bytes32 switchboard_,
         uint32 chainSlug_
     ) internal pure returns (bytes32) {
         return

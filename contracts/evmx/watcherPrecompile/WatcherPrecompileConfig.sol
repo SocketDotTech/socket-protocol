@@ -7,6 +7,7 @@ import {Ownable} from "solady/auth/Ownable.sol";
 import "../interfaces/IWatcherPrecompileConfig.sol";
 import {AddressResolverUtil} from "../AddressResolverUtil.sol";
 import {InvalidWatcherSignature, NonceUsed} from "../../utils/common/Errors.sol";
+import {toBytes32Format} from "../../utils/common/Converters.sol";
 import "./core/WatcherIdUtils.sol";
 
 /// @title WatcherPrecompileConfig
@@ -30,17 +31,17 @@ contract WatcherPrecompileConfig is
     // slot 102: _plugConfigs
     /// @notice Maps network and plug to their configuration
     /// @dev chainSlug => plug => PlugConfig
-    mapping(uint32 => mapping(address => PlugConfig)) internal _plugConfigs;
+    mapping(uint32 => mapping(bytes32 => PlugConfig)) internal _plugConfigs;
 
     // slot 103: switchboards
     /// @notice Maps chain slug to their associated switchboard
     /// @dev chainSlug => sb type => switchboard address
-    mapping(uint32 => mapping(bytes32 => address)) public switchboards;
+    mapping(uint32 => mapping(bytes32 => bytes32)) public switchboards;
 
     // slot 104: sockets
     /// @notice Maps chain slug to their associated socket
     /// @dev chainSlug => socket address
-    mapping(uint32 => address) public sockets;
+    mapping(uint32 => bytes32) public sockets;
 
     // slot 105: contractFactoryPlug
     /// @notice Maps chain slug to their associated contract factory plug
@@ -59,19 +60,19 @@ contract WatcherPrecompileConfig is
 
     // slot 108: isValidPlug
     // appGateway => chainSlug => plug => isValid
-    mapping(address => mapping(uint32 => mapping(address => bool))) public isValidPlug;
+    mapping(address => mapping(uint32 => mapping(bytes32 => bool))) public isValidPlug;
 
     /// @notice Emitted when a new plug is configured for an app gateway
     /// @param appGatewayId The id of the app gateway
     /// @param chainSlug The identifier of the destination network
     /// @param plug The address of the plug
-    event PlugAdded(bytes32 appGatewayId, uint32 chainSlug, address plug);
+    event PlugAdded(bytes32 appGatewayId, uint32 chainSlug, bytes32 plug);
 
     /// @notice Emitted when a switchboard is set for a network
     /// @param chainSlug The identifier of the network
     /// @param sbType The type of switchboard
     /// @param switchboard The address of the switchboard
-    event SwitchboardSet(uint32 chainSlug, bytes32 sbType, address switchboard);
+    event SwitchboardSet(uint32 chainSlug, bytes32 sbType, bytes32 switchboard);
 
     /// @notice Emitted when contracts are set for a network
     /// @param chainSlug The identifier of the network
@@ -80,7 +81,7 @@ contract WatcherPrecompileConfig is
     /// @param feesPlug The address of the fees plug
     event OnChainContractSet(
         uint32 chainSlug,
-        address socket,
+        bytes32 socket,
         address contractFactoryPlug,
         address feesPlug
     );
@@ -90,7 +91,7 @@ contract WatcherPrecompileConfig is
     /// @param chainSlug The identifier of the network
     /// @param plug The address of the plug
     /// @param isValid Whether the plug is valid
-    event IsValidPlugSet(address appGateway, uint32 chainSlug, address plug, bool isValid);
+    event IsValidPlugSet(address appGateway, uint32 chainSlug, bytes32 plug, bool isValid);
 
     error InvalidGateway();
     error InvalidSwitchboard();
@@ -137,7 +138,7 @@ contract WatcherPrecompileConfig is
     /// @param chainSlug_ The identifier of the network
     function setOnChainContracts(
         uint32 chainSlug_,
-        address socket_,
+        bytes32 socket_,
         address contractFactoryPlug_,
         address feesPlug_
     ) external onlyOwner {
@@ -155,7 +156,7 @@ contract WatcherPrecompileConfig is
     function setSwitchboard(
         uint32 chainSlug_,
         bytes32 sbType_,
-        address switchboard_
+        bytes32 switchboard_
     ) external onlyOwner {
         switchboards[chainSlug_][sbType_] = switchboard_;
         emit SwitchboardSet(chainSlug_, sbType_, switchboard_);
@@ -167,7 +168,7 @@ contract WatcherPrecompileConfig is
     /// @param chainSlug_ The identifier of the network
     /// @param plug_ The address of the plug
     /// @param isValid_ Whether the plug is valid
-    function setIsValidPlug(uint32 chainSlug_, address plug_, bool isValid_) external {
+    function setIsValidPlug(uint32 chainSlug_, bytes32 plug_, bool isValid_) external {
         isValidPlug[msg.sender][chainSlug_][plug_] = isValid_;
         emit IsValidPlugSet(msg.sender, chainSlug_, plug_, isValid_);
     }
@@ -180,8 +181,8 @@ contract WatcherPrecompileConfig is
     /// @dev Returns zero addresses if configuration doesn't exist
     function getPlugConfigs(
         uint32 chainSlug_,
-        address plug_
-    ) public view returns (bytes32, address) {
+        bytes32 plug_
+    ) public view returns (bytes32, bytes32) {
         return (
             _plugConfigs[chainSlug_][plug_].appGatewayId,
             _plugConfigs[chainSlug_][plug_].switchboard
@@ -196,18 +197,18 @@ contract WatcherPrecompileConfig is
     /// @param switchboard_ The address of the switchboard
     function verifyConnections(
         uint32 chainSlug_,
-        address target_,
+        bytes32 target_,
         address appGateway_,
-        address switchboard_,
+        bytes32 switchboard_,
         address middleware_
     ) external view {
         // if target is contractFactoryPlug, return
         // as connection is with middleware delivery helper and not app gateway
         if (
-            middleware_ == address(deliveryHelper__()) && target_ == contractFactoryPlug[chainSlug_]
+            middleware_ == address(deliveryHelper__()) && target_ == toBytes32Format(contractFactoryPlug[chainSlug_])
         ) return;
 
-        (bytes32 appGatewayId, address switchboard) = getPlugConfigs(chainSlug_, target_);
+        (bytes32 appGatewayId, bytes32 switchboard) = getPlugConfigs(chainSlug_, target_);
         if (appGatewayId != WatcherIdUtils.encodeAppGatewayId(appGateway_)) revert InvalidGateway();
         if (switchboard != switchboard_) revert InvalidSwitchboard();
     }

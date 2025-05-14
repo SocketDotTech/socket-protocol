@@ -82,20 +82,20 @@ struct UpdateLimitParams {
 }
 
 struct AppGatewayConfig {
-    address plug;
+    bytes32 plug;
     bytes32 appGatewayId;
-    address switchboard;
+    bytes32 switchboard;
     uint32 chainSlug;
 }
 // Plug config:
 struct PlugConfig {
     bytes32 appGatewayId;
-    address switchboard;
+    bytes32 switchboard;
 }
 //trigger:
 struct TriggerParams {
     bytes32 triggerId;
-    address plug;
+    bytes32 plug;
     bytes32 appGatewayId;
     uint32 chainSlug;
     bytes overrides;
@@ -146,7 +146,7 @@ struct UserCredits {
 
 // digest:
 struct DigestParams {
-    address socket;
+    bytes32 socket;
     address transmitter;
     bytes32 payloadId;
     uint256 deadline;
@@ -154,7 +154,7 @@ struct DigestParams {
     uint256 gasLimit;
     uint256 value;
     bytes payload;
-    address target;
+    bytes32 target;
     bytes32 appGatewayId;
     bytes32 prevDigestsHash;
 }
@@ -166,8 +166,8 @@ struct QueuePayloadParams {
     IsPlug isPlug;
     WriteFinality writeFinality;
     address asyncPromise;
-    address switchboard;
-    address target;
+    bytes32 switchboard;
+    bytes32 target;
     address appGateway;
     uint256 gasLimit;
     uint256 value;
@@ -183,8 +183,8 @@ struct PayloadSubmitParams {
     Parallel isParallel;
     WriteFinality writeFinality;
     address asyncPromise;
-    address switchboard;
-    address target;
+    bytes32 switchboard;
+    bytes32 target;
     address appGateway;
     uint256 gasLimit;
     uint256 value;
@@ -204,8 +204,8 @@ struct PayloadParams {
     // Parallel isParallel;
     // WriteFinality writeFinality;
     address asyncPromise;
-    address switchboard;
-    address target;
+    bytes32 switchboard;
+    bytes32 target;
     address appGateway;
     bytes32 payloadId;
     bytes32 prevDigestsHash;
@@ -244,6 +244,7 @@ struct RequestMetadata {
     bytes onCompleteData;
 }
 
+// TODO:GW: remove comment after review: ExecuteParams is for EVM calls - should we name it ExecuteParamsEvm?
 struct ExecuteParams {
     CallType callType;
     uint40 requestCount;
@@ -271,4 +272,25 @@ struct PayloadIdParams {
     uint40 payloadCount;
     uint32 chainSlug;
     address switchboard;
+}
+
+struct SolanaInstruction {
+    SolanaInstructionData data;
+    SolanaInstructionDataDescription description;
+}
+
+struct SolanaInstructionData {
+    bytes32 programId;
+    bytes8 instructionDiscriminator;
+    bytes32[] accounts;
+    bytes[] functionArguments;
+}
+
+struct SolanaInstructionDataDescription {
+    // flags for accounts
+    // 0 bit - isWritable (0|1)
+    // 1 bit - isSigner (0|1)
+    bytes1[] accountFlags;
+    // names for function argument types used later in data decoding in watcher and transmitter
+    string[] functionArgumentTypeNames;
 }

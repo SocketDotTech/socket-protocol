@@ -2,6 +2,7 @@
 pragma solidity ^0.8.21;
 
 import "./DeliveryUtils.sol";
+import { toBytes32Format } from "../../../utils/common/Converters.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
 abstract contract RequestQueue is DeliveryUtils {
@@ -176,7 +177,7 @@ abstract contract RequestQueue is DeliveryUtils {
 
     function _createDeployPayloadDetails(
         QueuePayloadParams memory queuePayloadParams_
-    ) internal returns (bytes memory payload, address target) {
+    ) internal returns (bytes memory payload, bytes32 target) {
         bytes32 salt = keccak256(
             abi.encode(queuePayloadParams_.appGateway, queuePayloadParams_.chainSlug, saltCounter++)
         );
@@ -193,7 +194,7 @@ abstract contract RequestQueue is DeliveryUtils {
         );
 
         // getting app gateway for deployer as the plug is connected to the app gateway
-        target = getDeliveryHelperPlugAddress(queuePayloadParams_.chainSlug);
+        target = toBytes32Format(getDeliveryHelperPlugAddress(queuePayloadParams_.chainSlug));
     }
 
     /// @notice Creates the payload details for a given call parameters
@@ -204,7 +205,7 @@ abstract contract RequestQueue is DeliveryUtils {
         QueuePayloadParams memory queuePayloadParams_
     ) internal returns (PayloadSubmitParams memory) {
         bytes memory payload = queuePayloadParams_.payload;
-        address target = queuePayloadParams_.target;
+        bytes32 target = queuePayloadParams_.target;
         if (queuePayloadParams_.callType == CallType.DEPLOY) {
             (payload, target) = _createDeployPayloadDetails(queuePayloadParams_);
         }

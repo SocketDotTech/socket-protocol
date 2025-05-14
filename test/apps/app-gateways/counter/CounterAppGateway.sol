@@ -6,6 +6,7 @@ import "../../../../contracts/evmx/interfaces/IForwarder.sol";
 import "../../../../contracts/evmx/interfaces/IPromise.sol";
 import "./Counter.sol";
 import "./ICounter.sol";
+import {toBytes32Format} from "../../../../contracts/utils/common/Converters.sol";
 
 contract CounterAppGateway is AppGatewayBase, Ownable {
     bytes32 public counter = _createContractId("counter");
@@ -99,7 +100,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
 
     // trigger from a chain
     function setIsValidPlug(uint32 chainSlug_, address plug_) public {
-        watcherPrecompileConfig().setIsValidPlug(chainSlug_, plug_, true);
+        watcherPrecompileConfig().setIsValidPlug(chainSlug_, toBytes32Format(plug_), true);
     }
 
     function increase(uint256 value_) external onlyWatcherPrecompile {

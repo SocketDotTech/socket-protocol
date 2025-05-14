@@ -8,6 +8,7 @@ import "./interfaces/IPromise.sol";
 import "./interfaces/IForwarder.sol";
 import {AddressResolverUtil} from "./AddressResolverUtil.sol";
 import {AsyncModifierNotUsed, NoAsyncPromiseFound, PromiseCallerMismatch, RequestCountMismatch, DeliveryHelperNotSet} from "../utils/common/Errors.sol";
+import { toBytes32Format } from "../utils/common/Converters.sol";
 import "solady/utils/Initializable.sol";
 
 /// @title Forwarder Storage
@@ -20,7 +21,7 @@ abstract contract ForwarderStorage is IForwarder {
     /// @notice chain slug on which the contract is deployed
     uint32 public chainSlug;
     /// @notice on-chain address associated with this forwarder
-    address public onChainAddress;
+    bytes32 public onChainAddress;
 
     // slot 51
     /// @notice caches the latest async promise address for the last call
@@ -51,7 +52,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
     /// @param addressResolver_ address resolver contract
     function initialize(
         uint32 chainSlug_,
-        address onChainAddress_,
+        bytes32 onChainAddress_,
         address addressResolver_
     ) public initializer {
         chainSlug = chainSlug_;
@@ -79,7 +80,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
 
     /// @notice Returns the on-chain address associated with this forwarder.
     /// @return The on-chain address.
-    function getOnChainAddress() external view returns (address) {
+    function getOnChainAddress() external view returns (bytes32) {
         return onChainAddress;
     }
 
@@ -119,7 +120,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
         ) = IAppGateway(msg.sender).getOverrideParams();
 
         // get the switchboard address from the watcher precompile config
-        address switchboard = watcherPrecompileConfig().switchboards(chainSlug, sbType);
+        bytes32 switchboard = watcherPrecompileConfig().switchboards(chainSlug, sbType);
 
         // Queue the call in the middleware.
         deliveryHelper__().queue(
