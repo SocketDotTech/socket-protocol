@@ -43,23 +43,23 @@ contract ParallelCounterTest is DeliveryHelperTest {
         chainSlugs[1] = optChainSlug;
         deployCounterApps(chainSlugs);
 
-        (address onChainArb1, address forwarderArb1) = getOnChainAndForwarderAddresses(
+        (bytes32 onChainArb1, address forwarderArb1) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId1,
             parallelCounterGateway
         );
-        (address onChainArb2, address forwarderArb2) = getOnChainAndForwarderAddresses(
+        (bytes32 onChainArb2, address forwarderArb2) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId2,
             parallelCounterGateway
         );
 
-        (address onChainOpt1, address forwarderOpt1) = getOnChainAndForwarderAddresses(
+        (bytes32 onChainOpt1, address forwarderOpt1) = getOnChainAndForwarderAddresses(
             optChainSlug,
             counterId1,
             parallelCounterGateway
         );
-        (address onChainOpt2, address forwarderOpt2) = getOnChainAndForwarderAddresses(
+        (bytes32 onChainOpt2, address forwarderOpt2) = getOnChainAndForwarderAddresses(
             optChainSlug,
             counterId2,
             parallelCounterGateway

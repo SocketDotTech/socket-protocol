@@ -153,28 +153,28 @@ contract DeliveryHelperTest is SetupTest {
 
         AppGatewayConfig[] memory gateways = new AppGatewayConfig[](4);
         gateways[0] = AppGatewayConfig({
-            plug: address(arbConfig.contractFactoryPlug),
+            plug: toBytes32Format(address(arbConfig.contractFactoryPlug)),
             chainSlug: arbChainSlug,
             appGatewayId: _encodeAppGatewayId(address(deliveryHelper)),
-            switchboard: address(arbConfig.switchboard)
+            switchboard: toBytes32Format(address(arbConfig.switchboard))
         });
         gateways[1] = AppGatewayConfig({
-            plug: address(optConfig.contractFactoryPlug),
+            plug: toBytes32Format(address(optConfig.contractFactoryPlug)),
             chainSlug: optChainSlug,
             appGatewayId: _encodeAppGatewayId(address(deliveryHelper)),
-            switchboard: address(optConfig.switchboard)
+            switchboard: toBytes32Format(address(optConfig.switchboard))
         });
         gateways[2] = AppGatewayConfig({
-            plug: address(arbConfig.feesPlug),
+            plug: toBytes32Format(address(arbConfig.feesPlug)),
             chainSlug: arbChainSlug,
             appGatewayId: _encodeAppGatewayId(address(feesManager)),
-            switchboard: address(arbConfig.switchboard)
+            switchboard: toBytes32Format(address(arbConfig.switchboard))
         });
         gateways[3] = AppGatewayConfig({
-            plug: address(optConfig.feesPlug),
+            plug: toBytes32Format(address(optConfig.feesPlug)),
             chainSlug: optChainSlug,
             appGatewayId: _encodeAppGatewayId(address(feesManager)),
-            switchboard: address(optConfig.switchboard)
+            switchboard: toBytes32Format(address(optConfig.switchboard))
         });
 
         bytes memory watcherSignature = _createWatcherSignature(
@@ -285,13 +285,13 @@ contract DeliveryHelperTest is SetupTest {
 
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
         for (uint i = 0; i < contractIds_.length; i++) {
-            address plug = appGateway_.getOnChainAddress(contractIds_[i], chainSlug_);
+            bytes32 plug = appGateway_.getOnChainAddress(contractIds_[i], chainSlug_);
 
             gateways[i] = AppGatewayConfig({
                 plug: plug,
                 chainSlug: chainSlug_,
                 appGatewayId: _encodeAppGatewayId(address(appGateway_)),
-                switchboard: address(socketConfig.switchboard)
+                switchboard: toBytes32Format(address(socketConfig.switchboard))
             });
         }
 
@@ -359,10 +359,10 @@ contract DeliveryHelperTest is SetupTest {
         uint32 chainSlug_,
         bytes32 contractId_,
         IAppGateway appGateway_
-    ) internal view returns (address, address) {
-        address app = appGateway_.getOnChainAddress(contractId_, chainSlug_);
+    ) internal view returns (bytes32, address) {
+        bytes32 plug = appGateway_.getOnChainAddress(contractId_, chainSlug_);
         address forwarder = appGateway_.forwarderAddresses(contractId_, chainSlug_);
-        return (app, forwarder);
+        return (plug, forwarder);
     }
 
     function getContractFactoryPlug(uint32 chainSlug_) internal view returns (address) {
