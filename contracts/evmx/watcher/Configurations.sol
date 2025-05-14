@@ -2,27 +2,20 @@
 pragma solidity ^0.8.21;
 
 import "solady/utils/Initializable.sol";
-import {ECDSA} from "solady/utils/ECDSA.sol";
-import {Ownable} from "solady/auth/Ownable.sol";
 import "../interfaces/IConfigurations.sol";
 import {AddressResolverUtil} from "../AddressResolverUtil.sol";
-import {InvalidWatcherSignature, NonceUsed} from "../../utils/common/Errors.sol";
 import "./core/WatcherIdUtils.sol";
 
 /// @title Configurations
 /// @notice Configuration contract for the Watcher Precompile system
 /// @dev Handles the mapping between networks, plugs, and app gateways for payload execution
-contract Configurations is IConfigurations, Initializable, Ownable, AddressResolverUtil {
+contract Configurations is IConfigurations, Initializable, AddressResolverUtil {
     // slots 0-50 (51) reserved for addr resolver util
 
     // slots [51-100]: gap for future storage variables
     uint256[50] _gap_before;
 
-    // slot 101: evmxSlug
-    /// @notice The chain slug of the watcher precompile
-    uint32 public evmxSlug;
-
-    // slot 102: _plugConfigs
+    // slot 101: _plugConfigs
     /// @notice Maps network and plug to their configuration
     /// @dev chainSlug => plug => PlugConfig
     mapping(uint32 => mapping(address => PlugConfig)) internal _plugConfigs;
@@ -41,11 +34,6 @@ contract Configurations is IConfigurations, Initializable, Ownable, AddressResol
     /// @notice Maps contract address to their associated app gateway
     /// @dev contractAddress => appGateway
     mapping(address => address) public coreAppGateways;
-
-    // slot 108: isNonceUsed
-    /// @notice Maps nonce to whether it has been used
-    /// @dev signatureNonce => isValid
-    mapping(uint256 => bool) public isNonceUsed;
 
     // slot 109: isValidPlug
     /// @notice Maps app gateway, chain slug, and plug to whether it is valid
@@ -87,15 +75,8 @@ contract Configurations is IConfigurations, Initializable, Ownable, AddressResol
     error InvalidSwitchboard();
 
     /// @notice Initial initialization (version 1)
-    function initialize(
-        address owner_,
-        address addressResolver_,
-        uint32 evmxSlug_
-    ) public reinitializer(1) {
+    function initialize(address addressResolver_) public reinitializer(1) {
         _setAddressResolver(addressResolver_);
-        _initializeOwner(owner_);
-
-        evmxSlug = evmxSlug_;
     }
 
     /// @notice Configures app gateways with their respective plugs and switchboards
@@ -148,7 +129,7 @@ contract Configurations is IConfigurations, Initializable, Ownable, AddressResol
     /// @param chainSlug_ The identifier of the network
     /// @param plug_ The address of the plug
     /// @param isValid_ Whether the plug is valid
-    function setIsValidPlug(uint32 chainSlug_, address plug_, bool isValid_) external {
+    function setIsValidPlug(bool isValid_, uint32 chainSlug_, address plug_) external {
         isValidPlug[msg.sender][chainSlug_][plug_] = isValid_;
         emit IsValidPlugSet(msg.sender, chainSlug_, plug_, isValid_);
     }
@@ -156,6 +137,11 @@ contract Configurations is IConfigurations, Initializable, Ownable, AddressResol
     function setCoreAppGateway(address appGateway_) external {
         coreAppGateways[appGateway_] = msg.sender;
         emit CoreAppGatewaySet(appGateway_, msg.sender);
+    }
+
+    function getCoreAppGateway(address appGateway_) external view returns (address coreAppGateway) {
+        coreAppGateway = coreAppGateways[appGateway_];
+        if (coreAppGateway == address(0)) coreAppGateway = appGateway_;
     }
 
     /// @notice Retrieves the configuration for a specific plug on a network
