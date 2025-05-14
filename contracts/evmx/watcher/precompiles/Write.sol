@@ -53,7 +53,6 @@ contract Write is IPrecompile {
             queuePayloadParams_.overrideParams.value
         );
 
-        //todo: no callback fees if callback data not set in promise
         fees = writeFees + callbackFees;
     }
 

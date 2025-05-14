@@ -40,7 +40,7 @@ abstract contract WatcherStorage is IWatcher {
     QueueParams[] public queue;
 
     address public latestAsyncPromise;
-    address public latestPromiseCaller;
+    address public appGatewayTemp;
 
     // slots [51-100]: gap for future storage variables
     uint256[50] _gap_after;
@@ -79,8 +79,14 @@ contract Watcher is WatcherStorage {
         QueueParams memory queue_,
         address appGateway_
     ) external returns (address, uint40) {
+        address coreAppGateway = getCoreAppGateway(appGateway_);
         // Deploy a new async promise contract.
-        latestAsyncPromise = asyncDeployer__().deployAsyncPromiseContract(appGateway_);
+        if (appGatewayTemp != address(0))
+            if (appGatewayTemp != coreAppGateway || coreAppGateway == address(0))
+                revert InvalidAppGateway();
+
+        latestAsyncPromise = asyncDeployer__().deployAsyncPromiseContract(coreAppGateway);
+        appGatewayTemp = coreAppGateway;
         queue_.asyncPromise = latestAsyncPromise;
 
         // Add the promise to the queue.
@@ -106,6 +112,8 @@ contract Watcher is WatcherStorage {
         address consumeFrom,
         bytes onCompleteData
     ) external returns (uint40 requestCount, address[] memory promiseList) {
+        if (getCoreAppGateway(msg.sender) != appGatewayTemp) revert InvalidAppGateways();
+
         (requestCount, promiseList) = requestHandler.submitRequest(
             maxFees,
             auctionManager,
