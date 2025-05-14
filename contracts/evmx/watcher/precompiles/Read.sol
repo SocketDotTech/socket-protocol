@@ -4,10 +4,11 @@ pragma solidity ^0.8.21;
 import "../../interfaces/IWatcher.sol";
 import "../../../utils/common/Structs.sol";
 import "../../../utils/common/Errors.sol";
+import "../WatcherBase.sol";
 
 /// @title Read
 /// @notice Handles read precompile logic
-contract Read is IPrecompile {
+contract Read is IPrecompile, WatcherBase {
     /// @notice Emitted when a new read is requested
     event ReadRequested(PayloadParams params);
 
@@ -41,5 +42,11 @@ contract Read is IPrecompile {
     ) external pure returns (uint256 fees) {
         fees = readFees + callbackFees;
         emit ReadRequested(payloadParams);
+    }
+
+    function setFees(uint256 readFees_, uint256 callbackFees_) external onlyWatcher {
+        readFees = readFees_;
+        callbackFees = callbackFees_;
+        emit FeesSet(readFees_, callbackFees_);
     }
 }

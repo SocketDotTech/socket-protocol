@@ -58,8 +58,9 @@ interface IWatcher {
     );
 
     event RequestSubmitted(
-        address middleware,
+        bool hasWrite,
         uint40 requestCount,
+        RequestParams requestParams,
         PayloadParams[] payloadParamsArray
     );
 

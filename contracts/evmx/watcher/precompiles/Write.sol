@@ -5,9 +5,11 @@ import "../../interfaces/IWatcher.sol";
 import "../../../utils/common/Structs.sol";
 import "../../../utils/common/Errors.sol";
 
+import "../WatcherBase.sol";
+
 /// @title Write
 /// @notice Handles write precompile logic
-contract Write is IPrecompile {
+contract Write is IPrecompile, WatcherBase {
     /// @notice Mapping to store watcher proofs
     /// @dev Maps payload ID to proof bytes
     /// @dev payloadId => proof bytes
@@ -69,7 +71,7 @@ contract Write is IPrecompile {
     /// @notice Marks a write request as finalized with a proof on digest
     /// @param payloadId_ The unique identifier of the request
     /// @param proof_ The watcher's proof
-    function finalize(bytes32 payloadId_, bytes memory proof_) public onlyOwner {
+    function finalize(bytes32 payloadId_, bytes memory proof_) public onlyWatcher {
         watcherProofs[payloadId_] = proof_;
         emit Finalized(payloadId_, proof_);
     }
@@ -80,7 +82,7 @@ contract Write is IPrecompile {
     function updateChainMaxMsgValueLimits(
         uint32[] calldata chainSlugs_,
         uint256[] calldata maxMsgValueLimits_
-    ) external onlyOwner {
+    ) external onlyWatcher {
         if (chainSlugs_.length != maxMsgValueLimits_.length) revert InvalidIndex();
 
         for (uint256 i = 0; i < chainSlugs_.length; i++) {
@@ -90,7 +92,7 @@ contract Write is IPrecompile {
         emit ChainMaxMsgValueLimitsUpdated(chainSlugs_, maxMsgValueLimits_);
     }
 
-    function setFees(uint256 writeFees_, uint256 callbackFees_) external onlyOwner {
+    function setFees(uint256 writeFees_, uint256 callbackFees_) external onlyWatcher {
         writeFees = writeFees_;
         callbackFees = callbackFees_;
         emit FeesSet(writeFees_, callbackFees_);

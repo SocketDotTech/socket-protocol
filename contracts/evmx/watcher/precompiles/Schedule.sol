@@ -4,11 +4,12 @@ pragma solidity ^0.8.21;
 import "../../interfaces/IPrecompile.sol";
 import "../../../utils/common/Structs.sol";
 import "../../../utils/common/Errors.sol";
+import "../WatcherBase.sol";
 
 /// @title Schedule
 /// @notice Library that handles schedule logic for the WatcherPrecompile system
 /// @dev This library contains pure functions for schedule operations
-contract Schedule is IPrecompile {
+contract Schedule is IPrecompile, WatcherBase {
     // slot 52
     /// @notice The maximum delay for a schedule
     /// @dev Maximum schedule delay in seconds
@@ -30,7 +31,7 @@ contract Schedule is IPrecompile {
     /// @param maxScheduleDelayInSeconds_ The maximum schedule delay in seconds
     /// @dev This function sets the maximum schedule delay in seconds
     /// @dev Only callable by the contract owner
-    function setMaxScheduleDelayInSeconds(uint256 maxScheduleDelayInSeconds_) external onlyOwner {
+    function setMaxScheduleDelayInSeconds(uint256 maxScheduleDelayInSeconds_) external onlyWatcher {
         maxScheduleDelayInSeconds = maxScheduleDelayInSeconds_;
         emit MaxScheduleDelayInSecondsSet(maxScheduleDelayInSeconds_);
     }
@@ -39,7 +40,7 @@ contract Schedule is IPrecompile {
     /// @param scheduleFeesPerSecond_ The fees per second for a schedule
     /// @dev This function sets the fees per second for a schedule
     /// @dev Only callable by the contract owner
-    function setScheduleFeesPerSecond(uint256 scheduleFeesPerSecond_) external onlyOwner {
+    function setScheduleFeesPerSecond(uint256 scheduleFeesPerSecond_) external onlyWatcher {
         scheduleFeesPerSecond = scheduleFeesPerSecond_;
         emit ScheduleFeesPerSecondSet(scheduleFeesPerSecond_);
     }
@@ -48,7 +49,7 @@ contract Schedule is IPrecompile {
     /// @param scheduleCallbackFees_ The callback fees for a schedule
     /// @dev This function sets the callback fees for a schedule
     /// @dev Only callable by the contract owner
-    function setScheduleCallbackFees(uint256 scheduleCallbackFees_) external onlyOwner {
+    function setScheduleCallbackFees(uint256 scheduleCallbackFees_) external onlyWatcher {
         scheduleCallbackFees = scheduleCallbackFees_;
         emit ScheduleCallbackFeesSet(scheduleCallbackFees_);
     }

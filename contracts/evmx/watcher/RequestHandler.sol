@@ -73,7 +73,8 @@ contract RequestHandler is WatcherBase {
             onCompleteData: onCompleteData_
         });
 
-        (r.requestFeesDetails.watcherFees, r.writeCount, promiseList) = _createRequest(
+        PayloadParams[] memory payloads;
+        (r.requestFeesDetails.watcherFees, r.writeCount, promiseList, payloads) = _createRequest(
             queuePayloadParams_,
             appGateway,
             requestCount
@@ -83,7 +84,7 @@ contract RequestHandler is WatcherBase {
         watcherPrecompile__().setRequestParams(requestCount, r);
 
         if (r.writeCount == 0) startProcessingRequest();
-        emit RequestSubmitted();
+        emit RequestSubmitted(r.writeCount > 0, requestCount, r, payloads);
     }
 
     function _createRequest(
@@ -92,7 +93,12 @@ contract RequestHandler is WatcherBase {
         uint40 requestCount_
     )
         internal
-        returns (uint256 totalWatcherFees, uint256 writeCount, address[] memory promiseList)
+        returns (
+            uint256 totalWatcherFees,
+            uint256 writeCount,
+            address[] memory promiseList,
+            PayloadParams[] memory payloads
+        )
     {
         // push first batch count
         requestBatchIds[requestCount_].push(nextBatchCount);
@@ -139,7 +145,7 @@ contract RequestHandler is WatcherBase {
             batchPayloadIds[batchCount].push(payloadId);
 
             // create prev digest hash
-            PayloadSubmitParams memory p = PayloadSubmitParams({
+            PayloadParams memory p = PayloadParams({
                 requestCount: requestCount_,
                 batchCount: batchCount,
                 payloadCount: payloadCount,
@@ -150,6 +156,7 @@ contract RequestHandler is WatcherBase {
                 appGateway: queuePayloadParams_.appGateway
             });
             promiseList.push(queuePayloadParams_.asyncPromise);
+            payloads.push(p);
             watcherPrecompile__().setPayloadParams(payloadId, p);
         }
 
