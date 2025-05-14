@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../../interfaces/IWatcherPrecompile.sol";
+import "../../interfaces/IWatcher.sol";
 import "../../interfaces/IPromise.sol";
 import "../../libs/PayloadHeaderDecoder.sol";
 import "../../common/Structs.sol";
@@ -125,7 +125,7 @@ contract PromiseResolver {
         uint256 currentTimestamp
     ) external onlyWatcherStorage returns (bool success) {
         // Get payload params from WatcherPrecompileStorage
-         PayloadParams memory payloadParams = payloads[payloadId_];
+        PayloadParams memory payloadParams = payloads[payloadId_];
         if (payloadParams.deadline > block.timestamp) revert DeadlineNotPassedForOnChainRevert();
 
         RequestParams storage currentRequestParams = requestParams[

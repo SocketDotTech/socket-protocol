@@ -2,12 +2,6 @@
 pragma solidity ^0.8.21;
 
 //// ENUMS ////
-enum CallType {
-    READ,
-    WRITE,
-    SCHEDULE
-}
-
 enum IsPlug {
     YES,
     NO
@@ -48,18 +42,6 @@ enum ExecutionStatus {
     NotExecuted,
     Executed,
     Reverted
-}
-
-// not needed
-/// @notice Creates a struct to hold batch parameters
-struct BatchParams {
-    address appGateway;
-    address auctionManager;
-    uint256 maxFees;
-    bytes onCompleteData;
-    bool onlyReadRequests;
-    uint256 queryCount;
-    uint256 finalizeCount;
 }
 
 struct AppGatewayWhitelistParams {
@@ -113,7 +95,7 @@ struct Bid {
 }
 
 struct ExecuteParams {
-    CallType callType;
+    bytes4 callType;
     uint40 requestCount;
     uint40 batchCount;
     uint40 payloadCount;
@@ -150,7 +132,7 @@ struct DigestParams {
     address transmitter;
     bytes32 payloadId;
     uint256 deadline;
-    CallType callType;
+    bytes4 callType;
     uint256 gasLimit;
     uint256 value;
     bytes payload;
@@ -160,12 +142,13 @@ struct DigestParams {
 }
 // App gateway base:
 struct OverrideParams {
-    CallType callType;
+    bytes4 callType;
     Parallel isParallelCall;
     WriteFinality writeFinality;
     uint256 gasLimit;
     uint256 value;
-    uint256 readAt;
+    uint256 readAtBlockNumber;
+    uint256 delayInSeconds;
 }
 
 // payload
@@ -184,7 +167,7 @@ struct QueueParams {
     OverrideParams overrideParams;
     Transaction transaction;
     address asyncPromise;
-    address switchboard;
+    bytes32 switchboardType;
 }
 
 struct PayloadParams {
@@ -232,7 +215,7 @@ struct RequestParams {
     RequestFeesDetails requestFeesDetails;
     address appGateway;
     address auctionManager;
-    uint256 finalizeCount;
+    uint256 writeCount;
     bool isRequestExecuted;
     bytes onCompleteData;
 }

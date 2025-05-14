@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
+import {TriggerParams} from "../../utils/common/Structs.sol";
+
 /// @title Trigger
 /// @notice Contract that handles trigger validation and execution logic
 /// @dev This contract interacts with the WatcherPrecompileStorage for storage access
@@ -16,7 +18,6 @@ contract Trigger {
     /// @dev Maps call ID to boolean indicating if the appGateway has been called
     /// @dev callId => bool
     mapping(bytes32 => bool) public appGatewayCalled;
-
 
     // Only WatcherPrecompileStorage can call functions
     modifier onlyWatcherStorage() {
@@ -59,10 +60,10 @@ contract Trigger {
                 )
             ) revert InvalidCallerTriggered();
 
-            IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileCreditsFromAddress(
-                    watcherPrecompileLimits__.callBackFees(),
-                    appGateway
-                );
+            feesManager__().assignWatcherPrecompileCreditsFromAddress(
+                watcherPrecompileLimits__.callBackFees(),
+                appGateway
+            );
 
             appGatewayCaller = appGateway;
             appGatewayCalled[params_[i].triggerId] = true;
