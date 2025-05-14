@@ -148,9 +148,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         if (requestMetadata.auctionManager != address(this)) revert InvalidBid();
 
         // get the total fees required for the watcher precompile ops
-        uint256 watcherFees = watcherPrecompile().getMaxFees(
-            requestCount_
-        );
+        uint256 watcherFees = watcherPrecompile().getMaxFees(requestCount_);
         return requestMetadata.maxFees - watcherFees;
     }
 
@@ -168,10 +166,10 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
 
         auctionClosed[requestCount_] = true;
         RequestMetadata memory requestMetadata = _getRequestMetadata(requestCount_);
-        
+
         // block the fees
         // in startRequestProcessing, block the fees from bid
-        // IFeesManager(addressResolver__.feesManager()).blockCredits(
+        // feesManager__().blockCredits(
         //     requestMetadata.consumeFrom,
         //     winningBid.fee,
         //     requestCount_
@@ -185,17 +183,11 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         //     abi.encodeWithSelector(this.expireBid.selector, requestCount_)
         // );
 
-        // start the request processing, it will finalize the request
-        if(requestMetadata.transmitter != address(0)) {
-            IWatcherPrecompile(addressResolver__.watcherPrecompile()).updateTransmitter(
-                requestCount_,
-                winningBid
-            );
-        } else 
-            IWatcherPrecompile(addressResolver__.watcherPrecompile()).startRequestProcessing(
-                requestCount_,
-                winningBid
-            );
+        // start the request processing, it will queue the request
+        if (requestMetadata.transmitter != address(0)) {
+            IWatcher(watcherPrecompile__()).updateTransmitter(requestCount_, winningBid);
+        } else {
+            IWatcher(watcherPrecompile__()).startRequestProcessing(requestCount_, winningBid);
         }
 
         emit AuctionEnded(requestCount_, winningBid);
@@ -216,7 +208,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         reAuctionCount[requestCount_]++;
 
         // todo: unblock credits by calling watcher for updating transmitter to addr(0)
-        // IFeesManager(addressResolver__.feesManager()).unblockCredits(requestCount_);
+        // feesManager__().unblockCredits(requestCount_);
         emit AuctionRestarted(requestCount_);
     }
 
@@ -240,6 +232,6 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     function _getRequestMetadata(
         uint40 requestCount_
     ) internal view returns (RequestMetadata memory) {
-        return IMiddleware(addressResolver__.deliveryHelper()).getRequestMetadata(requestCount_);
+        return watcherPrecompile__().getRequestMetadata(requestCount_);
     }
 }

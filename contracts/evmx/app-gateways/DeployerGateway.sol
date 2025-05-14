@@ -8,7 +8,6 @@ import {PayloadSubmitParams, QueuePayloadParams} from "../../utils/common/Struct
 /// @notice App gateway contract responsible for handling deployment requests
 /// @dev Extends AppGatewayBase to provide deployment queueing functionality
 contract DeployerGateway is AppGatewayBase {
-
     // slot 51
     /// @notice The counter for the salt used to generate/deploy the contract address
     uint256 public saltCounter;
@@ -25,34 +24,30 @@ contract DeployerGateway is AppGatewayBase {
         bytes32 deploymentType_,
         bytes32 contractId_,
         uint32 chainSlug_,
-        IsPlug isPlug_,
+        OverrideParams memory overrideParams_,
         bytes memory initCallData_,
         bytes memory payload_
     ) external {
         if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
-
-        address asyncPromise = addressResolver__.deployAsyncPromiseContract(address(this));
-        IPromise(asyncPromise).then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
-
-        isValidPromise[asyncPromise] = true;
         onCompleteData = abi.encode(chainSlug_, true);
 
         QueuePayloadParams memory queuePayloadParams = QueuePayloadParams({
-            chainSlug: chainSlug_,
-            callType: CallType.DEPLOY,
-            isParallel: overrideParams.isParallelCall,
-            isPlug: isPlug_,
-            writeFinality: overrideParams.writeFinality,
-            asyncPromise: asyncPromise,
-            switchboard: watcherPrecompileConfig().switchboards(chainSlug_, sbType),
-            target: address(0),
-            appGateway: address(this),
-            gasLimit: overrideParams.gasLimit,
-            value: overrideParams.value,
-            readAt: overrideParams.readAt,
-            payload: payload_,
-            initCallData: initCallData_
+            overrideParams: overrideParams,
+            transaction: Transaction({
+                chainSlug: chainSlug_,
+                target: contractFactoryPlug[chainSlug_],
+                payload: payload_
+            }),
+            asyncPromise: address(0),
+            switchboardType: sbType
         });
+
+        // isPlug: isPlug_,
+        // payload: payload_,
+        // initCallData: initCallData_
+
+        IPromise(asyncPromise).then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
+        isValidPromise[asyncPromise] = true;
 
         if (queuePayloadParams.payload.length > PAYLOAD_SIZE_LIMIT) revert PayloadTooLarge();
         IWatcher(deliveryHelper__()).queue(queuePayloadParams);

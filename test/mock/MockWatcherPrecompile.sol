@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 import "../../contracts/evmx/interfaces/IAppGateway.sol";
-import "../../contracts/evmx/interfaces/IWatcherPrecompile.sol";
+import "../../contracts/evmx/interfaces/IWatcher.sol";
 import "../../contracts/evmx/interfaces/IPromise.sol";
 
 import {TimeoutRequest, TriggerParams, PlugConfig, ResolvedPromises, AppGatewayConfig} from "../../contracts/utils/common/Structs.sol";

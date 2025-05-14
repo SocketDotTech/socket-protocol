@@ -15,7 +15,7 @@ import "./WatcherPrecompileStorage.sol";
 /// @dev This contract implements the core functionality for payload verification, execution, and app configurations
 /// @dev It is inherited by WatcherPrecompile and provides the base implementation for request handling
 abstract contract WatcherPrecompileCore is
-    IWatcherPrecompile,
+    IWatcher,
     WatcherPrecompileStorage,
     Initializable,
     Ownable,
@@ -58,22 +58,6 @@ abstract contract WatcherPrecompileCore is
         PayloadParams memory params_,
         address transmitter_
     ) internal returns (bytes32 digest) {
-        uint32 chainSlug = params_.payloadHeader.getChainSlug();
-
-        // Verify that the app gateway is properly configured for this chain and target
-        watcherPrecompileConfig__.verifyConnections(
-            chainSlug,
-            params_.target,
-            params_.appGateway,
-            params_.switchboard,
-            requestParams[params_.payloadHeader.getRequestCount()].middleware
-        );
-
-        _consumeCallbackFeesFromRequestCount(
-            watcherPrecompileLimits__.finalizeFees(),
-            params_.payloadHeader.getRequestCount()
-        );
-
         uint256 deadline = block.timestamp + expiryTime;
         payloads[params_.payloadId].deadline = deadline;
         payloads[params_.payloadId].finalizedTransmitter = transmitter_;
@@ -107,11 +91,6 @@ abstract contract WatcherPrecompileCore is
     /// @param params_ The payload parameters for the query
     /// @dev This function sets up a query request and emits a QueryRequested event
     function _query(PayloadParams memory params_) internal {
-        _consumeCallbackFeesFromRequestCount(
-            watcherPrecompileLimits__.queryFees(),
-            params_.payloadHeader.getRequestCount()
-        );
-
         payloads[params_.payloadId].prevDigestsHash = _getPreviousDigestsHash(
             params_.payloadHeader.getBatchCount()
         );
@@ -184,22 +163,18 @@ abstract contract WatcherPrecompileCore is
         return payloadParamsArray;
     }
 
-   
-
     function _consumeCallbackFeesFromRequestCount(uint256 fees_, uint40 requestCount_) internal {
         // for callbacks in all precompiles
         uint256 feesToConsume = fees_ + watcherPrecompileLimits__.callBackFees();
-        IFeesManager(addressResolver__.feesManager())
-            .assignWatcherPrecompileCreditsFromRequestCount(feesToConsume, requestCount_);
+        feesManager__().assignWatcherPrecompileCreditsFromRequestCount(
+            feesToConsume,
+            requestCount_
+        );
     }
 
     function _consumeCallbackFeesFromAddress(uint256 fees_, address consumeFrom_) internal {
         // for callbacks in all precompiles
         uint256 feesToConsume = fees_ + watcherPrecompileLimits__.callBackFees();
-        IFeesManager(addressResolver__.feesManager()).assignWatcherPrecompileCreditsFromAddress(
-            feesToConsume,
-            consumeFrom_
-        );
+        feesManager__().assignWatcherPrecompileCreditsFromAddress(feesToConsume, consumeFrom_);
     }
-
 }
