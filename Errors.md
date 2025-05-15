@@ -6,6 +6,12 @@
 | ---------------------------- | ------------ |
 | `InvalidAppGateway(address)` | `0x0e66940d` |
 
+## evmx/AddressResolverTest.sol
+
+| Error                        | Signature    |
+| ---------------------------- | ------------ |
+| `InvalidAppGateway(address)` | `0x0e66940d` |
+
 ## evmx/AddressResolverUtil.sol
 
 | Error                                     | Signature    |
@@ -22,6 +28,18 @@
 | `OnlyForwarderOrLocalInvoker()` | `0xa9fb0b28` |
 | `PromiseAlreadySetUp()`         | `0x927c53d5` |
 | `PromiseRevertFailed()`         | `0x0175b9de` |
+
+## evmx/ForwarderSolana.sol
+
+| Error                      | Signature    |
+| -------------------------- | ------------ |
+| `InvalidSolanaChainSlug()` | `0xe37803ab` |
+
+## evmx/ForwarderSolanaTest.sol
+
+| Error                      | Signature    |
+| -------------------------- | ------------ |
+| `InvalidSolanaChainSlug()` | `0xe37803ab` |
 
 ## evmx/interfaces/IWatcherPrecompile.sol
 
@@ -154,6 +172,12 @@
 | Error               | Signature    |
 | ------------------- | ------------ |
 | `NoPermit(bytes32)` | `0x962f6333` |
+
+## utils/common/Converters.sol
+
+| Error                      | Signature    |
+| -------------------------- | ------------ |
+| `NotAnEvmAddress(bytes32)` | `0x33b960d0` |
 
 ## utils/common/Errors.sol
 

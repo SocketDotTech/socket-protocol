@@ -9,7 +9,7 @@ import "../interfaces/IFeesManager.sol";
 import {AddressResolverUtil} from "../AddressResolverUtil.sol";
 import {NotAuctionManager, InvalidWatcherSignature, NonceUsed} from "../../utils/common/Errors.sol";
 import {Bid, CallType, Parallel, WriteFinality, QueuePayloadParams, IsPlug, PayloadSubmitParams, RequestMetadata, UserCredits} from "../../utils/common/Structs.sol";
-import { toBytes32Format } from "../../utils/common/Converters.sol";
+import {toBytes32Format} from "../../utils/common/Converters.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
     // slots [0-49] reserved for gap

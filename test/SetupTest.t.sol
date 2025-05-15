@@ -111,7 +111,11 @@ contract SetupTest is Test {
         );
         SocketFeeManager socketFeeManager = new SocketFeeManager(owner, socketFees);
         hoax(watcherEOA);
-        watcherPrecompileConfig.setSwitchboard(chainSlug_, FAST, toBytes32Format(address(switchboard)));
+        watcherPrecompileConfig.setSwitchboard(
+            chainSlug_,
+            FAST,
+            toBytes32Format(address(switchboard))
+        );
 
         return
             SocketContracts({

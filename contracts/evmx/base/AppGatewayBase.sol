@@ -9,7 +9,7 @@ import "../interfaces/IPromise.sol";
 
 import {InvalidPromise, FeesNotSet, AsyncModifierNotUsed} from "../../utils/common/Errors.sol";
 import {FAST} from "../../utils/common/Constants.sol";
-import { toBytes32Format } from "../../utils/common/Converters.sol";
+import {toBytes32Format} from "../../utils/common/Converters.sol";
 
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway

@@ -37,6 +37,43 @@
 | `version`                       | `0x54fd4d50` |
 | `watcherPrecompile__`           | `0x1de360c3` |
 
+## AddressResolverTest
+
+| Function                        | Signature    |
+| ------------------------------- | ------------ |
+| `asyncPromiseBeacon`            | `0xc0fbc0ef` |
+| `asyncPromiseCounter`           | `0x97cdbf4c` |
+| `asyncPromiseImplementation`    | `0x59531b8d` |
+| `cancelOwnershipHandover`       | `0x54d1f13d` |
+| `clearPromises`                 | `0x96e03234` |
+| `completeOwnershipHandover`     | `0xf04e283e` |
+| `contractsToGateways`           | `0x5bc03a67` |
+| `defaultAuctionManager`         | `0x8f27cdc6` |
+| `deliveryHelper`                | `0x71eaa36f` |
+| `deployAsyncPromiseContract`    | `0x00afbf9d` |
+| `feesManager`                   | `0x05a9e073` |
+| `forwarderBeacon`               | `0x945709ae` |
+| `forwarderImplementation`       | `0xe38d60a1` |
+| `getAsyncPromiseAddress`        | `0xb6400df5` |
+| `getForwarderAddress`           | `0x48c0b3e0` |
+| `getOrDeployForwarderContract`  | `0xe8d616a8` |
+| `getPromises`                   | `0xa01afb0d` |
+| `initialize`                    | `0xc4d66de8` |
+| `owner`                         | `0x8da5cb5b` |
+| `ownershipHandoverExpiresAt`    | `0xfee81cf4` |
+| `renounceOwnership`             | `0x715018a6` |
+| `requestOwnershipHandover`      | `0x25692962` |
+| `setAsyncPromiseImplementation` | `0xeb506eab` |
+| `setContractsToGateways`        | `0xb08dd08b` |
+| `setDefaultAuctionManager`      | `0xede8b4b5` |
+| `setDeliveryHelper`             | `0x75523822` |
+| `setFeesManager`                | `0x1c89382a` |
+| `setForwarderImplementation`    | `0x83b1e974` |
+| `setWatcherPrecompile`          | `0x5ca44c9b` |
+| `transferOwnership`             | `0xf2fde38b` |
+| `version`                       | `0x54fd4d50` |
+| `watcherPrecompile__`           | `0x1de360c3` |
+
 ## AsyncPromise
 
 | Function                  | Signature    |
@@ -66,12 +103,71 @@
 | `deliveryHelper__`        | `0xc031dfb4` |
 | `getChainSlug`            | `0x0b8c6568` |
 | `getOnChainAddress`       | `0x9da48789` |
-| `initialize`              | `0x647c576c` |
+| `initialize`              | `0x148841cb` |
 | `latestAsyncPromise`      | `0xb8a8ba52` |
 | `latestPromiseCaller`     | `0xdfe580a8` |
 | `latestRequestCount`      | `0x198b9a47` |
 | `onChainAddress`          | `0x8bd0b363` |
 | `then`                    | `0x0bf2ba15` |
+| `watcherPrecompileConfig` | `0x8618a912` |
+| `watcherPrecompileLimits` | `0xa71cd97d` |
+| `watcherPrecompile__`     | `0x1de360c3` |
+
+## ForwarderSolana
+
+| Function                    | Signature    |
+| --------------------------- | ------------ |
+| `SOLANA_DEVNET_CHAIN_SLUG`  | `0xb5eb4957` |
+| `SOLANA_MAINNET_CHAIN_SLUG` | `0xe8826c67` |
+| `addressResolver__`         | `0x6a750469` |
+| `callSolana`                | `0x5a4ef6fc` |
+| `chainSlug`                 | `0xb349ba65` |
+| `deliveryHelper__`          | `0xc031dfb4` |
+| `getChainSlug`              | `0x0b8c6568` |
+| `getOnChainAddress`         | `0x9da48789` |
+| `initialize`                | `0x148841cb` |
+| `latestAsyncPromise`        | `0xb8a8ba52` |
+| `latestPromiseCaller`       | `0xdfe580a8` |
+| `latestRequestCount`        | `0x198b9a47` |
+| `onChainAddress`            | `0x8bd0b363` |
+| `watcherPrecompileConfig`   | `0x8618a912` |
+| `watcherPrecompileLimits`   | `0xa71cd97d` |
+| `watcherPrecompile__`       | `0x1de360c3` |
+
+## ForwarderSolanaTest
+
+| Function                  | Signature    |
+| ------------------------- | ------------ |
+| `addressResolver__`       | `0x6a750469` |
+| `callSolana`              | `0x5a4ef6fc` |
+| `chainSlug`               | `0xb349ba65` |
+| `deliveryHelper__`        | `0xc031dfb4` |
+| `getChainSlug`            | `0x0b8c6568` |
+| `getOnChainAddress`       | `0x9da48789` |
+| `initialize`              | `0xc4d66de8` |
+| `latestAsyncPromise`      | `0xb8a8ba52` |
+| `latestPromiseCaller`     | `0xdfe580a8` |
+| `latestRequestCount`      | `0x198b9a47` |
+| `onChainAddress`          | `0x8bd0b363` |
+| `watcherPrecompileConfig` | `0x8618a912` |
+| `watcherPrecompileLimits` | `0xa71cd97d` |
+| `watcherPrecompile__`     | `0x1de360c3` |
+
+## ForwarderSolanaTest
+
+| Function                  | Signature    |
+| ------------------------- | ------------ |
+| `addressResolver__`       | `0x6a750469` |
+| `callSolana`              | `0x5a4ef6fc` |
+| `chainSlug`               | `0xb349ba65` |
+| `deliveryHelper__`        | `0xc031dfb4` |
+| `getChainSlug`            | `0x0b8c6568` |
+| `getOnChainAddress`       | `0x9da48789` |
+| `initialize`              | `0xc4d66de8` |
+| `latestAsyncPromise`      | `0xb8a8ba52` |
+| `latestPromiseCaller`     | `0xdfe580a8` |
+| `latestRequestCount`      | `0x198b9a47` |
+| `onChainAddress`          | `0x8bd0b363` |
 | `watcherPrecompileConfig` | `0x8618a912` |
 | `watcherPrecompileLimits` | `0xa71cd97d` |
 | `watcherPrecompile__`     | `0x1de360c3` |
@@ -318,22 +414,22 @@
 | `deliveryHelper__`           | `0xc031dfb4` |
 | `evmxSlug`                   | `0x8bae77c2` |
 | `feesPlug`                   | `0xd1ba159d` |
-| `getPlugConfigs`             | `0x8a028c38` |
+| `getPlugConfigs`             | `0x25945c1a` |
 | `initialize`                 | `0x6ecf2b22` |
 | `isNonceUsed`                | `0x5d00bb12` |
-| `isValidPlug`                | `0xec8aef74` |
+| `isValidPlug`                | `0x00f9b9f4` |
 | `owner`                      | `0x8da5cb5b` |
 | `ownershipHandoverExpiresAt` | `0xfee81cf4` |
 | `renounceOwnership`          | `0x715018a6` |
 | `requestOwnershipHandover`   | `0x25692962` |
-| `setAppGateways`             | `0xdd8539d4` |
-| `setIsValidPlug`             | `0xb3a6bbcf` |
-| `setOnChainContracts`        | `0x33fa78c2` |
-| `setSwitchboard`             | `0x61706f1e` |
+| `setAppGateways`             | `0xc431965c` |
+| `setIsValidPlug`             | `0x1b7715b1` |
+| `setOnChainContracts`        | `0xa3fc2aea` |
+| `setSwitchboard`             | `0x491eac1f` |
 | `sockets`                    | `0xb44a23ab` |
 | `switchboards`               | `0xaa539546` |
 | `transferOwnership`          | `0xf2fde38b` |
-| `verifyConnections`          | `0xf269ab50` |
+| `verifyConnections`          | `0x325fd533` |
 | `watcherPrecompileConfig`    | `0x8618a912` |
 | `watcherPrecompileLimits`    | `0xa71cd97d` |
 | `watcherPrecompile__`        | `0x1de360c3` |
@@ -409,7 +505,7 @@
 | `initialize`                   | `0x7265580f` |
 | `owner`                        | `0x8da5cb5b` |
 | `ownershipHandoverExpiresAt`   | `0xfee81cf4` |
-| `queue`                        | `0x1b9396f5` |
+| `queue`                        | `0xd62eea9b` |
 | `queuePayloadParams`           | `0x3c362159` |
 | `renounceOwnership`            | `0x715018a6` |
 | `requestOwnershipHandover`     | `0x25692962` |
@@ -433,7 +529,7 @@
 | `appGatewayCalled`            | `0xc6767cf1` |
 | `appGatewayCaller`            | `0x712b193a` |
 | `batchPayloadIds`             | `0x02b74f98` |
-| `callAppGateways`             | `0x5c38ded5` |
+| `callAppGateways`             | `0x9237b4f2` |
 | `cancelOwnershipHandover`     | `0x54d1f13d` |
 | `cancelRequest`               | `0x50ad0779` |
 | `completeOwnershipHandover`   | `0xf04e283e` |
@@ -444,7 +540,7 @@
 | `getBatchPayloadIds`          | `0xfd83cd1f` |
 | `getBatches`                  | `0xcb95b7b3` |
 | `getCurrentRequestCount`      | `0x5715abbb` |
-| `getDigest`                   | `0xa7993154` |
+| `getDigest`                   | `0x5e2ea4b6` |
 | `getPayloadParams`            | `0xae5eeb77` |
 | `getRequestParams`            | `0x71263d0d` |
 | `initialize`                  | `0xb7dc6b77` |
@@ -458,7 +554,7 @@
 | `ownershipHandoverExpiresAt`  | `0xfee81cf4` |
 | `payloadCounter`              | `0x550ce1d5` |
 | `payloads`                    | `0x58722672` |
-| `query`                       | `0x16ad71bc` |
+| `query`                       | `0x85588a6f` |
 | `renounceOwnership`           | `0x715018a6` |
 | `requestBatchIds`             | `0xf865c4a7` |
 | `requestMetadata`             | `0x875b3f7e` |
@@ -472,7 +568,7 @@
 | `setWatcherPrecompileConfig`  | `0x794edeb4` |
 | `setWatcherPrecompileLimits`  | `0x712a6f07` |
 | `startProcessingRequest`      | `0x77290f24` |
-| `submitRequest`               | `0x16b47482` |
+| `submitRequest`               | `0xa3918222` |
 | `timeoutIdPrefix`             | `0x96ec119f` |
 | `timeoutRequests`             | `0xcdf85751` |
 | `transferOwnership`           | `0xf2fde38b` |

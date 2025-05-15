@@ -44,14 +44,17 @@ export const getOrDeploy = async (
   if (!deployUtils || !deployUtils.addresses)
     throw new Error("No addresses found");
 
+  // console.log("XXX0");
   let contract: Contract;
   if (!deployUtils.addresses[keyName]) {
+    // console.log("XXX1");
     contract = await deployContractWithArgs(
       path + `:${contractName}`,
       args,
       deployUtils.signer,
       deployUtils.currentChainSlug
     );
+    // console.log("XXX2");
 
     console.log(
       `${contractName} deployed on ${deployUtils.currentChainSlug} for ${deployUtils.mode} at address ${contract.address}`
@@ -86,10 +89,17 @@ export async function deployContractWithArgs(
     const Contract: ContractFactory = await ethers.getContractFactory(
       contractName
     );
+    // console.log("XXX3");
+    // console.log("XXX3 : Contract", Contract);
+    // console.log("XXX3 : chianslug", chainSlug);
+    // console.log("XXX3 : overrides", await overrides(chainSlug));
+    // console.log("XXX3 : signer", signer);
+
     // gasLimit is set to undefined to not use the value set in overrides
     const contract: Contract = await Contract.connect(signer).deploy(...args, {
       ...(await overrides(chainSlug)),
     });
+    console.log("XXX4");
     await contract.deployed();
     return contract;
   } catch (error) {

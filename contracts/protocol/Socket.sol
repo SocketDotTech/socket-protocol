@@ -84,7 +84,10 @@ contract Socket is SocketUtils {
         if (msg.value < executeParams_.value + transmissionParams_.socketFees)
             revert InsufficientMsgValue();
 
-        bytes32 payloadId = _createPayloadId(fromBytes32Format(plugConfig.switchboard), executeParams_);
+        bytes32 payloadId = _createPayloadId(
+            fromBytes32Format(plugConfig.switchboard),
+            executeParams_
+        );
 
         // validate the execution status
         _validateExecutionStatus(payloadId);

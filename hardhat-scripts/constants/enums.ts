@@ -16,6 +16,7 @@ export enum EVMxCoreContracts {
   FeesManager = "FeesManager",
   DeliveryHelper = "DeliveryHelper",
   Forwarder = "Forwarder",
+  ForwarderSolana = "ForwarderSolana",
   AsyncPromise = "AsyncPromise",
   AddressResolver = "AddressResolver",
 }

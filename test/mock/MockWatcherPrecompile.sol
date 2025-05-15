@@ -171,7 +171,9 @@ contract MockWatcherPrecompile {
         address switchboardAsAddress = fromBytes32Format(switchboard);
         return
             bytes32(
-                (uint256(chainSlug_) << 224) | (uint256(uint160(switchboardAsAddress)) << 64) | counter_
+                (uint256(chainSlug_) << 224) |
+                    (uint256(uint160(switchboardAsAddress)) << 64) |
+                    counter_
             );
     }
 

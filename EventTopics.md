@@ -19,6 +19,25 @@
 | `PlugAdded`                    | `(appGateway: address, chainSlug: uint32, plug: address)`   | `0x2cb8d865028f9abf3dc064724043264907615fadc8615a3699a85edb66472273` |
 | `WatcherPrecompileUpdated`     | `(watcherPrecompile_: address)`                             | `0xb00972c0b5c3d3d9ddc6d6a6db612abeb109653a3424d5d972510fa20bff4972` |
 
+## AddressResolverTest
+
+| Event                          | Arguments                                                   | Topic                                                                |
+| ------------------------------ | ----------------------------------------------------------- | -------------------------------------------------------------------- |
+| `AddressSet`                   | `(name: bytes32, oldAddress: address, newAddress: address)` | `0x9ef0e8c8e52743bb38b83b17d9429141d494b8041ca6d616a6c77cebae9cd8b7` |
+| `AsyncPromiseDeployed`         | `(newAsyncPromise: address, salt: bytes32)`                 | `0xb6c5491cf83e09749b1a4dd6a9f07b0e925fcb0a915ac8c2b40e8ab28191c270` |
+| `ContractsToGatewaysUpdated`   | `(contractAddress_: address, appGateway_: address)`         | `0xb870bb0c6b5ea24214ae6c653af6c2a8b6240d5838f82132703ee5c069b14b4c` |
+| `DefaultAuctionManagerUpdated` | `(defaultAuctionManager_: address)`                         | `0x60f296739208a505ead7fb622df0f76b7791b824481b120a2300bdaf85e3e3d6` |
+| `DeliveryHelperUpdated`        | `(deliveryHelper_: address)`                                | `0xc792471d30bbabcf9dc9fdba5bfa74f8872ff3c28f6e65e122bdb82a71b83c1c` |
+| `FeesManagerUpdated`           | `(feesManager_: address)`                                   | `0x94e67aa1341a65767dfde81e62fd265bfbade1f5744bfd3cd73f99a6eca0572a` |
+| `ForwarderDeployed`            | `(newForwarder: address, salt: bytes32)`                    | `0x4dbbecb9cf9c8b93da9743a2b48ea52efe68d69230ab1c1b711891d9d223b29f` |
+| `ImplementationUpdated`        | `(contractName: string, newImplementation: address)`        | `0xa1e41aa2c2f3f20d9b63ac06b634d2788768d6034f3d9192cdf7d07374bb16f4` |
+| `Initialized`                  | `(version: uint64)`                                         | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
+| `OwnershipHandoverCanceled`    | `(pendingOwner: address)`                                   | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
+| `OwnershipHandoverRequested`   | `(pendingOwner: address)`                                   | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
+| `OwnershipTransferred`         | `(oldOwner: address, newOwner: address)`                    | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
+| `PlugAdded`                    | `(appGateway: address, chainSlug: uint32, plug: address)`   | `0x2cb8d865028f9abf3dc064724043264907615fadc8615a3699a85edb66472273` |
+| `WatcherPrecompileUpdated`     | `(watcherPrecompile_: address)`                             | `0xb00972c0b5c3d3d9ddc6d6a6db612abeb109653a3424d5d972510fa20bff4972` |
+
 ## AsyncPromise
 
 | Event         | Arguments           | Topic                                                                |
@@ -26,6 +45,24 @@
 | `Initialized` | `(version: uint64)` | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
 
 ## Forwarder
+
+| Event         | Arguments           | Topic                                                                |
+| ------------- | ------------------- | -------------------------------------------------------------------- |
+| `Initialized` | `(version: uint64)` | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
+
+## ForwarderSolana
+
+| Event         | Arguments           | Topic                                                                |
+| ------------- | ------------------- | -------------------------------------------------------------------- |
+| `Initialized` | `(version: uint64)` | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
+
+## ForwarderSolanaTest
+
+| Event         | Arguments           | Topic                                                                |
+| ------------- | ------------------- | -------------------------------------------------------------------- |
+| `Initialized` | `(version: uint64)` | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
+
+## ForwarderSolanaTest
 
 | Event         | Arguments           | Topic                                                                |
 | ------------- | ------------------- | -------------------------------------------------------------------- |
@@ -149,13 +186,13 @@
 | Event                        | Arguments                                                                               | Topic                                                                |
 | ---------------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | `Initialized`                | `(version: uint64)`                                                                     | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
-| `IsValidPlugSet`             | `(appGateway: address, chainSlug: uint32, plug: address, isValid: bool)`                | `0x61cccc7387868fc741379c7acd9dd346e0ca2e5c067dc5b156fbbc55b1c2fcf5` |
-| `OnChainContractSet`         | `(chainSlug: uint32, socket: address, contractFactoryPlug: address, feesPlug: address)` | `0xd24cf816377e3c571e7bc798dd43d3d5fc78c32f7fc94b42898b0d37c5301a4e` |
+| `IsValidPlugSet`             | `(appGateway: address, chainSlug: uint32, plug: bytes32, isValid: bool)`                | `0xd7a90efd60960a8435ef282822190655f6bd2ffa14bb350dc23d6f6956056d7e` |
+| `OnChainContractSet`         | `(chainSlug: uint32, socket: bytes32, contractFactoryPlug: address, feesPlug: address)` | `0x687cbf1ae052f850933042a2b058b8a15bd56d0bc62547ece204bcdf1e060bbf` |
 | `OwnershipHandoverCanceled`  | `(pendingOwner: address)`                                                               | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
 | `OwnershipHandoverRequested` | `(pendingOwner: address)`                                                               | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
 | `OwnershipTransferred`       | `(oldOwner: address, newOwner: address)`                                                | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
-| `PlugAdded`                  | `(appGatewayId: bytes32, chainSlug: uint32, plug: address)`                             | `0x7b3e14230a721c4737d275f9a63b92c44cb657bcfddbe6fe9b4d9cd9bd8d4a95` |
-| `SwitchboardSet`             | `(chainSlug: uint32, sbType: bytes32, switchboard: address)`                            | `0x6273f161f4a795e66ef3585d9b4442ef3796b32337157fdfb420b5281e4cf2e3` |
+| `PlugAdded`                  | `(appGatewayId: bytes32, chainSlug: uint32, plug: bytes32)`                             | `0x3734a2406c5c2f2556c82a0819c51e42a135dd102465cc9856594481ea2f1637` |
+| `SwitchboardSet`             | `(chainSlug: uint32, sbType: bytes32, switchboard: bytes32)`                            | `0xcdfbfa261040f4dffb03c7d9493f74b575f2ae533bb43fd7b5d5b24ac9d804f4` |
 
 ## WatcherPrecompileLimits
 
@@ -192,7 +229,7 @@
 | `OwnershipHandoverCanceled`     | `(pendingOwner: address)`                                                                                                                   | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
 | `OwnershipHandoverRequested`    | `(pendingOwner: address)`                                                                                                                   | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
 | `OwnershipTransferred`          | `(oldOwner: address, newOwner: address)`                                                                                                    | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
-| `PayloadSubmitted`              | `(requestCount: uint40, appGateway: address, payloadSubmitParams: tuple[], fees: uint256, auctionManager: address, onlyReadRequests: bool)` | `0xc6455dba7c07a5e75c7189040ae9e3478162f333a96365b283b434fd0e32c6b3` |
+| `PayloadSubmitted`              | `(requestCount: uint40, appGateway: address, payloadSubmitParams: tuple[], fees: uint256, auctionManager: address, onlyReadRequests: bool)` | `0x52395bdacf0f600e427fb9751a30717ccd5dd75d5faf225447c623115ffb8307` |
 | `RequestCancelled`              | `(requestCount: uint40)`                                                                                                                    | `0xff191657769be72fc08def44c645014c60d18cb24b9ca05c9a33406a28253245` |
 
 ## WatcherPrecompile
@@ -202,7 +239,7 @@
 | `AppGatewayCallFailed`        | `(triggerId: bytes32)`                                                                          | `0xcaf8475fdade8465ea31672463949e6cf1797fdcdd11eeddbbaf857e1e5907b7` |
 | `CalledAppGateway`            | `(triggerId: bytes32)`                                                                          | `0xf659ffb3875368f54fb4ab8f5412ac4518af79701a48076f7a58d4448e4bdd0b` |
 | `ExpiryTimeSet`               | `(expiryTime: uint256)`                                                                         | `0x07e837e13ad9a34715a6bd45f49bbf12de19f06df79cb0be12b3a7d7f2397fa9` |
-| `FinalizeRequested`           | `(digest: bytes32, params: tuple)`                                                              | `0x5bc623895e2e50e307b4c3ba21df61ddfe68de0e084bb85eb1d42d4596532589` |
+| `FinalizeRequested`           | `(digest: bytes32, params: tuple)`                                                              | `0xc5a38a366c2b21c3cf453db4dbcd46537dcf1790f6d7a5652cbcc586717db2eb` |
 | `Finalized`                   | `(payloadId: bytes32, proof: bytes)`                                                            | `0x7e6e3e411317567fb9eabe3eb86768c3e33c46e38a50790726e916939b4918d6` |
 | `Initialized`                 | `(version: uint64)`                                                                             | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
 | `MarkedRevert`                | `(payloadId: bytes32, isRevertingOnchain: bool)`                                                | `0xcf1fd844cb4d32cbebb5ca6ce4ac834fe98da3ddac44deb77fffd22ad933824c` |
@@ -212,9 +249,9 @@
 | `OwnershipTransferred`        | `(oldOwner: address, newOwner: address)`                                                        | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
 | `PromiseNotResolved`          | `(payloadId: bytes32, asyncPromise: address)`                                                   | `0xbcf0d0c678940566e9e64f0c871439395bd5fb5c39bca3547b126fe6ee467937` |
 | `PromiseResolved`             | `(payloadId: bytes32, asyncPromise: address)`                                                   | `0x1b1b5810494fb3e17f7c46547e6e67cd6ad3e6001ea6fb7d12ea0241ba13c4ba` |
-| `QueryRequested`              | `(params: tuple)`                                                                               | `0xca81bf0029a549d7e6e3a9c668a717472f4330a6a5ec4350304a9e79bf437345` |
+| `QueryRequested`              | `(params: tuple)`                                                                               | `0xe72d5e75e1f983e5594c83cc941173348201105a3660bbe19e34231f31e82b88` |
 | `RequestCancelledFromGateway` | `(requestCount: uint40)`                                                                        | `0x333619ca4a2a9c4ee292aafa3c37215d88afe358afee4a575cfed21d743091c6` |
-| `RequestSubmitted`            | `(middleware: address, requestCount: uint40, payloadParamsArray: tuple[])`                      | `0xb856562fcff2119ba754f0486f47c06087ebc1842bff464faf1b2a1f8d273b1d` |
+| `RequestSubmitted`            | `(middleware: address, requestCount: uint40, payloadParamsArray: tuple[])`                      | `0x0daa16afaf7a6407a3fb2fdb4d19583ec9318257fe5254a2e41266a7d38c1faa` |
 | `TimeoutRequested`            | `(timeoutId: bytes32, target: address, payload: bytes, executeAt: uint256)`                     | `0xdf94fed77e41734b8a17815476bbbf88e2db15d762f42a30ddb9d7870f2fb858` |
 | `TimeoutResolved`             | `(timeoutId: bytes32, target: address, payload: bytes, executedAt: uint256, returnData: bytes)` | `0x61122416680ac7038ca053afc2c26983f2c524e5003b1f4d9dea095fbc8f6905` |
 | `WatcherPrecompileConfigSet`  | `(watcherPrecompileConfig: address)`                                                            | `0xdc19bca647582b3fbf69a6ffacabf56b4f7a4551d2d0944843712f2d0987a8e5` |

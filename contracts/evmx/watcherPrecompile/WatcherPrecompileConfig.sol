@@ -205,7 +205,8 @@ contract WatcherPrecompileConfig is
         // if target is contractFactoryPlug, return
         // as connection is with middleware delivery helper and not app gateway
         if (
-            middleware_ == address(deliveryHelper__()) && target_ == toBytes32Format(contractFactoryPlug[chainSlug_])
+            middleware_ == address(deliveryHelper__()) &&
+            target_ == toBytes32Format(contractFactoryPlug[chainSlug_])
         ) return;
 
         (bytes32 appGatewayId, bytes32 switchboard) = getPlugConfigs(chainSlug_, target_);
