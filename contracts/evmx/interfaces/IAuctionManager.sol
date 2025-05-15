@@ -12,13 +12,15 @@ interface IAuctionManager {
     function bid(
         uint40 requestCount_,
         uint256 fee_,
+        address scheduleFees_,
         bytes memory transmitterSignature_,
         bytes memory extraData_
     ) external;
 
     /// @notice Ends an auction
     /// @param requestCount_ The request count
-    function endAuction(uint40 requestCount_) external;
+    /// @param scheduleFees_ The schedule fees
+    function endAuction(uint40 requestCount_, uint256 scheduleFees_) external;
 
     /// @notice Checks if an auction is closed
     /// @param requestCount_ The request count
