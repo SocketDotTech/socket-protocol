@@ -9,7 +9,6 @@ import "../interfaces/IFeesManager.sol";
 import {AddressResolverUtil} from "../AddressResolverUtil.sol";
 import {NotAuctionManager, InvalidWatcherSignature, NonceUsed} from "../../utils/common/Errors.sol";
 import {Bid, CallType, Parallel, WriteFinality, QueuePayloadParams, IsPlug, PayloadSubmitParams, RequestMetadata, UserCredits} from "../../utils/common/Structs.sol";
-import { toBytes32Format } from "../../utils/common/Converters.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
     // slots [0-49] reserved for gap
@@ -430,7 +429,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
             writeFinality: WriteFinality.LOW,
             asyncPromise: address(0),
             switchboard: _getSwitchboard(chainSlug_),
-            target: toBytes32Format(_getFeesPlugAddress(chainSlug_)),
+            target: _getFeesPlugAddress(chainSlug_),
             appGateway: address(this),
             gasLimit: 10000000,
             value: 0,
@@ -463,7 +462,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
                 writeFinality: WriteFinality.LOW,
                 asyncPromise: address(0),
                 switchboard: _getSwitchboard(chainSlug_),
-                target: toBytes32Format(_getFeesPlugAddress(chainSlug_)),
+                target: _getFeesPlugAddress(chainSlug_),
                 appGateway: address(this),
                 gasLimit: 10000000,
                 value: 0,
@@ -484,7 +483,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         deliveryHelper__().queue(queuePayloadParams);
     }
 
-    function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (address) {
+    function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (bytes32) {
         return watcherPrecompileConfig().feesPlug(chainSlug_);
     }
 

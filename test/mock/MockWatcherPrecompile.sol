@@ -5,7 +5,7 @@ import "../../contracts/evmx/interfaces/IAppGateway.sol";
 import "../../contracts/evmx/interfaces/IWatcherPrecompile.sol";
 import "../../contracts/evmx/interfaces/IPromise.sol";
 
-import {TimeoutRequest, TriggerParams, PlugConfig, ResolvedPromises, AppGatewayConfig} from "../../contracts/utils/common/Structs.sol";
+import {TimeoutRequest, TriggerParams, PlugConfigGeneric, ResolvedPromises, AppGatewayConfig} from "../../contracts/utils/common/Structs.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/utils/common/Constants.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../../contracts/utils/common/Errors.sol";
 import "solady/utils/ERC1967Factory.sol";
@@ -21,7 +21,7 @@ contract MockWatcherPrecompile {
     /// @dev timeoutId => TimeoutRequest struct
     mapping(bytes32 => TimeoutRequest) public timeoutRequests;
 
-    mapping(uint32 => mapping(bytes32 => PlugConfig)) internal _plugConfigs;
+    mapping(uint32 => mapping(bytes32 => PlugConfigGeneric)) internal _plugConfigs;
 
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();

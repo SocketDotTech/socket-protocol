@@ -88,10 +88,17 @@ struct AppGatewayConfig {
     uint32 chainSlug;
 }
 // Plug config:
-struct PlugConfig {
+struct PlugConfigGeneric {
     bytes32 appGatewayId;
     bytes32 switchboard;
 }
+
+// Plug config:
+struct PlugConfigEvm {
+    bytes32 appGatewayId;
+    address switchboard;
+}
+
 //trigger:
 struct TriggerParams {
     bytes32 triggerId;
@@ -244,7 +251,6 @@ struct RequestMetadata {
     bytes onCompleteData;
 }
 
-// TODO:GW: remove comment after review: ExecuteParams is for EVM calls - should we name it ExecuteParamsEvm?
 struct ExecuteParams {
     CallType callType;
     uint40 requestCount;

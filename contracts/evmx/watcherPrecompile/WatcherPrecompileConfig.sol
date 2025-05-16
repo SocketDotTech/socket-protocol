@@ -30,8 +30,8 @@ contract WatcherPrecompileConfig is
 
     // slot 102: _plugConfigs
     /// @notice Maps network and plug to their configuration
-    /// @dev chainSlug => plug => PlugConfig
-    mapping(uint32 => mapping(bytes32 => PlugConfig)) internal _plugConfigs;
+    /// @dev chainSlug => plug => PlugConfigGeneric
+    mapping(uint32 => mapping(bytes32 => PlugConfigGeneric)) internal _plugConfigs;
 
     // slot 103: switchboards
     /// @notice Maps chain slug to their associated switchboard
@@ -46,12 +46,12 @@ contract WatcherPrecompileConfig is
     // slot 105: contractFactoryPlug
     /// @notice Maps chain slug to their associated contract factory plug
     /// @dev chainSlug => contract factory plug address
-    mapping(uint32 => address) public contractFactoryPlug;
+    mapping(uint32 => bytes32) public contractFactoryPlug;
 
     // slot 106: feesPlug
     /// @notice Maps chain slug to their associated fees plug
     /// @dev chainSlug => fees plug address
-    mapping(uint32 => address) public feesPlug;
+    mapping(uint32 => bytes32) public feesPlug;
 
     // slot 107: isNonceUsed
     /// @notice Maps nonce to whether it has been used
@@ -82,8 +82,8 @@ contract WatcherPrecompileConfig is
     event OnChainContractSet(
         uint32 chainSlug,
         bytes32 socket,
-        address contractFactoryPlug,
-        address feesPlug
+        bytes32 contractFactoryPlug,
+        bytes32 feesPlug
     );
 
     /// @notice Emitted when a valid plug is set for an app gateway
@@ -125,7 +125,7 @@ contract WatcherPrecompileConfig is
 
         for (uint256 i = 0; i < configs_.length; i++) {
             // Store the plug configuration for this network and plug
-            _plugConfigs[configs_[i].chainSlug][configs_[i].plug] = PlugConfig({
+            _plugConfigs[configs_[i].chainSlug][configs_[i].plug] = PlugConfigGeneric({
                 appGatewayId: configs_[i].appGatewayId,
                 switchboard: configs_[i].switchboard
             });
@@ -139,8 +139,8 @@ contract WatcherPrecompileConfig is
     function setOnChainContracts(
         uint32 chainSlug_,
         bytes32 socket_,
-        address contractFactoryPlug_,
-        address feesPlug_
+        bytes32 contractFactoryPlug_,
+        bytes32 feesPlug_
     ) external onlyOwner {
         sockets[chainSlug_] = socket_;
         contractFactoryPlug[chainSlug_] = contractFactoryPlug_;
@@ -205,7 +205,7 @@ contract WatcherPrecompileConfig is
         // if target is contractFactoryPlug, return
         // as connection is with middleware delivery helper and not app gateway
         if (
-            middleware_ == address(deliveryHelper__()) && target_ == toBytes32Format(contractFactoryPlug[chainSlug_])
+            middleware_ == address(deliveryHelper__()) && target_ == contractFactoryPlug[chainSlug_]
         ) return;
 
         (bytes32 appGatewayId, bytes32 switchboard) = getPlugConfigs(chainSlug_, target_);

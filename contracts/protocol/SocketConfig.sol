@@ -7,10 +7,10 @@ import {IPlug} from "./interfaces/IPlug.sol";
 import "./interfaces/ISocketFeeManager.sol";
 import "../utils/AccessControl.sol";
 import {GOVERNANCE_ROLE, RESCUE_ROLE, SWITCHBOARD_DISABLER_ROLE} from "../utils/common/AccessRoles.sol";
-import {CallType, PlugConfig, SwitchboardStatus, ExecutionStatus} from "../utils/common/Structs.sol";
+import {CallType, PlugConfigEvm, SwitchboardStatus, ExecutionStatus} from "../utils/common/Structs.sol";
 import {PlugNotFound, InvalidAppGateway, InvalidTransmitter} from "../utils/common/Errors.sol";
 import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
-import {toBytes32Format, fromBytes32Format} from "../utils/common/Converters.sol";
+
 /**
  * @title SocketConfig
  * @notice An abstract contract for configuring socket connections for plugs,
@@ -25,9 +25,7 @@ abstract contract SocketConfig is ISocket, AccessControl {
     mapping(address => SwitchboardStatus) public isValidSwitchboard;
 
     // @notice mapping of plug address to its config
-    // TODO:GW: remove comment after review: PlugConfig is shared with WatcherPrecompile which handles solana so switchboard needs to be bytes32
-    //       another option is the have a separate struct PlugConfigEvm for EVM only
-    mapping(address => PlugConfig) internal _plugConfigs;
+    mapping(address => PlugConfigEvm) internal _plugConfigs;
 
     // @notice max copy bytes for socket
     uint16 public maxCopyBytes = 2048; // 2KB
@@ -85,11 +83,11 @@ abstract contract SocketConfig is ISocket, AccessControl {
         if (isValidSwitchboard[switchboard_] != SwitchboardStatus.REGISTERED)
             revert InvalidSwitchboard();
 
-        PlugConfig storage _plugConfig = _plugConfigs[msg.sender];
+        PlugConfigEvm storage _plugConfig = _plugConfigs[msg.sender];
 
         _plugConfig.appGatewayId = appGatewayId_;
         // This is used by watcher precompile which need to also handle bytes32 format for Solana
-        _plugConfig.switchboard = toBytes32Format(switchboard_);
+        _plugConfig.switchboard = switchboard_;
 
         emit PlugConnected(msg.sender, appGatewayId_, switchboard_);
     }
@@ -110,7 +108,7 @@ abstract contract SocketConfig is ISocket, AccessControl {
     function getPlugConfig(
         address plugAddress_
     ) external view returns (bytes32 appGatewayId, address switchboard) {
-        PlugConfig memory _plugConfig = _plugConfigs[plugAddress_];
-        return (_plugConfig.appGatewayId, fromBytes32Format(_plugConfig.switchboard));
+        PlugConfigEvm memory _plugConfig = _plugConfigs[plugAddress_];
+        return (_plugConfig.appGatewayId, _plugConfig.switchboard);
     }
 }

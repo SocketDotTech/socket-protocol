@@ -21,7 +21,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
     function submitRequest(
         PayloadSubmitParams[] memory payloadSubmitParams_
     ) public returns (uint40 requestCount) {
-        address appGateway = _checkAppGateways(payloadSubmitParams_);
+        _checkAppGateways(payloadSubmitParams_);
 
         requestCount = nextRequestCount++;
         uint40 batchCount = nextBatchCount;

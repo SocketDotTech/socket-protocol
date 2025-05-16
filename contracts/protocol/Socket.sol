@@ -77,14 +77,14 @@ contract Socket is SocketUtils {
         // check if the call type is valid
         if (executeParams_.callType == CallType.READ) revert ReadOnlyCall();
 
-        PlugConfig memory plugConfig = _plugConfigs[executeParams_.target];
+        PlugConfigEvm memory plugConfig = _plugConfigs[executeParams_.target];
         // check if the plug is disconnected
         if (plugConfig.appGatewayId == bytes32(0)) revert PlugNotFound();
 
         if (msg.value < executeParams_.value + transmissionParams_.socketFees)
             revert InsufficientMsgValue();
 
-        bytes32 payloadId = _createPayloadId(fromBytes32Format(plugConfig.switchboard), executeParams_);
+        bytes32 payloadId = _createPayloadId(plugConfig.switchboard, executeParams_);
 
         // validate the execution status
         _validateExecutionStatus(payloadId);
@@ -107,7 +107,7 @@ contract Socket is SocketUtils {
         payloadIdToDigest[payloadId] = digest;
 
         // verify the digest
-        _verify(digest, payloadId, fromBytes32Format(plugConfig.switchboard));
+        _verify(digest, payloadId, plugConfig.switchboard);
 
         return _execute(payloadId, executeParams_, transmissionParams_);
     }
@@ -182,7 +182,7 @@ contract Socket is SocketUtils {
      * @notice To trigger to a connected remote chain. Should only be called by a plug.
      */
     function _triggerAppGateway(address plug_) internal returns (bytes32 triggerId) {
-        PlugConfig memory plugConfig = _plugConfigs[plug_];
+        PlugConfigEvm memory plugConfig = _plugConfigs[plug_];
 
         // if no sibling plug is found for the given chain slug, revert
         // sends the trigger to connected app gateway
@@ -193,7 +193,7 @@ contract Socket is SocketUtils {
         emit AppGatewayCallRequested(
             triggerId,
             plugConfig.appGatewayId,
-            fromBytes32Format(plugConfig.switchboard),
+            plugConfig.switchboard,
             plug_,
             // gets the overrides from the plug
             IPlug(plug_).overrides(),

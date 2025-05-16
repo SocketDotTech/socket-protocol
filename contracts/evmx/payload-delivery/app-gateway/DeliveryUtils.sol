@@ -63,7 +63,7 @@ abstract contract DeliveryUtils is
     /// @notice Gets the payload delivery plug address
     /// @param chainSlug_ The chain identifier
     /// @return address The address of the payload delivery plug
-    function getDeliveryHelperPlugAddress(uint32 chainSlug_) public view returns (address) {
+    function getDeliveryHelperPlugAddress(uint32 chainSlug_) public view returns (bytes32) {
         return watcherPrecompileConfig().contractFactoryPlug(chainSlug_);
     }
 
