@@ -1,4 +1,4 @@
-import { ChainAddressesObj, ChainSlug } from "../../src";
+import { ChainAddressesObj, ChainId, ChainSlug } from "../../src";
 import { config } from "dotenv";
 import { BigNumber, Contract, Signer, utils, Wallet } from "ethers";
 import { formatEther } from "ethers/lib/utils";
@@ -43,6 +43,17 @@ config();
 
 let EVMxOwner: string;
 
+export const mockForwarderSolanaOnChainAddress32Bytes = Buffer.from(
+  "55d893e742d43eafc1e6509eefca9ceb635a39bd3394041d334203ed35720922",
+  "hex"
+);
+
+export const mockSwitchboardSolanaAddress32Bytes = Buffer.from(
+//"111893e742d43eafc1e6509eefca9ceb635a39bd3394041d334203ed35720333",
+  "0000000000000000000000000000000000000000000000000000000000000001",  //Make sure this is the same as in ForwarderSolana.sol (mocked address)
+  "hex"
+);
+
 const main = async () => {
   logConfig();
   await logBalances();
@@ -61,6 +72,8 @@ const logBalances = async () => {
   );
   await Promise.all(
     chains.map(async (chain) => {
+      console.log("chain: ", chain);
+      // TODO:GW: if I add Solana chain slug in config.ts it will not work as there is no RPC in env vars for it (on the other hand, should there be if EVMx can't do anything on it?)
       const socketDeployer = await getSocketSigner(chain as ChainSlug);
       const socketBalance = await socketDeployer.provider.getBalance(
         socketDeployer.address
@@ -83,6 +96,7 @@ const deployEVMxContracts = async () => {
       currentChainSlug: EVMX_CHAIN_ID as ChainSlug,
     };
     const chain = EVMX_CHAIN_ID;
+
     try {
       console.log("Deploying EVMx contracts");
       addresses = getAddresses(mode) as unknown as DeploymentAddresses;
@@ -113,7 +127,7 @@ const deployEVMxContracts = async () => {
 
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.AddressResolver,
-        `contracts/protocol/AddressResolver.sol`,
+        `contracts/evmx/AddressResolver.sol`,
         [EVMxOwner],
         proxyFactory,
         deployUtils
@@ -126,7 +140,7 @@ const deployEVMxContracts = async () => {
 
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.WatcherPrecompileLimits,
-        `contracts/protocol/watcherPrecompile/WatcherPrecompileLimits.sol`,
+        `contracts/evmx/watcherPrecompile/WatcherPrecompileLimits.sol`,
         [EVMxOwner, addressResolver.address, DEFAULT_MAX_LIMIT],
         proxyFactory,
         deployUtils
@@ -134,7 +148,7 @@ const deployEVMxContracts = async () => {
 
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.WatcherPrecompileConfig,
-        `contracts/protocol/watcherPrecompile/WatcherPrecompileConfig.sol`,
+        `contracts/evmx/watcherPrecompile/WatcherPrecompileConfig.sol`,
         [EVMxOwner, addressResolver.address, EVMX_CHAIN_ID],
         proxyFactory,
         deployUtils
@@ -142,7 +156,7 @@ const deployEVMxContracts = async () => {
 
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.WatcherPrecompile,
-        `contracts/protocol/watcherPrecompile/core/WatcherPrecompile.sol`,
+        `contracts/evmx/watcherPrecompile/core/WatcherPrecompile.sol`,
         [
           EVMxOwner,
           addressResolver.address,
@@ -157,7 +171,7 @@ const deployEVMxContracts = async () => {
 
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.FeesManager,
-        `contracts/protocol/payload-delivery/FeesManager.sol`,
+        `contracts/evmx/payload-delivery/FeesManager.sol`,
         [
           addressResolver.address,
           EVMxOwner,
@@ -174,7 +188,7 @@ const deployEVMxContracts = async () => {
 
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.DeliveryHelper,
-        `contracts/protocol/payload-delivery/app-gateway/DeliveryHelper.sol`,
+        `contracts/evmx/payload-delivery/app-gateway/DeliveryHelper.sol`,
         [addressResolver.address, EVMxOwner, BID_TIMEOUT],
         proxyFactory,
         deployUtils
@@ -182,7 +196,7 @@ const deployEVMxContracts = async () => {
 
       deployUtils = await deployContractWithProxy(
         EVMxCoreContracts.AuctionManager,
-        `contracts/protocol/payload-delivery/AuctionManager.sol`,
+        `contracts/evmx/payload-delivery/AuctionManager.sol`,
         [
           EVMX_CHAIN_ID,
           auctionEndDelaySeconds,
@@ -193,6 +207,31 @@ const deployEVMxContracts = async () => {
         proxyFactory,
         deployUtils
       );
+
+      // fix this is not 32 bytes if as string literal
+      try {
+        console.log("AddressResolver address:", addressResolver.address);
+
+        
+        deployUtils = await deployContractWithProxy(
+          EVMxCoreContracts.ForwarderSolana,
+          // "ForwarderSolanaTest",
+          // `contracts/evmx/ForwarderSolanaTest.sol`,
+          `contracts/evmx/ForwarderSolana.sol`,
+          [
+            ChainId.SOLANA_DEVNET,
+            // Uint8Array.from(mockForwarderSolanaAddress32Bytes),
+            mockForwarderSolanaOnChainAddress32Bytes,
+            addressResolver.address,
+          ],
+          proxyFactory,
+          deployUtils
+        );
+        const forwarderSolanaAddress = deployUtils.addresses[EVMxCoreContracts.ForwarderSolana];
+        console.log("ForwarderSolana Proxy:", forwarderSolanaAddress);
+      } catch (error) {
+        console.log("Error deploying ForwarderSolana:", error);
+      }
 
       await updateContractSettings(
         addressResolver,
@@ -360,6 +399,11 @@ const deploySocketContracts = async () => {
         const signer: Wallet = getSocketSigner(chain as ChainSlug);
         const socketOwner = signer.address;
 
+        console.log(
+          "XXX Signer balance:",
+          (await signer.getBalance()).toBigInt()
+        );
+
         deployUtils = {
           addresses: chainAddresses,
           mode,
@@ -371,7 +415,7 @@ const deploySocketContracts = async () => {
         const socket: Contract = await getOrDeploy(
           contractName,
           contractName,
-          `contracts/protocol/socket/${contractName}.sol`,
+          `contracts/protocol/${contractName}.sol`,
           [chain as ChainSlug, socketOwner, "EVMX"],
           deployUtils
         );
@@ -381,7 +425,7 @@ const deploySocketContracts = async () => {
         const batcher: Contract = await getOrDeploy(
           contractName,
           contractName,
-          `contracts/protocol/socket/${contractName}.sol`,
+          `contracts/protocol/${contractName}.sol`,
           [socketOwner, socket.address],
           deployUtils
         );
@@ -391,7 +435,7 @@ const deploySocketContracts = async () => {
         const sb: Contract = await getOrDeploy(
           contractName,
           contractName,
-          `contracts/protocol/socket/switchboard/${contractName}.sol`,
+          `contracts/protocol/switchboard/${contractName}.sol`,
           [chain as ChainSlug, socket.address, socketOwner],
           deployUtils
         );
@@ -402,7 +446,7 @@ const deploySocketContracts = async () => {
         const testUSDC: Contract = await getOrDeploy(
           contractName,
           contractName,
-          `contracts/helpers/${contractName}.sol`,
+          `contracts/evmx/helpers/${contractName}.sol`,
           [
             TEST_USDC_NAME,
             TEST_USDC_SYMBOL,
@@ -418,7 +462,7 @@ const deploySocketContracts = async () => {
         const feesPlug: Contract = await getOrDeploy(
           contractName,
           contractName,
-          `contracts/protocol/payload-delivery/${contractName}.sol`,
+          `contracts/evmx/payload-delivery/${contractName}.sol`,
           [socket.address, socketOwner],
           deployUtils
         );
@@ -430,7 +474,7 @@ const deploySocketContracts = async () => {
         const contractFactoryPlug: Contract = await getOrDeploy(
           contractName,
           contractName,
-          `contracts/protocol/payload-delivery/${contractName}.sol`,
+          `contracts/evmx/payload-delivery/${contractName}.sol`,
           [socket.address, socketOwner],
           deployUtils
         );
