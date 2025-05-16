@@ -123,7 +123,12 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         // end the auction if the no auction end delay
         if (auctionEndDelaySeconds > 0) {
             _startAuction(requestCount_);
-            _createRequest(auctionEndDelaySeconds, scheduleFees_, transmitter, abi.encodeWithSelector(this.endAuction.selector, requestCount_, scheduleFees_));
+            _createRequest(
+                auctionEndDelaySeconds,
+                scheduleFees_,
+                transmitter,
+                abi.encodeWithSelector(this.endAuction.selector, requestCount_, scheduleFees_)
+            );
         } else {
             _endAuction(requestCount_, scheduleFees_);
         }
@@ -141,7 +146,10 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
 
     /// @notice Ends an auction
     /// @param requestCount_ The ID of the auction
-    function endAuction(uint40 requestCount_, uint256 scheduleFees_) external onlyWatcherPrecompile {
+    function endAuction(
+        uint40 requestCount_,
+        uint256 scheduleFees_
+    ) external onlyWatcherPrecompile {
         if (auctionClosed[requestCount_]) return;
         _endAuction(requestCount_, scheduleFees_);
     }
@@ -163,7 +171,12 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
 
         // set the timeout for the bid expiration
         // useful in case a transmitter did bid but did not execute payloads
-        _createRequest(bidTimeout, scheduleFees_, winningBid.transmitter, abi.encodeWithSelector(this.expireBid.selector, requestCount_));
+        _createRequest(
+            bidTimeout,
+            scheduleFees_,
+            winningBid.transmitter,
+            abi.encodeWithSelector(this.expireBid.selector, requestCount_)
+        );
 
         // todo: merge them and create a single function call
         // start the request processing, it will queue the request
@@ -185,45 +198,55 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         RequestParams memory requestParams = _getRequestParams(requestCount_);
 
         // if executed, bid is not expired
-        if (requestParams.requestTrackingParams.payloadsRemaining == 0 || requestParams.requestTrackingParams.isRequestCancelled) return;
-        
+        if (
+            requestParams.requestTrackingParams.payloadsRemaining == 0 ||
+            requestParams.requestTrackingParams.isRequestCancelled
+        ) return;
+
         delete winningBids[requestCount_];
         auctionClosed[requestCount_] = false;
         reAuctionCount[requestCount_]++;
 
         // todo: unblock credits by calling watcher for updating transmitter to addr(0)
         // feesManager__().unblockCredits(requestCount_);
-        
+
         emit AuctionRestarted(requestCount_);
     }
 
-    function _createRequest(uint256 delayInSeconds_, uint256 maxFees_, address consumeFrom_, bytes memory payload_) internal {
+    function _createRequest(
+        uint256 delayInSeconds_,
+        uint256 maxFees_,
+        address consumeFrom_,
+        bytes memory payload_
+    ) internal {
         QueueParams memory queueParams = QueueParams({
-                overrideParams: OverrideParams({
-                    overrideParams.isParallelCall = Parallel.OFF;
-                    gasLimit: 0,
-                    value: 0,
-                    readAtBlockNumber: 0,
-                    writeFinality: WriteFinality.LOW,
-                    delayInSeconds: delayInSeconds_
-                }),
-                transaction: Transaction({
-                    chainSlug: evmxSlug,
-                    target: address(this),
-                    payload: payload_
-                }),
-                asyncPromise: address(0),
-                switchboardType: sbType
-            });
+            overrideParams: OverrideParams({
+                isPlug: IsPlug.NO,
+                callType: CallType.WRITE,
+                isParallelCall: Parallel.OFF,
+                gasLimit: 0,
+                value: 0,
+                readAtBlockNumber: 0,
+                writeFinality: WriteFinality.LOW,
+                delayInSeconds: delayInSeconds_
+            }),
+            transaction: Transaction({
+                chainSlug: evmxSlug,
+                target: address(this),
+                payload: payload_
+            }),
+            asyncPromise: address(0),
+            switchboardType: sbType
+        });
 
-            // queue and create request
-            watcherPrecompile__().queueAndRequest(
-                queueParams,
-                maxFees_,
-                address(this),
-                consumeFrom_,
-                bytes("")
-            );
+        // queue and create request
+        watcherPrecompile__().queueAndRequest(
+            queueParams,
+            maxFees_,
+            address(this),
+            consumeFrom_,
+            bytes("")
+        );
     }
 
     /// @notice Returns the quoted transmitter fees for a request

@@ -4,7 +4,7 @@ pragma solidity ^0.8.21;
 import "../interfaces/IWatcher.sol";
 
 import {InvalidCallerTriggered, TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed, RequestAlreadyExecuted} from "../../utils/common/Errors.sol";
-import {ResolvedPromises, AppGatewayConfig, LimitParams, WriteFinality, UpdateLimitParams, PlugConfig, DigestParams, TimeoutRequest, QueuePayloadParams, PayloadParams, RequestParams, RequestMetadata} from "../../utils/common/Structs.sol";
+import {ResolvedPromises, AppGatewayConfig, LimitParams, WriteFinality, UpdateLimitParams, PlugConfig, DigestParams, TimeoutRequest, QueueParams, PayloadParams, RequestParams} from "../../utils/common/Structs.sol";
 
 /// @title WatcherStorage
 /// @notice Storage contract for the WatcherPrecompile system
@@ -37,8 +37,7 @@ abstract contract WatcherStorage is IWatcher {
     mapping(uint40 => RequestParams) public requests;
 
     /// @notice The queue of payloads
-    QueueParams[] public queue;
-
+    QueueParams[] public payloadQueue;
     address public latestAsyncPromise;
     address public appGatewayTemp;
 
@@ -50,25 +49,37 @@ abstract contract WatcherStorage is IWatcher {
 }
 
 contract Watcher is WatcherStorage {
+    IRequestHandler public requestHandler__;
+    IConfigManager public configManager__;
+    IPromiseResolver public promiseResolver__;
+    IAddressResolver public addressResolver__;
+
     constructor(
         address requestHandler_,
         address configManager_,
-        address trigger_,
-        address precompileFeesManager_,
         address promiseResolver_,
         address addressResolver_
     ) {
-        requestHandler = requestHandler_;
-        configManager = configManager_;
-        trigger = trigger_;
-        precompileFeesManager = precompileFeesManager_;
-        promiseResolver = promiseResolver_;
-        addressResolver = addressResolver_;
+        requestHandler__ = requestHandler_;
+        configManager__ = configManager_;
+        promiseResolver__ = promiseResolver_;
+        addressResolver__ = addressResolver_;
     }
 
     /// @notice Clears the call parameters array
     function clearQueue() public {
         delete queue;
+    }
+
+    function queueAndRequest(
+        QueueParams memory queue_,
+        uint256 maxFees,
+        address auctionManager,
+        address consumeFrom,
+        bytes onCompleteData
+    ) internal returns (uint40, address[] memory) {
+        _queue(queue_, msg.sender);
+        return _submitRequest(maxFees, auctionManager, consumeFrom, onCompleteData);
     }
 
     // todo: delegate call?
@@ -79,6 +90,13 @@ contract Watcher is WatcherStorage {
         QueueParams memory queue_,
         address appGateway_
     ) external returns (address, uint40) {
+        return _queue(queue_, appGateway_);
+    }
+
+    function _queue(
+        QueueParams memory queue_,
+        address appGateway_
+    ) internal returns (address, uint40) {
         address coreAppGateway = getCoreAppGateway(appGateway_);
         // Deploy a new async promise contract.
         if (appGatewayTemp != address(0))
@@ -90,14 +108,15 @@ contract Watcher is WatcherStorage {
         queue_.asyncPromise = latestAsyncPromise;
 
         // Add the promise to the queue.
-        queue.push(queue_);
+        payloadQueue.push(queue_);
         // return the promise and request count
-        return (latestAsyncPromise, requestHandler.nextRequestCount());
+        return (latestAsyncPromise, requestHandler__.nextRequestCount());
     }
 
     function then(bytes4 selector_, bytes memory data_) external {
         if (latestAsyncPromise == address(0)) revert NoAsyncPromiseFound();
-        if (latestRequestCount != requestHandler.nextRequestCount()) revert RequestCountMismatch();
+        if (latestRequestCount != requestHandler__.nextRequestCount())
+            revert RequestCountMismatch();
 
         address latestAsyncPromise_ = latestAsyncPromise;
         latestAsyncPromise = address(0);
@@ -111,15 +130,24 @@ contract Watcher is WatcherStorage {
         address auctionManager,
         address consumeFrom,
         bytes onCompleteData
-    ) external returns (uint40 requestCount, address[] memory promiseList) {
+    ) external returns (uint40, address[] memory) {
+        return _submitRequest(maxFees, auctionManager, consumeFrom, onCompleteData);
+    }
+
+    function _submitRequest(
+        uint256 maxFees,
+        address auctionManager,
+        address consumeFrom,
+        bytes onCompleteData
+    ) internal returns (uint40 requestCount, address[] memory promiseList) {
         if (getCoreAppGateway(msg.sender) != appGatewayTemp) revert InvalidAppGateways();
 
-        (requestCount, promiseList) = requestHandler.submitRequest(
+        (requestCount, promiseList) = requestHandler__.submitRequest(
             maxFees,
             auctionManager,
             consumeFrom,
             msg.sender,
-            queue,
+            payloadQueue,
             onCompleteData
         );
         clearQueue();
@@ -139,9 +167,13 @@ contract Watcher is WatcherStorage {
     /// @param expiryTime_ The expiry time in seconds
     /// @dev This function sets the expiry time for payload execution
     /// @dev Only callable by the contract owner
-    function setExpiryTime(uint256 expiryTime_) external onlyOwner {
+    function setExpiryTime(uint256 expiryTime_) external {
         expiryTime = expiryTime_;
         emit ExpiryTimeSet(expiryTime_);
+    }
+
+    function getRequestParams(uint40 requestCount_) external view returns (RequestParams memory) {
+        return requests[requestCount_];
     }
 
     // all function from watcher requiring signature
@@ -150,7 +182,7 @@ contract Watcher is WatcherStorage {
         bytes[] memory data_,
         uint256[] memory nonces_,
         bytes[] memory signatures_
-    ) external {
+    ) external payable {
         for (uint40 i = 0; i < contracts.length; i++) {
             if (contracts[i] == address(0)) revert InvalidContract();
             if (data_[i].length == 0) revert InvalidData();
@@ -162,7 +194,7 @@ contract Watcher is WatcherStorage {
                 revert InvalidSignature();
 
             // call the contract
-            (bool success, bytes memory result) = contracts[i].call(data_[i]);
+            (bool success, bytes memory result) = contracts[i].call{value: msg.value}(data_[i]);
             if (!success) revert CallFailed();
         }
     }

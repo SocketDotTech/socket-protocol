@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {DigestParams, ResolvedPromises, PayloadParams, TriggerParams, PayloadSubmitParams, RequestParams} from "../../utils/common/Structs.sol";
+import {PayloadParams, RequestParams, QueueParams, Bid} from "../../utils/common/Structs.sol";
 
 /// @title IWatcher
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
@@ -116,7 +116,7 @@ interface IWatcher {
         uint256 maxFees,
         address auctionManager,
         address consumeFrom,
-        bytes onCompleteData
+        bytes calldata onCompleteData
     ) external returns (uint40 requestCount);
 
     // {
@@ -188,10 +188,9 @@ interface IWatcher {
     function cancelRequest(uint40 requestCount) external;
 
     // settleFees on FM
-
     function getMaxFees(uint40 requestCount) external view returns (uint256);
 
     function getCurrentRequestCount() external view returns (uint40);
 
-    function nextRequestCount() external view returns (uint40);
+    function getRequestParams(uint40 requestCount) external view returns (RequestParams memory);
 }
