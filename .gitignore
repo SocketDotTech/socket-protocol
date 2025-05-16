@@ -8,6 +8,8 @@ cache_hardhat/
 artifacts/
 src/types
 
+.idea/
+
 .vscode/
 #Hardhat plugin files
 typechain-types/

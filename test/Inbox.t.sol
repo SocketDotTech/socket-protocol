@@ -55,7 +55,11 @@ contract TriggerTest is DeliveryHelperTest {
         watcherPrecompileConfig.setAppGateways(gateways, signatureNonce++, watcherSignature);
 
         hoax(watcherEOA);
-        watcherPrecompileConfig.setIsValidPlug(arbChainSlug, toBytes32Format(address(counter)), true);
+        watcherPrecompileConfig.setIsValidPlug(
+            arbChainSlug,
+            toBytes32Format(address(counter)),
+            true
+        );
     }
 
     function testIncrementAfterTrigger() public {

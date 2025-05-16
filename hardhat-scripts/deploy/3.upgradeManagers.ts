@@ -17,6 +17,8 @@ import {
   getSocketSigner,
   getWatcherSigner,
   storeAddresses,
+  toBytes32Format,
+  toBytes32FormatHexString,
 } from "../utils";
 
 export const main = async () => {
@@ -87,13 +89,29 @@ async function setOnchainContracts(chain: number, addresses) {
       contractFactoryPlugAddress.toLowerCase() ||
     currentFeesPlug.toLowerCase() !== feesPlugAddress.toLowerCase()
   ) {
+    console.log("chain: ", chain);
+    console.log("socketAddress: ", socketAddress);
+    console.log(
+      "socketAddress as bytes32: ",
+      toBytes32FormatHexString(socketAddress)
+    );
+    console.log("contractFactoryPlugAddress: ", contractFactoryPlugAddress);
+    console.log(
+      "contractFactoryPlugAddress as bytes32: ",
+      toBytes32FormatHexString(contractFactoryPlugAddress)
+    );
+    console.log("feesPlugAddress: ", feesPlugAddress);
+    console.log(
+      "feesPlugAddress as bytes32: ",
+      toBytes32FormatHexString(feesPlugAddress)
+    );
     const tx = await watcherPrecompileConfig
       .connect(signer)
       .setOnChainContracts(
         chain,
-        socketAddress,
-        contractFactoryPlugAddress,
-        feesPlugAddress
+        toBytes32Format(socketAddress),
+        toBytes32Format(contractFactoryPlugAddress),
+        toBytes32Format(feesPlugAddress)
       );
 
     console.log(`Setting onchain contracts for ${chain}, txHash: `, tx.hash);
@@ -102,9 +120,11 @@ async function setOnchainContracts(chain: number, addresses) {
 
   console.log("Setting switchboard for", chain);
   if (currentSbAddress.toLowerCase() !== sbAddress.toLowerCase()) {
+    console.log("sbAddress: ", sbAddress);
+    console.log("sbAddress as bytes32: ", toBytes32FormatHexString(sbAddress));
     const tx = await watcherPrecompileConfig
       .connect(signer)
-      .setSwitchboard(chain, FAST_SWITCHBOARD_TYPE, sbAddress);
+      .setSwitchboard(chain, FAST_SWITCHBOARD_TYPE, toBytes32Format(sbAddress));
 
     console.log(`Setting switchboard for ${chain}, txHash: `, tx.hash);
     await tx.wait();

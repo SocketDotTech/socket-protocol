@@ -1,0 +1,38 @@
+{
+  "421614": {
+    "ContractFactoryPlug": "0xf5d7d161724d720BE8dEb056FB9D34a4B786de1D",
+    "FastSwitchboard": "0x9fDd8EAF64307d35a253579e42b6ac060A02c954",
+    "FeesPlug": "0xCBC339E2ec929B0454B177dcc50247732Af62b13",
+    "Socket": "0xB92237c7670323b31233D9973D2F9b13789686f2",
+    "SocketBatcher": "0x791e908C57cfDab12FFe7BAcd54df4CF3e5a6532",
+    "startBlock": 152185956,
+    "TestUSDC": "0xd2dE379Eb0CA0BCbCe58eA245B28d9967163a484"
+  },
+  "7625382": {
+    "AddressResolver": "0xd90Fe1dAb08A86e42bd4119Bef8eCA9556B4905C",
+    "AddressResolverImpl": "0xf8Ea530d304F02B45d783794A1acFf7Fd8617eb2",
+    "AuctionManager": "0x7F9215588909294CD2D6feBC0f4e7842C9581Fcb",
+    "AuctionManagerImpl": "0xfF7c394147A61641649c953Ce86A0fD253c2eC06",
+    "DeliveryHelper": "0x199FfB4EB827D07f54F5Bf749Db79E9000AB99ab",
+    "DeliveryHelperImpl": "0xd1ffA457d54b10F76470DFca2516b7eD72e62434",
+    "ERC1967Factory": "0xe2C2494Ea3eb297a2fe05d1d787f17dB5ad3368D",
+    "FeesManager": "0xeB724d7cCA5436D940214D2Dc0d9CFD0F411B865",
+    "FeesManagerImpl": "0x2174a0489b62Ca90B66A3F42dCDBb4db4036Ddad",
+    "startBlock": 6473821,
+    "WatcherPrecompile": "0xe65d4104e4D3332442054A7f0821E74896f9EdE2",
+    "WatcherPrecompileConfig": "0x6280F382cCa2b47ff85ed0630BD6A1Be67690b5F",
+    "WatcherPrecompileConfigImpl": "0x3eBf22b05EBE0184fa47AD24275d6c0C80300768",
+    "WatcherPrecompileImpl": "0x3Ab1e6ADE793A4C4af699B4d78634085095a9C80",
+    "WatcherPrecompileLimits": "0xcEfDc704A2df14ba2c606aCD3E3E4BAB3506BCC6",
+    "WatcherPrecompileLimitsImpl": "0x7D08348200B3493e3A1EE8A7262FdcE67De4c07f"
+  },
+  "11155420": {
+    "ContractFactoryPlug": "0x6BF08F11bDA6CD571Bc942F23ec38b8652FFfB2D",
+    "FastSwitchboard": "0x6Fd0c0D4df8098590805bdB54556313ddb23A37C",
+    "FeesPlug": "0x53128464C6Da629559351DD863B90F1f3B84b247",
+    "Socket": "0xE1164582Bb3412846E723FF3628Be1d165Ef7D54",
+    "SocketBatcher": "0xC60AD001Ed331737B58510e50f1b715142f3ec7c",
+    "startBlock": 27627567,
+    "TestUSDC": "0x9897b10Ac199cbb12C79C2B77c8718638b62b314"
+  }
+}

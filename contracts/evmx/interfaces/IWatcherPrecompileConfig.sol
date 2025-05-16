@@ -59,5 +59,4 @@ interface IWatcherPrecompileConfig {
         uint256 signatureNonce_,
         bytes calldata signature_
     ) external;
-
 }
