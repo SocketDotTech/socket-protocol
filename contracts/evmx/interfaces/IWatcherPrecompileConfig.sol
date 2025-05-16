@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {AppGatewayConfig, PlugConfig} from "../../utils/common/Structs.sol";
+import {AppGatewayConfig, PlugConfigGeneric} from "../../utils/common/Structs.sol";
 
 /// @title IWatcherPrecompileConfig
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
@@ -17,10 +17,10 @@ interface IWatcherPrecompileConfig {
     function sockets(uint32 chainSlug) external view returns (bytes32);
 
     /// @notice Maps chain slug to their associated contract factory plug
-    function contractFactoryPlug(uint32 chainSlug) external view returns (address);
+    function contractFactoryPlug(uint32 chainSlug) external view returns (bytes32);
 
     /// @notice Maps chain slug to their associated fees plug
-    function feesPlug(uint32 chainSlug) external view returns (address);
+    function feesPlug(uint32 chainSlug) external view returns (bytes32);
 
     /// @notice Maps nonce to whether it has been used
     function isNonceUsed(uint256 nonce) external view returns (bool);

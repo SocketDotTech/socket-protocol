@@ -122,7 +122,7 @@ contract CounterTest is DeliveryHelperTest {
     function testCounterReadMultipleChains() external {
         testCounterIncrementMultipleChains();
 
-        (bytes32 arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
+        (, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId,
             counterGateway

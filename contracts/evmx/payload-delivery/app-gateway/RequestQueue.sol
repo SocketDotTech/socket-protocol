@@ -194,7 +194,7 @@ abstract contract RequestQueue is DeliveryUtils {
         );
 
         // getting app gateway for deployer as the plug is connected to the app gateway
-        target = toBytes32Format(getDeliveryHelperPlugAddress(queuePayloadParams_.chainSlug));
+        target = getDeliveryHelperPlugAddress(queuePayloadParams_.chainSlug);
     }
 
     /// @notice Creates the payload details for a given call parameters

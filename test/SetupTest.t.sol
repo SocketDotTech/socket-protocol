@@ -106,8 +106,8 @@ contract SetupTest is Test {
         watcherPrecompileConfig.setOnChainContracts(
             chainSlug_,
             toBytes32Format(address(socket)),
-            address(contractFactoryPlug),
-            address(feesPlug)
+            toBytes32Format(address(contractFactoryPlug)),
+            toBytes32Format(address(feesPlug))
         );
         SocketFeeManager socketFeeManager = new SocketFeeManager(owner, socketFees);
         hoax(watcherEOA);
@@ -286,7 +286,7 @@ contract SetupTest is Test {
         return
             socketBatcher.attestAndExecute(
                 params,
-                // TODO:GW:remove comment after review: SocketBatcher is only used in EVM so we convert to address
+                // SocketBatcher is only used in EVM so we convert to address
                 fromBytes32Format(payloadParams.switchboard),
                 digest,
                 watcherProof,
@@ -367,7 +367,6 @@ contract SetupTest is Test {
         );
         transmitterSig = _createSignature(transmitterDigest, transmitterPrivateKey);
 
-        // TODO:GW:remove comment after review: ExecuteParams is for EVM calls only so we use address types not bytes32
         params = ExecuteParams({
             callType: payloadParams.payloadHeader.getCallType(),
             deadline: payloadParams.deadline,
