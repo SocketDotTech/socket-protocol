@@ -12,6 +12,14 @@ import {AppGatewayBase} from "../base/AppGatewayBase.sol";
 /// @title AuctionManagerStorage
 /// @notice Storage for the AuctionManager contract
 abstract contract AuctionManagerStorage is IAuctionManager {
+    enum AuctionStatus {
+        NOT_STARTED,
+        OPEN,
+        CLOSED,
+        RESTARTED,
+        EXPIRED
+    }
+
     // slot 50
     uint32 public evmxSlug;
 
@@ -26,14 +34,12 @@ abstract contract AuctionManagerStorage is IAuctionManager {
     uint256 public auctionEndDelaySeconds;
 
     // slot 53
+    /// @notice The winning bid for a request (requestCount => Bid)
     mapping(uint40 => Bid) public winningBids;
 
     // slot 54
-    // requestCount => auction status
-    mapping(uint40 => bool) public override auctionClosed;
-
-    // slot 55
-    mapping(uint40 => bool) public override auctionStarted;
+    /// @notice The auction status for a request (requestCount => AuctionStatus)
+    mapping(uint40 => AuctionStatus) public override auctionStatus;
 
     // slot 56
     mapping(uint40 => uint256) public reAuctionCount;
@@ -52,6 +58,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     error MaxReAuctionCountReached();
 
     constructor() {
+        // todo: evmx slug can be immutable and set here
         _disableInitializers(); // disable for implementation
     }
 
@@ -94,11 +101,13 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     function bid(
         uint40 requestCount_,
         uint256 bidFees,
-        address scheduleFees_,
         bytes memory transmitterSignature,
         bytes memory extraData
     ) external {
-        if (auctionClosed[requestCount_]) revert AuctionClosed();
+        if (
+            auctionStatus[requestCount_] != AuctionStatus.OPEN &&
+            auctionStatus[requestCount_] != AuctionStatus.RESTARTED
+        ) revert AuctionNotOpen();
 
         // check if the transmitter is valid
         address transmitter = _recoverSigner(
@@ -108,84 +117,73 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         if (!_hasRole(TRANSMITTER_ROLE, transmitter)) revert InvalidTransmitter();
 
         // check if the bid is lower than the existing bid
-        if (
-            winningBids[requestCount_].transmitter != address(0) &&
-            bidFees >= winningBids[requestCount_].fee
-        ) revert LowerBidAlreadyExists();
+        if (bidFees >= winningBids[requestCount_].fee && bidFees != 0)
+            revert LowerBidAlreadyExists();
 
-        uint256 transmitterCredits = quotedTransmitterFees(requestCount_);
+        uint256 transmitterCredits = get(requestCount_);
         if (bidFees > transmitterCredits) revert BidExceedsMaxFees();
+
+        deductScheduleFees(
+            transmitter,
+            winningBids[requestCount_].transmitter == address(0)
+                ? address(this)
+                : winningBids[requestCount_].transmitter
+        );
 
         // create a new bid
         Bid memory newBid = Bid({fee: bidFees, transmitter: transmitter, extraData: extraData});
         winningBids[requestCount_] = newBid;
 
         // end the auction if the no auction end delay
-        if (auctionEndDelaySeconds > 0) {
+        if (auctionEndDelaySeconds > 0 && auctionStatus[requestCount_] != AuctionStatus.OPEN) {
             _startAuction(requestCount_);
             _createRequest(
                 auctionEndDelaySeconds,
-                scheduleFees_,
-                transmitter,
-                abi.encodeWithSelector(this.endAuction.selector, requestCount_, scheduleFees_)
+                address(this),
+                abi.encodeWithSelector(this.endAuction.selector, requestCount_)
             );
         } else {
-            _endAuction(requestCount_, scheduleFees_);
+            _endAuction(requestCount_);
         }
 
         emit BidPlaced(requestCount_, newBid);
     }
 
     function _startAuction(uint40 requestCount_) internal {
-        if (auctionClosed[requestCount_]) revert AuctionClosed();
-        if (auctionStarted[requestCount_]) revert AuctionAlreadyStarted();
-
-        auctionStarted[requestCount_] = true;
+        if (auctionStatus[requestCount_] != AuctionStatus.OPEN) revert AuctionNotOpen();
+        auctionStatus[requestCount_] = AuctionStatus.OPEN;
         emit AuctionStarted(requestCount_);
     }
 
     /// @notice Ends an auction
     /// @param requestCount_ The ID of the auction
-    function endAuction(
-        uint40 requestCount_,
-        uint256 scheduleFees_
-    ) external onlyWatcherPrecompile {
-        if (auctionClosed[requestCount_]) return;
-        _endAuction(requestCount_, scheduleFees_);
+    function endAuction(uint40 requestCount_) external onlyWatcher {
+        if (
+            auctionStatus[requestCount_] == AuctionStatus.CLOSED ||
+            auctionStatus[requestCount_] == AuctionStatus.NOT_STARTED
+        ) return;
+        _endAuction(requestCount_);
     }
 
-    function _endAuction(uint40 requestCount_, uint256 scheduleFees_) internal {
+    function _endAuction(uint40 requestCount_) internal {
         // get the winning bid, if no transmitter is set, revert
         Bid memory winningBid = winningBids[requestCount_];
         if (winningBid.transmitter == address(0)) revert InvalidTransmitter();
+        auctionStatus[requestCount_] = AuctionStatus.CLOSED;
 
-        auctionClosed[requestCount_] = true;
-        RequestParams memory requestParams = _getRequestParams(requestCount_);
-
-        // todo: block fees in watcher in startRequestProcessing
-        // feesManager__().blockCredits(
-        //     requestMetadata.consumeFrom,
-        //     winningBid.fee,
-        //     requestCount_
-        // );
-
+        // todo: might block the request processing if transmitter don't have enough balance
+        // not implementing this for now
         // set the timeout for the bid expiration
         // useful in case a transmitter did bid but did not execute payloads
         _createRequest(
             bidTimeout,
-            scheduleFees_,
+            deductScheduleFees(winningBid.transmitter, address(this)),
             winningBid.transmitter,
             abi.encodeWithSelector(this.expireBid.selector, requestCount_)
         );
 
-        // todo: merge them and create a single function call
         // start the request processing, it will queue the request
-        if (requestParams.requestFeesDetails.bid.transmitter != address(0)) {
-            IWatcher(watcherPrecompile__()).updateTransmitter(requestCount_, winningBid);
-        } else {
-            IWatcher(watcherPrecompile__()).startRequestProcessing(requestCount_, winningBid);
-        }
-
+        IWatcher(watcherPrecompile__()).assignTransmitter(requestCount_, winningBid);
         emit AuctionEnded(requestCount_, winningBid);
     }
 
@@ -193,7 +191,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     /// @dev Auction can be restarted only for `maxReAuctionCount` times.
     /// @dev It also unblocks the fees from last transmitter to be assigned to the new winner.
     /// @param requestCount_ The request id
-    function expireBid(uint40 requestCount_) external onlyWatcherPrecompile {
+    function expireBid(uint40 requestCount_) external onlyWatcher {
         if (reAuctionCount[requestCount_] >= maxReAuctionCount) revert MaxReAuctionCountReached();
         RequestParams memory requestParams = _getRequestParams(requestCount_);
 
@@ -204,12 +202,13 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         ) return;
 
         delete winningBids[requestCount_];
-        auctionClosed[requestCount_] = false;
+        auctionStatus[requestCount_] = AuctionStatus.RESTARTED;
         reAuctionCount[requestCount_]++;
 
-        // todo: unblock credits by calling watcher for updating transmitter to addr(0)
-        // feesManager__().unblockCredits(requestCount_);
-
+        IWatcher(watcherPrecompile__()).assignTransmitter(
+            requestCount_,
+            Bid({fee: 0, transmitter: address(0), extraData: ""})
+        );
         emit AuctionRestarted(requestCount_);
     }
 
@@ -222,7 +221,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         QueueParams memory queueParams = QueueParams({
             overrideParams: OverrideParams({
                 isPlug: IsPlug.NO,
-                callType: CallType.WRITE,
+                callType: SCHEDULE,
                 isParallelCall: Parallel.OFF,
                 gasLimit: 0,
                 value: 0,
@@ -244,7 +243,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
             queueParams,
             maxFees_,
             address(this),
-            consumeFrom_,
+            address(this),
             bytes("")
         );
     }
@@ -253,13 +252,17 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     /// @dev returns the max fees quoted by app gateway subtracting the watcher fees
     /// @param requestCount_ The request id
     /// @return The quoted transmitter fees
-    function quotedTransmitterFees(uint40 requestCount_) public view returns (uint256) {
+    function getMaxFees(uint40 requestCount_) internal view returns (uint256) {
         RequestParams memory requestParams = _getRequestParams(requestCount_);
         // check if the bid is for this auction manager
         if (requestParams.auctionManager != address(this)) revert InvalidBid();
         // get the total fees required for the watcher precompile ops
-        return
-            requestParams.requestFeesDetails.maxFees - requestParams.requestFeesDetails.watcherFees;
+        return requestParams.requestFeesDetails.maxFees;
+    }
+
+    function deductScheduleFees(address from_, address to_) internal returns (uint256 watcherFees) {
+        watcherFees = watcher__().getPrecompileFees(SCHEDULE);
+        feesManager__().transferCredits(from_, to_, watcherFees);
     }
 
     function _getRequestParams(uint40 requestCount_) internal view returns (RequestParams memory) {
