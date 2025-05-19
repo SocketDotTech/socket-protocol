@@ -11,7 +11,7 @@ import "../../utils/RescueFundsLib.sol";
 import {ETH_ADDRESS} from "../../utils/common/Constants.sol";
 import {InvalidTokenAddress, FeesAlreadyPaid} from "../../utils/common/Errors.sol";
 
-/// @title FeesManager
+/// @title FeesPlug
 /// @notice Contract for managing fees on a network
 /// @dev The amount deposited here is locked and updated in the EVMx for an app gateway
 /// @dev The fees are redeemed by the transmitters executing request or can be withdrawn by the owner

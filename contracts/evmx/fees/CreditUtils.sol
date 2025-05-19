@@ -52,11 +52,9 @@ abstract contract CreditUtils is UserUtils {
     /// @dev Only callable by delivery helper
     function blockCredits(
         uint40 requestCount_,
-        uint256 credits_,
-        address consumeFrom_
+        address consumeFrom_,
+        uint256 credits_
     ) external onlyWatcher {
-        // todo: check in watcher if AM is correct while starting process or updating transmitter
-        // Block fees
         if (getAvailableCredits(consumeFrom_) < credits_) revert InsufficientCreditsAvailable();
 
         UserCredits storage userCredit = userCredits[consumeFrom_];
@@ -68,10 +66,10 @@ abstract contract CreditUtils is UserUtils {
 
     /// @notice Unblocks fees after successful execution and assigns them to the transmitter
     /// @param requestCount_ The async ID of the executed batch
-    /// @param consumeFor_ The address of the receiver
+    /// @param assignTo_ The address of the transmitter
     function unblockAndAssignCredits(
         uint40 requestCount_,
-        address consumeFor_
+        address assignTo_
     ) external override onlyWatcher {
         uint256 blockedCredits = requestCountCredits[requestCount_];
         if (blockedCredits == 0) return;
@@ -80,24 +78,14 @@ abstract contract CreditUtils is UserUtils {
         uint256 fees = requestParams.requestFeesDetails.maxFees;
 
         // Unblock fees from deposit
-        _useBlockedUserCredits(requestParams.consumeFrom, blockedCredits, fees);
+        _updateUserCredits(requestParams.consumeFrom, blockedCredits, fees);
 
         // Assign fees to transmitter
-        userCredits[consumeFor_].totalCredits += fees;
+        userCredits[assignTo_].totalCredits += fees;
 
         // Clean up storage
         delete requestCountCredits[requestCount_];
-        emit CreditsUnblockedAndAssigned(requestCount_, consumeFor_, fees);
-    }
-
-    function _useBlockedUserCredits(
-        address consumeFrom_,
-        uint256 toConsumeFromBlocked_,
-        uint256 toConsumeFromTotal_
-    ) internal {
-        UserCredits storage userCredit = userCredits[consumeFrom_];
-        userCredit.blockedCredits -= toConsumeFromBlocked_;
-        userCredit.totalCredits -= toConsumeFromTotal_;
+        emit CreditsUnblockedAndAssigned(requestCount_, assignTo_, fees);
     }
 
     function _useAvailableUserCredits(address consumeFrom_, uint256 toConsume_) internal {
@@ -118,22 +106,14 @@ abstract contract CreditUtils is UserUtils {
     }
 
     function unblockCredits(uint40 requestCount_) external onlyWatcher {
-        RequestParams memory requestParams = _getRequestParams(requestCount_);
-
-        // todo: check in watcher
-        // if (msg.sender != requestParams.auctionManager) revert InvalidCaller();
-
+        RequestParams memory r = _getRequestParams(requestCount_);
         uint256 blockedCredits = requestCountCredits[requestCount_];
         if (blockedCredits == 0) return;
 
         // Unblock fees from deposit
-        _useBlockedUserCredits(
-            requestParams.requestFeesDetails.consumeFrom,
-            blockedCredits,
-            requestParams.requestFeesDetails.maxFees
-        );
+        _updateUserCredits(r.requestFeesDetails.consumeFrom, blockedCredits, 0);
         delete requestCountCredits[requestCount_];
-        emit CreditsUnblocked(requestCount_, requestParams.requestFeesDetails.consumeFrom);
+        emit CreditsUnblocked(requestCount_, r.requestFeesDetails.consumeFrom);
     }
 
     function _getRequestParams(uint40 requestCount_) internal view returns (RequestParams memory) {

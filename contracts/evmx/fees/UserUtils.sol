@@ -110,6 +110,27 @@ abstract contract UserUtils is FeesStorage, Initializable, Ownable, AddressResol
         return getAvailableCredits(consumeFrom_) >= amount_;
     }
 
+    function _updateUserCredits(
+        address consumeFrom_,
+        uint256 toConsumeFromBlocked_,
+        uint256 toConsumeFromTotal_
+    ) internal {
+        UserCredits storage userCredit = userCredits[consumeFrom_];
+        userCredit.blockedCredits -= toConsumeFromBlocked_;
+        userCredit.totalCredits -= toConsumeFromTotal_;
+    }
+
+    // todo: if watcher, don't check whitelist
+    function transferCredits(address from_, address to_, uint256 amount_) external {
+        if (!isAppGatewayWhitelisted[from_][to_]) revert AppGatewayNotWhitelisted();
+
+        if (!isUserCreditsEnough(from_, to_, amount_)) revert InsufficientCreditsAvailable();
+        userCredits[from_].totalCredits -= amount_;
+        userCredits[to_].totalCredits += amount_;
+
+        emit CreditsTransferred(from_, to_, amount_);
+    }
+
     function whitelistAppGatewayWithSignature(
         bytes memory feeApprovalData_
     ) external returns (address consumeFrom, address appGateway, bool isApproved) {

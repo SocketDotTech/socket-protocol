@@ -34,13 +34,13 @@ interface IFeesManager {
     ) external;
 
     // Fee settlement
-    // if addr(0) then settle to original user, onlyWatcherPrecompile can call
+    // if addr(0) then settle to original user, onlyWatcher can call
     function settleFees(uint40 requestId, address transmitter) external;
 
-    // onlyWatcherPrecompile, request's AM can call
+    // onlyWatcher, request's AM can call
     function blockCredits(uint40 requestId, address user, uint256 amount) external;
 
-    // onlyWatcherPrecompile, request's AM can call
+    // onlyWatcher, request's AM can call
     function unblockCredits(uint40 requestId, address user, uint256 amount) external;
 
     // msg sender should be user whitelisted app gateway
