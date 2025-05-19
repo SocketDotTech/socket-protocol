@@ -6,10 +6,10 @@ import "../../../utils/common/Structs.sol";
 import "../../../utils/common/Errors.sol";
 import "../WatcherBase.sol";
 
-/// @title Schedule
+/// @title SchedulePrecompile
 /// @notice Library that handles schedule logic for the WatcherPrecompile system
 /// @dev This library contains pure functions for schedule operations
-contract Schedule is IPrecompile, WatcherBase {
+contract SchedulePrecompile is IPrecompile, WatcherBase {
     // slot 52
     /// @notice The maximum delay for a schedule
     /// @dev Maximum schedule delay in seconds
@@ -168,3 +168,50 @@ contract Schedule is IPrecompile, WatcherBase {
         return abi.encode(scheduleId, target, payload, executedAt, returnData);
     }
 }
+
+// /// @notice Ends the timeouts and calls the target address with the callback payload
+// /// @param timeoutId_ The unique identifier for the timeout
+// function resolveTimeout(
+//     bytes32 timeoutId_,
+// ) external {
+//     TimeoutRequest storage timeoutRequest_ = timeoutRequests[timeoutId_];
+//     if (timeoutRequest_.target == address(0)) revert InvalidTimeoutRequest();
+//     if (timeoutRequest_.isResolved) revert TimeoutAlreadyResolved();
+//     if (block.timestamp < timeoutRequest_.executeAt) revert ResolvingTimeoutTooEarly();
+
+//     (bool success, , bytes memory returnData) = timeoutRequest_.target.tryCall(
+//         0,
+//         gasleft(),
+//         0, // setting max_copy_bytes to 0 as not using returnData right now
+//         timeoutRequest_.payload
+//     );
+//     if (!success) revert CallFailed();
+//     timeoutRequest_.isResolved = true;
+//     timeoutRequest_.executedAt = block.timestamp;
+
+//     emit TimeoutResolved(
+//         timeoutId_,
+//         timeoutRequest_.target,
+//         timeoutRequest_.payload,
+//         block.timestamp,
+//         returnData
+//     );
+// }
+
+// /// @notice Sets a timeout for a payload execution on app gateway
+// /// @return timeoutId The unique identifier for the timeout request
+// function _setTimeout(
+//     uint256 delayInSeconds_,
+//     bytes memory payload_
+// ) internal returns (bytes32 timeoutId) {
+//     uint256 executeAt = block.timestamp + delayInSeconds_;
+//     timeoutId = _encodeTimeoutId();
+
+//     timeoutRequests[timeoutId].target = msg.sender;
+//     timeoutRequests[timeoutId].delayInSeconds = delayInSeconds_;
+//     timeoutRequests[timeoutId].executeAt = executeAt;
+//     timeoutRequests[timeoutId].payload = payload_;
+
+//     // emits event for watcher to track timeout and resolve when timeout is reached
+//     emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);
+// }

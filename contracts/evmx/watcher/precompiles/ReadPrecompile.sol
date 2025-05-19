@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../../interfaces/IWatcher.sol";
+import "../../interfaces/IPrecompile.sol";
 import "../../../utils/common/Structs.sol";
 import "../../../utils/common/Errors.sol";
 import "../WatcherBase.sol";
 
 /// @title Read
 /// @notice Handles read precompile logic
-contract Read is IPrecompile, WatcherBase {
+contract ReadPrecompile is IPrecompile, WatcherBase {
     /// @notice Emitted when a new read is requested
     event ReadRequested(PayloadParams params);
 
