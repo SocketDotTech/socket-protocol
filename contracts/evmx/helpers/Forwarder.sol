@@ -4,7 +4,6 @@ pragma solidity ^0.8.21;
 import "./interfaces/IAddressResolver.sol";
 import "./interfaces/IMiddleware.sol";
 import "./interfaces/IAppGateway.sol";
-import "./interfaces/IPromise.sol";
 import "./interfaces/IForwarder.sol";
 import {AddressResolverUtil} from "./AddressResolverUtil.sol";
 import {AsyncModifierNotUsed, NoAsyncPromiseFound, PromiseCallerMismatch, RequestCountMismatch, WatcherNotSt} from "../utils/common/Errors.sol";

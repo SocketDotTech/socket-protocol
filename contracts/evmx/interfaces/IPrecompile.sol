@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../../utils/common/Structs.sol";
+import {QueueParams, PayloadParams} from "../../utils/common/Structs.sol";
 
 /// @title IPrecompile
 /// @notice Interface for precompile functionality

@@ -99,15 +99,7 @@ interface IWatcher {
 
     function queueSubmitStart(QueueParams calldata queuePayloadParams_) external;
 
-    // queue:
     function queue(QueueParams calldata queuePayloadParams_) external;
-
-    // push in queue
-    // validateAndGetPrecompileData:
-    // write: verifyConnection, max msg gas limit is under limit,
-    // schedule: max delay
-    // read:
-    // return encoded data and fees
 
     /// @notice Clears the temporary queue used to store payloads for a request
     function clearQueue() external;
@@ -119,54 +111,18 @@ interface IWatcher {
         bytes calldata onCompleteData
     ) external returns (uint40 requestCount);
 
-    // {
-    //     (params.precompileData, fees) = IPrecompile.getPrecompileData(queuePayloadParams_);
-    // }
-    // precompileFees += fees
-    // if coreAppGateway is not set, set it else check if it is the same
-    // decide level
-    // create id and assign counts
-    // store payload struct
-
-    // set default AM if addr(0)
-    // total fees check from maxFees
-    // verify if msg sender have same core app gateway
-    // create and store req param
-    // clear queue
-    // if writeCount == 0, startProcessing else wait
-
     function assignTransmitter(uint40 requestCount, Bid memory bid_) external;
 
-    // validate AM from req param
-    // update transmitter
-    // assignTransmitter
-    // - block for new transmitter
-    // refinalize payloads for new transmitter
-    // 0 => non zero
-    // non zero => non zero
-    // - unblock credits from prev transmitter
-    // non zero => 0
-    // - just unblock credits and return
-    // if(_validateProcessBatch() == true) processBatch()
-
     // _processBatch();
-    // if a batch is already processed or in process, reprocess it for new transmitter
-    // deduct fee with precompile call (IPrecompile.handlePayload(payloadParams) returns fees)
     // prev digest hash create
+    // create digest, deadline
 
     // handlePayload:
-    // create digest, deadline
     // emit relevant events
 
     function _validateProcessBatch() external;
 
-    // if request is cancelled, return
-    // check if all payloads from last batch are executed, else return;
-    // check if all payloads are executed, if yes call _settleRequest
-
     function _settleRequest(uint40 requestCount) external;
-
-    // if yes, call settleFees on FM and call onCompleteData in App gateway, if not success emit DataNotExecuted()
 
     function markPayloadResolved(uint40 requestCount, RequestParams memory requestParams) external;
 
@@ -186,8 +142,8 @@ interface IWatcher {
     ) external;
 
     function cancelRequest(uint40 requestCount) external;
-
     // settleFees on FM
+
     function getMaxFees(uint40 requestCount) external view returns (uint256);
 
     function getCurrentRequestCount() external view returns (uint40);

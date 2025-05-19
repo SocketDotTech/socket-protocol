@@ -102,7 +102,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         watcherPrecompileConfig().setIsValidPlug(chainSlug_, plug_, true);
     }
 
-    function increase(uint256 value_) external onlyWatcherPrecompile {
+    function increase(uint256 value_) external onlyWatcher {
         counterVal += value_;
     }
 
@@ -115,7 +115,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         watcherPrecompile__().setTimeout(delayInSeconds_, payload);
     }
 
-    function resolveTimeout(uint256 creationTimestamp_) external onlyWatcherPrecompile {
+    function resolveTimeout(uint256 creationTimestamp_) external onlyWatcher {
         emit TimeoutResolved(creationTimestamp_, block.timestamp);
     }
 

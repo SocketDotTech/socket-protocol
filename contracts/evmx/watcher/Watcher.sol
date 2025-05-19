@@ -2,7 +2,6 @@
 pragma solidity ^0.8.21;
 
 import "../interfaces/IWatcher.sol";
-
 import {InvalidCallerTriggered, TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed, RequestAlreadyExecuted} from "../../utils/common/Errors.sol";
 import {ResolvedPromises, AppGatewayConfig, LimitParams, WriteFinality, UpdateLimitParams, PlugConfig, DigestParams, TimeoutRequest, QueueParams, PayloadParams, RequestParams} from "../../utils/common/Structs.sol";
 
@@ -11,7 +10,6 @@ import {ResolvedPromises, AppGatewayConfig, LimitParams, WriteFinality, UpdateLi
 /// @dev This contract contains all the storage variables used by the WatcherPrecompile system
 /// @dev It is inherited by WatcherPrecompileCore and WatcherPrecompile
 abstract contract WatcherStorage is IWatcher {
-    // todo: can we remove proxies?
     // slots [0-49]: gap for future storage variables
     uint256[50] _gap_before;
 
@@ -28,13 +26,6 @@ abstract contract WatcherStorage is IWatcher {
     /// @dev Used to prevent replay attacks with signature nonces
     /// @dev signatureNonce => isValid
     mapping(uint256 => bool) public isNonceUsed;
-
-    // queue => update to payloadParams, assign id, store in payloadParams map
-    /// @notice Mapping to store the payload parameters for each payload ID
-    mapping(bytes32 => PayloadParams) public payloads;
-
-    /// @notice The metadata for a request
-    mapping(uint40 => RequestParams) public requests;
 
     /// @notice The queue of payloads
     QueueParams[] public payloadQueue;
@@ -153,16 +144,6 @@ contract Watcher is WatcherStorage {
         clearQueue();
     }
 
-    function setPayloadParams(bytes32 payloadId_, PayloadParams memory payloadParams_) external {
-        if (msg.sender != address(requestHandler)) revert InvalidCaller();
-        payloads[payloadId_] = payloadParams_;
-    }
-
-    function setRequestParams(uint40 requestCount_, RequestParams memory requestParams_) external {
-        if (msg.sender != address(requestHandler)) revert InvalidCaller();
-        requests[requestCount_] = requestParams_;
-    }
-
     /// @notice Sets the expiry time for payload execution
     /// @param expiryTime_ The expiry time in seconds
     /// @dev This function sets the expiry time for payload execution
@@ -173,7 +154,11 @@ contract Watcher is WatcherStorage {
     }
 
     function getRequestParams(uint40 requestCount_) external view returns (RequestParams memory) {
-        return requests[requestCount_];
+        return requestHandler__().getRequestParams(requestCount_);
+    }
+
+    function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory) {
+        return requestHandler__().getPayloadParams(payloadId_);
     }
 
     // all function from watcher requiring signature
