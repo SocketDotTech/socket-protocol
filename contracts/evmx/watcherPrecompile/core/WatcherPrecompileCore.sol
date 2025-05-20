@@ -7,7 +7,7 @@ import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 import {AddressResolverUtil} from "../../AddressResolverUtil.sol";
 import {IFeesManager} from "../../interfaces/IFeesManager.sol";
-import "./WatcherIdUtils.sol";
+import {toBytes32Format} from "../../../utils/common/Converters.sol";
 import "./WatcherPrecompileStorage.sol";
 
 /// @title WatcherPrecompileCore
@@ -92,7 +92,7 @@ abstract contract WatcherPrecompileCore is
             params_.value,
             params_.payload,
             params_.target,
-            WatcherIdUtils.encodeAppGatewayId(params_.appGateway),
+            toBytes32Format(params_.appGateway),
             prevDigestsHash
         );
 
@@ -163,7 +163,7 @@ abstract contract WatcherPrecompileCore is
                 p.value,
                 p.payload,
                 p.target,
-                WatcherIdUtils.encodeAppGatewayId(p.appGateway),
+                toBytes32Format(p.appGateway),
                 p.prevDigestsHash
             );
             prevDigestsHash = keccak256(abi.encodePacked(prevDigestsHash, getDigest(digestParams)));

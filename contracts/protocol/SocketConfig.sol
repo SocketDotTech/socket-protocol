@@ -86,7 +86,6 @@ abstract contract SocketConfig is ISocket, AccessControl {
         PlugConfigEvm storage _plugConfig = _plugConfigs[msg.sender];
 
         _plugConfig.appGatewayId = appGatewayId_;
-        // This is used by watcher precompile which need to also handle bytes32 format for Solana
         _plugConfig.switchboard = switchboard_;
 
         emit PlugConnected(msg.sender, appGatewayId_, switchboard_);

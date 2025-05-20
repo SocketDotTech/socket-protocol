@@ -3,6 +3,7 @@ pragma solidity ^0.8.21;
 
 import "./RequestHandler.sol";
 import {LibCall} from "solady/utils/LibCall.sol";
+import {fromBytes32Format} from "../../../utils/common/Converters.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles request submission, iteration and execution
@@ -254,7 +255,7 @@ contract WatcherPrecompile is RequestHandler {
         for (uint256 i = 0; i < params_.length; i++) {
             if (appGatewayCalled[params_[i].triggerId]) revert AppGatewayAlreadyCalled();
 
-            address appGateway = WatcherIdUtils.decodeAppGatewayId(params_[i].appGatewayId);
+            address appGateway = fromBytes32Format(params_[i].appGatewayId);
             if (
                 !watcherPrecompileConfig__.isValidPlug(
                     appGateway,

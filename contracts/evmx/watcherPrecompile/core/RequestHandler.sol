@@ -2,6 +2,7 @@
 pragma solidity ^0.8.21;
 
 import "./WatcherPrecompileCore.sol";
+import {WatcherIdUtils} from "./WatcherIdUtils.sol";
 
 /// @title RequestHandler
 /// @notice Contract that handles request submission and processing

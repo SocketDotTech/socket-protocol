@@ -2,7 +2,6 @@
 pragma solidity ^0.8.21;
 
 import "./DeliveryUtils.sol";
-import { toBytes32Format } from "../../../utils/common/Converters.sol";
 
 /// @notice Abstract contract for managing asynchronous payloads
 abstract contract RequestQueue is DeliveryUtils {

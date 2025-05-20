@@ -8,7 +8,6 @@ import "./interfaces/IPromise.sol";
 import "./interfaces/IForwarder.sol";
 import {AddressResolverUtil} from "./AddressResolverUtil.sol";
 import {AsyncModifierNotUsed, NoAsyncPromiseFound, PromiseCallerMismatch, RequestCountMismatch, DeliveryHelperNotSet} from "../utils/common/Errors.sol";
-import { toBytes32Format } from "../utils/common/Converters.sol";
 import "solady/utils/Initializable.sol";
 
 /// @title Forwarder Storage
