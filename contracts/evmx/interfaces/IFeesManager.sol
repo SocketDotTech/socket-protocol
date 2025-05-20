@@ -18,7 +18,7 @@ interface IFeesManager {
     function getAvailableCredits(address user) external view returns (uint256);
 
     // withdraw credits onchain
-    // finalize and release sign, no AM needed, can be used by watcher and transmitter
+    // process and release sign, no AM needed, can be used by watcher and transmitter
     function withdrawCreditsTo(
         uint32 chainSlug,
         address to,

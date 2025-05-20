@@ -58,7 +58,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     error MaxReAuctionCountReached();
 
     constructor() {
-        // todo: evmx slug can be immutable and set here
+        // todo-later: evmx slug can be immutable and set here
         _disableInitializers(); // disable for implementation
     }
 
@@ -171,8 +171,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         auctionStatus[requestCount_] = AuctionStatus.CLOSED;
 
         if (winningBid.transmitter != address(0)) {
-            // todo: might block the request processing if transmitter don't have enough balance
-            // not implementing this for now
+            // todo-later: might block the request processing if transmitter don't have enough balance
             // set the timeout for the bid expiration
             // useful in case a transmitter did bid but did not execute payloads
             _createRequest(

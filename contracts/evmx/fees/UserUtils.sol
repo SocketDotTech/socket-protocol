@@ -79,7 +79,7 @@ abstract contract UserUtils is FeesStorage, Initializable, Ownable, AddressResol
         if (userCredit.totalCredits < amount_) revert InsufficientCreditsAvailable();
         userCredit.totalCredits -= amount_;
 
-        // todo: if contract balance not enough, take from our pool?
+        // todo-later: if contract balance not enough, take from our pool?
         if (address(this).balance < amount_) revert InsufficientBalance();
         payable(msg.sender).transfer(amount_);
 
@@ -95,19 +95,23 @@ abstract contract UserUtils is FeesStorage, Initializable, Ownable, AddressResol
     }
 
     /// @notice Checks if the user has enough credits
-    /// @param consumeFrom_ The app gateway address
-    /// @param appGateway_ The app gateway address
+    /// @param from_ The app gateway address
+    /// @param to_ The app gateway address
     /// @param amount_ The amount
     /// @return True if the user has enough credits, false otherwise
     function isUserCreditsEnough(
-        address consumeFrom_,
-        address appGateway_,
+        address from_,
+        address to_,
         uint256 amount_
     ) external view returns (bool) {
-        // If consumeFrom is not appGateway, check if it is whitelisted
-        if (consumeFrom_ != appGateway_ && !isAppGatewayWhitelisted[consumeFrom_][appGateway_])
-            revert AppGatewayNotWhitelisted();
-        return getAvailableCredits(consumeFrom_) >= amount_;
+        // If from_ is not same as to_ or to_ is not watcher, check if it is whitelisted
+        if (
+            to_ != address(watcherPrecompile__()) &&
+            from_ != to_ &&
+            !isAppGatewayWhitelisted[from_][to_]
+        ) revert AppGatewayNotWhitelisted();
+
+        return getAvailableCredits(from_) >= amount_;
     }
 
     function _updateUserCredits(
@@ -120,10 +124,7 @@ abstract contract UserUtils is FeesStorage, Initializable, Ownable, AddressResol
         userCredit.totalCredits -= toConsumeFromTotal_;
     }
 
-    // todo: if watcher, don't check whitelist
     function transferCredits(address from_, address to_, uint256 amount_) external {
-        if (!isAppGatewayWhitelisted[from_][to_]) revert AppGatewayNotWhitelisted();
-
         if (!isUserCreditsEnough(from_, to_, amount_)) revert InsufficientCreditsAvailable();
         userCredits[from_].totalCredits -= amount_;
         userCredits[to_].totalCredits += amount_;

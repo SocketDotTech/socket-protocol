@@ -243,19 +243,16 @@ contract RequestHandler is WatcherBase {
         bytes32[] memory payloadIds = batchPayloadIds[batchCount_];
 
         uint256 totalFees = 0;
-        uint256 fees;
-
         for (uint40 i = 0; i < payloadIds.length; i++) {
             bytes32 payloadId = payloadIds[i];
 
             // check needed for re-process, in case a payload is already executed by last transmitter
             if (!isPromiseExecuted[payloadId]) continue;
 
-            // todo: move it to write precompile
-            // payloadParams.deadline = block.timestamp + expiryTime;
-
             PayloadParams storage payloadParams = payloads[payloadId];
-            (fees, payloadParams) = IPrecompile(precompiles[payloadParams.callType]).handlePayload(
+            payloadParams.deadline = block.timestamp + expiryTime;
+
+            uint256 fees = IPrecompile(precompiles[payloadParams.callType]).handlePayload(
                 r.requestFeesDetails.winningBid.transmitter,
                 payloadParams
             );
