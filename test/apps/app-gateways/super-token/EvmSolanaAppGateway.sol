@@ -78,13 +78,13 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         return address(forwarderSolana.addressResolver__());
     }
 
-    function transfer(bytes memory order_) external async(bytes("")) {
+    function transfer(bytes memory order_, bytes32 switchboardSolana) external async(bytes("")) {
         TransferOrderEvmToSolana memory order = abi.decode(order_, (TransferOrderEvmToSolana));
         // ISuperToken(order.srcEvmToken).burn(order.userEvm, order.srcAmount);
 
         SolanaInstruction memory solanaInstruction = buildSolanaInstruction(order);
         // we are directly calling the ForwarderSolana
-        forwarderSolana.callSolana(solanaInstruction);
+        forwarderSolana.callSolana(solanaInstruction, switchboardSolana);
 
         emit Transferred(_getCurrentAsyncId());
     }

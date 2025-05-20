@@ -91,7 +91,6 @@ export async function deployContractWithArgs(
     const contract: Contract = await Contract.connect(signer).deploy(...args, {
       ...(await overrides(chainSlug)),
     });
-    // console.log("XXX4");
     await contract.deployed();
     return contract;
   } catch (error) {

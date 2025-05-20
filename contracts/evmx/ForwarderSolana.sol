@@ -104,7 +104,7 @@ contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil
 
     /// @notice Fallback function to process the contract calls to onChainAddress
     /// @dev It queues the calls in the middleware and deploys the promise contract
-    function callSolana(SolanaInstruction memory solanaInstruction) external {
+    function callSolana(SolanaInstruction memory solanaInstruction, bytes32 switchboardSolana) external {
         if (address(deliveryHelper__()) == address(0)) {
             revert DeliveryHelperNotSet();
         }
@@ -133,8 +133,6 @@ contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil
 
         // get the switchboard address from the watcher precompile config
         // address switchboard = watcherPrecompileConfig().switchboards(chainSlug, sbType);
-        // TODO:GW: fix after deployment of Switchboard - move that to .env as it must be read also in connection.ts script
-        bytes32 switchboard = 0x0000000000000000000000000000000000000000000000000000000000000001;
 
         bytes memory solanaPayload = abi.encode(solanaInstruction);
 
@@ -147,7 +145,7 @@ contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil
                 isPlug: IsPlug.NO,
                 writeFinality: writeFinality,
                 asyncPromise: latestAsyncPromise,
-                switchboard: switchboard,
+                switchboard: switchboardSolana,
                 target: onChainAddress,
                 appGateway: msg.sender,
                 gasLimit: gasLimit,

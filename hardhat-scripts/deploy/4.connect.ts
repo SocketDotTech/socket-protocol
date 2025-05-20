@@ -15,7 +15,7 @@ import {
   toBytes32FormatHexString,
 } from "../utils";
 import { getWatcherSigner, signWatcherMessage } from "../utils/sign";
-import { mockForwarderSolanaOnChainAddress32Bytes, mockSwitchboardSolanaAddress32Bytes } from "./1.deploy";
+import { mockForwarderSolanaOnChainAddress32Bytes } from "./1.deploy";
 const plugs = [CORE_CONTRACTS.ContractFactoryPlug, CORE_CONTRACTS.FeesPlug];
 export type AppGatewayConfig = {
   plug: string;
@@ -149,14 +149,10 @@ export const isConfigSetOnEVMx = async (
   appGatewayId: string,
   switchboardHexStringBytes32: string
 ) => {
-  console.log("chain: ", chain);
-  console.log("plugHexBytes32: ", plugHexStringBytes32);
-  console.log("switchboardHexBytes32: ", switchboardHexStringBytes32);
   const plugConfigRegistered = await watcher.getPlugConfigs(
     chain,
     toBytes32Format(plugHexStringBytes32)
   );
-  console.log("plugConfigRegistered: ", plugConfigRegistered);
   return (
     plugConfigRegistered[0].toLowerCase() === appGatewayId?.toLowerCase() &&
     plugConfigRegistered[1].toLowerCase() ===
@@ -219,19 +215,27 @@ export const updateConfigEVMx = async () => {
         
       })
     );
-    // TODO:GW: fix the InvalidGateway issue : here manually push the appConfigs for solana
+    //TODO:GW: This is a temporary workaround for th Solana POC
+    //---
     const appGatewayAddress = process.env.APP_GATEWAY;
     if (!appGatewayAddress) throw new Error("APP_GATEWAY is not set");
+    const solanaSwitchboard = process.env.SWITCHBOARD_SOLANA;
+    if (!solanaSwitchboard) throw new Error("SWITCHBOARD_SOLANA is not set");
+
+    const solanaSwitchboardBytes32 = Buffer.from(solanaSwitchboard, "hex");
     const solanaAppGatewayId = ethers.utils.hexZeroPad(appGatewayAddress, 32);
-    console.log("XXX solanaAppGatewayId: ", solanaAppGatewayId);
+
+    console.log("SolanaAppGatewayId: ", solanaAppGatewayId);
+    console.log("SolanaSwitchboardBytes32: ", solanaSwitchboardBytes32);
 
     appConfigs.push({
-      plug: "0x" + mockForwarderSolanaOnChainAddress32Bytes.toString("hex"),  // mock address from ForwaderSolana on-chain address
-      // TODO:GW: why this is called AppGatewayId if it is not an app gateway address ?
+      plug: "0x" + mockForwarderSolanaOnChainAddress32Bytes.toString("hex"),
       appGatewayId: solanaAppGatewayId,
-      switchboard: "0x" + mockSwitchboardSolanaAddress32Bytes.toString("hex"), // mock it manually 
+      // switchboard: "0x" + mockSwitchboardSolanaAddress32Bytes.toString("hex"),
+      switchboard: "0x" + solanaSwitchboardBytes32.toString("hex"),
       chainSlug: ChainId.SOLANA_DEVNET,
     });
+    //---
 
     // Update configs if any changes needed
     if (appConfigs.length > 0) {
