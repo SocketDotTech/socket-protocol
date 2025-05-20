@@ -265,6 +265,22 @@ contract RequestHandler is WatcherBase {
         feesManager__().transferCredits(watcherFeesPayer, address(this), totalFees);
     }
 
+    /// @notice Increases the fees for a request if no bid is placed
+    /// @param requestCount_ The ID of the request
+    /// @param newMaxFees_ The new maximum fees
+    function increaseFees(uint40 requestCount_, uint256 newMaxFees_) external {
+        RequestParams storage r = requestParams[requestCount_];
+        address appGateway = _getCoreAppGateway(msg.sender);
+
+        if (appGateway != r.appGateway) revert OnlyAppGateway();
+        if (r.requestFeesDetails.winningBid.transmitter != address(0)) revert WinningBidExists();
+        if (r.requestFeesDetails.maxFees >= newMaxFees_)
+            revert NewMaxFeesLowerThanCurrent(r.requestFeesDetails.maxFees, newMaxFees_);
+
+        r.requestFeesDetails.maxFees = newMaxFees_;
+        emit FeesIncreased(appGateway, requestCount_, newMaxFees_);
+    }
+
     function markPayloadExecutedAndProcessBatch(
         uint40 requestCount_,
         bytes32 payloadId_
@@ -283,6 +299,21 @@ contract RequestHandler is WatcherBase {
 
         r.requestTrackingParams.currentBatch++;
         _processBatch(requestCount_, r.requestTrackingParams.currentBatch_, r);
+    }
+
+    /// @notice Cancels a request
+    /// @param requestCount The request count to cancel
+    /// @dev This function cancels a request
+    /// @dev It verifies that the caller is the middleware and that the request hasn't been cancelled yet
+    function cancelRequest(uint40 requestCount) external {
+        RequestParams storage r = requestParams[requestCount];
+        if (r.isRequestCancelled) revert RequestAlreadyCancelled();
+        if (r.appGateway != getCoreAppGateway(msg.sender)) revert InvalidCaller();
+
+        r.isRequestCancelled = true;
+
+        _settleRequest(requestCount, r);
+        emit RequestCancelled(requestCount);
     }
 
     function _settleRequest(uint40 requestCount_, RequestParams storage r) internal {
@@ -305,46 +336,3 @@ contract RequestHandler is WatcherBase {
         emit RequestSettled(requestCount_, r.requestFeesDetails.winningBid.transmitter);
     }
 }
-
-// /// @notice Increases the fees for a request if no bid is placed
-// /// @param requestCount_ The ID of the request
-// /// @param newMaxFees_ The new maximum fees
-// function increaseFees(uint40 requestCount_, uint256 newMaxFees_) external override {
-//     address appGateway = _getCoreAppGateway(msg.sender);
-//     // todo: should we allow core app gateway too?
-//     if (appGateway != requests[requestCount_].appGateway) {
-//         revert OnlyAppGateway();
-//     }
-//     if (requests[requestCount_].winningBid.transmitter != address(0)) revert WinningBidExists();
-//     if (requests[requestCount_].maxFees >= newMaxFees_)
-//         revert NewMaxFeesLowerThanCurrent(requests[requestCount_].maxFees, newMaxFees_);
-//     requests[requestCount_].maxFees = newMaxFees_;
-//     emit FeesIncreased(appGateway, requestCount_, newMaxFees_);
-// }
-
-// /// @notice Cancels a request
-// /// @param requestCount The request count to cancel
-// /// @dev This function cancels a request
-// /// @dev It verifies that the caller is the middleware and that the request hasn't been cancelled yet
-// function cancelRequest(uint40 requestCount) external {
-//     RequestParams storage r = requestParams[requestCount];
-//     if (r.isRequestCancelled) revert RequestAlreadyCancelled();
-//     if (r.middleware != msg.sender) revert InvalidCaller();
-
-//     r.isRequestCancelled = true;
-//     emit RequestCancelledFromGateway(requestCount);
-// }
-
-// /// @notice Cancels a request and settles the fees
-// /// @dev if no transmitter was assigned, fees is unblocked to app gateway
-// /// @dev Only app gateway can call this function
-// /// @param requestCount_ The ID of the request
-// function cancelRequest(uint40 requestCount_) external {
-//     if (msg.sender != requests[requestCount_].appGateway) {
-//         revert OnlyAppGateway();
-//     }
-
-//     _settleFees(requestCount_);
-//     watcherPrecompile__().cancelRequest(requestCount_);
-//     emit RequestCancelled(requestCount_);
-// }
