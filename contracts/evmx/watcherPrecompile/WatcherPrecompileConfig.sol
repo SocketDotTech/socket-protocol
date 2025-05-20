@@ -8,7 +8,6 @@ import "../interfaces/IWatcherPrecompileConfig.sol";
 import {AddressResolverUtil} from "../AddressResolverUtil.sol";
 import {InvalidWatcherSignature, NonceUsed} from "../../utils/common/Errors.sol";
 import {toBytes32Format} from "../../utils/common/Converters.sol";
-import "./core/WatcherIdUtils.sol";
 
 /// @title WatcherPrecompileConfig
 /// @notice Configuration contract for the Watcher Precompile system
@@ -209,7 +208,7 @@ contract WatcherPrecompileConfig is
         ) return;
 
         (bytes32 appGatewayId, bytes32 switchboard) = getPlugConfigs(chainSlug_, target_);
-        if (appGatewayId != WatcherIdUtils.encodeAppGatewayId(appGateway_)) revert InvalidGateway();
+        if (appGatewayId != toBytes32Format(appGateway_)) revert InvalidGateway();
         if (switchboard != switchboard_) revert InvalidSwitchboard();
     }
 
