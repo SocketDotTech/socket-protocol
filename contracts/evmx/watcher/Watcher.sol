@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 
 import "../interfaces/IWatcher.sol";
 import {InvalidCallerTriggered, TimeoutDelayTooLarge, TimeoutAlreadyResolved, InvalidInboxCaller, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed, RequestAlreadyExecuted} from "../../utils/common/Errors.sol";
-import {ResolvedPromises, AppGatewayConfig, LimitParams, WriteFinality, UpdateLimitParams, PlugConfig, DigestParams, TimeoutRequest, QueueParams, PayloadParams, RequestParams} from "../../utils/common/Structs.sol";
+import {ResolvedPromises, AppGatewayConfig, LimitParams, WriteFinality, UpdateLimitParams, PlugConfig, DigestParams, QueueParams, PayloadParams, RequestParams} from "../../utils/common/Structs.sol";
 
 /// @title WatcherStorage
 /// @notice Storage contract for the WatcherPrecompile system
