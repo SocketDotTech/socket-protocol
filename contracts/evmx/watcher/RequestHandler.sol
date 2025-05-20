@@ -77,7 +77,6 @@ contract RequestHandler is WatcherBase {
             requestTrackingParams: RequestTrackingParams({
                 isRequestCancelled: false,
                 isRequestExecuted: false,
-                firstBatchCount: nextBatchCount,
                 currentBatch: nextBatchCount,
                 currentBatchPayloadsLeft: 0,
                 payloadsRemaining: queuePayloadParams_.length
@@ -94,17 +93,23 @@ contract RequestHandler is WatcherBase {
         });
 
         PayloadParams[] memory payloadParams;
-        uint256 totalWatcherFees;
-        (totalWatcherFees, r.writeCount, promiseList, payloadParams) = _createRequest(
+        uint256 totalEstimatedWatcherFees;
+        (totalEstimatedWatcherFees, r.writeCount, promiseList, payloadParams) = _createRequest(
             queuePayloadParams_,
             appGateway,
             requestCount
         );
 
-        if (totalWatcherFees > maxFees_) revert InsufficientFees();
+        if (totalEstimatedWatcherFees > maxFees_) revert InsufficientFees();
 
         if (r.writeCount == 0) _processBatch(requestCount, r.requestTrackingParams.currentBatch, r);
-        emit RequestSubmitted(r.writeCount > 0, requestCount, totalWatcherFees, r, payloadParams);
+        emit RequestSubmitted(
+            r.writeCount > 0,
+            requestCount,
+            totalEstimatedWatcherFees,
+            r,
+            payloadParams
+        );
     }
 
     // called by auction manager when a auction ends or a new transmitter is assigned (bid expiry)
@@ -114,20 +119,21 @@ contract RequestHandler is WatcherBase {
     ) external isRequestCancelled(requestCount_) {
         RequestParams storage r = requestParams[requestCount_];
         if (r.auctionManager != msg.sender) revert InvalidCaller();
-        if (r.writeCount == 0) revert NoWriteRequest();
+        if (r.requestTrackingParams.isRequestExecuted) revert RequestAlreadySettled();
 
+        if (r.writeCount == 0) revert NoWriteRequest();
         if (r.requestFeesDetails.winningBid.transmitter == bid_.transmitter)
-            revert AlreadyStarted();
+            revert AlreadyAssigned();
 
         if (r.requestFeesDetails.winningBid.transmitter != address(0)) {
             feesManager__().unblockCredits(requestCount_);
         }
-        r.requestFeesDetails.winningBid = bid_;
 
+        r.requestFeesDetails.winningBid = bid_;
         if (bid_.transmitter == address(0)) return;
         feesManager__().blockCredits(requestCount_, r.requestFeesDetails.consumeFrom, bid_.fees);
 
-        // re-finalize current batch again or finalize the batch for the first time
+        // re-process current batch again or process the batch for the first time
         _processBatch(requestCount_, r.requestTrackingParams.currentBatch, r);
     }
 
@@ -138,7 +144,7 @@ contract RequestHandler is WatcherBase {
     )
         internal
         returns (
-            uint256 totalWatcherFees,
+            uint256 totalEstimatedWatcherFees,
             uint256 writeCount,
             address[] memory promiseList,
             PayloadParams[] memory payloadParams
@@ -170,12 +176,12 @@ contract RequestHandler is WatcherBase {
             );
 
             // process payload data and store
-            (uint256 fees, bytes memory precompileData) = _validateAndGetPrecompileData(
+            (uint256 estimatedFees, bytes memory precompileData) = _validateAndGetPrecompileData(
                 queuePayloadParam,
                 appGateway_,
                 callType
             );
-            totalWatcherFees += fees;
+            totalEstimatedWatcherFees += estimatedFees;
 
             // create payload id
             uint40 payloadCount = payloadCounter++;
@@ -234,31 +240,27 @@ contract RequestHandler is WatcherBase {
         uint40 batchCount_,
         RequestParams storage r
     ) internal {
-        if (r.requestTrackingParams.isRequestExecuted) return;
-
         bytes32[] memory payloadIds = batchPayloadIds[batchCount_];
 
-        uint256 totalPayloads = 0;
         uint256 totalFees = 0;
+        uint256 fees;
+
         for (uint40 i = 0; i < payloadIds.length; i++) {
             bytes32 payloadId = payloadIds[i];
 
-            // check needed for re-finalize, in case a payload is already executed by last transmitter
-            if (isPromiseExecuted[payloadId]) continue;
-            totalPayloads++;
+            // check needed for re-process, in case a payload is already executed by last transmitter
+            if (!isPromiseExecuted[payloadId]) continue;
+
+            // todo: move it to write precompile
+            // payloadParams.deadline = block.timestamp + expiryTime;
 
             PayloadParams storage payloadParams = payloads[payloadId];
-            uint256 deadline = block.timestamp + expiryTime;
-            payloadParams.deadline = deadline;
-
-            uint256 fees = IPrecompile(precompiles[payloadParams.callType]).handlePayload(
+            (fees, payloadParams) = IPrecompile(precompiles[payloadParams.callType]).handlePayload(
                 r.requestFeesDetails.winningBid.transmitter,
                 payloadParams
             );
             totalFees += fees;
         }
-
-        r.requestTrackingParams.currentBatchPayloadsLeft = totalPayloads;
 
         address watcherFeesPayer = r.requestFeesDetails.winningBid.transmitter == address(0)
             ? r.requestFeesDetails.consumeFrom

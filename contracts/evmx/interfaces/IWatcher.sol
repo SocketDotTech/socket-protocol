@@ -15,13 +15,13 @@ interface IWatcher {
     /// @param triggerId The unique identifier for the trigger
     event AppGatewayCallFailed(bytes32 triggerId);
 
-    /// @notice Emitted when a finalize request is made
-    event FinalizeRequested(bytes32 digest, PayloadParams params);
+    /// @notice Emitted when a proof upload request is made
+    event WriteProofRequested(bytes32 digest, PayloadParams params);
 
-    /// @notice Emitted when a request is finalized
+    /// @notice Emitted when a proof is uploaded
     /// @param payloadId The unique identifier for the request
     /// @param proof The proof from the watcher
-    event Finalized(bytes32 indexed payloadId, bytes proof);
+    event WriteProofUploaded(bytes32 indexed payloadId, bytes proof);
 
     /// @notice Emitted when a promise is resolved
     /// @param payloadId The unique identifier for the resolved promise
@@ -134,14 +134,10 @@ interface IWatcher {
     /// @param fees_ The new fees
     function increaseFees(uint40 requestCount_, uint256 fees_) external;
 
-    function finalized(
-        bytes32 payloadId_,
-        bytes calldata proof_,
-        uint256 signatureNonce_,
-        bytes calldata signature_
-    ) external;
+    function uploadProof(bytes32 payloadId_, bytes calldata proof_) external;
 
     function cancelRequest(uint40 requestCount) external;
+
     // settleFees on FM
 
     function getMaxFees(uint40 requestCount) external view returns (uint256);
