@@ -59,7 +59,7 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
     function validateAndGetPrecompileData(
         QueueParams calldata queuePayloadParams_,
         address appGateway_
-    ) external view returns (bytes memory precompileData, uint256 fees) {
+    ) external view returns (bytes memory precompileData, uint256 estimatedFees) {
         if (
             queuePayloadParams_.transaction.target != address(0) &&
             appGateway_ != getCoreAppGateway(queuePayloadParams_.transaction.target)
@@ -82,7 +82,7 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
             queuePayloadParams_.overrideParams.delayInSeconds
         );
 
-        fees =
+        estimatedFees =
             scheduleFeesPerSecond *
             queuePayloadParams_.overrideParams.delayInSeconds +
             scheduleCallbackFees;

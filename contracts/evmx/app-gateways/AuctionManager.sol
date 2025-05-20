@@ -58,7 +58,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     error MaxReAuctionCountReached();
 
     constructor() {
-        // todo: evmx slug can be immutable and set here
+        // todo-later: evmx slug can be immutable and set here
         _disableInitializers(); // disable for implementation
     }
 
@@ -168,22 +168,23 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     function _endAuction(uint40 requestCount_) internal {
         // get the winning bid, if no transmitter is set, revert
         Bid memory winningBid = winningBids[requestCount_];
-        if (winningBid.transmitter == address(0)) revert InvalidTransmitter();
         auctionStatus[requestCount_] = AuctionStatus.CLOSED;
 
-        // todo: might block the request processing if transmitter don't have enough balance
-        // not implementing this for now
-        // set the timeout for the bid expiration
-        // useful in case a transmitter did bid but did not execute payloads
-        _createRequest(
-            bidTimeout,
-            deductScheduleFees(winningBid.transmitter, address(this)),
-            winningBid.transmitter,
-            abi.encodeWithSelector(this.expireBid.selector, requestCount_)
-        );
+        if (winningBid.transmitter != address(0)) {
+            // todo-later: might block the request processing if transmitter don't have enough balance
+            // set the timeout for the bid expiration
+            // useful in case a transmitter did bid but did not execute payloads
+            _createRequest(
+                bidTimeout,
+                deductScheduleFees(winningBid.transmitter, address(this)),
+                winningBid.transmitter,
+                abi.encodeWithSelector(this.expireBid.selector, requestCount_)
+            );
 
-        // start the request processing, it will queue the request
-        IWatcher(watcherPrecompile__()).assignTransmitter(requestCount_, winningBid);
+            // start the request processing, it will queue the request
+            IWatcher(watcherPrecompile__()).assignTransmitter(requestCount_, winningBid);
+        }
+
         emit AuctionEnded(requestCount_, winningBid);
     }
 

@@ -180,15 +180,11 @@ struct PayloadParams {
     address appGateway;
     bytes32 payloadId;
     uint256 resolvedAt; // replaced isPromiseExecuted
-    uint256 deadline;
     bytes precompileData;
 
-    // bytes32 prevDigestsHash;
-    // address finalizedTransmitter;
-    // Transaction transaction;
+    // uint256 deadline;
     // OverrideParams overrideParams;
     // TimeoutRequest timeoutRequest;
-    // address switchboard;
 }
 // timeout:
 // struct TimeoutRequest {
@@ -201,7 +197,6 @@ struct PayloadParams {
 struct RequestTrackingParams {
     bool isRequestCancelled;
     bool isRequestExecuted; //
-    uint40 firstBatchCount; //
     uint40 currentBatch; //
     uint256 currentBatchPayloadsLeft; //
     uint256 payloadsRemaining; //

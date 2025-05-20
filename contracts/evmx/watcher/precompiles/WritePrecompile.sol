@@ -18,10 +18,11 @@ contract WritePrecompile is IPrecompile, WatcherBase {
     /// @notice The maximum message value limit for a chain
     mapping(uint32 => uint256) public chainMaxMsgValueLimit;
 
-    /// @notice The fees for a write
+    /// @notice The digest hash for a payload
+    mapping(bytes32 => bytes32) public digestHashes;
+
+    /// @notice The fees for a write and includes callback fees
     uint256 public writeFees;
-    /// @notice The callback fees for a write
-    uint256 public callbackFees;
 
     error MaxMsgValueLimitExceeded();
     error InvalidTarget();
@@ -36,13 +37,15 @@ contract WritePrecompile is IPrecompile, WatcherBase {
     /// @notice Gets precompile data and fees for queue parameters
     /// @param queuePayloadParams_ The queue parameters to process
     /// @return precompileData The encoded precompile data
-    /// @return fees Estimated fees required for processing
+    /// @return estimatedFees Estimated fees required for processing
     function validateAndGetPrecompileData(
         QueueParams calldata queuePayloadParams_,
         address appGateway_
-    ) external view returns (bytes memory precompileData, uint256 fees) {
-        if (queuePayloadParams_.value > chainMaxMsgValueLimit[queuePayloadParams_.chainSlug])
-            revert MaxMsgValueLimitExceeded();
+    ) external view returns (bytes memory precompileData, uint256 estimatedFees) {
+        if (
+            queuePayloadParams_.value >
+            chainMaxMsgValueLimit[queuePayloadParams_.transaction.chainSlug]
+        ) revert MaxMsgValueLimitExceeded();
 
         if (queuePayloadParams_.transaction.target != address(0)) {
             revert InvalidTarget();
@@ -56,7 +59,7 @@ contract WritePrecompile is IPrecompile, WatcherBase {
         }
 
         configurations__().verifyConnections(
-            queuePayloadParams_.chainSlug,
+            queuePayloadParams_.transaction.chainSlug,
             queuePayloadParams_.transaction.target,
             appGateway_,
             queuePayloadParams_.switchboardType
@@ -70,7 +73,7 @@ contract WritePrecompile is IPrecompile, WatcherBase {
             queuePayloadParams_.overrideParams.value
         );
 
-        fees = writeFees + callbackFees;
+        estimatedFees = writeFees;
     }
 
     /// @notice Handles payload processing and returns fees
@@ -90,7 +93,7 @@ contract WritePrecompile is IPrecompile, WatcherBase {
             uint256 value
         ) = abi.decode(payloadParams.precompileData, (Transaction, bool, uint256, uint256));
 
-        bytes32 prevDigestsHash = _getPreviousDigestsHash(payloadParams);
+        bytes32 prevBatchDigestHash = _getPrevBatchDigestHash(payloadParams);
 
         // create digest
         DigestParams memory digestParams_ = DigestParams(
@@ -104,43 +107,33 @@ contract WritePrecompile is IPrecompile, WatcherBase {
             transaction.payload,
             transaction.target,
             WatcherIdUtils.encodeAppGatewayId(payloadParams.appGateway),
-            prevDigestsHash,
+            prevBatchDigestHash,
             bytes("")
         );
 
-        // Calculate digest from payload parameters
+        // Calculate and store digest from payload parameters
         bytes32 digest = getDigest(digestParams_);
-
-        // store digest and prev digest hash
         digestHashes[payloadParams.payloadId] = digest;
-        emit WriteRequested(digest, transaction, writeFinality, gasLimit, value);
+
+        emit WriteProofRequested(digest, transaction, writeFinality, gasLimit, value);
     }
 
-    function _getPreviousDigestsHash(
-        PayloadParams memory payloadParams_
-    ) internal view returns (bytes32) {
-        uint40 batchCount = payloadParams_.batchCount;
+    function _getPrevBatchDigestHash(uint40 batchCount_) internal view returns (bytes32) {
+        if (batchCount_ == 0) return bytes32(0);
 
         // if first batch, return bytes32(0)
-        uint40[] memory requestBatchIds = requestHandler__().requestBatchIds(batchCount);
-        if (requestBatchIds[0] == batchCount) return bytes32(0);
+        uint40[] memory requestBatchIds = requestHandler__().requestBatchIds(batchCount_);
+        if (requestBatchIds[0] == batchCount_) return bytes32(0);
 
-        // get previous digests hash from storage for last batchCount if already calculated
-        if (prevDigestsHashes[batchCount] != bytes32(0)) return prevDigestsHashes[batchCount];
+        uint40 prevBatchCount = batchCount_ - 1;
 
-        // else calculate the previous digests hash
-        uint40 lastBatchCount = batchCount - 1;
-        bytes32[] memory payloadIds = requestHandler__().batchPayloadIds(lastBatchCount);
-
+        bytes32[] memory payloadIds = requestHandler__().batchPayloadIds(prevBatchCount);
         bytes32 prevDigestsHash = bytes32(0);
         for (uint40 i = 0; i < payloadIds.length; i++) {
             prevDigestsHash = keccak256(
                 abi.encodePacked(prevDigestsHash, digestHashes[payloadIds[i]])
             );
         }
-
-        // store the previous digests hash
-        prevDigestsHashes[batchCount] = prevDigestsHash;
         return prevDigestsHash;
     }
 
@@ -168,12 +161,12 @@ contract WritePrecompile is IPrecompile, WatcherBase {
         );
     }
 
-    /// @notice Marks a write request as finalized with a proof on digest
+    /// @notice Marks a write request with a proof on digest
     /// @param payloadId_ The unique identifier of the request
     /// @param proof_ The watcher's proof
-    function finalize(bytes32 payloadId_, bytes memory proof_) public onlyWatcher {
+    function uploadProof(bytes32 payloadId_, bytes memory proof_) public onlyWatcher {
         watcherProofs[payloadId_] = proof_;
-        emit Finalized(payloadId_, proof_);
+        emit WriteProofUploaded(payloadId_, proof_);
     }
 
     /// @notice Updates the maximum message value limit for multiple chains
@@ -192,9 +185,8 @@ contract WritePrecompile is IPrecompile, WatcherBase {
         emit ChainMaxMsgValueLimitsUpdated(chainSlugs_, maxMsgValueLimits_);
     }
 
-    function setFees(uint256 writeFees_, uint256 callbackFees_) external onlyWatcher {
+    function setFees(uint256 writeFees_) external onlyWatcher {
         writeFees = writeFees_;
-        callbackFees = callbackFees_;
-        emit FeesSet(writeFees_, callbackFees_);
+        emit FeesSet(writeFees_);
     }
 }
