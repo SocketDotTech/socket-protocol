@@ -17,8 +17,11 @@ contract EvmSolanaOnchainCalls is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         EvmSolanaAppGateway appGateway = EvmSolanaAppGateway(vm.envAddress("APP_GATEWAY"));
+        bytes32 switchboardSolana = vm.envBytes32("SWITCHBOARD_SOLANA");
 
         console.log("EvmSolanaAppGateway:", address(appGateway));
+        console.log("Switchboard solana:");
+        console.logBytes32(switchboardSolana);
 
         // console.log("Deploying SuperToken on Optimism Sepolia...");
         // appGateway.deployEvmContract(11155420);
@@ -33,7 +36,8 @@ contract EvmSolanaOnchainCalls is Script {
                     srcAmount: 1000000000000000000,
                     deadline: 1715702400
                 })
-            )
+            ),
+            switchboardSolana
         );
     }
 }

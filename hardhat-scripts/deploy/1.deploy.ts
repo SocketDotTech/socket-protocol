@@ -43,16 +43,17 @@ config();
 
 let EVMxOwner: string;
 
+// mocked address of Solana target program associated with ForwarderSolana - later make it a real address of solana super-token program
 export const mockForwarderSolanaOnChainAddress32Bytes = Buffer.from(
   "55d893e742d43eafc1e6509eefca9ceb635a39bd3394041d334203ed35720922",
   "hex"
 );
 
-export const mockSwitchboardSolanaAddress32Bytes = Buffer.from(
-//"111893e742d43eafc1e6509eefca9ceb635a39bd3394041d334203ed35720333",
-  "0000000000000000000000000000000000000000000000000000000000000001",  //Make sure this is the same as in ForwarderSolana.sol (mocked address)
-  "hex"
-);
+// export const mockSwitchboardSolanaAddress32Bytes = Buffer.from(
+// //"111893e742d43eafc1e6509eefca9ceb635a39bd3394041d334203ed35720333",
+//   "0000000000000000000000000000000000000000000000000000000000000001",  //Make sure this is the same as in ForwarderSolana.sol (mocked address)
+//   "hex"
+// );
 
 const main = async () => {
   logConfig();
@@ -208,19 +209,15 @@ const deployEVMxContracts = async () => {
         deployUtils
       );
 
-      // fix this is not 32 bytes if as string literal
+      // TODO:GW: this is a temporary workaround for the Solana POC
       try {
         console.log("AddressResolver address:", addressResolver.address);
-
         
         deployUtils = await deployContractWithProxy(
           EVMxCoreContracts.ForwarderSolana,
-          // "ForwarderSolanaTest",
-          // `contracts/evmx/ForwarderSolanaTest.sol`,
           `contracts/evmx/ForwarderSolana.sol`,
           [
             ChainId.SOLANA_DEVNET,
-            // Uint8Array.from(mockForwarderSolanaAddress32Bytes),
             mockForwarderSolanaOnChainAddress32Bytes,
             addressResolver.address,
           ],
@@ -398,11 +395,6 @@ const deploySocketContracts = async () => {
 
         const signer: Wallet = getSocketSigner(chain as ChainSlug);
         const socketOwner = signer.address;
-
-        console.log(
-          "XXX Signer balance:",
-          (await signer.getBalance()).toBigInt()
-        );
 
         deployUtils = {
           addresses: chainAddresses,
