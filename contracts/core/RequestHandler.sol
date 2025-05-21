@@ -135,7 +135,6 @@ abstract contract RequestHandler is WatcherPrecompileCore {
     /// @dev It verifies that the caller is the middleware and that the request hasn't been started yet
     function startProcessingRequest(uint40 requestCount, address transmitter_) public {
         RequestParams storage r = requestParams[requestCount];
-        if (r.middleware != msg.sender) revert InvalidCaller();
         if (r.transmitter != address(0)) revert AlreadyStarted();
         if (r.currentBatchPayloadsLeft > 0) revert AlreadyStarted();
 
@@ -171,10 +170,5 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         r.currentBatchPayloadsLeft = totalPayloads;
     }
 
-    /// @notice Gets the current request count
-    /// @return The current request count
-    /// @dev This function returns the next request count, which is the current request count
-    function getCurrentRequestCount() external view returns (uint40) {
-        return nextRequestCount;
-    }
+   
 }

@@ -92,7 +92,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
     /// @notice Fallback function to process the contract calls to onChainAddress
     /// @dev It queues the calls in the middleware and deploys the promise contract
     fallback() external {
-        if (address(deliveryHelper__()) == address(0)) {
+        if (address(watcherPrecompile__()) == address(0)) {
             revert DeliveryHelperNotSet();
         }
 
@@ -108,36 +108,23 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
         latestRequestCount = watcherPrecompile__().nextRequestCount();
 
         // fetch the override params from app gateway
-        (
-            Read isReadCall,
-            Parallel isParallelCall,
-            WriteFinality writeFinality,
-            uint256 readAt,
-            uint256 gasLimit,
-            uint256 value,
-            bytes32 sbType
-        ) = IAppGateway(msg.sender).getOverrideParams();
+        (OverrideParams overrideParams, bytes32 sbType) = IAppGateway(msg.sender)
+            .getOverrideParams();
 
         // get the switchboard address from the watcher precompile config
         address switchboard = watcherPrecompileConfig().switchboards(chainSlug, sbType);
 
         // Queue the call in the middleware.
-        deliveryHelper__().queue(
+        watcherPrecompile__().queue(
             QueuePayloadParams({
-                chainSlug: chainSlug,
-                callType: isReadCall == Read.ON ? CallType.READ : CallType.WRITE,
-                isParallel: isParallelCall,
-                isPlug: IsPlug.NO,
-                writeFinality: writeFinality,
+                overrideParams: overrideParams,
+                transaction: Transaction({
+                    chainSlug: chainSlug,
+                    target: onChainAddress,
+                    payload: msg.data
+                }),
                 asyncPromise: latestAsyncPromise,
-                switchboard: switchboard,
-                target: onChainAddress,
-                appGateway: msg.sender,
-                gasLimit: gasLimit,
-                value: value,
-                readAt: readAt,
-                payload: msg.data,
-                initCallData: bytes("")
+                switchboard: switchboard
             })
         );
     }

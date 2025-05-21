@@ -6,23 +6,6 @@ import "./FeesHelpers.sol";
 /// @title DeliveryHelper
 /// @notice Contract for managing payload delivery
 contract DeliveryHelper is FeesHelpers {
-    constructor() {
-        _disableInitializers(); // disable for implementation
-    }
-
-    /// @notice Initializer function to replace constructor
-    /// @param addressResolver_ The address resolver contract
-    /// @param owner_ The owner address
-    function initialize(
-        address addressResolver_,
-        address owner_,
-        uint128 bidTimeout_
-    ) public reinitializer(1) {
-        _setAddressResolver(addressResolver_);
-        _initializeOwner(owner_);
-
-        bidTimeout = bidTimeout_;
-    }
 
     /// @notice Calls the watcher precompile to start processing a request
     /// @dev If a transmitter was already assigned, it updates the transmitter in watcher precompile too
@@ -104,12 +87,4 @@ contract DeliveryHelper is FeesHelpers {
         }
     }
 
-    /// @notice Returns the request metadata
-    /// @param requestCount_ The ID of the request
-    /// @return requestMetadata The request metadata
-    function getRequestMetadata(
-        uint40 requestCount_
-    ) external view returns (RequestMetadata memory) {
-        return requests[requestCount_];
-    }
 }
