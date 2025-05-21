@@ -3,6 +3,7 @@ pragma solidity ^0.8.21;
 
 import {LibCall} from "solady/utils/LibCall.sol";
 import "./SocketUtils.sol";
+import {WRITE} from "../../utils/common/Constants.sol";
 
 /**
  * @title Socket
@@ -74,8 +75,9 @@ contract Socket is SocketUtils {
     ) external payable returns (bool, bytes memory) {
         // check if the deadline has passed
         if (executeParams_.deadline < block.timestamp) revert DeadlinePassed();
+
         // check if the call type is valid
-        if (executeParams_.callType == CallType.READ) revert ReadOnlyCall();
+        if (executeParams_.callType != WRITE) revert InvalidCallType();
 
         PlugConfig memory plugConfig = _plugConfigs[executeParams_.target];
         // check if the plug is disconnected

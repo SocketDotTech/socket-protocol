@@ -13,7 +13,6 @@ abstract contract AsyncPromiseStorage is IPromise {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
-    // slot 50
     // bytes1
     /// @notice The callback selector to be called on the invoker.
     bytes4 public callbackSelector;
@@ -27,10 +26,6 @@ abstract contract AsyncPromiseStorage is IPromise {
     /// @notice The local contract which initiated the async call.
     /// @dev The callback will be executed on this address
     address public localInvoker;
-
-    // slot 51
-    /// @notice The forwarder address which can set the callback selector and data
-    address public forwarder;
 
     // slot 52
     /// @notice The callback data to be used when the promise is resolved.
@@ -49,8 +44,8 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     using LibCall for address;
     /// @notice Error thrown when attempting to resolve an already resolved promise.
     error PromiseAlreadyResolved();
-    /// @notice Only the forwarder or local invoker can set then's promise callback
-    error OnlyForwarderOrLocalInvoker();
+    /// @notice Only the local invoker can set then's promise callback
+    error OnlyInvoker();
     /// @notice Error thrown when attempting to set an already existing promise
     error PromiseAlreadySetUp();
     /// @notice Error thrown when the promise reverts
@@ -62,16 +57,9 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
 
     /// @notice Initialize promise states
     /// @param invoker_ The address of the local invoker
-    /// @param forwarder_ The address of the forwarder
     /// @param addressResolver_ The address resolver contract address
-    function initialize(
-        address invoker_,
-        address forwarder_,
-        address addressResolver_
-    ) public initializer {
+    function initialize(address invoker_, address addressResolver_) public initializer {
         localInvoker = invoker_;
-        forwarder = forwarder_;
-
         _setAddressResolver(addressResolver_);
     }
 
@@ -82,7 +70,7 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         uint40 requestCount_,
         bytes32 payloadId_,
         bytes memory returnData_
-    ) external override onlyWatcherPrecompile returns (bool success) {
+    ) external override onlyWatcher returns (bool success) {
         if (resolved) revert PromiseAlreadyResolved();
 
         resolved = true;
@@ -108,7 +96,7 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     function markOnchainRevert(
         uint40 requestCount_,
         bytes32 payloadId_
-    ) external override onlyWatcherPrecompile {
+    ) external override onlyWatcher {
         _handleRevert(requestCount_, payloadId_, AsyncPromiseState.ONCHAIN_REVERTING);
     }
 
@@ -134,12 +122,7 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     function then(
         bytes4 selector_,
         bytes memory data_
-    ) external override returns (address promise_) {
-        // allows forwarder or local invoker to set the callback selector and data
-        if (msg.sender != forwarder && msg.sender != localInvoker) {
-            revert OnlyForwarderOrLocalInvoker();
-        }
-
+    ) external override onlyWatcher returns (address promise_) {
         // if the promise is already set up, revert
         if (state == AsyncPromiseState.WAITING_FOR_CALLBACK_EXECUTION) {
             revert PromiseAlreadySetUp();

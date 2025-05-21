@@ -7,7 +7,7 @@ import "solady/utils/ECDSA.sol";
 import "../interfaces/IFeesManager.sol";
 import {AddressResolverUtil} from "../AddressResolverUtil.sol";
 import {NotAuctionManager, InvalidWatcherSignature, NonceUsed} from "../../utils/common/Errors.sol";
-import {Bid, CallType, Parallel, WriteFinality, QueuePayloadParams, IsPlug, PayloadSubmitParams, RequestMetadata, UserCredits} from "../../utils/common/Structs.sol";
+import {Bid, Parallel, WriteFinality, QueuePayloadParams, IsPlug, PayloadSubmitParams, RequestMetadata, UserCredits} from "../../utils/common/Structs.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
     // slots [0-49] reserved for gap
@@ -127,8 +127,6 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     /// @return The available fee amount
     function getAvailableCredits(address consumeFrom_) public view returns (uint256) {
         UserCredits memory userCredit = userCredits[consumeFrom_];
-        if (userCredit.totalCredits == 0 || userCredit.totalCredits <= userCredit.blockedCredits)
-            return 0;
         return userCredit.totalCredits - userCredit.blockedCredits;
     }
 
@@ -194,6 +192,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
     ) internal returns (address, address, bool) {
         (address consumeFrom, address appGateway, bool isApproved, bytes memory signature_) = abi
             .decode(feeApprovalData_, (address, address, bool, bytes));
+
         if (signature_.length == 0) {
             // If no signature, consumeFrom is appGateway
             return (appGateway, appGateway, isApproved);
@@ -395,7 +394,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         payloadSubmitParamsArray[0] = PayloadSubmitParams({
             levelNumber: 0,
             chainSlug: chainSlug_,
-            callType: CallType.WRITE,
+            callType: WRITE,
             isParallel: Parallel.OFF,
             writeFinality: WriteFinality.LOW,
             asyncPromise: address(0),
@@ -404,7 +403,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
             appGateway: address(this),
             gasLimit: 10000000,
             value: 0,
-            readAt: 0,
+            readAtBlockNumber: 0,
             payload: payload
         });
         return payloadSubmitParamsArray;
@@ -437,7 +436,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
                 appGateway: address(this),
                 gasLimit: 10000000,
                 value: 0,
-                readAt: 0,
+                readAtBlockNumber: 0,
                 payload: payload_,
                 initCallData: bytes("")
             });
@@ -482,7 +481,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
 //         address auctionManager_,
 //         uint256 fees_
 //     ) external returns (uint40) {
-//         IFeesManager(addressResolver__.feesManager()).withdrawCredits(
+//         feesManager__().withdrawCredits(
 //             msg.sender,
 //             chainSlug_,
 //             token_,
@@ -504,9 +503,8 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
 //     ) external returns (uint40 requestCount) {
 //         address transmitter = msg.sender;
 
-//         PayloadSubmitParams[] memory payloadSubmitParamsArray = IFeesManager(
-//             addressResolver__.feesManager()
-//         ).getWithdrawTransmitterCreditsPayloadParams(
+//         PayloadSubmitParams[] memory payloadSubmitParamsArray = feesManager__()
+//         .getWithdrawTransmitterCreditsPayloadParams(
 //                 transmitter,
 //                 chainSlug_,
 //                 token_,
@@ -515,7 +513,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
 //             );
 
 //         RequestMetadata memory requestMetadata = RequestMetadata({
-//             appGateway: addressResolver__.feesManager(),
+//             appGateway: feesManager__(),
 //             auctionManager: address(0),
 //             maxFees: 0,
 //             winningBid: Bid({transmitter: transmitter, fee: 0, extraData: new bytes(0)}),

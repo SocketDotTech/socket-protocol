@@ -10,11 +10,12 @@ interface IPrecompile {
     /// @param queuePayloadParams_ The queue parameters to process
     /// @return precompileData The encoded precompile data
     /// @return fees Estimated fees required for processing
-    function getPrecompileData(QueueParams calldata queuePayloadParams_) external returns (bytes memory precompileData, uint256 fees);
+    function getPrecompileData(
+        QueueParams calldata queuePayloadParams_
+    ) external returns (bytes memory precompileData, uint256 fees);
 
     /// @notice Handles payload processing and returns fees
     /// @param payloadParams The payload parameters to handle
     /// @return fees The fees required for processing
     function handlePayload(PayloadParams calldata payloadParams) external returns (uint256 fees);
 }
-

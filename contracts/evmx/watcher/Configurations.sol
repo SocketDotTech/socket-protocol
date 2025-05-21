@@ -179,16 +179,16 @@ contract Configurations is IConfigurations, Initializable, Ownable, AddressResol
     /// @param chainSlug_ The identifier of the network
     /// @param target_ The address of the target
     /// @param appGateway_ The address of the app gateway
-    /// @param switchboard_ The address of the switchboard
+    /// @param switchboardType_ The type of switchboard
     function verifyConnections(
         uint32 chainSlug_,
         address target_,
         address appGateway_,
-        address switchboard_
+        bytes32 switchboardType_
     ) external view {
         (bytes32 appGatewayId, address switchboard) = getPlugConfigs(chainSlug_, target_);
 
         if (appGatewayId != WatcherIdUtils.encodeAppGatewayId(appGateway_)) revert InvalidGateway();
-        if (switchboard != switchboard_) revert InvalidSwitchboard();
+        if (switchboard != switchboards[chainSlug_][switchboardType_]) revert InvalidSwitchboard();
     }
 }

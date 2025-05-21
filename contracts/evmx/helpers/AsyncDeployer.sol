@@ -28,6 +28,9 @@ abstract contract AsyncDeployerStorage is IAddressResolver {
     // slot 58
     uint256 public asyncPromiseCounter;
 
+    // slot 59
+    address public addressResolver;
+
     // slots [61-110] reserved for gap
     uint256[50] _gap_after;
 }
@@ -36,8 +39,9 @@ abstract contract AsyncDeployerStorage is IAddressResolver {
 /// @notice This contract is responsible for deploying Forwarder and AsyncPromise contracts.
 /// @dev Inherits the Ownable contract and implements the IAddressResolver interface.
 contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable {
-    constructor() {
+    constructor(address addressResolver_) {
         _disableInitializers(); // disable for implementation
+        addressResolver = addressResolver_;
     }
 
     /// @notice Initializer to replace constructor for upgradeable contracts
@@ -110,14 +114,13 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable {
     function _createAsyncPromiseParams(
         address invoker_
     ) internal view returns (bytes32 salt, bytes memory initData) {
-        bytes memory constructorArgs = abi.encode(invoker_, msg.sender, address(this));
+        bytes memory constructorArgs = abi.encode(invoker_, addressResolver);
 
         // creates init data
         initData = abi.encodeWithSelector(
             AsyncPromise.initialize.selector,
             invoker_,
-            msg.sender,
-            address(this)
+            addressResolver
         );
 
         // creates salt with a counter
@@ -136,8 +139,6 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable {
 
         // deploys the proxy
         newAsyncPromise = _deployProxy(salt, address(asyncPromiseBeacon), initData);
-        _promises.push(newAsyncPromise);
-
         emit AsyncPromiseDeployed(newAsyncPromise, salt);
     }
 
@@ -154,18 +155,6 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable {
         require(success, "Initialization failed");
 
         return proxy;
-    }
-
-    /// @notice Clears the list of promises
-    /// @dev this function helps in queueing the promises and whitelisting on gateway at the end.
-    function clearPromises() external {
-        delete _promises;
-    }
-
-    /// @notice Gets the list of promises
-    /// @return array of promises deployed while queueing async calls
-    function getPromises() external view returns (address[] memory) {
-        return _promises;
     }
 
     /// @notice Gets the predicted address of a Forwarder proxy contract

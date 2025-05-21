@@ -3,10 +3,10 @@ pragma solidity ^0.8.21;
 
 import {DigestParams, ResolvedPromises, PayloadParams, TriggerParams, PayloadSubmitParams, RequestParams} from "../../utils/common/Structs.sol";
 
-/// @title IWatcherPrecompile
+/// @title IWatcher
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
 /// @dev Defines core functionality for payload processing and promise resolution
-interface IWatcherPrecompile {
+interface IWatcher {
     /// @notice Emitted when a new call is made to an app gateway
     /// @param triggerId The unique identifier for the trigger
     event CalledAppGateway(bytes32 triggerId);
@@ -96,24 +96,28 @@ interface IWatcherPrecompile {
     error InvalidLevelNumber();
     error DeadlineNotPassedForOnChainRevert();
 
-    QueueParams[] queuePayloadParams;
-
     function queueSubmitStart(QueueParams calldata queuePayloadParams_) external;
 
     // queue:
     function queue(QueueParams calldata queuePayloadParams_) external;
+
     // push in queue
-
     // validateAndGetPrecompileData:
-    // finalize: verifyConnection, max msg gas limit is under limit, 
-    // timeout: max delay 
-    // query: 
+    // write: verifyConnection, max msg gas limit is under limit,
+    // schedule: max delay
+    // read:
     // return encoded data and fees
-    
-    /// @notice Clears the temporary queue used to store payloads for a request
-    function clearQueueAndPrecompileFees() external;
 
-    function submitRequest(address auctionManager, bytes onCompleteData) external returns (uint40 requestCount);
+    /// @notice Clears the temporary queue used to store payloads for a request
+    function clearQueue() external;
+
+    function submitRequest(
+        uint256 maxFees,
+        address auctionManager,
+        address consumeFrom,
+        bytes onCompleteData
+    ) external returns (uint40 requestCount);
+
     // {
     //     (params.precompileData, fees) = IPrecompile.getPrecompileData(queuePayloadParams_);
     // }
@@ -127,15 +131,17 @@ interface IWatcherPrecompile {
     // total fees check from maxFees
     // verify if msg sender have same core app gateway
     // create and store req param
+    // clear queue
     // if writeCount == 0, startProcessing else wait
 
     function assignTransmitter(uint40 requestCount, Bid memory bid_) external;
+
     // validate AM from req param
     // update transmitter
     // assignTransmitter
     // - block for new transmitter
     // refinalize payloads for new transmitter
-    // 0 => non zero 
+    // 0 => non zero
     // non zero => non zero
     // - unblock credits from prev transmitter
     // non zero => 0
@@ -152,17 +158,19 @@ interface IWatcherPrecompile {
     // emit relevant events
 
     function _validateProcessBatch() external;
+
     // if request is cancelled, return
     // check if all payloads from last batch are executed, else return;
     // check if all payloads are executed, if yes call _settleRequest
 
     function _settleRequest(uint40 requestCount) external;
+
     // if yes, call settleFees on FM and call onCompleteData in App gateway, if not success emit DataNotExecuted()
 
     function markPayloadResolved(uint40 requestCount, RequestParams memory requestParams) external;
+
     // update RequestTrackingParams
     // if(_validateProcessBatch() == true) processBatch()
-
 
     /// @notice Increases the fees for a request
     /// @param requestCount_ The request id
@@ -177,6 +185,7 @@ interface IWatcherPrecompile {
     ) external;
 
     function cancelRequest(uint40 requestCount) external;
+
     // settleFees on FM
 
     function getMaxFees(uint40 requestCount) external view returns (uint256);

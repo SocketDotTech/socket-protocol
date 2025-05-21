@@ -4,15 +4,19 @@ pragma solidity ^0.8.21;
 import {Ownable} from "solady/auth/Ownable.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
 import "./interfaces/IAddressResolver.sol";
+import "./interfaces/IWatcher.sol";
+import "./interfaces/IFeesManager.sol";
+import "./interfaces/IDefaultAuctionManager.sol";
+import "./interfaces/IAsyncDeployer.sol";
 
 abstract contract AddressResolverStorage is IAddressResolver {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
-    IWatcherPrecompile public override watcherPrecompile__;
-    address public override feesManager;
-    address public override asyncDeployer;
-    address public override defaultAuctionManager;
+    IWatcher public override watcherPrecompile__;
+    IFeesManager public override feesManager;
+    IAsyncDeployer public override asyncDeployer;
+    IDefaultAuctionManager public override defaultAuctionManager;
 
     // slots [61-110] reserved for gap
     uint256[50] _gap_after;
@@ -46,21 +50,28 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
     /// @notice Updates the address of the fees manager
     /// @param feesManager_ The address of the fees manager
     function setFeesManager(address feesManager_) external onlyOwner {
-        feesManager = feesManager_;
+        feesManager = IFeesManager(feesManager_);
         emit FeesManagerUpdated(feesManager_);
     }
 
     /// @notice Updates the address of the default auction manager
     /// @param defaultAuctionManager_ The address of the default auction manager
     function setDefaultAuctionManager(address defaultAuctionManager_) external onlyOwner {
-        defaultAuctionManager = defaultAuctionManager_;
+        defaultAuctionManager = IDefaultAuctionManager(defaultAuctionManager_);
         emit DefaultAuctionManagerUpdated(defaultAuctionManager_);
     }
 
     /// @notice Updates the address of the watcher precompile contract
     /// @param watcherPrecompile_ The address of the watcher precompile contract
     function setWatcherPrecompile(address watcherPrecompile_) external onlyOwner {
-        watcherPrecompile__ = IWatcherPrecompile(watcherPrecompile_);
+        watcherPrecompile__ = IWatcher(watcherPrecompile_);
         emit WatcherPrecompileUpdated(watcherPrecompile_);
+    }
+
+    /// @notice Returns the address of the async deployer
+    /// @return The address of the async deployer
+    function setAsyncDeployer(address asyncDeployer_) external onlyOwner {
+        asyncDeployer = IAsyncDeployer(asyncDeployer_);
+        emit AsyncDeployerUpdated(asyncDeployer_);
     }
 }

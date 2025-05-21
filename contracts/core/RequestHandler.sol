@@ -21,8 +21,6 @@ abstract contract RequestHandler is WatcherPrecompileCore {
     function submitRequest(
         PayloadSubmitParams[] memory payloadSubmitParams_
     ) public returns (uint40 requestCount) {
-        address appGateway = _checkAppGateways(payloadSubmitParams_);
-
         requestCount = nextRequestCount++;
         uint40 batchCount = nextBatchCount;
         uint40 currentBatch = batchCount;
@@ -35,7 +33,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
             PayloadSubmitParams memory p = payloadSubmitParams_[i];
 
             // Count reads and writes for checking limits
-            if (p.callType == CallType.READ) {
+            if (p.callType == READ) {
                 readCount++;
             } else writeCount++;
 
@@ -49,14 +47,6 @@ abstract contract RequestHandler is WatcherPrecompileCore {
                 }
             }
 
-            uint40 localPayloadCount = payloadCounter++;
-            bytes32 payloadId = WatcherIdUtils.createPayloadId(
-                requestCount,
-                batchCount,
-                localPayloadCount,
-                p.switchboard,
-                p.chainSlug
-            );
             batchPayloadIds[batchCount].push(payloadId);
 
             bytes32 payloadHeader = PayloadHeaderDecoder.createPayloadHeader(
@@ -73,13 +63,11 @@ abstract contract RequestHandler is WatcherPrecompileCore {
             payloads[payloadId].asyncPromise = p.asyncPromise;
             payloads[payloadId].switchboard = p.switchboard;
             payloads[payloadId].target = p.target;
-            payloads[payloadId].appGateway = p.callType == CallType.DEPLOY
-                ? addressResolver__.deliveryHelper()
-                : p.appGateway;
+            payloads[payloadId].appGateway = p.appGateway;
             payloads[payloadId].payloadId = payloadId;
             payloads[payloadId].gasLimit = p.gasLimit;
             payloads[payloadId].value = p.value;
-            payloads[payloadId].readAt = p.readAt;
+            payloads[payloadId].readAtBlockNumber = p.readAtBlockNumber;
             payloads[payloadId].payload = p.payload;
 
             requestParams[requestCount].payloadParamsArray.push(payloads[payloadId]);
@@ -89,13 +77,7 @@ abstract contract RequestHandler is WatcherPrecompileCore {
         // Push the final batch ID to the request's batch list and increment the counter
         // This is needed because the last batch in the loop above doesn't get added since there's no next level to trigger it
         requestBatchIds[requestCount].push(nextBatchCount++);
-
-        requestParams[requestCount].queryCount = readCount;
-        requestParams[requestCount].finalizeCount = writeCount;
-
         requestParams[requestCount].currentBatch = currentBatch;
-        requestParams[requestCount].payloadsRemaining = payloadSubmitParams_.length;
-        requestParams[requestCount].middleware = msg.sender;
 
         emit RequestSubmitted(
             msg.sender,
@@ -111,12 +93,8 @@ abstract contract RequestHandler is WatcherPrecompileCore {
     function _checkAppGateways(
         PayloadSubmitParams[] memory payloadSubmitParams
     ) internal view returns (address appGateway) {
-        bool isDeliveryHelper = msg.sender == addressResolver__.deliveryHelper();
-
         // Get first app gateway and use it as reference
-        address coreAppGateway = isDeliveryHelper
-            ? _getCoreAppGateway(payloadSubmitParams[0].appGateway)
-            : _getCoreAppGateway(msg.sender);
+        address coreAppGateway = _getCoreAppGateway(msg.sender);
 
         // Skip first element since we already checked it
         for (uint256 i = 1; i < payloadSubmitParams.length; i++) {
@@ -169,6 +147,4 @@ abstract contract RequestHandler is WatcherPrecompileCore {
 
         r.currentBatchPayloadsLeft = totalPayloads;
     }
-
-   
 }

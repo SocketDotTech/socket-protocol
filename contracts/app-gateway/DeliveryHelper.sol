@@ -6,7 +6,6 @@ import "./FeesHelpers.sol";
 /// @title DeliveryHelper
 /// @notice Contract for managing payload delivery
 contract DeliveryHelper is FeesHelpers {
-
     /// @notice Calls the watcher precompile to start processing a request
     /// @dev If a transmitter was already assigned, it updates the transmitter in watcher precompile too
     /// @param requestCount_ The ID of the request
@@ -37,7 +36,7 @@ contract DeliveryHelper is FeesHelpers {
 
         // todo: move it to watcher precompile
         if (requestMetadata_.winningBid.transmitter != address(0))
-            IFeesManager(addressResolver__.feesManager()).unblockAndAssignCredits(
+            feesManager__().unblockAndAssignCredits(
                 requestCount_,
                 requestMetadata_.winningBid.transmitter
             );
@@ -77,14 +76,13 @@ contract DeliveryHelper is FeesHelpers {
     function _settleFees(uint40 requestCount_) internal {
         // If the request has a winning bid, ie. transmitter already assigned, unblock and assign fees
         if (requests[requestCount_].winningBid.transmitter != address(0)) {
-            IFeesManager(addressResolver__.feesManager()).unblockAndAssignCredits(
+            feesManager__().unblockAndAssignCredits(
                 requestCount_,
                 requests[requestCount_].winningBid.transmitter
             );
         } else {
             // If the request has no winning bid, ie. transmitter not assigned, unblock fees
-            IFeesManager(addressResolver__.feesManager()).unblockCredits(requestCount_);
+            feesManager__().unblockCredits(requestCount_);
         }
     }
-
 }

@@ -7,7 +7,7 @@ import "./interfaces/IAppGateway.sol";
 import "./interfaces/IPromise.sol";
 import "./interfaces/IForwarder.sol";
 import {AddressResolverUtil} from "./AddressResolverUtil.sol";
-import {AsyncModifierNotUsed, NoAsyncPromiseFound, PromiseCallerMismatch, RequestCountMismatch, DeliveryHelperNotSet} from "../utils/common/Errors.sol";
+import {AsyncModifierNotUsed, NoAsyncPromiseFound, PromiseCallerMismatch, RequestCountMismatch, WatcherNotSt} from "../utils/common/Errors.sol";
 import "solady/utils/Initializable.sol";
 
 /// @title Forwarder Storage
@@ -21,10 +21,6 @@ abstract contract ForwarderStorage is IForwarder {
     uint32 public chainSlug;
     /// @notice on-chain address associated with this forwarder
     address public onChainAddress;
-
-    // slot 51
-    /// @notice caches the latest async promise address for the last call
-    address public latestAsyncPromise;
 
     // slot 52
     /// @notice the address of the contract that called the latest async promise
@@ -66,15 +62,8 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
     /// @param data_ The data to be passed to callback
     /// @return promise_ The address of the new promise
     function then(bytes4 selector_, bytes memory data_) external returns (address promise_) {
-        if (latestAsyncPromise == address(0)) revert NoAsyncPromiseFound();
-        if (latestPromiseCaller != msg.sender) revert PromiseCallerMismatch();
-        if (latestRequestCount != watcherPrecompile__().nextRequestCount())
-            revert RequestCountMismatch();
-
-        address latestAsyncPromise_ = latestAsyncPromise;
-        latestAsyncPromise = address(0);
-
-        promise_ = IPromise(latestAsyncPromise_).then(selector_, data_);
+        if (lastForwarderCaller != msg.sender) revert CallerMismatch();
+        promise_ = watcherPrecompile__().then(selector_, data_, msg.sender);
     }
 
     /// @notice Returns the on-chain address associated with this forwarder.
@@ -93,28 +82,20 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
     /// @dev It queues the calls in the middleware and deploys the promise contract
     fallback() external {
         if (address(watcherPrecompile__()) == address(0)) {
-            revert DeliveryHelperNotSet();
+            revert WatcherNotSet();
         }
 
         // validates if the async modifier is set
         bool isAsyncModifierSet = IAppGateway(msg.sender).isAsyncModifierSet();
         if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
 
-        // Deploy a new async promise contract.
-        latestAsyncPromise = addressResolver__.deployAsyncPromiseContract(msg.sender);
-
-        // set the latest promise caller and request count for validating if the future .then call is valid
-        latestPromiseCaller = msg.sender;
-        latestRequestCount = watcherPrecompile__().nextRequestCount();
-
         // fetch the override params from app gateway
         (OverrideParams overrideParams, bytes32 sbType) = IAppGateway(msg.sender)
             .getOverrideParams();
 
-        // get the switchboard address from the watcher precompile config
-        address switchboard = watcherPrecompileConfig().switchboards(chainSlug, sbType);
-
         // Queue the call in the middleware.
+        // and sets the latest promise caller and request count for validating if the future .then call is valid
+        latestPromiseCaller = msg.sender;
         watcherPrecompile__().queue(
             QueuePayloadParams({
                 overrideParams: overrideParams,
@@ -123,9 +104,10 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
                     target: onChainAddress,
                     payload: msg.data
                 }),
-                asyncPromise: latestAsyncPromise,
-                switchboard: switchboard
-            })
+                asyncPromise: address(0),
+                switchboardType: sbType
+            }),
+            latestPromiseCaller
         );
     }
 }
