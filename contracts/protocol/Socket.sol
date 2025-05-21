@@ -170,6 +170,8 @@ contract Socket is SocketUtils {
         return (success, returnData);
     }
 
+    /// @notice Validates the execution status of a payload
+    /// @dev This function can be retried till execution status is executed
     function _validateExecutionStatus(bytes32 payloadId_) internal {
         if (payloadExecuted[payloadId_] == ExecutionStatus.Executed)
             revert PayloadAlreadyExecuted(payloadExecuted[payloadId_]);

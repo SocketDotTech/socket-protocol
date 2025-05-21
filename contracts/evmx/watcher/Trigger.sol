@@ -2,6 +2,7 @@
 pragma solidity ^0.8.21;
 
 import "./WatcherStorage.sol";
+
 /// @title Trigger
 /// @notice Contract that handles trigger validation and execution logic
 /// @dev This contract interacts with the WatcherPrecompileStorage for storage access
@@ -31,8 +32,8 @@ abstract contract Trigger is WatcherStorage {
             revert InvalidCallerTriggered();
 
         feesManager__().transferFrom(appGateway, address(this), triggerFees);
-        appGatewayCaller = appGateway;
 
+        appGatewayCaller = appGateway;
         appGatewayCalled[params_.triggerId] = true;
         (bool success, , ) = appGateway.tryCall(
             0,

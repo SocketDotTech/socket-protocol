@@ -5,11 +5,11 @@ import {Ownable} from "solady/auth/Ownable.sol";
 import {LibClone} from "solady/utils/LibClone.sol";
 import {UpgradeableBeacon} from "solady/utils/UpgradeableBeacon.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
-import "./interfaces/IAddressResolver.sol";
+import "./interfaces/IAsyncDeployer.sol";
 import {Forwarder} from "./Forwarder.sol";
 import {AsyncPromise} from "./AsyncPromise.sol";
 
-abstract contract AsyncDeployerStorage is IAddressResolver {
+abstract contract AsyncDeployerStorage is IAsyncDeployer {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 

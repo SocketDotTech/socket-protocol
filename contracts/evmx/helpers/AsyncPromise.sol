@@ -67,50 +67,63 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     /// @dev Only callable by the watcher precompile.
     /// @param returnData_ The data returned from the async payload execution.
     function markResolved(
-        uint40 requestCount_,
+        bool exceededMaxCopy_,
         bytes32 payloadId_,
         bytes memory returnData_
     ) external override onlyWatcher returns (bool success) {
-        if (resolved) revert PromiseAlreadyResolved();
-
-        resolved = true;
+        if (
+            state == AsyncPromiseState.CALLBACK_REVERTING ||
+            state == AsyncPromiseState.ONCHAIN_REVERTING ||
+            state == AsyncPromiseState.RESOLVED
+        ) revert PromiseAlreadyResolved();
         state = AsyncPromiseState.RESOLVED;
 
         // Call callback to app gateway
-        if (callbackSelector == bytes4(0)) return true;
+        if (callbackSelector == bytes4(0)) {
+            success = true;
+        } else {
+            exceededMaxCopy = exceededMaxCopy_;
+            returnData = returnData_;
 
-        bytes memory combinedCalldata = abi.encodePacked(
-            callbackSelector,
-            abi.encode(callbackData, returnData_)
-        );
+            bytes memory combinedCalldata = abi.encodePacked(
+                callbackSelector,
+                abi.encode(callbackData, returnData_)
+            );
 
-        // setting max_copy_bytes to 0 as not using returnData right now
-        (success, , ) = localInvoker.tryCall(0, gasleft(), 0, combinedCalldata);
-        if (success) return success;
-
-        _handleRevert(requestCount_, payloadId_, AsyncPromiseState.CALLBACK_REVERTING);
+            (success, , ) = localInvoker.tryCall(0, gasleft(), 0, combinedCalldata);
+            if (!success) {
+                state = AsyncPromiseState.CALLBACK_REVERTING;
+                _handleRevert(payloadId_);
+            }
+        }
     }
 
     /// @notice Marks the promise as onchain reverting.
     /// @dev Only callable by the watcher precompile.
     function markOnchainRevert(
-        uint40 requestCount_,
-        bytes32 payloadId_
+        bool exceededMaxCopy_,
+        bytes32 payloadId_,
+        bytes memory returnData_
     ) external override onlyWatcher {
-        _handleRevert(requestCount_, payloadId_, AsyncPromiseState.ONCHAIN_REVERTING);
+        if (
+            state == AsyncPromiseState.CALLBACK_REVERTING ||
+            state == AsyncPromiseState.ONCHAIN_REVERTING ||
+            state == AsyncPromiseState.RESOLVED
+        ) revert PromiseAlreadyResolved();
+
+        // to update the state in case selector is bytes(0) but reverting onchain
+        state = AsyncPromiseState.ONCHAIN_REVERTING;
+        exceededMaxCopy_ = exceededMaxCopy_;
+        returnData_ = returnData_;
+        _handleRevert(payloadId_);
     }
 
-    function _handleRevert(
-        uint40 requestCount_,
-        bytes32 payloadId_,
-        AsyncPromiseState state_
-    ) internal {
-        // to update the state in case selector is bytes(0) but reverting onchain
-        resolved = true;
-        state = state_;
-        try IAppGateway(localInvoker).handleRevert(requestCount_, payloadId_) {
-            // Successfully handled revert
-        } catch {
+    /// @notice Handles the revert of the promise.
+    /// @dev Only callable by the watcher.
+    /// @dev handleRevert function can be retried till it succeeds
+    function _handleRevert(bytes32 payloadId_) internal {
+        try IAppGateway(localInvoker).handleRevert(payloadId_) {} catch {
+            // todo-later: in this case, promise will stay unresolved
             revert PromiseRevertFailed();
         }
     }
@@ -119,22 +132,19 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     /// @param selector_ The function selector for the callback.
     /// @param data_ The data to be passed to the callback.
     /// @return promise_ The address of the current promise.
-    function then(
-        bytes4 selector_,
-        bytes memory data_
-    ) external override onlyWatcher returns (address promise_) {
+    function then(bytes4 selector_, bytes memory data_) external override onlyWatcher {
         // if the promise is already set up, revert
-        if (state == AsyncPromiseState.WAITING_FOR_CALLBACK_EXECUTION) {
+        if (state != AsyncPromiseState.WAITING_FOR_CALLBACK_SELECTOR) {
             revert PromiseAlreadySetUp();
         }
 
-        // if the promise is waiting for the callback selector, set it and update the state
-        if (state == AsyncPromiseState.WAITING_FOR_SET_CALLBACK_SELECTOR) {
-            callbackSelector = selector_;
-            callbackData = data_;
-            state = AsyncPromiseState.WAITING_FOR_CALLBACK_EXECUTION;
-        }
+        // todo: check if we can directly call .then from app gateway
+        // move watcher checks here
+        if (msg.sender != localInvoker) revert OnlyInvoker();
 
-        promise_ = address(this);
+        // if the promise is waiting for the callback selector, set it and update the state
+        callbackSelector = selector_;
+        callbackData = data_;
+        state = AsyncPromiseState.WAITING_FOR_CALLBACK_EXECUTION;
     }
 }
