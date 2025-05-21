@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 import "../interfaces/IAddressResolver.sol";
 import "../interfaces/IWatcher.sol";
 import "../interfaces/IFeesManager.sol";
+import "../interfaces/IAsyncDeployer.sol";
 
 /// @title AddressResolverUtil
 /// @notice Utility contract for resolving system contract addresses
@@ -23,7 +24,7 @@ abstract contract AddressResolverBase {
     /// @notice Restricts function access to the watcher precompile contract
     /// @dev Validates that msg.sender matches the registered watcher precompile address
     modifier onlyWatcher() {
-        if (msg.sender != address(addressResolver__.watcherPrecompile__())) {
+        if (msg.sender != address(addressResolver__.watcher__())) {
             revert onlyWatcherAllowed();
         }
 
@@ -33,8 +34,8 @@ abstract contract AddressResolverBase {
     /// @notice Gets the watcher precompile contract interface
     /// @return IWatcher interface of the registered watcher precompile
     /// @dev Resolves and returns the watcher precompile contract for interaction
-    function watcherPrecompile__() public view returns (IWatcher) {
-        return addressResolver__.watcherPrecompile__();
+    function watcher__() public view returns (IWatcher) {
+        return addressResolver__.watcher__();
     }
 
     /// @notice Gets the watcher precompile contract interface

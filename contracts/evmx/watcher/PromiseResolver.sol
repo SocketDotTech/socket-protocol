@@ -46,7 +46,6 @@ contract PromiseResolver is IPromiseResolver {
 
         address asyncPromise = payloadParams.asyncPromise;
         requestCount = payloadParams.requestCount;
-        success = true;
 
         if (asyncPromise != address(0)) {
             success = IPromise(asyncPromise).markResolved(
@@ -59,6 +58,8 @@ contract PromiseResolver is IPromiseResolver {
                 emit PromiseNotResolved(resolvedPromise_.payloadId, asyncPromise);
                 return (requestCount, false);
             }
+        } else {
+            success = true;
         }
 
         emit PromiseResolved(resolvedPromise_.payloadId, asyncPromise);

@@ -41,3 +41,8 @@ error PromiseCallerMismatch();
 error RequestCountMismatch();
 /// @notice Error thrown when delivery helper is not set
 error DeliveryHelperNotSet();
+
+error InvalidTarget();
+error InvalidPayloadSize();
+error InvalidScheduleDelay();
+error InvalidTimeoutRequest();

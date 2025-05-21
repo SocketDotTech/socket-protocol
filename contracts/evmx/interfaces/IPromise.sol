@@ -21,7 +21,4 @@ interface IPromise {
     /// @notice Marks the promise as onchain reverting.
     /// @dev Only callable by the watcher precompile.
     function markOnchainRevert(uint40 requestCount_, bytes32 payloadId_) external;
-
-    /// @notice Indicates whether the promise has been resolved.
-    function resolved() external view returns (bool);
 }
