@@ -29,7 +29,7 @@ contract PromiseResolver is IPromiseResolver {
         for (uint256 i = 0; i < resolvedPromises_.length; i++) {
             (uint40 requestCount, bool success) = _processPromiseResolution(resolvedPromises_[i]);
             if (success) {
-                requestHandler__().markPayloadExecutedAndProcessBatch(
+                requestHandler__().updateRequestAndProcessBatch(
                     requestCount,
                     resolvedPromises_[i].payloadId
                 );
@@ -37,6 +37,7 @@ contract PromiseResolver is IPromiseResolver {
         }
     }
 
+    // todo: add max copy bytes and update function inputs
     function _processPromiseResolution(
         ResolvedPromises memory resolvedPromise_
     ) internal returns (uint40 requestCount, bool success) {

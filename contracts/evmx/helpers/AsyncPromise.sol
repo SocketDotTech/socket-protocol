@@ -16,9 +16,6 @@ abstract contract AsyncPromiseStorage is IPromise {
     // bytes1
     /// @notice The callback selector to be called on the invoker.
     bytes4 public callbackSelector;
-    // bytes4
-    /// @notice Indicates whether the promise has been resolved.
-    bool public override resolved;
     // bytes8
     /// @notice The current state of the async promise.
     AsyncPromiseState public state;
@@ -26,6 +23,9 @@ abstract contract AsyncPromiseStorage is IPromise {
     /// @notice The local contract which initiated the async call.
     /// @dev The callback will be executed on this address
     address public localInvoker;
+
+    /// @notice The request count of the promise
+    uint256 public requestCount;
 
     // slot 52
     /// @notice The callback data to be used when the promise is resolved.
@@ -58,8 +58,13 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     /// @notice Initialize promise states
     /// @param invoker_ The address of the local invoker
     /// @param addressResolver_ The address resolver contract address
-    function initialize(address invoker_, address addressResolver_) public initializer {
+    function initialize(
+        address invoker_,
+        address addressResolver_,
+        uint256 requestCount_
+    ) public initializer {
         localInvoker = invoker_;
+        requestCount = requestCount_;
         _setAddressResolver(addressResolver_);
     }
 
@@ -132,15 +137,14 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     /// @param selector_ The function selector for the callback.
     /// @param data_ The data to be passed to the callback.
     /// @return promise_ The address of the current promise.
-    function then(bytes4 selector_, bytes memory data_) external override onlyWatcher {
+    function then(bytes4 selector_, bytes memory data_) external override {
+        if (msg.sender != localInvoker) revert NotInvoker();
         // if the promise is already set up, revert
         if (state != AsyncPromiseState.WAITING_FOR_CALLBACK_SELECTOR) {
             revert PromiseAlreadySetUp();
         }
-
-        // todo: check if we can directly call .then from app gateway
-        // move watcher checks here
-        if (msg.sender != localInvoker) revert OnlyInvoker();
+        if (watcher__().latestAsyncPromise != address(this)) revert PromiseAlreadySetUp();
+        if (requestCount != watcher__().latestRequestCount) revert RequestCountMismatch();
 
         // if the promise is waiting for the callback selector, set it and update the state
         callbackSelector = selector_;

@@ -132,7 +132,7 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable {
     /// @return newAsyncPromise The address of the deployed AsyncPromise proxy contract
     function deployAsyncPromiseContract(
         address invoker_
-    ) external returns (address newAsyncPromise) {
+    ) external onlyWatcher returns (address newAsyncPromise) {
         // creates init data and salt
         (bytes32 salt, bytes memory initData) = _createAsyncPromiseParams(invoker_);
         asyncPromiseCounter++;

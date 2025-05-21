@@ -31,4 +31,8 @@ contract WatcherBase {
     function configurations__() external view returns (IConfigurations) {
         return IWatcher(watcher).configurations__();
     }
+
+    function getCoreAppGateway(address appGateway_) external view returns (address) {
+        return IWatcher(watcher).configurations__().getCoreAppGateway(appGateway_);
+    }
 }

@@ -53,31 +53,25 @@ contract Watcher is Trigger {
         address appGateway_
     ) internal returns (address, uint40) {
         address coreAppGateway = getCoreAppGateway(appGateway_);
-        // Deploy a new async promise contract.
+
+        // checks if app gateway passed by forwarder is coming from same core app gateway group
         if (appGatewayTemp != address(0))
             if (appGatewayTemp != coreAppGateway || coreAppGateway == address(0))
                 revert InvalidAppGateway();
 
-        latestAsyncPromise = asyncDeployer__().deployAsyncPromiseContract(coreAppGateway);
+        uint40 requestCount = requestHandler__.nextRequestCount();
+        // Deploy a new async promise contract.
+        latestAsyncPromise = asyncDeployer__().deployAsyncPromiseContract(
+            coreAppGateway,
+            requestCount
+        );
         appGatewayTemp = coreAppGateway;
         queue_.asyncPromise = latestAsyncPromise;
 
         // Add the promise to the queue.
         payloadQueue.push(queue_);
         // return the promise and request count
-        return (latestAsyncPromise, requestHandler__.nextRequestCount());
-    }
-
-    function then(bytes4 selector_, bytes memory data_) external {
-        if (latestAsyncPromise == address(0)) revert NoAsyncPromiseFound();
-        if (latestRequestCount != requestHandler__.nextRequestCount())
-            revert RequestCountMismatch();
-
-        address promise_ = latestAsyncPromise;
-        latestAsyncPromise = address(0);
-
-        // as same req count is checked, assuming app gateway will be same else it will revert on batch
-        IPromise(promise_).then(selector_, data_);
+        return (latestAsyncPromise, requestCount);
     }
 
     function submitRequest(
@@ -95,13 +89,16 @@ contract Watcher is Trigger {
         address consumeFrom,
         bytes onCompleteData
     ) internal returns (uint40 requestCount, address[] memory promiseList) {
-        if (getCoreAppGateway(msg.sender) != appGatewayTemp) revert InvalidAppGateways();
+        // this check is to verify that msg.sender (app gateway base) belongs to correct app gateway
+        address coreAppGateway = getCoreAppGateway(msg.sender);
+        if (coreAppGateway != appGatewayTemp) revert InvalidAppGateways();
+        latestAsyncPromise = address(0);
 
         (requestCount, promiseList) = requestHandler__.submitRequest(
             maxFees,
             auctionManager,
             consumeFrom,
-            msg.sender,
+            coreAppGateway,
             payloadQueue,
             onCompleteData
         );

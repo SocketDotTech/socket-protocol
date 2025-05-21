@@ -75,7 +75,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         for (uint256 i = 0; i < instances_.length; i++) {
             uint32 chainSlug = IForwarder(instances_[i]).getChainSlug();
             ICounter(instances_[i]).getCounter();
-            IPromise(instances_[i]).then(this.setCounterValues.selector, abi.encode(chainSlug));
+            then(this.setCounterValues.selector, abi.encode(chainSlug));
         }
         _setOverrides(Read.OFF, Parallel.OFF);
     }

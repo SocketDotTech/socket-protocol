@@ -148,7 +148,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
             address(this)
         );
 
-        watcher__().then(promise_);
+        IPromise(watcher__().latestAsyncPromise()).then(this.onRequestComplete, onCompleteData);
     }
 
     /// @notice Gets the socket address
