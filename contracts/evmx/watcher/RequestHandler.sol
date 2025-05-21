@@ -15,11 +15,11 @@ contract RequestHandler is WatcherBase {
     error InvalidPrecompileData();
     error InvalidCallType();
 
-    /// @notice Counter for tracking payload requests
-    uint40 public payloadCounter;
-
     /// @notice Counter for tracking request counts
     uint40 public nextRequestCount = 1;
+
+    /// @notice Counter for tracking payload requests
+    uint40 public payloadCounter;
 
     /// @notice Counter for tracking batch counts
     uint40 public nextBatchCount;
@@ -33,9 +33,25 @@ contract RequestHandler is WatcherBase {
     /// @notice Mapping to store the precompiles for each call type
     mapping(bytes4 => IPrecompile) public precompiles;
 
+    // queue => update to payloadParams, assign id, store in payloadParams map
+    /// @notice Mapping to store the payload parameters for each payload ID
+    mapping(bytes32 => PayloadParams) public payloads;
+
+    /// @notice The metadata for a request
+    mapping(uint40 => RequestParams) public requests;
+
+    /// @notice Mapping to store if a promise is executed for each payload ID
+    mapping(bytes32 => bool) public isPromiseExecuted;
+
     constructor(address watcherStorage_) WatcherBase(watcherStorage_) {}
 
-    function setPrecompile(bytes4 callType_, IPrecompile precompile_) external onlyWatcherStorage {
+    modifier isRequestCancelled(uint40 requestCount_) {
+        if (requestParams[requestCount_].requestTrackingParams.isRequestCancelled)
+            revert RequestCancelled();
+        _;
+    }
+
+    function setPrecompile(bytes4 callType_, IPrecompile precompile_) external onlyWatcher {
         precompiles[callType_] = precompile_;
     }
 
@@ -46,7 +62,7 @@ contract RequestHandler is WatcherBase {
         address appGateway_,
         QueueParams[] calldata queuePayloadParams_,
         bytes memory onCompleteData_
-    ) external onlyWatcherPrecompile returns (uint40 requestCount, address[] memory promiseList) {
+    ) external onlyWatcher returns (uint40 requestCount, address[] memory promiseList) {
         if (queuePayloadParams_.length == 0) return uint40(0);
         if (queuePayloadParams.length > REQUEST_PAYLOAD_COUNT_LIMIT)
             revert RequestPayloadCountLimitExceeded();
@@ -56,16 +72,19 @@ contract RequestHandler is WatcherBase {
             revert InsufficientFees();
 
         requestCount = nextRequestCount++;
-        RequestParams memory r = RequestParams({
+        RequestParams storage r = requestParams[requestCount];
+        r = RequestParams({
             requestTrackingParams: RequestTrackingParams({
+                isRequestCancelled: false,
+                isRequestExecuted: false,
                 currentBatch: nextBatchCount,
                 currentBatchPayloadsLeft: 0,
                 payloadsRemaining: queuePayloadParams_.length
             }),
             requestFeesDetails: RequestFeesDetails({
-                watcherFees: 0,
+                maxFees: maxFees_,
                 consumeFrom: consumeFrom_,
-                maxFees: maxFees_
+                winningBid: Bid({transmitter: address(0), fees: 0})
             }),
             writeCount: 0,
             auctionManager: _getAuctionManager(auctionManager_),
@@ -73,17 +92,49 @@ contract RequestHandler is WatcherBase {
             onCompleteData: onCompleteData_
         });
 
-        (r.requestFeesDetails.watcherFees, r.writeCount, promiseList) = _createRequest(
+        PayloadParams[] memory payloadParams;
+        uint256 totalEstimatedWatcherFees;
+        (totalEstimatedWatcherFees, r.writeCount, promiseList, payloadParams) = _createRequest(
             queuePayloadParams_,
             appGateway,
             requestCount
         );
 
-        if (r.requestFeesDetails.watcherFees > maxFees_) revert InsufficientFees();
-        watcherPrecompile__().setRequestParams(requestCount, r);
+        if (totalEstimatedWatcherFees > maxFees_) revert InsufficientFees();
 
-        if (r.writeCount == 0) startProcessingRequest();
-        emit RequestSubmitted();
+        if (r.writeCount == 0) _processBatch(requestCount, r.requestTrackingParams.currentBatch, r);
+        emit RequestSubmitted(
+            r.writeCount > 0,
+            requestCount,
+            totalEstimatedWatcherFees,
+            r,
+            payloadParams
+        );
+    }
+
+    // called by auction manager when a auction ends or a new transmitter is assigned (bid expiry)
+    function assignTransmitter(
+        uint40 requestCount_,
+        Bid memory bid_
+    ) external isRequestCancelled(requestCount_) {
+        RequestParams storage r = requestParams[requestCount_];
+        if (r.auctionManager != msg.sender) revert InvalidCaller();
+        if (r.requestTrackingParams.isRequestExecuted) revert RequestAlreadySettled();
+
+        if (r.writeCount == 0) revert NoWriteRequest();
+        if (r.requestFeesDetails.winningBid.transmitter == bid_.transmitter)
+            revert AlreadyAssigned();
+
+        if (r.requestFeesDetails.winningBid.transmitter != address(0)) {
+            feesManager__().unblockCredits(requestCount_);
+        }
+
+        r.requestFeesDetails.winningBid = bid_;
+        if (bid_.transmitter == address(0)) return;
+        feesManager__().blockCredits(requestCount_, r.requestFeesDetails.consumeFrom, bid_.fees);
+
+        // re-process current batch again or process the batch for the first time
+        _processBatch(requestCount_, r.requestTrackingParams.currentBatch, r);
     }
 
     function _createRequest(
@@ -92,7 +143,12 @@ contract RequestHandler is WatcherBase {
         uint40 requestCount_
     )
         internal
-        returns (uint256 totalWatcherFees, uint256 writeCount, address[] memory promiseList)
+        returns (
+            uint256 totalEstimatedWatcherFees,
+            uint256 writeCount,
+            address[] memory promiseList,
+            PayloadParams[] memory payloadParams
+        )
     {
         // push first batch count
         requestBatchIds[requestCount_].push(nextBatchCount);
@@ -120,12 +176,12 @@ contract RequestHandler is WatcherBase {
             );
 
             // process payload data and store
-            (uint256 fees, bytes memory precompileData) = _validateAndGetPrecompileData(
+            (uint256 estimatedFees, bytes memory precompileData) = _validateAndGetPrecompileData(
                 queuePayloadParam,
                 appGateway_,
                 callType
             );
-            totalWatcherFees += fees;
+            totalEstimatedWatcherFees += estimatedFees;
 
             // create payload id
             uint40 payloadCount = payloadCounter++;
@@ -139,18 +195,21 @@ contract RequestHandler is WatcherBase {
             batchPayloadIds[batchCount].push(payloadId);
 
             // create prev digest hash
-            PayloadSubmitParams memory p = PayloadSubmitParams({
+            PayloadParams memory p = PayloadParams({
                 requestCount: requestCount_,
                 batchCount: batchCount,
                 payloadCount: payloadCount,
-                payloadId: payloadId,
-                prevDigestsHash: prevDigestsHash,
-                precompileData: precompileData,
+                callType: callType,
                 asyncPromise: queuePayloadParams_.asyncPromise,
-                appGateway: queuePayloadParams_.appGateway
+                appGateway: queuePayloadParams_.appGateway,
+                payloadId: payloadId,
+                resolvedAt: 0,
+                deadline: 0,
+                precompileData: precompileData
             });
             promiseList.push(queuePayloadParams_.asyncPromise);
-            watcherPrecompile__().setPayloadParams(payloadId, p);
+            payloadParams.push(p);
+            payloads[payloadId] = p;
         }
 
         nextBatchCount++;
@@ -162,7 +221,6 @@ contract RequestHandler is WatcherBase {
         bytes4 callType_
     ) internal returns (uint256, bytes memory) {
         if (address(precompiles[callType_]) == address(0)) revert InvalidCallType();
-
         return
             IPrecompile(precompiles[callType_]).validateAndGetPrecompileData(
                 payloadParams_,
@@ -177,114 +235,116 @@ contract RequestHandler is WatcherBase {
                 : auctionManager_;
     }
 
-    //todo
-    function _getPreviousDigestsHash(uint40 batchCount_) internal view returns (bytes32) {
+    function _processBatch(
+        uint40 requestCount_,
+        uint40 batchCount_,
+        RequestParams storage r
+    ) internal {
         bytes32[] memory payloadIds = batchPayloadIds[batchCount_];
-        bytes32 prevDigestsHash = bytes32(0);
 
+        uint256 totalFees = 0;
         for (uint40 i = 0; i < payloadIds.length; i++) {
-            PayloadParams memory p = payloads[payloadIds[i]];
-            DigestParams memory digestParams = DigestParams(
-                watcherPrecompileConfig__.sockets(p.payloadHeader.getChainSlug()),
-                p.finalizedTransmitter,
-                p.payloadId,
-                p.deadline,
-                p.payloadHeader.getCallType(),
-                p.gasLimit,
-                p.value,
-                p.payload,
-                p.target,
-                WatcherIdUtils.encodeAppGatewayId(p.appGateway),
-                p.prevDigestsHash
+            bytes32 payloadId = payloadIds[i];
+
+            // check needed for re-process, in case a payload is already executed by last transmitter
+            if (!isPromiseExecuted[payloadId]) continue;
+
+            PayloadParams storage payloadParams = payloads[payloadId];
+            payloadParams.deadline = block.timestamp + expiryTime;
+
+            uint256 fees = IPrecompile(precompiles[payloadParams.callType]).handlePayload(
+                r.requestFeesDetails.winningBid.transmitter,
+                payloadParams
             );
-            prevDigestsHash = keccak256(abi.encodePacked(prevDigestsHash, getDigest(digestParams)));
+            totalFees += fees;
         }
-        return prevDigestsHash;
+
+        address watcherFeesPayer = r.requestFeesDetails.winningBid.transmitter == address(0)
+            ? r.requestFeesDetails.consumeFrom
+            : r.requestFeesDetails.winningBid.transmitter;
+        feesManager__().transferCredits(watcherFeesPayer, address(this), totalFees);
     }
 
-    // /// @notice Increases the fees for a request if no bid is placed
-    // /// @param requestCount_ The ID of the request
-    // /// @param newMaxFees_ The new maximum fees
-    // function increaseFees(uint40 requestCount_, uint256 newMaxFees_) external override {
-    //     address appGateway = _getCoreAppGateway(msg.sender);
-    //     // todo: should we allow core app gateway too?
-    //     if (appGateway != requests[requestCount_].appGateway) {
-    //         revert OnlyAppGateway();
-    //     }
-    //     if (requests[requestCount_].winningBid.transmitter != address(0)) revert WinningBidExists();
-    //     if (requests[requestCount_].maxFees >= newMaxFees_)
-    //         revert NewMaxFeesLowerThanCurrent(requests[requestCount_].maxFees, newMaxFees_);
-    //     requests[requestCount_].maxFees = newMaxFees_;
-    //     emit FeesIncreased(appGateway, requestCount_, newMaxFees_);
-    // }
+    function markPayloadExecutedAndProcessBatch(
+        uint40 requestCount_,
+        bytes32 payloadId_
+    ) external onlyPromiseResolver isRequestCancelled(requestCount_) {
+        RequestParams storage r = requestParams[requestCount_];
 
-    // /// @notice Updates the transmitter for a request
-    // /// @param requestCount The request count to update
-    // /// @param transmitter The new transmitter address
-    // /// @dev This function updates the transmitter for a request
-    // /// @dev It verifies that the caller is the middleware and that the request hasn't been started yet
-    // function updateTransmitter(uint40 requestCount, address transmitter) public {
-    //     RequestParams storage r = requestParams[requestCount];
-    //     if (r.isRequestCancelled) revert RequestCancelled();
-    //     if (r.payloadsRemaining == 0) revert RequestAlreadyExecuted();
-    //     if (r.middleware != msg.sender) revert InvalidCaller();
-    //     if (r.transmitter != address(0)) revert RequestNotProcessing();
-    //     r.transmitter = transmitter;
+        isPromiseExecuted[payloadId_] = true;
+        r.requestTrackingParams.currentBatchPayloadsLeft--;
+        r.requestTrackingParams.payloadsRemaining--;
 
-    //     _processBatch(requestCount, r.currentBatch);
-    // }
+        if (r.requestTrackingParams.currentBatchPayloadsLeft != 0) return;
+        if (r.requestTrackingParams.payloadsRemaining == 0) {
+            _settleRequest(requestCount_, r);
+            return;
+        }
 
-    // /// @notice Cancels a request
-    // /// @param requestCount The request count to cancel
-    // /// @dev This function cancels a request
-    // /// @dev It verifies that the caller is the middleware and that the request hasn't been cancelled yet
-    // function cancelRequest(uint40 requestCount) external {
-    //     RequestParams storage r = requestParams[requestCount];
-    //     if (r.isRequestCancelled) revert RequestAlreadyCancelled();
-    //     if (r.middleware != msg.sender) revert InvalidCaller();
+        r.requestTrackingParams.currentBatch++;
+        _processBatch(requestCount_, r.requestTrackingParams.currentBatch_, r);
+    }
 
-    //     r.isRequestCancelled = true;
-    //     emit RequestCancelledFromGateway(requestCount);
-    // }
+    function _settleRequest(uint40 requestCount_, RequestParams storage r) internal {
+        if (r.requestTrackingParams.isRequestExecuted) return;
+        r.requestTrackingParams.isRequestExecuted = true;
 
-    // /// @notice Ends the timeouts and calls the target address with the callback payload
-    // /// @param timeoutId_ The unique identifier for the timeout
-    // /// @param signatureNonce_ The nonce used in the watcher's signature
-    // /// @param signature_ The watcher's signature
-    // /// @dev It verifies if the signature is valid and the timeout hasn't been resolved yet
-    // function resolveTimeout(
-    //     bytes32 timeoutId_,
-    //     uint256 signatureNonce_,
-    //     bytes memory signature_
-    // ) external {
-    //     _isWatcherSignatureValid(
-    //         abi.encode(this.resolveTimeout.selector, timeoutId_),
-    //         signatureNonce_,
-    //         signature_
-    //     );
+        feesManager__().unblockAndAssignCredits(
+            requestCount_,
+            r.requestFeesDetails.winningBid.transmitter
+        );
 
-    //     TimeoutRequest storage timeoutRequest_ = timeoutRequests[timeoutId_];
-    //     if (timeoutRequest_.target == address(0)) revert InvalidTimeoutRequest();
-    //     if (timeoutRequest_.isResolved) revert TimeoutAlreadyResolved();
-    //     if (block.timestamp < timeoutRequest_.executeAt) revert ResolvingTimeoutTooEarly();
+        if (r.appGateway.code.length > 0 && r.onCompleteData.length > 0) {
+            try
+                IAppGateway(r.appGateway).onRequestComplete(requestCount_, r.onCompleteData)
+            {} catch {
+                emit RequestCompletedWithErrors(requestCount_);
+            }
+        }
 
-    //     (bool success, , bytes memory returnData) = timeoutRequest_.target.tryCall(
-    //         0,
-    //         gasleft(),
-    //         0, // setting max_copy_bytes to 0 as not using returnData right now
-    //         timeoutRequest_.payload
-    //     );
-    //     if (!success) revert CallFailed();
-
-    //     timeoutRequest_.isResolved = true;
-    //     timeoutRequest_.executedAt = block.timestamp;
-
-    //     emit TimeoutResolved(
-    //         timeoutId_,
-    //         timeoutRequest_.target,
-    //         timeoutRequest_.payload,
-    //         block.timestamp,
-    //         returnData
-    //     );
-    // }
+        emit RequestSettled(requestCount_, r.requestFeesDetails.winningBid.transmitter);
+    }
 }
+
+// /// @notice Increases the fees for a request if no bid is placed
+// /// @param requestCount_ The ID of the request
+// /// @param newMaxFees_ The new maximum fees
+// function increaseFees(uint40 requestCount_, uint256 newMaxFees_) external override {
+//     address appGateway = _getCoreAppGateway(msg.sender);
+//     // todo: should we allow core app gateway too?
+//     if (appGateway != requests[requestCount_].appGateway) {
+//         revert OnlyAppGateway();
+//     }
+//     if (requests[requestCount_].winningBid.transmitter != address(0)) revert WinningBidExists();
+//     if (requests[requestCount_].maxFees >= newMaxFees_)
+//         revert NewMaxFeesLowerThanCurrent(requests[requestCount_].maxFees, newMaxFees_);
+//     requests[requestCount_].maxFees = newMaxFees_;
+//     emit FeesIncreased(appGateway, requestCount_, newMaxFees_);
+// }
+
+// /// @notice Cancels a request
+// /// @param requestCount The request count to cancel
+// /// @dev This function cancels a request
+// /// @dev It verifies that the caller is the middleware and that the request hasn't been cancelled yet
+// function cancelRequest(uint40 requestCount) external {
+//     RequestParams storage r = requestParams[requestCount];
+//     if (r.isRequestCancelled) revert RequestAlreadyCancelled();
+//     if (r.middleware != msg.sender) revert InvalidCaller();
+
+//     r.isRequestCancelled = true;
+//     emit RequestCancelledFromGateway(requestCount);
+// }
+
+// /// @notice Cancels a request and settles the fees
+// /// @dev if no transmitter was assigned, fees is unblocked to app gateway
+// /// @dev Only app gateway can call this function
+// /// @param requestCount_ The ID of the request
+// function cancelRequest(uint40 requestCount_) external {
+//     if (msg.sender != requests[requestCount_].appGateway) {
+//         revert OnlyAppGateway();
+//     }
+
+//     _settleFees(requestCount_);
+//     watcherPrecompile__().cancelRequest(requestCount_);
+//     emit RequestCancelled(requestCount_);
+// }

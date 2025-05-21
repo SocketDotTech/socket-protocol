@@ -4,11 +4,12 @@ pragma solidity ^0.8.21;
 import "../../interfaces/IPrecompile.sol";
 import "../../../utils/common/Structs.sol";
 import "../../../utils/common/Errors.sol";
+import "../WatcherBase.sol";
 
-/// @title Schedule
+/// @title SchedulePrecompile
 /// @notice Library that handles schedule logic for the WatcherPrecompile system
 /// @dev This library contains pure functions for schedule operations
-contract Schedule is IPrecompile {
+contract SchedulePrecompile is IPrecompile, WatcherBase {
     // slot 52
     /// @notice The maximum delay for a schedule
     /// @dev Maximum schedule delay in seconds
@@ -30,7 +31,7 @@ contract Schedule is IPrecompile {
     /// @param maxScheduleDelayInSeconds_ The maximum schedule delay in seconds
     /// @dev This function sets the maximum schedule delay in seconds
     /// @dev Only callable by the contract owner
-    function setMaxScheduleDelayInSeconds(uint256 maxScheduleDelayInSeconds_) external onlyOwner {
+    function setMaxScheduleDelayInSeconds(uint256 maxScheduleDelayInSeconds_) external onlyWatcher {
         maxScheduleDelayInSeconds = maxScheduleDelayInSeconds_;
         emit MaxScheduleDelayInSecondsSet(maxScheduleDelayInSeconds_);
     }
@@ -39,7 +40,7 @@ contract Schedule is IPrecompile {
     /// @param scheduleFeesPerSecond_ The fees per second for a schedule
     /// @dev This function sets the fees per second for a schedule
     /// @dev Only callable by the contract owner
-    function setScheduleFeesPerSecond(uint256 scheduleFeesPerSecond_) external onlyOwner {
+    function setScheduleFeesPerSecond(uint256 scheduleFeesPerSecond_) external onlyWatcher {
         scheduleFeesPerSecond = scheduleFeesPerSecond_;
         emit ScheduleFeesPerSecondSet(scheduleFeesPerSecond_);
     }
@@ -48,7 +49,7 @@ contract Schedule is IPrecompile {
     /// @param scheduleCallbackFees_ The callback fees for a schedule
     /// @dev This function sets the callback fees for a schedule
     /// @dev Only callable by the contract owner
-    function setScheduleCallbackFees(uint256 scheduleCallbackFees_) external onlyOwner {
+    function setScheduleCallbackFees(uint256 scheduleCallbackFees_) external onlyWatcher {
         scheduleCallbackFees = scheduleCallbackFees_;
         emit ScheduleCallbackFeesSet(scheduleCallbackFees_);
     }
@@ -58,7 +59,7 @@ contract Schedule is IPrecompile {
     function validateAndGetPrecompileData(
         QueueParams calldata queuePayloadParams_,
         address appGateway_
-    ) external view returns (bytes memory precompileData, uint256 fees) {
+    ) external view returns (bytes memory precompileData, uint256 estimatedFees) {
         if (
             queuePayloadParams_.transaction.target != address(0) &&
             appGateway_ != getCoreAppGateway(queuePayloadParams_.transaction.target)
@@ -81,7 +82,7 @@ contract Schedule is IPrecompile {
             queuePayloadParams_.overrideParams.delayInSeconds
         );
 
-        fees =
+        estimatedFees =
             scheduleFeesPerSecond *
             queuePayloadParams_.overrideParams.delayInSeconds +
             scheduleCallbackFees;
@@ -167,3 +168,50 @@ contract Schedule is IPrecompile {
         return abi.encode(scheduleId, target, payload, executedAt, returnData);
     }
 }
+
+// /// @notice Ends the timeouts and calls the target address with the callback payload
+// /// @param timeoutId_ The unique identifier for the timeout
+// function resolveTimeout(
+//     bytes32 timeoutId_,
+// ) external {
+//     TimeoutRequest storage timeoutRequest_ = timeoutRequests[timeoutId_];
+//     if (timeoutRequest_.target == address(0)) revert InvalidTimeoutRequest();
+//     if (timeoutRequest_.isResolved) revert TimeoutAlreadyResolved();
+//     if (block.timestamp < timeoutRequest_.executeAt) revert ResolvingTimeoutTooEarly();
+
+//     (bool success, , bytes memory returnData) = timeoutRequest_.target.tryCall(
+//         0,
+//         gasleft(),
+//         0, // setting max_copy_bytes to 0 as not using returnData right now
+//         timeoutRequest_.payload
+//     );
+//     if (!success) revert CallFailed();
+//     timeoutRequest_.isResolved = true;
+//     timeoutRequest_.executedAt = block.timestamp;
+
+//     emit TimeoutResolved(
+//         timeoutId_,
+//         timeoutRequest_.target,
+//         timeoutRequest_.payload,
+//         block.timestamp,
+//         returnData
+//     );
+// }
+
+// /// @notice Sets a timeout for a payload execution on app gateway
+// /// @return timeoutId The unique identifier for the timeout request
+// function _setTimeout(
+//     uint256 delayInSeconds_,
+//     bytes memory payload_
+// ) internal returns (bytes32 timeoutId) {
+//     uint256 executeAt = block.timestamp + delayInSeconds_;
+//     timeoutId = _encodeTimeoutId();
+
+//     timeoutRequests[timeoutId].target = msg.sender;
+//     timeoutRequests[timeoutId].delayInSeconds = delayInSeconds_;
+//     timeoutRequests[timeoutId].executeAt = executeAt;
+//     timeoutRequests[timeoutId].payload = payload_;
+
+//     // emits event for watcher to track timeout and resolve when timeout is reached
+//     emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);
+// }

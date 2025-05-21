@@ -25,4 +25,10 @@ contract WatcherBase {
     function setWatcher(address watcher_) external onlyWatcher {
         watcher = watcher_;
     }
+
+    /// @notice Returns the configurations of the WatcherPrecompileStorage contract
+    /// @return configurations The configurations of the WatcherPrecompileStorage contract
+    function configurations__() external view returns (IConfigurations) {
+        return IWatcher(watcher).configurations__();
+    }
 }

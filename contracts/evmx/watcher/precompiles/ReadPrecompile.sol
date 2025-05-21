@@ -1,27 +1,28 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../../interfaces/IWatcher.sol";
+import "../../interfaces/IPrecompile.sol";
 import "../../../utils/common/Structs.sol";
 import "../../../utils/common/Errors.sol";
+import "../WatcherBase.sol";
 
 /// @title Read
 /// @notice Handles read precompile logic
-contract Read is IPrecompile {
+contract ReadPrecompile is IPrecompile, WatcherBase {
     /// @notice Emitted when a new read is requested
     event ReadRequested(PayloadParams params);
 
+    /// @notice The fees for a read and includes callback fees
     uint256 public readFees;
-    uint256 public callbackFees;
 
     /// @notice Gets precompile data and fees for queue parameters
     /// @param queuePayloadParams_ The queue parameters to process
     /// @return precompileData The encoded precompile data
-    /// @return fees Estimated fees required for processing
+    /// @return estimatedFees Estimated fees required for processing
     function validateAndGetPrecompileData(
         QueueParams calldata queuePayloadParams_,
         address
-    ) external view returns (bytes memory precompileData, uint256 fees) {
+    ) external view returns (bytes memory precompileData, uint256 estimatedFees) {
         if (queuePayloadParams_.transaction.target != address(0)) revert InvalidTarget();
         if (queuePayloadParams_.transaction.payload.length > 0) revert InvalidPayloadSize();
 
@@ -30,16 +31,27 @@ contract Read is IPrecompile {
             queuePayloadParams_.transaction,
             queuePayloadParams_.overrideParams.readAtBlockNumber
         );
-        fees = readFees + callbackFees;
+        estimatedFees = readFees;
     }
 
     /// @notice Handles payload processing and returns fees
     /// @param payloadParams The payload parameters to handle
     /// @return fees The fees required for processing
     function handlePayload(
+        address,
         PayloadParams calldata payloadParams
     ) external pure returns (uint256 fees) {
-        fees = readFees + callbackFees;
-        emit ReadRequested(payloadParams);
+        fees = readFees;
+
+        (Transaction memory transaction, uint256 readAtBlockNumber) = abi.decode(
+            payloadParams.precompileData,
+            (Transaction, uint256)
+        );
+        emit ReadRequested(transaction, readAtBlockNumber, payloadParams.payloadId);
+    }
+
+    function setFees(uint256 readFees_) external onlyWatcher {
+        readFees = readFees_;
+        emit FeesSet(readFees_);
     }
 }

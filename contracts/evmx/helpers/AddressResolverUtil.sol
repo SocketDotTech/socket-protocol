@@ -18,13 +18,13 @@ abstract contract AddressResolverBase {
     uint256[50] __gap_resolver_util;
 
     /// @notice Error thrown when an invalid address attempts to call the Watcher only function
-    error OnlyWatcherPrecompile();
+    error onlyWatcherAllowed();
 
     /// @notice Restricts function access to the watcher precompile contract
     /// @dev Validates that msg.sender matches the registered watcher precompile address
     modifier onlyWatcher() {
         if (msg.sender != address(addressResolver__.watcherPrecompile__())) {
-            revert OnlyWatcherPrecompile();
+            revert onlyWatcherAllowed();
         }
 
         _;
