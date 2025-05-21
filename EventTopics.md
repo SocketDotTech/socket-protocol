@@ -19,25 +19,6 @@
 | `PlugAdded` | `(appGateway: address, chainSlug: uint32, plug: address)` | `0x2cb8d865028f9abf3dc064724043264907615fadc8615a3699a85edb66472273` |
 | `WatcherPrecompileUpdated` | `(watcherPrecompile_: address)` | `0xb00972c0b5c3d3d9ddc6d6a6db612abeb109653a3424d5d972510fa20bff4972` |
 
-## AddressResolverTest
-
-| Event | Arguments | Topic |
-| ----- | --------- | ----- |
-| `AddressSet` | `(name: bytes32, oldAddress: address, newAddress: address)` | `0x9ef0e8c8e52743bb38b83b17d9429141d494b8041ca6d616a6c77cebae9cd8b7` |
-| `AsyncPromiseDeployed` | `(newAsyncPromise: address, salt: bytes32)` | `0xb6c5491cf83e09749b1a4dd6a9f07b0e925fcb0a915ac8c2b40e8ab28191c270` |
-| `ContractsToGatewaysUpdated` | `(contractAddress_: address, appGateway_: address)` | `0xb870bb0c6b5ea24214ae6c653af6c2a8b6240d5838f82132703ee5c069b14b4c` |
-| `DefaultAuctionManagerUpdated` | `(defaultAuctionManager_: address)` | `0x60f296739208a505ead7fb622df0f76b7791b824481b120a2300bdaf85e3e3d6` |
-| `DeliveryHelperUpdated` | `(deliveryHelper_: address)` | `0xc792471d30bbabcf9dc9fdba5bfa74f8872ff3c28f6e65e122bdb82a71b83c1c` |
-| `FeesManagerUpdated` | `(feesManager_: address)` | `0x94e67aa1341a65767dfde81e62fd265bfbade1f5744bfd3cd73f99a6eca0572a` |
-| `ForwarderDeployed` | `(newForwarder: address, salt: bytes32)` | `0x4dbbecb9cf9c8b93da9743a2b48ea52efe68d69230ab1c1b711891d9d223b29f` |
-| `ImplementationUpdated` | `(contractName: string, newImplementation: address)` | `0xa1e41aa2c2f3f20d9b63ac06b634d2788768d6034f3d9192cdf7d07374bb16f4` |
-| `Initialized` | `(version: uint64)` | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
-| `OwnershipHandoverCanceled` | `(pendingOwner: address)` | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
-| `OwnershipHandoverRequested` | `(pendingOwner: address)` | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
-| `OwnershipTransferred` | `(oldOwner: address, newOwner: address)` | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
-| `PlugAdded` | `(appGateway: address, chainSlug: uint32, plug: address)` | `0x2cb8d865028f9abf3dc064724043264907615fadc8615a3699a85edb66472273` |
-| `WatcherPrecompileUpdated` | `(watcherPrecompile_: address)` | `0xb00972c0b5c3d3d9ddc6d6a6db612abeb109653a3424d5d972510fa20bff4972` |
-
 ## AsyncPromise
 
 | Event | Arguments | Topic |
@@ -51,18 +32,6 @@
 | `Initialized` | `(version: uint64)` | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
 
 ## ForwarderSolana
-
-| Event | Arguments | Topic |
-| ----- | --------- | ----- |
-| `Initialized` | `(version: uint64)` | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
-
-## ForwarderSolanaTest
-
-| Event | Arguments | Topic |
-| ----- | --------- | ----- |
-| `Initialized` | `(version: uint64)` | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
-
-## ForwarderSolanaTest
 
 | Event | Arguments | Topic |
 | ----- | --------- | ----- |
@@ -152,7 +121,6 @@
 
 | Event | Arguments | Topic |
 | ----- | --------- | ----- |
-| `ApiGatewayCreditsLogs` | `(amount: uint256, consumeFrom: address)` | `0x68fc9d5b6a981838d69a5026e320be3bc3f8ccfa5d58f9405abe0b6606ced899` |
 | `CreditsBlocked` | `(requestCount: uint40, consumeFrom: address, amount: uint256)` | `0xf037c15aef41440aa823cf1fdeaea332105d8b23d52557f6670189b5d76f1eed` |
 | `CreditsDeposited` | `(chainSlug: uint32, appGateway: address, token: address, amount: uint256)` | `0x7254d040844de2dac4225a23f81bb54acb13d1eadb6e8b369dd251d36a9e8552` |
 | `CreditsUnblocked` | `(requestCount: uint40, appGateway: address)` | `0x45db29ef2701319155cac058aa2f56ce1f73e0e238161d3db9f8c9a47655210d` |
