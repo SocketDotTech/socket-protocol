@@ -107,15 +107,12 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     }
 
     // TIMEOUT
-    function setTimeout(uint256 delayInSeconds_) public {
-        bytes memory payload = abi.encodeWithSelector(
-            this.resolveTimeout.selector,
-            block.timestamp
-        );
-        watcherPrecompile__().setTimeout(delayInSeconds_, payload);
+    function setTimeout(uint256 delayInSeconds_) public async(bytes("")) {
+        _setTimeout(delayInSeconds_);
+        then(this.resolveTimeout.selector, abi.encode(block.timestamp));
     }
 
-    function resolveTimeout(uint256 creationTimestamp_) external onlyWatcher {
+    function resolveTimeout(uint256 creationTimestamp_) external onlyPromises {
         emit TimeoutResolved(creationTimestamp_, block.timestamp);
     }
 

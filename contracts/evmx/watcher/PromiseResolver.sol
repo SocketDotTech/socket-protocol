@@ -76,7 +76,7 @@ contract PromiseResolver is IPromiseResolver {
         if (payloadParams.deadline > block.timestamp) revert DeadlineNotPassedForOnChainRevert();
 
         // marks the request as cancelled and settles the fees
-        requestHandler__().cancelRequest(payloadParams.requestCount);
+        requestHandler__().cancelRequestFromPromise(payloadParams.requestCount);
 
         // marks the promise as onchain reverting if the request is reverting onchain
         if (isRevertingOnchain_ && payloadParams.asyncPromise != address(0))

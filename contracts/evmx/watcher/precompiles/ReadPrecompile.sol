@@ -40,8 +40,9 @@ contract ReadPrecompile is IPrecompile, WatcherBase {
     function handlePayload(
         address,
         PayloadParams calldata payloadParams
-    ) external pure returns (uint256 fees) {
+    ) external pure returns (uint256 fees, uint256 deadline) {
         fees = readFees;
+        deadline = block.timestamp + expiryTime;
 
         (Transaction memory transaction, uint256 readAtBlockNumber) = abi.decode(
             payloadParams.precompileData,
@@ -49,6 +50,8 @@ contract ReadPrecompile is IPrecompile, WatcherBase {
         );
         emit ReadRequested(transaction, readAtBlockNumber, payloadParams.payloadId);
     }
+
+    function resolvePayload(PayloadParams calldata payloadParams_) external {}
 
     function setFees(uint256 readFees_) external onlyWatcher {
         readFees = readFees_;

@@ -62,7 +62,7 @@ contract Watcher is Trigger {
         uint40 requestCount = requestHandler__.nextRequestCount();
         // Deploy a new async promise contract.
         latestAsyncPromise = asyncDeployer__().deployAsyncPromiseContract(
-            coreAppGateway,
+            appGateway_,
             requestCount
         );
         appGatewayTemp = coreAppGateway;
@@ -122,6 +122,26 @@ contract Watcher is Trigger {
         return requestHandler__().getPayloadParams(payloadId_);
     }
 
+    function callAppGateways(
+        TriggerParams[] memory params_,
+        uint256 nonce_,
+        bytes memory signature_
+    ) external {
+        _validateSignature(abi.encode(params_), nonce_, signature_);
+        for (uint40 i = 0; i < params_.length; i++) {
+            _callAppGateways(params_[i]);
+        }
+    }
+
+    function setTriggerFees(
+        uint256 triggerFees_,
+        uint256 nonce_,
+        bytes memory signature_
+    ) external {
+        _validateSignature(abi.encode(triggerFees_), nonce_, signature_);
+        _setTriggerFees(triggerFees_);
+    }
+
     // all function from watcher requiring signature
     function watcherMultiCall(
         address[] memory contracts,
@@ -131,18 +151,24 @@ contract Watcher is Trigger {
     ) external payable {
         for (uint40 i = 0; i < contracts.length; i++) {
             if (contracts[i] == address(0)) revert InvalidContract();
-            if (data_[i].length == 0) revert InvalidData();
-            if (nonces_[i] == 0) revert InvalidNonce();
-            if (signatures_[i].length == 0) revert InvalidSignature();
-
-            // check if signature is valid
-            if (!_isWatcherSignatureValid(nonces_[i], data_[i], signatures_[i]))
-                revert InvalidSignature();
-
+            _validateSignature(data_[i], nonces_[i], signatures_[i]);
             // call the contract
             (bool success, bytes memory result) = contracts[i].call{value: msg.value}(data_[i]);
             if (!success) revert CallFailed();
         }
+    }
+
+    function _validateSignature(
+        bytes memory data_,
+        uint256 nonce_,
+        bytes memory signature_
+    ) internal {
+        if (data_.length == 0) revert InvalidData();
+        if (nonce_ == 0) revert InvalidNonce();
+        if (signature_.length == 0) revert InvalidSignature();
+
+        // check if signature is valid
+        if (!_isWatcherSignatureValid(nonce_, data_, signature_)) revert InvalidSignature();
     }
 
     /// @notice Verifies that a watcher signature is valid

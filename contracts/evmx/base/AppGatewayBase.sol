@@ -129,26 +129,17 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         _deploy(contractId_, chainSlug_, isPlug_, new bytes(0));
     }
 
-    function _schedule(uint256 delayInSeconds_, bytes memory payload_) internal {
+    /// @notice Schedules a function to be called after a delay
+    /// @param delayInSeconds_ The delay in seconds
+    /// @dev callback function and data is set in .then call
+    function _setTimeout(uint256 delayInSeconds_) internal {
         if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
         overrideParams.callType = SCHEDULE;
         overrideParams.delayInSeconds = delayInSeconds_;
 
-        (address promise_, ) = watcherPrecompile__().queue(
-            QueuePayloadParams({
-                overrideParams: overrideParams,
-                transaction: Transaction({
-                    chainSlug: uint32(0),
-                    target: address(this),
-                    payload: payload_
-                }),
-                asyncPromise: address(0),
-                switchboardType: sbType
-            }),
-            address(this)
-        );
-
-        IPromise(watcher__().latestAsyncPromise()).then(this.onRequestComplete, onCompleteData);
+        QueueParams memory queueParams = new QueueParams();
+        queueParams.overrideParams = overrideParams;
+        (address promise_, ) = watcherPrecompile__().queue(queueParams, address(this));
     }
 
     /// @notice Gets the socket address

@@ -244,13 +244,11 @@ contract RequestHandler is WatcherBase {
             if (!isPromiseExecuted[payloadId]) continue;
 
             PayloadParams storage payloadParams = payloads[payloadId];
-            payloadParams.deadline = block.timestamp + expiryTime;
 
-            uint256 fees = IPrecompile(precompiles[payloadParams.callType]).handlePayload(
-                r.requestFeesDetails.winningBid.transmitter,
-                payloadParams
-            );
+            (uint256 fees, uint256 deadline) = IPrecompile(precompiles[payloadParams.callType])
+                .handlePayload(r.requestFeesDetails.winningBid.transmitter, payloadParams);
             totalFees += fees;
+            payloadParams.deadline = deadline;
         }
 
         address watcherFeesPayer = r.requestFeesDetails.winningBid.transmitter == address(0)
@@ -292,10 +290,12 @@ contract RequestHandler is WatcherBase {
     ) external onlyPromiseResolver isRequestCancelled(requestCount_) {
         RequestParams storage r = requestParams[requestCount_];
 
+        PayloadParams storage payloadParams = payloads[payloadId_];
+        IPrecompile(precompiles[payloadParams.callType]).resolvePayload(payloadParams);
+
         // todo: read the status from promise here
         isPromiseExecuted[payloadId_] = true;
-        r.requestTrackingParams.currentBatchPayloadsLeft--;
-        r.requestTrackingParams.payloadsRemaining--;
+        payloadParams.resolvedAt = block.timestamp;
 
         if (r.requestTrackingParams.currentBatchPayloadsLeft != 0) return;
         if (r.requestTrackingParams.payloadsRemaining == 0) {
@@ -313,12 +313,19 @@ contract RequestHandler is WatcherBase {
     /// @dev It verifies that the caller is the middleware and that the request hasn't been cancelled yet
     function cancelRequest(uint40 requestCount) external {
         RequestParams storage r = requestParams[requestCount];
+        if (r.appGateway != getCoreAppGateway(msg.sender)) revert InvalidCaller();
+        _cancelRequest(requestCount, r);
+    }
+
+    function handleRevert(uint40 requestCount) external onlyPromiseResolver {
+        _cancelRequest(requestCount, requestParams[requestCount]);
+    }
+
+    function _cancelRequest(uint40 requestCount_, RequestParams storage r) internal {
         if (r.requestTrackingParams.isRequestCancelled) revert RequestAlreadyCancelled();
         if (r.requestTrackingParams.isRequestExecuted) revert RequestAlreadySettled();
-        if (r.appGateway != getCoreAppGateway(msg.sender)) revert InvalidCaller();
 
         r.requestTrackingParams.isRequestCancelled = true;
-
         _settleRequest(requestCount, r);
         emit RequestCancelled(requestCount);
     }
