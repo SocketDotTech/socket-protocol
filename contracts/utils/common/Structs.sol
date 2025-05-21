@@ -31,7 +31,7 @@ enum SwitchboardStatus {
 
 /// @notice The state of the async promise
 enum AsyncPromiseState {
-    WAITING_FOR_SET_CALLBACK_SELECTOR,
+    WAITING_FOR_CALLBACK_SELECTOR,
     WAITING_FOR_CALLBACK_EXECUTION,
     CALLBACK_REVERTING,
     ONCHAIN_REVERTING,

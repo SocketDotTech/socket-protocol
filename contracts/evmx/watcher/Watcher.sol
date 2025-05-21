@@ -73,11 +73,11 @@ contract Watcher is Trigger {
         if (latestRequestCount != requestHandler__.nextRequestCount())
             revert RequestCountMismatch();
 
-        address latestAsyncPromise_ = latestAsyncPromise;
+        address promise_ = latestAsyncPromise;
         latestAsyncPromise = address(0);
 
         // as same req count is checked, assuming app gateway will be same else it will revert on batch
-        promise_ = IPromise(latestAsyncPromise_).then(selector_, data_);
+        IPromise(promise_).then(selector_, data_);
     }
 
     function submitRequest(
