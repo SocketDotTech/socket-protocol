@@ -37,43 +37,6 @@
 | `version` | `0x54fd4d50` |
 | `watcherPrecompile__` | `0x1de360c3` |
 
-## AddressResolverTest
-
-| Function | Signature |
-| -------- | --------- |
-| `asyncPromiseBeacon` | `0xc0fbc0ef` |
-| `asyncPromiseCounter` | `0x97cdbf4c` |
-| `asyncPromiseImplementation` | `0x59531b8d` |
-| `cancelOwnershipHandover` | `0x54d1f13d` |
-| `clearPromises` | `0x96e03234` |
-| `completeOwnershipHandover` | `0xf04e283e` |
-| `contractsToGateways` | `0x5bc03a67` |
-| `defaultAuctionManager` | `0x8f27cdc6` |
-| `deliveryHelper` | `0x71eaa36f` |
-| `deployAsyncPromiseContract` | `0x00afbf9d` |
-| `feesManager` | `0x05a9e073` |
-| `forwarderBeacon` | `0x945709ae` |
-| `forwarderImplementation` | `0xe38d60a1` |
-| `getAsyncPromiseAddress` | `0xb6400df5` |
-| `getForwarderAddress` | `0x48c0b3e0` |
-| `getOrDeployForwarderContract` | `0xe8d616a8` |
-| `getPromises` | `0xa01afb0d` |
-| `initialize` | `0xc4d66de8` |
-| `owner` | `0x8da5cb5b` |
-| `ownershipHandoverExpiresAt` | `0xfee81cf4` |
-| `renounceOwnership` | `0x715018a6` |
-| `requestOwnershipHandover` | `0x25692962` |
-| `setAsyncPromiseImplementation` | `0xeb506eab` |
-| `setContractsToGateways` | `0xb08dd08b` |
-| `setDefaultAuctionManager` | `0xede8b4b5` |
-| `setDeliveryHelper` | `0x75523822` |
-| `setFeesManager` | `0x1c89382a` |
-| `setForwarderImplementation` | `0x83b1e974` |
-| `setWatcherPrecompile` | `0x5ca44c9b` |
-| `transferOwnership` | `0xf2fde38b` |
-| `version` | `0x54fd4d50` |
-| `watcherPrecompile__` | `0x1de360c3` |
-
 ## AsyncPromise
 
 | Function | Signature |
@@ -120,50 +83,12 @@
 | `SOLANA_DEVNET_CHAIN_SLUG` | `0xb5eb4957` |
 | `SOLANA_MAINNET_CHAIN_SLUG` | `0xe8826c67` |
 | `addressResolver__` | `0x6a750469` |
-| `callSolana` | `0x5a4ef6fc` |
+| `callSolana` | `0x5beed62d` |
 | `chainSlug` | `0xb349ba65` |
 | `deliveryHelper__` | `0xc031dfb4` |
 | `getChainSlug` | `0x0b8c6568` |
 | `getOnChainAddress` | `0x9da48789` |
 | `initialize` | `0x148841cb` |
-| `latestAsyncPromise` | `0xb8a8ba52` |
-| `latestPromiseCaller` | `0xdfe580a8` |
-| `latestRequestCount` | `0x198b9a47` |
-| `onChainAddress` | `0x8bd0b363` |
-| `watcherPrecompileConfig` | `0x8618a912` |
-| `watcherPrecompileLimits` | `0xa71cd97d` |
-| `watcherPrecompile__` | `0x1de360c3` |
-
-## ForwarderSolanaTest
-
-| Function | Signature |
-| -------- | --------- |
-| `addressResolver__` | `0x6a750469` |
-| `callSolana` | `0x5a4ef6fc` |
-| `chainSlug` | `0xb349ba65` |
-| `deliveryHelper__` | `0xc031dfb4` |
-| `getChainSlug` | `0x0b8c6568` |
-| `getOnChainAddress` | `0x9da48789` |
-| `initialize` | `0xc4d66de8` |
-| `latestAsyncPromise` | `0xb8a8ba52` |
-| `latestPromiseCaller` | `0xdfe580a8` |
-| `latestRequestCount` | `0x198b9a47` |
-| `onChainAddress` | `0x8bd0b363` |
-| `watcherPrecompileConfig` | `0x8618a912` |
-| `watcherPrecompileLimits` | `0xa71cd97d` |
-| `watcherPrecompile__` | `0x1de360c3` |
-
-## ForwarderSolanaTest
-
-| Function | Signature |
-| -------- | --------- |
-| `addressResolver__` | `0x6a750469` |
-| `callSolana` | `0x5a4ef6fc` |
-| `chainSlug` | `0xb349ba65` |
-| `deliveryHelper__` | `0xc031dfb4` |
-| `getChainSlug` | `0x0b8c6568` |
-| `getOnChainAddress` | `0x9da48789` |
-| `initialize` | `0xc4d66de8` |
 | `latestAsyncPromise` | `0xb8a8ba52` |
 | `latestPromiseCaller` | `0xdfe580a8` |
 | `latestRequestCount` | `0x198b9a47` |

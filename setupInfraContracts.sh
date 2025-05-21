@@ -12,4 +12,4 @@ time npx hardhat run hardhat-scripts/misc-scripts/errorCodes.ts --no-compile
 time npx hardhat run hardhat-scripts/misc-scripts/eventTopics.ts --no-compile
 time npx hardhat run hardhat-scripts/misc-scripts/functionSigs.ts --no-compile
 time npx hardhat run hardhat-scripts/verify/verify.ts --no-compile
-yarn lint 
+# yarn lint 

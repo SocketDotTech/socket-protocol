@@ -219,14 +219,14 @@ export const updateConfigEVMx = async () => {
     //---
     const appGatewayAddress = process.env.APP_GATEWAY;
     if (!appGatewayAddress) throw new Error("APP_GATEWAY is not set");
-    const solanaSwitchboard = process.env.SWITCHBOARD_SOLANA;
+    const solanaSwitchboard = (process.env.SWITCHBOARD_SOLANA!).slice(2); // remove 0x prefix for Buffer from conversion
     if (!solanaSwitchboard) throw new Error("SWITCHBOARD_SOLANA is not set");
 
     const solanaSwitchboardBytes32 = Buffer.from(solanaSwitchboard, "hex");
     const solanaAppGatewayId = ethers.utils.hexZeroPad(appGatewayAddress, 32);
 
     console.log("SolanaAppGatewayId: ", solanaAppGatewayId);
-    console.log("SolanaSwitchboardBytes32: ", solanaSwitchboardBytes32);
+    console.log("SolanaSwitchboardBytes32: ", solanaSwitchboardBytes32.toString("hex"));
 
     appConfigs.push({
       plug: "0x" + mockForwarderSolanaOnChainAddress32Bytes.toString("hex"),

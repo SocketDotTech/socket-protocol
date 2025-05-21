@@ -7,12 +7,6 @@
 |-------|-----------|
 | `InvalidAppGateway(address)` | `0x0e66940d` |
 
-## evmx/AddressResolverTest.sol
-
-| Error | Signature |
-|-------|-----------|
-| `InvalidAppGateway(address)` | `0x0e66940d` |
-
 ## evmx/AddressResolverUtil.sol
 
 | Error | Signature |
@@ -36,12 +30,6 @@
 |-------|-----------|
 | `InvalidSolanaChainSlug()` | `0xe37803ab` |
 
-## evmx/ForwarderSolanaTest.sol
-
-| Error | Signature |
-|-------|-----------|
-| `InvalidSolanaChainSlug()` | `0xe37803ab` |
-
 ## evmx/interfaces/IWatcherPrecompile.sol
 
 | Error | Signature |
@@ -51,7 +39,7 @@
 | `InvalidTimeoutRequest()` | `0x600ca372` |
 | `InvalidPayloadId()` | `0xfa0b8c86` |
 | `InvalidCaller()` | `0x48f5c3ed` |
-| `InvalidGateway()` | `0xfc9dfe85` | ---
+| `InvalidGateway()` | `0xfc9dfe85` |
 | `InvalidSwitchboard()` | `0xf63c9e4d` |
 | `RequestAlreadyCancelled()` | `0xc70f47d8` |
 | `RequestCancelled()` | `0xe3cf2258` |
