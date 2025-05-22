@@ -30,6 +30,4 @@ abstract contract FeesManagerStorage is IFeesManager, WatcherBase {
     /// @dev address => signatureNonce => isNonceUsed
     /// @dev used by watchers or other users in signatures
     mapping(address => mapping(uint256 => bool)) public isNonceUsed;
-
-    uint256 public withdrawCounter;
 }
