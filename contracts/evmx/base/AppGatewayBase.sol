@@ -5,7 +5,7 @@ import "../helpers/AddressResolverUtil.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IForwarder.sol";
 
-import {InvalidPromise, FeesNotSet, AsyncModifierNotUsed} from "../../utils/common/Errors.sol";
+import {InvalidPromise, FeesNotSet, AsyncModifierNotSet} from "../../utils/common/Errors.sol";
 import {FAST, READ, WRITE, SCHEDULE} from "../../utils/common/Constants.sol";
 
 /// @title AppGatewayBase
@@ -125,28 +125,53 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /// @notice Deploys a contract
     /// @param contractId_ The contract ID
     /// @param chainSlug_ The chain slug
-    function _deploy(bytes32 contractId_, uint32 chainSlug_, IsPlug isPlug_) internal {
-        _deploy(contractId_, chainSlug_, isPlug_, new bytes(0));
+    function _deploy(
+        bytes32 contractId_,
+        uint32 chainSlug_,
+        IsPlug isPlug_,
+        bytes memory initCallData_
+    ) internal {
+        if (!isAsyncModifierSet) revert AsyncModifierNotSet();
+        deployerGateway__().deploy(
+            contractId_,
+            chainSlug_,
+            overrideParams,
+            creationCodeWithArgs[contractId_],
+            initCallData_
+        );
+        IPromise(watcher__().latestAsyncPromise()).then(
+            this.setAddress.selector,
+            abi.encode(chainSlug_, contractId_)
+        );
+
+        onCompleteData = abi.encode(chainSlug_, true);
+    }
+
+    /// @notice Sets the address for a deployed contract
+    /// @param data_ The data
+    /// @param returnData_ The return data
+    function setAddress(bytes memory data_, bytes memory returnData_) external onlyPromises {
+        (uint32 chainSlug, bytes32 contractId) = abi.decode(data_, (uint32, bytes32));
+        address forwarderContractAddress = addressResolver__.getOrDeployForwarderContract(
+            address(this),
+            abi.decode(returnData_, (address)),
+            chainSlug
+        );
+
+        forwarderAddresses[appGateway][contractId][chainSlug] = forwarderContractAddress;
     }
 
     /// @notice Schedules a function to be called after a delay
     /// @param delayInSeconds_ The delay in seconds
     /// @dev callback function and data is set in .then call
     function _setTimeout(uint256 delayInSeconds_) internal {
-        if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
+        if (!isAsyncModifierSet) revert AsyncModifierNotSet();
         overrideParams.callType = SCHEDULE;
         overrideParams.delayInSeconds = delayInSeconds_;
 
         QueueParams memory queueParams = new QueueParams();
         queueParams.overrideParams = overrideParams;
         (address promise_, ) = watcherPrecompile__().queue(queueParams, address(this));
-    }
-
-    /// @notice Gets the socket address
-    /// @param chainSlug_ The chain slug
-    /// @return socketAddress_ The socket address
-    function getSocketAddress(uint32 chainSlug_) public view returns (address) {
-        return watcherPrecompile__().sockets(chainSlug_);
     }
 
     /// @notice Gets the on-chain address
