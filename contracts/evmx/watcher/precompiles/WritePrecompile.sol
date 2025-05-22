@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 import {InvalidIndex} from "../../../utils/common/Errors.sol";
 import "../../../utils/common/Constants.sol";
 import "../../interfaces/IPrecompile.sol";
+import {encodeAppGatewayId} from "../../../utils/common/IdUtils.sol";
 
 import "../WatcherBase.sol";
 
@@ -105,7 +106,7 @@ contract WritePrecompile is IPrecompile, WatcherBase {
             value,
             transaction.payload,
             transaction.target,
-            WatcherIdUtils.encodeAppGatewayId(payloadParams.appGateway),
+            encodeAppGatewayId(payloadParams.appGateway),
             prevBatchDigestHash,
             bytes("")
         );

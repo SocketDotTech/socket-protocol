@@ -4,8 +4,7 @@ pragma solidity ^0.8.21;
 import "solady/utils/Initializable.sol";
 import "../interfaces/IConfigurations.sol";
 import {AddressResolverUtil} from "../AddressResolverUtil.sol";
-import "./core/WatcherIdUtils.sol";
-
+import {encodeAppGatewayId} from "../../utils/common/IdUtils.sol";
 /// @title Configurations
 /// @notice Configuration contract for the Watcher Precompile system
 /// @dev Handles the mapping between networks, plugs, and app gateways for payload execution

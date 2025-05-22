@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 import {LibCall} from "solady/utils/LibCall.sol";
 import "./SocketUtils.sol";
 import {WRITE} from "../utils/common/Constants.sol";
+import {createPayloadId} from "../utils/common/IdUtils.sol";
 
 /**
  * @title Socket
@@ -86,7 +87,13 @@ contract Socket is SocketUtils {
         if (msg.value < executeParams_.value + transmissionParams_.socketFees)
             revert InsufficientMsgValue();
 
-        bytes32 payloadId = _createPayloadId(plugConfig.switchboard, executeParams_);
+        bytes32 payloadId = createPayloadId(
+            executeParams_.requestCount,
+            executeParams_.batchCount,
+            executeParams_.payloadCount,
+            plugConfig.switchboard,
+            chainSlug
+        );
 
         // validate the execution status
         _validateExecutionStatus(payloadId);

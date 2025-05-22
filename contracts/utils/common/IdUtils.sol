@@ -1,16 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
-// todo: remove watcher id util lib
 function encodeAppGatewayId(address appGateway_) pure returns (bytes32) {
     return bytes32(uint256(uint160(appGateway_)));
 }
 
-function decodeAppGatewayId(bytes32 appGatewayId_) pure returns (address) {
-    return address(uint160(uint256(appGatewayId_)));
-}
-
-// todo: also use in socket
 /// @notice Creates a payload ID from the given parameters
 /// @param requestCount_ The request count
 /// @param batchCount_ The batch count

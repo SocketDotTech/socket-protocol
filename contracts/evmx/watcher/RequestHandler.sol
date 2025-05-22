@@ -5,7 +5,7 @@ import "./WatcherBase.sol";
 import "../../utils/common/Structs.sol";
 import "../../utils/common/Errors.sol";
 import "../../utils/common/Constants.sol";
-
+import "../../utils/common/IdUtils.sol";
 import "../interfaces/IPrecompile.sol";
 
 /// @title RequestHandler
@@ -179,7 +179,7 @@ contract RequestHandler is WatcherBase {
 
             // create payload id
             uint40 payloadCount = payloadCounter++;
-            bytes32 payloadId = WatcherIdUtils.createPayloadId(
+            bytes32 payloadId = createPayloadId(
                 requestCount_,
                 batchCount,
                 payloadCount,
