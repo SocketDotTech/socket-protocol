@@ -106,6 +106,13 @@ struct UserCredits {
     uint256 blockedCredits;
 }
 
+struct WatcherMultiCallParams {
+    address contracts;
+    bytes data_;
+    uint256 nonces_;
+    bytes signatures_;
+}
+
 // digest:
 struct DigestParams {
     address socket;
@@ -155,6 +162,7 @@ struct PayloadParams {
     address appGateway;
     bytes32 payloadId;
     uint256 resolvedAt;
+    uint256 deadline;
     bytes precompileData;
 }
 

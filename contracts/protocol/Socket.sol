@@ -39,10 +39,6 @@ contract Socket is SocketUtils {
      */
     error LowGasLimit();
     /**
-     * @dev Error emitted when the chain slug is invalid
-     */
-    error InvalidSlug();
-    /**
      * @dev Error emitted when the deadline has passed
      */
     error DeadlinePassed();

@@ -6,6 +6,7 @@ import "./AddressResolverUtil.sol";
 import "../interfaces/IAddressResolver.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IForwarder.sol";
+import {QueueParams, OverrideParams, Transaction} from "../../utils/common/Structs.sol";
 import {AsyncModifierNotSet, WatcherNotSet} from "../../utils/common/Errors.sol";
 
 /// @title Forwarder Storage
@@ -49,13 +50,13 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
 
     /// @notice Returns the on-chain address associated with this forwarder.
     /// @return The on-chain address.
-    function getOnChainAddress() external view returns (address) {
+    function getOnChainAddress() external view override returns (address) {
         return onChainAddress;
     }
 
     /// @notice Returns the chain slug on which the contract is deployed.
     /// @return chain slug
-    function getChainSlug() external view returns (uint32) {
+    function getChainSlug() external view override returns (uint32) {
         return chainSlug;
     }
 
@@ -67,16 +68,17 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
         }
 
         // validates if the async modifier is set
-        bool isAsyncModifierSet = IAppGateway(msg.sender).isAsyncModifierSet();
+        address msgSender = msg.sender;
+        bool isAsyncModifierSet = IAppGateway(msgSender).isAsyncModifierSet();
         if (!isAsyncModifierSet) revert AsyncModifierNotSet();
 
         // fetch the override params from app gateway
-        (OverrideParams overrideParams, bytes32 sbType) = IAppGateway(msg.sender)
+        (OverrideParams memory overrideParams, bytes32 sbType) = IAppGateway(msgSender)
             .getOverrideParams();
 
         // Queue the call in the middleware.
         watcher__().queue(
-            QueuePayloadParams({
+            QueueParams({
                 overrideParams: overrideParams,
                 transaction: Transaction({
                     chainSlug: chainSlug,
@@ -86,7 +88,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
                 asyncPromise: address(0),
                 switchboardType: sbType
             }),
-            latestPromiseCaller
+            msgSender
         );
     }
 }

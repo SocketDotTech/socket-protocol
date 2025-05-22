@@ -5,6 +5,7 @@ import "../interfaces/IAddressResolver.sol";
 import "../interfaces/IWatcher.sol";
 import "../interfaces/IFeesManager.sol";
 import "../interfaces/IAsyncDeployer.sol";
+import {OnlyWatcherAllowed} from "../../utils/common/Errors.sol";
 
 /// @title AddressResolverUtil
 /// @notice Utility contract for resolving system contract addresses
@@ -18,14 +19,11 @@ abstract contract AddressResolverUtil {
     // slots 1-50 reserved for future use
     uint256[50] __gap_resolver_util;
 
-    /// @notice Error thrown when an invalid address attempts to call the Watcher only function
-    error onlyWatcherAllowed();
-
     /// @notice Restricts function access to the watcher precompile contract
     /// @dev Validates that msg.sender matches the registered watcher precompile address
     modifier onlyWatcher() {
         if (msg.sender != address(addressResolver__.watcher__())) {
-            revert onlyWatcherAllowed();
+            revert OnlyWatcherAllowed();
         }
 
         _;
@@ -64,5 +62,9 @@ abstract contract AddressResolverUtil {
     /// @dev Should be called in the initialization of inheriting contracts
     function _setAddressResolver(address _addressResolver) internal {
         addressResolver__ = IAddressResolver(_addressResolver);
+    }
+
+    function getCoreAppGateway(address appGateway_) internal view returns (address) {
+        return addressResolver__.watcher__().configurations__().getCoreAppGateway(appGateway_);
     }
 }

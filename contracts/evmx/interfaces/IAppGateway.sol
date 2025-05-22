@@ -21,9 +21,8 @@ interface IAppGateway {
     function onRequestComplete(uint40 requestCount_, bytes calldata onCompleteData_) external;
 
     /// @notice Handles the revert event
-    /// @param requestCount_ The request count
     /// @param payloadId_ The payload id
-    function handleRevert(uint40 requestCount_, bytes32 payloadId_) external;
+    function handleRevert(bytes32 payloadId_) external;
 
     /// @notice initialize the contracts on chain
     /// @param chainSlug_ The chain slug

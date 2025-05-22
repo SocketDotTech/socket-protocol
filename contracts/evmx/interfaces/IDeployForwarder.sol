@@ -27,7 +27,7 @@ interface IDeployForwarder {
     function deploy(
         IsPlug isPlug_,
         uint32 chainSlug_,
-        bytes calldata initCallData_,
-        bytes calldata payload_
+        bytes memory initCallData_,
+        bytes memory payload_
     ) external;
 }

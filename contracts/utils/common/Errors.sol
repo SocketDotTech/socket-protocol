@@ -4,6 +4,8 @@ pragma solidity ^0.8.21;
 error ZeroAddress();
 error InvalidTransmitter();
 error InvalidTokenAddress();
+error InvalidSwitchboard();
+error SocketAlreadyInitialized();
 
 // Socket
 error NotSocket();
@@ -23,6 +25,7 @@ error AsyncModifierNotSet();
 error WatcherNotSet();
 error InvalidTarget();
 error InvalidIndex();
+error InvalidChainSlug();
 error InvalidPayloadSize();
 error InvalidScheduleDelay();
 error InvalidTimeoutRequest();
@@ -40,3 +43,28 @@ error RequestCountMismatch();
 error InvalidAmount();
 error InsufficientCreditsAvailable();
 error InsufficientBalance();
+/// @notice Error thrown when a caller is invalid
+error InvalidCaller();
+
+/// @notice Error thrown when a gateway is invalid
+error InvalidGateway();
+/// @notice Error thrown when a request is already cancelled
+error RequestAlreadyCancelled();
+error RequestCancelled();
+error DeadlineNotPassedForOnChainRevert();
+
+error InvalidBid();
+error MaxReAuctionCountReached();
+error MaxMsgValueLimitExceeded();
+/// @notice Error thrown when an invalid address attempts to call the Watcher only function
+error OnlyWatcherAllowed();
+error InvalidPrecompileData();
+error InvalidCallType();
+error NotRequestHandler();
+error NotInvoker();
+error NotPromiseResolver();
+error RequestPayloadCountLimitExceeded();
+error InsufficientFees();
+error RequestAlreadySettled();
+error NoWriteRequest();
+error AlreadyAssigned();

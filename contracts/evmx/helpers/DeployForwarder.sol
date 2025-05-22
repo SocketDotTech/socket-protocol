@@ -1,19 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {QueueParams, OverrideParams, Transaction} from "../../utils/common/Structs.sol";
+import {IAppGateway} from "../interfaces/IAppGateway.sol";
+import {IContractFactoryPlug} from "../interfaces/IContractFactoryPlug.sol";
+import {IDeployForwarder} from "../interfaces/IDeployForwarder.sol";
 import "./AddressResolverUtil.sol";
+import {AsyncModifierNotSet} from "../../utils/common/Errors.sol";
+import {QueueParams, OverrideParams, Transaction} from "../../utils/common/Structs.sol";
+import {encodeAppGatewayId} from "../../utils/common/IdUtils.sol";
 
 /// @title DeployerGateway
 /// @notice App gateway contract responsible for handling deployment requests
 /// @dev Extends AppGatewayBase to provide deployment queueing functionality
-contract DeployForwarder is AddressResolverUtil {
+contract DeployForwarder is AddressResolverUtil, IDeployForwarder {
     /// @notice The counter for the salt used to generate/deploy the contract address
-    uint256 public saltCounter;
+    uint256 public override saltCounter;
 
-    bytes32 public deployerSwitchboardType;
+    bytes32 public override deployerSwitchboardType;
 
-    mapping(uint32 => address) public contractFactoryPlugs;
+    mapping(uint32 => address) public override contractFactoryPlugs;
 
     /// @notice Deploys a contract
     /// @param chainSlug_ The chain slug
@@ -23,11 +28,12 @@ contract DeployForwarder is AddressResolverUtil {
         bytes memory initCallData_,
         bytes memory payload_
     ) external {
-        bool isAsyncModifierSet = IAppGateway(msg.sender).isAsyncModifierSet();
-        if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
+        address msgSender = msg.sender;
+        bool isAsyncModifierSet = IAppGateway(msgSender).isAsyncModifierSet();
+        if (!isAsyncModifierSet) revert AsyncModifierNotSet();
 
         // fetch the override params from app gateway
-        (OverrideParams overrideParams, bytes32 plugSwitchboardType) = IAppGateway(msg.sender)
+        (OverrideParams memory overrideParams, bytes32 plugSwitchboardType) = IAppGateway(msgSender)
             .getOverrideParams();
 
         QueueParams memory queueParams;
@@ -39,7 +45,7 @@ contract DeployForwarder is AddressResolverUtil {
             payload: _createPayload(
                 isPlug_,
                 plugSwitchboardType,
-                msg.sender,
+                msgSender,
                 chainSlug_,
                 payload_,
                 initCallData_
@@ -65,7 +71,7 @@ contract DeployForwarder is AddressResolverUtil {
             isPlug_,
             salt,
             encodeAppGatewayId(appGateway_),
-            configurations__().switchboards(chainSlug_, plugSwitchboardType_),
+            watcher__().configurations__().switchboards(chainSlug_, plugSwitchboardType_),
             payload_,
             initCallData_
         );
