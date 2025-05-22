@@ -135,16 +135,14 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
             initCallData_,
             creationCodeWithArgs[contractId_]
         );
-        IPromise(watcher__().latestAsyncPromise()).then(
-            this.setAddress.selector,
-            abi.encode(chainSlug_, contractId_)
-        );
+
+        then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
 
         onCompleteData = abi.encode(chainSlug_, true);
     }
 
-    function then(bytes memory data_, bytes memory returnData_) external onlyPromises {
-        // todo
+    function then(bytes4 selector_, bytes memory data_) internal {
+        IPromise(watcher__().latestAsyncPromise()).then(selector_, data_);
     }
 
     /// @notice Sets the address for a deployed contract

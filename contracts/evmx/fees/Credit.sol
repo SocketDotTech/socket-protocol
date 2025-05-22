@@ -4,6 +4,8 @@ pragma solidity ^0.8.21;
 import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 import "solady/utils/ECDSA.sol";
+import "solady/utils/SafeTransferLib.sol";
+
 import "../interfaces/IFeesManager.sol";
 import "../interfaces/IFeesPlug.sol";
 import {AddressResolverUtil} from "../helpers/AddressResolverUtil.sol";
@@ -85,13 +87,13 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         UserCredits storage userCredit = userCredits[depositTo_];
         userCredit.totalCredits += creditAmount_;
 
-        // try catch: if native transfer fails, add to credit
-        payable(depositTo_).transfer(nativeAmount_);
+        // if native transfer fails, add to credit
+        bool success = SafeTransferLib.trySafeTransferETH(depositTo_, nativeAmount_);
+        if (!success) userCredit.totalCredits += nativeAmount_;
 
         emit CreditsDeposited(chainSlug_, depositTo_, token_, creditAmount_);
     }
 
-    // todo: add safe eth transfer
     function wrap(address receiver_) external payable override {
         UserCredits storage userCredit = userCredits[receiver_];
         userCredit.totalCredits += msg.value;
@@ -104,7 +106,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         userCredit.totalCredits -= amount_;
 
         if (address(this).balance < amount_) revert InsufficientBalance();
-        payable(receiver_).transfer(amount_);
+        SafeTransferLib.safeTransferETH(receiver_, amount_);
 
         emit CreditsUnwrapped(receiver_, amount_);
     }

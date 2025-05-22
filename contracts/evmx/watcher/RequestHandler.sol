@@ -6,6 +6,7 @@ import "../../utils/common/Errors.sol";
 import "../../utils/common/Constants.sol";
 import "../../utils/common/IdUtils.sol";
 import "../interfaces/IAppGateway.sol";
+import "../interfaces/IPromise.sol";
 
 /// @title RequestHandler
 /// @notice Contract that handles request processing and management, including request submission, batch processing, and request lifecycle management
@@ -36,9 +37,6 @@ contract RequestHandler is AddressResolverUtil {
 
     /// @notice The metadata for a request
     mapping(uint40 => RequestParams) public requests;
-
-    /// @notice Mapping to store if a promise is executed for each payload ID
-    mapping(bytes32 => bool) public isPromiseExecuted;
 
     event RequestSubmitted(
         bool hasWrite,
@@ -116,7 +114,6 @@ contract RequestHandler is AddressResolverUtil {
     }
 
     // called by auction manager when a auction ends or a new transmitter is assigned (bid expiry)
-    // todo: add AM cases handled here
     function assignTransmitter(
         uint40 requestCount_,
         Bid memory bid_
@@ -126,15 +123,22 @@ contract RequestHandler is AddressResolverUtil {
         if (r.requestTrackingParams.isRequestExecuted) revert RequestAlreadySettled();
 
         if (r.writeCount == 0) revert NoWriteRequest();
+
+        // If same transmitter is reassigned, revert
         if (r.requestFeesDetails.winningBid.transmitter == bid_.transmitter)
             revert AlreadyAssigned();
 
+        // If a transmitter was already assigned previously, unblock the credits
         if (r.requestFeesDetails.winningBid.transmitter != address(0)) {
             feesManager__().unblockCredits(requestCount_);
         }
 
         r.requestFeesDetails.winningBid = bid_;
+
+        // If a transmitter changed to address(0), return after unblocking the credits
         if (bid_.transmitter == address(0)) return;
+
+        // Block the credits for the new transmitter
         feesManager__().blockCredits(requestCount_, r.requestFeesDetails.consumeFrom, bid_.fee);
 
         // re-process current batch again or process the batch for the first time
@@ -246,7 +250,7 @@ contract RequestHandler is AddressResolverUtil {
             bytes32 payloadId = payloadIds[i];
 
             // check needed for re-process, in case a payload is already executed by last transmitter
-            if (!isPromiseExecuted[payloadId]) continue;
+            if (!_isPromiseResolved(payloads[payloadId].asyncPromise)) continue;
             PayloadParams storage payloadParams = payloads[payloadId];
 
             (uint256 fees, uint256 deadline) = IPrecompile(precompiles[payloadParams.callType])
@@ -297,8 +301,6 @@ contract RequestHandler is AddressResolverUtil {
         PayloadParams storage payloadParams = payloads[payloadId_];
         IPrecompile(precompiles[payloadParams.callType]).resolvePayload(payloadParams);
 
-        // todo: read the status from promise here
-        isPromiseExecuted[payloadId_] = true;
         payloadParams.resolvedAt = block.timestamp;
 
         if (r.requestTrackingParams.currentBatchPayloadsLeft != 0) return;
@@ -309,6 +311,10 @@ contract RequestHandler is AddressResolverUtil {
             r.requestTrackingParams.currentBatch++;
             _processBatch(requestCount_, r.requestTrackingParams.currentBatch, r);
         }
+    }
+
+    function _isPromiseResolved(address promise_) internal view returns (bool) {
+        return IPromise(promise_).state() == AsyncPromiseState.RESOLVED;
     }
 
     /// @notice Cancels a request

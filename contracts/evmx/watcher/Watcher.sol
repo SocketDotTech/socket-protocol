@@ -31,8 +31,6 @@ contract Watcher is Trigger {
         return _submitRequest(maxFees, auctionManager, consumeFrom, onCompleteData);
     }
 
-    // todo: delegate call?
-    // todo: check app gateway input auth
     /// @notice Queues a new payload
     /// @param queue_ The call parameters
     function queue(
@@ -101,8 +99,8 @@ contract Watcher is Trigger {
         delete payloadQueue;
     }
 
+    // todo: add this function
     // function callAppGateways(WatcherMultiCallParams[] memory params_) external {
-    //     // todo:
     //     // _validateSignature(params_[i].data_, params_[i].nonces_, params_[i].signatures_);
     //     for (uint40 i = 0; i < params_.length; i++) {
     //         _callAppGateways(params_[i]);
@@ -144,8 +142,10 @@ contract Watcher is Trigger {
             _validateSignature(params_[i].data_, params_[i].nonces_, params_[i].signatures_);
 
             // call the contract
-            // todo: add msg value to its struct params
-            (bool success, ) = params_[i].contracts.call{value: msg.value}(params_[i].data_);
+            // trusting watcher to send enough value for all calls
+            (bool success, ) = params_[i].contracts.call{value: params_[i].value_}(
+                params_[i].data_
+            );
             if (!success) revert CallFailed();
         }
     }

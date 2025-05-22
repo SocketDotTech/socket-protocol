@@ -43,7 +43,6 @@ contract PromiseResolver is IPromiseResolver, WatcherBase {
         }
     }
 
-    // todo: add max copy bytes and update function inputs
     function _processPromiseResolution(
         PromiseReturnData memory resolvedPromise_
     ) internal returns (uint40 requestCount, bool success) {

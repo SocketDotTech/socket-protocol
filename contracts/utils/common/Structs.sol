@@ -109,8 +109,9 @@ struct UserCredits {
 
 struct WatcherMultiCallParams {
     address contracts;
-    bytes data_;
     uint256 nonces_;
+    uint256 value_;
+    bytes data_;
     bytes signatures_;
 }
 
