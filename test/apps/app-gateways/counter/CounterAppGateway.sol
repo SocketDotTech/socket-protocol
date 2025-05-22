@@ -75,7 +75,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         for (uint256 i = 0; i < instances_.length; i++) {
             uint32 chainSlug = IForwarder(instances_[i]).getChainSlug();
             ICounter(instances_[i]).getCounter();
-            IPromise(instances_[i]).then(this.setCounterValues.selector, abi.encode(chainSlug));
+            then(this.setCounterValues.selector, abi.encode(chainSlug));
         }
         _setOverrides(Read.OFF, Parallel.OFF);
     }
@@ -107,15 +107,12 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     }
 
     // TIMEOUT
-    function setTimeout(uint256 delayInSeconds_) public {
-        bytes memory payload = abi.encodeWithSelector(
-            this.resolveTimeout.selector,
-            block.timestamp
-        );
-        watcherPrecompile__().setTimeout(delayInSeconds_, payload);
+    function setTimeout(uint256 delayInSeconds_) public async(bytes("")) {
+        _setTimeout(delayInSeconds_);
+        then(this.resolveTimeout.selector, abi.encode(block.timestamp));
     }
 
-    function resolveTimeout(uint256 creationTimestamp_) external onlyWatcher {
+    function resolveTimeout(uint256 creationTimestamp_) external onlyPromises {
         emit TimeoutResolved(creationTimestamp_, block.timestamp);
     }
 

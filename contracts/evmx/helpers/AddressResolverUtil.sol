@@ -9,7 +9,7 @@ import "../interfaces/IAsyncDeployer.sol";
 /// @title AddressResolverUtil
 /// @notice Utility contract for resolving system contract addresses
 /// @dev Provides access control and address resolution functionality for the system
-abstract contract AddressResolverBase {
+abstract contract AddressResolverUtil {
     /// @notice The address resolver contract reference
     /// @dev Used to look up system contract addresses
     // slot 0

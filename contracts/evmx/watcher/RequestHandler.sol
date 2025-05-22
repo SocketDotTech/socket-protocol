@@ -67,8 +67,7 @@ contract RequestHandler is WatcherBase {
         if (queuePayloadParams.length > REQUEST_PAYLOAD_COUNT_LIMIT)
             revert RequestPayloadCountLimitExceeded();
 
-        address appGateway = _getCoreAppGateway(appGateway_);
-        if (!IFeesManager(feesManager__()).isUserCreditsEnough(consumeFrom_, appGateway, maxFees_))
+        if (!IFeesManager(feesManager__()).isUserCreditsEnough(consumeFrom_, appGateway_, maxFees_))
             revert InsufficientFees();
 
         requestCount = nextRequestCount++;
@@ -88,7 +87,7 @@ contract RequestHandler is WatcherBase {
             }),
             writeCount: 0,
             auctionManager: _getAuctionManager(auctionManager_),
-            appGateway: appGateway,
+            appGateway: appGateway_,
             onCompleteData: onCompleteData_
         });
 
@@ -96,7 +95,7 @@ contract RequestHandler is WatcherBase {
         uint256 totalEstimatedWatcherFees;
         (totalEstimatedWatcherFees, r.writeCount, promiseList, payloadParams) = _createRequest(
             queuePayloadParams_,
-            appGateway,
+            appGateway_,
             requestCount
         );
 
@@ -156,11 +155,6 @@ contract RequestHandler is WatcherBase {
         for (uint256 i = 0; i < queuePayloadParams.length; i++) {
             QueueParams calldata queuePayloadParam = queuePayloadParams_[i];
             bytes4 callType = queuePayloadParam.overrideParams.callType;
-
-            // checks
-            if (getCoreAppGateway(queuePayloadParam.appGateway) != appGateway_)
-                revert InvalidAppGateway();
-
             if (callType == WRITE) writeCount++;
 
             // decide batch count
@@ -250,13 +244,11 @@ contract RequestHandler is WatcherBase {
             if (!isPromiseExecuted[payloadId]) continue;
 
             PayloadParams storage payloadParams = payloads[payloadId];
-            payloadParams.deadline = block.timestamp + expiryTime;
 
-            uint256 fees = IPrecompile(precompiles[payloadParams.callType]).handlePayload(
-                r.requestFeesDetails.winningBid.transmitter,
-                payloadParams
-            );
+            (uint256 fees, uint256 deadline) = IPrecompile(precompiles[payloadParams.callType])
+                .handlePayload(r.requestFeesDetails.winningBid.transmitter, payloadParams);
             totalFees += fees;
+            payloadParams.deadline = deadline;
         }
 
         address watcherFeesPayer = r.requestFeesDetails.winningBid.transmitter == address(0)
@@ -270,35 +262,49 @@ contract RequestHandler is WatcherBase {
     /// @param newMaxFees_ The new maximum fees
     function increaseFees(uint40 requestCount_, uint256 newMaxFees_) external {
         RequestParams storage r = requestParams[requestCount_];
-        address appGateway = _getCoreAppGateway(msg.sender);
+        address appGateway = getCoreAppGateway(msg.sender);
+
+        if (r.requestTrackingParams.isRequestCancelled) revert RequestAlreadyCancelled();
+        if (r.requestTrackingParams.isRequestExecuted) revert RequestAlreadySettled();
 
         if (appGateway != r.appGateway) revert OnlyAppGateway();
-        if (r.requestFeesDetails.winningBid.transmitter != address(0)) revert WinningBidExists();
         if (r.requestFeesDetails.maxFees >= newMaxFees_)
             revert NewMaxFeesLowerThanCurrent(r.requestFeesDetails.maxFees, newMaxFees_);
+        if (
+            !IFeesManager(feesManager__()).isUserCreditsEnough(
+                r.requestFeesDetails.consumeFrom,
+                appGateway,
+                newMaxFees_
+            )
+        ) revert InsufficientFees();
 
         r.requestFeesDetails.maxFees = newMaxFees_;
-        emit FeesIncreased(appGateway, requestCount_, newMaxFees_);
+
+        // indexed by transmitter and watcher to start bidding or re-processing the request
+        emit FeesIncreased(requestCount_, newMaxFees_);
     }
 
-    function markPayloadExecutedAndProcessBatch(
+    function updateRequestAndProcessBatch(
         uint40 requestCount_,
         bytes32 payloadId_
     ) external onlyPromiseResolver isRequestCancelled(requestCount_) {
         RequestParams storage r = requestParams[requestCount_];
 
+        PayloadParams storage payloadParams = payloads[payloadId_];
+        IPrecompile(precompiles[payloadParams.callType]).resolvePayload(payloadParams);
+
+        // todo: read the status from promise here
         isPromiseExecuted[payloadId_] = true;
-        r.requestTrackingParams.currentBatchPayloadsLeft--;
-        r.requestTrackingParams.payloadsRemaining--;
+        payloadParams.resolvedAt = block.timestamp;
 
         if (r.requestTrackingParams.currentBatchPayloadsLeft != 0) return;
         if (r.requestTrackingParams.payloadsRemaining == 0) {
+            r.requestTrackingParams.isRequestExecuted = true;
             _settleRequest(requestCount_, r);
-            return;
+        } else {
+            r.requestTrackingParams.currentBatch++;
+            _processBatch(requestCount_, r.requestTrackingParams.currentBatch, r);
         }
-
-        r.requestTrackingParams.currentBatch++;
-        _processBatch(requestCount_, r.requestTrackingParams.currentBatch_, r);
     }
 
     /// @notice Cancels a request
@@ -307,25 +313,30 @@ contract RequestHandler is WatcherBase {
     /// @dev It verifies that the caller is the middleware and that the request hasn't been cancelled yet
     function cancelRequest(uint40 requestCount) external {
         RequestParams storage r = requestParams[requestCount];
-        if (r.isRequestCancelled) revert RequestAlreadyCancelled();
         if (r.appGateway != getCoreAppGateway(msg.sender)) revert InvalidCaller();
+        _cancelRequest(requestCount, r);
+    }
 
-        r.isRequestCancelled = true;
+    function handleRevert(uint40 requestCount) external onlyPromiseResolver {
+        _cancelRequest(requestCount, requestParams[requestCount]);
+    }
 
+    function _cancelRequest(uint40 requestCount_, RequestParams storage r) internal {
+        if (r.requestTrackingParams.isRequestCancelled) revert RequestAlreadyCancelled();
+        if (r.requestTrackingParams.isRequestExecuted) revert RequestAlreadySettled();
+
+        r.requestTrackingParams.isRequestCancelled = true;
         _settleRequest(requestCount, r);
         emit RequestCancelled(requestCount);
     }
 
     function _settleRequest(uint40 requestCount_, RequestParams storage r) internal {
-        if (r.requestTrackingParams.isRequestExecuted) return;
-        r.requestTrackingParams.isRequestExecuted = true;
-
         feesManager__().unblockAndAssignCredits(
             requestCount_,
             r.requestFeesDetails.winningBid.transmitter
         );
 
-        if (r.appGateway.code.length > 0 && r.onCompleteData.length > 0) {
+        if (r.onCompleteData.length > 0) {
             try
                 IAppGateway(r.appGateway).onRequestComplete(requestCount_, r.onCompleteData)
             {} catch {

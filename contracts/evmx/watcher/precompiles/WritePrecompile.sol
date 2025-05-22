@@ -25,8 +25,6 @@ contract WritePrecompile is IPrecompile, WatcherBase {
     uint256 public writeFees;
 
     error MaxMsgValueLimitExceeded();
-    error InvalidTarget();
-    error InvalidPayloadSize();
 
     /// @notice Emitted when fees are set
     event FeesSet(uint256 writeFees, uint256 callbackFees);
@@ -83,8 +81,9 @@ contract WritePrecompile is IPrecompile, WatcherBase {
     function handlePayload(
         address transmitter_,
         PayloadParams calldata payloadParams
-    ) external pure returns (uint256 fees) {
+    ) external pure returns (uint256 fees, uint256 deadline) {
         fees = writeFees + callbackFees;
+        deadline = block.timestamp + expiryTime;
 
         (
             Transaction transaction,
@@ -189,4 +188,6 @@ contract WritePrecompile is IPrecompile, WatcherBase {
         writeFees = writeFees_;
         emit FeesSet(writeFees_);
     }
+
+    function resolvePayload(PayloadParams calldata payloadParams_) external {}
 }

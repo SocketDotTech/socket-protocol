@@ -60,158 +60,35 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
         QueueParams calldata queuePayloadParams_,
         address appGateway_
     ) external view returns (bytes memory precompileData, uint256 estimatedFees) {
-        if (
-            queuePayloadParams_.transaction.target != address(0) &&
-            appGateway_ != getCoreAppGateway(queuePayloadParams_.transaction.target)
-        ) revert InvalidTarget();
-
-        if (
-            queuePayloadParams_.transaction.payload.length > 0 &&
-            queuePayloadParams_.transaction.payload.length < PAYLOAD_SIZE_LIMIT
-        ) {
-            revert InvalidPayloadSize();
-        }
         if (queuePayloadParams_.overrideParams.delayInSeconds > maxScheduleDelayInSeconds)
             revert InvalidScheduleDelay();
 
-        // todo: how do we store tx data in promise and execute?
-
         // For schedule precompile, encode the payload parameters
-        precompileData = abi.encode(
-            queuePayloadParams_.transaction,
-            queuePayloadParams_.overrideParams.delayInSeconds
-        );
-
+        precompileData = abi.encode(queuePayloadParams_.overrideParams.delayInSeconds);
         estimatedFees =
             scheduleFeesPerSecond *
             queuePayloadParams_.overrideParams.delayInSeconds +
             scheduleCallbackFees;
     }
 
-    // /// @notice Encodes a unique schedule ID
-    // /// @param scheduleIdPrefix The prefix for schedule IDs
-    // /// @param counter The counter value to include in the ID
-    // /// @return scheduleId The encoded schedule ID
-    // function encodeScheduleId(
-    //     uint256 scheduleIdPrefix,
-    //     uint256 counter
-    // ) public pure returns (bytes32 scheduleId) {
-    //     // Encode schedule ID by bit-shifting and combining:
-    //     // EVMx chainSlug (32 bits) | watcher precompile address (160 bits) | counter (64 bits)
-    //     return bytes32(scheduleIdPrefix | counter);
-    // }
+    /// @notice Handles payload processing and returns fees
+    /// @param payloadParams The payload parameters to handle
+    /// @return fees The fees required for processing
+    function handlePayload(
+        address,
+        PayloadParams calldata payloadParams
+    ) external pure returns (uint256 fees, uint256 deadline) {
+        uint256 delayInSeconds = abi.decode(payloadParams.precompileData, (uint256));
+        // expiryTime is very low, to account for infra delay
+        deadline = block.timestamp + delayInSeconds + expiryTime;
 
-    /// @notice Prepares a schedule request
-    /// @param target The target address for the schedule callback
-    /// @param delayInSeconds_ The delay in seconds before the schedule executes
-    /// @param executeAt The timestamp when the schedule should be executed
-    /// @param payload_ The payload data to be executed after the schedule
-    /// @return request The prepared schedule request
-    function prepareScheduleRequest(
-        address target,
-        uint256 delayInSeconds_,
-        uint256 executeAt,
-        bytes memory payload_
-    ) public pure returns (ScheduleRequest memory request) {
-        request.target = target;
-        request.delayInSeconds = delayInSeconds_;
-        request.executeAt = executeAt;
-        request.payload = payload_;
-        request.isResolved = false;
-        request.executedAt = 0;
-        return request;
+        // emits event for watcher to track timeout and resolve when timeout is reached
+        emit ScheduleRequested(payloadParams.payloadId, deadline);
     }
 
-    /// @notice Validates schedule resolution conditions
-    /// @param request The schedule request to validate
-    /// @param currentTimestamp The current block timestamp
-    /// @return isValid Whether the schedule can be resolved
-    function _validateScheduleResolution(
-        ScheduleRequest memory request,
-        uint256 currentTimestamp
-    ) internal pure returns (bool isValid) {
-        if (request.target == address(0)) return false;
-        if (request.isResolved) return false;
-        if (currentTimestamp < request.executeAt) return false;
-        return true;
-    }
+    function resolvePayload(PayloadParams calldata payloadParams_) external {
+        if (block.timestamp < payloadParams_.deadline) revert ResolvingTimeoutTooEarly();
 
-    /// @notice Creates the event data for schedule request
-    /// @param scheduleId The unique identifier for the schedule
-    /// @param target The target address for the schedule callback
-    /// @param payload The payload data to be executed
-    /// @param executeAt The timestamp when the schedule should be executed
-    /// @return The encoded event data for schedule request
-    function createScheduleRequestEventData(
-        bytes32 scheduleId,
-        address target,
-        bytes memory payload,
-        uint256 executeAt
-    ) public pure returns (bytes memory) {
-        return abi.encode(scheduleId, target, payload, executeAt);
-    }
-
-    /// @notice Creates the event data for schedule resolution
-    /// @param scheduleId The unique identifier for the schedule
-    /// @param target The target address for the schedule callback
-    /// @param payload The payload data that was executed
-    /// @param executedAt The timestamp when the schedule was executed
-    /// @param returnData The return data from the schedule execution
-    /// @return The encoded event data for schedule resolution
-    function createScheduleResolvedEventData(
-        bytes32 scheduleId,
-        address target,
-        bytes memory payload,
-        uint256 executedAt,
-        bytes memory returnData
-    ) public pure returns (bytes memory) {
-        return abi.encode(scheduleId, target, payload, executedAt, returnData);
+        emit ScheduleResolved(payloadParams_.payloadId);
     }
 }
-
-// /// @notice Ends the timeouts and calls the target address with the callback payload
-// /// @param timeoutId_ The unique identifier for the timeout
-// function resolveTimeout(
-//     bytes32 timeoutId_,
-// ) external {
-//     TimeoutRequest storage timeoutRequest_ = timeoutRequests[timeoutId_];
-//     if (timeoutRequest_.target == address(0)) revert InvalidTimeoutRequest();
-//     if (timeoutRequest_.isResolved) revert TimeoutAlreadyResolved();
-//     if (block.timestamp < timeoutRequest_.executeAt) revert ResolvingTimeoutTooEarly();
-
-//     (bool success, , bytes memory returnData) = timeoutRequest_.target.tryCall(
-//         0,
-//         gasleft(),
-//         0, // setting max_copy_bytes to 0 as not using returnData right now
-//         timeoutRequest_.payload
-//     );
-//     if (!success) revert CallFailed();
-//     timeoutRequest_.isResolved = true;
-//     timeoutRequest_.executedAt = block.timestamp;
-
-//     emit TimeoutResolved(
-//         timeoutId_,
-//         timeoutRequest_.target,
-//         timeoutRequest_.payload,
-//         block.timestamp,
-//         returnData
-//     );
-// }
-
-// /// @notice Sets a timeout for a payload execution on app gateway
-// /// @return timeoutId The unique identifier for the timeout request
-// function _setTimeout(
-//     uint256 delayInSeconds_,
-//     bytes memory payload_
-// ) internal returns (bytes32 timeoutId) {
-//     uint256 executeAt = block.timestamp + delayInSeconds_;
-//     timeoutId = _encodeTimeoutId();
-
-//     timeoutRequests[timeoutId].target = msg.sender;
-//     timeoutRequests[timeoutId].delayInSeconds = delayInSeconds_;
-//     timeoutRequests[timeoutId].executeAt = executeAt;
-//     timeoutRequests[timeoutId].payload = payload_;
-
-//     // emits event for watcher to track timeout and resolve when timeout is reached
-//     emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);
-// }

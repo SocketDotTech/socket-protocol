@@ -2,20 +2,24 @@
 pragma solidity ^0.8.21;
 
 import "solady/utils/SafeTransferLib.sol";
-import "solady/tokens/ERC20.sol";
 import "../../protocol/base/PlugBase.sol";
 import "../../utils/AccessControl.sol";
 import {RESCUE_ROLE} from "../../utils/common/AccessRoles.sol";
 import {IFeesPlug} from "../interfaces/IFeesPlug.sol";
 import "../../utils/RescueFundsLib.sol";
-import {ETH_ADDRESS} from "../../utils/common/Constants.sol";
-import {InvalidTokenAddress, FeesAlreadyPaid} from "../../utils/common/Errors.sol";
+import {InvalidTokenAddress} from "../../utils/common/Errors.sol";
+
+interface IERC20 {
+    function balanceOf(address account) external view returns (uint256);
+}
 
 /// @title FeesPlug
 /// @notice Contract for managing fees on a network
 /// @dev The amount deposited here is locked and updated in the EVMx for an app gateway
 /// @dev The fees are redeemed by the transmitters executing request or can be withdrawn by the owner
 contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
+    using SafeTransferLib for address;
+
     /// @notice Mapping to store if a token is whitelisted
     mapping(address => bool) public whitelistedTokens;
 
@@ -41,9 +45,10 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
     event TokenRemovedFromWhitelist(address token);
 
     /// @notice Modifier to check if the balance of a token is enough to withdraw
-    modifier isBalanceEnough(address feeToken_, uint256 fee_) {
-        uint balance_ = ERC20(feeToken_).balanceOf(address(this));
-        if (balance_ < fee_) revert InsufficientTokenBalance(feeToken_, balance_, fee_);
+    modifier isBalanceEnough(address feeToken_, uint256 withdrawAmount_) {
+        uint balance = IERC20(feeToken_).balanceOf(address(this));
+        if (balance < withdrawAmount_)
+            revert InsufficientTokenBalance(feeToken_, balance, withdrawAmount_);
         _;
     }
 
@@ -55,19 +60,7 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
         _initializeOwner(owner_);
     }
 
-    /// @notice Withdraws fees
-    /// @param token_ The token address
-    /// @param amount_ The amount
-    /// @param receiver_ The receiver address
-    function withdrawFees(
-        address token_,
-        address receiver_,
-        uint256 amount_
-    ) external override onlySocket isBalanceEnough(token_, amount_) {
-        SafeTransferLib.safeTransfer(token_, receiver_, amount_);
-        emit FeesWithdrawn(token_, receiver_, amount_);
-    }
-
+    /////////////////////// DEPOSIT AND WITHDRAWAL ///////////////////////
     function depositToFee(address token_, address receiver_, uint256 amount_) external override {
         _deposit(token_, receiver_, amount_, 0);
     }
@@ -78,8 +71,7 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
         uint256 amount_
     ) external override {
         uint256 nativeAmount_ = amount_ / 10;
-        uint256 creditAmount_ = amount_ - nativeAmount_;
-        _deposit(token_, receiver_, creditAmount_, nativeAmount_);
+        _deposit(token_, receiver_, amount_ - nativeAmount_, nativeAmount_);
     }
 
     function depositToNative(address token_, address receiver_, uint256 amount_) external override {
@@ -97,11 +89,30 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
         uint256 creditAmount_,
         uint256 nativeAmount_
     ) internal {
-        uint256 totalAmount_ = creditAmount_ + nativeAmount_;
         if (!whitelistedTokens[token_]) revert TokenNotWhitelisted(token_);
-        SafeTransferLib.safeTransferFrom(token_, msg.sender, address(this), totalAmount_);
+        SafeTransferLib.safeTransferFrom(
+            token_,
+            msg.sender,
+            address(this),
+            creditAmount_ + nativeAmount_
+        );
         emit FeesDeposited(token_, receiver_, creditAmount_, nativeAmount_);
     }
+
+    /// @notice Withdraws fees
+    /// @param token_ The token address
+    /// @param amount_ The amount
+    /// @param receiver_ The receiver address
+    function withdrawFees(
+        address token_,
+        address receiver_,
+        uint256 amount_
+    ) external override onlySocket isBalanceEnough(token_, amount_) {
+        SafeTransferLib.safeTransfer(token_, receiver_, amount_);
+        emit FeesWithdrawn(token_, receiver_, amount_);
+    }
+
+    /////////////////////// ADMIN FUNCTIONS ///////////////////////
 
     /// @notice Adds a token to the whitelist
     /// @param token_ The token address to whitelist

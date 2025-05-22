@@ -174,7 +174,7 @@ contract Configurations is IConfigurations, Initializable, AddressResolverUtil {
     ) external view {
         (bytes32 appGatewayId, address switchboard) = getPlugConfigs(chainSlug_, target_);
 
-        if (appGatewayId != WatcherIdUtils.encodeAppGatewayId(appGateway_)) revert InvalidGateway();
+        if (appGatewayId != encodeAppGatewayId(appGateway_)) revert InvalidGateway();
         if (switchboard != switchboards[chainSlug_][switchboardType_]) revert InvalidSwitchboard();
     }
 }
