@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
-import {InvalidCallerTriggered, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed} from "../../utils/common/Errors.sol";
-import {Bid, ResolvedPromises, AppGatewayConfig, WriteFinality, PlugConfig, DigestParams, QueueParams, PayloadParams, RequestParams, WatcherMultiCallParams} from "../../utils/common/Structs.sol";
+import "../../utils/common/Errors.sol";
+import {Bid, AppGatewayConfig, WriteFinality, PlugConfig, DigestParams, QueueParams, PayloadParams, RequestParams, WatcherMultiCallParams} from "../../utils/common/Structs.sol";
 
 import "./IRequestHandler.sol";
 import "./IConfigurations.sol";
 import "./IPromiseResolver.sol";
-import "./IAddressResolver.sol";
 
 /// @title IWatcher
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
@@ -26,12 +25,15 @@ interface IWatcher {
 
     function promiseResolver__() external view returns (IPromiseResolver);
 
-    function addressResolver__() external view returns (IAddressResolver);
-
     /// @notice Returns the request params for a given request count
     /// @param requestCount_ The request count
     /// @return The request params
     function getRequestParams(uint40 requestCount_) external view returns (RequestParams memory);
+
+    /// @notice Returns the request params for a given request count
+    /// @param payloadId_ The payload id
+    /// @return The request params
+    function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory);
 
     /// @notice Returns the current request count
     /// @return The current request count
@@ -42,8 +44,11 @@ interface IWatcher {
     function latestAsyncPromise() external view returns (address);
 
     /// @notice Queues a payload for execution
-    /// @param queuePayloadParams_ The parameters for the payload
-    function queue(QueueParams calldata queuePayloadParams_, address appGateway_) external;
+    /// @param queueParams_ The parameters for the payload
+    function queue(
+        QueueParams calldata queueParams_,
+        address appGateway_
+    ) external returns (address, uint40);
 
     /// @notice Clears the queue of payloads
     function clearQueue() external;
@@ -63,13 +68,12 @@ interface IWatcher {
         bytes calldata onCompleteData
     ) external returns (uint40 requestCount, address[] memory promises);
 
-    /// @notice Assigns a transmitter to a request
-    /// @param requestCount_ The request count
-    /// @param bid_ The bid
-    function assignTransmitter(uint40 requestCount_, Bid memory bid_) external;
-
     /// @notice Returns the precompile fees for a given precompile
     /// @param precompile_ The precompile
+    /// @param precompileData_ The precompile data
     /// @return The precompile fees
-    function getPrecompileFees(bytes4 precompile_) external view returns (uint256);
+    function getPrecompileFees(
+        bytes4 precompile_,
+        bytes memory precompileData_
+    ) external view returns (uint256);
 }

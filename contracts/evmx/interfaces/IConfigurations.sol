@@ -12,7 +12,7 @@ interface IConfigurations {
         uint32 chainSlug_,
         address target_,
         address appGateway_,
-        address switchboard_
+        bytes32 switchboardType_
     ) external view;
 
     /// @notice Maps contract address to their associated app gateway
@@ -34,7 +34,7 @@ interface IConfigurations {
     /// @notice Maps chain slug to their associated socket
     /// @param chainSlug_ The chain slug
     /// @return The socket
-    function socket(uint32 chainSlug_) external view returns (address);
+    function sockets(uint32 chainSlug_) external view returns (address);
 
     /// @notice Returns the socket for a given chain slug
     /// @param chainSlug_ The chain slug
@@ -50,7 +50,8 @@ interface IConfigurations {
 
     function setPlugConfigs(AppGatewayConfig[] calldata configs_) external;
 
-    function setOnChainContracts(uint32 chainSlug_, address socket_) external;
+    /// @notice Sets the socket for a chain slug
+    function setSocket(uint32 chainSlug_, address socket_) external;
 
     /// @notice Sets the core app gateway for the watcher precompile
     function setCoreAppGateway(address appGateway_) external;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {InvalidIndex} from "../../../utils/common/Errors.sol";
+import {InvalidIndex, MaxMsgValueLimitExceeded, InvalidPayloadSize} from "../../../utils/common/Errors.sol";
 import "../../../utils/common/Constants.sol";
 import "../../interfaces/IPrecompile.sol";
 import {encodeAppGatewayId} from "../../../utils/common/IdUtils.sol";
@@ -22,60 +22,82 @@ contract WritePrecompile is IPrecompile, WatcherBase {
     /// @notice The digest hash for a payload
     mapping(bytes32 => bytes32) public digestHashes;
 
-    mapping(address => bool) public isContractFactoryPlug;
+    mapping(uint32 => address) public contractFactoryPlugs;
 
     /// @notice The fees for a write and includes callback fees
     uint256 public writeFees;
-
-    error MaxMsgValueLimitExceeded();
+    uint256 public expiryTime;
 
     /// @notice Emitted when fees are set
-    event FeesSet(uint256 writeFees, uint256 callbackFees);
+    event FeesSet(uint256 writeFees);
     event ChainMaxMsgValueLimitsUpdated(uint32[] chainSlugs, uint256[] maxMsgValueLimits);
     event WriteRequested(bytes32 digest, PayloadParams payloadParams);
-    event Finalized(bytes32 payloadId, bytes proof);
+    /// @notice Emitted when a proof upload request is made
+    event WriteProofRequested(
+        bytes32 digest,
+        Transaction transaction,
+        WriteFinality writeFinality,
+        uint256 gasLimit,
+        uint256 value
+    );
+
+    /// @notice Emitted when a proof is uploaded
+    /// @param payloadId The unique identifier for the request
+    /// @param proof The proof from the watcher
+    event WriteProofUploaded(bytes32 indexed payloadId, bytes proof);
+    event ExpiryTimeSet(uint256 expiryTime);
+
+    constructor(address watcher_, uint256 writeFees_, uint256 expiryTime_) WatcherBase(watcher_) {
+        writeFees = writeFees_;
+        expiryTime = expiryTime_;
+    }
+
+    function getPrecompileFees(bytes memory) external view returns (uint256) {
+        return writeFees;
+    }
 
     /// @notice Gets precompile data and fees for queue parameters
-    /// @param queuePayloadParams_ The queue parameters to process
+    /// @param queueParams_ The queue parameters to process
     /// @return precompileData The encoded precompile data
     /// @return estimatedFees Estimated fees required for processing
     function validateAndGetPrecompileData(
-        QueueParams calldata queuePayloadParams_,
+        QueueParams memory queueParams_,
         address appGateway_
-    ) external view returns (bytes memory precompileData, uint256 estimatedFees) {
+    ) external view override returns (bytes memory precompileData, uint256 estimatedFees) {
         if (
-            queuePayloadParams_.value >
-            chainMaxMsgValueLimit[queuePayloadParams_.transaction.chainSlug]
+            queueParams_.overrideParams.value >
+            chainMaxMsgValueLimit[queueParams_.transaction.chainSlug]
         ) revert MaxMsgValueLimitExceeded();
 
         if (
-            queuePayloadParams_.transaction.payload.length > 0 &&
-            queuePayloadParams_.transaction.payload.length < PAYLOAD_SIZE_LIMIT
+            queueParams_.transaction.payload.length > 0 &&
+            queueParams_.transaction.payload.length < PAYLOAD_SIZE_LIMIT
         ) {
             revert InvalidPayloadSize();
         }
 
-        if (queuePayloadParams_.transaction.target == address(0)) {
-            queuePayloadParams_.transaction.target = contractFactoryPlugs[
-                queuePayloadParams_.transaction.chainSlug
+        if (queueParams_.transaction.target == address(0)) {
+            queueParams_.transaction.target = contractFactoryPlugs[
+                queueParams_.transaction.chainSlug
             ];
             appGateway_ = address(this);
         } else {
             configurations__().verifyConnections(
-                queuePayloadParams_.transaction.chainSlug,
-                queuePayloadParams_.transaction.target,
+                queueParams_.transaction.chainSlug,
+                queueParams_.transaction.target,
                 appGateway_,
-                queuePayloadParams_.switchboardType
+                queueParams_.switchboardType
             );
         }
 
         // For write precompile, encode the payload parameters
         precompileData = abi.encode(
             appGateway_,
-            queuePayloadParams_.transaction,
-            queuePayloadParams_.overrideParams.writeFinality,
-            queuePayloadParams_.overrideParams.gasLimit,
-            queuePayloadParams_.overrideParams.value
+            queueParams_.transaction,
+            queueParams_.overrideParams.writeFinality,
+            queueParams_.overrideParams.gasLimit,
+            queueParams_.overrideParams.value
+            // todo: add sb
         );
 
         estimatedFees = writeFees;
@@ -84,30 +106,30 @@ contract WritePrecompile is IPrecompile, WatcherBase {
     /// @notice Handles payload processing and returns fees
     /// @param payloadParams The payload parameters to handle
     /// @return fees The fees required for processing
-    /// @return precompileData The precompile data
+    /// @return deadline The deadline for the payload
     function handlePayload(
         address transmitter_,
         PayloadParams calldata payloadParams
-    ) external pure returns (uint256 fees, uint256 deadline) {
-        fees = writeFees + callbackFees;
+    ) external onlyWatcher returns (uint256 fees, uint256 deadline) {
+        fees = writeFees;
         deadline = block.timestamp + expiryTime;
 
         (
             address appGateway,
-            Transaction transaction,
+            Transaction memory transaction,
             WriteFinality writeFinality,
             uint256 gasLimit,
             uint256 value
         ) = abi.decode(
                 payloadParams.precompileData,
-                (address, Transaction, bool, uint256, uint256)
+                (address, Transaction, WriteFinality, uint256, uint256)
             );
 
-        bytes32 prevBatchDigestHash = _getPrevBatchDigestHash(payloadParams);
+        bytes32 prevBatchDigestHash = _getPrevBatchDigestHash(payloadParams.batchCount);
 
         // create digest
         DigestParams memory digestParams_ = DigestParams(
-            configManager__().sockets(transaction.chainSlug),
+            configurations__().sockets(transaction.chainSlug),
             transmitter_,
             payloadParams.payloadId,
             payloadParams.deadline,
@@ -200,5 +222,14 @@ contract WritePrecompile is IPrecompile, WatcherBase {
         emit FeesSet(writeFees_);
     }
 
-    function resolvePayload(PayloadParams calldata payloadParams_) external {}
+    /// @notice Sets the expiry time for payload execution
+    /// @param expiryTime_ The expiry time in seconds
+    /// @dev This function sets the expiry time for payload execution
+    /// @dev Only callable by the contract owner
+    function setExpiryTime(uint256 expiryTime_) external onlyWatcher {
+        expiryTime = expiryTime_;
+        emit ExpiryTimeSet(expiryTime_);
+    }
+
+    function resolvePayload(PayloadParams calldata payloadParams_) external override {}
 }

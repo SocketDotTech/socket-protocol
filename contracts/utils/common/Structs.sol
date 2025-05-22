@@ -69,7 +69,8 @@ struct TriggerParams {
     bytes overrides;
     bytes payload;
 }
-struct ResolvedPromises {
+struct PromiseReturnData {
+    bool maxCopyExceeded;
     bytes32 payloadId;
     bytes returnData;
 }

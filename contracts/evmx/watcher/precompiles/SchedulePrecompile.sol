@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 
 import "../../interfaces/IPrecompile.sol";
 import "../../../utils/common/Structs.sol";
-import {InvalidPayloadSize, InvalidScheduleDelay, InvalidTimeoutRequest, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly, CallFailed} from "../../../utils/common/Errors.sol";
+import {InvalidScheduleDelay, ResolvingTimeoutTooEarly} from "../../../utils/common/Errors.sol";
 import "../WatcherBase.sol";
 
 /// @title SchedulePrecompile
@@ -19,6 +19,8 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
     uint256 public scheduleFeesPerSecond;
     /// @notice The callback fees for a schedule
     uint256 public scheduleCallbackFees;
+    /// @notice The expiry time for a schedule
+    uint256 public expiryTime;
 
     /// @notice Emitted when the maximum schedule delay in seconds is set
     event MaxScheduleDelayInSecondsSet(uint256 maxScheduleDelayInSeconds_);
@@ -26,6 +28,30 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
     event ScheduleFeesPerSecondSet(uint256 scheduleFeesPerSecond_);
     /// @notice Emitted when the callback fees for a schedule is set
     event ScheduleCallbackFeesSet(uint256 scheduleCallbackFees_);
+    /// @notice Emitted when the expiry time for a schedule is set
+    event ExpiryTimeSet(uint256 expiryTime_);
+    /// @notice Emitted when a schedule is requested
+    event ScheduleRequested(bytes32 payloadId, uint256 deadline);
+    /// @notice Emitted when a schedule is resolved
+    event ScheduleResolved(bytes32 payloadId);
+
+    constructor(
+        address watcher_,
+        uint256 maxScheduleDelayInSeconds_,
+        uint256 scheduleFeesPerSecond_,
+        uint256 scheduleCallbackFees_,
+        uint256 expiryTime_
+    ) WatcherBase(watcher_) {
+        maxScheduleDelayInSeconds = maxScheduleDelayInSeconds_;
+        scheduleFeesPerSecond = scheduleFeesPerSecond_;
+        scheduleCallbackFees = scheduleCallbackFees_;
+        expiryTime = expiryTime_;
+    }
+
+    function getPrecompileFees(bytes memory precompileData_) external view returns (uint256) {
+        uint256 delayInSeconds = abi.decode(precompileData_, (uint256));
+        return scheduleFeesPerSecond * delayInSeconds + scheduleCallbackFees;
+    }
 
     /// @notice Sets the maximum schedule delay in seconds
     /// @param maxScheduleDelayInSeconds_ The maximum schedule delay in seconds
@@ -57,17 +83,17 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
     /// @notice Validates schedule parameters and return data with fees
     /// @dev assuming that tx is executed on EVMx chain
     function validateAndGetPrecompileData(
-        QueueParams calldata queuePayloadParams_,
-        address appGateway_
+        QueueParams calldata queueParams_,
+        address
     ) external view returns (bytes memory precompileData, uint256 estimatedFees) {
-        if (queuePayloadParams_.overrideParams.delayInSeconds > maxScheduleDelayInSeconds)
+        if (queueParams_.overrideParams.delayInSeconds > maxScheduleDelayInSeconds)
             revert InvalidScheduleDelay();
 
         // For schedule precompile, encode the payload parameters
-        precompileData = abi.encode(queuePayloadParams_.overrideParams.delayInSeconds);
+        precompileData = abi.encode(queueParams_.overrideParams.delayInSeconds);
         estimatedFees =
             scheduleFeesPerSecond *
-            queuePayloadParams_.overrideParams.delayInSeconds +
+            queueParams_.overrideParams.delayInSeconds +
             scheduleCallbackFees;
     }
 
@@ -77,10 +103,11 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
     function handlePayload(
         address,
         PayloadParams calldata payloadParams
-    ) external pure returns (uint256 fees, uint256 deadline) {
+    ) external onlyWatcher returns (uint256 fees, uint256 deadline) {
         uint256 delayInSeconds = abi.decode(payloadParams.precompileData, (uint256));
         // expiryTime is very low, to account for infra delay
         deadline = block.timestamp + delayInSeconds + expiryTime;
+        fees = scheduleFeesPerSecond * delayInSeconds + scheduleCallbackFees;
 
         // emits event for watcher to track timeout and resolve when timeout is reached
         emit ScheduleRequested(payloadParams.payloadId, deadline);
@@ -90,5 +117,14 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
         if (block.timestamp < payloadParams_.deadline) revert ResolvingTimeoutTooEarly();
 
         emit ScheduleResolved(payloadParams_.payloadId);
+    }
+
+    /// @notice Sets the expiry time for payload execution
+    /// @param expiryTime_ The expiry time in seconds
+    /// @dev This function sets the expiry time for payload execution
+    /// @dev Only callable by the contract owner
+    function setExpiryTime(uint256 expiryTime_) external onlyWatcher {
+        expiryTime = expiryTime_;
+        emit ExpiryTimeSet(expiryTime_);
     }
 }

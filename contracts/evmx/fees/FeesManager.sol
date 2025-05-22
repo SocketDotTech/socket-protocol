@@ -25,10 +25,12 @@ abstract contract FeesManager is Credit {
 
     /// @notice Emitted when fees are unblocked and assigned to a transmitter
     /// @param requestCount The batch identifier
+    /// @param consumeFrom The consume from address
     /// @param transmitter The transmitter address
     /// @param amount The unblocked amount
     event CreditsUnblockedAndAssigned(
         uint40 indexed requestCount,
+        address indexed consumeFrom,
         address indexed transmitter,
         uint256 amount
     );
@@ -44,6 +46,11 @@ abstract contract FeesManager is Credit {
         address token,
         address consumeFrom
     );
+
+    modifier onlyRequestHandler() {
+        if (msg.sender != address(watcher__().requestHandler__())) revert NotRequestHandler();
+        _;
+    }
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -76,13 +83,13 @@ abstract contract FeesManager is Credit {
         uint40 requestCount_,
         address consumeFrom_,
         uint256 credits_
-    ) external onlyRequestHandler {
-        if (getAvailableCredits(consumeFrom) < credits_) revert InsufficientCreditsAvailable();
+    ) external override onlyRequestHandler {
+        if (getAvailableCredits(consumeFrom_) < credits_) revert InsufficientCreditsAvailable();
 
-        UserCredits storage userCredit = userCredits[consumeFrom];
+        UserCredits storage userCredit = userCredits[consumeFrom_];
         userCredit.blockedCredits += credits_;
         requestBlockedCredits[requestCount_] = credits_;
-        emit CreditsBlocked(requestCount_, consumeFrom, credits_);
+        emit CreditsBlocked(requestCount_, consumeFrom_, credits_);
     }
 
     /// @notice Unblocks fees after successful execution and assigns them to the transmitter
@@ -109,7 +116,7 @@ abstract contract FeesManager is Credit {
         emit CreditsUnblockedAndAssigned(requestCount_, consumeFrom, assignTo_, blockedCredits);
     }
 
-    function unblockCredits(uint40 requestCount_) external onlyRequestHandler {
+    function unblockCredits(uint40 requestCount_) external override onlyRequestHandler {
         uint256 blockedCredits = requestBlockedCredits[requestCount_];
         if (blockedCredits == 0) return;
 

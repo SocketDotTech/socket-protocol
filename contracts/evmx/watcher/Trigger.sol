@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
+import {LibCall} from "solady/utils/LibCall.sol";
 import "./WatcherStorage.sol";
+import {decodeAppGatewayId} from "../../utils/common/IdUtils.sol";
 
 /// @title Trigger
 /// @notice Contract that handles trigger validation and execution logic
 /// @dev This contract interacts with the WatcherPrecompileStorage for storage access
 abstract contract Trigger is WatcherStorage {
+    using LibCall for address;
+
     /// @notice stores temporary chainSlug of the trigger from a chain
     uint32 public triggerFromChainSlug;
     /// @notice stores temporary plug of the trigger from a chain
@@ -20,10 +24,15 @@ abstract contract Trigger is WatcherStorage {
     /// @dev callId => bool
     mapping(bytes32 => bool) public isAppGatewayCalled;
 
+    event TriggerFeesSet(uint256 triggerFees);
+    event TriggerFailed(bytes32 triggerId);
+    event TriggerSucceeded(bytes32 triggerId);
+
     /// @notice Sets the trigger fees
     /// @param triggerFees_ The amount of fees to set
     function _setTriggerFees(uint256 triggerFees_) internal {
         triggerFees = triggerFees_;
+        emit TriggerFeesSet(triggerFees_);
     }
 
     /// @notice Calls app gateways with the specified parameters
@@ -34,7 +43,8 @@ abstract contract Trigger is WatcherStorage {
     function _callAppGateways(TriggerParams memory params_) internal {
         if (isAppGatewayCalled[params_.triggerId]) revert AppGatewayAlreadyCalled();
 
-        if (!configurations__().isValidPlug(params_.appGatewayId, params_.chainSlug, params_.plug))
+        address appGateway = decodeAppGatewayId(params_.appGatewayId);
+        if (!configurations__.isValidPlug(appGateway, params_.chainSlug, params_.plug))
             revert InvalidCallerTriggered();
 
         feesManager__().transferCredits(appGateway, address(this), triggerFees);

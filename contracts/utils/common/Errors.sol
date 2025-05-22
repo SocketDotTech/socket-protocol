@@ -50,7 +50,6 @@ error InvalidCaller();
 error InvalidGateway();
 /// @notice Error thrown when a request is already cancelled
 error RequestAlreadyCancelled();
-error RequestCancelled();
 error DeadlineNotPassedForOnChainRevert();
 
 error InvalidBid();
@@ -68,3 +67,10 @@ error InsufficientFees();
 error RequestAlreadySettled();
 error NoWriteRequest();
 error AlreadyAssigned();
+
+error OnlyAppGateway();
+error NewMaxFeesLowerThanCurrent(uint256 currentMaxFees, uint256 newMaxFees);
+error InvalidContract();
+error InvalidData();
+error InvalidNonce();
+error InvalidSignature();

@@ -30,20 +30,6 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
     /// @notice Error thrown when token is not whitelisted
     error TokenNotWhitelisted(address token_);
 
-    /// @notice Event emitted when fees are deposited
-    event FeesDeposited(
-        address token,
-        address receiver,
-        uint256 creditAmount,
-        uint256 nativeAmount
-    );
-    /// @notice Event emitted when fees are withdrawn
-    event FeesWithdrawn(address token, address receiver, uint256 amount);
-    /// @notice Event emitted when a token is whitelisted
-    event TokenWhitelisted(address token);
-    /// @notice Event emitted when a token is removed from whitelist
-    event TokenRemovedFromWhitelist(address token);
-
     /// @notice Constructor for the FeesPlug contract
     /// @param socket_ The socket address
     /// @param owner_ The owner address

@@ -129,7 +129,8 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
                     transmitter,
                     winningBids[requestCount_].transmitter == address(0)
                         ? address(this)
-                        : winningBids[requestCount_].transmitter
+                        : winningBids[requestCount_].transmitter,
+                    auctionEndDelaySeconds
                 ),
                 address(this),
                 abi.encodeWithSelector(this.endAuction.selector, requestCount_)
@@ -168,13 +169,13 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
             // useful in case a transmitter did bid but did not execute payloads
             _createRequest(
                 bidTimeout,
-                deductScheduleFees(winningBid.transmitter, address(this)),
+                deductScheduleFees(winningBid.transmitter, address(this), bidTimeout),
                 winningBid.transmitter,
                 abi.encodeWithSelector(this.expireBid.selector, requestCount_)
             );
 
             // start the request processing, it will queue the request
-            watcher__().assignTransmitter(requestCount_, winningBid);
+            watcher__().requestHandler__().assignTransmitter(requestCount_, winningBid);
         }
 
         emit AuctionEnded(requestCount_, winningBid);
@@ -198,7 +199,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         auctionStatus[requestCount_] = AuctionStatus.RESTARTED;
         reAuctionCount[requestCount_]++;
 
-        watcher__().assignTransmitter(
+        watcher__().requestHandler__().assignTransmitter(
             requestCount_,
             Bid({fee: 0, transmitter: address(0), extraData: ""})
         );
@@ -240,8 +241,12 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         return requestParams.requestFeesDetails.maxFees;
     }
 
-    function deductScheduleFees(address from_, address to_) internal returns (uint256 watcherFees) {
-        watcherFees = watcher__().getPrecompileFees(SCHEDULE);
+    function deductScheduleFees(
+        address from_,
+        address to_,
+        uint256 delayInSeconds_
+    ) internal returns (uint256 watcherFees) {
+        watcherFees = watcher__().getPrecompileFees(SCHEDULE, abi.encode(delayInSeconds_));
         feesManager__().transferCredits(from_, to_, watcherFees);
     }
 

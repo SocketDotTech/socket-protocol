@@ -6,15 +6,16 @@ import "solady/utils/Initializable.sol";
 import "solady/utils/ECDSA.sol";
 import "../interfaces/IFeesManager.sol";
 import "../interfaces/IFeesPlug.sol";
-import "../watcher/WatcherBase.sol";
 import {AddressResolverUtil} from "../helpers/AddressResolverUtil.sol";
-import {NonceUsed, InvalidAmount, InsufficientCreditsAvailable, InsufficientBalance} from "../../utils/common/Errors.sol";
-import {WriteFinality, UserCredits, AppGatewayApprovals, OverrideParams} from "../../utils/common/Structs.sol";
+import {NonceUsed, InvalidAmount, InsufficientCreditsAvailable, InsufficientBalance, InvalidChainSlug, NotRequestHandler} from "../../utils/common/Errors.sol";
 import {WRITE} from "../../utils/common/Constants.sol";
 
-abstract contract FeesManagerStorage is IFeesManager, WatcherBase {
+abstract contract FeesManagerStorage is IFeesManager {
     /// @notice evmx slug
     uint32 public evmxSlug;
+
+    /// @notice switchboard type
+    bytes32 public sbType;
 
     /// @notice user credits => stores fees for user, app gateway, transmitters and watcher precompile
     mapping(address => UserCredits) public userCredits;
@@ -35,6 +36,10 @@ abstract contract FeesManagerStorage is IFeesManager, WatcherBase {
     /// @dev address => signatureNonce => isNonceUsed
     /// @dev used by watchers or other users in signatures
     mapping(address => mapping(uint256 => bool)) public isNonceUsed;
+
+    /// @notice Mapping to track fees plug for each chain slug
+    /// @dev chainSlug => fees plug address
+    mapping(uint32 => address) public feesPlugs;
 }
 
 /// @title UserUtils
@@ -73,19 +78,21 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         address token_,
         uint256 nativeAmount_,
         uint256 creditAmount_
-    ) external payable onlyWatcher {
+    ) external payable override onlyWatcher {
         if (creditAmount_ + nativeAmount_ != msg.value) revert InvalidAmount();
         tokenOnChainBalances[chainSlug_][token_] += nativeAmount_ + creditAmount_;
 
         UserCredits storage userCredit = userCredits[depositTo_];
         userCredit.totalCredits += creditAmount_;
+
+        // try catch: if native transfer fails, add to credit
         payable(depositTo_).transfer(nativeAmount_);
 
         emit CreditsDeposited(chainSlug_, depositTo_, token_, creditAmount_);
     }
 
     // todo: add safe eth transfer
-    function wrap(address receiver_) external payable {
+    function wrap(address receiver_) external payable override {
         UserCredits storage userCredit = userCredits[receiver_];
         userCredit.totalCredits += msg.value;
         emit CreditsWrapped(receiver_, msg.value);
@@ -105,7 +112,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
     /// @notice Returns available (unblocked) credits for a gateway
     /// @param consumeFrom_ The app gateway address
     /// @return The available credit amount
-    function getAvailableCredits(address consumeFrom_) public view returns (uint256) {
+    function getAvailableCredits(address consumeFrom_) public view override returns (uint256) {
         UserCredits memory userCredit = userCredits[consumeFrom_];
         return userCredit.totalCredits - userCredit.blockedCredits;
     }
@@ -119,7 +126,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         address consumeFrom_,
         address spender_,
         uint256 amount_
-    ) public view returns (bool) {
+    ) public view override returns (bool) {
         // If consumeFrom_ is not same as spender_ or spender_ is not watcher, check if it is approved
         if (spender_ != address(watcher__()) && consumeFrom_ != spender_) {
             if (!isApproved[consumeFrom_][spender_]) return false;
@@ -128,7 +135,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         return getAvailableCredits(consumeFrom_) >= amount_;
     }
 
-    function transferCredits(address from_, address to_, uint256 amount_) external {
+    function transferCredits(address from_, address to_, uint256 amount_) external override {
         if (!isCreditSpendable(from_, msg.sender, amount_)) revert InsufficientCreditsAvailable();
         userCredits[from_].totalCredits -= amount_;
         userCredits[to_].totalCredits += amount_;
@@ -138,7 +145,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
 
     /// @notice Approves multiple app gateways for the caller
     /// @param params_ Array of app gateway addresses to approve
-    function approveAppGateways(AppGatewayApprovals[] calldata params_) external {
+    function approveAppGateways(AppGatewayApprovals[] calldata params_) external override {
         for (uint256 i = 0; i < params_.length; i++) {
             isApproved[msg.sender][params_[i].appGateway] = params_[i].approval;
         }
@@ -157,7 +164,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         bytes memory signature_;
         (spender, approval, nonce, signature_) = abi.decode(
             feeApprovalData_,
-            (address, address, bool, uint256, bytes)
+            (address, bool, uint256, bytes)
         );
         bytes32 digest = keccak256(abi.encode(address(this), evmxSlug, spender, nonce, approval));
         consumeFrom = _recoverSigner(digest, signature_);
@@ -182,8 +189,8 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         uint256 credits_,
         uint256 maxFees_,
         address receiver_
-    ) public {
-        address consumeFrom = _getCoreAppGateway(msg.sender);
+    ) public override {
+        address consumeFrom = getCoreAppGateway(msg.sender);
 
         // Check if amount is available in fees plug
         uint256 availableCredits = getAvailableCredits(consumeFrom);
@@ -225,7 +232,8 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
     }
 
     function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (address) {
-        return configuration__().feesPlug(chainSlug_);
+        if (feesPlugs[chainSlug_] == address(0)) revert InvalidChainSlug();
+        return feesPlugs[chainSlug_];
     }
 
     function _getRequestParams(uint40 requestCount_) internal view returns (RequestParams memory) {
