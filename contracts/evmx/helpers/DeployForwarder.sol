@@ -14,43 +14,43 @@ contract DeployForwarder is AddressResolverUtil {
     /// @notice Deploys a contract
     /// @param chainSlug_ The chain slug
     function deploy(
-        address sbType_,
+        IsPlug isPlug_,
         uint32 chainSlug_,
-        OverrideParams memory overrideParams_,
         bytes memory initCallData_,
         bytes memory payload_
     ) external {
+        bool isAsyncModifierSet = IAppGateway(msg.sender).isAsyncModifierSet();
+        if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
+
+        // fetch the override params from app gateway
+        (OverrideParams overrideParams, bytes32 sbType) = IAppGateway(msg.sender)
+            .getOverrideParams();
+
         QueueParams memory queueParams;
-        queueParams.overrideParams = overrideParams_;
-        queueParams.switchboardType = sbType_;
+        queueParams.overrideParams = overrideParams;
+        queueParams.switchboardType = sbType;
         queueParams.transaction = Transaction({
             chainSlug: chainSlug_,
             target: configurations__.contractFactoryPlug(chainSlug_),
-            payload: _createPayload(
-                msg.sender,
-                chainSlug_,
-                payload_,
-                initCallData_,
-                overrideParams_
-            )
+            payload: _createPayload(isPlug_, msg.sender, chainSlug_, payload_, initCallData_)
         });
 
         watcher__().queue(queueParams, msg.sender);
     }
 
     function _createPayload(
+        IsPlug isPlug_,
         address appGateway_,
         uint32 chainSlug_,
         bytes memory payload_,
-        bytes memory initCallData_,
-        OverrideParams memory overrideParams_
+        bytes memory initCallData_
     ) internal returns (bytes memory payload) {
         bytes32 salt = keccak256(abi.encode(appGateway_, chainSlug_, saltCounter++));
 
         // app gateway is set in the plug deployed on chain
         payload = abi.encodeWithSelector(
             IContractFactoryPlug.deployContract.selector,
-            overrideParams_.isPlug,
+            isPlug_,
             salt,
             bytes32(uint256(uint160(appGateway_))),
             switchboardType_,

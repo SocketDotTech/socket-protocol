@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../../../utils/common/Errors.sol";
+import {InvalidIndex} from "../../../utils/common/Errors.sol";
 import "../../../utils/common/Constants.sol";
 import "../../interfaces/IPrecompile.sol";
 

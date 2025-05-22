@@ -50,19 +50,6 @@ struct AppGatewayWhitelistParams {
 }
 
 //// STRUCTS ////
-// plug:
-struct LimitParams {
-    uint256 lastUpdateTimestamp;
-    uint256 ratePerSecond;
-    uint256 maxLimit;
-    uint256 lastUpdateLimit;
-}
-struct UpdateLimitParams {
-    bytes32 limitType;
-    address appGateway;
-    uint256 maxLimit;
-    uint256 ratePerSecond;
-}
 
 struct AppGatewayConfig {
     PlugConfig plugConfig;
@@ -115,12 +102,6 @@ struct TransmissionParams {
     bytes transmitterSignature;
 }
 
-struct OnChainFees {
-    uint32 chainSlug;
-    address token;
-    uint256 amount;
-}
-
 struct UserCredits {
     uint256 totalCredits;
     uint256 blockedCredits;
@@ -159,11 +140,6 @@ struct Transaction {
     bytes payload;
 }
 
-struct DeployParam {
-    IsPlug isPlug;
-    bytes initCallData;
-}
-
 struct QueueParams {
     OverrideParams overrideParams;
     Transaction transaction;
@@ -176,43 +152,33 @@ struct PayloadParams {
     uint40 batchCount;
     uint40 payloadCount;
     bytes4 callType;
-    address asyncPromise; // todo: multiple promise support?
+    address asyncPromise;
     address appGateway;
     bytes32 payloadId;
-    uint256 resolvedAt; // replaced isPromiseExecuted
+    uint256 resolvedAt;
     bytes precompileData;
-
-    // uint256 deadline;
-    // OverrideParams overrideParams;
-    // TimeoutRequest timeoutRequest;
 }
-// timeout:
-// struct TimeoutRequest {
-//     uint256 delayInSeconds;
-//     uint256 executeAt;
-//     bool isResolved;
-// }
 
 // request
 struct RequestTrackingParams {
     bool isRequestCancelled;
-    bool isRequestExecuted; //
-    uint40 currentBatch; //
-    uint256 currentBatchPayloadsLeft; //
-    uint256 payloadsRemaining; //
+    bool isRequestExecuted;
+    uint40 currentBatch;
+    uint256 currentBatchPayloadsLeft;
+    uint256 payloadsRemaining;
 }
 
 struct RequestFeesDetails {
-    uint256 maxFees; //
-    address consumeFrom; //
-    Bid winningBid; //
+    uint256 maxFees;
+    address consumeFrom;
+    Bid winningBid;
 }
 
 struct RequestParams {
     RequestTrackingParams requestTrackingParams;
     RequestFeesDetails requestFeesDetails;
-    address appGateway; //
-    address auctionManager; //
-    uint256 writeCount; //
-    bytes onCompleteData; //
+    address appGateway;
+    address auctionManager;
+    uint256 writeCount;
+    bytes onCompleteData;
 }

@@ -5,7 +5,7 @@ import "../helpers/AddressResolverUtil.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IForwarder.sol";
 
-import {InvalidPromise, FeesNotSet, AsyncModifierNotSet} from "../../utils/common/Errors.sol";
+import {InvalidPromise, AsyncModifierNotSet} from "../../utils/common/Errors.sol";
 import {FAST, READ, WRITE, SCHEDULE} from "../../utils/common/Constants.sol";
 
 /// @title AppGatewayBase
@@ -131,13 +131,11 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         IsPlug isPlug_,
         bytes memory initCallData_
     ) internal {
-        if (!isAsyncModifierSet) revert AsyncModifierNotSet();
         deployerGateway__().deploy(
-            contractId_,
+            isPlug_,
             chainSlug_,
-            overrideParams,
-            creationCodeWithArgs[contractId_],
-            initCallData_
+            initCallData_,
+            creationCodeWithArgs[contractId_]
         );
         IPromise(watcher__().latestAsyncPromise()).then(
             this.setAddress.selector,

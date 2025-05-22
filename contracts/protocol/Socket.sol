@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 
 import {LibCall} from "solady/utils/LibCall.sol";
 import "./SocketUtils.sol";
-import {WRITE} from "../../utils/common/Constants.sol";
+import {WRITE} from "../utils/common/Constants.sol";
 
 /**
  * @title Socket
@@ -52,7 +52,7 @@ contract Socket is SocketUtils {
     /**
      * @dev Error emitted when the call type is read
      */
-    error ReadOnlyCall();
+    error InvalidCallType();
 
     /**
      * @notice Constructor for the Socket contract

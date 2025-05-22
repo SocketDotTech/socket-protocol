@@ -6,7 +6,7 @@ import "solady/utils/Initializable.sol";
 import "solady/utils/ECDSA.sol";
 import "../interfaces/IFeesManager.sol";
 import {AddressResolverUtil} from "../AddressResolverUtil.sol";
-import {NotAuctionManager, InvalidWatcherSignature, NonceUsed} from "../../utils/common/Errors.sol";
+import {NonceUsed} from "../../utils/common/Errors.sol";
 import {Bid, Parallel, WriteFinality, QueuePayloadParams, IsPlug, PayloadSubmitParams, RequestMetadata, UserCredits} from "../../utils/common/Structs.sol";
 import "../watcher/WatcherBase.sol";
 

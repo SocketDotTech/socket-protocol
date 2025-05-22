@@ -5,7 +5,7 @@ import {ECDSA} from "solady/utils/ECDSA.sol";
 import "solady/utils/Initializable.sol";
 import "../interfaces/IAuctionManager.sol";
 import "../../utils/AccessControl.sol";
-import {AuctionClosed, AuctionAlreadyStarted, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter} from "../../utils/common/Errors.sol";
+import {AuctionClosed, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter} from "../../utils/common/Errors.sol";
 import {TRANSMITTER_ROLE} from "../../utils/common/AccessRoles.sol";
 import {AppGatewayBase} from "../base/AppGatewayBase.sol";
 
