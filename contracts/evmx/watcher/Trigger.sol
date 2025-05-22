@@ -37,7 +37,7 @@ abstract contract Trigger is WatcherStorage {
         if (!configurations__().isValidPlug(params_.appGatewayId, params_.chainSlug, params_.plug))
             revert InvalidCallerTriggered();
 
-        feesManager__().transferFrom(appGateway, address(this), triggerFees);
+        feesManager__().transferCredits(appGateway, address(this), triggerFees);
 
         triggerFromChainSlug = params_.chainSlug;
         triggerFromPlug = params_.plug;

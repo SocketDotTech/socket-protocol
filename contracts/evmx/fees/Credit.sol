@@ -5,7 +5,7 @@ import "./FeesStorage.sol";
 
 /// @title UserUtils
 /// @notice Contract for managing user utils
-abstract contract UserUtils is FeesStorage, Initializable, Ownable, AddressResolverUtil {
+abstract contract Credit is FeesStorage, Initializable, Ownable, AddressResolverUtil {
     /// @notice Emitted when fees deposited are updated
     /// @param chainSlug The chain identifier
     /// @param appGateway The app gateway address
@@ -47,31 +47,10 @@ abstract contract UserUtils is FeesStorage, Initializable, Ownable, AddressResol
         emit CreditsDeposited(chainSlug_, depositTo_, token_, creditAmount_);
     }
 
-    /// @notice Adds the fees deposited for an app gateway on a chain
-    /// @param depositTo_ The app gateway address
-    // @dev only callable by watcher precompile
-    // @dev will need tokenAmount_ and creditAmount_ when introduce tokens except stables
-    function depositCredits(
-        address depositTo_,
-        uint32 chainSlug_,
-        address token_,
-        uint256 nativeAmount_,
-        uint256 creditAmount_
-    ) external payable onlyWatcher {
-        if (creditAmount_ + nativeAmount_ != msg.value) revert InvalidAmount();
-
-        UserCredits storage userCredit = userCredits[depositTo_];
-        userCredit.totalCredits += creditAmount_;
-        tokenPoolBalances[chainSlug_][token_] += creditAmount_;
-        payable(depositTo_).transfer(nativeAmount_);
-
-        emit CreditsDeposited(chainSlug_, depositTo_, token_, creditAmount_);
-    }
-
-    function wrap() external payable {
-        UserCredits storage userCredit = userCredits[msg.sender];
+    function wrap(address receiver_) external payable {
+        UserCredits storage userCredit = userCredits[receiver_];
         userCredit.totalCredits += msg.value;
-        emit CreditsWrapped(msg.sender, msg.value);
+        emit CreditsWrapped(receiver_, msg.value);
     }
 
     function unwrap(uint256 amount_) external {
@@ -79,7 +58,6 @@ abstract contract UserUtils is FeesStorage, Initializable, Ownable, AddressResol
         if (userCredit.totalCredits < amount_) revert InsufficientCreditsAvailable();
         userCredit.totalCredits -= amount_;
 
-        // todo-later: if contract balance not enough, take from our pool?
         if (address(this).balance < amount_) revert InsufficientBalance();
         payable(msg.sender).transfer(amount_);
 
@@ -114,18 +92,8 @@ abstract contract UserUtils is FeesStorage, Initializable, Ownable, AddressResol
         return getAvailableCredits(from_) >= amount_;
     }
 
-    function _updateUserCredits(
-        address consumeFrom_,
-        uint256 toConsumeFromBlocked_,
-        uint256 toConsumeFromTotal_
-    ) internal {
-        UserCredits storage userCredit = userCredits[consumeFrom_];
-        userCredit.blockedCredits -= toConsumeFromBlocked_;
-        userCredit.totalCredits -= toConsumeFromTotal_;
-    }
-
     function transferCredits(address from_, address to_, uint256 amount_) external {
-        if (!isUserCreditsEnough(from_, to_, amount_)) revert InsufficientCreditsAvailable();
+        if (!isUserCreditsEnough(from_, msg.sender, amount_)) revert InsufficientCreditsAvailable();
         userCredits[from_].totalCredits -= amount_;
         userCredits[to_].totalCredits += amount_;
 
@@ -149,59 +117,59 @@ abstract contract UserUtils is FeesStorage, Initializable, Ownable, AddressResol
     function _processFeeApprovalData(
         bytes memory feeApprovalData_
     ) internal returns (address, address, bool) {
-        (address consumeFrom, address appGateway, bool isApproved, bytes memory signature_) = abi
-            .decode(feeApprovalData_, (address, address, bool, bytes));
+        (
+            address consumeFrom,
+            address appGateway,
+            bool isApproved,
+            uint256 nonce,
+            bytes memory signature_
+        ) = abi.decode(feeApprovalData_, (address, address, bool, uint256, bytes));
 
+        if (isNonceUsed[consumeFrom][nonce]) revert NonceUsed();
+        // todo: check
         if (signature_.length == 0) {
             // If no signature, consumeFrom is appGateway
             return (appGateway, appGateway, isApproved);
         }
+
         bytes32 digest = keccak256(
-            abi.encode(
-                address(this),
-                evmxSlug,
-                consumeFrom,
-                appGateway,
-                userNonce[consumeFrom],
-                isApproved
-            )
+            abi.encode(address(this), evmxSlug, consumeFrom, appGateway, nonce, isApproved)
         );
         if (_recoverSigner(digest, signature_) != consumeFrom) revert InvalidUserSignature();
         isAppGatewayWhitelisted[consumeFrom][appGateway] = isApproved;
-        userNonce[consumeFrom]++;
+        isNonceUsed[consumeFrom][nonce] = true;
 
         return (consumeFrom, appGateway, isApproved);
     }
 
     /// @notice Withdraws funds to a specified receiver
     /// @dev This function is used to withdraw fees from the fees plug
-    /// @param originAppGatewayOrUser_ The address of the app gateway
+    /// @dev assumed that transmitter can bid for their request on AM
     /// @param chainSlug_ The chain identifier
     /// @param token_ The address of the token
     /// @param amount_ The amount of tokens to withdraw
+    /// @param maxFees_ The fees needed for the request
     /// @param receiver_ The address of the receiver
     function withdrawCredits(
-        address originAppGatewayOrUser_,
         uint32 chainSlug_,
         address token_,
         uint256 amount_,
         uint256 maxFees_,
         address receiver_
     ) public {
-        if (msg.sender != address(deliveryHelper__())) originAppGatewayOrUser_ = msg.sender;
-        address source = _getCoreAppGateway(originAppGatewayOrUser_);
+        address consumeFrom = _getCoreAppGateway(msg.sender);
 
         // Check if amount is available in fees plug
-        uint256 availableAmount = getAvailableCredits(source);
+        uint256 availableAmount = getAvailableCredits(consumeFrom);
         if (availableAmount < amount_) revert InsufficientCreditsAvailable();
 
-        _useAvailableUserCredits(source, amount_);
+        userCredits[consumeFrom].totalCredits -= amount_;
         tokenPoolBalances[chainSlug_][token_] -= amount_;
 
         // Add it to the queue and submit request
         _createRequest(
             chainSlug_,
-            msg.sender,
+            consumeFrom,
             maxFees_,
             abi.encodeCall(IFeesPlug.withdrawFees, (token_, receiver_, amount_))
         );
@@ -213,25 +181,19 @@ abstract contract UserUtils is FeesStorage, Initializable, Ownable, AddressResol
         uint256 maxFees_,
         bytes memory payload_
     ) internal {
-        QueueParams memory queueParams = QueueParams({
-            overrideParams: OverrideParams({
-                isPlug: IsPlug.NO,
-                callType: WRITE,
-                isParallelCall: Parallel.OFF,
-                gasLimit: 10000000,
-                value: 0,
-                readAtBlockNumber: 0,
-                writeFinality: WriteFinality.LOW,
-                delayInSeconds: 0
-            }),
-            transaction: Transaction({
-                chainSlug: chainSlug_,
-                target: _getFeesPlugAddress(chainSlug_),
-                payload: payload_
-            }),
-            asyncPromise: address(0),
-            switchboardType: sbType
+        OverrideParams memory overrideParams;
+        overrideParams.callType = WRITE;
+        overrideParams.gasLimit = 10000000;
+        overrideParams.writeFinality = WriteFinality.LOW;
+
+        QueueParams memory queueParams;
+        queueParams.overrideParams = overrideParams;
+        queueParams.transaction = Transaction({
+            chainSlug: chainSlug_,
+            target: _getFeesPlugAddress(chainSlug_),
+            payload: payload_
         });
+        queueParams.switchboardType = sbType;
 
         // queue and create request
         watcherPrecompile__().queueAndRequest(
@@ -243,11 +205,12 @@ abstract contract UserUtils is FeesStorage, Initializable, Ownable, AddressResol
         );
     }
 
-    /// @notice hook called by watcher precompile when request is finished
-    function onRequestComplete(uint40 requestCount_, bytes memory) external {}
-
     function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (address) {
-        return watcherPrecompileConfig().feesPlug(chainSlug_);
+        return configuration__().feesPlug(chainSlug_);
+    }
+
+    function _getRequestParams(uint40 requestCount_) internal view returns (RequestParams memory) {
+        return watcher__().getRequestParams(requestCount_);
     }
 
     function _recoverSigner(
@@ -258,4 +221,7 @@ abstract contract UserUtils is FeesStorage, Initializable, Ownable, AddressResol
         // recovered signer is checked for the valid roles later
         signer = ECDSA.recover(digest, signature_);
     }
+
+    /// @notice hook called by watcher precompile when request is finished
+    function onRequestComplete(uint40, bytes memory) external {}
 }

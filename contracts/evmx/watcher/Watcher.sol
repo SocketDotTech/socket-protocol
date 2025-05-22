@@ -21,11 +21,6 @@ contract Watcher is Trigger {
         addressResolver__ = addressResolver_;
     }
 
-    /// @notice Clears the call parameters array
-    function clearQueue() public {
-        delete queue;
-    }
-
     function queueAndRequest(
         QueueParams memory queue_,
         uint256 maxFees,
@@ -105,21 +100,9 @@ contract Watcher is Trigger {
         clearQueue();
     }
 
-    /// @notice Sets the expiry time for payload execution
-    /// @param expiryTime_ The expiry time in seconds
-    /// @dev This function sets the expiry time for payload execution
-    /// @dev Only callable by the contract owner
-    function setExpiryTime(uint256 expiryTime_) external onlyOwner {
-        expiryTime = expiryTime_;
-        emit ExpiryTimeSet(expiryTime_);
-    }
-
-    function getRequestParams(uint40 requestCount_) external view returns (RequestParams memory) {
-        return requestHandler__().getRequestParams(requestCount_);
-    }
-
-    function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory) {
-        return requestHandler__().getPayloadParams(payloadId_);
+    /// @notice Clears the call parameters array
+    function clearQueue() public {
+        delete queue;
     }
 
     function callAppGateways(
@@ -131,6 +114,23 @@ contract Watcher is Trigger {
         for (uint40 i = 0; i < params_.length; i++) {
             _callAppGateways(params_[i]);
         }
+    }
+
+    function getRequestParams(uint40 requestCount_) external view returns (RequestParams memory) {
+        return requestHandler__().getRequestParams(requestCount_);
+    }
+
+    function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory) {
+        return requestHandler__().getPayloadParams(payloadId_);
+    }
+
+    /// @notice Sets the expiry time for payload execution
+    /// @param expiryTime_ The expiry time in seconds
+    /// @dev This function sets the expiry time for payload execution
+    /// @dev Only callable by the contract owner
+    function setExpiryTime(uint256 expiryTime_) external onlyOwner {
+        expiryTime = expiryTime_;
+        emit ExpiryTimeSet(expiryTime_);
     }
 
     function setTriggerFees(

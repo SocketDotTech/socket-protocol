@@ -13,6 +13,11 @@ import "../watcher/WatcherBase.sol";
 abstract contract FeesManagerStorage is IFeesManager, WatcherBase {
     // user credits => stores fees for user, app gateway, transmitters and watcher precompile
     mapping(address => UserCredits) public userCredits;
+
+    /// @notice Mapping to track request credits details for each request count
+    /// @dev requestCount => RequestFee
+    mapping(uint40 => uint256) public requestCountCredits;
+
     // user approved app gateways
     // userAddress => appGateway => isWhitelisted
     mapping(address => mapping(address => bool)) public isAppGatewayWhitelisted;
@@ -21,12 +26,6 @@ abstract contract FeesManagerStorage is IFeesManager, WatcherBase {
     //  chainSlug => token address  => amount
     mapping(uint32 => mapping(address => uint256)) public tokenPoolBalances;
 
-    // slot 54
-    /// @notice Mapping to track request credits details for each request count
-    /// @dev requestCount => RequestFee
-    mapping(uint40 => uint256) public requestCountCredits;
-
-    // slot 56
     /// @notice Mapping to track nonce to whether it has been used
     /// @dev address => signatureNonce => isNonceUsed
     /// @dev used by watchers or other users in signatures

@@ -320,7 +320,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     function onRequestComplete(
         uint40,
         bytes calldata onCompleteData_
-    ) external override onlyDeliveryHelper {
+    ) external override onlyWatcher {
         if (onCompleteData_.length == 0) return;
         (uint32 chainSlug, bool isDeploy) = abi.decode(onCompleteData_, (uint32, bool));
         if (isDeploy) {
