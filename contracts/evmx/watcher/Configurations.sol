@@ -3,8 +3,9 @@ pragma solidity ^0.8.21;
 
 import "solady/utils/Initializable.sol";
 import "../interfaces/IConfigurations.sol";
-import {AddressResolverUtil} from "../AddressResolverUtil.sol";
+import {AddressResolverUtil} from "../helpers/AddressResolverUtil.sol";
 import {encodeAppGatewayId} from "../../utils/common/IdUtils.sol";
+
 /// @title Configurations
 /// @notice Configuration contract for the Watcher Precompile system
 /// @dev Handles the mapping between networks, plugs, and app gateways for payload execution
@@ -24,7 +25,11 @@ contract Configurations is IConfigurations, Initializable, AddressResolverUtil {
     /// @dev chainSlug => sb type => switchboard address
     mapping(uint32 => mapping(bytes32 => address)) public switchboards;
 
-    // slot 104: sockets
+    // slot 104: deployedForwarders
+    /// @notice Maps contract id to their associated forwarder
+    /// @dev contractId => forwarder address
+
+    // slot 105: sockets
     /// @notice Maps chain slug to their associated socket
     /// @dev chainSlug => socket address
     mapping(uint32 => SocketConfig) public socketConfigs;
@@ -104,6 +109,7 @@ contract Configurations is IConfigurations, Initializable, AddressResolverUtil {
         emit OnChainContractSet(
             chainSlug_,
             socketConfig_.socket,
+            // todo: move in their app gateways
             socketConfig_.contractFactoryPlug,
             socketConfig_.feesPlug
         );
@@ -172,7 +178,6 @@ contract Configurations is IConfigurations, Initializable, AddressResolverUtil {
         bytes32 switchboardType_
     ) external view {
         (bytes32 appGatewayId, address switchboard) = getPlugConfigs(chainSlug_, target_);
-
         if (appGatewayId != encodeAppGatewayId(appGateway_)) revert InvalidGateway();
         if (switchboard != switchboards[chainSlug_][switchboardType_]) revert InvalidSwitchboard();
     }

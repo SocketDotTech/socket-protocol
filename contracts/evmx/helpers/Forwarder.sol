@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "./interfaces/IAddressResolver.sol";
-import "./interfaces/IMiddleware.sol";
-import "./interfaces/IAppGateway.sol";
-import "./interfaces/IForwarder.sol";
-import {AddressResolverUtil} from "./AddressResolverUtil.sol";
-import {AsyncModifierNotUsed, WatcherNotSet} from "../utils/common/Errors.sol";
 import "solady/utils/Initializable.sol";
+import "./AddressResolverUtil.sol";
+import "../interfaces/IAddressResolver.sol";
+import "../interfaces/IAppGateway.sol";
+import "../interfaces/IForwarder.sol";
+import {AsyncModifierNotSet, WatcherNotSet} from "../../utils/common/Errors.sol";
 
 /// @title Forwarder Storage
 /// @notice Storage contract for the Forwarder contract that contains the state variables
@@ -69,7 +68,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
 
         // validates if the async modifier is set
         bool isAsyncModifierSet = IAppGateway(msg.sender).isAsyncModifierSet();
-        if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
+        if (!isAsyncModifierSet) revert AsyncModifierNotSet();
 
         // fetch the override params from app gateway
         (OverrideParams overrideParams, bytes32 sbType) = IAppGateway(msg.sender)

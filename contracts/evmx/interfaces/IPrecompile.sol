@@ -17,5 +17,13 @@ interface IPrecompile {
     /// @notice Handles payload processing and returns fees
     /// @param payloadParams The payload parameters to handle
     /// @return fees The fees required for processing
-    function handlePayload(PayloadParams calldata payloadParams) external returns (uint256 fees);
+    /// @return deadline The deadline for processing
+    function handlePayload(
+        PayloadParams calldata payloadParams
+    ) external returns (uint256 fees, uint256 deadline);
+
+    /// @notice Resolves a payload
+    /// @param payloadParams The payload parameters to resolve
+    /// @return fees The fees required for processing
+    function resolvePayload(PayloadParams calldata payloadParams) external returns (uint256 fees);
 }

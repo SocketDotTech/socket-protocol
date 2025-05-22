@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 import {InvalidCallerTriggered, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled, InvalidWatcherSignature, NonceUsed} from "../../utils/common/Errors.sol";
-import {ResolvedPromises, AppGatewayConfig, WriteFinality, PlugConfig, DigestParams, QueueParams, PayloadParams, RequestParams} from "../../utils/common/Structs.sol";
+import {Bid, ResolvedPromises, AppGatewayConfig, WriteFinality, PlugConfig, DigestParams, QueueParams, PayloadParams, RequestParams} from "../../utils/common/Structs.sol";
 
 /// @title IWatcher
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
@@ -70,7 +70,7 @@ interface IWatcher {
 
     event WatcherPrecompileLimitsSet(address watcherPrecompileLimits);
 
-    event WatcherPrecompileConfigSet(address watcherPrecompileConfig);
+    event configurations__Set(address configurations__);
 
     event RequestCancelledFromGateway(uint40 requestCount);
 

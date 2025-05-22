@@ -44,13 +44,12 @@ enum ExecutionStatus {
     Reverted
 }
 
-struct AppGatewayWhitelistParams {
+struct AppGatewayApprovals {
     address appGateway;
-    bool isApproved;
+    bool approval;
 }
 
 //// STRUCTS ////
-
 struct AppGatewayConfig {
     PlugConfig plugConfig;
     address plug;

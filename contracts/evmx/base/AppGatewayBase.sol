@@ -4,9 +4,11 @@ pragma solidity ^0.8.21;
 import "../helpers/AddressResolverUtil.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IForwarder.sol";
+import "../interfaces/IPromise.sol";
 
 import {InvalidPromise, AsyncModifierNotSet} from "../../utils/common/Errors.sol";
 import {FAST, READ, WRITE, SCHEDULE} from "../../utils/common/Constants.sol";
+import {IsPlug, QueueParams, Read, WriteFinality, Parallel} from "../../utils/common/Structs.sol";
 
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway
@@ -51,7 +53,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     function _postAsync() internal {
         isAsyncModifierSet = false;
 
-        (uint40 requestCount, address[] memory promises) = watcherPrecompile__().submitRequest(
+        (uint40 requestCount, address[] memory promises) = watcher__().submitRequest(
             maxFees,
             auctionManager,
             consumeFrom,
@@ -63,16 +65,12 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     function _preAsync() internal {
         isAsyncModifierSet = true;
         _clearOverrides();
-        watcherPrecompile__().clearQueue();
+        watcher__().clearQueue();
     }
 
     function _approveFeesWithSignature(bytes memory feesApprovalData_) internal {
-        _handleFeesApproval(feesApprovalData_);
-    }
-
-    function _handleFeesApproval(bytes memory feesApprovalData_) internal {
         if (feesApprovalData_.length > 0) {
-            (consumeFrom, , ) = feesManager__().whitelistAppGatewayWithSignature(feesApprovalData_);
+            (consumeFrom, , ) = feesManager__().approveAppGatewayWithSignature(feesApprovalData_);
         }
     }
 
@@ -92,7 +90,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /// @notice Gets the current async ID
     /// @return uint40 The current async ID
     function _getCurrentAsyncId() internal view returns (uint40) {
-        return watcherPrecompile__().getCurrentRequestCount();
+        return watcher__().getCurrentRequestCount();
     }
 
     /// @notice Sets the auction manager
@@ -115,7 +113,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /// @dev This function retrieves the onchain address using the contractId and chainSlug, then calls the watcher precompile to update the plug's validity status
     function _setValidPlug(uint32 chainSlug_, bytes32 contractId, bool isValid) internal {
         address onchainAddress = getOnChainAddress(contractId, chainSlug_);
-        watcherPrecompileConfig().setIsValidPlug(chainSlug_, onchainAddress, isValid);
+        watcher__().setIsValidPlug(chainSlug_, onchainAddress, isValid);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -131,7 +129,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         IsPlug isPlug_,
         bytes memory initCallData_
     ) internal {
-        deployerGateway__().deploy(
+        deployForwarder__().deploy(
             isPlug_,
             chainSlug_,
             initCallData_,
@@ -156,7 +154,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
             chainSlug
         );
 
-        forwarderAddresses[appGateway][contractId][chainSlug] = forwarderContractAddress;
+        forwarderAddresses[contractId][chainSlug] = forwarderContractAddress;
     }
 
     /// @notice Schedules a function to be called after a delay
@@ -169,7 +167,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
 
         QueueParams memory queueParams = new QueueParams();
         queueParams.overrideParams = overrideParams;
-        (address promise_, ) = watcherPrecompile__().queue(queueParams, address(this));
+        (address promise_, ) = watcher__().queue(queueParams, address(this));
     }
 
     /// @notice Gets the on-chain address

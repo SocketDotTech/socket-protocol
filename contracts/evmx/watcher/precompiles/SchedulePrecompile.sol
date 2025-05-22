@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 
 import "../../interfaces/IPrecompile.sol";
 import "../../../utils/common/Structs.sol";
-import {InvalidTarget, InvalidPayloadSize, InvalidScheduleDelay, InvalidTimeoutRequest, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly, CallFailed} from "../../../utils/common/Errors.sol";
+import {InvalidPayloadSize, InvalidScheduleDelay, InvalidTimeoutRequest, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly, CallFailed} from "../../../utils/common/Errors.sol";
 import "../WatcherBase.sol";
 
 /// @title SchedulePrecompile

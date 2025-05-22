@@ -5,7 +5,9 @@ import {ECDSA} from "solady/utils/ECDSA.sol";
 import "solady/utils/Initializable.sol";
 import "../interfaces/IAuctionManager.sol";
 import "../../utils/AccessControl.sol";
-import {AuctionClosed, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter} from "../../utils/common/Errors.sol";
+import {AuctionNotOpen, AuctionClosed, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter} from "../../utils/common/Errors.sol";
+import {SCHEDULE} from "../../utils/common/Constants.sol";
+
 import {TRANSMITTER_ROLE} from "../../utils/common/AccessRoles.sol";
 import {AppGatewayBase} from "../base/AppGatewayBase.sol";
 
@@ -53,6 +55,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     event AuctionEnded(uint40 requestCount, Bid winningBid);
     event BidPlaced(uint40 requestCount, Bid bid);
     event AuctionEndDelaySecondsSet(uint256 auctionEndDelaySeconds);
+    event MaxReAuctionCountSet(uint256 maxReAuctionCount);
 
     error InvalidBid();
     error MaxReAuctionCountReached();
@@ -120,7 +123,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         if (bidFees >= winningBids[requestCount_].fee && bidFees != 0)
             revert LowerBidAlreadyExists();
 
-        uint256 transmitterCredits = get(requestCount_);
+        uint256 transmitterCredits = getMaxFees(requestCount_);
         if (bidFees > transmitterCredits) revert BidExceedsMaxFees();
 
         deductScheduleFees(
@@ -182,7 +185,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
             );
 
             // start the request processing, it will queue the request
-            IWatcher(watcherPrecompile__()).assignTransmitter(requestCount_, winningBid);
+            watcher__().assignTransmitter(requestCount_, winningBid);
         }
 
         emit AuctionEnded(requestCount_, winningBid);
@@ -206,7 +209,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         auctionStatus[requestCount_] = AuctionStatus.RESTARTED;
         reAuctionCount[requestCount_]++;
 
-        IWatcher(watcherPrecompile__()).assignTransmitter(
+        watcher__().assignTransmitter(
             requestCount_,
             Bid({fee: 0, transmitter: address(0), extraData: ""})
         );
@@ -219,34 +222,21 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         address consumeFrom_,
         bytes memory payload_
     ) internal {
-        QueueParams memory queueParams = QueueParams({
-            overrideParams: OverrideParams({
-                isPlug: IsPlug.NO,
-                callType: SCHEDULE,
-                isParallelCall: Parallel.OFF,
-                gasLimit: 0,
-                value: 0,
-                readAtBlockNumber: 0,
-                writeFinality: WriteFinality.LOW,
-                delayInSeconds: delayInSeconds_
-            }),
-            transaction: Transaction({
-                chainSlug: evmxSlug,
-                target: address(this),
-                payload: payload_
-            }),
-            asyncPromise: address(0),
-            switchboardType: sbType
+        OverrideParams memory overrideParams;
+        overrideParams.callType = SCHEDULE;
+        overrideParams.delayInSeconds = delayInSeconds_;
+
+        QueueParams memory queueParams;
+        queueParams.overrideParams = overrideParams;
+        queueParams.transaction = Transaction({
+            chainSlug: evmxSlug,
+            target: address(this),
+            payload: payload_
         });
+        queueParams.switchboardType = sbType;
 
         // queue and create request
-        watcherPrecompile__().queueAndRequest(
-            queueParams,
-            maxFees_,
-            address(this),
-            address(this),
-            bytes("")
-        );
+        watcher__().queueAndSubmit(queueParams, maxFees_, address(this), address(this), bytes(""));
     }
 
     /// @notice Returns the quoted transmitter fees for a request
@@ -267,7 +257,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     }
 
     function _getRequestParams(uint40 requestCount_) internal view returns (RequestParams memory) {
-        return watcherPrecompile__().getRequestParams(requestCount_);
+        return watcher__().getRequestParams(requestCount_);
     }
 
     /// @notice Recovers the signer of a message

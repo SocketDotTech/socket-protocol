@@ -3,6 +3,7 @@ pragma solidity ^0.8.21;
 import "./IWatcher.sol";
 import "./IFeesManager.sol";
 import "./IAsyncDeployer.sol";
+import "./IDeployForwarder.sol";
 
 /// @title IAddressResolver
 /// @notice Interface for resolving system contract addresses
@@ -13,11 +14,6 @@ interface IAddressResolver {
     /// @notice Event emitted when the watcher precompile is updated
     event WatcherUpdated(address watcher_);
 
-    // any other address resolution
-    function getAddress(bytes32 name) external view returns (address);
-
-    function setAddress(bytes32 name, address addr) external;
-
     // System component addresses
     function watcher__() external view returns (IWatcher);
 
@@ -26,6 +22,8 @@ interface IAddressResolver {
     function asyncDeployer__() external view returns (IAsyncDeployer);
 
     function defaultAuctionManager() external view returns (address);
+
+    function deployForwarder__() external view returns (IDeployForwarder);
 
     function setFeesManager(address feesManager_) external;
 

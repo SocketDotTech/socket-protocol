@@ -52,6 +52,13 @@ abstract contract AddressResolverUtil {
         return addressResolver__.asyncDeployer__();
     }
 
+    /// @notice Gets the deploy forwarder contract interface
+    /// @return IDeployForwarder interface of the registered deploy forwarder
+    /// @dev Resolves and returns the deploy forwarder contract for interaction
+    function deployForwarder__() public view returns (IDeployForwarder) {
+        return addressResolver__.deployForwarder__();
+    }
+
     /// @notice Internal function to set the address resolver
     /// @param _addressResolver The address of the resolver contract
     /// @dev Should be called in the initialization of inheriting contracts

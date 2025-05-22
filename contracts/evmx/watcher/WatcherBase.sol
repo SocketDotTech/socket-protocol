@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 import "../interfaces/IWatcher.sol";
-
+import "../interfaces/IConfigurations.sol";
 /// @title WatcherBase
 contract WatcherBase {
     // The address of the WatcherPrecompileStorage contract

@@ -22,6 +22,8 @@ contract WritePrecompile is IPrecompile, WatcherBase {
     /// @notice The digest hash for a payload
     mapping(bytes32 => bytes32) public digestHashes;
 
+    mapping(address => bool) public isContractFactoryPlug;
+
     /// @notice The fees for a write and includes callback fees
     uint256 public writeFees;
 
@@ -46,10 +48,6 @@ contract WritePrecompile is IPrecompile, WatcherBase {
             chainMaxMsgValueLimit[queuePayloadParams_.transaction.chainSlug]
         ) revert MaxMsgValueLimitExceeded();
 
-        if (queuePayloadParams_.transaction.target != address(0)) {
-            revert InvalidTarget();
-        }
-
         if (
             queuePayloadParams_.transaction.payload.length > 0 &&
             queuePayloadParams_.transaction.payload.length < PAYLOAD_SIZE_LIMIT
@@ -57,15 +55,23 @@ contract WritePrecompile is IPrecompile, WatcherBase {
             revert InvalidPayloadSize();
         }
 
-        configurations__().verifyConnections(
-            queuePayloadParams_.transaction.chainSlug,
-            queuePayloadParams_.transaction.target,
-            appGateway_,
-            queuePayloadParams_.switchboardType
-        );
+        if (queuePayloadParams_.transaction.target == address(0)) {
+            queuePayloadParams_.transaction.target = contractFactoryPlugs[
+                queuePayloadParams_.transaction.chainSlug
+            ];
+            appGateway_ = address(this);
+        } else {
+            configurations__().verifyConnections(
+                queuePayloadParams_.transaction.chainSlug,
+                queuePayloadParams_.transaction.target,
+                appGateway_,
+                queuePayloadParams_.switchboardType
+            );
+        }
 
         // For write precompile, encode the payload parameters
         precompileData = abi.encode(
+            appGateway_,
             queuePayloadParams_.transaction,
             queuePayloadParams_.overrideParams.writeFinality,
             queuePayloadParams_.overrideParams.gasLimit,
@@ -87,11 +93,15 @@ contract WritePrecompile is IPrecompile, WatcherBase {
         deadline = block.timestamp + expiryTime;
 
         (
+            address appGateway,
             Transaction transaction,
             WriteFinality writeFinality,
             uint256 gasLimit,
             uint256 value
-        ) = abi.decode(payloadParams.precompileData, (Transaction, bool, uint256, uint256));
+        ) = abi.decode(
+                payloadParams.precompileData,
+                (address, Transaction, bool, uint256, uint256)
+            );
 
         bytes32 prevBatchDigestHash = _getPrevBatchDigestHash(payloadParams);
 
@@ -106,7 +116,7 @@ contract WritePrecompile is IPrecompile, WatcherBase {
             value,
             transaction.payload,
             transaction.target,
-            encodeAppGatewayId(payloadParams.appGateway),
+            encodeAppGatewayId(appGateway),
             prevBatchDigestHash,
             bytes("")
         );

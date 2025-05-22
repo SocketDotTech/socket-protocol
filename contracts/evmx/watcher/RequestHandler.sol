@@ -67,7 +67,7 @@ contract RequestHandler is WatcherBase {
         if (queuePayloadParams.length > REQUEST_PAYLOAD_COUNT_LIMIT)
             revert RequestPayloadCountLimitExceeded();
 
-        if (!IFeesManager(feesManager__()).isUserCreditsEnough(consumeFrom_, appGateway_, maxFees_))
+        if (!IFeesManager(feesManager__()).isCreditSpendable(consumeFrom_, appGateway_, maxFees_))
             revert InsufficientFees();
 
         requestCount = nextRequestCount++;
@@ -164,7 +164,7 @@ contract RequestHandler is WatcherBase {
             }
 
             // get the switchboard address from the watcher precompile config
-            address switchboard = watcherPrecompileConfig().switchboards(
+            address switchboard = configurations__().switchboards(
                 queuePayloadParam.chainSlug,
                 queuePayloadParam.switchboardType
             );
@@ -271,7 +271,7 @@ contract RequestHandler is WatcherBase {
         if (r.requestFeesDetails.maxFees >= newMaxFees_)
             revert NewMaxFeesLowerThanCurrent(r.requestFeesDetails.maxFees, newMaxFees_);
         if (
-            !IFeesManager(feesManager__()).isUserCreditsEnough(
+            !IFeesManager(feesManager__()).isCreditSpendable(
                 r.requestFeesDetails.consumeFrom,
                 appGateway,
                 newMaxFees_

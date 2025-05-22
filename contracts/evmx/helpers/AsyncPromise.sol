@@ -3,12 +3,12 @@ pragma solidity ^0.8.21;
 
 import {Initializable} from "solady/utils/Initializable.sol";
 import {LibCall} from "solady/utils/LibCall.sol";
-import {IPromise} from "./interfaces/IPromise.sol";
-import {IAppGateway} from "./interfaces/IAppGateway.sol";
 import {AddressResolverUtil} from "./AddressResolverUtil.sol";
-import {AsyncPromiseState} from "../utils/common/Structs.sol";
-import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
-import {RequestAlreadyExecuted} from "../utils/common/Errors.sol";
+import {IPromise} from "../interfaces/IPromise.sol";
+import {IAppGateway} from "../interfaces/IAppGateway.sol";
+import {AsyncPromiseState} from "../../utils/common/Structs.sol";
+import {MAX_COPY_BYTES} from "../../utils/common/Constants.sol";
+
 abstract contract AsyncPromiseStorage is IPromise {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;

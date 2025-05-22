@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {Bid, RequestMetadata, RequestParams} from "../../utils/common/Structs.sol";
+import {QueueParams, OverrideParams, Transaction, Bid, RequestParams} from "../../utils/common/Structs.sol";
 
 interface IAuctionManager {
     /// @notice Bids for an auction

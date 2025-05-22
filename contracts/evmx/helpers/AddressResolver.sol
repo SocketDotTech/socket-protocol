@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 
 import {Ownable} from "solady/auth/Ownable.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
-import "./interfaces/IAddressResolver.sol";
+import "../interfaces/IAddressResolver.sol";
 
 abstract contract AddressResolverStorage is IAddressResolver {
     // slots [0-49] reserved for gap

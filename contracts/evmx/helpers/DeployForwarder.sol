@@ -11,6 +11,10 @@ contract DeployForwarder is AddressResolverUtil {
     /// @notice The counter for the salt used to generate/deploy the contract address
     uint256 public saltCounter;
 
+    bytes32 public deployerSwitchboardType;
+
+    mapping(uint32 => address) public contractFactoryPlugs;
+
     /// @notice Deploys a contract
     /// @param chainSlug_ The chain slug
     function deploy(
@@ -23,16 +27,23 @@ contract DeployForwarder is AddressResolverUtil {
         if (!isAsyncModifierSet) revert AsyncModifierNotUsed();
 
         // fetch the override params from app gateway
-        (OverrideParams overrideParams, bytes32 sbType) = IAppGateway(msg.sender)
+        (OverrideParams overrideParams, bytes32 plugSwitchboardType) = IAppGateway(msg.sender)
             .getOverrideParams();
 
         QueueParams memory queueParams;
         queueParams.overrideParams = overrideParams;
-        queueParams.switchboardType = sbType;
+        queueParams.switchboardType = deployerSwitchboardType;
         queueParams.transaction = Transaction({
             chainSlug: chainSlug_,
-            target: configurations__.contractFactoryPlug(chainSlug_),
-            payload: _createPayload(isPlug_, msg.sender, chainSlug_, payload_, initCallData_)
+            target: address(0),
+            payload: _createPayload(
+                isPlug_,
+                plugSwitchboardType,
+                msg.sender,
+                chainSlug_,
+                payload_,
+                initCallData_
+            )
         });
 
         watcher__().queue(queueParams, msg.sender);
@@ -40,6 +51,7 @@ contract DeployForwarder is AddressResolverUtil {
 
     function _createPayload(
         IsPlug isPlug_,
+        bytes32 plugSwitchboardType_,
         address appGateway_,
         uint32 chainSlug_,
         bytes memory payload_,
@@ -52,8 +64,8 @@ contract DeployForwarder is AddressResolverUtil {
             IContractFactoryPlug.deployContract.selector,
             isPlug_,
             salt,
-            bytes32(uint256(uint160(appGateway_))),
-            switchboardType_,
+            encodeAppGatewayId(appGateway_),
+            configurations__().switchboards(chainSlug_, plugSwitchboardType_),
             payload_,
             initCallData_
         );

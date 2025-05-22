@@ -21,7 +21,7 @@ contract Watcher is Trigger {
         addressResolver__ = addressResolver_;
     }
 
-    function queueAndRequest(
+    function queueAndSubmit(
         QueueParams memory queue_,
         uint256 maxFees,
         address auctionManager,
