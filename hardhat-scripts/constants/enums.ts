@@ -9,9 +9,9 @@ export enum CORE_CONTRACTS {
 }
 
 export enum EVMxCoreContracts {
-  WatcherPrecompile = "WatcherPrecompile",
-  WatcherPrecompileLimits = "WatcherPrecompileLimits",
-  WatcherPrecompileConfig = "WatcherPrecompileConfig",
+  Watcher = "Watcher",
+  ReqestHandler = "ReqestHandler",
+  Configurations = "Configurations",
   AuctionManager = "AuctionManager",
   FeesManager = "FeesManager",
   DeliveryHelper = "DeliveryHelper",

@@ -165,8 +165,8 @@ export const updateConfigEVMx = async () => {
     const EVMxAddresses = addresses[EVMX_CHAIN_ID]!;
     const watcherPrecompileConfig = (
       await getInstance(
-        EVMxCoreContracts.WatcherPrecompileConfig,
-        EVMxAddresses[EVMxCoreContracts.WatcherPrecompileConfig]
+        EVMxCoreContracts.Configurations,
+        EVMxAddresses[EVMxCoreContracts.Configurations]
       )
     ).connect(signer);
 

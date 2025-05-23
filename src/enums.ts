@@ -16,7 +16,7 @@ export enum Events {
   // FeesPlug
   FeesDeposited = "FeesDeposited",
 
-  // WatcherPrecompile
+  // Watcher
   CalledAppGateway = "CalledAppGateway",
   QueryRequested = "QueryRequested",
   FinalizeRequested = "FinalizeRequested",
@@ -27,6 +27,9 @@ export enum Events {
   RequestSubmitted = "RequestSubmitted",
   Finalized = "Finalized",
   MarkedRevert = "MarkedRevert",
+  ReadRequested = "ReadRequested",
+  WriteProofRequested = "WriteProofRequested",
+  WriteProofUploaded = "WriteProofUploaded",
   // AuctionManager
   AuctionEnded = "AuctionEnded",
   AuctionRestarted = "AuctionRestarted",
@@ -41,25 +44,25 @@ export enum Events {
 export enum Contracts {
   Socket = "Socket",
   FeesPlug = "FeesPlug",
-  WatcherPrecompile = "WatcherPrecompile",
-  WatcherPrecompileLimits = "WatcherPrecompileLimits",
-  WatcherPrecompileConfig = "WatcherPrecompileConfig",
-  AuctionManager = "AuctionManager",
-  DeliveryHelper = "DeliveryHelper",
-}
+  ContractFactoryPlug = "ContractFactoryPlug",
+  FastSwitchboard = "FastSwitchboard",
+  SocketBatcher = "SocketBatcher",
 
-export enum CallType {
-  READ,
-  WRITE,
-  DEPLOY,
-  WITHDRAW,
+  AddressResolver = "AddressResolver",
+  Watcher = "Watcher",
+  RequestHandler = "RequestHandler",
+  Configurations = "Configurations",
+  PromiseResolver = "PromiseResolver",
+  AuctionManager = "AuctionManager",
+  FeesManager = "FeesManager",
+  WritePrecompile = "WritePrecompile",
+  ReadPrecompile = "ReadPrecompile",
 }
 
 export enum CallTypeNames {
   READ = "READ",
   WRITE = "WRITE",
-  DEPLOY = "DEPLOY",
-  WITHDRAW = "WITHDRAW",
+  SCHEDULE = "SCHEDULE",
 }
 
 export enum FinalityBucket {

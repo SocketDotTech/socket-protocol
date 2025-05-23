@@ -125,31 +125,31 @@ const deployEVMxContracts = async () => {
       );
 
       deployUtils = await deployContractWithProxy(
-        EVMxCoreContracts.WatcherPrecompileLimits,
-        `contracts/protocol/watcherPrecompile/WatcherPrecompileLimits.sol`,
+        EVMxCoreContracts.ReqestHandler,
+        `contracts/protocol/watcherPrecompile/ReqestHandler.sol`,
         [EVMxOwner, addressResolver.address, DEFAULT_MAX_LIMIT],
         proxyFactory,
         deployUtils
       );
 
       deployUtils = await deployContractWithProxy(
-        EVMxCoreContracts.WatcherPrecompileConfig,
-        `contracts/protocol/watcherPrecompile/WatcherPrecompileConfig.sol`,
+        EVMxCoreContracts.Configurations,
+        `contracts/protocol/watcherPrecompile/Configurations.sol`,
         [EVMxOwner, addressResolver.address, EVMX_CHAIN_ID],
         proxyFactory,
         deployUtils
       );
 
       deployUtils = await deployContractWithProxy(
-        EVMxCoreContracts.WatcherPrecompile,
-        `contracts/protocol/watcherPrecompile/core/WatcherPrecompile.sol`,
+        EVMxCoreContracts.Watcher,
+        `contracts/protocol/watcherPrecompile/core/Watcher.sol`,
         [
           EVMxOwner,
           addressResolver.address,
           EXPIRY_TIME,
           EVMX_CHAIN_ID,
-          deployUtils.addresses[EVMxCoreContracts.WatcherPrecompileLimits],
-          deployUtils.addresses[EVMxCoreContracts.WatcherPrecompileConfig],
+          deployUtils.addresses[EVMxCoreContracts.ReqestHandler],
+          deployUtils.addresses[EVMxCoreContracts.Configurations],
         ],
         proxyFactory,
         deployUtils
@@ -222,13 +222,13 @@ const deployEVMxContracts = async () => {
         addressResolver,
         "watcherPrecompile__",
         "setWatcherPrecompile",
-        deployUtils.addresses[EVMxCoreContracts.WatcherPrecompile],
+        deployUtils.addresses[EVMxCoreContracts.Watcher],
         deployUtils.signer
       );
 
       let watcherPrecompileLimits = await getInstance(
-        EVMxCoreContracts.WatcherPrecompileLimits,
-        deployUtils.addresses[EVMxCoreContracts.WatcherPrecompileLimits]
+        EVMxCoreContracts.ReqestHandler,
+        deployUtils.addresses[EVMxCoreContracts.ReqestHandler]
       );
       watcherPrecompileLimits = watcherPrecompileLimits.connect(
         deployUtils.signer

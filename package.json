@@ -9,7 +9,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.1.15",
+  "version": "1.1.15-solana-test.1",
   "description": "socket protocol",
   "scripts": {
     "build": "yarn abi && tsc --project lib.tsconfig.json",

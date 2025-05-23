@@ -108,7 +108,7 @@ async function setRolesForEVMx(addresses: DeploymentAddresses) {
     {}) as ChainAddressesObj;
   const signer = await getSigner(EVMX_CHAIN_ID, true);
 
-  const contractAddress = chainAddresses[EVMxCoreContracts.WatcherPrecompile];
+  const contractAddress = chainAddresses[EVMxCoreContracts.Watcher];
   if (!contractAddress) return;
 
   await setRoleForContract(
