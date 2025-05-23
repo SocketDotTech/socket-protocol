@@ -80,10 +80,8 @@
 
 | Function | Signature |
 | -------- | --------- |
-| `SOLANA_DEVNET_CHAIN_SLUG` | `0xb5eb4957` |
-| `SOLANA_MAINNET_CHAIN_SLUG` | `0xe8826c67` |
 | `addressResolver__` | `0x6a750469` |
-| `callSolana` | `0x5beed62d` |
+| `callSolana` | `0xa54024ef` |
 | `chainSlug` | `0xb349ba65` |
 | `deliveryHelper__` | `0xc031dfb4` |
 | `getChainSlug` | `0x0b8c6568` |
@@ -459,6 +457,7 @@
 | `cancelRequest` | `0x50ad0779` |
 | `completeOwnershipHandover` | `0xf04e283e` |
 | `deliveryHelper__` | `0xc031dfb4` |
+| `encodeU64Borsh` | `0xacc1b559` |
 | `evmxSlug` | `0x8bae77c2` |
 | `expiryTime` | `0x99bc0aea` |
 | `finalized` | `0x81c051de` |

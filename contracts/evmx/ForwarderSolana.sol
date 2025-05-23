@@ -10,7 +10,7 @@ import {AddressResolverUtil} from "./AddressResolverUtil.sol";
 import {AsyncModifierNotUsed, NoAsyncPromiseFound, PromiseCallerMismatch, RequestCountMismatch, DeliveryHelperNotSet} from "../utils/common/Errors.sol";
 import "solady/utils/Initializable.sol";
 import {SolanaInstruction} from "../utils/common/Structs.sol";
-
+import {CHAIN_SLUG_SOLANA_MAINNET, CHAIN_SLUG_SOLANA_DEVNET} from "../utils/common/Constants.sol";
 /// @title Forwarder Storage
 /// @notice Storage contract for the Forwarder contract that contains the state variables
 abstract contract ForwarderStorage is IForwarder {
@@ -43,9 +43,6 @@ abstract contract ForwarderStorage is IForwarder {
 /// @title Forwarder Contract
 /// @notice This contract acts as a forwarder for async calls to the on-chain contracts.
 contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil {
-    // TODO: move to some constants file, this might later used in AppGatewayBase to switch between forwarders
-    uint32 public constant SOLANA_MAINNET_CHAIN_SLUG = 10000001;
-    uint32 public constant SOLANA_DEVNET_CHAIN_SLUG = 10000002;
 
     error InvalidSolanaChainSlug();
 
@@ -62,7 +59,7 @@ contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil
         bytes32 onChainAddress_,
         address addressResolver_
     ) public initializer {
-        if (chainSlug_ == SOLANA_MAINNET_CHAIN_SLUG || chainSlug_ == SOLANA_DEVNET_CHAIN_SLUG) {
+        if (chainSlug_ == CHAIN_SLUG_SOLANA_MAINNET || chainSlug_ == CHAIN_SLUG_SOLANA_DEVNET) {
             chainSlug = chainSlug_;
         } else {
             revert InvalidSolanaChainSlug();

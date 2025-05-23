@@ -8,6 +8,8 @@ import "./SuperToken.sol";
 import {SolanaInstruction, SolanaInstructionData, SolanaInstructionDataDescription} from "../../../../contracts/utils/common/Structs.sol";
 import "./ISuperTokenSolana.sol";
 import {ForwarderSolana} from "../../../../contracts/evmx/ForwarderSolana.sol";
+import "forge-std/console.sol";
+
 
 contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
     bytes32 public superTokenEvm = _createContractId("superTokenEvm");
@@ -83,6 +85,13 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         // ISuperToken(order.srcEvmToken).burn(order.userEvm, order.srcAmount);
 
         SolanaInstruction memory solanaInstruction = buildSolanaInstruction(order);
+
+        // temporary code to check the payload encoding
+        // bytes memory solanaPayload = abi.encode(solanaInstruction);
+        // -- start here and depoloy the apiGateway again
+        // console.log("solanaPayload");
+        // console.logBytes(solanaPayload);
+
         // we are directly calling the ForwarderSolana
         forwarderSolana.callSolana(solanaInstruction, switchboardSolana);
 
@@ -119,6 +128,9 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         // TODO:GW: update when TargetDummy is ready
         bytes8 instructionDiscriminator = bytes8(uint64(123));
 
+        string[] memory functionArgumentTypeNames = new string[](1);
+        functionArgumentTypeNames[0] = "u64";
+
         return
             SolanaInstruction({
                 data: SolanaInstructionData({
@@ -129,7 +141,7 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
                 }),
                 description: SolanaInstructionDataDescription({
                     accountFlags: accountFlags,
-                    functionArgumentTypeNames: new string[](1)
+                    functionArgumentTypeNames: functionArgumentTypeNames
                 })
             });
     }
