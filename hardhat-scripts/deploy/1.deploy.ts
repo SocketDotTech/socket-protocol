@@ -74,7 +74,7 @@ const logBalances = async () => {
   await Promise.all(
     chains.map(async (chain) => {
       console.log("chain: ", chain);
-      // TODO:GW: if I add Solana chain slug in config.ts it will not work as there is no RPC in env vars for it (on the other hand, should there be if EVMx can't do anything on it?)
+      // TODO:GW: after POC add special case for logging socketDeployer balance for Solana
       const socketDeployer = await getSocketSigner(chain as ChainSlug);
       const socketBalance = await socketDeployer.provider.getBalance(
         socketDeployer.address

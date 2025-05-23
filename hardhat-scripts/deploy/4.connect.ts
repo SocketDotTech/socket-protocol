@@ -31,11 +31,11 @@ export const getAppGatewayId = (
   let address: string = "";
   switch (plug) {
     case CORE_CONTRACTS.ContractFactoryPlug:
-      address = addresses?.[EVMX_CHAIN_ID]?.[EVMxCoreContracts.DeliveryHelper]; // TODO:GW: ask why DeliveryHelper referred as plug ?
+      address = addresses?.[EVMX_CHAIN_ID]?.[EVMxCoreContracts.DeliveryHelper];
       if (!address) throw new Error(`DeliveryHelper not found on EVMX`);
       return ethers.utils.hexZeroPad(address, 32);
     case CORE_CONTRACTS.FeesPlug:
-      address = addresses?.[EVMX_CHAIN_ID]?.[EVMxCoreContracts.FeesManager]; // TODO:GW: ask why FeesManager is on EVMx it should only be on on-chain ?
+      address = addresses?.[EVMX_CHAIN_ID]?.[EVMxCoreContracts.FeesManager];
       if (!address) throw new Error(`FeesManager not found on EVMX`);
       return ethers.utils.hexZeroPad(address, 32);
     default:
@@ -184,7 +184,6 @@ export const updateConfigEVMx = async () => {
         const addr = addresses[chain]!;
 
         for (const plugContract of plugs) {
-          // TODO:GW: this method getAppGatewayId() should also probably be adjusted to hand bytes32 as plugContract and address ?
           const appGatewayId = getAppGatewayId(plugContract, addresses);
           const switchboard = addr[CORE_CONTRACTS.FastSwitchboard];
           const plugAddress = addr[plugContract];
@@ -233,7 +232,7 @@ export const updateConfigEVMx = async () => {
       appGatewayId: solanaAppGatewayId,
       // switchboard: "0x" + mockSwitchboardSolanaAddress32Bytes.toString("hex"),
       switchboard: "0x" + solanaSwitchboardBytes32.toString("hex"),
-      chainSlug: ChainId.SOLANA_DEVNET,
+      chainSlug: ChainSlug.SOLANA_DEVNET,
     });
     //---
 

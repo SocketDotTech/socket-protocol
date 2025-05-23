@@ -27,7 +27,6 @@ export const getChains = () => {
   switch (mode) {
     case DeploymentMode.LOCAL:
       // TODO:GW: for later (now mock all): return [ChainSlug.ARBITRUM_SEPOLIA, ChainSlug.OPTIMISM_SEPOLIA, ChainSlug.SOLANA_DEVNET];
-      // if I add Solana chain slug here it will not work later in 1.deploy.ts as there is no RPC in env vars for it (on the other hand, should there be if EVMx can't do anything on it?)
       return [ChainSlug.ARBITRUM_SEPOLIA, ChainSlug.OPTIMISM_SEPOLIA];
     case DeploymentMode.DEV:
       return [ChainSlug.ARBITRUM_SEPOLIA, ChainSlug.OPTIMISM_SEPOLIA];
