@@ -124,7 +124,7 @@ abstract contract WatcherPrecompileCore is
         digest = keccak256(
             abi.encode(
                 params_.socket,
-                params_.transmitter,
+                params_.transmitter, // TODO: this later will have to moved to bytes32 format as transmitter on solana side is bytes32 address
                 params_.payloadId,
                 params_.deadline,
                 params_.callType,

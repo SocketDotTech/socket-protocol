@@ -5,7 +5,6 @@ import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {ETH_ADDRESS} from "../../contracts/utils/common/Constants.sol";
 import {EvmSolanaAppGateway} from "../../test/apps/app-gateways/super-token/EvmSolanaAppGateway.sol";
-import {SolanaInstruction, SolanaInstructionData, SolanaInstructionDataDescription} from "../../contracts/utils/common/Structs.sol";
 
 // source .env && forge script script/counter/EvmSolanaOnchainCalls.s.sol --broadcast --skip-simulation --legacy --gas-price 0
 contract EvmSolanaOnchainCalls is Script {
