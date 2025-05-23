@@ -154,7 +154,7 @@ struct UserCredits {
 // digest:
 struct DigestParams {
     bytes32 socket;
-    address transmitter;
+    address transmitter; // TODO:GW: this later will have to moved to bytes32 format as transmitter on solana side is bytes32 address
     bytes32 payloadId;
     uint256 deadline;
     CallType callType;

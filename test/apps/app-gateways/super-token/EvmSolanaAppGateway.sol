@@ -8,7 +8,6 @@ import "./SuperToken.sol";
 import {SolanaInstruction, SolanaInstructionData, SolanaInstructionDataDescription} from "../../../../contracts/utils/common/Structs.sol";
 import "./ISuperTokenSolana.sol";
 import {ForwarderSolana} from "../../../../contracts/evmx/ForwarderSolana.sol";
-import "forge-std/console.sol";
 
 
 contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
@@ -85,12 +84,6 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         // ISuperToken(order.srcEvmToken).burn(order.userEvm, order.srcAmount);
 
         SolanaInstruction memory solanaInstruction = buildSolanaInstruction(order);
-
-        // temporary code to check the payload encoding
-        // bytes memory solanaPayload = abi.encode(solanaInstruction);
-        // -- start here and depoloy the apiGateway again
-        // console.log("solanaPayload");
-        // console.logBytes(solanaPayload);
 
         // we are directly calling the ForwarderSolana
         forwarderSolana.callSolana(solanaInstruction, switchboardSolana);
