@@ -9,6 +9,7 @@ import {ETH_ADDRESS} from "../../contracts/utils/common/Constants.sol";
 import {ForwarderSolana} from "../../contracts/evmx/ForwarderSolana.sol";
 import {AddressResolver} from "../../contracts/evmx/AddressResolver.sol";
 
+
 // source .env && forge script script/counter/deployEVMxCounterApp.s.sol --broadcast --skip-simulation --legacy --gas-price 0
 contract DeployEVMSolanaApps is Script {
     function run() external {
@@ -23,7 +24,7 @@ contract DeployEVMSolanaApps is Script {
 
         // fill with correct values after deployment
         bytes32 solanaProgramId = 0x666111e742d43eafc1e6509eefca9ceb635a39bd3394041d334203ed35720922;
-        address forwarderSolanaAddress = 0xae0f263ac5831313D2f75f36d0a0226C9e84B66D;
+        address forwarderSolanaAddress = 0x96438E01A933d50f6803481453E8426ED6c39Eb2;
 
         // Setting fee payment on Arbitrum Sepolia
         uint256 fees = 10 ether;

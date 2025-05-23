@@ -330,7 +330,7 @@ contract SetupTest is Test {
         bytes32 digest = watcherPrecompile.getDigest(digestParams_);
 
         bytes32 sigDigest = keccak256(
-            abi.encode(address(socketConfig.switchboard), socketConfig.chainSlug, digest)
+            abi.encodePacked(address(socketConfig.switchboard), socketConfig.chainSlug, digest)
         );
         bytes memory proof = _createSignature(sigDigest, watcherPrivateKey);
         return (proof, digest);

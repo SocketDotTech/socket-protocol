@@ -43,7 +43,8 @@ contract FastSwitchboard is SwitchboardBase {
         if (isAttested[digest_]) revert AlreadyAttested();
 
         address watcher = _recoverSigner(
-            keccak256(abi.encode(address(this), chainSlug, digest_)),
+            // Must match the watcher-processor which generates the proof (this encodePacked more chain agnostic)
+            keccak256(abi.encodePacked(address(this), chainSlug, digest_)),
             proof_
         );
         if (!_hasRole(WATCHER_ROLE, watcher)) revert WatcherNotFound();

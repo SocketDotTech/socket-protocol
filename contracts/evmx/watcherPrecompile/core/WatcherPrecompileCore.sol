@@ -9,6 +9,8 @@ import {AddressResolverUtil} from "../../AddressResolverUtil.sol";
 import {IFeesManager} from "../../interfaces/IFeesManager.sol";
 import {toBytes32Format} from "../../../utils/common/Converters.sol";
 import "./WatcherPrecompileStorage.sol";
+import {SolanaInstruction} from "../../../utils/common/Structs.sol";
+import {CHAIN_SLUG_SOLANA_MAINNET, CHAIN_SLUG_SOLANA_DEVNET} from "../../../utils/common/Constants.sol";
 
 /// @title WatcherPrecompileCore
 /// @notice Core functionality for the WatcherPrecompile system
@@ -56,7 +58,7 @@ abstract contract WatcherPrecompileCore is
     /// @dev This function verifies the app gateway configuration and creates a digest for the payload
     function _finalize(
         PayloadParams memory params_,
-        address transmitter_
+        address transmitter_  // TODO:GW: ask why transmitter has address if it is an off-chain service ?
     ) internal returns (bytes32 digest) {
         uint32 chainSlug = params_.payloadHeader.getChainSlug();
 
@@ -82,20 +84,13 @@ abstract contract WatcherPrecompileCore is
         payloads[params_.payloadId].prevDigestsHash = prevDigestsHash;
 
         // Construct parameters for digest calculation
-        DigestParams memory digestParams_ = DigestParams(
-            watcherPrecompileConfig__.sockets(chainSlug),
-            transmitter_,
-            params_.payloadId,
-            deadline,
-            params_.payloadHeader.getCallType(),
-            params_.gasLimit,
-            params_.value,
-            params_.payload,
-            params_.target,
-            toBytes32Format(params_.appGateway),
-            prevDigestsHash
-        );
-
+        DigestParams memory digestParams_;
+        if (_isSolanaChainSlug(chainSlug)) {
+            digestParams_ = _createSolanaDigestParams(params_, transmitter_, prevDigestsHash, deadline);
+        } else {
+            digestParams_ = _createEvmDigestParams(params_, transmitter_, prevDigestsHash, deadline);
+        }
+        
         // Calculate digest from payload parameters
         digest = getDigest(digestParams_);
         emit FinalizeRequested(digest, payloads[params_.payloadId]);
@@ -233,6 +228,70 @@ abstract contract WatcherPrecompileCore is
         );
     }
 
+    function _createEvmDigestParams(
+        PayloadParams memory params_,
+        address transmitter_,
+        bytes32 prevDigestsHash_,
+        uint256 deadline_
+    ) internal view returns (DigestParams memory) {
+        return DigestParams(
+            watcherPrecompileConfig__.sockets(params_.payloadHeader.getChainSlug()),
+            transmitter_,
+            params_.payloadId,
+            deadline_,
+            params_.payloadHeader.getCallType(),
+            params_.gasLimit,
+            params_.value,
+            params_.payload,
+            params_.target,
+            toBytes32Format(params_.appGateway),
+            prevDigestsHash_
+        );
+    }
+
+    function _createSolanaDigestParams(
+        PayloadParams memory params_,
+        address transmitter_,
+        bytes32 prevDigestsHash_,
+        uint256 deadline_
+    ) internal view returns (DigestParams memory) {
+        SolanaInstruction memory instruction = abi.decode(params_.payload, (SolanaInstruction));
+        // TODO: this is a problem, function arguments must be packed in a way that is not later touched and that can be used on Solana side in raw Instruction call
+        // like a call data, so it should be Borsh encoded already here
+        bytes memory functionArgsPacked;
+        for (uint256 i = 0; i < instruction.data.functionArguments.length; i++) {
+            uint256 abiDecodedArg = abi.decode(instruction.data.functionArguments[i], (uint256));
+            // silent assumption that all arguments are uint64 to simplify the encoding
+            uint64 arg = uint64(abiDecodedArg);
+            bytes8 borshEncodedArg = encodeU64Borsh(arg);
+            functionArgsPacked = abi.encodePacked(functionArgsPacked, borshEncodedArg);
+        }
+        
+        bytes memory payloadPacked = abi.encodePacked(
+            instruction.data.programId,
+            instruction.data.accounts,
+            instruction.data.instructionDiscriminator, // TODO: check discriminator should also be encoded in Borsh style
+            functionArgsPacked
+        );
+        return DigestParams(
+            watcherPrecompileConfig__.sockets(params_.payloadHeader.getChainSlug()),
+            transmitter_,
+            params_.payloadId,
+            deadline_,
+            params_.payloadHeader.getCallType(),
+            params_.gasLimit,
+            params_.value,
+            payloadPacked,
+            params_.target,
+            toBytes32Format(params_.appGateway),
+            prevDigestsHash_
+        );
+    }
+
+    function _isSolanaChainSlug(uint32 chainSlug_) internal pure returns (bool) {
+        return chainSlug_ == CHAIN_SLUG_SOLANA_MAINNET || chainSlug_ == CHAIN_SLUG_SOLANA_DEVNET;
+    }
+
     /// @notice Gets the batch IDs for a request
     /// @param requestCount_ The request count to get the batch IDs for
     /// @return An array of batch IDs for the given request
@@ -252,5 +311,16 @@ abstract contract WatcherPrecompileCore is
     /// @return The payload parameters for the given payload ID
     function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory) {
         return payloads[payloadId_];
+    }
+
+    // Borsh helper functions
+    function encodeU64Borsh(uint64 v) public pure returns (bytes8) {
+        return bytes8(swapBytes8(v));
+    }
+
+    function swapBytes8(uint64 v) internal pure returns (uint64) {
+        v = ((v & 0x00ff00ff00ff00ff) << 8) | ((v & 0xff00ff00ff00ff00) >> 8);
+        v = ((v & 0x0000ffff0000ffff) << 16) | ((v & 0xffff0000ffff0000) >> 16);
+        return (v << 32) | (v >> 32);
     }
 }
