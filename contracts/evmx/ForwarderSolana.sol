@@ -131,6 +131,7 @@ contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil
             bytes32 sbType
         ) = IAppGateway(msg.sender).getOverrideParams();
 
+        // TODO:GW: after POC make it work like below
         // get the switchboard address from the watcher precompile config
         // address switchboard = watcherPrecompileConfig().switchboards(chainSlug, sbType);
 
