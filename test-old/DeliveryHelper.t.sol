@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../contracts/evmx/payload-delivery/app-gateway/DeliveryHelper.sol";
-import "../contracts/evmx/payload-delivery/FeesManager.sol";
-import "../contracts/evmx/payload-delivery/AuctionManager.sol";
-
-import "../contracts/evmx/Forwarder.sol";
-import "../contracts/evmx/interfaces/IAppGateway.sol";
-
 import "./SetupTest.t.sol";
 
 interface IAppGatewayDeployer {
@@ -19,18 +12,13 @@ contract DeliveryHelperTest is SetupTest {
     uint256 public bidAmount = maxFees / 100;
     uint256 public deployCounter;
     uint256 public asyncPromiseCounterLocal = 0;
-    uint256 public asyncCounterTest;
-    uint256 public auctionEndDelaySeconds = 0;
-    uint256 public bidTimeout = 86400;
+    bytes public asyncPromiseBytecode = type(AsyncPromise).creationCode;
 
-    DeliveryHelper deliveryHelper;
-    FeesManager feesManager;
-    AuctionManager auctionManager;
 
     event PayloadSubmitted(
         uint40 indexed requestCount,
         address indexed appGateway,
-        PayloadSubmitParams[] payloadSubmitParams,
+        PayloadParams[] payloadParams,
         uint256 maxFees,
         address auctionManager,
         bool onlyReadRequests
@@ -40,91 +28,6 @@ contract DeliveryHelperTest is SetupTest {
     event RequestCancelled(uint40 indexed requestCount);
     event QueryRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
 
-    //////////////////////////////////// Setup ////////////////////////////////////
-    function setUpDeliveryHelper() internal {
-        // core
-        deployEVMxCore();
-        // Deploy implementations
-        FeesManager feesManagerImpl = new FeesManager();
-        DeliveryHelper deliveryHelperImpl = new DeliveryHelper();
-        AuctionManager auctionManagerImpl = new AuctionManager();
-
-        // Deploy and initialize proxies
-        bytes memory feesManagerData = abi.encodeWithSelector(
-            FeesManager.initialize.selector,
-            address(addressResolver),
-            watcherEOA,
-            evmxSlug,
-            FAST
-        );
-
-        vm.expectEmit(true, true, true, false);
-        emit Initialized(version);
-        address feesManagerProxy = proxyFactory.deployAndCall(
-            address(feesManagerImpl),
-            watcherEOA,
-            feesManagerData
-        );
-
-        bytes memory auctionManagerData = abi.encodeWithSelector(
-            AuctionManager.initialize.selector,
-            evmxSlug,
-            auctionEndDelaySeconds,
-            address(addressResolver),
-            owner,
-            maxReAuctionCount
-        );
-        vm.expectEmit(true, true, true, false);
-        emit Initialized(version);
-        address auctionManagerProxy = proxyFactory.deployAndCall(
-            address(auctionManagerImpl),
-            watcherEOA,
-            auctionManagerData
-        );
-
-        bytes memory deliveryHelperData = abi.encodeWithSelector(
-            DeliveryHelper.initialize.selector,
-            address(addressResolver),
-            owner,
-            bidTimeout
-        );
-
-        vm.expectEmit(true, true, true, false);
-        emit Initialized(version);
-        address deliveryHelperProxy = proxyFactory.deployAndCall(
-            address(deliveryHelperImpl),
-            watcherEOA,
-            deliveryHelperData
-        );
-
-        // Assign proxy addresses to contract variables
-        feesManager = FeesManager(address(feesManagerProxy));
-        deliveryHelper = DeliveryHelper(address(deliveryHelperProxy));
-        auctionManager = AuctionManager(address(auctionManagerProxy));
-
-        vm.startPrank(watcherEOA);
-        addressResolver.setDeliveryHelper(address(deliveryHelper));
-        addressResolver.setDefaultAuctionManager(address(auctionManager));
-        addressResolver.setFeesManager(address(feesManager));
-        vm.stopPrank();
-
-        hoax(owner);
-        auctionManager.grantRole(TRANSMITTER_ROLE, transmitterEOA);
-
-        // chain core contracts
-        arbConfig = deploySocket(arbChainSlug);
-        optConfig = deploySocket(optChainSlug);
-        connectDeliveryHelper();
-
-        depositUSDCFees(
-            address(auctionManager),
-            OnChainFees({
-                chainSlug: arbChainSlug,
-                token: address(arbConfig.feesTokenUSDC),
-                amount: 1 ether
-            })
-        );
-    }
 
     function connectDeliveryHelper() internal {
         vm.startPrank(owner);
@@ -186,7 +89,7 @@ contract DeliveryHelperTest is SetupTest {
 
     //////////////////////////////////// Fees ////////////////////////////////////
 
-    function depositUSDCFees(address appGateway_, OnChainFees memory fees_) internal {
+    function depositUSDCFees(address appGateway_, uint256 fees_) internal {
         SocketContracts memory socketConfig = getSocketConfig(fees_.chainSlug);
         vm.startPrank(owner);
         ERC20(fees_.token).approve(address(socketConfig.feesPlug), fees_.amount);
@@ -394,35 +297,30 @@ contract DeliveryHelperTest is SetupTest {
     //////////////////////////////////// Validators ////////////////////////////////////
 
     function checkPayloadRequestAndDetails(
-        PayloadSubmitParams[] memory payloadSubmitParams,
+        PayloadParams[] memory payloadParams,
         uint40 requestCount,
         address appGateway_
     ) internal view {
-        for (uint i = 0; i < payloadSubmitParams.length; i++) {
-            PayloadSubmitParams memory payloadSubmitParam = payloadSubmitParams[i];
+        for (uint i = 0; i < payloadParams.length; i++) {
+            PayloadParams memory payloadSubmitParam = payloadParams[i];
 
             assertEq(
                 payloadSubmitParam.chainSlug,
-                payloadSubmitParams[i].chainSlug,
+                payloadParams[i].chainSlug,
                 "ChainSlug mismatch"
             );
-            // todo
-            assertEq(payloadSubmitParam.target, payloadSubmitParams[i].target, "Target mismatch");
+            assertEq(payloadSubmitParam.target, payloadParams[i].target, "Target mismatch");
             assertEq(
                 keccak256(payloadSubmitParam.payload),
-                keccak256(payloadSubmitParams[i].payload),
+                keccak256(payloadParams[i].payload),
                 "Payload mismatch"
             );
             assertEq(
                 uint(payloadSubmitParam.callType),
-                uint(payloadSubmitParams[i].callType),
+                uint(payloadParams[i].callType),
                 "CallType mismatch"
             );
-            assertEq(
-                payloadSubmitParam.gasLimit,
-                payloadSubmitParams[i].gasLimit,
-                "gasLimit mismatch"
-            );
+            assertEq(payloadSubmitParam.gasLimit, payloadParams[i].gasLimit, "gasLimit mismatch");
         }
 
         RequestMetadata memory payloadRequest = deliveryHelper.getRequestMetadata(requestCount);

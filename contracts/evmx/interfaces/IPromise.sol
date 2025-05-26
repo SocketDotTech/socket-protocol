@@ -13,7 +13,7 @@ interface IPromise {
     function localInvoker() external view returns (address);
 
     /// @notice The request count of the promise
-    function requestCount() external view returns (uint256);
+    function requestCount() external view returns (uint40);
 
     /// @notice The flag to check if the promise exceeded the max copy limit
     function exceededMaxCopy() external view returns (bool);

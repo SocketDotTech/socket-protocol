@@ -120,6 +120,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /////////////////////////////////   DEPLOY HELPERS ///////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
+    function _deploy(bytes32 contractId_, uint32 chainSlug_, IsPlug isPlug_) internal {
+        _deploy(contractId_, chainSlug_, isPlug_, bytes(""));
+    }
+
     /// @notice Deploys a contract
     /// @param contractId_ The contract ID
     /// @param chainSlug_ The chain slug
@@ -321,13 +325,14 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /// @param token_ The token address
     /// @param amount_ The amount
     /// @param receiver_ The receiver address
-    function _withdrawFeeTokens(
+    function _withdrawCredits(
         uint32 chainSlug_,
         address token_,
         uint256 amount_,
+        uint256 maxFees_,
         address receiver_
     ) internal {
-        feesManager__().withdrawCredits(chainSlug_, token_, amount_, maxFees, receiver_);
+        feesManager__().withdrawCredits(chainSlug_, token_, amount_, maxFees_, receiver_);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

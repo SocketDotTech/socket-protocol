@@ -45,6 +45,8 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
         maxScheduleDelayInSeconds = maxScheduleDelayInSeconds_;
         scheduleFeesPerSecond = scheduleFeesPerSecond_;
         scheduleCallbackFees = scheduleCallbackFees_;
+
+        if (maxScheduleDelayInSeconds < expiryTime) revert InvalidScheduleDelay();
         expiryTime = expiryTime_;
     }
 
@@ -58,6 +60,7 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
     /// @dev This function sets the maximum schedule delay in seconds
     /// @dev Only callable by the contract owner
     function setMaxScheduleDelayInSeconds(uint256 maxScheduleDelayInSeconds_) external onlyWatcher {
+        if (maxScheduleDelayInSeconds < expiryTime) revert InvalidScheduleDelay();
         maxScheduleDelayInSeconds = maxScheduleDelayInSeconds_;
         emit MaxScheduleDelayInSecondsSet(maxScheduleDelayInSeconds_);
     }
@@ -78,6 +81,16 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
     function setScheduleCallbackFees(uint256 scheduleCallbackFees_) external onlyWatcher {
         scheduleCallbackFees = scheduleCallbackFees_;
         emit ScheduleCallbackFeesSet(scheduleCallbackFees_);
+    }
+
+    /// @notice Sets the expiry time for payload execution
+    /// @param expiryTime_ The expiry time in seconds
+    /// @dev This function sets the expiry time for payload execution
+    /// @dev Only callable by the contract owner
+    function setExpiryTime(uint256 expiryTime_) external onlyWatcher {
+        if (maxScheduleDelayInSeconds < expiryTime) revert InvalidScheduleDelay();
+        expiryTime = expiryTime_;
+        emit ExpiryTimeSet(expiryTime_);
     }
 
     /// @notice Validates schedule parameters and return data with fees
@@ -117,14 +130,5 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
         if (block.timestamp < payloadParams_.deadline) revert ResolvingTimeoutTooEarly();
 
         emit ScheduleResolved(payloadParams_.payloadId);
-    }
-
-    /// @notice Sets the expiry time for payload execution
-    /// @param expiryTime_ The expiry time in seconds
-    /// @dev This function sets the expiry time for payload execution
-    /// @dev Only callable by the contract owner
-    function setExpiryTime(uint256 expiryTime_) external onlyWatcher {
-        expiryTime = expiryTime_;
-        emit ExpiryTimeSet(expiryTime_);
     }
 }

@@ -4,24 +4,20 @@ pragma solidity ^0.8.21;
 import "../interfaces/IWatcher.sol";
 import "../helpers/AddressResolverUtil.sol";
 import "solady/utils/ECDSA.sol";
+import {Initializable} from "solady/utils/Initializable.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
 
 /// @title WatcherStorage
 /// @notice Storage contract for the WatcherPrecompile system
 /// @dev This contract contains all the storage variables used by the WatcherPrecompile system
 /// @dev It is inherited by WatcherPrecompileCore and WatcherPrecompile
-abstract contract WatcherStorage is IWatcher, AddressResolverUtil, Ownable {
+abstract contract WatcherStorage is IWatcher, Initializable, AddressResolverUtil, Ownable {
     // slots [0-49]: gap for future storage variables
     uint256[50] _gap_before;
 
     // slot 50
     /// @notice The chain slug of the watcher precompile
     uint32 public evmxSlug;
-
-    // Payload Params
-    /// @notice The time from queue for the payload to be executed
-    /// @dev Expiry time in seconds for payload execution
-    uint256 public expiryTime;
 
     /// @notice Maps nonce to whether it has been used
     /// @dev Used to prevent replay attacks with signature nonces

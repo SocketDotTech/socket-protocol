@@ -7,12 +7,13 @@ import "../../utils/common/Constants.sol";
 import "../../utils/common/IdUtils.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
+import "solady/auth/Ownable.sol";
 
 /// @title RequestHandler
 /// @notice Contract that handles request processing and management, including request submission, batch processing, and request lifecycle management
 /// @dev Handles request submission, batch processing, transmitter assignment, request cancellation and settlement
 /// @dev This contract interacts with the WatcherPrecompileStorage for storage access
-contract RequestHandler is AddressResolverUtil {
+contract RequestHandler is AddressResolverUtil, Ownable {
     /// @notice Counter for tracking request counts
     uint40 public nextRequestCount = 1;
 
@@ -37,6 +38,12 @@ contract RequestHandler is AddressResolverUtil {
 
     /// @notice The metadata for a request
     mapping(uint40 => RequestParams) public requests;
+    struct CreateRequestResult {
+        uint256 totalEstimatedWatcherFees;
+        uint256 writeCount;
+        address[] promiseList;
+        PayloadParams[] payloadParams;
+    }
 
     event RequestSubmitted(
         bool hasWrite,
@@ -62,9 +69,12 @@ contract RequestHandler is AddressResolverUtil {
         _;
     }
 
-    // constructor(address watcherStorage_) WatcherBase(watcherStorage_) {}
+    constructor(address owner_, address addressResolver_) {
+        _initializeOwner(owner_);
+        _setAddressResolver(addressResolver_);
+    }
 
-    function setPrecompile(bytes4 callType_, IPrecompile precompile_) external onlyWatcher {
+    function setPrecompile(bytes4 callType_, IPrecompile precompile_) external onlyOwner {
         precompiles[callType_] = precompile_;
     }
 
@@ -93,23 +103,18 @@ contract RequestHandler is AddressResolverUtil {
         r.appGateway = appGateway_;
         r.onCompleteData = onCompleteData_;
 
-        PayloadParams[] memory payloadParams;
-        uint256 totalEstimatedWatcherFees;
-        (totalEstimatedWatcherFees, r.writeCount, promiseList, payloadParams) = _createRequest(
-            queueParams_,
-            appGateway_,
-            requestCount
-        );
-
-        if (totalEstimatedWatcherFees > maxFees_) revert InsufficientFees();
-        if (r.writeCount == 0) _processBatch(requestCount, r.requestTrackingParams.currentBatch, r);
+        CreateRequestResult memory result = _createRequest(queueParams_, appGateway_, requestCount);
+        r.writeCount = result.writeCount;
+        promiseList = result.promiseList;
+        if (result.totalEstimatedWatcherFees > maxFees_) revert InsufficientFees();
+        if (r.writeCount == 0) _processBatch(r.requestTrackingParams.currentBatch, r);
 
         emit RequestSubmitted(
             r.writeCount > 0,
             requestCount,
-            totalEstimatedWatcherFees,
+            result.totalEstimatedWatcherFees,
             r,
-            payloadParams
+            result.payloadParams
         );
     }
 
@@ -142,30 +147,23 @@ contract RequestHandler is AddressResolverUtil {
         feesManager__().blockCredits(requestCount_, r.requestFeesDetails.consumeFrom, bid_.fee);
 
         // re-process current batch again or process the batch for the first time
-        _processBatch(requestCount_, r.requestTrackingParams.currentBatch, r);
+        _processBatch(r.requestTrackingParams.currentBatch, r);
     }
 
     function _createRequest(
         QueueParams[] calldata queueParams_,
         address appGateway_,
         uint40 requestCount_
-    )
-        internal
-        returns (
-            uint256 totalEstimatedWatcherFees,
-            uint256 writeCount,
-            address[] memory promiseList,
-            PayloadParams[] memory payloadParams
-        )
-    {
+    ) internal returns (CreateRequestResult memory result) {
         // push first batch count
         requestBatchIds[requestCount_].push(nextBatchCount);
-        promiseList = new address[](queueParams_.length);
-        payloadParams = new PayloadParams[](queueParams_.length);
+
+        result.promiseList = new address[](queueParams_.length);
+        result.payloadParams = new PayloadParams[](queueParams_.length);
         for (uint256 i = 0; i < queueParams_.length; i++) {
             QueueParams calldata queuePayloadParam = queueParams_[i];
             bytes4 callType = queuePayloadParam.overrideParams.callType;
-            if (callType == WRITE) writeCount++;
+            if (callType == WRITE) result.writeCount++;
 
             // decide batch count
             if (i > 0 && queueParams_[i].overrideParams.isParallelCall != Parallel.ON) {
@@ -184,7 +182,7 @@ contract RequestHandler is AddressResolverUtil {
                 appGateway_,
                 callType
             );
-            totalEstimatedWatcherFees += estimatedFees;
+            result.totalEstimatedWatcherFees += estimatedFees;
 
             // create payload id
             uint40 payloadCount = payloadCounter++;
@@ -210,8 +208,8 @@ contract RequestHandler is AddressResolverUtil {
                 deadline: 0,
                 precompileData: precompileData
             });
-            promiseList[i] = queueParams_[i].asyncPromise;
-            payloadParams[i] = p;
+            result.promiseList[i] = queueParams_[i].asyncPromise;
+            result.payloadParams[i] = p;
             payloads[payloadId] = p;
         }
 
@@ -238,11 +236,7 @@ contract RequestHandler is AddressResolverUtil {
                 : auctionManager_;
     }
 
-    function _processBatch(
-        uint40 requestCount_,
-        uint40 batchCount_,
-        RequestParams storage r
-    ) internal {
+    function _processBatch(uint40 batchCount_, RequestParams storage r) internal {
         bytes32[] memory payloadIds = batchPayloadIds[batchCount_];
 
         uint256 totalFees = 0;
@@ -270,7 +264,7 @@ contract RequestHandler is AddressResolverUtil {
     /// @param newMaxFees_ The new maximum fees
     function increaseFees(uint40 requestCount_, uint256 newMaxFees_) external {
         RequestParams storage r = requests[requestCount_];
-        address appGateway = getCoreAppGateway(msg.sender);
+        address appGateway = msg.sender;
 
         if (r.requestTrackingParams.isRequestCancelled) revert RequestAlreadyCancelled();
         if (r.requestTrackingParams.isRequestExecuted) revert RequestAlreadySettled();
@@ -309,7 +303,7 @@ contract RequestHandler is AddressResolverUtil {
             _settleRequest(requestCount_, r);
         } else {
             r.requestTrackingParams.currentBatch++;
-            _processBatch(requestCount_, r.requestTrackingParams.currentBatch, r);
+            _processBatch(r.requestTrackingParams.currentBatch, r);
         }
     }
 
@@ -331,7 +325,7 @@ contract RequestHandler is AddressResolverUtil {
     /// @dev It verifies that the caller is the middleware and that the request hasn't been cancelled yet
     function cancelRequest(uint40 requestCount) external {
         RequestParams storage r = requests[requestCount];
-        if (r.appGateway != getCoreAppGateway(msg.sender)) revert InvalidCaller();
+        if (r.appGateway != msg.sender) revert InvalidCaller();
         _cancelRequest(requestCount, r);
     }
 

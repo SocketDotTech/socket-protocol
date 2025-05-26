@@ -3,11 +3,11 @@ pragma solidity ^0.8.21;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {FeesPlug} from "../../contracts/evmx/payload-delivery/FeesPlug.sol";
-import {ETH_ADDRESS} from "../../contracts/utils/common/Constants.sol";
-import {TestUSDC} from "../../contracts/evmx/helpers/TestUSDC.sol";
-// source .env && forge script script/helpers/PayFeesInArbitrumETH.s.sol --broadcast --skip-simulation
-contract DepositFees is Script {
+import {FeesPlug} from "../../contracts/evmx/plugs/FeesPlug.sol";
+import {TestUSDC} from "../../contracts/evmx/mocks/TestUSDC.sol";
+
+// source .env && forge script script/helpers/DepositCreditAndNative.s.sol --broadcast --skip-simulation
+contract DepositCreditAndNative is Script {
     function run() external {
         uint256 feesAmount = 100000000;
         vm.createSelectFork(vm.envString("ARBITRUM_SEPOLIA_RPC"));
@@ -30,6 +30,6 @@ contract DepositFees is Script {
         console.log("App Gateway:", appGateway);
         console.log("Fees Plug:", address(feesPlug));
         console.log("Fees Amount:", feesAmount);
-        feesPlug.depositToFeeAndNative(address(testUSDCContract), appGateway, feesAmount);
+        feesPlug.depositCreditAndNative(address(testUSDCContract), appGateway, feesAmount);
     }
 }

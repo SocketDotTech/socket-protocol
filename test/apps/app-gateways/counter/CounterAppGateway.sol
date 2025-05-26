@@ -25,7 +25,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     }
 
     // deploy contracts
-    function deployContracts(uint32 chainSlug_) external async(bytes("")) {
+    function deployContracts(uint32 chainSlug_) external async {
         _deploy(counter, chainSlug_, IsPlug.YES);
     }
 
@@ -33,14 +33,14 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         _deploy(counter, chainSlug_, IsPlug.YES);
     }
 
-    function deployParallelContracts(uint32 chainSlug_) external async(bytes("")) {
+    function deployParallelContracts(uint32 chainSlug_) external async {
         _setOverrides(Parallel.ON);
         _deploy(counter, chainSlug_, IsPlug.YES);
         _deploy(counter1, chainSlug_, IsPlug.YES);
         _setOverrides(Parallel.OFF);
     }
 
-    function deployMultiChainContracts(uint32[] memory chainSlugs_) external async(bytes("")) {
+    function deployMultiChainContracts(uint32[] memory chainSlugs_) external async {
         _setOverrides(Parallel.ON);
         for (uint32 i = 0; i < chainSlugs_.length; i++) {
             _deploy(counter, chainSlugs_[i], IsPlug.YES);
@@ -53,7 +53,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         return;
     }
 
-    function incrementCounters(address[] memory instances_) public async(bytes("")) {
+    function incrementCounters(address[] memory instances_) public async {
         // the increase function is called on given list of instances
         // this
         for (uint256 i = 0; i < instances_.length; i++) {
@@ -69,7 +69,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         }
     }
 
-    function readCounters(address[] memory instances_) public async(bytes("")) {
+    function readCounters(address[] memory instances_) public async {
         // the increase function is called on given list of instances
         _setOverrides(Read.ON, Parallel.ON);
         for (uint256 i = 0; i < instances_.length; i++) {
@@ -80,7 +80,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         _setOverrides(Read.OFF, Parallel.OFF);
     }
 
-    function readCounterAtBlock(address instance_, uint256 blockNumber_) public async(bytes("")) {
+    function readCounterAtBlock(address instance_, uint256 blockNumber_) public async {
         uint32 chainSlug = IForwarder(instance_).getChainSlug();
         _setOverrides(Read.ON, Parallel.ON, blockNumber_);
         ICounter(instance_).getCounter();
@@ -99,7 +99,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
 
     // trigger from a chain
     function setIsValidPlug(uint32 chainSlug_, address plug_) public {
-        watcherPrecompileConfig().setIsValidPlug(chainSlug_, plug_, true);
+        watcher__().configurations__().setIsValidPlug(true, chainSlug_, plug_);
     }
 
     function increase(uint256 value_) external onlyWatcher {
@@ -107,7 +107,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     }
 
     // TIMEOUT
-    function setTimeout(uint256 delayInSeconds_) public async(bytes("")) {
+    function setTimeout(uint256 delayInSeconds_) public async {
         _setTimeout(delayInSeconds_);
         then(this.resolveTimeout.selector, abi.encode(block.timestamp));
     }
@@ -121,27 +121,28 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         maxFees = fees_;
     }
 
-    function withdrawFeeTokens(
+    function withdrawCredits(
         uint32 chainSlug_,
         address token_,
         uint256 amount_,
+        uint256 maxFees_,
         address receiver_
-    ) external returns (uint40) {
-        return _withdrawFeeTokens(chainSlug_, token_, amount_, receiver_);
+    ) external {
+        _withdrawCredits(chainSlug_, token_, amount_, maxFees_, receiver_);
     }
 
-    function testOnChainRevert(uint32 chainSlug) public async(bytes("")) {
+    function testOnChainRevert(uint32 chainSlug) public async {
         address instance = forwarderAddresses[counter][chainSlug];
         ICounter(instance).wrongFunction();
     }
 
-    function testCallBackRevert(uint32 chainSlug) public async(bytes("")) {
+    function testCallBackRevert(uint32 chainSlug) public async {
         // the increase function is called on given list of instances
         _setOverrides(Read.ON, Parallel.ON);
         address instance = forwarderAddresses[counter][chainSlug];
         ICounter(instance).getCounter();
         // wrong function call in callback so it reverts
-        IPromise(instance).then(this.withdrawFeeTokens.selector, abi.encode(chainSlug));
+        IPromise(instance).then(this.withdrawCredits.selector, abi.encode(chainSlug));
         _setOverrides(Read.OFF, Parallel.OFF);
     }
 

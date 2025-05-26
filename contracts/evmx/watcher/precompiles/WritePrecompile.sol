@@ -7,10 +7,11 @@ import "../../interfaces/IPrecompile.sol";
 import {encodeAppGatewayId} from "../../../utils/common/IdUtils.sol";
 
 import "../WatcherBase.sol";
+import "solady/auth/Ownable.sol";
 
 /// @title WritePrecompile
 /// @notice Handles write precompile logic
-contract WritePrecompile is IPrecompile, WatcherBase {
+contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
     /// @notice Mapping to store watcher proofs
     /// @dev Maps payload ID to proof bytes
     /// @dev payloadId => proof bytes
@@ -30,15 +31,17 @@ contract WritePrecompile is IPrecompile, WatcherBase {
 
     /// @notice Emitted when fees are set
     event FeesSet(uint256 writeFees);
-    event ChainMaxMsgValueLimitsUpdated(uint32[] chainSlugs, uint256[] maxMsgValueLimits);
-    event WriteRequested(bytes32 digest, PayloadParams payloadParams);
+    event ChainMaxMsgValueLimitsUpdated(uint32 chainSlug, uint256 maxMsgValueLimit);
+    event ContractFactoryPlugSet(uint32 chainSlug, address contractFactoryPlug);
+
     /// @notice Emitted when a proof upload request is made
     event WriteProofRequested(
         bytes32 digest,
         Transaction transaction,
         WriteFinality writeFinality,
         uint256 gasLimit,
-        uint256 value
+        uint256 value,
+        address switchboard
     );
 
     /// @notice Emitted when a proof is uploaded
@@ -47,7 +50,13 @@ contract WritePrecompile is IPrecompile, WatcherBase {
     event WriteProofUploaded(bytes32 indexed payloadId, bytes proof);
     event ExpiryTimeSet(uint256 expiryTime);
 
-    constructor(address watcher_, uint256 writeFees_, uint256 expiryTime_) WatcherBase(watcher_) {
+    constructor(
+        address owner_,
+        address watcher_,
+        uint256 writeFees_,
+        uint256 expiryTime_
+    ) WatcherBase(watcher_) {
+        _initializeOwner(owner_);
         writeFees = writeFees_;
         expiryTime = expiryTime_;
     }
@@ -96,8 +105,11 @@ contract WritePrecompile is IPrecompile, WatcherBase {
             queueParams_.transaction,
             queueParams_.overrideParams.writeFinality,
             queueParams_.overrideParams.gasLimit,
-            queueParams_.overrideParams.value
-            // todo: add sb
+            queueParams_.overrideParams.value,
+            configurations__().switchboards(
+                queueParams_.transaction.chainSlug,
+                queueParams_.switchboardType
+            )
         );
 
         estimatedFees = writeFees;
@@ -119,10 +131,11 @@ contract WritePrecompile is IPrecompile, WatcherBase {
             Transaction memory transaction,
             WriteFinality writeFinality,
             uint256 gasLimit,
-            uint256 value
+            uint256 value,
+            address switchboard
         ) = abi.decode(
                 payloadParams.precompileData,
-                (address, Transaction, WriteFinality, uint256, uint256)
+                (address, Transaction, WriteFinality, uint256, uint256, address)
             );
 
         bytes32 prevBatchDigestHash = _getPrevBatchDigestHash(payloadParams.batchCount);
@@ -147,7 +160,7 @@ contract WritePrecompile is IPrecompile, WatcherBase {
         bytes32 digest = getDigest(digestParams_);
         digestHashes[payloadParams.payloadId] = digest;
 
-        emit WriteProofRequested(digest, transaction, writeFinality, gasLimit, value);
+        emit WriteProofRequested(digest, transaction, writeFinality, gasLimit, value, switchboard);
     }
 
     function _getPrevBatchDigestHash(uint40 batchCount_) internal view returns (bytes32) {
@@ -202,24 +215,27 @@ contract WritePrecompile is IPrecompile, WatcherBase {
     }
 
     /// @notice Updates the maximum message value limit for multiple chains
-    /// @param chainSlugs_ Array of chain identifiers
-    /// @param maxMsgValueLimits_ Array of corresponding maximum message value limits
+    /// @param chainSlug_ The chain identifier
+    /// @param maxMsgValueLimit_ The maximum message value limit
     function updateChainMaxMsgValueLimits(
-        uint32[] calldata chainSlugs_,
-        uint256[] calldata maxMsgValueLimits_
-    ) external onlyWatcher {
-        if (chainSlugs_.length != maxMsgValueLimits_.length) revert InvalidIndex();
-
-        for (uint256 i = 0; i < chainSlugs_.length; i++) {
-            chainMaxMsgValueLimit[chainSlugs_[i]] = maxMsgValueLimits_[i];
-        }
-
-        emit ChainMaxMsgValueLimitsUpdated(chainSlugs_, maxMsgValueLimits_);
+        uint32 chainSlug_,
+        uint256 maxMsgValueLimit_
+    ) external onlyOwner {
+        chainMaxMsgValueLimit[chainSlug_] = maxMsgValueLimit_;
+        emit ChainMaxMsgValueLimitsUpdated(chainSlug_, maxMsgValueLimit_);
     }
 
     function setFees(uint256 writeFees_) external onlyWatcher {
         writeFees = writeFees_;
         emit FeesSet(writeFees_);
+    }
+
+    function setContractFactoryPlugs(
+        uint32 chainSlug_,
+        address contractFactoryPlug_
+    ) external onlyOwner {
+        contractFactoryPlugs[chainSlug_] = contractFactoryPlug_;
+        emit ContractFactoryPlugSet(chainSlug_, contractFactoryPlug_);
     }
 
     /// @notice Sets the expiry time for payload execution

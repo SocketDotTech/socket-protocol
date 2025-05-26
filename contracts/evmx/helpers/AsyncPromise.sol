@@ -15,18 +15,18 @@ abstract contract AsyncPromiseStorage is IPromise {
     /// @notice The callback selector to be called on the invoker.
     bytes4 public callbackSelector;
 
+    /// @notice The flag to check if the promise exceeded the max copy limit
+    bool public override exceededMaxCopy;
+
     /// @notice The current state of the async promise.
     AsyncPromiseState public override state;
+
+    /// @notice The request count of the promise
+    uint40 public override requestCount;
 
     /// @notice The local contract which initiated the async call.
     /// @dev The callback will be executed on this address
     address public override localInvoker;
-
-    /// @notice The request count of the promise
-    uint256 public override requestCount;
-
-    /// @notice The flag to check if the promise exceeded the max copy limit
-    bool public override exceededMaxCopy;
 
     /// @notice The return data of the promise
     bytes public override returnData;
@@ -63,9 +63,9 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     /// @param invoker_ The address of the local invoker
     /// @param addressResolver_ The address resolver contract address
     function initialize(
+        uint40 requestCount_,
         address invoker_,
-        address addressResolver_,
-        uint256 requestCount_
+        address addressResolver_
     ) public initializer {
         localInvoker = invoker_;
         requestCount = requestCount_;
@@ -132,7 +132,7 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     /// @dev handleRevert function can be retried till it succeeds
     function _handleRevert(bytes32 payloadId_) internal {
         try IAppGateway(localInvoker).handleRevert(payloadId_) {} catch {
-            // todo-later: in this case, promise will stay unresolved
+            // todo: in this case, promise will stay unresolved
             revert PromiseRevertFailed();
         }
     }

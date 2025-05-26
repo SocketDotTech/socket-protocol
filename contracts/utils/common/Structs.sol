@@ -108,11 +108,11 @@ struct UserCredits {
 }
 
 struct WatcherMultiCallParams {
-    address contracts;
-    uint256 nonces_;
-    uint256 value_;
-    bytes data_;
-    bytes signatures_;
+    address contractAddress;
+    uint256 value;
+    bytes data;
+    uint256 nonce;
+    bytes signature;
 }
 
 // digest:

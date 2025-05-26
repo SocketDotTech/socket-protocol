@@ -15,9 +15,6 @@ interface IConfigurations {
         bytes32 switchboardType_
     ) external view;
 
-    /// @notice Maps contract address to their associated app gateway
-    function getCoreAppGateway(address contractAddress) external view returns (address);
-
     /// @notice Maps app gateway, chain slug and plug to validity
     function isValidPlug(
         address appGateway,
@@ -52,7 +49,4 @@ interface IConfigurations {
 
     /// @notice Sets the socket for a chain slug
     function setSocket(uint32 chainSlug_, address socket_) external;
-
-    /// @notice Sets the core app gateway for the watcher precompile
-    function setCoreAppGateway(address appGateway_) external;
 }

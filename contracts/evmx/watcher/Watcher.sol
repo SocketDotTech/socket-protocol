@@ -4,21 +4,47 @@ pragma solidity ^0.8.21;
 import "./Trigger.sol";
 
 contract Watcher is Trigger {
-    constructor(
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
+    function initialize(
+        uint32 evmxSlug_,
+        uint256 triggerFees_,
+        address owner_,
+        address addressResolver_
+    ) public reinitializer(1) {
+        evmxSlug = evmxSlug_;
+        triggerFees = triggerFees_;
+        _initializeOwner(owner_);
+        _setAddressResolver(addressResolver_);
+    }
+
+    function setCoreContracts(
         address requestHandler_,
         address configManager_,
-        address promiseResolver_,
-        address addressResolver_,
-        address owner_
-    ) {
+        address promiseResolver_
+    ) external onlyOwner {
         requestHandler__ = IRequestHandler(requestHandler_);
         configurations__ = IConfigurations(configManager_);
         promiseResolver__ = IPromiseResolver(promiseResolver_);
-        addressResolver__ = IAddressResolver(addressResolver_);
-        _initializeOwner(owner_);
     }
 
-    // todo: add withdraw credit function
+    function setTriggerFees(
+        uint256 triggerFees_,
+        uint256 nonce_,
+        bytes memory signature_
+    ) external {
+        _validateSignature(abi.encode(triggerFees_), nonce_, signature_);
+        _setTriggerFees(triggerFees_);
+    }
+
+    function isWatcher(address account_) public view override returns (bool) {
+        return
+            account_ == address(requestHandler__) ||
+            account_ == address(configurations__) ||
+            account_ == address(promiseResolver__);
+    }
 
     function queueAndSubmit(
         QueueParams memory queue_,
@@ -44,17 +70,18 @@ contract Watcher is Trigger {
         QueueParams memory queue_,
         address appGateway_
     ) internal returns (address, uint40) {
-        address coreAppGateway = getCoreAppGateway(appGateway_);
-
         // checks if app gateway passed by forwarder is coming from same core app gateway group
         if (appGatewayTemp != address(0))
-            if (appGatewayTemp != coreAppGateway || coreAppGateway == address(0))
+            if (appGatewayTemp != appGateway_ || appGateway_ == address(0))
                 revert InvalidAppGateway();
 
         uint40 requestCount = getCurrentRequestCount();
         // Deploy a new async promise contract.
-        latestAsyncPromise = asyncDeployer__().deployAsyncPromiseContract(appGateway_);
-        appGatewayTemp = coreAppGateway;
+        latestAsyncPromise = asyncDeployer__().deployAsyncPromiseContract(
+            appGateway_,
+            requestCount
+        );
+        appGatewayTemp = appGateway_;
         queue_.asyncPromise = latestAsyncPromise;
 
         // Add the promise to the queue.
@@ -79,15 +106,15 @@ contract Watcher is Trigger {
         bytes memory onCompleteData
     ) internal returns (uint40 requestCount, address[] memory promiseList) {
         // this check is to verify that msg.sender (app gateway base) belongs to correct app gateway
-        address coreAppGateway = getCoreAppGateway(msg.sender);
-        if (coreAppGateway != appGatewayTemp) revert InvalidAppGateway();
+        address appGateway = msg.sender;
+        if (appGateway != appGatewayTemp) revert InvalidAppGateway();
         latestAsyncPromise = address(0);
 
         (requestCount, promiseList) = requestHandler__.submitRequest(
             maxFees,
             auctionManager,
             consumeFrom,
-            coreAppGateway,
+            appGateway,
             payloadQueue,
             onCompleteData
         );
@@ -99,13 +126,13 @@ contract Watcher is Trigger {
         delete payloadQueue;
     }
 
-    // todo: add this function
-    // function callAppGateways(WatcherMultiCallParams[] memory params_) external {
-    //     // _validateSignature(params_[i].data_, params_[i].nonces_, params_[i].signatures_);
-    //     for (uint40 i = 0; i < params_.length; i++) {
-    //         _callAppGateways(params_[i]);
-    //     }
-    // }
+    function callAppGateways(WatcherMultiCallParams[] memory params_) external {
+        for (uint40 i = 0; i < params_.length; i++) {
+            _validateSignature(params_[i].data, params_[i].nonce, params_[i].signature);
+            TriggerParams memory params = abi.decode(params_[i].data, (TriggerParams));
+            _callAppGateways(params);
+        }
+    }
 
     function getCurrentRequestCount() public view returns (uint40) {
         return requestHandler__.nextRequestCount();
@@ -126,25 +153,17 @@ contract Watcher is Trigger {
         return requestHandler__.getPrecompileFees(precompile_, precompileData_);
     }
 
-    function setTriggerFees(
-        uint256 triggerFees_,
-        uint256 nonce_,
-        bytes memory signature_
-    ) external {
-        _validateSignature(abi.encode(triggerFees_), nonce_, signature_);
-        _setTriggerFees(triggerFees_);
-    }
-
     // all function from watcher requiring signature
+    // can be also used to do msg.sender check related function in other contracts like withdraw credits from fees manager and set core app-gateways in configurations
     function watcherMultiCall(WatcherMultiCallParams[] memory params_) external payable {
         for (uint40 i = 0; i < params_.length; i++) {
-            if (params_[i].contracts == address(0)) revert InvalidContract();
-            _validateSignature(params_[i].data_, params_[i].nonces_, params_[i].signatures_);
+            if (params_[i].contractAddress == address(0)) revert InvalidContract();
+            _validateSignature(params_[i].data, params_[i].nonce, params_[i].signature);
 
             // call the contract
             // trusting watcher to send enough value for all calls
-            (bool success, ) = params_[i].contracts.call{value: params_[i].value_}(
-                params_[i].data_
+            (bool success, ) = params_[i].contractAddress.call{value: params_[i].value}(
+                params_[i].data
             );
             if (!success) revert CallFailed();
         }

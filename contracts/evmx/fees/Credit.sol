@@ -68,6 +68,14 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
     /// @notice Emitted when credits are transferred
     event CreditsTransferred(address indexed from, address indexed to, uint256 amount);
 
+    /// @notice Emitted when fees plug is set
+    event FeesPlugSet(uint32 indexed chainSlug, address indexed feesPlug);
+
+    function setFeesPlug(uint32 chainSlug_, address feesPlug_) external onlyOwner {
+        feesPlugs[chainSlug_] = feesPlug_;
+        emit FeesPlugSet(chainSlug_, feesPlug_);
+    }
+
     /// @notice Deposits credits and native tokens to a user
     /// @param depositTo_ The address to deposit the credits to
     /// @param chainSlug_ The chain slug
@@ -88,7 +96,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         userCredit.totalCredits += creditAmount_;
 
         // if native transfer fails, add to credit
-        bool success = SafeTransferLib.trySafeTransferETH(depositTo_, nativeAmount_);
+        bool success = SafeTransferLib.trySafeTransferETH(depositTo_, nativeAmount_, gasleft());
         if (!success) userCredit.totalCredits += nativeAmount_;
 
         emit CreditsDeposited(chainSlug_, depositTo_, token_, creditAmount_);
@@ -130,7 +138,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         uint256 amount_
     ) public view override returns (bool) {
         // If consumeFrom_ is not same as spender_ or spender_ is not watcher, check if it is approved
-        if (spender_ != address(watcher__()) && consumeFrom_ != spender_) {
+        if (!_isWatcher(spender_) && consumeFrom_ != spender_) {
             if (!isApproved[consumeFrom_][spender_]) return false;
         }
 
@@ -192,11 +200,11 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         uint256 maxFees_,
         address receiver_
     ) public override {
-        address consumeFrom = getCoreAppGateway(msg.sender);
+        address consumeFrom = msg.sender;
 
         // Check if amount is available in fees plug
         uint256 availableCredits = getAvailableCredits(consumeFrom);
-        if (availableCredits < credits_) revert InsufficientCreditsAvailable();
+        if (availableCredits < credits_ + maxFees_) revert InsufficientCreditsAvailable();
 
         userCredits[consumeFrom].totalCredits -= credits_;
         tokenOnChainBalances[chainSlug_][token_] -= credits_;
