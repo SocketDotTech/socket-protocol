@@ -3,7 +3,6 @@ pragma solidity ^0.8.21;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {ETH_ADDRESS} from "../../contracts/utils/common/Constants.sol";
 import {CounterAppGateway} from "../../test/apps/app-gateways/counter/CounterAppGateway.sol";
 
 // source .env && forge script script/counter/DeployCounterOnchain.s.sol --broadcast --skip-simulation --legacy --gas-price 0

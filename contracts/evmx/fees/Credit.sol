@@ -88,7 +88,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         userCredit.totalCredits += creditAmount_;
 
         // if native transfer fails, add to credit
-        bool success = SafeTransferLib.trySafeTransferETH(depositTo_, nativeAmount_);
+        bool success = SafeTransferLib.trySafeTransferETH(depositTo_, nativeAmount_, gasleft());
         if (!success) userCredit.totalCredits += nativeAmount_;
 
         emit CreditsDeposited(chainSlug_, depositTo_, token_, creditAmount_);
@@ -196,7 +196,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
 
         // Check if amount is available in fees plug
         uint256 availableCredits = getAvailableCredits(consumeFrom);
-        if (availableCredits < credits_) revert InsufficientCreditsAvailable();
+        if (availableCredits < credits_ + maxFees_) revert InsufficientCreditsAvailable();
 
         userCredits[consumeFrom].totalCredits -= credits_;
         tokenOnChainBalances[chainSlug_][token_] -= credits_;
