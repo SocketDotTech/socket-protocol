@@ -68,6 +68,14 @@ contract RequestHandler is AddressResolverUtil {
         precompiles[callType_] = precompile_;
     }
 
+    // Add this struct at the top of the contract (after events, before functions)
+    struct CreateRequestResult {
+        uint256 totalEstimatedWatcherFees;
+        uint256 writeCount;
+        address[] promiseList;
+        PayloadParams[] payloadParams;
+    }
+
     function submitRequest(
         uint256 maxFees_,
         address auctionManager_,
@@ -93,23 +101,18 @@ contract RequestHandler is AddressResolverUtil {
         r.appGateway = appGateway_;
         r.onCompleteData = onCompleteData_;
 
-        PayloadParams[] memory payloadParams;
-        uint256 totalEstimatedWatcherFees;
-        (totalEstimatedWatcherFees, r.writeCount, promiseList, payloadParams) = _createRequest(
-            queueParams_,
-            appGateway_,
-            requestCount
-        );
-
-        if (totalEstimatedWatcherFees > maxFees_) revert InsufficientFees();
-        if (r.writeCount == 0) _processBatch(requestCount, r.requestTrackingParams.currentBatch, r);
+        CreateRequestResult memory result = _createRequest(queueParams_, appGateway_, requestCount);
+        r.writeCount = result.writeCount;
+        promiseList = result.promiseList;
+        if (result.totalEstimatedWatcherFees > maxFees_) revert InsufficientFees();
+        if (r.writeCount == 0) _processBatch(r.requestTrackingParams.currentBatch, r);
 
         emit RequestSubmitted(
             r.writeCount > 0,
             requestCount,
-            totalEstimatedWatcherFees,
+            result.totalEstimatedWatcherFees,
             r,
-            payloadParams
+            result.payloadParams
         );
     }
 
@@ -142,30 +145,22 @@ contract RequestHandler is AddressResolverUtil {
         feesManager__().blockCredits(requestCount_, r.requestFeesDetails.consumeFrom, bid_.fee);
 
         // re-process current batch again or process the batch for the first time
-        _processBatch(requestCount_, r.requestTrackingParams.currentBatch, r);
+        _processBatch(r.requestTrackingParams.currentBatch, r);
     }
 
     function _createRequest(
         QueueParams[] calldata queueParams_,
         address appGateway_,
         uint40 requestCount_
-    )
-        internal
-        returns (
-            uint256 totalEstimatedWatcherFees,
-            uint256 writeCount,
-            address[] memory promiseList,
-            PayloadParams[] memory payloadParams
-        )
-    {
+    ) internal returns (CreateRequestResult memory result) {
         // push first batch count
         requestBatchIds[requestCount_].push(nextBatchCount);
-        promiseList = new address[](queueParams_.length);
-        payloadParams = new PayloadParams[](queueParams_.length);
+        result.promiseList = new address[](queueParams_.length);
+        result.payloadParams = new PayloadParams[](queueParams_.length);
         for (uint256 i = 0; i < queueParams_.length; i++) {
             QueueParams calldata queuePayloadParam = queueParams_[i];
             bytes4 callType = queuePayloadParam.overrideParams.callType;
-            if (callType == WRITE) writeCount++;
+            if (callType == WRITE) result.writeCount++;
 
             // decide batch count
             if (i > 0 && queueParams_[i].overrideParams.isParallelCall != Parallel.ON) {
@@ -184,7 +179,7 @@ contract RequestHandler is AddressResolverUtil {
                 appGateway_,
                 callType
             );
-            totalEstimatedWatcherFees += estimatedFees;
+            result.totalEstimatedWatcherFees += estimatedFees;
 
             // create payload id
             uint40 payloadCount = payloadCounter++;
@@ -210,8 +205,8 @@ contract RequestHandler is AddressResolverUtil {
                 deadline: 0,
                 precompileData: precompileData
             });
-            promiseList[i] = queueParams_[i].asyncPromise;
-            payloadParams[i] = p;
+            result.promiseList[i] = queueParams_[i].asyncPromise;
+            result.payloadParams[i] = p;
             payloads[payloadId] = p;
         }
 
@@ -238,11 +233,7 @@ contract RequestHandler is AddressResolverUtil {
                 : auctionManager_;
     }
 
-    function _processBatch(
-        uint40 requestCount_,
-        uint40 batchCount_,
-        RequestParams storage r
-    ) internal {
+    function _processBatch(uint40 batchCount_, RequestParams storage r) internal {
         bytes32[] memory payloadIds = batchPayloadIds[batchCount_];
 
         uint256 totalFees = 0;
@@ -309,7 +300,7 @@ contract RequestHandler is AddressResolverUtil {
             _settleRequest(requestCount_, r);
         } else {
             r.requestTrackingParams.currentBatch++;
-            _processBatch(requestCount_, r.requestTrackingParams.currentBatch, r);
+            _processBatch(r.requestTrackingParams.currentBatch, r);
         }
     }
 
