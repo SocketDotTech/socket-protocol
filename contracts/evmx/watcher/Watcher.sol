@@ -70,17 +70,15 @@ contract Watcher is Trigger {
         QueueParams memory queue_,
         address appGateway_
     ) internal returns (address, uint40) {
-        address coreAppGateway = getCoreAppGateway(appGateway_);
-
         // checks if app gateway passed by forwarder is coming from same core app gateway group
         if (appGatewayTemp != address(0))
-            if (appGatewayTemp != coreAppGateway || coreAppGateway == address(0))
+            if (appGatewayTemp != appGateway_ || appGateway_ == address(0))
                 revert InvalidAppGateway();
 
         uint40 requestCount = getCurrentRequestCount();
         // Deploy a new async promise contract.
         latestAsyncPromise = asyncDeployer__().deployAsyncPromiseContract(appGateway_);
-        appGatewayTemp = coreAppGateway;
+        appGatewayTemp = appGateway_;
         queue_.asyncPromise = latestAsyncPromise;
 
         // Add the promise to the queue.
@@ -105,15 +103,15 @@ contract Watcher is Trigger {
         bytes memory onCompleteData
     ) internal returns (uint40 requestCount, address[] memory promiseList) {
         // this check is to verify that msg.sender (app gateway base) belongs to correct app gateway
-        address coreAppGateway = getCoreAppGateway(msg.sender);
-        if (coreAppGateway != appGatewayTemp) revert InvalidAppGateway();
+        address appGateway = msg.sender;
+        if (appGateway != appGatewayTemp) revert InvalidAppGateway();
         latestAsyncPromise = address(0);
 
         (requestCount, promiseList) = requestHandler__.submitRequest(
             maxFees,
             auctionManager,
             consumeFrom,
-            coreAppGateway,
+            appGateway,
             payloadQueue,
             onCompleteData
         );

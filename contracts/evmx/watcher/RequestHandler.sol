@@ -264,7 +264,7 @@ contract RequestHandler is AddressResolverUtil, Ownable {
     /// @param newMaxFees_ The new maximum fees
     function increaseFees(uint40 requestCount_, uint256 newMaxFees_) external {
         RequestParams storage r = requests[requestCount_];
-        address appGateway = getCoreAppGateway(msg.sender);
+        address appGateway = msg.sender;
 
         if (r.requestTrackingParams.isRequestCancelled) revert RequestAlreadyCancelled();
         if (r.requestTrackingParams.isRequestExecuted) revert RequestAlreadySettled();
@@ -325,7 +325,7 @@ contract RequestHandler is AddressResolverUtil, Ownable {
     /// @dev It verifies that the caller is the middleware and that the request hasn't been cancelled yet
     function cancelRequest(uint40 requestCount) external {
         RequestParams storage r = requests[requestCount];
-        if (r.appGateway != getCoreAppGateway(msg.sender)) revert InvalidCaller();
+        if (r.appGateway != msg.sender) revert InvalidCaller();
         _cancelRequest(requestCount, r);
     }
 

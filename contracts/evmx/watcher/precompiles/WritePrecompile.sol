@@ -216,8 +216,8 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
     }
 
     /// @notice Updates the maximum message value limit for multiple chains
-    /// @param chainSlugs_ Array of chain identifiers
-    /// @param maxMsgValueLimits_ Array of corresponding maximum message value limits
+    /// @param chainSlug_ The chain identifier
+    /// @param maxMsgValueLimit_ The maximum message value limit
     function updateChainMaxMsgValueLimits(
         uint32 chainSlug_,
         uint256 maxMsgValueLimit_

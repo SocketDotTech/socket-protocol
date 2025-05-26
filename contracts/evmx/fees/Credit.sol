@@ -200,7 +200,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         uint256 maxFees_,
         address receiver_
     ) public override {
-        address consumeFrom = getCoreAppGateway(msg.sender);
+        address consumeFrom = msg.sender;
 
         // Check if amount is available in fees plug
         uint256 availableCredits = getAvailableCredits(consumeFrom);

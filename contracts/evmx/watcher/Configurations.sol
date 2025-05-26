@@ -64,12 +64,6 @@ contract Configurations is IConfigurations, Initializable, WatcherBase, Ownable 
     /// @param plug The address of the plug
     /// @param isValid Whether the plug is valid
     event IsValidPlugSet(address appGateway, uint32 chainSlug, address plug, bool isValid);
-
-    /// @notice Emitted when a core app gateway is set for an app gateway
-    /// @param appGateway The address of the app gateway
-    /// @param coreAppGateway The address of the core app gateway
-    event CoreAppGatewaySet(address appGateway, address coreAppGateway);
-
     constructor(address watcher_) WatcherBase(watcher_) {}
 
     /// @notice Configures app gateways with their respective plugs and switchboards

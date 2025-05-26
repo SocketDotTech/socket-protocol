@@ -398,7 +398,7 @@ contract SetupTest is SetupStore {
             params_.value,
             params_.payload,
             params_.target,
-            _encodeAppGatewayId(params_.appGateway),
+            encodeAppGatewayId(params_.appGateway),
             params_.prevDigestsHash
         );
         bytes32 digest = watcher.getDigest(digestParams_);
