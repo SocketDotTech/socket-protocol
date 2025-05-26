@@ -47,7 +47,6 @@ contract DeliveryHelperTest is SetupTest {
         deployEVMxCore();
         // Deploy implementations
         FeesManager feesManagerImpl = new FeesManager();
-        DeliveryHelper deliveryHelperImpl = new DeliveryHelper();
         AuctionManager auctionManagerImpl = new AuctionManager();
 
         // Deploy and initialize proxies
@@ -407,7 +406,6 @@ contract DeliveryHelperTest is SetupTest {
                 payloadParams[i].chainSlug,
                 "ChainSlug mismatch"
             );
-            // todo
             assertEq(payloadSubmitParam.target, payloadParams[i].target, "Target mismatch");
             assertEq(
                 keccak256(payloadSubmitParam.payload),

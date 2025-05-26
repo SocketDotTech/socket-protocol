@@ -132,7 +132,7 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     /// @dev handleRevert function can be retried till it succeeds
     function _handleRevert(bytes32 payloadId_) internal {
         try IAppGateway(localInvoker).handleRevert(payloadId_) {} catch {
-            // todo-later: in this case, promise will stay unresolved
+            // todo: in this case, promise will stay unresolved
             revert PromiseRevertFailed();
         }
     }

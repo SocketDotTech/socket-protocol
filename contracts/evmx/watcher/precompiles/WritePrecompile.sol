@@ -32,13 +32,15 @@ contract WritePrecompile is IPrecompile, WatcherBase {
     event FeesSet(uint256 writeFees);
     event ChainMaxMsgValueLimitsUpdated(uint32[] chainSlugs, uint256[] maxMsgValueLimits);
     event WriteRequested(bytes32 digest, PayloadParams payloadParams);
+
     /// @notice Emitted when a proof upload request is made
     event WriteProofRequested(
         bytes32 digest,
         Transaction transaction,
         WriteFinality writeFinality,
         uint256 gasLimit,
-        uint256 value
+        uint256 value,
+        address switchboard
     );
 
     /// @notice Emitted when a proof is uploaded
@@ -96,8 +98,11 @@ contract WritePrecompile is IPrecompile, WatcherBase {
             queueParams_.transaction,
             queueParams_.overrideParams.writeFinality,
             queueParams_.overrideParams.gasLimit,
-            queueParams_.overrideParams.value
-            // todo: add sb
+            queueParams_.overrideParams.value,
+            configurations__().switchboards(
+                queueParams_.transaction.chainSlug,
+                queueParams_.switchboardType
+            )
         );
 
         estimatedFees = writeFees;
@@ -119,10 +124,11 @@ contract WritePrecompile is IPrecompile, WatcherBase {
             Transaction memory transaction,
             WriteFinality writeFinality,
             uint256 gasLimit,
-            uint256 value
+            uint256 value,
+            address switchboard
         ) = abi.decode(
                 payloadParams.precompileData,
-                (address, Transaction, WriteFinality, uint256, uint256)
+                (address, Transaction, WriteFinality, uint256, uint256, address)
             );
 
         bytes32 prevBatchDigestHash = _getPrevBatchDigestHash(payloadParams.batchCount);
@@ -147,7 +153,7 @@ contract WritePrecompile is IPrecompile, WatcherBase {
         bytes32 digest = getDigest(digestParams_);
         digestHashes[payloadParams.payloadId] = digest;
 
-        emit WriteProofRequested(digest, transaction, writeFinality, gasLimit, value);
+        emit WriteProofRequested(digest, transaction, writeFinality, gasLimit, value, switchboard);
     }
 
     function _getPrevBatchDigestHash(uint40 batchCount_) internal view returns (bytes32) {

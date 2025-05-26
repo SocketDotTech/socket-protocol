@@ -6,7 +6,6 @@ import "../contracts/evmx/helpers/AddressResolver.sol";
 import "../contracts/evmx/watcher/Watcher.sol";
 import "../contracts/evmx/helpers/Forwarder.sol";
 import "../contracts/evmx/helpers/AsyncPromise.sol";
-import "./mock/MockWatcherPrecompileImpl.sol";
 
 contract MigrationTest is SetupTest {
     // ERC1967Factory emits this event with both proxy and implementation addresses

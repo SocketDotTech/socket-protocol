@@ -37,6 +37,12 @@ contract RequestHandler is AddressResolverUtil {
 
     /// @notice The metadata for a request
     mapping(uint40 => RequestParams) public requests;
+    struct CreateRequestResult {
+        uint256 totalEstimatedWatcherFees;
+        uint256 writeCount;
+        address[] promiseList;
+        PayloadParams[] payloadParams;
+    }
 
     event RequestSubmitted(
         bool hasWrite,
@@ -66,14 +72,6 @@ contract RequestHandler is AddressResolverUtil {
 
     function setPrecompile(bytes4 callType_, IPrecompile precompile_) external onlyWatcher {
         precompiles[callType_] = precompile_;
-    }
-
-    // Add this struct at the top of the contract (after events, before functions)
-    struct CreateRequestResult {
-        uint256 totalEstimatedWatcherFees;
-        uint256 writeCount;
-        address[] promiseList;
-        PayloadParams[] payloadParams;
     }
 
     function submitRequest(
@@ -155,6 +153,7 @@ contract RequestHandler is AddressResolverUtil {
     ) internal returns (CreateRequestResult memory result) {
         // push first batch count
         requestBatchIds[requestCount_].push(nextBatchCount);
+
         result.promiseList = new address[](queueParams_.length);
         result.payloadParams = new PayloadParams[](queueParams_.length);
         for (uint256 i = 0; i < queueParams_.length; i++) {

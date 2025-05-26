@@ -104,13 +104,13 @@ contract Watcher is Trigger {
         delete payloadQueue;
     }
 
-    // todo: add this function
-    // function callAppGateways(WatcherMultiCallParams[] memory params_) external {
-    //     // _validateSignature(params_[i].data_, params_[i].nonces_, params_[i].signatures_);
-    //     for (uint40 i = 0; i < params_.length; i++) {
-    //         _callAppGateways(params_[i]);
-    //     }
-    // }
+    function callAppGateways(WatcherMultiCallParams[] memory params_) external {
+        for (uint40 i = 0; i < params_.length; i++) {
+            _validateSignature(params_[i].data, params_[i].nonce, params_[i].signature);
+            TriggerParams memory params = abi.decode(params_[i].data, (TriggerParams));
+            _callAppGateways(params);
+        }
+    }
 
     function getCurrentRequestCount() public view returns (uint40) {
         return requestHandler__.nextRequestCount();
@@ -141,15 +141,16 @@ contract Watcher is Trigger {
     }
 
     // all function from watcher requiring signature
+    // can be also used to do msg.sender check related function in other contracts like withdraw credits from fees manager and set core app-gateways in configurations
     function watcherMultiCall(WatcherMultiCallParams[] memory params_) external payable {
         for (uint40 i = 0; i < params_.length; i++) {
-            if (params_[i].contracts == address(0)) revert InvalidContract();
-            _validateSignature(params_[i].data_, params_[i].nonces_, params_[i].signatures_);
+            if (params_[i].contractAddress == address(0)) revert InvalidContract();
+            _validateSignature(params_[i].data, params_[i].nonce, params_[i].signature);
 
             // call the contract
             // trusting watcher to send enough value for all calls
-            (bool success, ) = params_[i].contracts.call{value: params_[i].value_}(
-                params_[i].data_
+            (bool success, ) = params_[i].contractAddress.call{value: params_[i].value}(
+                params_[i].data
             );
             if (!success) revert CallFailed();
         }

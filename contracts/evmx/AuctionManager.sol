@@ -50,7 +50,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     event MaxReAuctionCountSet(uint256 maxReAuctionCount);
 
     constructor(address addressResolver_) AppGatewayBase(addressResolver_) {
-        // todo-later: evmx slug can be immutable and set here
+        // todo-tests: evmx slug can be immutable and set here
         _disableInitializers(); // disable for implementation
     }
 
@@ -164,7 +164,9 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         auctionStatus[requestCount_] = AuctionStatus.CLOSED;
 
         if (winningBid.transmitter != address(0)) {
-            // todo-later: might block the request processing if transmitter don't have enough balance
+            // todo: might block the request processing if transmitter don't have enough balance for this schedule
+            // this case can hit when bid timeout is more than 0
+
             // set the timeout for the bid expiration
             // useful in case a transmitter did bid but did not execute payloads
             _createRequest(
