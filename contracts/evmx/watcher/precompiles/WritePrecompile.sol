@@ -119,7 +119,7 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
     /// @return deadline The deadline for the payload
     function handlePayload(
         address transmitter_,
-        PayloadParams calldata payloadParams
+        PayloadParams memory payloadParams
     ) external onlyWatcher returns (uint256 fees, uint256 deadline) {
         fees = writeFees;
         deadline = block.timestamp + expiryTime;
@@ -130,7 +130,7 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
             WriteFinality writeFinality,
             uint256 gasLimit,
             uint256 value,
-            address switchboard
+
         ) = abi.decode(
                 payloadParams.precompileData,
                 (address, Transaction, WriteFinality, uint256, uint256, address)
