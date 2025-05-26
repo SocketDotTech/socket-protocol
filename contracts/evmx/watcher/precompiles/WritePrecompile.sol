@@ -33,15 +33,13 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
     event FeesSet(uint256 writeFees);
     event ChainMaxMsgValueLimitsUpdated(uint32 chainSlug, uint256 maxMsgValueLimit);
     event ContractFactoryPlugSet(uint32 chainSlug, address contractFactoryPlug);
-
     /// @notice Emitted when a proof upload request is made
     event WriteProofRequested(
+        address transmitter,
         bytes32 digest,
-        Transaction transaction,
-        WriteFinality writeFinality,
-        uint256 gasLimit,
-        uint256 value,
-        address switchboard
+        bytes32 prevBatchDigestHash,
+        uint256 deadline,
+        PayloadParams payloadParams
     );
 
     /// @notice Emitted when a proof is uploaded
@@ -160,7 +158,13 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
         bytes32 digest = getDigest(digestParams_);
         digestHashes[payloadParams.payloadId] = digest;
 
-        emit WriteProofRequested(digest, transaction, writeFinality, gasLimit, value, switchboard);
+        emit WriteProofRequested(
+            transmitter_,
+            digest,
+            prevBatchDigestHash,
+            deadline,
+            payloadParams
+        );
     }
 
     function _getPrevBatchDigestHash(uint40 batchCount_) internal view returns (bytes32) {
