@@ -22,11 +22,12 @@ abstract contract AddressResolverUtil {
     /// @notice Restricts function access to the watcher precompile contract
     /// @dev Validates that msg.sender matches the registered watcher precompile address
     modifier onlyWatcher() {
-        if (msg.sender != address(addressResolver__.watcher__())) {
-            revert OnlyWatcherAllowed();
-        }
-
+        if (!_isWatcher(msg.sender)) revert OnlyWatcherAllowed();
         _;
+    }
+
+    function _isWatcher(address account_) internal view returns (bool) {
+        return (watcher__().isWatcher(account_) || account_ == address(watcher__()));
     }
 
     /// @notice Gets the watcher precompile contract interface

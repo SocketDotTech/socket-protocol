@@ -130,7 +130,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         uint256 amount_
     ) public view override returns (bool) {
         // If consumeFrom_ is not same as spender_ or spender_ is not watcher, check if it is approved
-        if (spender_ != address(watcher__()) && consumeFrom_ != spender_) {
+        if (!_isWatcher(spender_) && consumeFrom_ != spender_) {
             if (!isApproved[consumeFrom_][spender_]) return false;
         }
 

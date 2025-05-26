@@ -18,7 +18,12 @@ contract Watcher is Trigger {
         _initializeOwner(owner_);
     }
 
-    // todo: add withdraw credit function
+    function isWatcher(address account_) public view override returns (bool) {
+        return
+            account_ == address(requestHandler__) ||
+            account_ == address(configurations__) ||
+            account_ == address(promiseResolver__);
+    }
 
     function queueAndSubmit(
         QueueParams memory queue_,

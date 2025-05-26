@@ -76,4 +76,6 @@ interface IWatcher {
         bytes4 precompile_,
         bytes memory precompileData_
     ) external view returns (uint256);
+
+    function isWatcher(address account_) external view returns (bool);
 }
