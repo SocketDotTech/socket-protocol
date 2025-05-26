@@ -49,7 +49,7 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         _initializeOwner(owner_);
     }
 
-    function deployContracts(uint32 chainSlug_) external async(bytes("")) {
+    function deployContracts(uint32 chainSlug_) external async {
         bytes memory initData = abi.encodeWithSelector(SuperToken.setOwner.selector, owner());
         _deploy(superToken, chainSlug_, IsPlug.YES, initData);
     }
@@ -60,7 +60,7 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         return;
     }
 
-    function transfer(bytes memory order_) external async(bytes("")) {
+    function transfer(bytes memory order_) external async {
         TransferOrder memory order = abi.decode(order_, (TransferOrder));
         ISuperToken(order.srcToken).burn(order.user, order.srcAmount);
         ISuperToken(order.dstToken).mint(order.user, order.srcAmount);

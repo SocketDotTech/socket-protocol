@@ -6,7 +6,7 @@ import {Counter} from "./apps/app-gateways/counter/Counter.sol";
 import "./SetupTest.t.sol";
 import {SocketFeeManager} from "../contracts/protocol/SocketFeeManager.sol";
 import {MockFastSwitchboard} from "./mock/MockFastSwitchboard.sol";
-import {ExecuteParams, TransmissionParams, CallType} from "../contracts/utils/common/Structs.sol";
+import {ExecuteParams, TransmissionParams} from "../contracts/utils/common/Structs.sol";
 import {GOVERNANCE_ROLE, RESCUE_ROLE} from "../contracts/utils/common/AccessRoles.sol";
 import {Test} from "forge-std/Test.sol";
 
@@ -126,7 +126,7 @@ contract SocketFeeManagerTest is SetupTest {
         bytes memory payload
     ) internal view returns (ExecuteParams memory, TransmissionParams memory) {
         ExecuteParams memory executeParams = ExecuteParams({
-            callType: CallType.WRITE,
+            callType: WRITE,
             deadline: block.timestamp + 1 days,
             gasLimit: 100000,
             value: 0,

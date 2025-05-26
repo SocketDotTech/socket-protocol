@@ -2,12 +2,10 @@
 pragma solidity ^0.8.21;
 
 import "./SetupTest.t.sol";
-import "../contracts/evmx/AddressResolver.sol";
-import "../contracts/evmx/watcherPrecompile/core/WatcherPrecompile.sol";
-import "../contracts/evmx/watcherPrecompile/WatcherPrecompileLimits.sol";
-import "../contracts/evmx/watcherPrecompile/WatcherPrecompileConfig.sol";
-import "../contracts/evmx/Forwarder.sol";
-import "../contracts/evmx/AsyncPromise.sol";
+import "../contracts/evmx/helpers/AddressResolver.sol";
+import "../contracts/evmx/watcher/Watcher.sol";
+import "../contracts/evmx/helpers/Forwarder.sol";
+import "../contracts/evmx/helpers/AsyncPromise.sol";
 import "./mock/MockWatcherPrecompileImpl.sol";
 
 contract MigrationTest is SetupTest {
