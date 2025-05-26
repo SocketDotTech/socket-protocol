@@ -1,15 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "../contracts/evmx/watcher/Watcher.sol";
-import "../contracts/evmx/fees/Credit.sol";
-import "../contracts/evmx/watcher/Watcher.sol";
-import "../contracts/evmx/AuctionManager.sol";
-import "../contracts/evmx/helpers/Forwarder.sol";
-import "../contracts/evmx/interfaces/IAppGateway.sol";
-
-import "../contracts/evmx/fees/FeesManager.sol";
-
 import "./SetupTest.t.sol";
 
 interface IAppGatewayDeployer {
@@ -21,12 +12,8 @@ contract DeliveryHelperTest is SetupTest {
     uint256 public bidAmount = maxFees / 100;
     uint256 public deployCounter;
     uint256 public asyncPromiseCounterLocal = 0;
-    uint256 public asyncCounterTest;
-    uint256 public auctionEndDelaySeconds = 0;
-    uint256 public bidTimeout = 86400;
+    bytes public asyncPromiseBytecode = type(AsyncPromise).creationCode;
 
-    FeesManager feesManager;
-    AuctionManager auctionManager;
 
     event PayloadSubmitted(
         uint40 indexed requestCount,
@@ -41,90 +28,6 @@ contract DeliveryHelperTest is SetupTest {
     event RequestCancelled(uint40 indexed requestCount);
     event QueryRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
 
-    //////////////////////////////////// Setup ////////////////////////////////////
-    function setUpDeliveryHelper() internal {
-        // core
-        deployEVMxCore();
-        // Deploy implementations
-        FeesManager feesManagerImpl = new FeesManager();
-        AuctionManager auctionManagerImpl = new AuctionManager();
-
-        // Deploy and initialize proxies
-        bytes memory feesManagerData = abi.encodeWithSelector(
-            FeesManager.initialize.selector,
-            address(addressResolver),
-            watcherEOA,
-            evmxSlug,
-            FAST
-        );
-
-        vm.expectEmit(true, true, true, false);
-        emit Initialized(version);
-        address feesManagerProxy = proxyFactory.deployAndCall(
-            address(feesManagerImpl),
-            watcherEOA,
-            feesManagerData
-        );
-
-        bytes memory auctionManagerData = abi.encodeWithSelector(
-            AuctionManager.initialize.selector,
-            evmxSlug,
-            auctionEndDelaySeconds,
-            address(addressResolver),
-            owner,
-            maxReAuctionCount
-        );
-        vm.expectEmit(true, true, true, false);
-        emit Initialized(version);
-        address auctionManagerProxy = proxyFactory.deployAndCall(
-            address(auctionManagerImpl),
-            watcherEOA,
-            auctionManagerData
-        );
-
-        bytes memory deliveryHelperData = abi.encodeWithSelector(
-            DeliveryHelper.initialize.selector,
-            address(addressResolver),
-            owner,
-            bidTimeout
-        );
-
-        vm.expectEmit(true, true, true, false);
-        emit Initialized(version);
-        address deliveryHelperProxy = proxyFactory.deployAndCall(
-            address(deliveryHelperImpl),
-            watcherEOA,
-            deliveryHelperData
-        );
-
-        // Assign proxy addresses to contract variables
-        feesManager = FeesManager(address(feesManagerProxy));
-        deliveryHelper = DeliveryHelper(address(deliveryHelperProxy));
-        auctionManager = AuctionManager(address(auctionManagerProxy));
-
-        vm.startPrank(watcherEOA);
-        addressResolver.setDeliveryHelper(address(deliveryHelper));
-        addressResolver.setDefaultAuctionManager(address(auctionManager));
-        addressResolver.setFeesManager(address(feesManager));
-        vm.stopPrank();
-
-        hoax(owner);
-        auctionManager.grantRole(TRANSMITTER_ROLE, transmitterEOA);
-
-        // chain core contracts
-        arbConfig = deploySocket(arbChainSlug);
-        optConfig = deploySocket(optChainSlug);
-        connectDeliveryHelper();
-
-        depositUSDCFees(
-            address(auctionManager),
-            OnChainFees({
-                chainSlug: arbChainSlug,
-                token: address(arbConfig.feesTokenUSDC),
-                amount: 1 ether
-            })
-        );
-    }
 
     function connectDeliveryHelper() internal {
         vm.startPrank(owner);

@@ -5,50 +5,55 @@ import "forge-std/Test.sol";
 import "../contracts/utils/common/Structs.sol";
 import "../contracts/utils/common/Errors.sol";
 import "../contracts/utils/common/Constants.sol";
-import "../contracts/evmx/watcher/Watcher.sol";
-import "../contracts/evmx/watcher/Configurations.sol";
-import "../contracts/evmx/interfaces/IForwarder.sol";
 import "../contracts/utils/common/AccessRoles.sol";
-import {Socket} from "../contracts/protocol/Socket.sol";
+
+import "../contracts/protocol/Socket.sol";
 import "../contracts/protocol/switchboard/FastSwitchboard.sol";
 import "../contracts/protocol/SocketBatcher.sol";
-import "../contracts/evmx/helpers/AddressResolver.sol";
-import {ContractFactoryPlug} from "../contracts/evmx/plugs/ContractFactoryPlug.sol";
-import {FeesPlug} from "../contracts/evmx/plugs/FeesPlug.sol";
-import {SocketFeeManager} from "../contracts/protocol/SocketFeeManager.sol";
-import "../contracts/utils/common/Structs.sol";
+import "../contracts/protocol/SocketFeeManager.sol";
 
+import "../contracts/evmx/watcher/Watcher.sol";
+import "../contracts/evmx/watcher/Configurations.sol";
+import "../contracts/evmx/watcher/RequestHandler.sol";
+import "../contracts/evmx/watcher/PromiseResolver.sol";
+import "../contracts/evmx/watcher/precompiles/WritePrecompile.sol";
+import "../contracts/evmx/watcher/precompiles/ReadPrecompile.sol";
+import "../contracts/evmx/watcher/precompiles/SchedulePrecompile.sol";
+
+import "../contracts/evmx/helpers/AddressResolver.sol";
 import "../contracts/evmx/helpers/AsyncDeployer.sol";
+import "../contracts/evmx/helpers/DeployForwarder.sol";
+import "../contracts/evmx/plugs/ContractFactoryPlug.sol";
+import "../contracts/evmx/fees/FeesManager.sol";
+import "../contracts/evmx/plugs/FeesPlug.sol";
+import "../contracts/evmx/AuctionManager.sol";
 
 import "solady/utils/ERC1967Factory.sol";
 import "./apps/app-gateways/USDC.sol";
 
 contract SetupTest is Test {
-    uint public c = 1;
-    address owner = address(uint160(c++));
+    uint256 c = 1;
 
     uint256 watcherPrivateKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
     uint256 transmitterPrivateKey =
         0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d;
-
     address watcherEOA = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     address transmitterEOA = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
+    address owner = address(uint160(c++));
 
     uint32 arbChainSlug = 421614;
     uint32 optChainSlug = 11155420;
     uint32 evmxSlug = 1;
+
     uint256 expiryTime = 10000000;
+    uint256 bidTimeout = 86400;
     uint256 maxReAuctionCount = 10;
+    uint256 auctionEndDelaySeconds = 0;
     uint256 socketFees = 0.01 ether;
+
     uint256 public signatureNonce;
     uint256 public payloadIdCounter;
-    uint256 public timeoutIdCounter;
     uint256 public triggerCounter;
-    uint256 public defaultLimit = 1000;
-
-    bytes public asyncPromiseBytecode = type(AsyncPromise).creationCode;
-    uint64 public version = 1;
-
     struct SocketContracts {
         uint32 chainSlug;
         Socket socket;
@@ -59,57 +64,61 @@ contract SetupTest is Test {
         FeesPlug feesPlug;
         ERC20 feesTokenUSDC;
     }
-
-    AddressResolver public addressResolver;
-    Watcher public watcher;
-    Configurations public configurations;
-    AsyncDeployer public asyncDeployer;
-    AsyncPromise public asyncPromise;
-
     SocketContracts public arbConfig;
     SocketContracts public optConfig;
 
-    // Add new variables for proxy admin and implementation contracts
-    Watcher public watcherImpl;
-    Configurations public configurationsImpl;
-    AsyncDeployer public asyncDeployerImpl;
-    AsyncPromise public asyncPromiseImpl;
-    AddressResolver public addressResolverImpl;
     ERC1967Factory public proxyFactory;
+    FeesManager feesManager;
+    AddressResolver public addressResolver;
+    AsyncDeployer public asyncDeployer;
+    DeployForwarder public deployForwarder;
+    AuctionManager auctionManager;
+
+    Watcher public watcher;
+    Configurations public configurations;
+    RequestHandler public requestHandler;
+    PromiseResolver public promiseResolver;
+    WritePrecompile public writePrecompile;
+    ReadPrecompile public readPrecompile;
+    SchedulePrecompile public schedulePrecompile;
 
     event Initialized(uint64 version);
     event FinalizeRequested(bytes32 digest, PayloadParams payloadParams);
 
     //////////////////////////////////// Setup ////////////////////////////////////
 
-    function deploySocket(uint32 chainSlug_) internal returns (SocketContracts memory) {
+    function _deploySocket(uint32 chainSlug_) internal returns (SocketContracts memory) {
+        // socket
         Socket socket = new Socket(chainSlug_, owner, "test");
+        SocketFeeManager socketFeeManager = new SocketFeeManager(owner, socketFees);
         SocketBatcher socketBatcher = new SocketBatcher(owner, socket);
+
+        // switchboard
+        ERC20 feesTokenUSDC = new USDC("USDC", "USDC", 6, owner, 1000000000000000000000000);
         FastSwitchboard switchboard = new FastSwitchboard(chainSlug_, socket, owner);
 
-        ERC20 feesTokenUSDC = new USDC("USDC", "USDC", 6, owner, 1000000000000000000000000);
+        // plugs
         FeesPlug feesPlug = new FeesPlug(address(socket), owner);
         ContractFactoryPlug contractFactoryPlug = new ContractFactoryPlug(address(socket), owner);
+
         vm.startPrank(owner);
-        // feePlug whitelist token
-        feesPlug.whitelistToken(address(feesTokenUSDC));
         // socket
         socket.grantRole(GOVERNANCE_ROLE, address(owner));
 
         // switchboard
         switchboard.registerSwitchboard();
         switchboard.grantRole(WATCHER_ROLE, watcherEOA);
+
+        // plugs
+        feesPlug.whitelistToken(address(feesTokenUSDC));
+        feesManager.setFeesPlug(chainSlug_, address(feesPlug));
+        writePrecompile.setContractFactoryPlugs(chainSlug_, address(contractFactoryPlug));
         vm.stopPrank();
 
-        hoax(watcherEOA);
+        vm.startPrank(watcherEOA);
         configurations.setSocket(chainSlug_, address(socket));
-        
-        // todo: setters
-        // address(contractFactoryPlug),
-        //     address(feesPlug)
-        SocketFeeManager socketFeeManager = new SocketFeeManager(owner, socketFees);
-        hoax(watcherEOA);
         configurations.setSwitchboard(chainSlug_, FAST, address(switchboard));
+        vm.stopPrank();
 
         return
             SocketContracts({
@@ -124,14 +133,16 @@ contract SetupTest is Test {
             });
     }
 
-    function deployEVMxCore() internal {
-        // Deploy implementations
-        addressResolverImpl = new AddressResolver();
-        watcherImpl = new Watcher();
-        configurationsImpl = new Configurations();
-        asyncDeployerImpl = new AsyncDeployer();
-        asyncPromiseImpl = new AsyncPromise();
+    function _deployEVMxCore() internal {
         proxyFactory = new ERC1967Factory();
+
+        // Deploy implementations for upgradeable contracts
+        FeesManager feesManagerImpl = new FeesManager();
+        AddressResolver addressResolverImpl = new AddressResolver();
+        AsyncDeployer asyncDeployerImpl = new AsyncDeployer();
+        DeployForwarder deployForwarderImpl = new DeployForwarder();
+        AuctionManager auctionManagerImpl = new AuctionManager();
+        Watcher watcherImpl = new Watcher();
 
         // Deploy and initialize proxies
         bytes memory addressResolverData = abi.encodeWithSelector(
@@ -144,20 +155,6 @@ contract SetupTest is Test {
             address(addressResolverImpl),
             watcherEOA,
             addressResolverData
-        );
-
-        bytes memory configurationsData = abi.encodeWithSelector(
-            Configurations.initialize.selector,
-            watcherEOA,
-            address(addressResolverProxy),
-            evmxSlug
-        );
-        vm.expectEmit(true, true, true, false);
-        emit Initialized(version);
-        address configurationsProxy = proxyFactory.deployAndCall(
-            address(configurationsImpl),
-            watcherEOA,
-            configurationsData
         );
 
         bytes memory watcherData = abi.encodeWithSelector(
@@ -176,21 +173,80 @@ contract SetupTest is Test {
             watcherData
         );
 
+        bytes memory feesManagerData = abi.encodeWithSelector(
+            FeesManager.initialize.selector,
+            address(addressResolver),
+            watcherEOA,
+            evmxSlug,
+            FAST
+        );
+
+        vm.expectEmit(true, true, true, false);
+        emit Initialized(version);
+        address feesManagerProxy = proxyFactory.deployAndCall(
+            address(feesManagerImpl),
+            watcherEOA,
+            feesManagerData
+        );
+
+        bytes memory auctionManagerData = abi.encodeWithSelector(
+            AuctionManager.initialize.selector,
+            evmxSlug,
+            auctionEndDelaySeconds,
+            address(addressResolver),
+            owner,
+            maxReAuctionCount
+        );
+        vm.expectEmit(true, true, true, false);
+        emit Initialized(version);
+        address auctionManagerProxy = proxyFactory.deployAndCall(
+            address(auctionManagerImpl),
+            watcherEOA,
+            auctionManagerData
+        );
+
         // Assign proxy addresses to public variables
+        feesManager = FeesManager(address(feesManagerProxy));
         addressResolver = AddressResolver(address(addressResolverProxy));
+        asyncDeployer = AsyncDeployer(address(asyncDeployerProxy));
+        deployForwarder = DeployForwarder(address(deployForwarderProxy));
+        auctionManager = AuctionManager(address(auctionManagerProxy));
         watcher = Watcher(address(watcherProxy));
-        configurations = Configurations(address(configurationsProxy));
-        // asyncDeployer = AsyncDeployer(address(asyncDeployerProxy));
-        // asyncPromise = AsyncPromise(address(asyncPromiseProxy));
+
+        configurations = new Configurations(watcher);
+        requestHandler = new RequestHandler(watcher);
+        promiseResolver = new PromiseResolver(watcher);
+        writePrecompile = new WritePrecompile(watcher);
+        readPrecompile = new ReadPrecompile(watcher);
+        schedulePrecompile = new SchedulePrecompile(watcher);
+    }
+
+    function deploy() internal {
+        _deployEVMxCore();
 
         vm.startPrank(watcherEOA);
         addressResolver.setWatcher(address(watcher));
-        watcher.setCallBackFees(1);
-        watcher.setFinalizeFees(1);
-        watcher.setQueryFees(1);
-        watcher.setTimeoutFees(1);
-
+        addressResolver.setDeliveryHelper(address(deliveryHelper));
+        addressResolver.setDefaultAuctionManager(address(auctionManager));
+        addressResolver.setFeesManager(address(feesManager));
         vm.stopPrank();
+
+        hoax(owner);
+        auctionManager.grantRole(TRANSMITTER_ROLE, transmitterEOA);
+
+        // chain core contracts
+        arbConfig = _deploySocket(arbChainSlug);
+        optConfig = _deploySocket(optChainSlug);
+        _connectDeliveryHelper();
+
+        _depositUSDCFees(
+            address(auctionManager),
+            OnChainFees({
+                chainSlug: arbChainSlug,
+                token: address(arbConfig.feesTokenUSDC),
+                amount: 1 ether
+            })
+        );
     }
 
     //////////////////////////////////// Watcher precompiles ////////////////////////////////////
