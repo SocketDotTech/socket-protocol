@@ -4,13 +4,14 @@ pragma solidity ^0.8.21;
 import "../interfaces/IWatcher.sol";
 import "../helpers/AddressResolverUtil.sol";
 import "solady/utils/ECDSA.sol";
+import {Initializable} from "solady/utils/Initializable.sol";
 import {Ownable} from "solady/auth/Ownable.sol";
 
 /// @title WatcherStorage
 /// @notice Storage contract for the WatcherPrecompile system
 /// @dev This contract contains all the storage variables used by the WatcherPrecompile system
 /// @dev It is inherited by WatcherPrecompileCore and WatcherPrecompile
-abstract contract WatcherStorage is IWatcher, AddressResolverUtil, Ownable {
+abstract contract WatcherStorage is IWatcher, Initializable, AddressResolverUtil, Ownable {
     // slots [0-49]: gap for future storage variables
     uint256[50] _gap_before;
 

@@ -31,7 +31,7 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
 
     /// @notice Emitted when fees are set
     event FeesSet(uint256 writeFees);
-    event ChainMaxMsgValueLimitsUpdated(uint32[] chainSlugs, uint256[] maxMsgValueLimits);
+    event ChainMaxMsgValueLimitsUpdated(uint32 chainSlug, uint256 maxMsgValueLimit);
     event WriteRequested(bytes32 digest, PayloadParams payloadParams);
     event ContractFactoryPlugSet(uint32 chainSlug, address contractFactoryPlug);
 
@@ -219,16 +219,11 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
     /// @param chainSlugs_ Array of chain identifiers
     /// @param maxMsgValueLimits_ Array of corresponding maximum message value limits
     function updateChainMaxMsgValueLimits(
-        uint32[] calldata chainSlugs_,
-        uint256[] calldata maxMsgValueLimits_
+        uint32 chainSlug_,
+        uint256 maxMsgValueLimit_
     ) external onlyOwner {
-        if (chainSlugs_.length != maxMsgValueLimits_.length) revert InvalidIndex();
-
-        for (uint256 i = 0; i < chainSlugs_.length; i++) {
-            chainMaxMsgValueLimit[chainSlugs_[i]] = maxMsgValueLimits_[i];
-        }
-
-        emit ChainMaxMsgValueLimitsUpdated(chainSlugs_, maxMsgValueLimits_);
+        chainMaxMsgValueLimit[chainSlug_] = maxMsgValueLimit_;
+        emit ChainMaxMsgValueLimitsUpdated(chainSlug_, maxMsgValueLimit_);
     }
 
     function setFees(uint256 writeFees_) external onlyWatcher {

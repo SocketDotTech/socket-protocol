@@ -36,11 +36,6 @@ contract Configurations is IConfigurations, Initializable, WatcherBase, Ownable 
     /// @dev chainSlug => socket address
     mapping(uint32 => address) public sockets;
 
-    // slot 107: contractsToGateways
-    /// @notice Maps contract address to their associated app gateway
-    /// @dev contractAddress => appGateway
-    mapping(address => address) public coreAppGateways;
-
     // slot 109: isValidPlug
     /// @notice Maps app gateway, chain slug, and plug to whether it is valid
     /// @dev appGateway => chainSlug => plug => isValid
@@ -75,9 +70,7 @@ contract Configurations is IConfigurations, Initializable, WatcherBase, Ownable 
     /// @param coreAppGateway The address of the core app gateway
     event CoreAppGatewaySet(address appGateway, address coreAppGateway);
 
-    constructor(address watcher_) WatcherBase(watcher_) {
-        _initializeOwner(msg.sender);
-    }
+    constructor(address watcher_) WatcherBase(watcher_) {}
 
     /// @notice Configures app gateways with their respective plugs and switchboards
     /// @dev Only callable by the watcher
@@ -129,16 +122,6 @@ contract Configurations is IConfigurations, Initializable, WatcherBase, Ownable 
     function setIsValidPlug(bool isValid_, uint32 chainSlug_, address plug_) external {
         isValidPlug[msg.sender][chainSlug_][plug_] = isValid_;
         emit IsValidPlugSet(msg.sender, chainSlug_, plug_, isValid_);
-    }
-
-    function setCoreAppGateway(address appGateway_) external {
-        coreAppGateways[appGateway_] = msg.sender;
-        emit CoreAppGatewaySet(appGateway_, msg.sender);
-    }
-
-    function getCoreAppGateway(address appGateway_) external view returns (address coreAppGateway) {
-        coreAppGateway = coreAppGateways[appGateway_];
-        if (coreAppGateway == address(0)) coreAppGateway = appGateway_;
     }
 
     /// @notice Retrieves the configuration for a specific plug on a network

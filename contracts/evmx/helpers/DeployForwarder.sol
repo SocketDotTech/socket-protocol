@@ -18,6 +18,11 @@ contract DeployForwarder is AddressResolverUtil, IDeployForwarder {
 
     bytes32 public override deployerSwitchboardType;
 
+    constructor(address addressResolver_, bytes32 deployerSwitchboardType_) {
+        _setAddressResolver(addressResolver_);
+        deployerSwitchboardType = deployerSwitchboardType_;
+    }
+
     /// @notice Deploys a contract
     /// @param chainSlug_ The chain slug
     function deploy(

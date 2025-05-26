@@ -4,22 +4,39 @@ pragma solidity ^0.8.21;
 import "./Trigger.sol";
 
 contract Watcher is Trigger {
-    constructor(uint32 evmxSlug_, address owner_, uint256 triggerFees_) {
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
+    function initialize(
+        uint32 evmxSlug_,
+        uint256 triggerFees_,
+        address owner_,
+        address addressResolver_
+    ) public reinitializer(1) {
         evmxSlug = evmxSlug_;
         triggerFees = triggerFees_;
         _initializeOwner(owner_);
+        _setAddressResolver(addressResolver_);
     }
 
     function setCoreContracts(
         address requestHandler_,
         address configManager_,
-        address promiseResolver_,
-        address addressResolver_
+        address promiseResolver_
     ) external onlyOwner {
         requestHandler__ = IRequestHandler(requestHandler_);
         configurations__ = IConfigurations(configManager_);
         promiseResolver__ = IPromiseResolver(promiseResolver_);
-        addressResolver__ = IAddressResolver(addressResolver_);
+    }
+
+    function setTriggerFees(
+        uint256 triggerFees_,
+        uint256 nonce_,
+        bytes memory signature_
+    ) external {
+        _validateSignature(abi.encode(triggerFees_), nonce_, signature_);
+        _setTriggerFees(triggerFees_);
     }
 
     function isWatcher(address account_) public view override returns (bool) {
@@ -133,15 +150,6 @@ contract Watcher is Trigger {
         bytes memory precompileData_
     ) external view returns (uint256) {
         return requestHandler__.getPrecompileFees(precompile_, precompileData_);
-    }
-
-    function setTriggerFees(
-        uint256 triggerFees_,
-        uint256 nonce_,
-        bytes memory signature_
-    ) external {
-        _validateSignature(abi.encode(triggerFees_), nonce_, signature_);
-        _setTriggerFees(triggerFees_);
     }
 
     // all function from watcher requiring signature

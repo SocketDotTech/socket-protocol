@@ -55,15 +55,17 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     }
 
     /// @notice Initializer function to replace constructor
+    /// @param evmxSlug_ The evmx chain slug
+    /// @param bidTimeout_ The timeout after which a bid expires
+    /// @param maxReAuctionCount_ The maximum number of re-auctions allowed
     /// @param auctionEndDelaySeconds_ The delay in seconds before an auction can end
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the contract owner
-    /// @param maxReAuctionCount_ The maximum number of re-auctions allowed
     function initialize(
         uint32 evmxSlug_,
         uint128 bidTimeout_,
-        uint256 auctionEndDelaySeconds_,
         uint256 maxReAuctionCount_,
+        uint256 auctionEndDelaySeconds_,
         address addressResolver_,
         address owner_
     ) public reinitializer(1) {
@@ -71,9 +73,9 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         _initializeOwner(owner_);
 
         evmxSlug = evmxSlug_;
-        auctionEndDelaySeconds = auctionEndDelaySeconds_;
         bidTimeout = bidTimeout_;
         maxReAuctionCount = maxReAuctionCount_;
+        auctionEndDelaySeconds = auctionEndDelaySeconds_;
     }
 
     function setAuctionEndDelaySeconds(uint256 auctionEndDelaySeconds_) external onlyOwner {
