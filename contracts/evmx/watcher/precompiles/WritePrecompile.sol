@@ -32,7 +32,6 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
     /// @notice Emitted when fees are set
     event FeesSet(uint256 writeFees);
     event ChainMaxMsgValueLimitsUpdated(uint32 chainSlug, uint256 maxMsgValueLimit);
-    event WriteRequested(bytes32 digest, PayloadParams payloadParams);
     event ContractFactoryPlugSet(uint32 chainSlug, address contractFactoryPlug);
 
     /// @notice Emitted when a proof upload request is made

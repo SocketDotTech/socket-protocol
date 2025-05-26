@@ -92,10 +92,11 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable, AddressR
     /// @param invoker_ The address of the invoker
     /// @return newAsyncPromise The address of the deployed AsyncPromise proxy contract
     function deployAsyncPromiseContract(
-        address invoker_
+        address invoker_,
+        uint40 requestCount_
     ) external override onlyWatcher returns (address newAsyncPromise) {
         // creates init data and salt
-        (bytes32 salt, bytes memory initData) = _createAsyncPromiseParams(invoker_);
+        (bytes32 salt, bytes memory initData) = _createAsyncPromiseParams(invoker_, requestCount_);
         asyncPromiseCounter++;
 
         // deploys the proxy
@@ -175,8 +176,11 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable, AddressR
     /// @notice Gets the predicted address of an AsyncPromise proxy contract
     /// @param invoker_ The address of the invoker
     /// @return The predicted address of the AsyncPromise proxy contract
-    function getAsyncPromiseAddress(address invoker_) public view override returns (address) {
-        (bytes32 salt, ) = _createAsyncPromiseParams(invoker_);
+    function getAsyncPromiseAddress(
+        address invoker_,
+        uint40 requestCount_
+    ) public view override returns (address) {
+        (bytes32 salt, ) = _createAsyncPromiseParams(invoker_, requestCount_);
         return _predictProxyAddress(salt, address(asyncPromiseBeacon));
     }
 

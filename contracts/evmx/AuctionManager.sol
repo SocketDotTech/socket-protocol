@@ -2,7 +2,6 @@
 pragma solidity ^0.8.21;
 
 import {ECDSA} from "solady/utils/ECDSA.sol";
-import "solady/utils/Initializable.sol";
 import "./interfaces/IAuctionManager.sol";
 import "../utils/AccessControl.sol";
 import {AuctionNotOpen, AuctionClosed, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter, MaxReAuctionCountReached, InvalidBid} from "../utils/common/Errors.sol";
@@ -15,7 +14,7 @@ import {AppGatewayBase} from "./base/AppGatewayBase.sol";
 /// @notice Storage for the AuctionManager contract
 abstract contract AuctionManagerStorage is IAuctionManager {
     // slot 50
-    uint32 public evmxSlug;
+    uint32 public immutable evmxSlug;
 
     // slot 50
     /// @notice The timeout after which a bid expires
@@ -41,7 +40,7 @@ abstract contract AuctionManagerStorage is IAuctionManager {
 
 /// @title AuctionManager
 /// @notice Contract for managing auctions and placing bids
-contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, AppGatewayBase {
+contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase {
     event AuctionRestarted(uint40 requestCount);
     event AuctionStarted(uint40 requestCount);
     event AuctionEnded(uint40 requestCount, Bid winningBid);
@@ -49,27 +48,21 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     event AuctionEndDelaySecondsSet(uint256 auctionEndDelaySeconds);
     event MaxReAuctionCountSet(uint256 maxReAuctionCount);
 
-    constructor(address addressResolver_) AppGatewayBase(addressResolver_) {
-        // todo-tests: evmx slug can be immutable and set here
-        _disableInitializers(); // disable for implementation
-    }
-
-    /// @notice Initializer function to replace constructor
     /// @param evmxSlug_ The evmx chain slug
     /// @param bidTimeout_ The timeout after which a bid expires
     /// @param maxReAuctionCount_ The maximum number of re-auctions allowed
     /// @param auctionEndDelaySeconds_ The delay in seconds before an auction can end
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the contract owner
-    function initialize(
+
+    constructor(
         uint32 evmxSlug_,
         uint128 bidTimeout_,
         uint256 maxReAuctionCount_,
         uint256 auctionEndDelaySeconds_,
         address addressResolver_,
         address owner_
-    ) public reinitializer(1) {
-        _setAddressResolver(addressResolver_);
+    ) AppGatewayBase(addressResolver_) {
         _initializeOwner(owner_);
 
         evmxSlug = evmxSlug_;

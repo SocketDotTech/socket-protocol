@@ -5,7 +5,7 @@ import "./Credit.sol";
 
 /// @title FeesManager
 /// @notice Contract for managing fees
-abstract contract FeesManager is Credit {
+contract FeesManager is Credit {
     /// @notice Emitted when fees are blocked for a batch
     /// @param requestCount The batch identifier
     /// @param consumeFrom The consume from address

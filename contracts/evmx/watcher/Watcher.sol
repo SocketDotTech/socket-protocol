@@ -77,7 +77,10 @@ contract Watcher is Trigger {
 
         uint40 requestCount = getCurrentRequestCount();
         // Deploy a new async promise contract.
-        latestAsyncPromise = asyncDeployer__().deployAsyncPromiseContract(appGateway_);
+        latestAsyncPromise = asyncDeployer__().deployAsyncPromiseContract(
+            appGateway_,
+            requestCount
+        );
         appGatewayTemp = appGateway_;
         queue_.asyncPromise = latestAsyncPromise;
 

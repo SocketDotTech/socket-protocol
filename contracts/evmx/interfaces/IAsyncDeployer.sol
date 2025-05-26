@@ -34,9 +34,15 @@ interface IAsyncDeployer {
     function setForwarderImplementation(address implementation_) external;
 
     // Async Promise Management
-    function deployAsyncPromiseContract(address invoker_) external returns (address);
+    function deployAsyncPromiseContract(
+        address invoker_,
+        uint40 requestCount_
+    ) external returns (address);
 
-    function getAsyncPromiseAddress(address invoker_) external view returns (address);
+    function getAsyncPromiseAddress(
+        address invoker_,
+        uint40 requestCount_
+    ) external view returns (address);
 
     function setAsyncPromiseImplementation(address implementation_) external;
 }
