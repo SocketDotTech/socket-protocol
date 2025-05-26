@@ -61,9 +61,9 @@ abstract contract FeesManager is Credit {
     /// @param owner_ The address of the owner
     /// @param evmxSlug_ The evmx chain slug
     function initialize(
+        uint32 evmxSlug_,
         address addressResolver_,
         address owner_,
-        uint32 evmxSlug_,
         bytes32 sbType_
     ) public reinitializer(1) {
         evmxSlug = evmxSlug_;

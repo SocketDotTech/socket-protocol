@@ -18,8 +18,6 @@ contract DeployForwarder is AddressResolverUtil, IDeployForwarder {
 
     bytes32 public override deployerSwitchboardType;
 
-    mapping(uint32 => address) public override contractFactoryPlugs;
-
     /// @notice Deploys a contract
     /// @param chainSlug_ The chain slug
     function deploy(

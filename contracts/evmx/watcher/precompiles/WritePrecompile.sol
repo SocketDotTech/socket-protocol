@@ -7,10 +7,11 @@ import "../../interfaces/IPrecompile.sol";
 import {encodeAppGatewayId} from "../../../utils/common/IdUtils.sol";
 
 import "../WatcherBase.sol";
+import "solady/auth/Ownable.sol";
 
 /// @title WritePrecompile
 /// @notice Handles write precompile logic
-contract WritePrecompile is IPrecompile, WatcherBase {
+contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
     /// @notice Mapping to store watcher proofs
     /// @dev Maps payload ID to proof bytes
     /// @dev payloadId => proof bytes
@@ -32,6 +33,7 @@ contract WritePrecompile is IPrecompile, WatcherBase {
     event FeesSet(uint256 writeFees);
     event ChainMaxMsgValueLimitsUpdated(uint32[] chainSlugs, uint256[] maxMsgValueLimits);
     event WriteRequested(bytes32 digest, PayloadParams payloadParams);
+    event ContractFactoryPlugSet(uint32 chainSlug, address contractFactoryPlug);
 
     /// @notice Emitted when a proof upload request is made
     event WriteProofRequested(
@@ -49,7 +51,13 @@ contract WritePrecompile is IPrecompile, WatcherBase {
     event WriteProofUploaded(bytes32 indexed payloadId, bytes proof);
     event ExpiryTimeSet(uint256 expiryTime);
 
-    constructor(address watcher_, uint256 writeFees_, uint256 expiryTime_) WatcherBase(watcher_) {
+    constructor(
+        address owner_,
+        address watcher_,
+        uint256 writeFees_,
+        uint256 expiryTime_
+    ) WatcherBase(watcher_) {
+        _initializeOwner(owner_);
         writeFees = writeFees_;
         expiryTime = expiryTime_;
     }
@@ -213,7 +221,7 @@ contract WritePrecompile is IPrecompile, WatcherBase {
     function updateChainMaxMsgValueLimits(
         uint32[] calldata chainSlugs_,
         uint256[] calldata maxMsgValueLimits_
-    ) external onlyWatcher {
+    ) external onlyOwner {
         if (chainSlugs_.length != maxMsgValueLimits_.length) revert InvalidIndex();
 
         for (uint256 i = 0; i < chainSlugs_.length; i++) {
@@ -226,6 +234,14 @@ contract WritePrecompile is IPrecompile, WatcherBase {
     function setFees(uint256 writeFees_) external onlyWatcher {
         writeFees = writeFees_;
         emit FeesSet(writeFees_);
+    }
+
+    function setContractFactoryPlugs(
+        uint32 chainSlug_,
+        address contractFactoryPlug_
+    ) external onlyOwner {
+        contractFactoryPlugs[chainSlug_] = contractFactoryPlug_;
+        emit ContractFactoryPlugSet(chainSlug_, contractFactoryPlug_);
     }
 
     /// @notice Sets the expiry time for payload execution

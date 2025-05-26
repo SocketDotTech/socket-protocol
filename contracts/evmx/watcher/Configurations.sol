@@ -6,11 +6,12 @@ import "../interfaces/IConfigurations.sol";
 import {WatcherBase} from "./WatcherBase.sol";
 import {encodeAppGatewayId} from "../../utils/common/IdUtils.sol";
 import {InvalidGateway, InvalidSwitchboard} from "../../utils/common/Errors.sol";
+import "solady/auth/Ownable.sol";
 
 /// @title Configurations
 /// @notice Configuration contract for the Watcher Precompile system
 /// @dev Handles the mapping between networks, plugs, and app gateways for payload execution
-contract Configurations is IConfigurations, Initializable, WatcherBase {
+contract Configurations is IConfigurations, Initializable, WatcherBase, Ownable {
     // slots 0-50 (51) reserved for addr resolver util
 
     // slots [51-100]: gap for future storage variables
@@ -74,7 +75,9 @@ contract Configurations is IConfigurations, Initializable, WatcherBase {
     /// @param coreAppGateway The address of the core app gateway
     event CoreAppGatewaySet(address appGateway, address coreAppGateway);
 
-    constructor(address watcher_) WatcherBase(watcher_) {}
+    constructor(address watcher_) WatcherBase(watcher_) {
+        _initializeOwner(msg.sender);
+    }
 
     /// @notice Configures app gateways with their respective plugs and switchboards
     /// @dev Only callable by the watcher
@@ -99,7 +102,7 @@ contract Configurations is IConfigurations, Initializable, WatcherBase {
     /// @notice Sets the socket for a network
     /// @param chainSlug_ The identifier of the network
     /// @param socket_ The address of the socket
-    function setSocket(uint32 chainSlug_, address socket_) external onlyWatcher {
+    function setSocket(uint32 chainSlug_, address socket_) external onlyOwner {
         sockets[chainSlug_] = socket_;
         emit SocketSet(chainSlug_, socket_);
     }
@@ -112,7 +115,7 @@ contract Configurations is IConfigurations, Initializable, WatcherBase {
         uint32 chainSlug_,
         bytes32 sbType_,
         address switchboard_
-    ) external onlyWatcher {
+    ) external onlyOwner {
         switchboards[chainSlug_][sbType_] = switchboard_;
         emit SwitchboardSet(chainSlug_, sbType_, switchboard_);
     }

@@ -24,12 +24,6 @@ contract WatcherBase {
         watcher__ = IWatcher(watcher_);
     }
 
-    /// @notice Updates the Watcher address
-    /// @param watcher_ The new address of the Watcher contract
-    function setWatcher(address watcher_) external onlyWatcher {
-        watcher__ = IWatcher(watcher_);
-    }
-
     /// @notice Returns the configurations of the Watcher contract
     /// @return configurations The configurations of the Watcher contract
     function configurations__() internal view returns (IConfigurations) {

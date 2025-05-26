@@ -68,6 +68,14 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
     /// @notice Emitted when credits are transferred
     event CreditsTransferred(address indexed from, address indexed to, uint256 amount);
 
+    /// @notice Emitted when fees plug is set
+    event FeesPlugSet(uint32 indexed chainSlug, address indexed feesPlug);
+
+    function setFeesPlug(uint32 chainSlug_, address feesPlug_) external onlyOwner {
+        feesPlugs[chainSlug_] = feesPlug_;
+        emit FeesPlugSet(chainSlug_, feesPlug_);
+    }
+
     /// @notice Deposits credits and native tokens to a user
     /// @param depositTo_ The address to deposit the credits to
     /// @param chainSlug_ The chain slug

@@ -4,18 +4,22 @@ pragma solidity ^0.8.21;
 import "./Trigger.sol";
 
 contract Watcher is Trigger {
-    constructor(
+    constructor(uint32 evmxSlug_, address owner_, uint256 triggerFees_) {
+        evmxSlug = evmxSlug_;
+        triggerFees = triggerFees_;
+        _initializeOwner(owner_);
+    }
+
+    function setCoreContracts(
         address requestHandler_,
         address configManager_,
         address promiseResolver_,
-        address addressResolver_,
-        address owner_
-    ) {
+        address addressResolver_
+    ) external onlyOwner {
         requestHandler__ = IRequestHandler(requestHandler_);
         configurations__ = IConfigurations(configManager_);
         promiseResolver__ = IPromiseResolver(promiseResolver_);
         addressResolver__ = IAddressResolver(addressResolver_);
-        _initializeOwner(owner_);
     }
 
     function isWatcher(address account_) public view override returns (bool) {

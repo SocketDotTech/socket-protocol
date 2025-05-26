@@ -18,11 +18,6 @@ abstract contract WatcherStorage is IWatcher, AddressResolverUtil, Ownable {
     /// @notice The chain slug of the watcher precompile
     uint32 public evmxSlug;
 
-    // Payload Params
-    /// @notice The time from queue for the payload to be executed
-    /// @dev Expiry time in seconds for payload execution
-    uint256 public expiryTime;
-
     /// @notice Maps nonce to whether it has been used
     /// @dev Used to prevent replay attacks with signature nonces
     /// @dev signatureNonce => isValid

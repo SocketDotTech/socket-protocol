@@ -14,11 +14,6 @@ interface IDeployForwarder {
     /// @return The deployer switchboard type
     function deployerSwitchboardType() external view returns (bytes32);
 
-    /// @notice Returns the contract factory plug address for a given chain slug
-    /// @param chainSlug The chain slug
-    /// @return The contract factory plug address
-    function contractFactoryPlugs(uint32 chainSlug) external view returns (address);
-
     /// @notice Deploys a contract
     /// @param isPlug_ Whether the contract is a plug
     /// @param chainSlug_ The chain slug

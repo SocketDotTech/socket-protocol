@@ -7,12 +7,13 @@ import "../../utils/common/Constants.sol";
 import "../../utils/common/IdUtils.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
+import "solady/auth/Ownable.sol";
 
 /// @title RequestHandler
 /// @notice Contract that handles request processing and management, including request submission, batch processing, and request lifecycle management
 /// @dev Handles request submission, batch processing, transmitter assignment, request cancellation and settlement
 /// @dev This contract interacts with the WatcherPrecompileStorage for storage access
-contract RequestHandler is AddressResolverUtil {
+contract RequestHandler is AddressResolverUtil, Ownable {
     /// @notice Counter for tracking request counts
     uint40 public nextRequestCount = 1;
 
@@ -68,9 +69,12 @@ contract RequestHandler is AddressResolverUtil {
         _;
     }
 
-    // constructor(address watcherStorage_) WatcherBase(watcherStorage_) {}
+    constructor(address owner_, address addressResolver_) {
+        _initializeOwner(owner_);
+        _setAddressResolver(addressResolver_);
+    }
 
-    function setPrecompile(bytes4 callType_, IPrecompile precompile_) external onlyWatcher {
+    function setPrecompile(bytes4 callType_, IPrecompile precompile_) external onlyOwner {
         precompiles[callType_] = precompile_;
     }
 
