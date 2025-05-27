@@ -8,6 +8,8 @@ import "solady/utils/SafeTransferLib.sol";
 
 import "../interfaces/IFeesManager.sol";
 import "../interfaces/IFeesPlug.sol";
+import "../interfaces/IFeesPool.sol";
+
 import {AddressResolverUtil} from "../helpers/AddressResolverUtil.sol";
 import {NonceUsed, InvalidAmount, InsufficientCreditsAvailable, InsufficientBalance, InvalidChainSlug, NotRequestHandler} from "../../utils/common/Errors.sol";
 import {WRITE} from "../../utils/common/Constants.sol";
@@ -18,6 +20,8 @@ abstract contract FeesManagerStorage is IFeesManager {
 
     /// @notice switchboard type
     bytes32 public sbType;
+
+    IFeesPool public feesPool;
 
     /// @notice user credits => stores fees for user, app gateway, transmitters and watcher precompile
     mapping(address => UserCredits) public userCredits;
@@ -71,9 +75,17 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
     /// @notice Emitted when fees plug is set
     event FeesPlugSet(uint32 indexed chainSlug, address indexed feesPlug);
 
+    /// @notice Emitted when fees pool is set
+    event FeesPoolSet(address indexed feesPool);
+
     function setFeesPlug(uint32 chainSlug_, address feesPlug_) external onlyOwner {
         feesPlugs[chainSlug_] = feesPlug_;
         emit FeesPlugSet(chainSlug_, feesPlug_);
+    }
+
+    function setFeesPool(address feesPool_) external onlyOwner {
+        feesPool = IFeesPool(feesPool_);
+        emit FeesPoolSet(feesPool_);
     }
 
     /// @notice Deposits credits and native tokens to a user
@@ -88,15 +100,14 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         address token_,
         uint256 nativeAmount_,
         uint256 creditAmount_
-    ) external payable override onlyWatcher {
-        if (creditAmount_ + nativeAmount_ != msg.value) revert InvalidAmount();
-        tokenOnChainBalances[chainSlug_][token_] += nativeAmount_ + creditAmount_;
+    ) external override onlyWatcher {
+        tokenOnChainBalances[chainSlug_][token_] += creditAmount_ + nativeAmount_;
 
         UserCredits storage userCredit = userCredits[depositTo_];
         userCredit.totalCredits += creditAmount_;
 
         // if native transfer fails, add to credit
-        bool success = SafeTransferLib.trySafeTransferETH(depositTo_, nativeAmount_, gasleft());
+        bool success = feesPool.withdraw(depositTo_, nativeAmount_);
         if (!success) userCredit.totalCredits += nativeAmount_;
 
         emit CreditsDeposited(chainSlug_, depositTo_, token_, creditAmount_);

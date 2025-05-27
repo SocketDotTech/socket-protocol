@@ -70,7 +70,6 @@ error OnlyAppGateway();
 error NewMaxFeesLowerThanCurrent(uint256 currentMaxFees, uint256 newMaxFees);
 error InvalidContract();
 error InvalidData();
-error InvalidNonce();
 error InvalidSignature();
 
 error DeadlinePassed();
