@@ -49,6 +49,7 @@ contract ReadPrecompile is IPrecompile, WatcherBase {
     /// @notice Handles payload processing and returns fees
     /// @param payloadParams The payload parameters to handle
     /// @return fees The fees required for processing
+    /// @return deadline The deadline for the payload
     function handlePayload(
         address,
         PayloadParams calldata payloadParams

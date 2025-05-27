@@ -124,17 +124,10 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
         fees = writeFees;
         deadline = block.timestamp + expiryTime;
 
-        (
-            address appGateway,
-            Transaction memory transaction,
-            WriteFinality writeFinality,
-            uint256 gasLimit,
-            uint256 value,
-
-        ) = abi.decode(
-                payloadParams.precompileData,
-                (address, Transaction, WriteFinality, uint256, uint256, address)
-            );
+        (, Transaction memory transaction, , uint256 gasLimit, uint256 value, ) = abi.decode(
+            payloadParams.precompileData,
+            (address, Transaction, WriteFinality, uint256, uint256, address)
+        );
 
         bytes32 prevBatchDigestHash = getPrevBatchDigestHash(payloadParams.batchCount);
 
@@ -149,7 +142,7 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
             value,
             transaction.payload,
             transaction.target,
-            encodeAppGatewayId(appGateway),
+            encodeAppGatewayId(payloadParams.appGateway),
             prevBatchDigestHash,
             bytes("")
         );

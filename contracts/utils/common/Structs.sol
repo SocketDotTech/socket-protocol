@@ -69,6 +69,7 @@ struct TriggerParams {
     bytes overrides;
     bytes payload;
 }
+
 struct PromiseReturnData {
     bool maxCopyExceeded;
     bytes32 payloadId;
@@ -109,7 +110,6 @@ struct UserCredits {
 
 struct WatcherMultiCallParams {
     address contractAddress;
-    uint256 value;
     bytes data;
     uint256 nonce;
     bytes signature;

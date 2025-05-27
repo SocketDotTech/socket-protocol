@@ -9,7 +9,7 @@ interface IFeesManager {
         address token_,
         uint256 nativeAmount_,
         uint256 creditAmount_
-    ) external payable;
+    ) external;
 
     function wrap(address receiver_) external payable;
 
