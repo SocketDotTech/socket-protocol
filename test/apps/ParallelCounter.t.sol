@@ -17,16 +17,17 @@ contract ParallelCounterTest is AppGatewayBaseSetup {
         deploy();
 
         parallelCounterGateway = new CounterAppGateway(address(addressResolver), feesAmount);
-        depositNativeAndCredits(arbChainSlug, 1 ether, 1 ether, address(parallelCounterGateway));
-        counterId1 = parallelCounterGateway.counter1();
+        depositNativeAndCredits(arbChainSlug, 1 ether, 0, address(parallelCounterGateway));
+
         counterId2 = parallelCounterGateway.counter();
+        counterId1 = parallelCounterGateway.counter1();
         contractIds[0] = counterId1;
         contractIds[1] = counterId2;
     }
 
     function deployCounterApps(uint32[] memory chainSlugs) internal {
         parallelCounterGateway.deployMultiChainContracts(chainSlugs);
-        executeRequest(new bytes[](0));
+        executeRequest();
     }
 
     function testParallelCounterDeployment() external {

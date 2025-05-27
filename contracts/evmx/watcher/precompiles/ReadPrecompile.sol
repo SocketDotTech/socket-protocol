@@ -36,7 +36,7 @@ contract ReadPrecompile is IPrecompile, WatcherBase {
         address
     ) external view returns (bytes memory precompileData, uint256 estimatedFees) {
         if (queueParams_.transaction.target != address(0)) revert InvalidTarget();
-        if (queueParams_.transaction.payload.length > 0) revert InvalidPayloadSize();
+        if (queueParams_.transaction.payload.length == 0) revert InvalidPayloadSize();
 
         // For read precompile, encode the payload parameters
         precompileData = abi.encode(
@@ -53,9 +53,14 @@ contract ReadPrecompile is IPrecompile, WatcherBase {
     function handlePayload(
         address,
         PayloadParams calldata payloadParams
-    ) external onlyWatcher returns (uint256 fees, uint256 deadline, bytes memory) {
+    )
+        external
+        onlyRequestHandler
+        returns (uint256 fees, uint256 deadline, bytes memory precompileData)
+    {
         fees = readFees;
         deadline = block.timestamp + expiryTime;
+        precompileData = payloadParams.precompileData;
 
         (Transaction memory transaction, uint256 readAtBlockNumber) = abi.decode(
             payloadParams.precompileData,
@@ -64,7 +69,7 @@ contract ReadPrecompile is IPrecompile, WatcherBase {
         emit ReadRequested(transaction, readAtBlockNumber, payloadParams.payloadId);
     }
 
-    function resolvePayload(PayloadParams calldata payloadParams_) external {}
+    function resolvePayload(PayloadParams calldata payloadParams_) external onlyPromiseResolver {}
 
     function setFees(uint256 readFees_) external onlyWatcher {
         readFees = readFees_;

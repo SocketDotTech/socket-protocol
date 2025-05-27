@@ -77,7 +77,7 @@ contract SuperTokenTest is AppGatewayBaseSetup {
         );
         // Enable app gateways to do all operations in the Watcher: Read, Write and Schedule on EVMx
         // Watcher sets the limits for apps in this SOCKET protocol version
-        depositNativeAndCredits(arbChainSlug, 1 ether, 1 ether, address(superTokenApp));
+        depositNativeAndCredits(arbChainSlug, 1 ether, 0, address(superTokenApp));
 
         appContracts = AppContracts({
             superTokenApp: superTokenApp,
@@ -93,7 +93,7 @@ contract SuperTokenTest is AppGatewayBaseSetup {
      * - Correct setup of forwarder contracts for multi-chain communication
      */
     function testContractDeployment() public {
-        deploy(arbChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
+        executeDeploy(arbChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
 
         (address onChain, address forwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
@@ -124,8 +124,8 @@ contract SuperTokenTest is AppGatewayBaseSetup {
      * @dev Deploys necessary contracts on both Arbitrum and Optimism chains
      */
     function beforeTransfer() internal {
-        deploy(arbChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
-        deploy(optChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
+        executeDeploy(arbChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
+        executeDeploy(optChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
     }
 
     /**
@@ -164,7 +164,7 @@ contract SuperTokenTest is AppGatewayBaseSetup {
 
         bytes memory encodedOrder = abi.encode(transferOrder);
         appContracts.superTokenApp.transfer(encodedOrder);
-        executeRequest(new bytes[](0));
+        executeRequest();
 
         assertEq(
             SuperToken(onChainArb).balanceOf(owner),

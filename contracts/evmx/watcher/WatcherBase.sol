@@ -18,6 +18,16 @@ contract WatcherBase {
         _;
     }
 
+    modifier onlyRequestHandler() {
+        require(msg.sender == address(requestHandler__()), "Only RequestHandler can call");
+        _;
+    }
+
+    modifier onlyPromiseResolver() {
+        require(msg.sender == address(promiseResolver__()), "Only PromiseResolver can call");
+        _;
+    }
+
     /// @notice Sets the Watcher address
     /// @param watcher_ The address of the Watcher contract
     constructor(address watcher_) {

@@ -116,7 +116,11 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
     function handlePayload(
         address,
         PayloadParams calldata payloadParams
-    ) external onlyWatcher returns (uint256 fees, uint256 deadline, bytes memory precompileData) {
+    )
+        external
+        onlyRequestHandler
+        returns (uint256 fees, uint256 deadline, bytes memory precompileData)
+    {
         uint256 delayInSeconds = abi.decode(payloadParams.precompileData, (uint256));
 
         // expiryTime is very low, to account for infra delay
@@ -129,7 +133,7 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
         emit ScheduleRequested(payloadParams.payloadId, executeAt, deadline);
     }
 
-    function resolvePayload(PayloadParams calldata payloadParams_) external {
+    function resolvePayload(PayloadParams calldata payloadParams_) external onlyPromiseResolver {
         if (payloadParams_.deadline > block.timestamp) revert ResolvingScheduleTooEarly();
         emit ScheduleResolved(payloadParams_.payloadId);
     }

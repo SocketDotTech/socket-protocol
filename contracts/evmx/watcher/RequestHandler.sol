@@ -9,6 +9,7 @@ import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
 import "../interfaces/IRequestHandler.sol";
 import "solady/auth/Ownable.sol";
+import "forge-std/console.sol";
 
 /// @title RequestHandler
 /// @notice Contract that handles request processing and management, including request submission, batch processing, and request lifecycle management
@@ -262,7 +263,7 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
             bytes32 payloadId = payloadIds[i];
 
             // check needed for re-process, in case a payload is already executed by last transmitter
-            if (!_isPromiseResolved(_payloads[payloadId].asyncPromise)) continue;
+            if (_isPromiseResolved(_payloads[payloadId].asyncPromise)) continue;
             PayloadParams storage payloadParams = _payloads[payloadId];
 
             (uint256 fees, uint256 deadline, bytes memory precompileData) = IPrecompile(

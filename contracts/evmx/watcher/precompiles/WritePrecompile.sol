@@ -77,8 +77,8 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
         ) revert MaxMsgValueLimitExceeded();
 
         if (
-            queueParams_.transaction.payload.length > 0 &&
-            queueParams_.transaction.payload.length < PAYLOAD_SIZE_LIMIT
+            queueParams_.transaction.payload.length == 0 ||
+            queueParams_.transaction.payload.length > PAYLOAD_SIZE_LIMIT
         ) {
             revert InvalidPayloadSize();
         }
@@ -120,7 +120,11 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
     function handlePayload(
         address transmitter_,
         PayloadParams memory payloadParams
-    ) external onlyWatcher returns (uint256 fees, uint256 deadline, bytes memory) {
+    )
+        external
+        onlyRequestHandler
+        returns (uint256 fees, uint256 deadline, bytes memory precompileData)
+    {
         fees = writeFees;
         deadline = block.timestamp + expiryTime;
 
@@ -128,6 +132,7 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
             payloadParams.precompileData,
             (address, Transaction, WriteFinality, uint256, uint256, address)
         );
+        precompileData = payloadParams.precompileData;
 
         bytes32 prevBatchDigestHash = getPrevBatchDigestHash(payloadParams.batchCount);
 
@@ -244,5 +249,7 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
         emit ExpiryTimeSet(expiryTime_);
     }
 
-    function resolvePayload(PayloadParams calldata payloadParams_) external override {}
+    function resolvePayload(
+        PayloadParams calldata payloadParams_
+    ) external override onlyPromiseResolver {}
 }

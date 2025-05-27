@@ -92,7 +92,13 @@ contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase 
         bytes memory transmitterSignature,
         bytes memory extraData
     ) external override {
-        if (
+        if (auctionEndDelaySeconds == 0) {
+            // todo: temp fix, can be called for random request
+            if (
+                auctionStatus[requestCount_] != AuctionStatus.NOT_STARTED &&
+                auctionStatus[requestCount_] != AuctionStatus.RESTARTED
+            ) revert AuctionNotOpen();
+        } else if (
             auctionStatus[requestCount_] != AuctionStatus.OPEN &&
             auctionStatus[requestCount_] != AuctionStatus.RESTARTED
         ) revert AuctionNotOpen();
@@ -105,7 +111,7 @@ contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase 
         if (!_hasRole(TRANSMITTER_ROLE, transmitter)) revert InvalidTransmitter();
 
         // check if the bid is lower than the existing bid
-        if (bidFees >= winningBids[requestCount_].fee && bidFees != 0)
+        if (bidFees > 0 && winningBids[requestCount_].fee >= bidFees)
             revert LowerBidAlreadyExists();
 
         uint256 transmitterCredits = getMaxFees(requestCount_);

@@ -105,10 +105,12 @@ contract Watcher is Trigger {
         address consumeFrom,
         bytes memory onCompleteData
     ) internal returns (uint40 requestCount, address[] memory promiseList) {
-        // this check is to verify that msg.sender (app gateway base) belongs to correct app gateway
         address appGateway = msg.sender;
+
+        // this check is to verify that msg.sender (app gateway base) belongs to correct app gateway
         if (appGateway != appGatewayTemp) revert InvalidAppGateway();
         latestAsyncPromise = address(0);
+        appGatewayTemp = address(0);
 
         (requestCount, promiseList) = requestHandler__.submitRequest(
             maxFees,
@@ -118,6 +120,7 @@ contract Watcher is Trigger {
             payloadQueue,
             onCompleteData
         );
+
         clearQueue();
     }
 

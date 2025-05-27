@@ -57,12 +57,12 @@ contract SetupStore is Test {
     uint256 maxScheduleDelayInSeconds = 86400;
     uint256 maxMsgValueLimit = 1 ether;
 
-    uint256 writeFees = 0.01 ether;
-    uint256 readFees = 0.01 ether;
-    uint256 scheduleCallbackFees = 0.01 ether;
-    uint256 scheduleFeesPerSecond = 0.01 ether;
-    uint256 triggerFees = 0.01 ether;
-    uint256 socketFees = 0.01 ether;
+    uint256 writeFees = 10000;
+    uint256 readFees = 10000;
+    uint256 scheduleCallbackFees = 10000;
+    uint256 scheduleFeesPerSecond = 10000;
+    uint256 triggerFees = 10000;
+    uint256 socketFees = 0;
 
     uint256 public watcherNonce;
     uint256 public payloadIdCounter;
@@ -102,7 +102,7 @@ contract DeploySetup is SetupStore {
     event Initialized(uint64 version);
 
     //////////////////////////////////// Setup ////////////////////////////////////
-    function deploy() internal {
+    function _deploy() internal {
         _deployEVMxCore();
 
         // chain core contracts
@@ -418,6 +418,13 @@ contract FeesSetup is DeploySetup {
     event CreditsUnwrapped(address indexed consumeFrom, uint256 amount);
     event CreditsTransferred(address indexed from, address indexed to, uint256 amount);
 
+    function deploy() internal {
+        _deploy();
+
+        depositNativeAndCredits(arbChainSlug, 100 ether, 100 ether, address(transmitterEOA));
+        approveAppGateway(address(auctionManager), address(transmitterEOA), transmitterPrivateKey);
+    }
+
     // mints test token and deposits the given  native and credits to given `user_`
     function depositNativeAndCredits(
         uint32 chainSlug_,
@@ -425,7 +432,6 @@ contract FeesSetup is DeploySetup {
         uint256 native_,
         address user_
     ) internal {
-        console.log(user_);
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
         TestUSDC token = socketConfig.testUSDC;
 
@@ -456,7 +462,6 @@ contract FeesSetup is DeploySetup {
         vm.expectEmit(true, true, true, false);
         emit Deposited(chainSlug_, address(token), user_, credits_, native_);
 
-        // todo: try to call this with hoax watcher
         watcherMultiCall(
             address(feesManager),
             abi.encodeWithSelector(
@@ -468,9 +473,6 @@ contract FeesSetup is DeploySetup {
                 credits_
             )
         );
-
-        // hoax(address(watcher));
-        // feesManager.deposit(chainSlug_, address(token), user_, native_, credits_);
 
         assertEq(
             feesManager.getAvailableCredits(user_),
@@ -510,30 +512,34 @@ contract FeesSetup is DeploySetup {
 }
 
 contract AuctionSetup is FeesSetup {
-    uint256 public bidAmount = 100 ether;
-
     event BidPlaced(uint40 requestCount, Bid bid);
     event AuctionStarted(uint40 requestCount);
     event AuctionEnded(uint40 requestCount, Bid winningBid);
 
+    function getBidAmount(uint40 requestCount) internal view returns (uint256) {
+        return watcher.getRequestParams(requestCount).requestFeesDetails.maxFees / 2;
+    }
+
     function placeBid(uint40 requestCount) internal {
+        uint256 bidAmount = getBidAmount(requestCount);
+
         bytes memory transmitterSignature = _createSignature(
             keccak256(abi.encode(address(auctionManager), evmxSlug, requestCount, bidAmount, "")),
             transmitterPrivateKey
         );
 
-        vm.expectEmit(true, true, true, false);
-        emit AuctionStarted(requestCount);
-
         if (auctionEndDelaySeconds == 0) {
-            vm.expectEmit(true, true, true, true);
+            vm.expectEmit(true, true, true, false);
             emit AuctionEnded(
                 requestCount,
-                Bid({fee: bidAmount, transmitter: transmitterEOA, extraData: ""})
+                Bid({fee: bidAmount, transmitter: transmitterEOA, extraData: bytes("")})
             );
+        } else {
+            vm.expectEmit(true, true, true, false);
+            emit AuctionStarted(requestCount);
         }
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, true, false);
         emit BidPlaced(
             requestCount,
             Bid({transmitter: transmitterEOA, fee: bidAmount, extraData: bytes("")})
@@ -545,6 +551,8 @@ contract AuctionSetup is FeesSetup {
         if (auctionEndDelaySeconds == 0) return;
 
         // todo: handle other cases
+
+        uint256 bidAmount = getBidAmount(requestCount_);
         bytes memory watcherSignature = _createSignature(
             keccak256(abi.encode(address(watcher), evmxSlug, requestCount_, bidAmount, "")),
             watcherPrivateKey
@@ -582,7 +590,7 @@ contract WatcherSetup is AuctionSetup {
     );
     event WriteProofUploaded(bytes32 indexed payloadId, bytes proof);
 
-    function deploy(
+    function executeDeploy(
         uint32 chainSlug_,
         IAppGateway appGateway_,
         bytes32[] memory contractIds_
@@ -600,8 +608,8 @@ contract WatcherSetup is AuctionSetup {
 
         // bids and executes schedule request if created for endAuction
         if (requestParams.writeCount != 0) bidAndEndAuction(requestCount);
-        for (uint i = 0; i < batches.length; i++) _processBatch(batches[i]);
 
+        for (uint i = 0; i < batches.length; i++) _processBatch(batches[i]);
         requestParams = requestHandler.getRequest(requestCount);
         assertEq(requestParams.requestTrackingParams.isRequestExecuted, true);
     }
@@ -629,16 +637,16 @@ contract WatcherSetup is AuctionSetup {
             }
 
             if (success) {
-                _resolvePromise(promiseReturnData[0].payloadId, promiseReturnData[0].returnData);
+                _resolvePromise(promiseReturnData);
             } else {
-                // _markRevert(promiseReturnData);
+                _markRevert(promiseReturnData[0], true);
             }
         }
     }
 
     function _processRead(
         PayloadParams memory payloadParams
-    ) internal returns (bool success, PromiseReturnData memory promiseReturnData_) {
+    ) internal returns (bool success, PromiseReturnData memory promiseReturnData) {
         (Transaction memory transaction, ) = abi.decode(
             payloadParams.precompileData,
             (Transaction, uint256)
@@ -646,7 +654,7 @@ contract WatcherSetup is AuctionSetup {
 
         bytes memory returnData;
         (success, returnData) = transaction.target.call(transaction.payload);
-        promiseReturnData_ = PromiseReturnData({
+        promiseReturnData = PromiseReturnData({
             maxCopyExceeded: false,
             payloadId: payloadParams.payloadId,
             returnData: returnData
@@ -655,146 +663,155 @@ contract WatcherSetup is AuctionSetup {
 
     function _processWrite(
         PayloadParams memory payloadParams
-    ) internal returns (bool success, PromiseReturnData memory promiseReturnData_) {
+    ) internal returns (bool success, PromiseReturnData memory promiseReturnData) {
+        bytes32 payloadId = payloadParams.payloadId;
+
         (
-            address appGateway,
+            uint32 chainSlug,
+            address switchboard,
+            bytes32 digest,
+            DigestParams memory digestParams
+        ) = _validateAndGetDigest(payloadParams);
+
+        bytes memory watcherProof = _uploadProof(payloadId, digest, switchboard, chainSlug);
+
+        return
+            _executeWrite(
+                chainSlug,
+                switchboard,
+                digest,
+                digestParams,
+                payloadParams,
+                watcherProof,
+                _createSignature(
+                    keccak256(
+                        abi.encode(address(getSocketConfig(chainSlug).socket), chainSlug, payloadId)
+                    ),
+                    transmitterPrivateKey
+                )
+            );
+    }
+
+    function _uploadProof(
+        bytes32 payloadId,
+        bytes32 digest,
+        address switchboard,
+        uint32 chainSlug
+    ) internal returns (bytes memory proof) {
+        proof = _createSignature(
+            keccak256(abi.encode(address(switchboard), chainSlug, digest)),
+            watcherPrivateKey
+        );
+        watcherMultiCall(
+            address(writePrecompile),
+            abi.encodeWithSelector(WritePrecompile.uploadProof.selector, payloadId, proof)
+        );
+        assertEq(writePrecompile.watcherProofs(payloadId), proof);
+    }
+
+    function _validateAndGetDigest(
+        PayloadParams memory payloadParams
+    )
+        internal
+        view
+        returns (
+            uint32 chainSlug,
+            address switchboard,
+            bytes32 digest,
+            DigestParams memory digestParams
+        )
+    {
+        (
+            ,
             Transaction memory transaction,
-            WriteFinality writeFinality,
+            ,
             uint256 gasLimit,
             uint256 value,
-            address switchboard
+            address switchboard_
         ) = abi.decode(
                 payloadParams.precompileData,
                 (address, Transaction, WriteFinality, uint256, uint256, address)
             );
 
-        bytes32 payloadId = payloadParams.payloadId;
+        chainSlug = transaction.chainSlug;
+        switchboard = switchboard_;
 
-        SocketContracts memory socketConfig = getSocketConfig(transaction.chainSlug);
-        DigestParams memory digestParams_ = DigestParams(
-            address(socketConfig.socket),
+        bytes32 prevDigestsHash = writePrecompile.getPrevBatchDigestHash(payloadParams.batchCount);
+        digestParams = DigestParams(
+            address(getSocketConfig(transaction.chainSlug).socket),
             transmitterEOA,
-            payloadId,
+            payloadParams.payloadId,
             payloadParams.deadline,
             payloadParams.callType,
             gasLimit,
             value,
             transaction.payload,
             transaction.target,
-            encodeAppGatewayId(appGateway),
-            writePrecompile.getPrevBatchDigestHash(payloadParams.batchCount),
+            encodeAppGatewayId(payloadParams.appGateway),
+            prevDigestsHash,
             bytes("")
         );
-        bytes32 digest = writePrecompile.getDigest(digestParams_);
-        bytes32 sigDigest = keccak256(
-            abi.encode(address(socketConfig.switchboard), socketConfig.chainSlug, digest)
-        );
-        bytes memory proof = _createSignature(sigDigest, watcherPrivateKey);
 
-        watcherMultiCall(
-            address(writePrecompile),
-            abi.encodeWithSelector(WritePrecompile.uploadProof.selector, payloadId, proof)
-        );
-        assertEq(writePrecompile.watcherProofs(payloadId), proof);
-        // _resolveAndExpectWriteProofRequested(
-        //     payloadId,
-        //     payloadParams,
-        //     promiseReturnData_,
-        //
-        // );
+        digest = writePrecompile.getDigest(digestParams);
+        assertEq(writePrecompile.digestHashes(payloadParams.payloadId), digest);
     }
 
-    function _uploadProofAndExecute(
+    function _executeWrite(
+        uint32 chainSlug,
+        address switchboard,
+        bytes32 digest,
+        DigestParams memory digestParams,
         PayloadParams memory payloadParams,
         bytes memory watcherProof,
-        bytes32 digest
-    ) internal returns (bool, bytes memory) {
-        // (
-        //     ExecuteParams memory params,
-        //     SocketBatcher socketBatcher,
-        //     ,
-        //     bytes memory transmitterSig,
-        //     address refundAddress
-        // ) = _getExecuteParams(payloadParams);
-        // return
-        //     socketBatcher.attestAndExecute(
-        //         params,
-        //         address(1), // todo: fix this socketConfig.switchboard,
-        //         digest,
-        //         watcherProof,
-        //         transmitterSig,
-        //         refundAddress
-        //     );
+        bytes memory transmitterSig
+    ) internal returns (bool success, PromiseReturnData memory promiseReturnData) {
+        bytes memory returnData;
+        (success, returnData) = getSocketConfig(chainSlug).socketBatcher.attestAndExecute(
+            ExecuteParams({
+                callType: digestParams.callType,
+                deadline: digestParams.deadline,
+                gasLimit: digestParams.gasLimit,
+                value: digestParams.value,
+                payload: digestParams.payload,
+                target: digestParams.target,
+                requestCount: payloadParams.requestCount,
+                batchCount: payloadParams.batchCount,
+                payloadCount: payloadParams.payloadCount,
+                prevDigestsHash: digestParams.prevDigestsHash,
+                extraData: digestParams.extraData
+            }),
+            switchboard,
+            digest,
+            watcherProof,
+            transmitterSig,
+            transmitterEOA
+        );
+
+        promiseReturnData = PromiseReturnData({
+            maxCopyExceeded: false,
+            payloadId: payloadParams.payloadId,
+            returnData: returnData
+        });
     }
 
-    function _resolveAndExpectWriteProofRequested(PayloadParams memory payloadParams) internal {
-        vm.expectEmit(false, false, false, false);
-        emit WriteProofRequested(
-            transmitterEOA,
-            writePrecompile.digestHashes(payloadParams.payloadId),
-            writePrecompile.getPrevBatchDigestHash(payloadParams.batchCount),
-            payloadParams.deadline,
-            payloadParams
+    function _resolvePromise(PromiseReturnData[] memory promiseReturnData) internal {
+        watcherMultiCall(
+            address(promiseResolver),
+            abi.encodeWithSelector(PromiseResolver.resolvePromises.selector, promiseReturnData)
         );
     }
 
-    function resolvePromises(bytes32[] memory payloadIds, bytes[] memory returnData) internal {
-        for (uint i = 0; i < payloadIds.length; i++) {
-            _resolvePromise(payloadIds[i], returnData[i]);
-        }
-    }
-
-    //////////////////////////////////// Helpers ////////////////////////////////////
-    // function _getExecuteParams(
-    //     PayloadParams memory payloadParams
-    // )
-    //     internal
-    //     view
-    //     returns (
-    //         ExecuteParams memory params,
-    //         SocketBatcher socketBatcher,
-    //         uint256 value,
-    //         bytes memory transmitterSig,
-    //         address refundAddress
-    //     )
-    // {
-    //     RequestParams memory requestParams = watcher.getRequestParams(payloadParams.requestCount);
-    //     // SocketContracts memory socketConfig = getSocketConfig(requestParams.chainSlug);
-
-    //     bytes32 transmitterDigest = keccak256(
-    //         abi.encode(address(socketConfig.socket), payloadParams.payloadId)
-    //     );
-    //     transmitterSig = _createSignature(transmitterDigest, transmitterPrivateKey);
-    //     params = ExecuteParams({
-    //         callType: payloadParams.payloadHeader.getCallType(),
-    //         deadline: payloadParams.deadline,
-    //         gasLimit: payloadParams.gasLimit,
-    //         value: payloadParams.value,
-    //         payload: payloadParams.payload,
-    //         target: payloadParams.target,
-    //         requestCount: payloadParams.payloadHeader.getRequestCount(),
-    //         batchCount: payloadParams.payloadHeader.getBatchCount(),
-    //         payloadCount: payloadParams.payloadHeader.getPayloadCount(),
-    //         prevDigestsHash: payloadParams.prevDigestsHash,
-    //         extraData: bytes("")
-    //     });
-
-    //     value = payloadParams.value;
-    //     socketBatcher = socketConfig.socketBatcher;
-    //     refundAddress = transmitterEOA;
-    // }
-
-    function _resolvePromise(bytes32 payloadId, bytes memory returnData) internal {
-        PromiseReturnData[] memory promiseReturnData = new PromiseReturnData[](1);
-        promiseReturnData[0] = PromiseReturnData({
-            maxCopyExceeded: false,
-            payloadId: payloadId,
-            returnData: returnData
-        });
-
+    function _markRevert(
+        PromiseReturnData memory promiseReturnData,
+        bool isRevertingOnchain_
+    ) internal {
         watcherMultiCall(
-            address(watcher),
-            abi.encodeWithSelector(PromiseResolver.resolvePromises.selector, promiseReturnData)
+            address(promiseResolver),
+            abi.encodeWithSelector(
+                PromiseResolver.markRevert.selector,
+                promiseReturnData,
+                isRevertingOnchain_
+            )
         );
     }
 
