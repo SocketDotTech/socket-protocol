@@ -4,9 +4,9 @@ import {WriteFinality, UserCredits, AppGatewayApprovals, OverrideParams, Transac
 
 interface IFeesManager {
     function deposit(
-        address depositTo_,
         uint32 chainSlug_,
         address token_,
+        address depositTo_,
         uint256 nativeAmount_,
         uint256 creditAmount_
     ) external;

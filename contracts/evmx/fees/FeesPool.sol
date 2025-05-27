@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 import "../../utils/AccessControl.sol";
 import "../../utils/common/AccessRoles.sol";
 import "../interfaces/IFeesPool.sol";
+import "solady/utils/SafeTransferLib.sol";
 
 /**
  * @title FeesPool
@@ -32,7 +33,8 @@ contract FeesPool is IFeesPool, AccessControl {
         address to_,
         uint256 amount_
     ) external onlyRole(FEE_MANAGER_ROLE) returns (bool success) {
-        (success, ) = to_.call{value: amount_}("");
+        if (amount_ == 0) return true;
+        success = SafeTransferLib.trySafeTransferETH(to_, amount_, gasleft());
         emit NativeWithdrawn(success, to_, amount_);
     }
 
