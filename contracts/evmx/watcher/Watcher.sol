@@ -139,11 +139,27 @@ contract Watcher is Trigger {
     }
 
     function getRequestParams(uint40 requestCount_) external view returns (RequestParams memory) {
-        return requestHandler__.requests(requestCount_);
+        return requestHandler__.getRequest(requestCount_);
     }
 
     function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory) {
-        return requestHandler__.payloads(payloadId_);
+        return requestHandler__.getPayload(payloadId_);
+    }
+
+    function setIsValidPlug(
+        bool isValid_,
+        uint32 chainSlug_,
+        address onchainAddress_
+    ) external override {
+        configurations__.setIsValidPlug(isValid_, chainSlug_, onchainAddress_);
+    }
+
+    function cancelRequest(uint40 requestCount_) external override {
+        requestHandler__.cancelRequest(requestCount_, msg.sender);
+    }
+
+    function increaseFees(uint40 requestCount_, uint256 newFees_) external override {
+        requestHandler__.increaseFees(requestCount_, newFees_, msg.sender);
     }
 
     function getPrecompileFees(

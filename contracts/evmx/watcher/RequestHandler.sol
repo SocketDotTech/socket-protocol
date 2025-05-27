@@ -7,43 +7,38 @@ import "../../utils/common/Constants.sol";
 import "../../utils/common/IdUtils.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
+import "../interfaces/IRequestHandler.sol";
 import "solady/auth/Ownable.sol";
 
 /// @title RequestHandler
 /// @notice Contract that handles request processing and management, including request submission, batch processing, and request lifecycle management
 /// @dev Handles request submission, batch processing, transmitter assignment, request cancellation and settlement
 /// @dev This contract interacts with the WatcherPrecompileStorage for storage access
-contract RequestHandler is AddressResolverUtil, Ownable {
+contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
     /// @notice Counter for tracking request counts
     uint40 public nextRequestCount = 1;
 
-    /// @notice Counter for tracking payload requests
+    /// @notice Counter for tracking payload _requests
     uint40 public payloadCounter;
 
     /// @notice Counter for tracking batch counts
     uint40 public nextBatchCount;
 
-    /// @notice Mapping to store the list of payload IDs for each batch
-    mapping(uint40 => bytes32[]) public batchPayloadIds;
-
-    /// @notice Mapping to store the batch IDs for each request
-    mapping(uint40 => uint40[]) public requestBatchIds;
-
     /// @notice Mapping to store the precompiles for each call type
     mapping(bytes4 => IPrecompile) public precompiles;
 
+    /// @notice Mapping to store the list of payload IDs for each batch
+    mapping(uint40 => bytes32[]) internal _batchPayloadIds;
+
+    /// @notice Mapping to store the batch IDs for each request
+    mapping(uint40 => uint40[]) internal _requestBatchIds;
+
     // queue => update to payloadParams, assign id, store in payloadParams map
     /// @notice Mapping to store the payload parameters for each payload ID
-    mapping(bytes32 => PayloadParams) public payloads;
+    mapping(bytes32 => PayloadParams) internal _payloads;
 
     /// @notice The metadata for a request
-    mapping(uint40 => RequestParams) public requests;
-    struct CreateRequestResult {
-        uint256 totalEstimatedWatcherFees;
-        uint256 writeCount;
-        address[] promiseList;
-        PayloadParams[] payloadParams;
-    }
+    mapping(uint40 => RequestParams) internal _requests;
 
     event RequestSubmitted(
         bool hasWrite,
@@ -59,7 +54,7 @@ contract RequestHandler is AddressResolverUtil, Ownable {
     event RequestCancelled(uint40 requestCount);
 
     modifier isRequestCancelled(uint40 requestCount_) {
-        if (requests[requestCount_].requestTrackingParams.isRequestCancelled)
+        if (_requests[requestCount_].requestTrackingParams.isRequestCancelled)
             revert RequestAlreadyCancelled();
         _;
     }
@@ -78,6 +73,29 @@ contract RequestHandler is AddressResolverUtil, Ownable {
         precompiles[callType_] = precompile_;
     }
 
+    function getPrecompileFees(
+        bytes4 callType_,
+        bytes memory precompileData_
+    ) external view returns (uint256) {
+        return precompiles[callType_].getPrecompileFees(precompileData_);
+    }
+
+    function getRequestBatchIds(uint40 batchCount_) external view returns (uint40[] memory) {
+        return _requestBatchIds[batchCount_];
+    }
+
+    function getBatchPayloadIds(uint40 batchCount_) external view returns (bytes32[] memory) {
+        return _batchPayloadIds[batchCount_];
+    }
+
+    function getRequest(uint40 requestCount_) external view returns (RequestParams memory) {
+        return _requests[requestCount_];
+    }
+
+    function getPayload(bytes32 payloadId_) external view returns (PayloadParams memory) {
+        return _payloads[payloadId_];
+    }
+
     function submitRequest(
         uint256 maxFees_,
         address auctionManager_,
@@ -94,7 +112,7 @@ contract RequestHandler is AddressResolverUtil, Ownable {
             revert InsufficientFees();
 
         requestCount = nextRequestCount++;
-        RequestParams storage r = requests[requestCount];
+        RequestParams storage r = _requests[requestCount];
         r.requestTrackingParams.currentBatch = nextBatchCount;
         r.requestTrackingParams.payloadsRemaining = queueParams_.length;
         r.requestFeesDetails.maxFees = maxFees_;
@@ -123,7 +141,7 @@ contract RequestHandler is AddressResolverUtil, Ownable {
         uint40 requestCount_,
         Bid memory bid_
     ) external isRequestCancelled(requestCount_) {
-        RequestParams storage r = requests[requestCount_];
+        RequestParams storage r = _requests[requestCount_];
         if (r.auctionManager != msg.sender) revert InvalidCaller();
         if (r.requestTrackingParams.isRequestExecuted) revert RequestAlreadySettled();
 
@@ -156,7 +174,7 @@ contract RequestHandler is AddressResolverUtil, Ownable {
         uint40 requestCount_
     ) internal returns (CreateRequestResult memory result) {
         // push first batch count
-        requestBatchIds[requestCount_].push(nextBatchCount);
+        _requestBatchIds[requestCount_].push(nextBatchCount);
 
         result.promiseList = new address[](queueParams_.length);
         result.payloadParams = new PayloadParams[](queueParams_.length);
@@ -168,7 +186,7 @@ contract RequestHandler is AddressResolverUtil, Ownable {
             // decide batch count
             if (i > 0 && queueParams_[i].overrideParams.isParallelCall != Parallel.ON) {
                 nextBatchCount++;
-                requestBatchIds[requestCount_].push(nextBatchCount);
+                _requestBatchIds[requestCount_].push(nextBatchCount);
             }
 
             // get the switchboard address from the watcher precompile config
@@ -193,7 +211,7 @@ contract RequestHandler is AddressResolverUtil, Ownable {
                 switchboard,
                 queuePayloadParam.transaction.chainSlug
             );
-            batchPayloadIds[nextBatchCount].push(payloadId);
+            _batchPayloadIds[nextBatchCount].push(payloadId);
 
             // create prev digest hash
             PayloadParams memory p = PayloadParams({
@@ -210,7 +228,7 @@ contract RequestHandler is AddressResolverUtil, Ownable {
             });
             result.promiseList[i] = queueParams_[i].asyncPromise;
             result.payloadParams[i] = p;
-            payloads[payloadId] = p;
+            _payloads[payloadId] = p;
         }
 
         nextBatchCount++;
@@ -237,15 +255,15 @@ contract RequestHandler is AddressResolverUtil, Ownable {
     }
 
     function _processBatch(uint40 batchCount_, RequestParams storage r) internal {
-        bytes32[] memory payloadIds = batchPayloadIds[batchCount_];
+        bytes32[] memory payloadIds = _batchPayloadIds[batchCount_];
 
         uint256 totalFees = 0;
         for (uint40 i = 0; i < payloadIds.length; i++) {
             bytes32 payloadId = payloadIds[i];
 
             // check needed for re-process, in case a payload is already executed by last transmitter
-            if (!_isPromiseResolved(payloads[payloadId].asyncPromise)) continue;
-            PayloadParams storage payloadParams = payloads[payloadId];
+            if (!_isPromiseResolved(_payloads[payloadId].asyncPromise)) continue;
+            PayloadParams storage payloadParams = _payloads[payloadId];
 
             (uint256 fees, uint256 deadline) = IPrecompile(precompiles[payloadParams.callType])
                 .handlePayload(r.requestFeesDetails.winningBid.transmitter, payloadParams);
@@ -262,20 +280,22 @@ contract RequestHandler is AddressResolverUtil, Ownable {
     /// @notice Increases the fees for a request if no bid is placed
     /// @param requestCount_ The ID of the request
     /// @param newMaxFees_ The new maximum fees
-    function increaseFees(uint40 requestCount_, uint256 newMaxFees_) external {
-        RequestParams storage r = requests[requestCount_];
-        address appGateway = msg.sender;
-
+    function increaseFees(
+        uint40 requestCount_,
+        uint256 newMaxFees_,
+        address appGateway_
+    ) external onlyWatcher {
+        RequestParams storage r = _requests[requestCount_];
         if (r.requestTrackingParams.isRequestCancelled) revert RequestAlreadyCancelled();
         if (r.requestTrackingParams.isRequestExecuted) revert RequestAlreadySettled();
 
-        if (appGateway != r.appGateway) revert OnlyAppGateway();
+        if (appGateway_ != r.appGateway) revert OnlyAppGateway();
         if (r.requestFeesDetails.maxFees >= newMaxFees_)
             revert NewMaxFeesLowerThanCurrent(r.requestFeesDetails.maxFees, newMaxFees_);
         if (
             !IFeesManager(feesManager__()).isCreditSpendable(
                 r.requestFeesDetails.consumeFrom,
-                appGateway,
+                appGateway_,
                 newMaxFees_
             )
         ) revert InsufficientFees();
@@ -290,9 +310,9 @@ contract RequestHandler is AddressResolverUtil, Ownable {
         uint40 requestCount_,
         bytes32 payloadId_
     ) external onlyPromiseResolver isRequestCancelled(requestCount_) {
-        RequestParams storage r = requests[requestCount_];
+        RequestParams storage r = _requests[requestCount_];
 
-        PayloadParams storage payloadParams = payloads[payloadId_];
+        PayloadParams storage payloadParams = _payloads[payloadId_];
         IPrecompile(precompiles[payloadParams.callType]).resolvePayload(payloadParams);
 
         payloadParams.resolvedAt = block.timestamp;
@@ -316,21 +336,21 @@ contract RequestHandler is AddressResolverUtil, Ownable {
     /// @dev This function cancels a request
     /// @dev It verifies that the caller is the middleware and that the request hasn't been cancelled yet
     function cancelRequestForReverts(uint40 requestCount) external onlyPromiseResolver {
-        _cancelRequest(requestCount, requests[requestCount]);
+        _cancelRequest(requestCount, _requests[requestCount]);
     }
 
     /// @notice Cancels a request
     /// @param requestCount The request count to cancel
     /// @dev This function cancels a request
     /// @dev It verifies that the caller is the middleware and that the request hasn't been cancelled yet
-    function cancelRequest(uint40 requestCount) external {
-        RequestParams storage r = requests[requestCount];
-        if (r.appGateway != msg.sender) revert InvalidCaller();
+    function cancelRequest(uint40 requestCount, address appGateway_) external onlyWatcher {
+        RequestParams storage r = _requests[requestCount];
+        if (appGateway_ != r.appGateway) revert InvalidCaller();
         _cancelRequest(requestCount, r);
     }
 
     function handleRevert(uint40 requestCount) external onlyPromiseResolver {
-        _cancelRequest(requestCount, requests[requestCount]);
+        _cancelRequest(requestCount, _requests[requestCount]);
     }
 
     function _cancelRequest(uint40 requestCount_, RequestParams storage r) internal {

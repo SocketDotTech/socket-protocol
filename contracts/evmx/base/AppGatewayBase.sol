@@ -187,8 +187,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
-            .getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
     }
 
     function _setCallType(Read isReadCall_) internal {
@@ -312,13 +311,13 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /// @notice Reverts the transaction
     /// @param requestCount_ The request count
     function _revertTx(uint40 requestCount_) internal {
-        watcher__().requestHandler__().cancelRequest(requestCount_);
+        watcher__().cancelRequest(requestCount_);
     }
 
     /// @notice increases the transaction maxFees
     /// @param requestCount_ The request count
     function _increaseFees(uint40 requestCount_, uint256 newMaxFees_) internal {
-        watcher__().requestHandler__().increaseFees(requestCount_, newMaxFees_);
+        watcher__().increaseFees(requestCount_, newMaxFees_);
     }
 
     /// @notice Withdraws fee tokens

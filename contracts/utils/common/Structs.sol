@@ -115,6 +115,13 @@ struct WatcherMultiCallParams {
     bytes signature;
 }
 
+struct CreateRequestResult {
+    uint256 totalEstimatedWatcherFees;
+    uint256 writeCount;
+    address[] promiseList;
+    PayloadParams[] payloadParams;
+}
+
 // digest:
 struct DigestParams {
     address socket;

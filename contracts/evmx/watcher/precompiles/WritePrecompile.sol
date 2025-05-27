@@ -136,14 +136,14 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
                 (address, Transaction, WriteFinality, uint256, uint256, address)
             );
 
-        bytes32 prevBatchDigestHash = _getPrevBatchDigestHash(payloadParams.batchCount);
+        bytes32 prevBatchDigestHash = getPrevBatchDigestHash(payloadParams.batchCount);
 
         // create digest
         DigestParams memory digestParams_ = DigestParams(
             configurations__().sockets(transaction.chainSlug),
             transmitter_,
             payloadParams.payloadId,
-            payloadParams.deadline,
+            deadline,
             payloadParams.callType,
             gasLimit,
             value,
@@ -167,16 +167,16 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
         );
     }
 
-    function _getPrevBatchDigestHash(uint40 batchCount_) internal view returns (bytes32) {
+    function getPrevBatchDigestHash(uint40 batchCount_) public view returns (bytes32) {
         if (batchCount_ == 0) return bytes32(0);
 
         // if first batch, return bytes32(0)
-        uint40[] memory requestBatchIds = requestHandler__().requestBatchIds(batchCount_);
+        uint40[] memory requestBatchIds = requestHandler__().getRequestBatchIds(batchCount_);
         if (requestBatchIds[0] == batchCount_) return bytes32(0);
 
         uint40 prevBatchCount = batchCount_ - 1;
 
-        bytes32[] memory payloadIds = requestHandler__().batchPayloadIds(prevBatchCount);
+        bytes32[] memory payloadIds = requestHandler__().getBatchPayloadIds(prevBatchCount);
         bytes32 prevDigestsHash = bytes32(0);
         for (uint40 i = 0; i < payloadIds.length; i++) {
             prevDigestsHash = keccak256(

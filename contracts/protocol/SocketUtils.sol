@@ -14,13 +14,12 @@ abstract contract SocketUtils is SocketConfig {
     ////////////////////// State Vars //////////////////////////
     ////////////////////////////////////////////////////////////
 
+    // Prefix for trigger ID containing chain slug and address bits
+    uint256 private immutable triggerPrefix;
     // Version string for this socket instance
     bytes32 public immutable version;
     // ChainSlug for this deployed socket instance
     uint32 public immutable chainSlug;
-    // Prefix for trigger ID containing chain slug and address bits
-    uint256 private immutable triggerPrefix;
-
     // @notice counter for trigger id
     uint64 public triggerCounter;
 
