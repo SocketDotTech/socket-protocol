@@ -14,17 +14,10 @@ contract ParallelCounterTest is AppGatewayBaseSetup {
     CounterAppGateway parallelCounterGateway;
 
     function deploySetup() internal {
-        setUpDeliveryHelper();
+        deploy();
 
         parallelCounterGateway = new CounterAppGateway(address(addressResolver), feesAmount);
-        depositUSDCFees(
-            address(parallelCounterGateway),
-            OnChainFees({
-                chainSlug: arbChainSlug,
-                token: address(arbConfig.feesTokenUSDC),
-                amount: 1 ether
-            })
-        );
+        depositNativeAndCredits(arbChainSlug, 1 ether, 1 ether, address(parallelCounterGateway));
         counterId1 = parallelCounterGateway.counter1();
         counterId2 = parallelCounterGateway.counter();
         contractIds[0] = counterId1;

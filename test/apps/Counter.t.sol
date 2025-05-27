@@ -14,24 +14,17 @@ contract CounterTest is AppGatewayBaseSetup {
     CounterAppGateway counterGateway;
 
     function deploySetup() internal {
-        setUpDeliveryHelper();
+        deploy();
 
         counterGateway = new CounterAppGateway(address(addressResolver), feesAmount);
-        depositUSDCFees(
-            address(counterGateway),
-            OnChainFees({
-                chainSlug: arbChainSlug,
-                token: address(arbConfig.feesTokenUSDC),
-                amount: 1 ether
-            })
-        );
+        depositNativeAndCredits(arbChainSlug, 1 ether, 1 ether, address(counterGateway));
 
         counterId = counterGateway.counter();
         contractIds[0] = counterId;
     }
 
     function deployCounterApp(uint32 chainSlug) internal returns (uint40 requestCount) {
-        requestCount = _deploy(chainSlug, counterGateway, contractIds);
+        requestCount = deploy(chainSlug, counterGateway, contractIds);
     }
 
     function testCounterDeployment() external {
@@ -59,7 +52,7 @@ contract CounterTest is AppGatewayBaseSetup {
     function testCounterDeploymentWithoutAsync() external {
         deploySetup();
 
-        vm.expectRevert(abi.encodeWithSelector(AsyncModifierNotUsed.selector));
+        vm.expectRevert(abi.encodeWithSelector(AsyncModifierNotSet.selector));
         counterGateway.deployContractsWithoutAsync(arbChainSlug);
     }
 

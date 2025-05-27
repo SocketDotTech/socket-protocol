@@ -28,6 +28,8 @@ contract SuperTokenTest is AppGatewayBaseSetup {
         SuperTokenAppGateway superTokenApp;
         bytes32 superToken;
     }
+    address owner = address(uint160(c++));
+    uint256 maxFees = 0.01 ether;
 
     /// @dev Main contracts used throughout the tests
     AppContracts appContracts;
@@ -48,7 +50,7 @@ contract SuperTokenTest is AppGatewayBaseSetup {
      * 3. Initializes contract IDs array
      */
     function setUp() public {
-        setUpDeliveryHelper();
+        deploy();
         deploySuperTokenApp();
         contractIds[0] = appContracts.superToken;
     }
@@ -75,14 +77,7 @@ contract SuperTokenTest is AppGatewayBaseSetup {
         );
         // Enable app gateways to do all operations in the Watcher: Read, Write and Schedule on EVMx
         // Watcher sets the limits for apps in this SOCKET protocol version
-        depositUSDCFees(
-            address(superTokenApp),
-            OnChainFees({
-                chainSlug: arbChainSlug,
-                token: address(arbConfig.feesTokenUSDC),
-                amount: 1 ether
-            })
-        );
+        depositNativeAndCredits(arbChainSlug, 1 ether, 1 ether, address(superTokenApp));
 
         appContracts = AppContracts({
             superTokenApp: superTokenApp,
@@ -98,7 +93,7 @@ contract SuperTokenTest is AppGatewayBaseSetup {
      * - Correct setup of forwarder contracts for multi-chain communication
      */
     function testContractDeployment() public {
-        _deploy(arbChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
+        deploy(arbChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
 
         (address onChain, address forwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
@@ -129,8 +124,8 @@ contract SuperTokenTest is AppGatewayBaseSetup {
      * @dev Deploys necessary contracts on both Arbitrum and Optimism chains
      */
     function beforeTransfer() internal {
-        _deploy(arbChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
-        _deploy(optChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
+        deploy(arbChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
+        deploy(optChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
     }
 
     /**
