@@ -31,7 +31,7 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
     /// @notice Emitted when the expiry time for a schedule is set
     event ExpiryTimeSet(uint256 expiryTime_);
     /// @notice Emitted when a schedule is requested
-    event ScheduleRequested(bytes32 payloadId, uint256 deadline);
+    event ScheduleRequested(bytes32 payloadId, uint256 executeAt, uint256 deadline);
     /// @notice Emitted when a schedule is resolved
     event ScheduleResolved(bytes32 payloadId);
 
@@ -103,7 +103,7 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
             revert InvalidScheduleDelay();
 
         // For schedule precompile, encode the payload parameters
-        precompileData = abi.encode(queueParams_.overrideParams.delayInSeconds);
+        precompileData = abi.encode(queueParams_.overrideParams.delayInSeconds, 0);
         estimatedFees =
             scheduleFeesPerSecond *
             queueParams_.overrideParams.delayInSeconds +
@@ -116,19 +116,21 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
     function handlePayload(
         address,
         PayloadParams calldata payloadParams
-    ) external onlyWatcher returns (uint256 fees, uint256 deadline) {
+    ) external onlyWatcher returns (uint256 fees, uint256 deadline, bytes memory precompileData) {
         uint256 delayInSeconds = abi.decode(payloadParams.precompileData, (uint256));
+
         // expiryTime is very low, to account for infra delay
-        deadline = block.timestamp + delayInSeconds + expiryTime;
+        uint256 executeAt = block.timestamp + delayInSeconds;
+        deadline = executeAt + expiryTime;
+        precompileData = abi.encode(delayInSeconds, executeAt);
         fees = scheduleFeesPerSecond * delayInSeconds + scheduleCallbackFees;
 
         // emits event for watcher to track schedule and resolve when deadline is reached
-        emit ScheduleRequested(payloadParams.payloadId, deadline);
+        emit ScheduleRequested(payloadParams.payloadId, executeAt, deadline);
     }
 
     function resolvePayload(PayloadParams calldata payloadParams_) external {
-        if (block.timestamp < payloadParams_.deadline) revert ResolvingScheduleTooEarly();
-
+        if (payloadParams_.deadline > block.timestamp) revert ResolvingScheduleTooEarly();
         emit ScheduleResolved(payloadParams_.payloadId);
     }
 }
