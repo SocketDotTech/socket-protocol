@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 
 import "../../interfaces/IPrecompile.sol";
 import "../../../utils/common/Structs.sol";
-import {InvalidScheduleDelay, ResolvingTimeoutTooEarly} from "../../../utils/common/Errors.sol";
+import {InvalidScheduleDelay, ResolvingScheduleTooEarly} from "../../../utils/common/Errors.sol";
 import "../WatcherBase.sol";
 
 /// @title SchedulePrecompile
@@ -122,12 +122,12 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
         deadline = block.timestamp + delayInSeconds + expiryTime;
         fees = scheduleFeesPerSecond * delayInSeconds + scheduleCallbackFees;
 
-        // emits event for watcher to track timeout and resolve when timeout is reached
+        // emits event for watcher to track schedule and resolve when deadline is reached
         emit ScheduleRequested(payloadParams.payloadId, deadline);
     }
 
     function resolvePayload(PayloadParams calldata payloadParams_) external {
-        if (block.timestamp < payloadParams_.deadline) revert ResolvingTimeoutTooEarly();
+        if (block.timestamp < payloadParams_.deadline) revert ResolvingScheduleTooEarly();
 
         emit ScheduleResolved(payloadParams_.payloadId);
     }

@@ -15,7 +15,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
 
     uint256 public arbCounter;
     uint256 public optCounter;
-    event TimeoutResolved(uint256 creationTimestamp, uint256 executionTimestamp);
+    event ScheduleResolved(uint256 creationTimestamp, uint256 executionTimestamp);
 
     constructor(address addressResolver_, uint256 fees_) AppGatewayBase(addressResolver_) {
         creationCodeWithArgs[counter] = abi.encodePacked(type(Counter).creationCode);
@@ -55,7 +55,6 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
 
     function incrementCounters(address[] memory instances_) public async {
         // the increase function is called on given list of instances
-        // this
         for (uint256 i = 0; i < instances_.length; i++) {
             ICounter(instances_[i]).increase();
         }
@@ -106,14 +105,14 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         counterVal += value_;
     }
 
-    // TIMEOUT
-    function setTimeout(uint256 delayInSeconds_) public async {
-        _setTimeout(delayInSeconds_);
-        then(this.resolveTimeout.selector, abi.encode(block.timestamp));
+    // Schedule
+    function setSchedule(uint256 delayInSeconds_) public async {
+        _setSchedule(delayInSeconds_);
+        then(this.resolveSchedule.selector, abi.encode(block.timestamp));
     }
 
-    function resolveTimeout(uint256 creationTimestamp_) external onlyPromises {
-        emit TimeoutResolved(creationTimestamp_, block.timestamp);
+    function resolveSchedule(uint256 creationTimestamp_) external onlyPromises {
+        emit ScheduleResolved(creationTimestamp_, block.timestamp);
     }
 
     // UTILS

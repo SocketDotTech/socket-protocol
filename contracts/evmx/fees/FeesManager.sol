@@ -12,17 +12,6 @@ contract FeesManager is Credit {
     /// @param amount The blocked amount
     event CreditsBlocked(uint40 indexed requestCount, address indexed consumeFrom, uint256 amount);
 
-    /// @notice Emitted when transmitter fees are updated
-    /// @param requestCount The batch identifier
-    /// @param transmitter The transmitter address
-    /// @param amount The new amount deposited
-    event TransmitterCreditsUpdated(
-        uint40 indexed requestCount,
-        address indexed transmitter,
-        uint256 amount
-    );
-    event WatcherPrecompileCreditsAssigned(uint256 amount, address consumeFrom);
-
     /// @notice Emitted when fees are unblocked and assigned to a transmitter
     /// @param requestCount The batch identifier
     /// @param consumeFrom The consume from address
@@ -37,15 +26,8 @@ contract FeesManager is Credit {
 
     /// @notice Emitted when fees are unblocked
     /// @param requestCount The batch identifier
-    /// @param appGateway The app gateway address
-    event CreditsUnblocked(uint40 indexed requestCount, address indexed appGateway);
-
-    /// @notice Emitted when insufficient watcher precompile fees are available
-    event InsufficientWatcherPrecompileCreditsAvailable(
-        uint32 chainSlug,
-        address token,
-        address consumeFrom
-    );
+    /// @param consumeFrom The consume from address
+    event CreditsUnblocked(uint40 indexed requestCount, address indexed consumeFrom);
 
     modifier onlyRequestHandler() {
         if (msg.sender != address(watcher__().requestHandler__())) revert NotRequestHandler();
@@ -93,7 +75,7 @@ contract FeesManager is Credit {
     }
 
     /// @notice Unblocks fees after successful execution and assigns them to the transmitter
-    /// @param requestCount_ The async ID of the executed batch
+    /// @param requestCount_ The request count of the executed batch
     /// @param assignTo_ The address of the transmitter
     function unblockAndAssignCredits(
         uint40 requestCount_,

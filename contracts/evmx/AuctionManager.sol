@@ -17,7 +17,7 @@ abstract contract AuctionManagerStorage is IAuctionManager {
     uint32 public immutable evmxSlug;
 
     // slot 50
-    /// @notice The timeout after which a bid expires
+    /// @notice The time after which a bid expires
     uint128 public bidTimeout;
 
     // slot 51
@@ -162,7 +162,7 @@ contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase 
             // todo: might block the request processing if transmitter don't have enough balance for this schedule
             // this case can hit when bid timeout is more than 0
 
-            // set the timeout for the bid expiration
+            // set the bid expiration time
             // useful in case a transmitter did bid but did not execute payloads
             _createRequest(
                 bidTimeout,

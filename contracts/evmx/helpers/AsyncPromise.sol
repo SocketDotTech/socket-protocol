@@ -24,7 +24,7 @@ abstract contract AsyncPromiseStorage is IPromise {
     /// @notice The request count of the promise
     uint40 public override requestCount;
 
-    /// @notice The local contract which initiated the async call.
+    /// @notice The local contract which initiated the call.
     /// @dev The callback will be executed on this address
     address public override localInvoker;
 

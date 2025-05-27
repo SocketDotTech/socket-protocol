@@ -65,6 +65,6 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         ISuperToken(order.srcToken).burn(order.user, order.srcAmount);
         ISuperToken(order.dstToken).mint(order.user, order.srcAmount);
 
-        emit Transferred(_getCurrentAsyncId());
+        emit Transferred(_getCurrentRequestCount());
     }
 }

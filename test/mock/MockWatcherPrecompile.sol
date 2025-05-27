@@ -20,38 +20,31 @@ contract MockWatcherPrecompile {
 
     event CalledAppGateway(bytes32 triggerId);
 
-    /// @notice Emitted when a new query is requested
+    /// @notice Emitted when a new read is requested
     /// @param chainSlug The identifier of the destination chain
     /// @param targetAddress The address of the target contract
-    /// @param payloadId The unique identifier for the query
-    /// @param payload The query data
-    event QueryRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
+    /// @param payloadId The unique identifier for the read
+    /// @param payload The read data
+    event ReadRequested(uint32 chainSlug, address targetAddress, bytes32 payloadId, bytes payload);
 
-    /// @notice Emitted when a finalize request is made
-    event FinalizeRequested(bytes32 digest, PayloadParams params);
+    /// @notice Emitted when a write proof is requested
+    event WriteProofRequested(bytes32 digest, PayloadParams params);
 
-    /// @notice Emitted when a request is finalized
+    /// @notice Emitted when a request proof is uploaded
     /// @param payloadId The unique identifier for the request
     /// @param proof The proof from the watcher
-    event Finalized(bytes32 indexed payloadId, bytes proof);
+    event WriteProofUploaded(bytes32 indexed payloadId, bytes proof);
 
     /// @notice Emitted when a promise is resolved
     /// @param payloadId The unique identifier for the resolved promise
     event PromiseResolved(bytes32 indexed payloadId);
 
-    event TimeoutRequested(
-        bytes32 timeoutId,
-        address target,
-        bytes payload,
-        uint256 executeAt // Epoch time when the task should execute
-    );
-
-    /// @notice Emitted when a timeout is resolved
-    /// @param timeoutId The unique identifier for the timeout
-    /// @param target The target address for the timeout
+    /// @notice Emitted when a Schedule is resolved
+    /// @param scheduleId The unique identifier for the Schedule
+    /// @param target The target address for the Schedule
     /// @param payload The payload data
     /// @param executedAt The epoch time when the task was executed
-    event TimeoutResolved(bytes32 timeoutId, address target, bytes payload, uint256 executedAt);
+    event ScheduleResolved(bytes32 scheduleId, address target, bytes payload, uint256 executedAt);
 
     /// @notice Contract constructor
     /// @param _owner Address of the contract owner

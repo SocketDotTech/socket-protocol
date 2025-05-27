@@ -13,7 +13,10 @@ interface IRequestHandler {
 
     function payloads(bytes32 payloadId_) external view returns (PayloadParams memory);
 
-    function getPrecompileFees(bytes4 precompile_, bytes memory precompileData_) external view returns (uint256);
+    function getPrecompileFees(
+        bytes4 precompile_,
+        bytes memory precompileData_
+    ) external view returns (uint256);
 
     function nextRequestCount() external view returns (uint40);
 

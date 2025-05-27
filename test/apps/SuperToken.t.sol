@@ -3,13 +3,13 @@ pragma solidity ^0.8.21;
 
 import {SuperTokenAppGateway} from "./app-gateways/super-token/SuperTokenAppGateway.sol";
 import {SuperToken} from "./app-gateways/super-token/SuperToken.sol";
-import "../DeliveryHelper.t.sol";
+import "../SetupTest.t.sol";
 
 /**
  * @title SuperToken Test
  * @notice Test contract for verifying the functionality of the SuperToken system, which enables
  * multi-chain token bridging capabilities.
- * @dev Inherits from DeliveryHelperTest to utilize multi-chain messaging infrastructure
+ * @dev Inherits from AppGatewayBaseSetup to utilize multi-chain messaging infrastructure
  *
  * The test suite validates:
  * - Contract deployment across different chains
@@ -17,7 +17,7 @@ import "../DeliveryHelper.t.sol";
  * - Proper balance updates
  * - Integration with the delivery and auction system
  */
-contract SuperTokenTest is DeliveryHelperTest {
+contract SuperTokenTest is AppGatewayBaseSetup {
     /**
      * @notice Groups the main contracts needed for SuperToken functionality
      * @param superTokenApp The gateway contract that handles multi-chain token operations

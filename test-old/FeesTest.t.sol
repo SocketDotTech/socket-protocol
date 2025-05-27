@@ -56,7 +56,7 @@ contract FeesTest is DeliveryHelperTest {
         );
         vm.stopPrank();
         uint40[] memory batches = watcherPrecompile.getBatches(requestCount);
-        _finalizeBatch(batches[0], new bytes[](0), 0, false);
+        _processBatch(batches[0], new bytes[](0), 0, false);
         assertEq(
             transmitterReceiverBalanceBefore + withdrawAmount,
             feesConfig.feesTokenUSDC.balanceOf(receiver),

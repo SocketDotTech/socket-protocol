@@ -3,9 +3,9 @@ pragma solidity ^0.8.21;
 
 import {CounterAppGateway} from "./app-gateways/counter/CounterAppGateway.sol";
 import {Counter} from "./app-gateways/counter/Counter.sol";
-import "../DeliveryHelper.t.sol";
+import "../SetupTest.t.sol";
 
-contract CounterTest is DeliveryHelperTest {
+contract CounterTest is AppGatewayBaseSetup {
     uint256 feesAmount = 0.01 ether;
 
     bytes32 counterId;
