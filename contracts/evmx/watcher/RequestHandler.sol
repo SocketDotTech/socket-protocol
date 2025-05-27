@@ -265,10 +265,13 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
             if (!_isPromiseResolved(_payloads[payloadId].asyncPromise)) continue;
             PayloadParams storage payloadParams = _payloads[payloadId];
 
-            (uint256 fees, uint256 deadline) = IPrecompile(precompiles[payloadParams.callType])
-                .handlePayload(r.requestFeesDetails.winningBid.transmitter, payloadParams);
+            (uint256 fees, uint256 deadline, bytes memory precompileData) = IPrecompile(
+                precompiles[payloadParams.callType]
+            ).handlePayload(r.requestFeesDetails.winningBid.transmitter, payloadParams);
+
             totalFees += fees;
             payloadParams.deadline = deadline;
+            payloadParams.precompileData = precompileData;
         }
 
         address watcherFeesPayer = r.requestFeesDetails.winningBid.transmitter == address(0)

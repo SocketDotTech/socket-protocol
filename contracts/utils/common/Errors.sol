@@ -72,3 +72,5 @@ error InvalidContract();
 error InvalidData();
 error InvalidNonce();
 error InvalidSignature();
+
+error DeadlinePassed();

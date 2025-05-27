@@ -52,7 +52,7 @@ contract ReadPrecompile is IPrecompile, WatcherBase {
     function handlePayload(
         address,
         PayloadParams calldata payloadParams
-    ) external onlyWatcher returns (uint256 fees, uint256 deadline) {
+    ) external onlyWatcher returns (uint256 fees, uint256 deadline, bytes memory) {
         fees = readFees;
         deadline = block.timestamp + expiryTime;
 

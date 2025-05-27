@@ -39,17 +39,9 @@ contract Socket is SocketUtils {
      */
     error LowGasLimit();
     /**
-     * @dev Error emitted when the deadline has passed
-     */
-    error DeadlinePassed();
-    /**
      * @dev Error emitted when the message value is insufficient
      */
     error InsufficientMsgValue();
-    /**
-     * @dev Error emitted when the call type is read
-     */
-    error InvalidCallType();
 
     /**
      * @notice Constructor for the Socket contract
