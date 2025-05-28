@@ -50,7 +50,7 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
         expiryTime = expiryTime_;
     }
 
-    function getPrecompileFees(bytes memory precompileData_) external view returns (uint256) {
+    function getPrecompileFees(bytes memory precompileData_) public view returns (uint256) {
         uint256 delayInSeconds = abi.decode(precompileData_, (uint256));
         return scheduleFeesPerSecond * delayInSeconds + scheduleCallbackFees;
     }
@@ -104,10 +104,7 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
 
         // For schedule precompile, encode the payload parameters
         precompileData = abi.encode(queueParams_.overrideParams.delayInSeconds, 0);
-        estimatedFees =
-            scheduleFeesPerSecond *
-            queueParams_.overrideParams.delayInSeconds +
-            scheduleCallbackFees;
+        estimatedFees = getPrecompileFees(precompileData);
     }
 
     /// @notice Handles payload processing and returns fees
@@ -127,7 +124,7 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
         uint256 executeAfter = block.timestamp + delayInSeconds;
         deadline = executeAfter + expiryTime;
         precompileData = abi.encode(delayInSeconds, executeAfter);
-        fees = scheduleFeesPerSecond * delayInSeconds + scheduleCallbackFees;
+        fees = getPrecompileFees(precompileData);
 
         // emits event for watcher to track schedule and resolve when deadline is reached
         emit ScheduleRequested(payloadParams.payloadId, executeAfter, deadline);

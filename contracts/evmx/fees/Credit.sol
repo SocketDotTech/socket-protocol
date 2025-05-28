@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 import "solady/utils/ECDSA.sol";
+import "solady/utils/SafeTransferLib.sol";
 
 import "../interfaces/IFeesManager.sol";
 import "../interfaces/IFeesPlug.sol";
@@ -123,8 +124,14 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
 
     function wrap(address receiver_) external payable override {
         UserCredits storage userCredit = userCredits[receiver_];
-        userCredit.totalCredits += msg.value;
-        emit CreditsWrapped(receiver_, msg.value);
+
+        uint256 amount = msg.value;
+        if (amount == 0) revert InvalidAmount();
+        userCredit.totalCredits += amount;
+
+        // reverts if transfer fails
+        SafeTransferLib.safeTransferETH(address(feesPool), amount);
+        emit CreditsWrapped(receiver_, amount);
     }
 
     function unwrap(uint256 amount_, address receiver_) external {
@@ -246,6 +253,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         OverrideParams memory overrideParams;
         overrideParams.callType = WRITE;
         overrideParams.writeFinality = WriteFinality.LOW;
+        // todo: can add gas limit here
 
         QueueParams memory queueParams;
         queueParams.overrideParams = overrideParams;

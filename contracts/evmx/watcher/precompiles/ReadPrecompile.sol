@@ -23,7 +23,7 @@ contract ReadPrecompile is IPrecompile, WatcherBase {
         expiryTime = expiryTime_;
     }
 
-    function getPrecompileFees(bytes memory) external view returns (uint256) {
+    function getPrecompileFees(bytes memory) public view returns (uint256) {
         return readFees;
     }
 
@@ -43,7 +43,7 @@ contract ReadPrecompile is IPrecompile, WatcherBase {
             queueParams_.transaction,
             queueParams_.overrideParams.readAtBlockNumber
         );
-        estimatedFees = readFees;
+        estimatedFees = getPrecompileFees(precompileData);
     }
 
     /// @notice Handles payload processing and returns fees
@@ -58,9 +58,9 @@ contract ReadPrecompile is IPrecompile, WatcherBase {
         onlyRequestHandler
         returns (uint256 fees, uint256 deadline, bytes memory precompileData)
     {
-        fees = readFees;
         deadline = block.timestamp + expiryTime;
         precompileData = payloadParams.precompileData;
+        fees = getPrecompileFees(payloadParams.precompileData);
 
         (Transaction memory transaction, uint256 readAtBlockNumber) = abi.decode(
             payloadParams.precompileData,

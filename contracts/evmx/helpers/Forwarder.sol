@@ -77,18 +77,14 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
             .getOverrideParams();
 
         // Queue the call in the middleware.
-        watcher__().queue(
-            QueueParams({
-                overrideParams: overrideParams,
-                transaction: Transaction({
-                    chainSlug: chainSlug,
-                    target: onChainAddress,
-                    payload: msg.data
-                }),
-                asyncPromise: address(0),
-                switchboardType: sbType
-            }),
-            msgSender
-        );
+        QueueParams memory queueParams;
+        queueParams.overrideParams = overrideParams;
+        queueParams.transaction = Transaction({
+            chainSlug: chainSlug,
+            target: onChainAddress,
+            payload: msg.data
+        });
+        queueParams.switchboardType = sbType;
+        watcher__().queue(queueParams, msgSender);
     }
 }

@@ -191,7 +191,7 @@ contract DeploySetup is SetupStore {
 
         watcherMultiCall(
             address(configurations),
-            abi.encodeWithSelector(Configurations.setPlugConfigs.selector, configs)
+            abi.encodeWithSelector(Configurations.setAppGatewayConfigs.selector, configs)
         );
     }
 
@@ -877,7 +877,7 @@ contract WatcherSetup is AuctionSetup {
         }
         watcherMultiCall(
             address(configurations),
-            abi.encodeWithSelector(Configurations.setPlugConfigs.selector, configs)
+            abi.encodeWithSelector(Configurations.setAppGatewayConfigs.selector, configs)
         );
     }
 }

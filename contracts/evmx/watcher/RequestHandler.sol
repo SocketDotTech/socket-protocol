@@ -115,6 +115,7 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
 
         requestCount = nextRequestCount++;
         uint40 currentBatch = nextBatchCount;
+
         RequestParams storage r = _requests[requestCount];
         r.requestTrackingParams.payloadsRemaining = queueParams_.length;
         r.requestFeesDetails.maxFees = maxFees_;
@@ -198,6 +199,7 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
             }
 
             // get the switchboard address from the configurations
+            // returns address(0) for schedule precompile and reads if sb type not set
             address switchboard = watcher__().configurations__().switchboards(
                 queuePayloadParam.transaction.chainSlug,
                 queuePayloadParam.switchboardType
@@ -218,23 +220,22 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
                 nextBatchCount,
                 payloadCount,
                 switchboard,
+                // todo: add evmx chain slug if schedule or read?
                 queuePayloadParam.transaction.chainSlug
             );
             _batchPayloadIds[nextBatchCount].push(payloadId);
 
             // create prev digest hash
-            PayloadParams memory p = PayloadParams({
-                requestCount: requestCount_,
-                batchCount: nextBatchCount,
-                payloadCount: payloadCount,
-                callType: callType,
-                asyncPromise: queueParams_[i].asyncPromise,
-                appGateway: appGateway_,
-                payloadId: payloadId,
-                resolvedAt: 0,
-                deadline: 0,
-                precompileData: precompileData
-            });
+            PayloadParams memory p;
+            p.requestCount = requestCount_;
+            p.batchCount = nextBatchCount;
+            p.payloadCount = payloadCount;
+            p.callType = callType;
+            p.asyncPromise = queueParams_[i].asyncPromise;
+            p.appGateway = appGateway_;
+            p.payloadId = payloadId;
+            p.precompileData = precompileData;
+
             result.promiseList[i] = queueParams_[i].asyncPromise;
             result.payloadParams[i] = p;
             _payloads[payloadId] = p;
@@ -263,6 +264,7 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
                 : auctionManager_;
     }
 
+    // called when processing batch first time or being retried
     function _processBatch(uint40 batchCount_, RequestParams storage r) internal {
         bytes32[] memory payloadIds = _batchPayloadIds[batchCount_];
 

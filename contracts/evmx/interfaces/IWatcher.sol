@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 import "../../utils/common/Errors.sol";
-import {Bid, AppGatewayConfig, WriteFinality, PlugConfig, DigestParams, QueueParams, PayloadParams, RequestParams, WatcherMultiCallParams} from "../../utils/common/Structs.sol";
+import "../../utils/common/Structs.sol";
 
 import "./IRequestHandler.sol";
 import "./IConfigurations.sol";

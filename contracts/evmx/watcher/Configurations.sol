@@ -73,13 +73,10 @@ contract Configurations is IConfigurations, Initializable, WatcherBase, Ownable 
     /// @dev Only callable by the watcher
     /// @dev This helps in verifying that plugs are called by respective app gateways
     /// @param configs_ Array of configurations containing app gateway, network, plug, and switchboard details
-    function setPlugConfigs(AppGatewayConfig[] calldata configs_) external onlyWatcher {
+    function setAppGatewayConfigs(AppGatewayConfig[] calldata configs_) external onlyWatcher {
         for (uint256 i = 0; i < configs_.length; i++) {
             // Store the plug configuration for this network and plug
-            _plugConfigs[configs_[i].chainSlug][configs_[i].plug] = PlugConfig({
-                appGatewayId: configs_[i].plugConfig.appGatewayId,
-                switchboard: configs_[i].plugConfig.switchboard
-            });
+            _plugConfigs[configs_[i].chainSlug][configs_[i].plug] = configs_[i].plugConfig;
 
             emit PlugAdded(
                 configs_[i].plugConfig.appGatewayId,

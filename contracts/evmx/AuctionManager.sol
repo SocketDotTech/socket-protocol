@@ -119,6 +119,7 @@ contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase 
 
         // create a new bid
         Bid memory newBid = Bid({fee: bidFees, transmitter: transmitter, extraData: extraData});
+        address oldTransmitter = winningBids[requestCount_].transmitter;
         winningBids[requestCount_] = newBid;
 
         // end the auction if the no auction end delay
@@ -128,9 +129,7 @@ contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase 
                 auctionEndDelaySeconds,
                 deductScheduleFees(
                     transmitter,
-                    winningBids[requestCount_].transmitter == address(0)
-                        ? address(this)
-                        : winningBids[requestCount_].transmitter,
+                    oldTransmitter == address(0) ? address(this) : newBid.transmitter,
                     auctionEndDelaySeconds
                 ),
                 address(this),
@@ -221,13 +220,6 @@ contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase 
 
         QueueParams memory queueParams;
         queueParams.overrideParams = overrideParams;
-        queueParams.transaction = Transaction({
-            chainSlug: evmxSlug,
-            target: address(this),
-            payload: payload_
-        });
-        queueParams.switchboardType = sbType;
-
         // queue and create request
         watcher__().queueAndSubmit(queueParams, maxFees_, address(this), consumeFrom_, bytes(""));
     }

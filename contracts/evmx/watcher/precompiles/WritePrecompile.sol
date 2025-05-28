@@ -59,7 +59,7 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
         expiryTime = expiryTime_;
     }
 
-    function getPrecompileFees(bytes memory) external view returns (uint256) {
+    function getPrecompileFees(bytes memory) public view returns (uint256) {
         return writeFees;
     }
 
@@ -115,7 +115,7 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
             )
         );
 
-        estimatedFees = writeFees;
+        estimatedFees = getPrecompileFees(precompileData);
     }
 
     /// @notice Handles payload processing and returns fees
@@ -130,9 +130,6 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
         onlyRequestHandler
         returns (uint256 fees, uint256 deadline, bytes memory precompileData)
     {
-        fees = writeFees;
-        deadline = block.timestamp + expiryTime;
-
         (
             address appGateway,
             Transaction memory transaction,
@@ -144,7 +141,10 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
                 payloadParams.precompileData,
                 (address, Transaction, WriteFinality, uint256, uint256, address)
             );
+
         precompileData = payloadParams.precompileData;
+        deadline = block.timestamp + expiryTime;
+        fees = getPrecompileFees(payloadParams.precompileData);
 
         bytes32 prevBatchDigestHash = getPrevBatchDigestHash(payloadParams.batchCount);
 
