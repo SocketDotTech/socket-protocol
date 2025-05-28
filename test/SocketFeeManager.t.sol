@@ -17,15 +17,18 @@ contract SocketFeeManagerTest is AppGatewayBaseSetup {
     SocketFeeManager public socketFeeManager;
 
     function setUp() public {
+        socketFees = 0.001 ether;
+
         socket = new Socket(arbChainSlug, owner, "test");
-        vm.prank(owner);
-        socket.grantRole(GOVERNANCE_ROLE, address(owner));
         socketFeeManager = new SocketFeeManager(owner, socketFees);
         mockSwitchboard = new MockFastSwitchboard(arbChainSlug, address(socket), owner);
-        mockSwitchboard.registerSwitchboard();
-
         counter = new Counter();
+
+        mockSwitchboard.registerSwitchboard();
         counter.initSocket(encodeAppGatewayId(gateway), address(socket), address(mockSwitchboard));
+
+        vm.prank(owner);
+        socket.grantRole(GOVERNANCE_ROLE, address(owner));
     }
 
     function testSuccessfulExecutionWithFeeManagerNotSet() public {
