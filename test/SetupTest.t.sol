@@ -590,13 +590,33 @@ contract WatcherSetup is AuctionSetup {
     );
     event WriteProofUploaded(bytes32 indexed payloadId, bytes proof);
 
-    function executeDeploy(
-        uint32 chainSlug_,
+    function executeDeployMultiChain(
         IAppGateway appGateway_,
+        uint32[] memory chainSlugs_,
+        bytes32[] memory contractIds_
+    ) internal returns (uint40 requestCount) {
+        return _executeDeploy(appGateway_, chainSlugs_, contractIds_);
+    }
+
+    function executeDeploy(
+        IAppGateway appGateway_,
+        uint32 chainSlug_,
+        bytes32[] memory contractIds_
+    ) internal returns (uint40 requestCount) {
+        uint32[] memory chainSlugs = new uint32[](1);
+        chainSlugs[0] = chainSlug_;
+        return _executeDeploy(appGateway_, chainSlugs, contractIds_);
+    }
+
+    function _executeDeploy(
+        IAppGateway appGateway_,
+        uint32[] memory chainSlugs_,
         bytes32[] memory contractIds_
     ) internal returns (uint40 requestCount) {
         requestCount = executeRequest();
-        setupGatewayAndPlugs(chainSlug_, appGateway_, contractIds_);
+        for (uint i = 0; i < chainSlugs_.length; i++) {
+            setupGatewayAndPlugs(chainSlugs_[i], appGateway_, contractIds_);
+        }
     }
 
     function executeRequest() internal returns (uint40 requestCount) {

@@ -112,8 +112,8 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
             revert InsufficientFees();
 
         requestCount = nextRequestCount++;
+        uint40 currentBatch = nextBatchCount;
         RequestParams storage r = _requests[requestCount];
-        r.requestTrackingParams.currentBatch = nextBatchCount;
         r.requestTrackingParams.payloadsRemaining = queueParams_.length;
         r.requestFeesDetails.maxFees = maxFees_;
         r.requestFeesDetails.consumeFrom = consumeFrom_;
@@ -123,14 +123,15 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
 
         CreateRequestResult memory result = _createRequest(queueParams_, appGateway_, requestCount);
 
-        r.requestTrackingParams.currentBatchPayloadsLeft = _batchPayloadIds[
-            r.requestTrackingParams.currentBatch
-        ].length;
+        // initialize tracking params
+        r.requestTrackingParams.currentBatch = currentBatch;
+        r.requestTrackingParams.currentBatchPayloadsLeft = _batchPayloadIds[currentBatch].length;
+
         r.writeCount = result.writeCount;
         promiseList = result.promiseList;
 
         if (result.totalEstimatedWatcherFees > maxFees_) revert InsufficientFees();
-        if (r.writeCount == 0) _processBatch(r.requestTrackingParams.currentBatch, r);
+        if (r.writeCount == 0) _processBatch(currentBatch, r);
 
         emit RequestSubmitted(
             r.writeCount > 0,
@@ -293,14 +294,14 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
         uint40 requestCount_,
         uint256 newMaxFees_,
         address appGateway_
-    ) external onlyWatcher {
+    ) external onlyWatcher isRequestCancelled(requestCount_) {
         RequestParams storage r = _requests[requestCount_];
-        if (r.requestTrackingParams.isRequestCancelled) revert RequestAlreadyCancelled();
         if (r.requestTrackingParams.isRequestExecuted) revert RequestAlreadySettled();
 
         if (appGateway_ != r.appGateway) revert OnlyAppGateway();
         if (r.requestFeesDetails.maxFees >= newMaxFees_)
             revert NewMaxFeesLowerThanCurrent(r.requestFeesDetails.maxFees, newMaxFees_);
+
         if (
             !IFeesManager(feesManager__()).isCreditSpendable(
                 r.requestFeesDetails.consumeFrom,
@@ -335,8 +336,9 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
             trackingParams.isRequestExecuted = true;
             _settleRequest(requestCount_, r);
         } else {
-            trackingParams.currentBatch++;
-            _processBatch(trackingParams.currentBatch, r);
+            uint40 currentBatch = ++trackingParams.currentBatch;
+            trackingParams.currentBatchPayloadsLeft = _batchPayloadIds[currentBatch].length;
+            _processBatch(currentBatch, r);
         }
     }
 
@@ -366,8 +368,10 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
         _cancelRequest(requestCount, _requests[requestCount]);
     }
 
-    function _cancelRequest(uint40 requestCount_, RequestParams storage r) internal {
-        if (r.requestTrackingParams.isRequestCancelled) revert RequestAlreadyCancelled();
+    function _cancelRequest(
+        uint40 requestCount_,
+        RequestParams storage r
+    ) internal isRequestCancelled(requestCount_) {
         if (r.requestTrackingParams.isRequestExecuted) revert RequestAlreadySettled();
 
         r.requestTrackingParams.isRequestCancelled = true;

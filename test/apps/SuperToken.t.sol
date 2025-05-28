@@ -93,7 +93,7 @@ contract SuperTokenTest is AppGatewayBaseSetup {
      * - Correct setup of forwarder contracts for multi-chain communication
      */
     function testContractDeployment() public {
-        executeDeploy(arbChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
+        executeDeploy(IAppGateway(appContracts.superTokenApp), arbChainSlug, contractIds);
 
         (address onChain, address forwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
@@ -124,8 +124,8 @@ contract SuperTokenTest is AppGatewayBaseSetup {
      * @dev Deploys necessary contracts on both Arbitrum and Optimism chains
      */
     function beforeTransfer() internal {
-        executeDeploy(arbChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
-        executeDeploy(optChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
+        executeDeploy(IAppGateway(appContracts.superTokenApp), arbChainSlug, contractIds);
+        executeDeploy(IAppGateway(appContracts.superTokenApp), optChainSlug, contractIds);
     }
 
     /**

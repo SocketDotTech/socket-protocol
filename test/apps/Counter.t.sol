@@ -13,23 +13,21 @@ contract CounterTest is AppGatewayBaseSetup {
 
     CounterAppGateway counterGateway;
 
-    function deploySetup() internal {
+    function setUp() public {
         deploy();
 
         counterGateway = new CounterAppGateway(address(addressResolver), feesAmount);
         depositNativeAndCredits(arbChainSlug, 1 ether, 0, address(counterGateway));
-
         counterId = counterGateway.counter();
         contractIds[0] = counterId;
     }
 
     function deployCounterApp(uint32 chainSlug) internal returns (uint40 requestCount) {
         counterGateway.deployContracts(chainSlug);
-        requestCount = executeDeploy(chainSlug, counterGateway, contractIds);
+        requestCount = executeDeploy(counterGateway, chainSlug, contractIds);
     }
 
     function testCounterDeployment() external {
-        deploySetup();
         deployCounterApp(arbChainSlug);
 
         (address onChain, address forwarder) = getOnChainAndForwarderAddresses(
@@ -51,14 +49,11 @@ contract CounterTest is AppGatewayBaseSetup {
     }
 
     function testCounterDeploymentWithoutAsync() external {
-        deploySetup();
-
         vm.expectRevert(abi.encodeWithSelector(AsyncModifierNotSet.selector));
         counterGateway.deployContractsWithoutAsync(arbChainSlug);
     }
 
     function testCounterIncrement() external {
-        deploySetup();
         deployCounterApp(arbChainSlug);
 
         (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
@@ -78,7 +73,6 @@ contract CounterTest is AppGatewayBaseSetup {
     }
 
     function testCounterIncrementMultipleChains() public {
-        deploySetup();
         deployCounterApp(arbChainSlug);
         deployCounterApp(optChainSlug);
 
@@ -129,11 +123,6 @@ contract CounterTest is AppGatewayBaseSetup {
         instances[1] = optCounterForwarder;
 
         counterGateway.readCounters(instances);
-
-        // bytes[] memory readReturnData = new bytes[](2);
-        // readReturnData[0] = abi.encode(10);
-        // readReturnData[1] = abi.encode(10);
-
         executeRequest();
     }
 }

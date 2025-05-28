@@ -23,7 +23,7 @@ contract FeesTest is AppGatewayBaseSetup {
 
         bytes32[] memory contractIds = new bytes32[](1);
         contractIds[0] = counterGateway.counter();
-        executeDeploy(feesChainSlug, IAppGateway(counterGateway), contractIds);
+        executeDeploy(IAppGateway(counterGateway), feesChainSlug, contractIds);
     }
 
     function testWithdrawTransmitterFees() public {

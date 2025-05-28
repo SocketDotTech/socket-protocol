@@ -192,7 +192,7 @@ contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase 
         if (reAuctionCount[requestCount_] >= maxReAuctionCount) revert MaxReAuctionCountReached();
         RequestParams memory requestParams = _getRequestParams(requestCount_);
 
-        // if executed, bid is not expired
+        // if executed or cancelled, bid is not expired
         if (
             requestParams.requestTrackingParams.payloadsRemaining == 0 ||
             requestParams.requestTrackingParams.isRequestCancelled

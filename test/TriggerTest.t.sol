@@ -33,7 +33,7 @@ contract TriggerTest is AppGatewayBaseSetup {
 
         // Deploy the counter contract
         gateway.deployContracts(arbChainSlug);
-        executeDeploy(arbChainSlug, gateway, contractIds);
+        executeDeploy(gateway, arbChainSlug, contractIds);
 
         (address counterAddress, ) = getOnChainAndForwarderAddresses(
             arbChainSlug,
