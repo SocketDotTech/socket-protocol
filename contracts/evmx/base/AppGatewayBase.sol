@@ -141,7 +141,6 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         );
 
         then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
-
         onCompleteData = abi.encode(chainSlug_, true);
     }
 

@@ -647,7 +647,7 @@ contract WatcherSetup is AuctionSetup {
             } else if (payloadParams.callType == WRITE) {
                 (success, promiseReturnData[0]) = _processWrite(payloadParams);
             } else if (payloadParams.callType == SCHEDULE) {
-                vm.warp(payloadParams.deadline);
+                vm.warp(payloadParams.deadline - expiryTime);
                 promiseReturnData[0] = PromiseReturnData({
                     exceededMaxCopy: false,
                     payloadId: payloadParams.payloadId,
@@ -659,6 +659,7 @@ contract WatcherSetup is AuctionSetup {
             if (success) {
                 _resolvePromise(promiseReturnData);
             } else {
+                vm.warp(payloadParams.deadline);
                 _markRevert(promiseReturnData[0], true);
             }
         }

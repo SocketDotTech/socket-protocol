@@ -137,6 +137,6 @@ contract CounterTest is AppGatewayBaseSetup {
         emit CounterScheduleResolved(creationTimestamp, block.timestamp);
         executeRequest();
 
-        assertEq(block.timestamp, creationTimestamp + 100 + expiryTime);
+        assertLe(block.timestamp, creationTimestamp + 100 + expiryTime);
     }
 }

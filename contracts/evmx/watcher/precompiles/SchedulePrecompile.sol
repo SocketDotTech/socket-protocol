@@ -31,7 +31,7 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
     /// @notice Emitted when the expiry time for a schedule is set
     event ExpiryTimeSet(uint256 expiryTime_);
     /// @notice Emitted when a schedule is requested
-    event ScheduleRequested(bytes32 payloadId, uint256 executeAt, uint256 deadline);
+    event ScheduleRequested(bytes32 payloadId, uint256 executeAfter, uint256 deadline);
     /// @notice Emitted when a schedule is resolved
     event ScheduleResolved(bytes32 payloadId);
 
@@ -121,20 +121,22 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
         onlyRequestHandler
         returns (uint256 fees, uint256 deadline, bytes memory precompileData)
     {
-        uint256 delayInSeconds = abi.decode(payloadParams.precompileData, (uint256));
+        (uint256 delayInSeconds, ) = abi.decode(payloadParams.precompileData, (uint256, uint256));
 
         // expiryTime is very low, to account for infra delay
-        uint256 executeAt = block.timestamp + delayInSeconds;
-        deadline = executeAt + expiryTime;
-        precompileData = abi.encode(delayInSeconds, executeAt);
+        uint256 executeAfter = block.timestamp + delayInSeconds;
+        deadline = executeAfter + expiryTime;
+        precompileData = abi.encode(delayInSeconds, executeAfter);
         fees = scheduleFeesPerSecond * delayInSeconds + scheduleCallbackFees;
 
         // emits event for watcher to track schedule and resolve when deadline is reached
-        emit ScheduleRequested(payloadParams.payloadId, executeAt, deadline);
+        emit ScheduleRequested(payloadParams.payloadId, executeAfter, deadline);
     }
 
     function resolvePayload(PayloadParams calldata payloadParams_) external onlyRequestHandler {
-        if (payloadParams_.deadline > block.timestamp) revert ResolvingScheduleTooEarly();
+        (, uint256 executeAfter) = abi.decode(payloadParams_.precompileData, (uint256, uint256));
+
+        if (executeAfter > block.timestamp) revert ResolvingScheduleTooEarly();
         emit ScheduleResolved(payloadParams_.payloadId);
     }
 }
