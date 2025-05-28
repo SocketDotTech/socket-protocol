@@ -40,6 +40,8 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
     /// @notice The metadata for a request
     mapping(uint40 => RequestParams) internal _requests;
 
+    error InsufficientMaxFees();
+
     event RequestSubmitted(
         bool hasWrite,
         uint40 requestCount,
@@ -130,7 +132,7 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
         r.writeCount = result.writeCount;
         promiseList = result.promiseList;
 
-        if (result.totalEstimatedWatcherFees > maxFees_) revert InsufficientFees();
+        if (result.totalEstimatedWatcherFees > maxFees_) revert InsufficientMaxFees();
         if (r.writeCount == 0) _processBatch(currentBatch, r);
 
         emit RequestSubmitted(

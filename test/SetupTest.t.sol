@@ -422,7 +422,7 @@ contract FeesSetup is DeploySetup {
         _deploy();
 
         depositNativeAndCredits(arbChainSlug, 100 ether, 100 ether, address(transmitterEOA));
-        approveAppGateway(address(auctionManager), address(transmitterEOA), transmitterPrivateKey);
+        approveAppGateway(address(auctionManager), address(transmitterEOA));
     }
 
     // mints test token and deposits the given  native and credits to given `user_`
@@ -482,7 +482,24 @@ contract FeesSetup is DeploySetup {
         assertEq(address(user_).balance, currentNative + native_, "User should have more native");
     }
 
-    function approveAppGateway(
+    function approveAppGateway(address appGateway_, address user_) internal {
+        bool approval = feesManager.isApproved(user_, appGateway_);
+        if (approval) return;
+
+        AppGatewayApprovals[] memory approvals = new AppGatewayApprovals[](1);
+        approvals[0] = AppGatewayApprovals({appGateway: appGateway_, approval: true});
+
+        hoax(user_);
+        feesManager.approveAppGateways(approvals);
+
+        assertEq(
+            feesManager.isApproved(user_, appGateway_),
+            true,
+            "App gateway should be approved"
+        );
+    }
+
+    function approveAppGatewayWithSignature(
         address appGateway_,
         address user_,
         uint256 userPrivateKey_
