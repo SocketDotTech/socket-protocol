@@ -10,8 +10,9 @@ contract CounterTest is AppGatewayBaseSetup {
 
     bytes32 counterId;
     bytes32[] contractIds = new bytes32[](1);
-
     CounterAppGateway counterGateway;
+
+    event CounterScheduleResolved(uint256 creationTimestamp, uint256 executionTimestamp);
 
     function setUp() public {
         deploy();
@@ -124,5 +125,18 @@ contract CounterTest is AppGatewayBaseSetup {
 
         counterGateway.readCounters(instances);
         executeRequest();
+    }
+
+    function testCounterSchedule() external {
+        deployCounterApp(arbChainSlug);
+
+        uint256 creationTimestamp = block.timestamp;
+        counterGateway.setSchedule(100);
+
+        vm.expectEmit(true, true, true, false);
+        emit CounterScheduleResolved(creationTimestamp, block.timestamp);
+        executeRequest();
+
+        assertEq(block.timestamp, creationTimestamp + 100 + expiryTime);
     }
 }

@@ -12,10 +12,10 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     bytes32 public counter1 = _createContractId("counter1");
 
     uint256 public counterVal;
-
     uint256 public arbCounter;
     uint256 public optCounter;
-    event ScheduleResolved(uint256 creationTimestamp, uint256 executionTimestamp);
+
+    event CounterScheduleResolved(uint256 creationTimestamp, uint256 executionTimestamp);
 
     constructor(address addressResolver_, uint256 fees_) AppGatewayBase(addressResolver_) {
         creationCodeWithArgs[counter] = abi.encodePacked(type(Counter).creationCode);
@@ -112,7 +112,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     }
 
     function resolveSchedule(uint256 creationTimestamp_) external onlyPromises {
-        emit ScheduleResolved(creationTimestamp_, block.timestamp);
+        emit CounterScheduleResolved(creationTimestamp_, block.timestamp);
     }
 
     // UTILS

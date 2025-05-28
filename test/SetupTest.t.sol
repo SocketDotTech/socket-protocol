@@ -647,7 +647,7 @@ contract WatcherSetup is AuctionSetup {
             } else if (payloadParams.callType == WRITE) {
                 (success, promiseReturnData[0]) = _processWrite(payloadParams);
             } else if (payloadParams.callType == SCHEDULE) {
-                // todo: update time to delay
+                vm.warp(payloadParams.deadline);
                 promiseReturnData[0] = PromiseReturnData({
                     exceededMaxCopy: false,
                     payloadId: payloadParams.payloadId,
