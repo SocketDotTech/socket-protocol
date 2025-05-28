@@ -23,48 +23,30 @@ contract TriggerTest is AppGatewayBaseSetup {
         // Setup core test infrastructure
         deploy();
 
-        // Deploy the counter contract
-        counter = new Counter();
-
         // Deploy the gateway with fees
         gateway = new CounterAppGateway(address(addressResolver), feesAmount);
-        gateway.setIsValidPlug(arbChainSlug, address(counter));
+        depositNativeAndCredits(arbChainSlug, 1 ether, 0, address(gateway));
 
-        // Connect the counter to the gateway and socket
-        counter.initSocket(
-            encodeAppGatewayId(address(gateway)),
-            address(arbConfig.socket),
-            address(arbConfig.switchboard)
+        bytes32[] memory contractIds = new bytes32[](1);
+        bytes32 counterId = gateway.counter();
+        contractIds[0] = counterId;
+
+        // Deploy the counter contract
+        gateway.deployContracts(arbChainSlug);
+        executeDeploy(arbChainSlug, gateway, contractIds);
+
+        (address counterAddress, ) = getOnChainAndForwarderAddresses(
+            arbChainSlug,
+            counterId,
+            gateway
         );
-
-        // Setup gateway config for the watcher
-        AppGatewayConfig[] memory configs = new AppGatewayConfig[](1);
-        configs[0] = AppGatewayConfig({
-            chainSlug: arbChainSlug,
-            plug: address(counter),
-            plugConfig: PlugConfig({
-                appGatewayId: encodeAppGatewayId(address(gateway)),
-                switchboard: address(arbConfig.switchboard)
-            })
-        });
-
-        watcherMultiCall(
-            address(configurations),
-            abi.encodeWithSelector(Configurations.setPlugConfigs.selector, configs)
-        );
-
-        hoax(watcherEOA);
-        configurations.setIsValidPlug(true, arbChainSlug, address(counter));
+        counter = Counter(counterAddress);
+        gateway.setIsValidPlug(arbChainSlug, counterAddress);
     }
 
     function testIncrementAfterTrigger() public {
         // Initial counter value should be 0
         assertEq(gateway.counterVal(), 0, "Initial gateway counter should be 0");
-        depositNativeAndCredits(arbChainSlug, 1 ether, 0, address(gateway));
-
-        bytes32[] memory contractIds = new bytes32[](1);
-        contractIds[0] = gateway.counter();
-        executeDeploy(arbChainSlug, IAppGateway(gateway), contractIds);
 
         // Simulate a message from another chain through the watcher
         uint256 incrementValue = 5;
@@ -85,8 +67,7 @@ contract TriggerTest is AppGatewayBaseSetup {
         );
         counter.increaseOnGateway(incrementValue);
 
-        TriggerParams[] memory params = new TriggerParams[](1);
-        params[0] = TriggerParams({
+        TriggerParams memory params = TriggerParams({
             triggerId: triggerId,
             chainSlug: arbChainSlug,
             appGatewayId: encodeAppGatewayId(address(gateway)),
@@ -94,11 +75,17 @@ contract TriggerTest is AppGatewayBaseSetup {
             payload: payload,
             overrides: bytes("")
         });
+        bytes memory data = abi.encode(params);
 
-        watcherMultiCall(
-            address(watcher),
-            abi.encodeWithSelector(Watcher.callAppGateways.selector, params)
-        );
+        WatcherMultiCallParams[] memory watcherParams = new WatcherMultiCallParams[](1);
+        watcherParams[0] = WatcherMultiCallParams({
+            contractAddress: address(watcher),
+            data: data,
+            nonce: watcherNonce,
+            signature: _createWatcherSignature(data)
+        });
+        watcherNonce++;
+        watcher.callAppGateways(watcherParams);
 
         // Check counter was incremented
         assertEq(gateway.counterVal(), incrementValue, "Gateway counter should be incremented");
