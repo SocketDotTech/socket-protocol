@@ -97,7 +97,7 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
             );
         }
 
-        // todo: can be used to set the default gas limit for each chain
+        // todo: can be changed to set the default gas limit for each chain
         if (queueParams_.overrideParams.gasLimit == 0) {
             queueParams_.overrideParams.gasLimit = 1000000;
         }

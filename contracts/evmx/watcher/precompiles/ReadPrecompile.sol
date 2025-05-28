@@ -35,7 +35,7 @@ contract ReadPrecompile is IPrecompile, WatcherBase {
         QueueParams calldata queueParams_,
         address
     ) external view returns (bytes memory precompileData, uint256 estimatedFees) {
-        if (queueParams_.transaction.target != address(0)) revert InvalidTarget();
+        if (queueParams_.transaction.target == address(0)) revert InvalidTarget();
         if (queueParams_.transaction.payload.length == 0) revert InvalidPayloadSize();
 
         // For read precompile, encode the payload parameters
