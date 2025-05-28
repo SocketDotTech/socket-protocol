@@ -629,7 +629,7 @@ contract WatcherSetup is AuctionSetup {
             } else if (payloadParams.callType == SCHEDULE) {
                 // todo: update time to delay
                 promiseReturnData[0] = PromiseReturnData({
-                    maxCopyExceeded: false,
+                    exceededMaxCopy: false,
                     payloadId: payloadParams.payloadId,
                     returnData: bytes("")
                 });
@@ -655,7 +655,7 @@ contract WatcherSetup is AuctionSetup {
         bytes memory returnData;
         (success, returnData) = transaction.target.call(transaction.payload);
         promiseReturnData = PromiseReturnData({
-            maxCopyExceeded: false,
+            exceededMaxCopy: false,
             payloadId: payloadParams.payloadId,
             returnData: returnData
         });
@@ -790,7 +790,7 @@ contract WatcherSetup is AuctionSetup {
         );
 
         promiseReturnData = PromiseReturnData({
-            maxCopyExceeded: false,
+            exceededMaxCopy: false,
             payloadId: payloadParams.payloadId,
             returnData: returnData
         });
