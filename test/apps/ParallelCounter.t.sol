@@ -2,9 +2,9 @@
 pragma solidity ^0.8.21;
 
 import {CounterAppGateway} from "./app-gateways/counter/CounterAppGateway.sol";
-import "../DeliveryHelper.t.sol";
+import "../SetupTest.t.sol";
 
-contract ParallelCounterTest is DeliveryHelperTest {
+contract ParallelCounterTest is AppGatewayBaseSetup {
     uint256 feesAmount = 0.01 ether;
 
     bytes32 counterId1;
@@ -14,26 +14,20 @@ contract ParallelCounterTest is DeliveryHelperTest {
     CounterAppGateway parallelCounterGateway;
 
     function deploySetup() internal {
-        setUpDeliveryHelper();
+        deploy();
 
         parallelCounterGateway = new CounterAppGateway(address(addressResolver), feesAmount);
-        depositUSDCFees(
-            address(parallelCounterGateway),
-            OnChainFees({
-                chainSlug: arbChainSlug,
-                token: address(arbConfig.feesTokenUSDC),
-                amount: 1 ether
-            })
-        );
-        counterId1 = parallelCounterGateway.counter1();
+        depositNativeAndCredits(arbChainSlug, 1 ether, 0, address(parallelCounterGateway));
+
         counterId2 = parallelCounterGateway.counter();
+        counterId1 = parallelCounterGateway.counter1();
         contractIds[0] = counterId1;
         contractIds[1] = counterId2;
     }
 
     function deployCounterApps(uint32[] memory chainSlugs) internal {
         parallelCounterGateway.deployMultiChainContracts(chainSlugs);
-        executeRequest(new bytes[](0));
+        executeRequest();
     }
 
     function testParallelCounterDeployment() external {

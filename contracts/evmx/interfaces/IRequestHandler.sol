@@ -5,15 +5,18 @@ import "../../utils/common/Structs.sol";
 import "../interfaces/IPrecompile.sol";
 
 interface IRequestHandler {
-    function requestBatchIds(uint40 batchCount_) external view returns (uint40[] memory);
+    function getRequestBatchIds(uint40 requestCount_) external view returns (uint40[] memory);
 
-    function batchPayloadIds(uint40 batchCount_) external view returns (bytes32[] memory);
+    function getBatchPayloadIds(uint40 batchCount_) external view returns (bytes32[] memory);
 
-    function requests(uint40 requestCount_) external view returns (RequestParams memory);
+    function getRequest(uint40 requestCount_) external view returns (RequestParams memory);
 
-    function payloads(bytes32 payloadId_) external view returns (PayloadParams memory);
+    function getPayload(bytes32 payloadId_) external view returns (PayloadParams memory);
 
-    function getPrecompileFees(bytes4 precompile_, bytes memory precompileData_) external view returns (uint256);
+    function getPrecompileFees(
+        bytes4 precompile_,
+        bytes memory precompileData_
+    ) external view returns (uint256);
 
     function nextRequestCount() external view returns (uint40);
 
@@ -34,9 +37,9 @@ interface IRequestHandler {
 
     function cancelRequestForReverts(uint40 requestCount) external;
 
-    function cancelRequest(uint40 requestCount) external;
+    function cancelRequest(uint40 requestCount, address appGateway_) external;
 
     function handleRevert(uint40 requestCount) external;
 
-    function increaseFees(uint40 requestCount_, uint256 newMaxFees_) external;
+    function increaseFees(uint40 requestCount_, uint256 newMaxFees_, address appGateway_) external;
 }

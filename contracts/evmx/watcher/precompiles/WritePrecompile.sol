@@ -33,15 +33,13 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
     event FeesSet(uint256 writeFees);
     event ChainMaxMsgValueLimitsUpdated(uint32 chainSlug, uint256 maxMsgValueLimit);
     event ContractFactoryPlugSet(uint32 chainSlug, address contractFactoryPlug);
-
     /// @notice Emitted when a proof upload request is made
     event WriteProofRequested(
+        address transmitter,
         bytes32 digest,
-        Transaction transaction,
-        WriteFinality writeFinality,
-        uint256 gasLimit,
-        uint256 value,
-        address switchboard
+        bytes32 prevBatchDigestHash,
+        uint256 deadline,
+        PayloadParams payloadParams
     );
 
     /// @notice Emitted when a proof is uploaded
@@ -79,8 +77,8 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
         ) revert MaxMsgValueLimitExceeded();
 
         if (
-            queueParams_.transaction.payload.length > 0 &&
-            queueParams_.transaction.payload.length < PAYLOAD_SIZE_LIMIT
+            queueParams_.transaction.payload.length == 0 ||
+            queueParams_.transaction.payload.length > PAYLOAD_SIZE_LIMIT
         ) {
             revert InvalidPayloadSize();
         }
@@ -97,6 +95,11 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
                 appGateway_,
                 queueParams_.switchboardType
             );
+        }
+
+        // todo: can be used to set the default gas limit for each chain
+        if (queueParams_.overrideParams.gasLimit == 0) {
+            queueParams_.overrideParams.gasLimit = 1000000;
         }
 
         // For write precompile, encode the payload parameters
@@ -121,31 +124,36 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
     /// @return deadline The deadline for the payload
     function handlePayload(
         address transmitter_,
-        PayloadParams calldata payloadParams
-    ) external onlyWatcher returns (uint256 fees, uint256 deadline) {
+        PayloadParams memory payloadParams
+    )
+        external
+        onlyRequestHandler
+        returns (uint256 fees, uint256 deadline, bytes memory precompileData)
+    {
         fees = writeFees;
         deadline = block.timestamp + expiryTime;
 
         (
             address appGateway,
             Transaction memory transaction,
-            WriteFinality writeFinality,
+            ,
             uint256 gasLimit,
             uint256 value,
-            address switchboard
+
         ) = abi.decode(
                 payloadParams.precompileData,
                 (address, Transaction, WriteFinality, uint256, uint256, address)
             );
+        precompileData = payloadParams.precompileData;
 
-        bytes32 prevBatchDigestHash = _getPrevBatchDigestHash(payloadParams.batchCount);
+        bytes32 prevBatchDigestHash = getPrevBatchDigestHash(payloadParams.batchCount);
 
         // create digest
         DigestParams memory digestParams_ = DigestParams(
             configurations__().sockets(transaction.chainSlug),
             transmitter_,
             payloadParams.payloadId,
-            payloadParams.deadline,
+            deadline,
             payloadParams.callType,
             gasLimit,
             value,
@@ -160,19 +168,25 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
         bytes32 digest = getDigest(digestParams_);
         digestHashes[payloadParams.payloadId] = digest;
 
-        emit WriteProofRequested(digest, transaction, writeFinality, gasLimit, value, switchboard);
+        emit WriteProofRequested(
+            transmitter_,
+            digest,
+            prevBatchDigestHash,
+            deadline,
+            payloadParams
+        );
     }
 
-    function _getPrevBatchDigestHash(uint40 batchCount_) internal view returns (bytes32) {
+    function getPrevBatchDigestHash(uint40 batchCount_) public view returns (bytes32) {
         if (batchCount_ == 0) return bytes32(0);
 
         // if first batch, return bytes32(0)
-        uint40[] memory requestBatchIds = requestHandler__().requestBatchIds(batchCount_);
+        uint40[] memory requestBatchIds = requestHandler__().getRequestBatchIds(batchCount_);
         if (requestBatchIds[0] == batchCount_) return bytes32(0);
 
         uint40 prevBatchCount = batchCount_ - 1;
 
-        bytes32[] memory payloadIds = requestHandler__().batchPayloadIds(prevBatchCount);
+        bytes32[] memory payloadIds = requestHandler__().getBatchPayloadIds(prevBatchCount);
         bytes32 prevDigestsHash = bytes32(0);
         for (uint40 i = 0; i < payloadIds.length; i++) {
             prevDigestsHash = keccak256(
@@ -247,5 +261,7 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
         emit ExpiryTimeSet(expiryTime_);
     }
 
-    function resolvePayload(PayloadParams calldata payloadParams_) external override {}
+    function resolvePayload(
+        PayloadParams calldata payloadParams_
+    ) external override onlyRequestHandler {}
 }

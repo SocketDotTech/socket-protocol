@@ -12,3 +12,5 @@ bytes32 constant TRANSMITTER_ROLE = keccak256("TRANSMITTER_ROLE");
 bytes32 constant WATCHER_ROLE = keccak256("WATCHER_ROLE");
 // used to disable switchboard
 bytes32 constant SWITCHBOARD_DISABLER_ROLE = keccak256("SWITCHBOARD_DISABLER_ROLE");
+// used by fees manager to withdraw native tokens
+bytes32 constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");

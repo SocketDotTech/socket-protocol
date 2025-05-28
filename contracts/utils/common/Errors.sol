@@ -12,8 +12,7 @@ error NotSocket();
 error PlugNotFound();
 
 // EVMx
-error TimeoutAlreadyResolved();
-error ResolvingTimeoutTooEarly();
+error ResolvingScheduleTooEarly();
 error CallFailed();
 error InvalidAppGateway();
 error AppGatewayAlreadyCalled();
@@ -28,7 +27,6 @@ error InvalidIndex();
 error InvalidChainSlug();
 error InvalidPayloadSize();
 error InvalidScheduleDelay();
-error InvalidTimeoutRequest();
 /// @notice Error thrown when trying to start or bid a closed auction
 error AuctionClosed();
 /// @notice Error thrown when trying to start or bid an auction that is not open
@@ -72,5 +70,6 @@ error OnlyAppGateway();
 error NewMaxFeesLowerThanCurrent(uint256 currentMaxFees, uint256 newMaxFees);
 error InvalidContract();
 error InvalidData();
-error InvalidNonce();
 error InvalidSignature();
+
+error DeadlinePassed();

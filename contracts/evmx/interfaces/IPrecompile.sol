@@ -25,10 +25,11 @@ interface IPrecompile {
     /// @param payloadParams The payload parameters to handle
     /// @return fees The fees required for processing
     /// @return deadline The deadline for processing
+    /// @return precompileData The encoded precompile data
     function handlePayload(
         address transmitter,
         PayloadParams calldata payloadParams
-    ) external returns (uint256 fees, uint256 deadline);
+    ) external returns (uint256 fees, uint256 deadline, bytes memory precompileData);
 
     /// @notice Resolves a payload
     /// @param payloadParams The payload parameters to resolve

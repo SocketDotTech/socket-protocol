@@ -77,5 +77,11 @@ interface IWatcher {
         bytes memory precompileData_
     ) external view returns (uint256);
 
+    function cancelRequest(uint40 requestCount_) external;
+
+    function increaseFees(uint40 requestCount_, uint256 newFees_) external;
+
+    function setIsValidPlug(bool isValid_, uint32 chainSlug_, address onchainAddress_) external;
+
     function isWatcher(address account_) external view returns (bool);
 }

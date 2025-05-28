@@ -105,10 +105,12 @@ contract Watcher is Trigger {
         address consumeFrom,
         bytes memory onCompleteData
     ) internal returns (uint40 requestCount, address[] memory promiseList) {
-        // this check is to verify that msg.sender (app gateway base) belongs to correct app gateway
         address appGateway = msg.sender;
+
+        // this check is to verify that msg.sender (app gateway base) belongs to correct app gateway
         if (appGateway != appGatewayTemp) revert InvalidAppGateway();
         latestAsyncPromise = address(0);
+        appGatewayTemp = address(0);
 
         (requestCount, promiseList) = requestHandler__.submitRequest(
             maxFees,
@@ -118,6 +120,7 @@ contract Watcher is Trigger {
             payloadQueue,
             onCompleteData
         );
+
         clearQueue();
     }
 
@@ -139,11 +142,27 @@ contract Watcher is Trigger {
     }
 
     function getRequestParams(uint40 requestCount_) external view returns (RequestParams memory) {
-        return requestHandler__.requests(requestCount_);
+        return requestHandler__.getRequest(requestCount_);
     }
 
     function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory) {
-        return requestHandler__.payloads(payloadId_);
+        return requestHandler__.getPayload(payloadId_);
+    }
+
+    function setIsValidPlug(
+        bool isValid_,
+        uint32 chainSlug_,
+        address onchainAddress_
+    ) external override {
+        configurations__.setIsValidPlug(isValid_, chainSlug_, onchainAddress_);
+    }
+
+    function cancelRequest(uint40 requestCount_) external override {
+        requestHandler__.cancelRequest(requestCount_, msg.sender);
+    }
+
+    function increaseFees(uint40 requestCount_, uint256 newFees_) external override {
+        requestHandler__.increaseFees(requestCount_, newFees_, msg.sender);
     }
 
     function getPrecompileFees(
@@ -161,47 +180,42 @@ contract Watcher is Trigger {
             _validateSignature(params_[i].data, params_[i].nonce, params_[i].signature);
 
             // call the contract
-            // trusting watcher to send enough value for all calls
-            (bool success, ) = params_[i].contractAddress.call{value: params_[i].value}(
-                params_[i].data
-            );
+            (bool success, ) = params_[i].contractAddress.call(params_[i].data);
             if (!success) revert CallFailed();
         }
     }
 
+    /// @notice Verifies that a watcher signature is valid
+    /// @param data_ The data to verify
+    /// @param nonce_ The nonce of the signature
+    /// @param signature_ The signature to verify
     function _validateSignature(
         bytes memory data_,
         uint256 nonce_,
         bytes memory signature_
     ) internal {
         if (data_.length == 0) revert InvalidData();
-        if (nonce_ == 0) revert InvalidNonce();
         if (signature_.length == 0) revert InvalidSignature();
+        if (isNonceUsed[nonce_]) revert NonceUsed();
+        isNonceUsed[nonce_] = true;
+
+        bytes32 digest = keccak256(abi.encode(address(this), evmxSlug, nonce_, data_));
 
         // check if signature is valid
-        if (!_isWatcherSignatureValid(nonce_, data_, signature_)) revert InvalidSignature();
+        if (_recoverSigner(digest, signature_) != owner()) revert InvalidSignature();
     }
 
-    /// @notice Verifies that a watcher signature is valid
-    /// @param signatureNonce_ The nonce of the signature
-    /// @param inputData_ The input data to verify
+    /// @notice Recovers the signer of a message
+    /// @param digest_ The digest of the input data
     /// @param signature_ The signature to verify
     /// @dev This function verifies that the signature was created by the watcher and that the nonce has not been used before
-    function _isWatcherSignatureValid(
-        uint256 signatureNonce_,
-        bytes memory inputData_,
+    function _recoverSigner(
+        bytes32 digest_,
         bytes memory signature_
-    ) internal returns (bool) {
-        if (isNonceUsed[signatureNonce_]) revert NonceUsed();
-        isNonceUsed[signatureNonce_] = true;
-
-        bytes32 digest = keccak256(
-            abi.encode(address(this), evmxSlug, signatureNonce_, inputData_)
-        );
-        digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
+    ) internal view returns (address signer) {
+        bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
 
         // recovered signer is checked for the valid roles later
-        address signer = ECDSA.recover(digest, signature_);
-        return signer == owner();
+        signer = ECDSA.recover(digest, signature_);
     }
 }

@@ -3,9 +3,9 @@ pragma solidity ^0.8.21;
 
 import {CounterAppGateway} from "./app-gateways/counter/CounterAppGateway.sol";
 import {Counter} from "./app-gateways/counter/Counter.sol";
-import "../DeliveryHelper.t.sol";
+import "../SetupTest.t.sol";
 
-contract CounterTest is DeliveryHelperTest {
+contract CounterTest is AppGatewayBaseSetup {
     uint256 feesAmount = 0.01 ether;
 
     bytes32 counterId;
@@ -14,24 +14,18 @@ contract CounterTest is DeliveryHelperTest {
     CounterAppGateway counterGateway;
 
     function deploySetup() internal {
-        setUpDeliveryHelper();
+        deploy();
 
         counterGateway = new CounterAppGateway(address(addressResolver), feesAmount);
-        depositUSDCFees(
-            address(counterGateway),
-            OnChainFees({
-                chainSlug: arbChainSlug,
-                token: address(arbConfig.feesTokenUSDC),
-                amount: 1 ether
-            })
-        );
+        depositNativeAndCredits(arbChainSlug, 1 ether, 0, address(counterGateway));
 
         counterId = counterGateway.counter();
         contractIds[0] = counterId;
     }
 
     function deployCounterApp(uint32 chainSlug) internal returns (uint40 requestCount) {
-        requestCount = _deploy(chainSlug, counterGateway, contractIds);
+        counterGateway.deployContracts(chainSlug);
+        requestCount = executeDeploy(chainSlug, counterGateway, contractIds);
     }
 
     function testCounterDeployment() external {
@@ -59,7 +53,7 @@ contract CounterTest is DeliveryHelperTest {
     function testCounterDeploymentWithoutAsync() external {
         deploySetup();
 
-        vm.expectRevert(abi.encodeWithSelector(AsyncModifierNotUsed.selector));
+        vm.expectRevert(abi.encodeWithSelector(AsyncModifierNotSet.selector));
         counterGateway.deployContractsWithoutAsync(arbChainSlug);
     }
 
@@ -78,7 +72,7 @@ contract CounterTest is DeliveryHelperTest {
         address[] memory instances = new address[](1);
         instances[0] = arbCounterForwarder;
         counterGateway.incrementCounters(instances);
-        executeRequest(new bytes[](0));
+        executeRequest();
 
         assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
     }
@@ -111,7 +105,7 @@ contract CounterTest is DeliveryHelperTest {
         chains[0] = arbChainSlug;
         chains[1] = optChainSlug;
 
-        executeRequest(new bytes[](0));
+        executeRequest();
         assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
         assertEq(Counter(optCounter).counter(), optCounterBefore + 1);
     }
@@ -136,10 +130,10 @@ contract CounterTest is DeliveryHelperTest {
 
         counterGateway.readCounters(instances);
 
-        bytes[] memory readReturnData = new bytes[](2);
-        readReturnData[0] = abi.encode(10);
-        readReturnData[1] = abi.encode(10);
+        // bytes[] memory readReturnData = new bytes[](2);
+        // readReturnData[0] = abi.encode(10);
+        // readReturnData[1] = abi.encode(10);
 
-        executeRequest(readReturnData);
+        executeRequest();
     }
 }

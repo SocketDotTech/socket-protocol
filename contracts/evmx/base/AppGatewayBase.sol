@@ -87,9 +87,9 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         return keccak256(abi.encode(contractName_));
     }
 
-    /// @notice Gets the current async ID
-    /// @return uint40 The current async ID
-    function _getCurrentAsyncId() internal view returns (uint40) {
+    /// @notice Gets the current request count
+    /// @return uint40 The current request count
+    function _getCurrentRequestCount() internal view returns (uint40) {
         return watcher__().getCurrentRequestCount();
     }
 
@@ -165,7 +165,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /// @notice Schedules a function to be called after a delay
     /// @param delayInSeconds_ The delay in seconds
     /// @dev callback function and data is set in .then call
-    function _setTimeout(uint256 delayInSeconds_) internal {
+    function _setSchedule(uint256 delayInSeconds_) internal {
         if (!isAsyncModifierSet) revert AsyncModifierNotSet();
         overrideParams.callType = SCHEDULE;
         overrideParams.delayInSeconds = delayInSeconds_;
@@ -309,15 +309,15 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// @notice Reverts the transaction
-    /// @param requestCount_ The async ID
+    /// @param requestCount_ The request count
     function _revertTx(uint40 requestCount_) internal {
-        watcher__().requestHandler__().cancelRequest(requestCount_);
+        watcher__().cancelRequest(requestCount_);
     }
 
     /// @notice increases the transaction maxFees
-    /// @param requestCount_ The async ID
+    /// @param requestCount_ The request count
     function _increaseFees(uint40 requestCount_, uint256 newMaxFees_) internal {
-        watcher__().requestHandler__().increaseFees(requestCount_, newMaxFees_);
+        watcher__().increaseFees(requestCount_, newMaxFees_);
     }
 
     /// @notice Withdraws fee tokens

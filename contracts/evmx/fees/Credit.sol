@@ -4,10 +4,11 @@ pragma solidity ^0.8.21;
 import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 import "solady/utils/ECDSA.sol";
-import "solady/utils/SafeTransferLib.sol";
 
 import "../interfaces/IFeesManager.sol";
 import "../interfaces/IFeesPlug.sol";
+import "../interfaces/IFeesPool.sol";
+
 import {AddressResolverUtil} from "../helpers/AddressResolverUtil.sol";
 import {NonceUsed, InvalidAmount, InsufficientCreditsAvailable, InsufficientBalance, InvalidChainSlug, NotRequestHandler} from "../../utils/common/Errors.sol";
 import {WRITE} from "../../utils/common/Constants.sol";
@@ -18,6 +19,8 @@ abstract contract FeesManagerStorage is IFeesManager {
 
     /// @notice switchboard type
     bytes32 public sbType;
+
+    IFeesPool public feesPool;
 
     /// @notice user credits => stores fees for user, app gateway, transmitters and watcher precompile
     mapping(address => UserCredits) public userCredits;
@@ -49,14 +52,16 @@ abstract contract FeesManagerStorage is IFeesManager {
 abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressResolverUtil {
     /// @notice Emitted when fees deposited are updated
     /// @param chainSlug The chain identifier
-    /// @param appGateway The app gateway address
     /// @param token The token address
-    /// @param amount The new amount deposited
-    event CreditsDeposited(
+    /// @param depositTo The address to deposit to
+    /// @param creditAmount The credit amount added
+    /// @param nativeAmount The native amount transferred
+    event Deposited(
         uint32 indexed chainSlug,
-        address indexed appGateway,
         address indexed token,
-        uint256 amount
+        address indexed depositTo,
+        uint256 creditAmount,
+        uint256 nativeAmount
     );
 
     /// @notice Emitted when credits are wrapped
@@ -71,9 +76,17 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
     /// @notice Emitted when fees plug is set
     event FeesPlugSet(uint32 indexed chainSlug, address indexed feesPlug);
 
+    /// @notice Emitted when fees pool is set
+    event FeesPoolSet(address indexed feesPool);
+
     function setFeesPlug(uint32 chainSlug_, address feesPlug_) external onlyOwner {
         feesPlugs[chainSlug_] = feesPlug_;
         emit FeesPlugSet(chainSlug_, feesPlug_);
+    }
+
+    function setFeesPool(address feesPool_) external onlyOwner {
+        feesPool = IFeesPool(feesPool_);
+        emit FeesPoolSet(feesPool_);
     }
 
     /// @notice Deposits credits and native tokens to a user
@@ -83,23 +96,29 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
     /// @param nativeAmount_ The native amount
     /// @param creditAmount_ The credit amount
     function deposit(
-        address depositTo_,
         uint32 chainSlug_,
         address token_,
+        address depositTo_,
         uint256 nativeAmount_,
         uint256 creditAmount_
-    ) external payable override onlyWatcher {
-        if (creditAmount_ + nativeAmount_ != msg.value) revert InvalidAmount();
-        tokenOnChainBalances[chainSlug_][token_] += nativeAmount_ + creditAmount_;
+    ) external override onlyWatcher {
+        tokenOnChainBalances[chainSlug_][token_] += creditAmount_ + nativeAmount_;
 
         UserCredits storage userCredit = userCredits[depositTo_];
         userCredit.totalCredits += creditAmount_;
 
-        // if native transfer fails, add to credit
-        bool success = SafeTransferLib.trySafeTransferETH(depositTo_, nativeAmount_, gasleft());
-        if (!success) userCredit.totalCredits += nativeAmount_;
+        if (nativeAmount_ > 0) {
+            // if native transfer fails, add to credit
+            bool success = feesPool.withdraw(depositTo_, nativeAmount_);
 
-        emit CreditsDeposited(chainSlug_, depositTo_, token_, creditAmount_);
+            if (!success) {
+                userCredit.totalCredits += nativeAmount_;
+                nativeAmount_ = 0;
+                creditAmount_ += nativeAmount_;
+            }
+        }
+
+        emit Deposited(chainSlug_, token_, depositTo_, creditAmount_, nativeAmount_);
     }
 
     function wrap(address receiver_) external payable override {
@@ -113,8 +132,8 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         if (userCredit.totalCredits < amount_) revert InsufficientCreditsAvailable();
         userCredit.totalCredits -= amount_;
 
-        if (address(this).balance < amount_) revert InsufficientBalance();
-        SafeTransferLib.safeTransferETH(receiver_, amount_);
+        bool success = feesPool.withdraw(receiver_, amount_);
+        if (!success) revert InsufficientBalance();
 
         emit CreditsUnwrapped(receiver_, amount_);
     }

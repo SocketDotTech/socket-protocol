@@ -47,6 +47,8 @@ contract PromiseResolver is IPromiseResolver, WatcherBase {
         PromiseReturnData memory resolvedPromise_
     ) internal returns (uint40 requestCount, bool success) {
         PayloadParams memory payloadParams = watcher__.getPayloadParams(resolvedPromise_.payloadId);
+        if (payloadParams.deadline < block.timestamp) revert DeadlinePassed();
+
         address asyncPromise = payloadParams.asyncPromise;
         requestCount = payloadParams.requestCount;
 

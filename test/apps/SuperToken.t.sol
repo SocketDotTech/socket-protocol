@@ -3,13 +3,13 @@ pragma solidity ^0.8.21;
 
 import {SuperTokenAppGateway} from "./app-gateways/super-token/SuperTokenAppGateway.sol";
 import {SuperToken} from "./app-gateways/super-token/SuperToken.sol";
-import "../DeliveryHelper.t.sol";
+import "../SetupTest.t.sol";
 
 /**
  * @title SuperToken Test
  * @notice Test contract for verifying the functionality of the SuperToken system, which enables
  * multi-chain token bridging capabilities.
- * @dev Inherits from DeliveryHelperTest to utilize multi-chain messaging infrastructure
+ * @dev Inherits from AppGatewayBaseSetup to utilize multi-chain messaging infrastructure
  *
  * The test suite validates:
  * - Contract deployment across different chains
@@ -17,7 +17,7 @@ import "../DeliveryHelper.t.sol";
  * - Proper balance updates
  * - Integration with the delivery and auction system
  */
-contract SuperTokenTest is DeliveryHelperTest {
+contract SuperTokenTest is AppGatewayBaseSetup {
     /**
      * @notice Groups the main contracts needed for SuperToken functionality
      * @param superTokenApp The gateway contract that handles multi-chain token operations
@@ -28,6 +28,8 @@ contract SuperTokenTest is DeliveryHelperTest {
         SuperTokenAppGateway superTokenApp;
         bytes32 superToken;
     }
+    address owner = address(uint160(c++));
+    uint256 maxFees = 0.01 ether;
 
     /// @dev Main contracts used throughout the tests
     AppContracts appContracts;
@@ -48,7 +50,7 @@ contract SuperTokenTest is DeliveryHelperTest {
      * 3. Initializes contract IDs array
      */
     function setUp() public {
-        setUpDeliveryHelper();
+        deploy();
         deploySuperTokenApp();
         contractIds[0] = appContracts.superToken;
     }
@@ -75,14 +77,7 @@ contract SuperTokenTest is DeliveryHelperTest {
         );
         // Enable app gateways to do all operations in the Watcher: Read, Write and Schedule on EVMx
         // Watcher sets the limits for apps in this SOCKET protocol version
-        depositUSDCFees(
-            address(superTokenApp),
-            OnChainFees({
-                chainSlug: arbChainSlug,
-                token: address(arbConfig.feesTokenUSDC),
-                amount: 1 ether
-            })
-        );
+        depositNativeAndCredits(arbChainSlug, 1 ether, 0, address(superTokenApp));
 
         appContracts = AppContracts({
             superTokenApp: superTokenApp,
@@ -98,7 +93,7 @@ contract SuperTokenTest is DeliveryHelperTest {
      * - Correct setup of forwarder contracts for multi-chain communication
      */
     function testContractDeployment() public {
-        _deploy(arbChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
+        executeDeploy(arbChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
 
         (address onChain, address forwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
@@ -129,8 +124,8 @@ contract SuperTokenTest is DeliveryHelperTest {
      * @dev Deploys necessary contracts on both Arbitrum and Optimism chains
      */
     function beforeTransfer() internal {
-        _deploy(arbChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
-        _deploy(optChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
+        executeDeploy(arbChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
+        executeDeploy(optChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
     }
 
     /**
@@ -169,7 +164,7 @@ contract SuperTokenTest is DeliveryHelperTest {
 
         bytes memory encodedOrder = abi.encode(transferOrder);
         appContracts.superTokenApp.transfer(encodedOrder);
-        executeRequest(new bytes[](0));
+        executeRequest();
 
         assertEq(
             SuperToken(onChainArb).balanceOf(owner),
