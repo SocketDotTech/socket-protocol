@@ -154,12 +154,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /// @param returnData_ The return data
     function setAddress(bytes memory data_, bytes memory returnData_) external onlyPromises {
         (uint32 chainSlug, bytes32 contractId) = abi.decode(data_, (uint32, bytes32));
-        address forwarderContractAddress = asyncDeployer__().getOrDeployForwarderContract(
+        forwarderAddresses[contractId][chainSlug] = asyncDeployer__().getOrDeployForwarderContract(
             abi.decode(returnData_, (address)),
             chainSlug
         );
-
-        forwarderAddresses[contractId][chainSlug] = forwarderContractAddress;
     }
 
     /// @notice Schedules a function to be called after a delay
@@ -187,7 +185,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
+            .getOnChainAddress();
     }
 
     function _setCallType(Read isReadCall_) internal {

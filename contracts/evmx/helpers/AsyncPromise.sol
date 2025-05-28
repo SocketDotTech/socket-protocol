@@ -74,11 +74,9 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
 
     /// @notice Marks the promise as resolved and executes the callback if set.
     /// @dev Only callable by the watcher precompile.
-    /// @param returnData_ The data returned from the async payload execution.
+    /// @param resolvedPromise_ The data returned from the async payload execution.
     function markResolved(
-        bool exceededMaxCopy_,
-        bytes32 payloadId_,
-        bytes memory returnData_
+        PromiseReturnData memory resolvedPromise_
     ) external override onlyWatcher returns (bool success) {
         if (
             state == AsyncPromiseState.CALLBACK_REVERTING ||
@@ -91,18 +89,18 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         if (callbackSelector == bytes4(0)) {
             success = true;
         } else {
-            exceededMaxCopy = exceededMaxCopy_;
-            returnData = returnData_;
+            exceededMaxCopy = resolvedPromise_.maxCopyExceeded;
+            returnData = resolvedPromise_.returnData;
 
             bytes memory combinedCalldata = abi.encodePacked(
                 callbackSelector,
-                abi.encode(callbackData, returnData_)
+                abi.encode(callbackData, resolvedPromise_.returnData)
             );
 
             (success, , ) = localInvoker.tryCall(0, gasleft(), 0, combinedCalldata);
             if (!success) {
                 state = AsyncPromiseState.CALLBACK_REVERTING;
-                _handleRevert(payloadId_);
+                _handleRevert(resolvedPromise_.payloadId);
             }
         }
     }
@@ -110,9 +108,7 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     /// @notice Marks the promise as onchain reverting.
     /// @dev Only callable by the watcher precompile.
     function markOnchainRevert(
-        bool exceededMaxCopy_,
-        bytes32 payloadId_,
-        bytes memory returnData_
+        PromiseReturnData memory resolvedPromise_
     ) external override onlyWatcher {
         if (
             state == AsyncPromiseState.CALLBACK_REVERTING ||
@@ -122,9 +118,9 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
 
         // to update the state in case selector is bytes(0) but reverting onchain
         state = AsyncPromiseState.ONCHAIN_REVERTING;
-        exceededMaxCopy_ = exceededMaxCopy_;
-        returnData_ = returnData_;
-        _handleRevert(payloadId_);
+        exceededMaxCopy = resolvedPromise_.maxCopyExceeded;
+        returnData = resolvedPromise_.returnData;
+        _handleRevert(resolvedPromise_.payloadId);
     }
 
     /// @notice Handles the revert of the promise.
