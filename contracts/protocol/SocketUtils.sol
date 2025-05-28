@@ -24,7 +24,6 @@ abstract contract SocketUtils is SocketConfig {
         bytes payload;
     }
 
-
     address public constant OFF_CHAIN_CALLER = address(0xDEAD);
 
     // Prefix for trigger ID containing chain slug and address bits
@@ -39,11 +38,10 @@ abstract contract SocketUtils is SocketConfig {
     error OnlyOffChain();
     error SimulationFailed();
 
-     modifier onlyOffChain() {
+    modifier onlyOffChain() {
         if (msg.sender != OFF_CHAIN_CALLER) revert OnlyOffChain();
         _;
     }
-
 
     /*
      * @notice constructor for creating a new Socket contract instance.
@@ -115,7 +113,6 @@ abstract contract SocketUtils is SocketConfig {
         return bytes32(triggerPrefix | triggerCounter++);
     }
 
-
     struct SimulationResult {
         bool success;
         bytes returnData;
@@ -126,14 +123,11 @@ abstract contract SocketUtils is SocketConfig {
         SimulateParams[] calldata params
     ) external payable onlyOffChain returns (SimulationResult[] memory) {
         SimulationResult[] memory results = new SimulationResult[](params.length);
-        
+
         for (uint256 i = 0; i < params.length; i++) {
-            (bool success, bool exceededMaxCopy, bytes memory returnData) = params[i].target.tryCall(
-                params[i].value,
-                params[i].gasLimit,
-                maxCopyBytes,
-                params[i].payload
-            );
+            (bool success, bool exceededMaxCopy, bytes memory returnData) = params[i]
+                .target
+                .tryCall(params[i].value, params[i].gasLimit, maxCopyBytes, params[i].payload);
             results[i] = SimulationResult(success, returnData, exceededMaxCopy);
         }
 

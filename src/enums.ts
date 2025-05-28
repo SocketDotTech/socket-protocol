@@ -11,10 +11,10 @@ export enum Events {
   ExecutionFailed = "ExecutionFailed",
   PlugConnected = "PlugConnected",
   AppGatewayCallRequested = "AppGatewayCallRequested",
-  
+
   // FeesPlug
   FeesDeposited = "FeesDeposited",
-  
+
   // Watcher
   CalledAppGateway = "CalledAppGateway",
   AppGatewayCallFailed = "AppGatewayCallFailed",
@@ -24,24 +24,22 @@ export enum Events {
   PromiseNotResolved = "PromiseNotResolved",
   MarkedRevert = "MarkedRevert",
 
-
   // RequestHandler
   RequestSubmitted = "RequestSubmitted",
   RequestCancelled = "RequestCancelled",
   FeesIncreased = "FeesIncreased",
-  
+
   // WritePrecompile
   WriteProofRequested = "WriteProofRequested",
   WriteProofUploaded = "WriteProofUploaded",
-  
+
   // ReadPrecompile
   ReadRequested = "ReadRequested",
-  
-    // SchedulePrecompile
-    ScheduleRequested = "ScheduleRequested",
-    ScheduleResolved = "ScheduleResolved",
 
-    
+  // SchedulePrecompile
+  ScheduleRequested = "ScheduleRequested",
+  ScheduleResolved = "ScheduleResolved",
+
   // AuctionManager
   AuctionEnded = "AuctionEnded",
   AuctionRestarted = "AuctionRestarted",
