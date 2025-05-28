@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {LibCall} from "solady/utils/LibCall.sol";
 import "./SocketUtils.sol";
 import {WRITE} from "../utils/common/Constants.sol";
 import {createPayloadId} from "../utils/common/IdUtils.sol";

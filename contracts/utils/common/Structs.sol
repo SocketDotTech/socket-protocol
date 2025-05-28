@@ -71,7 +71,7 @@ struct TriggerParams {
 }
 
 struct PromiseReturnData {
-    bool maxCopyExceeded;
+    bool exceededMaxCopy;
     bytes32 payloadId;
     bytes returnData;
 }

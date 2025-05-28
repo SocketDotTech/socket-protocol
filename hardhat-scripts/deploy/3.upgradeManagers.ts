@@ -60,8 +60,8 @@ async function setOnchainContracts(chain: number, addresses) {
   const chainAddresses = addresses[chain] as ChainAddressesObj;
   const watcherPrecompileConfig = (
     await getInstance(
-      EVMxCoreContracts.WatcherPrecompileConfig,
-      EVMxAddresses[EVMxCoreContracts.WatcherPrecompileConfig]
+      EVMxCoreContracts.Configurations,
+      EVMxAddresses[EVMxCoreContracts.Configurations]
     )
   ).connect(signer);
 

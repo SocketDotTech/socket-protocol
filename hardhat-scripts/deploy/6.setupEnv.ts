@@ -22,7 +22,7 @@ const updatedLines = lines.map((line) => {
   if (line.startsWith("ADDRESS_RESOLVER=")) {
     return `ADDRESS_RESOLVER=${latestEVMxAddresses["AddressResolver"]}`;
   } else if (line.startsWith("WATCHER_PRECOMPILE=")) {
-    return `WATCHER_PRECOMPILE=${latestEVMxAddresses["WatcherPrecompile"]}`;
+    return `WATCHER_PRECOMPILE=${latestEVMxAddresses["Watcher"]}`;
   } else if (line.startsWith("AUCTION_MANAGER=")) {
     return `AUCTION_MANAGER=${latestEVMxAddresses["AuctionManager"]}`;
   } else if (line.startsWith("FEES_MANAGER=")) {
