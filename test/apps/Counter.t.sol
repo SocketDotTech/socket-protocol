@@ -28,26 +28,26 @@ contract CounterTest is AppGatewayBaseSetup {
         requestCount = executeDeploy(chainSlug, counterGateway, contractIds);
     }
 
-    function testCounterDeployment1() external {
+    function testCounterDeployment() external {
         deploySetup();
         deployCounterApp(arbChainSlug);
 
-        // (address onChain, address forwarder) = getOnChainAndForwarderAddresses(
-        //     arbChainSlug,
-        //     counterId,
-        //     counterGateway
-        // );
+        (address onChain, address forwarder) = getOnChainAndForwarderAddresses(
+            arbChainSlug,
+            counterId,
+            counterGateway
+        );
 
-        // assertEq(
-        //     IForwarder(forwarder).getChainSlug(),
-        //     arbChainSlug,
-        //     "Forwarder chainSlug should be correct"
-        // );
-        // assertEq(
-        //     IForwarder(forwarder).getOnChainAddress(),
-        //     onChain,
-        //     "Forwarder onChainAddress should be correct"
-        // );
+        assertEq(
+            IForwarder(forwarder).getChainSlug(),
+            arbChainSlug,
+            "Forwarder chainSlug should be correct"
+        );
+        assertEq(
+            IForwarder(forwarder).getOnChainAddress(),
+            onChain,
+            "Forwarder onChainAddress should be correct"
+        );
     }
 
     function testCounterDeploymentWithoutAsync() external {

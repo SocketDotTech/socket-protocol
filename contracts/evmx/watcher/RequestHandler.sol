@@ -9,7 +9,6 @@ import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
 import "../interfaces/IRequestHandler.sol";
 import "solady/auth/Ownable.sol";
-import "forge-std/console.sol";
 
 /// @title RequestHandler
 /// @notice Contract that handles request processing and management, including request submission, batch processing, and request lifecycle management
@@ -123,8 +122,13 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
         r.onCompleteData = onCompleteData_;
 
         CreateRequestResult memory result = _createRequest(queueParams_, appGateway_, requestCount);
+
+        r.requestTrackingParams.currentBatchPayloadsLeft = _batchPayloadIds[
+            r.requestTrackingParams.currentBatch
+        ].length;
         r.writeCount = result.writeCount;
         promiseList = result.promiseList;
+
         if (result.totalEstimatedWatcherFees > maxFees_) revert InsufficientFees();
         if (r.writeCount == 0) _processBatch(r.requestTrackingParams.currentBatch, r);
 
@@ -190,9 +194,10 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
                 _requestBatchIds[requestCount_].push(nextBatchCount);
             }
 
-            // get the switchboard address from the watcher precompile config
-            address switchboard = watcher__().configurations__().sockets(
-                queuePayloadParam.transaction.chainSlug
+            // get the switchboard address from the configurations
+            address switchboard = watcher__().configurations__().switchboards(
+                queuePayloadParam.transaction.chainSlug,
+                queuePayloadParam.switchboardType
             );
 
             // process payload data and store
@@ -317,17 +322,21 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
         RequestParams storage r = _requests[requestCount_];
 
         PayloadParams storage payloadParams = _payloads[payloadId_];
-        IPrecompile(precompiles[payloadParams.callType]).resolvePayload(payloadParams);
-
         payloadParams.resolvedAt = block.timestamp;
 
-        if (r.requestTrackingParams.currentBatchPayloadsLeft != 0) return;
-        if (r.requestTrackingParams.payloadsRemaining == 0) {
-            r.requestTrackingParams.isRequestExecuted = true;
+        RequestTrackingParams storage trackingParams = r.requestTrackingParams;
+        trackingParams.currentBatchPayloadsLeft--;
+        trackingParams.payloadsRemaining--;
+
+        IPrecompile(precompiles[payloadParams.callType]).resolvePayload(payloadParams);
+
+        if (trackingParams.currentBatchPayloadsLeft != 0) return;
+        if (trackingParams.payloadsRemaining == 0) {
+            trackingParams.isRequestExecuted = true;
             _settleRequest(requestCount_, r);
         } else {
-            r.requestTrackingParams.currentBatch++;
-            _processBatch(r.requestTrackingParams.currentBatch, r);
+            trackingParams.currentBatch++;
+            _processBatch(trackingParams.currentBatch, r);
         }
     }
 

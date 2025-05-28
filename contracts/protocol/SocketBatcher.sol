@@ -49,7 +49,7 @@ contract SocketBatcher is ISocketBatcher, Ownable {
                 TransmissionParams({
                     transmitterSignature: transmitterSignature_,
                     socketFees: 0,
-                    extraData: "",
+                    extraData: executeParams_.extraData,
                     refundAddress: refundAddress_
                 })
             );

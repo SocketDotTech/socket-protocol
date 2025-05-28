@@ -172,7 +172,7 @@ contract DeploySetup is SetupStore {
                 switchboard: address(optConfig.switchboard)
             })
         });
-        configs[0] = AppGatewayConfig({
+        configs[2] = AppGatewayConfig({
             chainSlug: arbChainSlug,
             plug: address(arbConfig.contractFactoryPlug),
             plugConfig: PlugConfig({
@@ -180,7 +180,7 @@ contract DeploySetup is SetupStore {
                 switchboard: address(arbConfig.switchboard)
             })
         });
-        configs[1] = AppGatewayConfig({
+        configs[3] = AppGatewayConfig({
             chainSlug: optChainSlug,
             plug: address(optConfig.contractFactoryPlug),
             plugConfig: PlugConfig({
@@ -230,7 +230,7 @@ contract DeploySetup is SetupStore {
         feesPlug.whitelistToken(address(socketConfig.testUSDC));
 
         feesPlug.connectSocket(
-            encodeAppGatewayId(address(auctionManager)),
+            encodeAppGatewayId(address(feesManager)),
             address(socket),
             address(switchboard)
         );
@@ -682,13 +682,7 @@ contract WatcherSetup is AuctionSetup {
                 digest,
                 digestParams,
                 payloadParams,
-                watcherProof,
-                _createSignature(
-                    keccak256(
-                        abi.encode(address(getSocketConfig(chainSlug).socket), chainSlug, payloadId)
-                    ),
-                    transmitterPrivateKey
-                )
+                watcherProof
             );
     }
 
@@ -702,6 +696,9 @@ contract WatcherSetup is AuctionSetup {
             keccak256(abi.encode(address(switchboard), chainSlug, digest)),
             watcherPrivateKey
         );
+
+        vm.expectEmit(true, true, true, false);
+        emit WriteProofUploaded(payloadId, proof);
         watcherMultiCall(
             address(writePrecompile),
             abi.encodeWithSelector(WritePrecompile.uploadProof.selector, payloadId, proof)
@@ -722,7 +719,7 @@ contract WatcherSetup is AuctionSetup {
         )
     {
         (
-            ,
+            address appGateway,
             Transaction memory transaction,
             ,
             uint256 gasLimit,
@@ -747,7 +744,7 @@ contract WatcherSetup is AuctionSetup {
             value,
             transaction.payload,
             transaction.target,
-            encodeAppGatewayId(payloadParams.appGateway),
+            encodeAppGatewayId(appGateway),
             prevDigestsHash,
             bytes("")
         );
@@ -762,9 +759,14 @@ contract WatcherSetup is AuctionSetup {
         bytes32 digest,
         DigestParams memory digestParams,
         PayloadParams memory payloadParams,
-        bytes memory watcherProof,
-        bytes memory transmitterSig
+        bytes memory watcherProof
     ) internal returns (bool success, PromiseReturnData memory promiseReturnData) {
+        bytes memory transmitterSig = _createSignature(
+            keccak256(
+                abi.encode(address(getSocketConfig(chainSlug).socket), payloadParams.payloadId)
+            ),
+            transmitterPrivateKey
+        );
         bytes memory returnData;
         (success, returnData) = getSocketConfig(chainSlug).socketBatcher.attestAndExecute(
             ExecuteParams({

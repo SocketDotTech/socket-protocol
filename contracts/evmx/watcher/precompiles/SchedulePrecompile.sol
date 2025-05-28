@@ -133,7 +133,7 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
         emit ScheduleRequested(payloadParams.payloadId, executeAt, deadline);
     }
 
-    function resolvePayload(PayloadParams calldata payloadParams_) external onlyPromiseResolver {
+    function resolvePayload(PayloadParams calldata payloadParams_) external onlyRequestHandler {
         if (payloadParams_.deadline > block.timestamp) revert ResolvingScheduleTooEarly();
         emit ScheduleResolved(payloadParams_.payloadId);
     }

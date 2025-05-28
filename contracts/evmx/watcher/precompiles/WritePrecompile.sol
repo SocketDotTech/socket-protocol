@@ -97,6 +97,11 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
             );
         }
 
+        // todo: can be used to set the default gas limit for each chain
+        if (queueParams_.overrideParams.gasLimit == 0) {
+            queueParams_.overrideParams.gasLimit = 1000000;
+        }
+
         // For write precompile, encode the payload parameters
         precompileData = abi.encode(
             appGateway_,
@@ -128,10 +133,17 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
         fees = writeFees;
         deadline = block.timestamp + expiryTime;
 
-        (, Transaction memory transaction, , uint256 gasLimit, uint256 value, ) = abi.decode(
-            payloadParams.precompileData,
-            (address, Transaction, WriteFinality, uint256, uint256, address)
-        );
+        (
+            address appGateway,
+            Transaction memory transaction,
+            ,
+            uint256 gasLimit,
+            uint256 value,
+
+        ) = abi.decode(
+                payloadParams.precompileData,
+                (address, Transaction, WriteFinality, uint256, uint256, address)
+            );
         precompileData = payloadParams.precompileData;
 
         bytes32 prevBatchDigestHash = getPrevBatchDigestHash(payloadParams.batchCount);
@@ -147,7 +159,7 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
             value,
             transaction.payload,
             transaction.target,
-            encodeAppGatewayId(payloadParams.appGateway),
+            encodeAppGatewayId(appGateway),
             prevBatchDigestHash,
             bytes("")
         );
@@ -251,5 +263,5 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
 
     function resolvePayload(
         PayloadParams calldata payloadParams_
-    ) external override onlyPromiseResolver {}
+    ) external override onlyRequestHandler {}
 }
