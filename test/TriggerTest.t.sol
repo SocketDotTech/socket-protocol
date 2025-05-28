@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {CounterAppGateway} from "./apps/app-gateways/counter/CounterAppGateway.sol";
-import {Counter} from "./apps/app-gateways/counter/Counter.sol";
-import "./DeliveryHelper.t.sol";
+import {CounterAppGateway} from "./apps/Counter.t.sol";
+import {Counter} from "./apps/Counter.t.sol";
+import "./SetupTest.t.sol";
 
-contract TriggerTest is DeliveryHelperTest {
+contract TriggerTest is AppGatewayBaseSetup {
     uint256 constant feesAmount = 0.01 ether;
     CounterAppGateway public gateway;
     Counter public counter;
@@ -21,7 +21,7 @@ contract TriggerTest is DeliveryHelperTest {
 
     function setUp() public {
         // Setup core test infrastructure
-        setUpDeliveryHelper();
+        deploy();
 
         // Deploy the counter contract
         counter = new Counter();
@@ -32,42 +32,40 @@ contract TriggerTest is DeliveryHelperTest {
 
         // Connect the counter to the gateway and socket
         counter.initSocket(
-            _encodeAppGatewayId(address(gateway)),
+            encodeAppGatewayId(address(gateway)),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
 
         // Setup gateway config for the watcher
-        AppGatewayConfig[] memory gateways = new AppGatewayConfig[](1);
-        gateways[0] = AppGatewayConfig({
-            plug: address(counter),
+        AppGatewayConfig[] memory configs = new AppGatewayConfig[](1);
+        configs[0] = AppGatewayConfig({
             chainSlug: arbChainSlug,
-            appGatewayId: _encodeAppGatewayId(address(gateway)),
-            switchboard: address(arbConfig.switchboard)
+            plug: address(counter),
+            plugConfig: PlugConfig({
+                appGatewayId: encodeAppGatewayId(address(gateway)),
+                switchboard: address(arbConfig.switchboard)
+            })
         });
 
-        bytes memory watcherSignature = _createWatcherSignature(
-            address(watcherPrecompileConfig),
-            abi.encode(IWatcherPrecompileConfig.setAppGateways.selector, gateways)
+        watcherMultiCall(
+            address(configurations),
+            abi.encodeWithSelector(Configurations.setPlugConfigs.selector, configs)
         );
 
-        watcherPrecompileConfig.setAppGateways(gateways, signatureNonce++, watcherSignature);
-
         hoax(watcherEOA);
-        watcherPrecompileConfig.setIsValidPlug(arbChainSlug, address(counter), true);
+        configurations.setIsValidPlug(true, arbChainSlug, address(counter));
     }
 
     function testIncrementAfterTrigger() public {
         // Initial counter value should be 0
         assertEq(gateway.counterVal(), 0, "Initial gateway counter should be 0");
-        depositUSDCFees(
-            address(gateway),
-            OnChainFees({
-                chainSlug: arbChainSlug,
-                token: address(arbConfig.feesTokenUSDC),
-                amount: 1 ether
-            })
-        );
+        depositNativeAndCredits(arbChainSlug, 1 ether, 0, address(gateway));
+
+        bytes32[] memory contractIds = new bytes32[](1);
+        contractIds[0] = gateway.counter();
+        executeDeploy(arbChainSlug, IAppGateway(gateway), contractIds);
+
         // Simulate a message from another chain through the watcher
         uint256 incrementValue = 5;
         bytes32 triggerId = _encodeTriggerId(address(arbConfig.socket), arbChainSlug);
@@ -79,7 +77,7 @@ contract TriggerTest is DeliveryHelperTest {
         vm.expectEmit(true, true, true, true);
         emit AppGatewayCallRequested(
             triggerId,
-            _encodeAppGatewayId(address(gateway)),
+            encodeAppGatewayId(address(gateway)),
             address(arbConfig.switchboard),
             address(counter),
             bytes(""),
@@ -91,17 +89,17 @@ contract TriggerTest is DeliveryHelperTest {
         params[0] = TriggerParams({
             triggerId: triggerId,
             chainSlug: arbChainSlug,
-            appGatewayId: _encodeAppGatewayId(address(gateway)),
+            appGatewayId: encodeAppGatewayId(address(gateway)),
             plug: address(counter),
             payload: payload,
             overrides: bytes("")
         });
 
-        bytes memory watcherSignature = _createWatcherSignature(
-            address(watcherPrecompile),
-            abi.encode(IWatcherPrecompile.callAppGateways.selector, params)
+        watcherMultiCall(
+            address(watcher),
+            abi.encodeWithSelector(Watcher.callAppGateways.selector, params)
         );
-        watcherPrecompile.callAppGateways(params, signatureNonce++, watcherSignature);
+
         // Check counter was incremented
         assertEq(gateway.counterVal(), incrementValue, "Gateway counter should be incremented");
     }
