@@ -89,7 +89,7 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         if (callbackSelector == bytes4(0)) {
             success = true;
         } else {
-            exceededMaxCopy = resolvedPromise_.maxCopyExceeded;
+            exceededMaxCopy = resolvedPromise_.exceededMaxCopy;
             returnData = resolvedPromise_.returnData;
 
             bytes memory combinedCalldata = abi.encodePacked(
@@ -118,7 +118,7 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
 
         // to update the state in case selector is bytes(0) but reverting onchain
         state = AsyncPromiseState.ONCHAIN_REVERTING;
-        exceededMaxCopy = resolvedPromise_.maxCopyExceeded;
+        exceededMaxCopy = resolvedPromise_.exceededMaxCopy;
         returnData = resolvedPromise_.returnData;
         _handleRevert(resolvedPromise_.payloadId);
     }
