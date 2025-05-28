@@ -11,34 +11,40 @@ export enum Events {
   ExecutionFailed = "ExecutionFailed",
   PlugConnected = "PlugConnected",
   AppGatewayCallRequested = "AppGatewayCallRequested",
-  AppGatewayCallFailed = "AppGatewayCallFailed",
-
+  
   // FeesPlug
   FeesDeposited = "FeesDeposited",
-
+  
   // Watcher
   CalledAppGateway = "CalledAppGateway",
-  QueryRequested = "QueryRequested",
-  FinalizeRequested = "FinalizeRequested",
+  AppGatewayCallFailed = "AppGatewayCallFailed",
+
+  // PromiseResolver
   PromiseResolved = "PromiseResolved",
   PromiseNotResolved = "PromiseNotResolved",
-  TimeoutRequested = "TimeoutRequested",
-  TimeoutResolved = "TimeoutResolved",
-  RequestSubmitted = "RequestSubmitted",
-  Finalized = "Finalized",
   MarkedRevert = "MarkedRevert",
-  ReadRequested = "ReadRequested",
+
+
+  // RequestHandler
+  RequestSubmitted = "RequestSubmitted",
+  RequestCancelled = "RequestCancelled",
+  FeesIncreased = "FeesIncreased",
+  
+  // WritePrecompile
   WriteProofRequested = "WriteProofRequested",
   WriteProofUploaded = "WriteProofUploaded",
+  
+  // ReadPrecompile
+  ReadRequested = "ReadRequested",
+  
+    // SchedulePrecompile
+    ScheduleRequested = "ScheduleRequested",
+    ScheduleResolved = "ScheduleResolved",
+
+    
   // AuctionManager
   AuctionEnded = "AuctionEnded",
   AuctionRestarted = "AuctionRestarted",
-
-  // DeliveryHelper
-  PayloadSubmitted = "PayloadSubmitted",
-  PayloadAsyncRequested = "PayloadAsyncRequested",
-  FeesIncreased = "FeesIncreased",
-  RequestCancelled = "RequestCancelled",
 }
 
 export enum Contracts {
@@ -57,6 +63,7 @@ export enum Contracts {
   FeesManager = "FeesManager",
   WritePrecompile = "WritePrecompile",
   ReadPrecompile = "ReadPrecompile",
+  SchedulePrecompile = "SchedulePrecompile",
 }
 
 export enum CallTypeNames {

@@ -52,7 +52,7 @@ contract PromiseResolver is IPromiseResolver, WatcherBase {
 
         if (asyncPromise != address(0)) {
             success = IPromise(asyncPromise).markResolved(
-                resolvedPromise_.maxCopyExceeded,
+                resolvedPromise_.exceededMaxCopy,
                 resolvedPromise_.payloadId,
                 resolvedPromise_.returnData
             );
@@ -87,7 +87,7 @@ contract PromiseResolver is IPromiseResolver, WatcherBase {
         // marks the promise as onchain reverting if the request is reverting onchain
         if (isRevertingOnchain_ && payloadParams.asyncPromise != address(0))
             IPromise(payloadParams.asyncPromise).markOnchainRevert(
-                resolvedPromise_.maxCopyExceeded,
+                resolvedPromise_.exceededMaxCopy,
                 resolvedPromise_.payloadId,
                 resolvedPromise_.returnData
             );

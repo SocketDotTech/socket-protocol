@@ -4,15 +4,28 @@ pragma solidity ^0.8.21;
 import {ECDSA} from "solady/utils/ECDSA.sol";
 import "../utils/RescueFundsLib.sol";
 import "./SocketConfig.sol";
+import {LibCall} from "solady/utils/LibCall.sol";
 
 /**
  * @title SocketUtils
  * @notice Utility functions for socket
  */
 abstract contract SocketUtils is SocketConfig {
+    using LibCall for address;
+
     ////////////////////////////////////////////////////////////
     ////////////////////// State Vars //////////////////////////
     ////////////////////////////////////////////////////////////
+
+    struct SimulateParams {
+        address target;
+        uint256 value;
+        uint256 gasLimit;
+        bytes payload;
+    }
+
+
+    address public constant OFF_CHAIN_CALLER = address(0xDEAD);
 
     // Version string for this socket instance
     bytes32 public immutable version;
@@ -23,6 +36,15 @@ abstract contract SocketUtils is SocketConfig {
 
     // @notice counter for trigger id
     uint64 public triggerCounter;
+
+    error OnlyOffChain();
+    error SimulationFailed();
+
+     modifier onlyOffChain() {
+        if (msg.sender != OFF_CHAIN_CALLER) revert OnlyOffChain();
+        _;
+    }
+
 
     /*
      * @notice constructor for creating a new Socket contract instance.
@@ -92,6 +114,31 @@ abstract contract SocketUtils is SocketConfig {
      */
     function _encodeTriggerId() internal returns (bytes32) {
         return bytes32(triggerPrefix | triggerCounter++);
+    }
+
+
+    struct SimulationResult {
+        bool success;
+        bytes returnData;
+        bool exceededMaxCopy;
+    }
+
+    function simulate(
+        SimulateParams[] calldata params
+    ) external payable onlyOffChain returns (SimulationResult[] memory) {
+        SimulationResult[] memory results = new SimulationResult[](params.length);
+        
+        for (uint256 i = 0; i < params.length; i++) {
+            (bool success, bool exceededMaxCopy, bytes memory returnData) = params[i].target.tryCall(
+                params[i].value,
+                params[i].gasLimit,
+                maxCopyBytes,
+                params[i].payload
+            );
+            results[i] = SimulationResult(success, returnData, exceededMaxCopy);
+        }
+
+        return results;
     }
 
     //////////////////////////////////////////////

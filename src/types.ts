@@ -27,14 +27,15 @@ export type ChainAddressesObj = {
 
 export type EVMxAddressesObj = {
   AddressResolver: string;
+  Watcher: string;
   RequestHandler: string;
   Configurations: string;
   PromiseResolver: string;
-  AuctionManager: string;
-  FeesManager: string;
   WritePrecompile: string;
   ReadPrecompile: string;
-  Watcher: string;
+  SchedulePrecompile: string;
+  AuctionManager: string;
+  FeesManager: string;
   startBlock: number;
 };
 

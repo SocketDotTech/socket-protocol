@@ -11,10 +11,11 @@ export const feesPlugEvents = [Events.FeesDeposited];
 
 export const watcherEvents = [
   Events.CalledAppGateway,
-  Events.AppGatewayCallFailed,
-  Events.TimeoutRequested,
-  Events.TimeoutResolved,
+  Events.AppGatewayCallFailed
 ];
+
+export const promiseResolverEvents = [Events.PromiseResolved, Events.PromiseNotResolved, Events.MarkedRevert];
+
 
 export const requestHandlerEvents = [
   Events.RequestSubmitted,
@@ -22,11 +23,15 @@ export const requestHandlerEvents = [
   Events.RequestCancelled
 ];
 
-export const writePrecompileEvents = [Events.Finalized];
+export const writePrecompileEvents = [Events.WriteProofRequested, Events.WriteProofUploaded];
 
 export const readPrecompileEvents = [Events.ReadRequested];
 
-export const promiseResolverEvents = [Events.PromiseResolved, Events.PromiseNotResolved];
+export const schedulePrecompileEvents = [
+  Events.ScheduleRequested,
+  Events.ScheduleResolved,
+];
+
 
 export const auctionManagerEvents = [
   Events.AuctionEnded,
