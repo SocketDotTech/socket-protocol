@@ -51,18 +51,7 @@ contract SuperTokenTest is AppGatewayBaseSetup {
      */
     function setUp() public {
         deploy();
-        deploySuperTokenApp();
-        contractIds[0] = appContracts.superToken;
-    }
 
-    /**
-     * @notice Deploys the SuperToken application and its components
-     * @dev Creates both the deployer and gateway contracts with initial configuration
-     * - Sets up SuperToken with "SUPER TOKEN" name and "SUPER" symbol
-     * - Configures initial supply of 1 billion tokens
-     * - Sets up fee structure and auction manager integration
-     */
-    function deploySuperTokenApp() internal {
         SuperTokenAppGateway superTokenApp = new SuperTokenAppGateway(
             address(addressResolver),
             owner,
@@ -75,6 +64,7 @@ contract SuperTokenTest is AppGatewayBaseSetup {
                 initialSupply_: 1000000000 ether
             })
         );
+
         // Enable app gateways to do all operations in the Watcher: Read, Write and Schedule on EVMx
         // Watcher sets the limits for apps in this SOCKET protocol version
         depositNativeAndCredits(arbChainSlug, 1 ether, 0, address(superTokenApp));
@@ -83,6 +73,20 @@ contract SuperTokenTest is AppGatewayBaseSetup {
             superTokenApp: superTokenApp,
             superToken: superTokenApp.superToken()
         });
+
+        contractIds[0] = appContracts.superToken;
+    }
+
+    /**
+     * @notice Deploys the SuperToken application and its components
+     * @dev Creates both the deployer and gateway contracts with initial configuration
+     * - Sets up SuperToken with "SUPER TOKEN" name and "SUPER" symbol
+     * - Configures initial supply of 1 billion tokens
+     * - Sets up fee structure and auction manager integration
+     */
+    function deploySuperToken(uint32 chainSlug) internal {
+        appContracts.superTokenApp.deployContracts(chainSlug);
+        executeDeploy(IAppGateway(appContracts.superTokenApp), chainSlug, contractIds);
     }
 
     /**
@@ -93,7 +97,7 @@ contract SuperTokenTest is AppGatewayBaseSetup {
      * - Correct setup of forwarder contracts for multi-chain communication
      */
     function testContractDeployment() public {
-        executeDeploy(IAppGateway(appContracts.superTokenApp), arbChainSlug, contractIds);
+        deploySuperToken(arbChainSlug);
 
         (address onChain, address forwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
@@ -106,26 +110,19 @@ contract SuperTokenTest is AppGatewayBaseSetup {
             "SUPER TOKEN",
             "OnChain SuperToken name should be SUPER TOKEN"
         );
+
         assertEq(
             IForwarder(forwarder).getChainSlug(),
             arbChainSlug,
             "Forwarder SuperToken chainSlug should be arbChainSlug"
         );
+
         assertEq(
             IForwarder(forwarder).getOnChainAddress(),
             onChain,
             "Forwarder SuperToken onChainAddress should be correct"
         );
         assertEq(SuperToken(onChain).owner(), owner, "SuperToken owner should be correct");
-    }
-
-    /**
-     * @notice Helper function to prepare the environment for transfer tests
-     * @dev Deploys necessary contracts on both Arbitrum and Optimism chains
-     */
-    function beforeTransfer() internal {
-        executeDeploy(IAppGateway(appContracts.superTokenApp), arbChainSlug, contractIds);
-        executeDeploy(IAppGateway(appContracts.superTokenApp), optChainSlug, contractIds);
     }
 
     /**
@@ -137,7 +134,8 @@ contract SuperTokenTest is AppGatewayBaseSetup {
      * - Proper execution of multi-chain messaging
      */
     function testTransfer() public {
-        beforeTransfer();
+        deploySuperToken(arbChainSlug);
+        deploySuperToken(optChainSlug);
 
         (address onChainArb, address forwarderArb) = getOnChainAndForwarderAddresses(
             arbChainSlug,
