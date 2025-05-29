@@ -325,6 +325,7 @@ contract DeploySetup is SetupStore {
             watcherEOA,
             abi.encodeWithSelector(
                 DeployForwarder.initialize.selector,
+                watcherEOA,
                 address(addressResolver),
                 FAST
             )

@@ -7,10 +7,11 @@ import "./interfaces/IPromise.sol";
 import "./interfaces/IAuctionManager.sol";
 
 import "../utils/AccessControl.sol";
+import "../utils/RescueFundsLib.sol";
 import {AuctionNotOpen, AuctionClosed, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter, MaxReAuctionCountReached, InvalidBid} from "../utils/common/Errors.sol";
 import {SCHEDULE} from "../utils/common/Constants.sol";
 
-import {TRANSMITTER_ROLE} from "../utils/common/AccessRoles.sol";
+import {TRANSMITTER_ROLE, RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
 import {AppGatewayBase} from "./base/AppGatewayBase.sol";
 
 /// @title AuctionManagerStorage
@@ -47,7 +48,7 @@ abstract contract AuctionManagerStorage is IAuctionManager {
     uint256[50] _gap_after;
 
     // slots [106-164] 59 slots reserved for app gateway base
-    // slots [165-215] 51 slots reserved for access control
+    // slots [165-214] 50 slots reserved for access control
 }
 
 /// @title AuctionManager
@@ -283,5 +284,20 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AppGatewayBase,
         bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
         // recovered signer is checked for the valid roles later
         signer = ECDSA.recover(digest, signature_);
+    }
+
+    /**
+     * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
+     * theoretically need this function but it is added for safety.
+     * @param token_ The address of the token contract.
+     * @param rescueTo_ The address where rescued tokens need to be sent.
+     * @param amount_ The amount of tokens to be rescued.
+     */
+    function rescueFunds(
+        address token_,
+        address rescueTo_,
+        uint256 amount_
+    ) external onlyRole(RESCUE_ROLE) {
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

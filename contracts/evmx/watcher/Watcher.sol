@@ -225,4 +225,27 @@ contract Watcher is Trigger {
         // recovered signer is checked for the valid roles later
         signer = ECDSA.recover(digest, signature_);
     }
+
+    /**
+     * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
+     * theoretically need this function but it is added for safety.
+     * @param token_ The address of the token contract.
+     * @param rescueTo_ The address where rescued tokens need to be sent.
+     * @param amount_ The amount of tokens to be rescued.
+     */
+    function rescueFunds(
+        address token_,
+        address rescueTo_,
+        uint256 amount_,
+        uint256 nonce_,
+        bytes memory signature_
+    ) external {
+        _validateSignature(
+            address(this),
+            abi.encode(token_, rescueTo_, amount_),
+            nonce_,
+            signature_
+        );
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
+    }
 }

@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {Ownable} from "solady/auth/Ownable.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
+import {RESCUE_ROLE} from "../../utils/common/AccessRoles.sol";
+import "../../utils/RescueFundsLib.sol";
+import "../../utils/AccessControl.sol";
+
 import "../interfaces/IAddressResolver.sol";
 
 abstract contract AddressResolverStorage is IAddressResolver {
@@ -29,12 +32,14 @@ abstract contract AddressResolverStorage is IAddressResolver {
 
     // slots [56-105] reserved for gap
     uint256[50] _gap_after;
+
+    // slots [106-155] 50 slots reserved for access control
 }
 
 /// @title AddressResolver Contract
 /// @notice This contract is responsible for fetching latest core addresses and deploying Forwarder and AsyncPromise contracts.
 /// @dev Inherits the Ownable contract and implements the IAddressResolver interface.
-contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
+contract AddressResolver is AddressResolverStorage, Initializable, AccessControl {
     /// @notice Constructor to initialize the contract
     /// @dev it deploys the forwarder and async promise implementations and beacons for them
     /// @dev this contract is owner of the beacons for upgrading later
@@ -94,5 +99,20 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
     ) external override onlyOwner {
         contractAddresses[contractId_] = contractAddress_;
         emit ContractAddressUpdated(contractId_, contractAddress_);
+    }
+
+    /**
+     * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
+     * theoretically need this function but it is added for safety.
+     * @param token_ The address of the token contract.
+     * @param rescueTo_ The address where rescued tokens need to be sent.
+     * @param amount_ The amount of tokens to be rescued.
+     */
+    function rescueFunds(
+        address token_,
+        address rescueTo_,
+        uint256 amount_
+    ) external onlyRole(RESCUE_ROLE) {
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

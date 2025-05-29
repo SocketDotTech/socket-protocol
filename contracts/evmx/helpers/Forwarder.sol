@@ -8,6 +8,7 @@ import "../interfaces/IAppGateway.sol";
 import "../interfaces/IForwarder.sol";
 import {QueueParams, OverrideParams, Transaction} from "../../utils/common/Structs.sol";
 import {AsyncModifierNotSet, WatcherNotSet} from "../../utils/common/Errors.sol";
+import "../../utils/RescueFundsLib.sol";
 
 /// @title Forwarder Storage
 /// @notice Storage contract for the Forwarder contract that contains the state variables
@@ -58,6 +59,17 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
     /// @return chain slug
     function getChainSlug() external view override returns (uint32) {
         return chainSlug;
+    }
+
+    /**
+     * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
+     * theoretically need this function but it is added for safety.
+     * @param token_ The address of the token contract.
+     * @param rescueTo_ The address where rescued tokens need to be sent.
+     * @param amount_ The amount of tokens to be rescued.
+     */
+    function rescueFunds(address token_, address rescueTo_, uint256 amount_) external onlyWatcher {
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 
     /// @notice Fallback function to process the contract calls to onChainAddress

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 import "solady/utils/ECDSA.sol";
 import "solady/utils/SafeTransferLib.sol";
@@ -13,6 +12,10 @@ import "../interfaces/IFeesPool.sol";
 import {AddressResolverUtil} from "../helpers/AddressResolverUtil.sol";
 import {NonceUsed, InvalidAmount, InsufficientCreditsAvailable, InsufficientBalance, InvalidChainSlug, NotRequestHandler} from "../../utils/common/Errors.sol";
 import {WRITE} from "../../utils/common/Constants.sol";
+
+import {RESCUE_ROLE} from "../../utils/common/AccessRoles.sol";
+import "../../utils/RescueFundsLib.sol";
+import "../../utils/AccessControl.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
     // slots [0-49] reserved for gap
@@ -62,11 +65,12 @@ abstract contract FeesManagerStorage is IFeesManager {
     uint256[50] _gap_after;
 
     // slots [108-157] 50 slots reserved for address resolver util
+    // slots [158-207] 50 slots reserved for access control
 }
 
 /// @title UserUtils
 /// @notice Contract for managing user utils
-abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressResolverUtil {
+abstract contract Credit is FeesManagerStorage, Initializable, AccessControl, AddressResolverUtil {
     /// @notice Emitted when fees deposited are updated
     /// @param chainSlug The chain identifier
     /// @param token The token address

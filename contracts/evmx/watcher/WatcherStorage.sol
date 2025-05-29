@@ -5,7 +5,8 @@ import "../interfaces/IWatcher.sol";
 import "../helpers/AddressResolverUtil.sol";
 import "solady/utils/ECDSA.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
-import {Ownable} from "solady/auth/Ownable.sol";
+import "../../utils/RescueFundsLib.sol";
+import "solady/auth/Ownable.sol";
 
 /// @title WatcherStorage
 /// @notice Storage contract for the WatcherPrecompile system

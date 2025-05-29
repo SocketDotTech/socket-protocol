@@ -7,6 +7,7 @@ import {AddressResolverUtil} from "./AddressResolverUtil.sol";
 import {IAppGateway} from "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
 import {NotInvoker, RequestCountMismatch} from "../../utils/common/Errors.sol";
+import "../../utils/RescueFundsLib.sol";
 
 abstract contract AsyncPromiseStorage is IPromise {
     // slots [0-49] reserved for gap
@@ -154,5 +155,16 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         callbackSelector = selector_;
         callbackData = data_;
         state = AsyncPromiseState.WAITING_FOR_CALLBACK_EXECUTION;
+    }
+
+    /**
+     * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
+     * theoretically need this function but it is added for safety.
+     * @param token_ The address of the token contract.
+     * @param rescueTo_ The address where rescued tokens need to be sent.
+     * @param amount_ The amount of tokens to be rescued.
+     */
+    function rescueFunds(address token_, address rescueTo_, uint256 amount_) external onlyWatcher {
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

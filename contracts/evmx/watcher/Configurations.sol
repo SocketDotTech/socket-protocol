@@ -7,6 +7,7 @@ import {WatcherBase} from "./WatcherBase.sol";
 import {encodeAppGatewayId} from "../../utils/common/IdUtils.sol";
 import {InvalidGateway, InvalidSwitchboard} from "../../utils/common/Errors.sol";
 import "solady/auth/Ownable.sol";
+import "../../utils/RescueFundsLib.sol";
 
 abstract contract ConfigurationsStorage is IConfigurations {
     // slots [0-49] reserved for gap
@@ -160,5 +161,20 @@ contract Configurations is ConfigurationsStorage, Initializable, Ownable, Watche
         (bytes32 appGatewayId, address switchboard) = getPlugConfigs(chainSlug_, target_);
         if (appGatewayId != encodeAppGatewayId(appGateway_)) revert InvalidGateway();
         if (switchboard != switchboards[chainSlug_][switchboardType_]) revert InvalidSwitchboard();
+    }
+
+    /**
+     * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
+     * theoretically need this function but it is added for safety.
+     * @param token_ The address of the token contract.
+     * @param rescueTo_ The address where rescued tokens need to be sent.
+     * @param amount_ The amount of tokens to be rescued.
+     */
+    function rescueFunds(
+        address token_,
+        address rescueTo_,
+        uint256 amount_
+    ) external onlyWatcher {
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

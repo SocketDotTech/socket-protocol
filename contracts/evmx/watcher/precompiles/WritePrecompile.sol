@@ -8,6 +8,7 @@ import "../../interfaces/IPrecompile.sol";
 import {WRITE, PAYLOAD_SIZE_LIMIT} from "../../../utils/common/Constants.sol";
 import {InvalidIndex, MaxMsgValueLimitExceeded, InvalidPayloadSize} from "../../../utils/common/Errors.sol";
 import {encodeAppGatewayId} from "../../../utils/common/IdUtils.sol";
+import "../../../utils/RescueFundsLib.sol";
 import "../WatcherBase.sol";
 
 abstract contract WritePrecompileStorage is IPrecompile {
@@ -287,4 +288,15 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
     function resolvePayload(
         PayloadParams calldata payloadParams_
     ) external override onlyRequestHandler {}
+
+    /**
+     * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
+     * theoretically need this function but it is added for safety.
+     * @param token_ The address of the token contract.
+     * @param rescueTo_ The address where rescued tokens need to be sent.
+     * @param amount_ The amount of tokens to be rescued.
+     */
+    function rescueFunds(address token_, address rescueTo_, uint256 amount_) external onlyWatcher {
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
+    }
 }
