@@ -8,39 +8,40 @@ import {encodeAppGatewayId} from "../../utils/common/IdUtils.sol";
 import {InvalidGateway, InvalidSwitchboard} from "../../utils/common/Errors.sol";
 import "solady/auth/Ownable.sol";
 
-/// @title Configurations
-/// @notice Configuration contract for the Watcher Precompile system
-/// @dev Handles the mapping between networks, plugs, and app gateways for payload execution
-contract Configurations is IConfigurations, Initializable, WatcherBase, Ownable {
-    // slots 0-50 (51) reserved for addr resolver util
-
-    // slots [51-100]: gap for future storage variables
+abstract contract ConfigurationsStorage is IConfigurations {
+    // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
-    // slot 101: _plugConfigs
+    // slot 50
     /// @notice Maps network and plug to their configuration
     /// @dev chainSlug => plug => PlugConfig
     mapping(uint32 => mapping(address => PlugConfig)) internal _plugConfigs;
 
-    // slot 103: switchboards
+    // slot 51
     /// @notice Maps chain slug to their associated switchboard
     /// @dev chainSlug => sb type => switchboard address
     mapping(uint32 => mapping(bytes32 => address)) public switchboards;
 
-    // slot 104: deployedForwarders
-    /// @notice Maps contract id to their associated forwarder
-    /// @dev contractId => forwarder address
-
-    // slot 105: sockets
+    // slot 52
     /// @notice Maps chain slug to their associated socket
     /// @dev chainSlug => socket address
     mapping(uint32 => address) public sockets;
 
-    // slot 109: isValidPlug
+    // slot 53
     /// @notice Maps app gateway, chain slug, and plug to whether it is valid
     /// @dev appGateway => chainSlug => plug => isValid
     mapping(address => mapping(uint32 => mapping(address => bool))) public isValidPlug;
 
+    // slots [54-103] reserved for gap
+    uint256[50] _gap_after;
+
+    // 1 slot reserved for watcher base
+}
+
+/// @title Configurations
+/// @notice Configuration contract for the Watcher Precompile system
+/// @dev Handles the mapping between networks, plugs, and app gateways for payload execution
+contract Configurations is ConfigurationsStorage, Initializable, Ownable, WatcherBase {
     /// @notice Emitted when a new plug is configured for an app gateway
     /// @param appGatewayId The id of the app gateway
     /// @param chainSlug The identifier of the destination network
@@ -65,8 +66,13 @@ contract Configurations is IConfigurations, Initializable, WatcherBase, Ownable 
     /// @param isValid Whether the plug is valid
     event IsValidPlugSet(address appGateway, uint32 chainSlug, address plug, bool isValid);
 
-    constructor(address watcher_, address owner_) WatcherBase(watcher_) {
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
+    function initialize(address watcher_, address owner_) external reinitializer(1) {
         _initializeOwner(owner_);
+        _initializeWatcher(watcher_);
     }
 
     /// @notice Configures app gateways with their respective plugs and switchboards

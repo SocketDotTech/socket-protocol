@@ -25,7 +25,9 @@ contract PromiseResolver is IPromiseResolver, WatcherBase {
 
     /// @notice Sets the Watcher address
     /// @param watcher_ The address of the Watcher contract
-    constructor(address watcher_) WatcherBase(watcher_) {}
+    constructor(address watcher_) {
+        _initializeWatcher(watcher_);
+    }
 
     /// @notice Resolves multiple promises with their return data
     /// @param promiseReturnData_ Array of resolved promises and their return data

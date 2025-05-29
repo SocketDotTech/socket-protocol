@@ -18,9 +18,10 @@ contract ReadPrecompile is IPrecompile, WatcherBase {
     uint256 public readFees;
     uint256 public expiryTime;
 
-    constructor(address watcher_, uint256 readFees_, uint256 expiryTime_) WatcherBase(watcher_) {
+    constructor(address watcher_, uint256 readFees_, uint256 expiryTime_) {
         readFees = readFees_;
         expiryTime = expiryTime_;
+        _initializeWatcher(watcher_);
     }
 
     function getPrecompileFees(bytes memory) public view returns (uint256) {

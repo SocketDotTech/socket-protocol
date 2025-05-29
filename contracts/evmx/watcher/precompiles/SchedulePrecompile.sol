@@ -41,13 +41,14 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
         uint256 scheduleFeesPerSecond_,
         uint256 scheduleCallbackFees_,
         uint256 expiryTime_
-    ) WatcherBase(watcher_) {
+    ) {
         maxScheduleDelayInSeconds = maxScheduleDelayInSeconds_;
         scheduleFeesPerSecond = scheduleFeesPerSecond_;
         scheduleCallbackFees = scheduleCallbackFees_;
 
         if (maxScheduleDelayInSeconds < expiryTime) revert InvalidScheduleDelay();
         expiryTime = expiryTime_;
+        _initializeWatcher(watcher_);
     }
 
     function getPrecompileFees(bytes memory precompileData_) public view returns (uint256) {

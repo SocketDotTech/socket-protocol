@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
+import "solady/utils/Initializable.sol";
+import "solady/auth/Ownable.sol";
 import "../helpers/AddressResolverUtil.sol";
 import "../../utils/common/Errors.sol";
 import "../../utils/common/Constants.sol";
@@ -8,13 +10,12 @@ import "../../utils/common/IdUtils.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
 import "../interfaces/IRequestHandler.sol";
-import "solady/auth/Ownable.sol";
 
-/// @title RequestHandler
-/// @notice Contract that handles request processing and management, including request submission, batch processing, and request lifecycle management
-/// @dev Handles request submission, batch processing, transmitter assignment, request cancellation and settlement
-/// @dev This contract interacts with the WatcherPrecompileStorage for storage access
-contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
+abstract contract RequestHandlerStorage is IRequestHandler {
+    // slots [0-49] reserved for gap
+    uint256[50] _gap_before;
+
+    // slot 50 (40 + 40 + 40)
     /// @notice Counter for tracking request counts
     uint40 public nextRequestCount = 1;
 
@@ -24,22 +25,38 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
     /// @notice Counter for tracking batch counts
     uint40 public nextBatchCount;
 
+    // slot 51
     /// @notice Mapping to store the precompiles for each call type
     mapping(bytes4 => IPrecompile) public precompiles;
 
+    // slot 52
     /// @notice Mapping to store the list of payload IDs for each batch
     mapping(uint40 => bytes32[]) internal _batchPayloadIds;
 
+    // slot 53
     /// @notice Mapping to store the batch IDs for each request
     mapping(uint40 => uint40[]) internal _requestBatchIds;
 
     // queue => update to payloadParams, assign id, store in payloadParams map
+    // slot 54
     /// @notice Mapping to store the payload parameters for each payload ID
     mapping(bytes32 => PayloadParams) internal _payloads;
 
+    // slot 55
     /// @notice The metadata for a request
     mapping(uint40 => RequestParams) internal _requests;
 
+    // slots [56-105] reserved for gap
+    uint256[50] _gap_after;
+
+    // slots [106-155] 50 slots reserved for address resolver util
+}
+
+/// @title RequestHandler
+/// @notice Contract that handles request processing and management, including request submission, batch processing, and request lifecycle management
+/// @dev Handles request submission, batch processing, transmitter assignment, request cancellation and settlement
+/// @dev This contract interacts with the WatcherPrecompileStorage for storage access
+contract RequestHandler is RequestHandlerStorage, Initializable, Ownable, AddressResolverUtil {
     error InsufficientMaxFees();
 
     event RequestSubmitted(
@@ -66,7 +83,11 @@ contract RequestHandler is AddressResolverUtil, Ownable, IRequestHandler {
         _;
     }
 
-    constructor(address owner_, address addressResolver_) {
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
+    function initialize(address owner_, address addressResolver_) external reinitializer(1) {
         _initializeOwner(owner_);
         _setAddressResolver(addressResolver_);
     }
