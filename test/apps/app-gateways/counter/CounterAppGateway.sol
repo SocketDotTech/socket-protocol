@@ -97,8 +97,8 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     }
 
     // trigger from a chain
-    function setIsValidPlug(uint32 chainSlug_, address plug_) public {
-        watcher__().configurations__().setIsValidPlug(true, chainSlug_, plug_);
+    function setIsValidPlug(uint32 chainSlug_, bytes32 contractId_) public {
+        _setValidPlug(true, chainSlug_, contractId_);
     }
 
     function increase(uint256 value_) external onlyWatcher {

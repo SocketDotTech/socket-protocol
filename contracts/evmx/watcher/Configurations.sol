@@ -113,9 +113,14 @@ contract Configurations is IConfigurations, Initializable, WatcherBase, Ownable 
     /// @param chainSlug_ The identifier of the network
     /// @param plug_ The address of the plug
     /// @param isValid_ Whether the plug is valid
-    function setIsValidPlug(bool isValid_, uint32 chainSlug_, address plug_) external {
-        isValidPlug[msg.sender][chainSlug_][plug_] = isValid_;
-        emit IsValidPlugSet(msg.sender, chainSlug_, plug_, isValid_);
+    function setIsValidPlug(
+        bool isValid_,
+        uint32 chainSlug_,
+        address plug_,
+        address appGateway_
+    ) external onlyWatcher {
+        isValidPlug[appGateway_][chainSlug_][plug_] = isValid_;
+        emit IsValidPlugSet(appGateway_, chainSlug_, plug_, isValid_);
     }
 
     /// @notice Retrieves the configuration for a specific plug on a network

@@ -41,7 +41,7 @@ contract TriggerTest is AppGatewayBaseSetup {
             gateway
         );
         counter = Counter(counterAddress);
-        gateway.setIsValidPlug(arbChainSlug, counterAddress);
+        gateway.setIsValidPlug(arbChainSlug, counterId);
     }
 
     function testIncrementAfterTrigger() public {

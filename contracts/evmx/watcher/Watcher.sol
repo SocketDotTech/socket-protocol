@@ -150,12 +150,8 @@ contract Watcher is Trigger {
         return requestHandler__.getPayload(payloadId_);
     }
 
-    function setIsValidPlug(
-        bool isValid_,
-        uint32 chainSlug_,
-        address onchainAddress_
-    ) external override {
-        configurations__.setIsValidPlug(isValid_, chainSlug_, onchainAddress_);
+    function setIsValidPlug(bool isValid_, uint32 chainSlug_, address plug_) external override {
+        configurations__.setIsValidPlug(isValid_, chainSlug_, plug_, msg.sender);
     }
 
     function cancelRequest(uint40 requestCount_) external override {

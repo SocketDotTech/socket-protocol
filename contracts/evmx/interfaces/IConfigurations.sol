@@ -43,7 +43,12 @@ interface IConfigurations {
 
     /// @notice Sets valid plugs for each chain slug
     /// @dev This function is used to verify if a plug deployed on a chain slug is valid connection to the app gateway
-    function setIsValidPlug(bool isValid_, uint32 chainSlug_, address plug_) external;
+    function setIsValidPlug(
+        bool isValid_,
+        uint32 chainSlug_,
+        address plug_,
+        address appGateway_
+    ) external;
 
     function setAppGatewayConfigs(AppGatewayConfig[] calldata configs_) external;
 
