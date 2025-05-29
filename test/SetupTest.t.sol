@@ -266,6 +266,11 @@ contract DeploySetup is SetupStore {
         AddressResolver addressResolverImpl = new AddressResolver();
         AsyncDeployer asyncDeployerImpl = new AsyncDeployer();
         Watcher watcherImpl = new Watcher();
+        AuctionManager auctionManagerImpl = new AuctionManager();
+        DeployForwarder deployForwarderImpl = new DeployForwarder();
+        Configurations configurationsImpl = new Configurations();
+        RequestHandler requestHandlerImpl = new RequestHandler();
+        WritePrecompile writePrecompileImpl = new WritePrecompile();
 
         // Deploy and initialize proxies
         address addressResolverProxy = _deployAndVerifyProxy(
@@ -300,6 +305,32 @@ contract DeploySetup is SetupStore {
         );
         asyncDeployer = AsyncDeployer(asyncDeployerProxy);
 
+        address auctionManagerProxy = _deployAndVerifyProxy(
+            address(auctionManagerImpl),
+            watcherEOA,
+            abi.encodeWithSelector(
+                AuctionManager.initialize.selector,
+                evmxSlug,
+                uint128(bidTimeout),
+                maxReAuctionCount,
+                auctionEndDelaySeconds,
+                address(addressResolver),
+                watcherEOA
+            )
+        );
+        auctionManager = AuctionManager(auctionManagerProxy);
+
+        address deployForwarderProxy = _deployAndVerifyProxy(
+            address(deployForwarderImpl),
+            watcherEOA,
+            abi.encodeWithSelector(
+                DeployForwarder.initialize.selector,
+                address(addressResolver),
+                FAST
+            )
+        );
+        deployForwarder = DeployForwarder(deployForwarderProxy);
+
         address watcherProxy = _deployAndVerifyProxy(
             address(watcherImpl),
             watcherEOA,
@@ -313,20 +344,39 @@ contract DeploySetup is SetupStore {
         );
         watcher = Watcher(watcherProxy);
 
-        // non proxy contracts
-        auctionManager = new AuctionManager(
-            evmxSlug,
-            uint128(bidTimeout),
-            maxReAuctionCount,
-            auctionEndDelaySeconds,
-            address(addressResolver),
-            watcherEOA
+        address requestHandlerProxy = _deployAndVerifyProxy(
+            address(requestHandlerImpl),
+            watcherEOA,
+            abi.encodeWithSelector(
+                RequestHandler.initialize.selector,
+                watcherEOA,
+                address(addressResolver)
+            )
         );
-        deployForwarder = new DeployForwarder(address(addressResolver), FAST);
-        configurations = new Configurations(address(watcher), watcherEOA);
-        requestHandler = new RequestHandler(watcherEOA, address(addressResolver));
+        requestHandler = RequestHandler(requestHandlerProxy);
+
+        address configurationsProxy = _deployAndVerifyProxy(
+            address(configurationsImpl),
+            watcherEOA,
+            abi.encodeWithSelector(Configurations.initialize.selector, address(watcher), watcherEOA)
+        );
+        configurations = Configurations(configurationsProxy);
+
+        address writePrecompileProxy = _deployAndVerifyProxy(
+            address(writePrecompileImpl),
+            watcherEOA,
+            abi.encodeWithSelector(
+                WritePrecompile.initialize.selector,
+                watcherEOA,
+                address(watcher),
+                writeFees,
+                expiryTime
+            )
+        );
+        writePrecompile = WritePrecompile(writePrecompileProxy);
+
+        // non proxy contracts
         promiseResolver = new PromiseResolver(address(watcher));
-        writePrecompile = new WritePrecompile(watcherEOA, address(watcher), writeFees, expiryTime);
         readPrecompile = new ReadPrecompile(address(watcher), readFees, expiryTime);
         schedulePrecompile = new SchedulePrecompile(
             address(watcher),
@@ -575,10 +625,10 @@ contract AuctionSetup is FeesSetup {
         // todo: handle other cases
 
         uint256 bidAmount = getBidAmount(requestCount_);
-        bytes memory watcherSignature = _createSignature(
-            keccak256(abi.encode(address(watcher), evmxSlug, requestCount_, bidAmount, "")),
-            watcherPrivateKey
-        );
+        // bytes memory watcherSignature = _createSignature(
+        //     keccak256(abi.encode(address(watcher), evmxSlug, requestCount_, bidAmount, "")),
+        //     watcherPrivateKey
+        // );
 
         vm.expectEmit(true, true, true, true);
         emit AuctionEnded(

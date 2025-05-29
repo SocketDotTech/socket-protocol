@@ -2,7 +2,10 @@
 pragma solidity ^0.8.21;
 
 import {ECDSA} from "solady/utils/ECDSA.sol";
+import "solady/utils/Initializable.sol";
+import "./interfaces/IPromise.sol";
 import "./interfaces/IAuctionManager.sol";
+
 import "../utils/AccessControl.sol";
 import {AuctionNotOpen, AuctionClosed, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter, MaxReAuctionCountReached, InvalidBid} from "../utils/common/Errors.sol";
 import {SCHEDULE} from "../utils/common/Constants.sol";
@@ -18,7 +21,7 @@ abstract contract AuctionManagerStorage is IAuctionManager {
 
     // slot 50 (32 + 128)
     /// @notice The evmx chain slug
-    uint32 public immutable evmxSlug;
+    uint32 public evmxSlug;
 
     /// @notice The time after which a bid expires
     uint128 public bidTimeout;
@@ -49,7 +52,7 @@ abstract contract AuctionManagerStorage is IAuctionManager {
 
 /// @title AuctionManager
 /// @notice Contract for managing auctions and placing bids
-contract AuctionManager is AuctionManagerStorage, AppGatewayBase, AccessControl {
+contract AuctionManager is AuctionManagerStorage, Initializable, AppGatewayBase, AccessControl {
     event AuctionRestarted(uint40 requestCount);
     event AuctionStarted(uint40 requestCount);
     event AuctionEnded(uint40 requestCount, Bid winningBid);
@@ -57,16 +60,16 @@ contract AuctionManager is AuctionManagerStorage, AppGatewayBase, AccessControl 
     event AuctionEndDelaySecondsSet(uint256 auctionEndDelaySeconds);
     event MaxReAuctionCountSet(uint256 maxReAuctionCount);
 
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
     /// @param evmxSlug_ The evmx chain slug
     /// @param bidTimeout_ The timeout after which a bid expires
     /// @param maxReAuctionCount_ The maximum number of re-auctions allowed
     /// @param auctionEndDelaySeconds_ The delay in seconds before an auction can end
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the contract owner
-
-    constructor() {
-        _disableInitializers(); // disable for implementation
-    }
 
     function initialize(
         uint32 evmxSlug_,
@@ -147,7 +150,8 @@ contract AuctionManager is AuctionManagerStorage, AppGatewayBase, AccessControl 
                     auctionEndDelaySeconds
                 ),
                 address(this),
-                abi.encodeWithSelector(this.endAuction.selector, requestCount_)
+                this.endAuction.selector,
+                abi.encode(requestCount_)
             );
         } else {
             _endAuction(requestCount_);
@@ -187,7 +191,8 @@ contract AuctionManager is AuctionManagerStorage, AppGatewayBase, AccessControl 
                 bidTimeout,
                 deductScheduleFees(winningBid.transmitter, address(this), bidTimeout),
                 winningBid.transmitter,
-                abi.encodeWithSelector(this.expireBid.selector, requestCount_)
+                this.expireBid.selector,
+                abi.encode(requestCount_)
             );
 
             // start the request processing, it will queue the request
@@ -226,7 +231,8 @@ contract AuctionManager is AuctionManagerStorage, AppGatewayBase, AccessControl 
         uint256 delayInSeconds_,
         uint256 maxFees_,
         address consumeFrom_,
-        bytes memory payload_
+        bytes4 callbackSelector_,
+        bytes memory callbackData_
     ) internal {
         OverrideParams memory overrideParams;
         overrideParams.callType = SCHEDULE;
@@ -234,8 +240,11 @@ contract AuctionManager is AuctionManagerStorage, AppGatewayBase, AccessControl 
 
         QueueParams memory queueParams;
         queueParams.overrideParams = overrideParams;
+
         // queue and create request
-        watcher__().queueAndSubmit(queueParams, maxFees_, address(this), consumeFrom_, bytes(""));
+        watcher__().queue(queueParams, address(this));
+        then(callbackSelector_, callbackData_);
+        watcher__().submitRequest(maxFees_, address(this), consumeFrom_, bytes(""));
     }
 
     /// @notice Returns the quoted transmitter fees for a request

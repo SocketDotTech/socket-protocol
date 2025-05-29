@@ -2,6 +2,7 @@
 pragma solidity ^0.8.21;
 
 import "./Trigger.sol";
+import "../interfaces/IPromise.sol";
 
 contract Watcher is Trigger {
     constructor() {
@@ -37,13 +38,14 @@ contract Watcher is Trigger {
             account_ == address(promiseResolver__);
     }
 
+    // can be called to submit single payload request without any callback
     function queueAndSubmit(
         QueueParams memory queue_,
         uint256 maxFees,
         address auctionManager,
         address consumeFrom,
         bytes memory onCompleteData
-    ) external returns (uint40, address[] memory) {
+    ) external returns (uint40 requestCount, address[] memory promises) {
         _queue(queue_, msg.sender);
         return _submitRequest(maxFees, auctionManager, consumeFrom, onCompleteData);
     }

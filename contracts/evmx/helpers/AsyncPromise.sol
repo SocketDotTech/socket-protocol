@@ -57,6 +57,8 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     error PromiseAlreadySetUp();
     /// @notice Error thrown when the promise reverts
     error PromiseRevertFailed();
+    /// @notice Error thrown when the promise is not the latest promise set by the watcher
+    error NotLatestPromise();
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -145,7 +147,7 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         if (state != AsyncPromiseState.WAITING_FOR_CALLBACK_SELECTOR) {
             revert PromiseAlreadySetUp();
         }
-        if (watcher__().latestAsyncPromise() != address(this)) revert PromiseAlreadySetUp();
+        if (watcher__().latestAsyncPromise() != address(this)) revert NotLatestPromise();
         if (requestCount != watcher__().getCurrentRequestCount()) revert RequestCountMismatch();
 
         // if the promise is waiting for the callback selector, set it and update the state
