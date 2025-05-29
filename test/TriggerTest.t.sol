@@ -67,7 +67,8 @@ contract TriggerTest is AppGatewayBaseSetup {
         );
         counter.increaseOnGateway(incrementValue);
 
-        TriggerParams memory params = TriggerParams({
+        TriggerParams[] memory params = new TriggerParams[](1);
+        params[0] = TriggerParams({
             triggerId: triggerId,
             chainSlug: arbChainSlug,
             appGatewayId: encodeAppGatewayId(address(gateway)),
@@ -77,12 +78,12 @@ contract TriggerTest is AppGatewayBaseSetup {
         });
         bytes memory data = abi.encode(params);
 
-        WatcherMultiCallParams[] memory watcherParams = new WatcherMultiCallParams[](1);
-        watcherParams[0] = WatcherMultiCallParams({
+        WatcherMultiCallParams memory watcherParams;
+        watcherParams = WatcherMultiCallParams({
             contractAddress: address(watcher),
             data: data,
             nonce: watcherNonce,
-            signature: _createWatcherSignature(data)
+            signature: _createWatcherSignature(address(watcher), data)
         });
         watcherNonce++;
         watcher.callAppGateways(watcherParams);

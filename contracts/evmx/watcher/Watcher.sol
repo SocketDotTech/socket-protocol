@@ -30,15 +30,6 @@ contract Watcher is Trigger {
         promiseResolver__ = IPromiseResolver(promiseResolver_);
     }
 
-    function setTriggerFees(
-        uint256 triggerFees_,
-        uint256 nonce_,
-        bytes memory signature_
-    ) external {
-        _validateSignature(abi.encode(triggerFees_), nonce_, signature_);
-        _setTriggerFees(triggerFees_);
-    }
-
     function isWatcher(address account_) public view override returns (bool) {
         return
             account_ == address(requestHandler__) ||
@@ -129,12 +120,22 @@ contract Watcher is Trigger {
         delete payloadQueue;
     }
 
-    function callAppGateways(WatcherMultiCallParams[] memory params_) external {
-        for (uint40 i = 0; i < params_.length; i++) {
-            _validateSignature(params_[i].data, params_[i].nonce, params_[i].signature);
-            TriggerParams memory params = abi.decode(params_[i].data, (TriggerParams));
-            _callAppGateways(params);
+    function callAppGateways(WatcherMultiCallParams memory params_) external {
+        _validateSignature(address(this), params_.data, params_.nonce, params_.signature);
+        TriggerParams[] memory params = abi.decode(params_.data, (TriggerParams[]));
+
+        for (uint40 i = 0; i < params.length; i++) {
+            _callAppGateways(params[i]);
         }
+    }
+
+    function setTriggerFees(
+        uint256 triggerFees_,
+        uint256 nonce_,
+        bytes memory signature_
+    ) external {
+        _validateSignature(address(this), abi.encode(triggerFees_), nonce_, signature_);
+        _setTriggerFees(triggerFees_);
     }
 
     function getCurrentRequestCount() public view returns (uint40) {
@@ -176,8 +177,12 @@ contract Watcher is Trigger {
     // can be also used to do msg.sender check related function in other contracts like withdraw credits from fees manager and set core app-gateways in configurations
     function watcherMultiCall(WatcherMultiCallParams[] memory params_) external payable {
         for (uint40 i = 0; i < params_.length; i++) {
-            if (params_[i].contractAddress == address(0)) revert InvalidContract();
-            _validateSignature(params_[i].data, params_[i].nonce, params_[i].signature);
+            _validateSignature(
+                params_[i].contractAddress,
+                params_[i].data,
+                params_[i].nonce,
+                params_[i].signature
+            );
 
             // call the contract
             (bool success, ) = params_[i].contractAddress.call(params_[i].data);
@@ -190,16 +195,20 @@ contract Watcher is Trigger {
     /// @param nonce_ The nonce of the signature
     /// @param signature_ The signature to verify
     function _validateSignature(
+        address contractAddress_,
         bytes memory data_,
         uint256 nonce_,
         bytes memory signature_
     ) internal {
+        if (contractAddress_ == address(0)) revert InvalidContract();
         if (data_.length == 0) revert InvalidData();
         if (signature_.length == 0) revert InvalidSignature();
         if (isNonceUsed[nonce_]) revert NonceUsed();
         isNonceUsed[nonce_] = true;
 
-        bytes32 digest = keccak256(abi.encode(address(this), evmxSlug, nonce_, data_));
+        bytes32 digest = keccak256(
+            abi.encode(address(this), evmxSlug, nonce_, contractAddress_, data_)
+        );
 
         // check if signature is valid
         if (_recoverSigner(digest, signature_) != owner()) revert InvalidSignature();

@@ -357,14 +357,19 @@ contract DeploySetup is SetupStore {
             contractAddress: contractAddress_,
             data: data_,
             nonce: watcherNonce,
-            signature: _createWatcherSignature(data_)
+            signature: _createWatcherSignature(contractAddress_, data_)
         });
         watcherNonce++;
         watcher.watcherMultiCall(params);
     }
 
-    function _createWatcherSignature(bytes memory data_) internal view returns (bytes memory) {
-        bytes32 digest = keccak256(abi.encode(address(watcher), evmxSlug, watcherNonce, data_));
+    function _createWatcherSignature(
+        address contractAddress_,
+        bytes memory data_
+    ) internal view returns (bytes memory) {
+        bytes32 digest = keccak256(
+            abi.encode(address(watcher), evmxSlug, watcherNonce, contractAddress_, data_)
+        );
         return _createSignature(digest, watcherPrivateKey);
     }
 

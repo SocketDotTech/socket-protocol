@@ -76,12 +76,6 @@ struct PromiseReturnData {
     bytes returnData;
 }
 // AM
-struct Bid {
-    uint256 fee;
-    address transmitter;
-    bytes extraData;
-}
-
 struct ExecuteParams {
     bytes4 callType;
     uint40 requestCount;
@@ -103,11 +97,6 @@ struct TransmissionParams {
     bytes transmitterSignature;
 }
 
-struct UserCredits {
-    uint256 totalCredits;
-    uint256 blockedCredits;
-}
-
 struct WatcherMultiCallParams {
     address contractAddress;
     bytes data;
@@ -120,6 +109,17 @@ struct CreateRequestResult {
     uint256 writeCount;
     address[] promiseList;
     PayloadParams[] payloadParams;
+}
+
+struct Bid {
+    uint256 fee;
+    address transmitter;
+    bytes extraData;
+}
+
+struct UserCredits {
+    uint256 totalCredits;
+    uint256 blockedCredits;
 }
 
 // digest:
@@ -137,6 +137,7 @@ struct DigestParams {
     bytes32 prevDigestsHash;
     bytes extraData;
 }
+
 // App gateway base:
 struct OverrideParams {
     bytes4 callType;
