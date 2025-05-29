@@ -17,11 +17,12 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
 
     event CounterScheduleResolved(uint256 creationTimestamp, uint256 executionTimestamp);
 
-    constructor(address addressResolver_, uint256 fees_) AppGatewayBase(addressResolver_) {
+    constructor(address addressResolver_, uint256 fees_) {
         creationCodeWithArgs[counter] = abi.encodePacked(type(Counter).creationCode);
         creationCodeWithArgs[counter1] = abi.encodePacked(type(Counter).creationCode);
         _setMaxFees(fees_);
         _initializeOwner(msg.sender);
+        _initializeAppGateway(addressResolver_);
     }
 
     // deploy contracts

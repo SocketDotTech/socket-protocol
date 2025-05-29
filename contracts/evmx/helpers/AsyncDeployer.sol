@@ -31,6 +31,8 @@ abstract contract AsyncDeployerStorage is IAsyncDeployer {
 
     // slots [61-110] reserved for gap
     uint256[50] _gap_after;
+
+    // slots [111-160] 50 slots reserved for address resolver util
 }
 
 /// @title AsyncDeployer Contract

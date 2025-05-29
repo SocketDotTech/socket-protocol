@@ -10,9 +10,8 @@ import {QueueParams, OverrideParams, Transaction} from "../../utils/common/Struc
 import {WRITE} from "../../utils/common/Constants.sol";
 import {encodeAppGatewayId} from "../../utils/common/IdUtils.sol";
 
-/// @title DeployerGateway
-/// @notice App gateway contract responsible for handling deployment requests
-/// @dev Extends AppGatewayBase to provide deployment queueing functionality
+/// @title DeployForwarder
+/// @notice contract responsible for handling deployment requests
 contract DeployForwarder is AddressResolverUtil, IDeployForwarder {
     /// @notice The counter for the salt used to generate/deploy the contract address
     uint256 public override saltCounter;

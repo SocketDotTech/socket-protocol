@@ -16,8 +16,8 @@ abstract contract AddressResolverUtil {
     // slot 0
     IAddressResolver public addressResolver__;
 
-    // slots 1-50 reserved for future use
-    uint256[50] __gap_resolver_util;
+    // slots 1-49 reserved for future use
+    uint256[49] __gap_resolver_util;
 
     /// @notice Restricts function access to the watcher precompile contract
     /// @dev Validates that msg.sender matches the registered watcher precompile address

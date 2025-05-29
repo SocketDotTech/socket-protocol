@@ -42,11 +42,11 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         _;
     }
 
-    /// @notice Constructor for AppGatewayBase
+    /// @notice Initializer for AppGatewayBase
     /// @param addressResolver_ The address resolver address
-    constructor(address addressResolver_) {
-        _setAddressResolver(addressResolver_);
+    function _initializeAppGateway(address addressResolver_) internal {
         sbType = FAST;
+        _setAddressResolver(addressResolver_);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

@@ -62,13 +62,14 @@ contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase 
         uint256 auctionEndDelaySeconds_,
         address addressResolver_,
         address owner_
-    ) AppGatewayBase(addressResolver_) {
-        _initializeOwner(owner_);
-
+    ) {
         evmxSlug = evmxSlug_;
         bidTimeout = bidTimeout_;
         maxReAuctionCount = maxReAuctionCount_;
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
+
+        _initializeOwner(owner_);
+        _initializeAppGateway(addressResolver_);
     }
 
     function setAuctionEndDelaySeconds(uint256 auctionEndDelaySeconds_) external onlyOwner {
