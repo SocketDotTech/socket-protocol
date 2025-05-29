@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
+import {Initializable} from "solady/utils/Initializable.sol";
 import {IAppGateway} from "../interfaces/IAppGateway.sol";
 import {IContractFactoryPlug} from "../interfaces/IContractFactoryPlug.sol";
 import {IDeployForwarder} from "../interfaces/IDeployForwarder.sol";
@@ -12,15 +13,29 @@ import {encodeAppGatewayId} from "../../utils/common/IdUtils.sol";
 
 /// @title DeployForwarder
 /// @notice contract responsible for handling deployment requests
-contract DeployForwarder is AddressResolverUtil, IDeployForwarder {
+contract DeployForwarder is IDeployForwarder, Initializable, AddressResolverUtil {
+    // slots [0-49] 50 slots reserved for address resolver util
+
+    // slots [50-99] reserved for gap
+    uint256[50] _gap_before;
+
+    // slot 100
     /// @notice The counter for the salt used to generate/deploy the contract address
     uint256 public override saltCounter;
 
+    // slot 101
     bytes32 public override deployerSwitchboardType;
 
-    constructor(address addressResolver_, bytes32 deployerSwitchboardType_) {
-        _setAddressResolver(addressResolver_);
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
+    function initialize(
+        address addressResolver_,
+        bytes32 deployerSwitchboardType_
+    ) public reinitializer(1) {
         deployerSwitchboardType = deployerSwitchboardType_;
+        _setAddressResolver(addressResolver_);
     }
 
     /// @notice Deploys a contract

@@ -12,6 +12,7 @@ abstract contract AsyncPromiseStorage is IPromise {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
+    // slot 50 (4 + 8 + 8 + 40 + 160)
     /// @notice The callback selector to be called on the invoker.
     bytes4 public callbackSelector;
 
@@ -28,9 +29,11 @@ abstract contract AsyncPromiseStorage is IPromise {
     /// @dev The callback will be executed on this address
     address public override localInvoker;
 
+    // slot 51
     /// @notice The return data of the promise
     bytes public override returnData;
 
+    // slot 52
     /// @notice The callback data to be used when the promise is resolved.
     bytes public callbackData;
 

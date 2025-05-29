@@ -9,15 +9,25 @@ abstract contract AddressResolverStorage is IAddressResolver {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
+    // slot 50
     IWatcher public override watcher__;
+
+    // slot 51
     IFeesManager public override feesManager__;
+
+    // slot 52
     IAsyncDeployer public override asyncDeployer__;
+
+    // slot 53
     IDeployForwarder public override deployForwarder__;
 
+    // slot 54
     address public override defaultAuctionManager;
+
+    // slot 55
     mapping(bytes32 => address) public override contractAddresses;
 
-    // slots [61-110] reserved for gap
+    // slots [56-105] reserved for gap
     uint256[50] _gap_after;
 }
 
