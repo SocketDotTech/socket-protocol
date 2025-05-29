@@ -13,10 +13,13 @@ import {AppGatewayBase} from "./base/AppGatewayBase.sol";
 /// @title AuctionManagerStorage
 /// @notice Storage for the AuctionManager contract
 abstract contract AuctionManagerStorage is IAuctionManager {
-    // slot 50
+    // slots [0-49] reserved for gap
+    uint256[50] _gap_before;
+
+    // slot 50 (32 + 128)
+    /// @notice The evmx chain slug
     uint32 public immutable evmxSlug;
 
-    // slot 50
     /// @notice The time after which a bid expires
     uint128 public bidTimeout;
 
@@ -34,13 +37,19 @@ abstract contract AuctionManagerStorage is IAuctionManager {
     /// @notice The auction status for a request (requestCount => AuctionStatus)
     mapping(uint40 => AuctionStatus) public override auctionStatus;
 
-    // slot 56
+    // slot 55
     mapping(uint40 => uint256) public reAuctionCount;
+
+    // slots [56-105] reserved for gap
+    uint256[50] _gap_after;
+
+    // slots [106-164] 59 slots reserved for app gateway base
+    // slots [165-215] 51 slots reserved for access control
 }
 
 /// @title AuctionManager
 /// @notice Contract for managing auctions and placing bids
-contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase {
+contract AuctionManager is AuctionManagerStorage, AppGatewayBase, AccessControl {
     event AuctionRestarted(uint40 requestCount);
     event AuctionStarted(uint40 requestCount);
     event AuctionEnded(uint40 requestCount, Bid winningBid);
@@ -55,14 +64,18 @@ contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase 
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the contract owner
 
-    constructor(
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
+    function initialize(
         uint32 evmxSlug_,
         uint128 bidTimeout_,
         uint256 maxReAuctionCount_,
         uint256 auctionEndDelaySeconds_,
         address addressResolver_,
         address owner_
-    ) {
+    ) external reinitializer(1) {
         evmxSlug = evmxSlug_;
         bidTimeout = bidTimeout_;
         maxReAuctionCount = maxReAuctionCount_;
