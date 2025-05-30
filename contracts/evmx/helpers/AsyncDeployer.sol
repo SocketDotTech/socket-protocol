@@ -4,13 +4,12 @@ pragma solidity ^0.8.21;
 import {LibClone} from "solady/utils/LibClone.sol";
 import {UpgradeableBeacon} from "solady/utils/UpgradeableBeacon.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
+import "solady/auth/Ownable.sol";
 import "../interfaces/IAsyncDeployer.sol";
 import {Forwarder} from "./Forwarder.sol";
 import {AsyncPromise} from "./AsyncPromise.sol";
 import {AddressResolverUtil} from "./AddressResolverUtil.sol";
-import {RESCUE_ROLE} from "../../utils/common/AccessRoles.sol";
 import "../../utils/RescueFundsLib.sol";
-import "../../utils/AccessControl.sol";
 
 abstract contract AsyncDeployerStorage is IAsyncDeployer {
     // slots [0-49] reserved for gap
@@ -35,13 +34,12 @@ abstract contract AsyncDeployerStorage is IAsyncDeployer {
     uint256[50] _gap_after;
 
     // slots [106-155] 50 slots reserved for address resolver util
-    // slots [156-205] 50 slots reserved for access control
 }
 
 /// @title AsyncDeployer Contract
 /// @notice This contract is responsible for deploying Forwarder and AsyncPromise contracts.
 /// @dev Inherits the AccessControl contract and implements the IAddressResolver interface.
-contract AsyncDeployer is AsyncDeployerStorage, Initializable, AddressResolverUtil, AccessControl {
+contract AsyncDeployer is AsyncDeployerStorage, Initializable, AddressResolverUtil, Ownable {
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -219,11 +217,7 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, AddressResolverUt
      * @param rescueTo_ The address where rescued tokens need to be sent.
      * @param amount_ The amount of tokens to be rescued.
      */
-    function rescueFunds(
-        address token_,
-        address rescueTo_,
-        uint256 amount_
-    ) external onlyRole(RESCUE_ROLE) {
+    function rescueFunds(address token_, address rescueTo_, uint256 amount_) external onlyWatcher {
         RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

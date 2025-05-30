@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
+import "solady/auth/Ownable.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
 import {IAppGateway} from "../interfaces/IAppGateway.sol";
 import {IContractFactoryPlug} from "../interfaces/IContractFactoryPlug.sol";
@@ -9,14 +10,12 @@ import {AsyncModifierNotSet} from "../../utils/common/Errors.sol";
 import {QueueParams, OverrideParams, Transaction} from "../../utils/common/Structs.sol";
 import {WRITE} from "../../utils/common/Constants.sol";
 import {encodeAppGatewayId} from "../../utils/common/IdUtils.sol";
-import {RESCUE_ROLE} from "../../utils/common/AccessRoles.sol";
 import "../../utils/RescueFundsLib.sol";
-import "../../utils/AccessControl.sol";
 import "./AddressResolverUtil.sol";
 
 /// @title DeployForwarder
 /// @notice contract responsible for handling deployment requests
-contract DeployForwarder is IDeployForwarder, Initializable, AddressResolverUtil, AccessControl {
+contract DeployForwarder is IDeployForwarder, Initializable, AddressResolverUtil, Ownable {
     // slots [0-49] 50 slots reserved for address resolver util
 
     // slots [50-99] reserved for gap
@@ -108,11 +107,7 @@ contract DeployForwarder is IDeployForwarder, Initializable, AddressResolverUtil
      * @param rescueTo_ The address where rescued tokens need to be sent.
      * @param amount_ The amount of tokens to be rescued.
      */
-    function rescueFunds(
-        address token_,
-        address rescueTo_,
-        uint256 amount_
-    ) external onlyRole(RESCUE_ROLE) {
+    function rescueFunds(address token_, address rescueTo_, uint256 amount_) external onlyWatcher {
         RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

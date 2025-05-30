@@ -7,7 +7,6 @@ import {decodeAppGatewayId} from "../../utils/common/IdUtils.sol";
 
 /// @title Trigger
 /// @notice Contract that handles trigger validation and execution logic
-/// @dev This contract interacts with the WatcherPrecompileStorage for storage access
 abstract contract Trigger is WatcherStorage, AddressResolverUtil {
     using LibCall for address;
 

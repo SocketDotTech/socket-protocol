@@ -43,7 +43,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
         uint32 chainSlug_,
         address onChainAddress_,
         address addressResolver_
-    ) public initializer {
+    ) public reinitializer(1) {
         chainSlug = chainSlug_;
         onChainAddress = onChainAddress_;
         _setAddressResolver(addressResolver_);

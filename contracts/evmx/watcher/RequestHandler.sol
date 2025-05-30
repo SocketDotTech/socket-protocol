@@ -56,7 +56,6 @@ abstract contract RequestHandlerStorage is IRequestHandler {
 /// @title RequestHandler
 /// @notice Contract that handles request processing and management, including request submission, batch processing, and request lifecycle management
 /// @dev Handles request submission, batch processing, transmitter assignment, request cancellation and settlement
-/// @dev This contract interacts with the WatcherPrecompileStorage for storage access
 contract RequestHandler is RequestHandlerStorage, Initializable, Ownable, AddressResolverUtil {
     error InsufficientMaxFees();
 

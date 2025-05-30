@@ -11,7 +11,7 @@ import "../utils/RescueFundsLib.sol";
 import {AuctionNotOpen, AuctionClosed, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter, MaxReAuctionCountReached, InvalidBid} from "../utils/common/Errors.sol";
 import {SCHEDULE} from "../utils/common/Constants.sol";
 
-import {TRANSMITTER_ROLE, RESCUE_ROLE} from "../utils/common/AccessRoles.sol";
+import {TRANSMITTER_ROLE} from "../utils/common/AccessRoles.sol";
 import {AppGatewayBase} from "./base/AppGatewayBase.sol";
 
 /// @title AuctionManagerStorage
@@ -293,11 +293,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AppGatewayBase,
      * @param rescueTo_ The address where rescued tokens need to be sent.
      * @param amount_ The amount of tokens to be rescued.
      */
-    function rescueFunds(
-        address token_,
-        address rescueTo_,
-        uint256 amount_
-    ) external onlyRole(RESCUE_ROLE) {
+    function rescueFunds(address token_, address rescueTo_, uint256 amount_) external onlyWatcher {
         RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

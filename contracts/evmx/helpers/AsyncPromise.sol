@@ -72,7 +72,7 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         uint40 requestCount_,
         address invoker_,
         address addressResolver_
-    ) public initializer {
+    ) public reinitializer(1) {
         localInvoker = invoker_;
         requestCount = requestCount_;
         _setAddressResolver(addressResolver_);
