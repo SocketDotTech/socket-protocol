@@ -369,14 +369,14 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         if (onCompleteData_.length == 0) return;
         (uint32 chainSlug, bool isDeploy) = abi.decode(onCompleteData_, (uint32, bool));
         if (isDeploy) {
-            initialize(chainSlug);
+            initializeOnChain(chainSlug);
         }
     }
 
     /// @notice Initializes the contract after deployment
     /// @dev can be overridden by the app gateway to add custom logic
     /// @param chainSlug_ The chain slug
-    function initialize(uint32 chainSlug_) public virtual {}
+    function initializeOnChain(uint32 chainSlug_) public virtual {}
 
     /// @notice hook to handle the revert in callbacks or onchain executions
     /// @dev can be overridden by the app gateway to add custom logic

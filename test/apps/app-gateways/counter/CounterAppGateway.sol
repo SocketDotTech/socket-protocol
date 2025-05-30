@@ -50,7 +50,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         _setOverrides(Parallel.OFF);
     }
 
-    function initialize(uint32) public pure override {
+    function initializeOnChain(uint32) public pure override {
         return;
     }
 
