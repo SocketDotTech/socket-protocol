@@ -2,6 +2,7 @@
 pragma solidity ^0.8.21;
 
 import "./Trigger.sol";
+import "../interfaces/IPromise.sol";
 
 contract Watcher is Trigger {
     constructor() {
@@ -37,13 +38,14 @@ contract Watcher is Trigger {
             account_ == address(promiseResolver__);
     }
 
+    // can be called to submit single payload request without any callback
     function queueAndSubmit(
         QueueParams memory queue_,
         uint256 maxFees,
         address auctionManager,
         address consumeFrom,
         bytes memory onCompleteData
-    ) external returns (uint40, address[] memory) {
+    ) external returns (uint40 requestCount, address[] memory promises) {
         _queue(queue_, msg.sender);
         return _submitRequest(maxFees, auctionManager, consumeFrom, onCompleteData);
     }
@@ -222,5 +224,28 @@ contract Watcher is Trigger {
 
         // recovered signer is checked for the valid roles later
         signer = ECDSA.recover(digest, signature_);
+    }
+
+    /**
+     * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
+     * theoretically need this function but it is added for safety.
+     * @param token_ The address of the token contract.
+     * @param rescueTo_ The address where rescued tokens need to be sent.
+     * @param amount_ The amount of tokens to be rescued.
+     */
+    function rescueFunds(
+        address token_,
+        address rescueTo_,
+        uint256 amount_,
+        uint256 nonce_,
+        bytes memory signature_
+    ) external {
+        _validateSignature(
+            address(this),
+            abi.encode(token_, rescueTo_, amount_),
+            nonce_,
+            signature_
+        );
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

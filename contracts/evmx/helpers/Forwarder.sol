@@ -8,6 +8,7 @@ import "../interfaces/IAppGateway.sol";
 import "../interfaces/IForwarder.sol";
 import {QueueParams, OverrideParams, Transaction} from "../../utils/common/Structs.sol";
 import {AsyncModifierNotSet, WatcherNotSet} from "../../utils/common/Errors.sol";
+import "../../utils/RescueFundsLib.sol";
 
 /// @title Forwarder Storage
 /// @notice Storage contract for the Forwarder contract that contains the state variables
@@ -21,10 +22,10 @@ abstract contract ForwarderStorage is IForwarder {
     /// @notice on-chain address associated with this forwarder
     address public onChainAddress;
 
-    // slots [53-102] reserved for gap
+    // slots [51-100] reserved for gap
     uint256[50] _gap_after;
 
-    // slots 103-154 (51) reserved for addr resolver util
+    // slots [101-150] 50 slots reserved for address resolver util
 }
 
 /// @title Forwarder Contract
@@ -42,7 +43,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
         uint32 chainSlug_,
         address onChainAddress_,
         address addressResolver_
-    ) public initializer {
+    ) public reinitializer(1) {
         chainSlug = chainSlug_;
         onChainAddress = onChainAddress_;
         _setAddressResolver(addressResolver_);
@@ -58,6 +59,17 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
     /// @return chain slug
     function getChainSlug() external view override returns (uint32) {
         return chainSlug;
+    }
+
+    /**
+     * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
+     * theoretically need this function but it is added for safety.
+     * @param token_ The address of the token contract.
+     * @param rescueTo_ The address where rescued tokens need to be sent.
+     * @param amount_ The amount of tokens to be rescued.
+     */
+    function rescueFunds(address token_, address rescueTo_, uint256 amount_) external onlyWatcher {
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 
     /// @notice Fallback function to process the contract calls to onChainAddress

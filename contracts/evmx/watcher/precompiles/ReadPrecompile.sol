@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 import "../../interfaces/IPrecompile.sol";
 import "../../../utils/common/Structs.sol";
 import "../../../utils/common/Errors.sol";
+import "../../../utils/RescueFundsLib.sol";
 import "../WatcherBase.sol";
 
 /// @title Read
@@ -18,9 +19,10 @@ contract ReadPrecompile is IPrecompile, WatcherBase {
     uint256 public readFees;
     uint256 public expiryTime;
 
-    constructor(address watcher_, uint256 readFees_, uint256 expiryTime_) WatcherBase(watcher_) {
+    constructor(address watcher_, uint256 readFees_, uint256 expiryTime_) {
         readFees = readFees_;
         expiryTime = expiryTime_;
+        _initializeWatcher(watcher_);
     }
 
     function getPrecompileFees(bytes memory) public view returns (uint256) {
@@ -83,5 +85,16 @@ contract ReadPrecompile is IPrecompile, WatcherBase {
     function setExpiryTime(uint256 expiryTime_) external onlyWatcher {
         expiryTime = expiryTime_;
         emit ExpiryTimeSet(expiryTime_);
+    }
+
+    /**
+     * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
+     * theoretically need this function but it is added for safety.
+     * @param token_ The address of the token contract.
+     * @param rescueTo_ The address where rescued tokens need to be sent.
+     * @param amount_ The amount of tokens to be rescued.
+     */
+    function rescueFunds(address token_, address rescueTo_, uint256 amount_) external onlyWatcher {
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

@@ -14,16 +14,33 @@ import {IsPlug, QueueParams, Read, WriteFinality, Parallel} from "../../utils/co
 /// @notice Abstract contract for the app gateway
 /// @dev This contract contains helpers for contract deployment, overrides, hooks and request processing
 abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
+    // 50 slots reserved for address resolver util
+    // slot 51
     bool public isAsyncModifierSet;
-    address public auctionManager;
     address public consumeFrom;
+
+    // slot 52
+    address public auctionManager;
+
+    // slot 53
     uint256 public maxFees;
+
+    // slot 54
     bytes32 public sbType;
+
+    // slot 55
     bytes public onCompleteData;
+
+    // slot 56
     OverrideParams public overrideParams;
 
+    // slot 57
     mapping(address => bool) public isValidPromise;
+
+    // slot 58
     mapping(bytes32 => mapping(uint32 => address)) public override forwarderAddresses;
+
+    // slot 59
     mapping(bytes32 => bytes) public creationCodeWithArgs;
 
     /// @notice Modifier to treat functions async
@@ -42,11 +59,11 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         _;
     }
 
-    /// @notice Constructor for AppGatewayBase
+    /// @notice Initializer for AppGatewayBase
     /// @param addressResolver_ The address resolver address
-    constructor(address addressResolver_) {
-        _setAddressResolver(addressResolver_);
+    function _initializeAppGateway(address addressResolver_) internal {
         sbType = FAST;
+        _setAddressResolver(addressResolver_);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

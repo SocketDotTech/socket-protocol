@@ -11,7 +11,7 @@ contract DeployEVMx is Script {
         vm.createSelectFork(rpc);
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
-        MockWatcherPrecompile watcher = new MockWatcherPrecompile(address(0), address(0));
+        MockWatcherPrecompile watcher = new MockWatcherPrecompile();
         console.log("MockWatcherPrecompile:", address(watcher));
     }
 }

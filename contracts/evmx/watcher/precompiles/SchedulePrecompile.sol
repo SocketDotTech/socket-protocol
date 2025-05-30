@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 import "../../interfaces/IPrecompile.sol";
 import "../../../utils/common/Structs.sol";
 import {InvalidScheduleDelay, ResolvingScheduleTooEarly} from "../../../utils/common/Errors.sol";
+import "../../../utils/RescueFundsLib.sol";
 import "../WatcherBase.sol";
 
 /// @title SchedulePrecompile
@@ -41,13 +42,14 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
         uint256 scheduleFeesPerSecond_,
         uint256 scheduleCallbackFees_,
         uint256 expiryTime_
-    ) WatcherBase(watcher_) {
+    ) {
         maxScheduleDelayInSeconds = maxScheduleDelayInSeconds_;
         scheduleFeesPerSecond = scheduleFeesPerSecond_;
         scheduleCallbackFees = scheduleCallbackFees_;
 
         if (maxScheduleDelayInSeconds < expiryTime) revert InvalidScheduleDelay();
         expiryTime = expiryTime_;
+        _initializeWatcher(watcher_);
     }
 
     function getPrecompileFees(bytes memory precompileData_) public view returns (uint256) {
@@ -135,5 +137,16 @@ contract SchedulePrecompile is IPrecompile, WatcherBase {
 
         if (executeAfter > block.timestamp) revert ResolvingScheduleTooEarly();
         emit ScheduleResolved(payloadParams_.payloadId);
+    }
+
+    /**
+     * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
+     * theoretically need this function but it is added for safety.
+     * @param token_ The address of the token contract.
+     * @param rescueTo_ The address where rescued tokens need to be sent.
+     * @param amount_ The amount of tokens to be rescued.
+     */
+    function rescueFunds(address token_, address rescueTo_, uint256 amount_) external onlyWatcher {
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

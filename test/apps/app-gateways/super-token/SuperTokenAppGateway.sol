@@ -31,7 +31,7 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         address owner_,
         uint256 fees_,
         ConstructorParams memory params_
-    ) AppGatewayBase(addressResolver_) {
+    ) {
         creationCodeWithArgs[superToken] = abi.encodePacked(
             type(SuperToken).creationCode,
             abi.encode(
@@ -47,6 +47,7 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         // they can be updated for each transfer as well
         _setMaxFees(fees_);
         _initializeOwner(owner_);
+        _initializeAppGateway(addressResolver_);
     }
 
     function deployContracts(uint32 chainSlug_) external async {

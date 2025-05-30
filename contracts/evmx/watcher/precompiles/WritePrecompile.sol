@@ -1,34 +1,53 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {InvalidIndex, MaxMsgValueLimitExceeded, InvalidPayloadSize} from "../../../utils/common/Errors.sol";
-import "../../../utils/common/Constants.sol";
-import "../../interfaces/IPrecompile.sol";
-import {encodeAppGatewayId} from "../../../utils/common/IdUtils.sol";
-
-import "../WatcherBase.sol";
+import "solady/utils/Initializable.sol";
 import "solady/auth/Ownable.sol";
 
-/// @title WritePrecompile
-/// @notice Handles write precompile logic
-contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
+import "../../interfaces/IPrecompile.sol";
+import {WRITE, PAYLOAD_SIZE_LIMIT} from "../../../utils/common/Constants.sol";
+import {InvalidIndex, MaxMsgValueLimitExceeded, InvalidPayloadSize} from "../../../utils/common/Errors.sol";
+import {encodeAppGatewayId} from "../../../utils/common/IdUtils.sol";
+import "../../../utils/RescueFundsLib.sol";
+import "../WatcherBase.sol";
+
+abstract contract WritePrecompileStorage is IPrecompile {
+    // slots [0-49] reserved for gap
+    uint256[50] _gap_before;
+
+    // slot 50
+    /// @notice The fees for a write and includes callback fees
+    uint256 public writeFees;
+
+    // slot 51
+    uint256 public expiryTime;
+
+    // slot 52
     /// @notice Mapping to store watcher proofs
     /// @dev Maps payload ID to proof bytes
     /// @dev payloadId => proof bytes
     mapping(bytes32 => bytes) public watcherProofs;
 
+    // slot 53
     /// @notice The maximum message value limit for a chain
     mapping(uint32 => uint256) public chainMaxMsgValueLimit;
 
+    // slot 54
     /// @notice The digest hash for a payload
     mapping(bytes32 => bytes32) public digestHashes;
 
+    // slot 55
     mapping(uint32 => address) public contractFactoryPlugs;
 
-    /// @notice The fees for a write and includes callback fees
-    uint256 public writeFees;
-    uint256 public expiryTime;
+    // slots [56-105] reserved for gap
+    uint256[50] _gap_after;
 
+    // 1 slot reserved for watcher base
+}
+
+/// @title WritePrecompile
+/// @notice Handles write precompile logic
+contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, WatcherBase {
     /// @notice Emitted when fees are set
     event FeesSet(uint256 writeFees);
     event ChainMaxMsgValueLimitsUpdated(uint32 chainSlug, uint256 maxMsgValueLimit);
@@ -48,15 +67,20 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
     event WriteProofUploaded(bytes32 indexed payloadId, bytes proof);
     event ExpiryTimeSet(uint256 expiryTime);
 
-    constructor(
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
+    function initialize(
         address owner_,
         address watcher_,
         uint256 writeFees_,
         uint256 expiryTime_
-    ) WatcherBase(watcher_) {
-        _initializeOwner(owner_);
+    ) external reinitializer(1) {
         writeFees = writeFees_;
         expiryTime = expiryTime_;
+        _initializeOwner(owner_);
+        _initializeWatcher(watcher_);
     }
 
     function getPrecompileFees(bytes memory) public view returns (uint256) {
@@ -264,4 +288,15 @@ contract WritePrecompile is IPrecompile, WatcherBase, Ownable {
     function resolvePayload(
         PayloadParams calldata payloadParams_
     ) external override onlyRequestHandler {}
+
+    /**
+     * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
+     * theoretically need this function but it is added for safety.
+     * @param token_ The address of the token contract.
+     * @param rescueTo_ The address where rescued tokens need to be sent.
+     * @param amount_ The amount of tokens to be rescued.
+     */
+    function rescueFunds(address token_, address rescueTo_, uint256 amount_) external onlyWatcher {
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
+    }
 }

@@ -2,8 +2,12 @@
 pragma solidity ^0.8.21;
 
 import {ECDSA} from "solady/utils/ECDSA.sol";
+import "solady/utils/Initializable.sol";
+import "./interfaces/IPromise.sol";
 import "./interfaces/IAuctionManager.sol";
+
 import "../utils/AccessControl.sol";
+import "../utils/RescueFundsLib.sol";
 import {AuctionNotOpen, AuctionClosed, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter, MaxReAuctionCountReached, InvalidBid} from "../utils/common/Errors.sol";
 import {SCHEDULE} from "../utils/common/Constants.sol";
 
@@ -13,10 +17,13 @@ import {AppGatewayBase} from "./base/AppGatewayBase.sol";
 /// @title AuctionManagerStorage
 /// @notice Storage for the AuctionManager contract
 abstract contract AuctionManagerStorage is IAuctionManager {
-    // slot 50
-    uint32 public immutable evmxSlug;
+    // slots [0-49] reserved for gap
+    uint256[50] _gap_before;
 
-    // slot 50
+    // slot 50 (32 + 128)
+    /// @notice The evmx chain slug
+    uint32 public evmxSlug;
+
     /// @notice The time after which a bid expires
     uint128 public bidTimeout;
 
@@ -34,19 +41,29 @@ abstract contract AuctionManagerStorage is IAuctionManager {
     /// @notice The auction status for a request (requestCount => AuctionStatus)
     mapping(uint40 => AuctionStatus) public override auctionStatus;
 
-    // slot 56
+    // slot 55
     mapping(uint40 => uint256) public reAuctionCount;
+
+    // slots [56-105] reserved for gap
+    uint256[50] _gap_after;
+
+    // slots [106-164] 59 slots reserved for app gateway base
+    // slots [165-214] 50 slots reserved for access control
 }
 
 /// @title AuctionManager
 /// @notice Contract for managing auctions and placing bids
-contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase {
+contract AuctionManager is AuctionManagerStorage, Initializable, AppGatewayBase, AccessControl {
     event AuctionRestarted(uint40 requestCount);
     event AuctionStarted(uint40 requestCount);
     event AuctionEnded(uint40 requestCount, Bid winningBid);
     event BidPlaced(uint40 requestCount, Bid bid);
     event AuctionEndDelaySecondsSet(uint256 auctionEndDelaySeconds);
     event MaxReAuctionCountSet(uint256 maxReAuctionCount);
+
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
 
     /// @param evmxSlug_ The evmx chain slug
     /// @param bidTimeout_ The timeout after which a bid expires
@@ -55,28 +72,29 @@ contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase 
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the contract owner
 
-    constructor(
+    function initialize(
         uint32 evmxSlug_,
         uint128 bidTimeout_,
         uint256 maxReAuctionCount_,
         uint256 auctionEndDelaySeconds_,
         address addressResolver_,
         address owner_
-    ) AppGatewayBase(addressResolver_) {
-        _initializeOwner(owner_);
-
+    ) external reinitializer(1) {
         evmxSlug = evmxSlug_;
         bidTimeout = bidTimeout_;
         maxReAuctionCount = maxReAuctionCount_;
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
+
+        _initializeOwner(owner_);
+        _initializeAppGateway(addressResolver_);
     }
 
-    function setAuctionEndDelaySeconds(uint256 auctionEndDelaySeconds_) external onlyOwner {
+    function setAuctionEndDelaySeconds(uint256 auctionEndDelaySeconds_) external onlyWatcher {
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
         emit AuctionEndDelaySecondsSet(auctionEndDelaySeconds_);
     }
 
-    function setMaxReAuctionCount(uint256 maxReAuctionCount_) external onlyOwner {
+    function setMaxReAuctionCount(uint256 maxReAuctionCount_) external onlyWatcher {
         maxReAuctionCount = maxReAuctionCount_;
         emit MaxReAuctionCountSet(maxReAuctionCount_);
     }
@@ -133,7 +151,8 @@ contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase 
                     auctionEndDelaySeconds
                 ),
                 address(this),
-                abi.encodeWithSelector(this.endAuction.selector, requestCount_)
+                this.endAuction.selector,
+                abi.encode(requestCount_)
             );
         } else {
             _endAuction(requestCount_);
@@ -173,7 +192,8 @@ contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase 
                 bidTimeout,
                 deductScheduleFees(winningBid.transmitter, address(this), bidTimeout),
                 winningBid.transmitter,
-                abi.encodeWithSelector(this.expireBid.selector, requestCount_)
+                this.expireBid.selector,
+                abi.encode(requestCount_)
             );
 
             // start the request processing, it will queue the request
@@ -212,7 +232,8 @@ contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase 
         uint256 delayInSeconds_,
         uint256 maxFees_,
         address consumeFrom_,
-        bytes memory payload_
+        bytes4 callbackSelector_,
+        bytes memory callbackData_
     ) internal {
         OverrideParams memory overrideParams;
         overrideParams.callType = SCHEDULE;
@@ -220,8 +241,11 @@ contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase 
 
         QueueParams memory queueParams;
         queueParams.overrideParams = overrideParams;
+
         // queue and create request
-        watcher__().queueAndSubmit(queueParams, maxFees_, address(this), consumeFrom_, bytes(""));
+        watcher__().queue(queueParams, address(this));
+        then(callbackSelector_, callbackData_);
+        watcher__().submitRequest(maxFees_, address(this), consumeFrom_, bytes(""));
     }
 
     /// @notice Returns the quoted transmitter fees for a request
@@ -260,5 +284,16 @@ contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase 
         bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
         // recovered signer is checked for the valid roles later
         signer = ECDSA.recover(digest, signature_);
+    }
+
+    /**
+     * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
+     * theoretically need this function but it is added for safety.
+     * @param token_ The address of the token contract.
+     * @param rescueTo_ The address where rescued tokens need to be sent.
+     * @param amount_ The amount of tokens to be rescued.
+     */
+    function rescueFunds(address token_, address rescueTo_, uint256 amount_) external onlyWatcher {
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

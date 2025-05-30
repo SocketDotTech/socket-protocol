@@ -7,11 +7,13 @@ import {AddressResolverUtil} from "./AddressResolverUtil.sol";
 import {IAppGateway} from "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
 import {NotInvoker, RequestCountMismatch} from "../../utils/common/Errors.sol";
+import "../../utils/RescueFundsLib.sol";
 
 abstract contract AsyncPromiseStorage is IPromise {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
+    // slot 50 (4 + 8 + 8 + 40 + 160)
     /// @notice The callback selector to be called on the invoker.
     bytes4 public callbackSelector;
 
@@ -28,9 +30,11 @@ abstract contract AsyncPromiseStorage is IPromise {
     /// @dev The callback will be executed on this address
     address public override localInvoker;
 
+    // slot 51
     /// @notice The return data of the promise
     bytes public override returnData;
 
+    // slot 52
     /// @notice The callback data to be used when the promise is resolved.
     bytes public callbackData;
 
@@ -54,6 +58,8 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     error PromiseAlreadySetUp();
     /// @notice Error thrown when the promise reverts
     error PromiseRevertFailed();
+    /// @notice Error thrown when the promise is not the latest promise set by the watcher
+    error NotLatestPromise();
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -66,7 +72,7 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         uint40 requestCount_,
         address invoker_,
         address addressResolver_
-    ) public initializer {
+    ) public reinitializer(1) {
         localInvoker = invoker_;
         requestCount = requestCount_;
         _setAddressResolver(addressResolver_);
@@ -142,12 +148,23 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         if (state != AsyncPromiseState.WAITING_FOR_CALLBACK_SELECTOR) {
             revert PromiseAlreadySetUp();
         }
-        if (watcher__().latestAsyncPromise() != address(this)) revert PromiseAlreadySetUp();
+        if (watcher__().latestAsyncPromise() != address(this)) revert NotLatestPromise();
         if (requestCount != watcher__().getCurrentRequestCount()) revert RequestCountMismatch();
 
         // if the promise is waiting for the callback selector, set it and update the state
         callbackSelector = selector_;
         callbackData = data_;
         state = AsyncPromiseState.WAITING_FOR_CALLBACK_EXECUTION;
+    }
+
+    /**
+     * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
+     * theoretically need this function but it is added for safety.
+     * @param token_ The address of the token contract.
+     * @param rescueTo_ The address where rescued tokens need to be sent.
+     * @param amount_ The amount of tokens to be rescued.
+     */
+    function rescueFunds(address token_, address rescueTo_, uint256 amount_) external onlyWatcher {
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

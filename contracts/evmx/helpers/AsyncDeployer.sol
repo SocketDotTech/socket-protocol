@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {Ownable} from "solady/auth/Ownable.sol";
 import {LibClone} from "solady/utils/LibClone.sol";
 import {UpgradeableBeacon} from "solady/utils/UpgradeableBeacon.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
+import "solady/auth/Ownable.sol";
 import "../interfaces/IAsyncDeployer.sol";
 import {Forwarder} from "./Forwarder.sol";
 import {AsyncPromise} from "./AsyncPromise.sol";
 import {AddressResolverUtil} from "./AddressResolverUtil.sol";
+import "../../utils/RescueFundsLib.sol";
 
 abstract contract AsyncDeployerStorage is IAsyncDeployer {
     // slots [0-49] reserved for gap
@@ -17,26 +18,28 @@ abstract contract AsyncDeployerStorage is IAsyncDeployer {
     // slot 50
     UpgradeableBeacon public forwarderBeacon;
 
-    // slot 52
+    // slot 51
     UpgradeableBeacon public asyncPromiseBeacon;
 
-    // slot 55
+    // slot 52
     address public forwarderImplementation;
 
-    // slot 56
+    // slot 53
     address public asyncPromiseImplementation;
 
-    // slot 58
+    // slot 54
     uint256 public asyncPromiseCounter;
 
-    // slots [61-110] reserved for gap
+    // slots [55-104] reserved for gap
     uint256[50] _gap_after;
+
+    // slots [105-154] 50 slots reserved for address resolver util
 }
 
 /// @title AsyncDeployer Contract
 /// @notice This contract is responsible for deploying Forwarder and AsyncPromise contracts.
-/// @dev Inherits the Ownable contract and implements the IAddressResolver interface.
-contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable, AddressResolverUtil {
+/// @dev Inherits the AccessControl contract and implements the IAddressResolver interface.
+contract AsyncDeployer is AsyncDeployerStorage, Initializable, AddressResolverUtil, Ownable {
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -205,5 +208,16 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable, AddressR
     function setAsyncPromiseImplementation(address implementation_) external override onlyOwner {
         asyncPromiseBeacon.upgradeTo(implementation_);
         emit ImplementationUpdated("AsyncPromise", implementation_);
+    }
+
+    /**
+     * @notice Rescues funds from the contract if they are locked by mistake. This contract does not
+     * theoretically need this function but it is added for safety.
+     * @param token_ The address of the token contract.
+     * @param rescueTo_ The address where rescued tokens need to be sent.
+     * @param amount_ The amount of tokens to be rescued.
+     */
+    function rescueFunds(address token_, address rescueTo_, uint256 amount_) external onlyWatcher {
+        RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

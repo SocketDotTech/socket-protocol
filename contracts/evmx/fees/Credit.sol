@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {Ownable} from "solady/auth/Ownable.sol";
 import "solady/utils/Initializable.sol";
 import "solady/utils/ECDSA.sol";
 import "solady/utils/SafeTransferLib.sol";
+import "solady/auth/Ownable.sol";
 
 import "../interfaces/IFeesManager.sol";
 import "../interfaces/IFeesPlug.sol";
@@ -13,39 +13,56 @@ import "../interfaces/IFeesPool.sol";
 import {AddressResolverUtil} from "../helpers/AddressResolverUtil.sol";
 import {NonceUsed, InvalidAmount, InsufficientCreditsAvailable, InsufficientBalance, InvalidChainSlug, NotRequestHandler} from "../../utils/common/Errors.sol";
 import {WRITE} from "../../utils/common/Constants.sol";
+import "../../utils/RescueFundsLib.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
+    // slots [0-49] reserved for gap
+    uint256[50] _gap_before;
+
+    // slot 50
     /// @notice evmx slug
     uint32 public evmxSlug;
+    
+    IFeesPool public feesPool;
 
+    // slot 51
     /// @notice switchboard type
     bytes32 public sbType;
 
-    IFeesPool public feesPool;
-
+    // slot 52
     /// @notice user credits => stores fees for user, app gateway, transmitters and watcher precompile
     mapping(address => UserCredits) public userCredits;
 
+    // slot 53
     /// @notice Mapping to track request credits details for each request count
     /// @dev requestCount => RequestFee
     mapping(uint40 => uint256) public requestBlockedCredits;
 
+    // slot 54
     // user approved app gateways
     // userAddress => appGateway => isApproved
     mapping(address => mapping(address => bool)) public isApproved;
 
+    // slot 55
     // token pool balances
     //  chainSlug => token address => amount
     mapping(uint32 => mapping(address => uint256)) public tokenOnChainBalances;
 
+    // slot 56
     /// @notice Mapping to track nonce to whether it has been used
     /// @dev address => signatureNonce => isNonceUsed
     /// @dev used by watchers or other users in signatures
     mapping(address => mapping(uint256 => bool)) public isNonceUsed;
 
+    // slot 57
     /// @notice Mapping to track fees plug for each chain slug
     /// @dev chainSlug => fees plug address
     mapping(uint32 => address) public feesPlugs;
+
+    // slots [58-107] reserved for gap
+    uint256[50] _gap_after;
+
+    // slots [108-157] 50 slots reserved for address resolver util
 }
 
 /// @title UserUtils

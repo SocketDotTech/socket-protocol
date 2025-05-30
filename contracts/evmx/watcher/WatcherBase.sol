@@ -9,6 +9,7 @@ import "../interfaces/IRequestHandler.sol";
 /// @title WatcherBase
 /// @notice Base contract for the Watcher contract
 contract WatcherBase {
+    // slots 0
     // The address of the Watcher contract
     IWatcher public watcher__;
 
@@ -30,7 +31,7 @@ contract WatcherBase {
 
     /// @notice Sets the Watcher address
     /// @param watcher_ The address of the Watcher contract
-    constructor(address watcher_) {
+    function _initializeWatcher(address watcher_) internal {
         watcher__ = IWatcher(watcher_);
     }
 

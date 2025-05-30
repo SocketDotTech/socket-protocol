@@ -7,22 +7,8 @@ import {decodeAppGatewayId} from "../../utils/common/IdUtils.sol";
 
 /// @title Trigger
 /// @notice Contract that handles trigger validation and execution logic
-/// @dev This contract interacts with the WatcherPrecompileStorage for storage access
-abstract contract Trigger is WatcherStorage {
+abstract contract Trigger is WatcherStorage, AddressResolverUtil {
     using LibCall for address;
-
-    /// @notice stores temporary chainSlug of the trigger from a chain
-    uint32 public triggerFromChainSlug;
-    /// @notice stores temporary plug of the trigger from a chain
-    address public triggerFromPlug;
-
-    /// @notice Stores the trigger fees
-    uint256 public triggerFees;
-
-    /// @notice Mapping to store if appGateway has been called with trigger from on-chain Inbox
-    /// @dev Maps call ID to boolean indicating if the appGateway has been called
-    /// @dev callId => bool
-    mapping(bytes32 => bool) public isAppGatewayCalled;
 
     event TriggerFeesSet(uint256 triggerFees);
     event TriggerFailed(bytes32 triggerId);
