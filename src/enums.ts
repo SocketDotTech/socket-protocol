@@ -51,6 +51,8 @@ export enum Contracts {
   ContractFactoryPlug = "ContractFactoryPlug",
   FastSwitchboard = "FastSwitchboard",
   SocketBatcher = "SocketBatcher",
+  SocketFeeManager = "SocketFeeManager",
+  TestUSDC = "TestUSDC",
 
   AddressResolver = "AddressResolver",
   Watcher = "Watcher",
@@ -62,6 +64,9 @@ export enum Contracts {
   WritePrecompile = "WritePrecompile",
   ReadPrecompile = "ReadPrecompile",
   SchedulePrecompile = "SchedulePrecompile",
+  FeesPool = "FeesPool",
+  AsyncDeployer = "AsyncDeployer",
+  DeployForwarder = "DeployForwarder",
 }
 
 export enum CallTypeNames {

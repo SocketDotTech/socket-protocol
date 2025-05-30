@@ -3,11 +3,7 @@ dotenvConfig();
 
 import { Wallet } from "ethers";
 import { chains, EVMX_CHAIN_ID, mode, watcher, transmitter } from "../config";
-import {
-  CORE_CONTRACTS,
-  DeploymentAddresses,
-  EVMxCoreContracts,
-} from "../constants";
+import { DeploymentAddresses } from "../constants";
 import {
   getAddresses,
   getInstance,
@@ -15,7 +11,7 @@ import {
   getRoleHash,
   overrides,
 } from "../utils";
-import { ChainAddressesObj, ChainSlug } from "../../src";
+import { ChainAddressesObj, ChainSlug, Contracts } from "../../src";
 import { ROLES } from "../constants/roles";
 import { getWatcherSigner, getSocketSigner } from "../utils/sign";
 export const REQUIRED_ROLES = {
@@ -30,7 +26,7 @@ export const REQUIRED_ROLES = {
 };
 
 async function setRoleForContract(
-  contractName: CORE_CONTRACTS | EVMxCoreContracts,
+  contractName: Contracts,
   contractAddress: string | number,
   targetAddress: string,
   roleName: string,
@@ -86,13 +82,13 @@ async function setRolesForOnChain(
 
     for (const roleName of roles) {
       const targetAddress =
-        contractName === CORE_CONTRACTS.FastSwitchboard &&
+        contractName === Contracts.FastSwitchboard &&
         roleName === ROLES.WATCHER_ROLE
           ? watcher
           : signer.address;
 
       await setRoleForContract(
-        contractName as CORE_CONTRACTS,
+        contractName as Contracts,
         contractAddress,
         targetAddress,
         roleName,
@@ -108,14 +104,23 @@ async function setRolesForEVMx(addresses: DeploymentAddresses) {
     {}) as ChainAddressesObj;
   const signer = await getSigner(EVMX_CHAIN_ID, true);
 
-  const contractAddress = chainAddresses[EVMxCoreContracts.Watcher];
+  const contractAddress = chainAddresses[Contracts.Watcher];
   if (!contractAddress) return;
 
   await setRoleForContract(
-    EVMxCoreContracts.AuctionManager,
-    chainAddresses[EVMxCoreContracts.AuctionManager],
+    Contracts.AuctionManager,
+    chainAddresses[Contracts.AuctionManager],
     transmitter,
     ROLES.TRANSMITTER_ROLE,
+    signer,
+    EVMX_CHAIN_ID
+  );
+
+  await setRoleForContract(
+    Contracts.FeesPool,
+    chainAddresses[Contracts.FeesPool],
+    chainAddresses[Contracts.FeesManager],
+    ROLES.FEE_MANAGER_ROLE,
     signer,
     EVMX_CHAIN_ID
   );

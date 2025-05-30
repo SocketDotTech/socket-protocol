@@ -36,6 +36,7 @@ export type EVMxAddressesObj = {
   SchedulePrecompile: string;
   AuctionManager: string;
   FeesManager: string;
+  FeesPool: string;
   startBlock: number;
 };
 
