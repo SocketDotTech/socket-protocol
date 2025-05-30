@@ -57,7 +57,7 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
 
     // no need to call this directly, will be called automatically after all contracts are deployed.
     // check AppGatewayBase._deploy and AppGatewayBase.onRequestComplete
-    function initialize(uint32) public pure override {
+    function initializeOnChain(uint32) public pure override {
         return;
     }
 

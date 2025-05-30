@@ -159,10 +159,9 @@ const deployEVMxContracts = async () => {
         deployUtils
       );
 
-      const auctionManager = await getOrDeploy(
+      deployUtils = await deployContractWithProxy(
         Contracts.AuctionManager,
-        Contracts.AuctionManager,
-        "contracts/evmx/AuctionManager.sol",
+        `contracts/evmx/AuctionManager.sol`,
         [
           EVMX_CHAIN_ID,
           BID_TIMEOUT,
@@ -171,37 +170,33 @@ const deployEVMxContracts = async () => {
           addressResolver.address,
           EVMxOwner,
         ],
+        proxyFactory,
         deployUtils
       );
-      deployUtils.addresses[Contracts.AuctionManager] = auctionManager.address;
 
-      const deployForwarder = await getOrDeploy(
+      deployUtils = await deployContractWithProxy(
         Contracts.DeployForwarder,
-        Contracts.DeployForwarder,
-        "contracts/evmx/helpers/DeployForwarder.sol",
-        [addressResolver.address, FAST_SWITCHBOARD_TYPE],
+        `contracts/evmx/helpers/DeployForwarder.sol`,
+        [EVMxOwner, addressResolver.address, FAST_SWITCHBOARD_TYPE],
+        proxyFactory,
         deployUtils
       );
-      deployUtils.addresses[Contracts.DeployForwarder] =
-        deployForwarder.address;
 
-      const configurations = await getOrDeploy(
+      deployUtils = await deployContractWithProxy(
         Contracts.Configurations,
-        Contracts.Configurations,
-        "contracts/evmx/watcher/Configurations.sol",
+        `contracts/evmx/watcher/Configurations.sol`,
         [deployUtils.addresses[Contracts.Watcher], EVMxOwner],
+        proxyFactory,
         deployUtils
       );
-      deployUtils.addresses[Contracts.Configurations] = configurations.address;
 
-      const requestHandler = await getOrDeploy(
+      deployUtils = await deployContractWithProxy(
         Contracts.RequestHandler,
-        Contracts.RequestHandler,
-        "contracts/evmx/watcher/RequestHandler.sol",
+        `contracts/evmx/watcher/RequestHandler.sol`,
         [EVMxOwner, addressResolver.address],
+        proxyFactory,
         deployUtils
       );
-      deployUtils.addresses[Contracts.RequestHandler] = requestHandler.address;
 
       const promiseResolver = await getOrDeploy(
         Contracts.PromiseResolver,
@@ -213,20 +208,18 @@ const deployEVMxContracts = async () => {
       deployUtils.addresses[Contracts.PromiseResolver] =
         promiseResolver.address;
 
-      const writePrecompile = await getOrDeploy(
+      deployUtils = await deployContractWithProxy(
         Contracts.WritePrecompile,
-        Contracts.WritePrecompile,
-        "contracts/evmx/watcher/precompiles/WritePrecompile.sol",
+        `contracts/evmx/watcher/precompiles/WritePrecompile.sol`,
         [
           EVMxOwner,
           deployUtils.addresses[Contracts.Watcher],
           WRITE_FEES,
           EXPIRY_TIME,
         ],
+        proxyFactory,
         deployUtils
       );
-      deployUtils.addresses[Contracts.WritePrecompile] =
-        writePrecompile.address;
 
       const readPrecompile = await getOrDeploy(
         Contracts.ReadPrecompile,
