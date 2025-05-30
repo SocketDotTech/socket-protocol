@@ -1,11 +1,52 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "./FeesStorage.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
+import "solady/utils/Initializable.sol";
+import "solady/utils/ECDSA.sol";
+import "solady/utils/SafeTransferLib.sol";
+
+import "../interfaces/IFeesManager.sol";
+import "../interfaces/IFeesPlug.sol";
+import {AddressResolverUtil} from "../helpers/AddressResolverUtil.sol";
+import {NonceUsed, InvalidAmount, InsufficientCreditsAvailable, InsufficientBalance, InvalidChainSlug, NotRequestHandler} from "../../utils/common/Errors.sol";
+import {WRITE} from "../../utils/common/Constants.sol";
+
+abstract contract FeesManagerStorage is IFeesManager {
+    /// @notice evmx slug
+    uint32 public evmxSlug;
+
+    /// @notice switchboard type
+    bytes32 public sbType;
+
+    /// @notice user credits => stores fees for user, app gateway, transmitters and watcher precompile
+    mapping(address => UserCredits) public userCredits;
+
+    /// @notice Mapping to track request credits details for each request count
+    /// @dev requestCount => RequestFee
+    mapping(uint40 => uint256) public requestBlockedCredits;
+
+    // user approved app gateways
+    // userAddress => appGateway => isApproved
+    mapping(address => mapping(address => bool)) public isApproved;
+
+    // token pool balances
+    //  chainSlug => token address => amount
+    mapping(uint32 => mapping(address => uint256)) public tokenOnChainBalances;
+
+    /// @notice Mapping to track nonce to whether it has been used
+    /// @dev address => signatureNonce => isNonceUsed
+    /// @dev used by watchers or other users in signatures
+    mapping(address => mapping(uint256 => bool)) public isNonceUsed;
+
+    /// @notice Mapping to track fees plug for each chain slug
+    /// @dev chainSlug => fees plug address
+    mapping(uint32 => address) public feesPlugs;
+}
 
 /// @title UserUtils
 /// @notice Contract for managing user utils
-abstract contract Credit is FeesStorage, Initializable, Ownable, AddressResolverUtil {
+abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressResolverUtil {
     /// @notice Emitted when fees deposited are updated
     /// @param chainSlug The chain identifier
     /// @param appGateway The app gateway address
@@ -24,6 +65,9 @@ abstract contract Credit is FeesStorage, Initializable, Ownable, AddressResolver
     /// @notice Emitted when credits are unwrapped
     event CreditsUnwrapped(address indexed consumeFrom, uint256 amount);
 
+    /// @notice Emitted when credits are transferred
+    event CreditsTransferred(address indexed from, address indexed to, uint256 amount);
+
     /// @notice Deposits credits and native tokens to a user
     /// @param depositTo_ The address to deposit the credits to
     /// @param chainSlug_ The chain slug
@@ -36,110 +80,101 @@ abstract contract Credit is FeesStorage, Initializable, Ownable, AddressResolver
         address token_,
         uint256 nativeAmount_,
         uint256 creditAmount_
-    ) external payable onlyWatcher {
+    ) external payable override onlyWatcher {
         if (creditAmount_ + nativeAmount_ != msg.value) revert InvalidAmount();
+        tokenOnChainBalances[chainSlug_][token_] += nativeAmount_ + creditAmount_;
 
         UserCredits storage userCredit = userCredits[depositTo_];
         userCredit.totalCredits += creditAmount_;
-        tokenPoolBalances[chainSlug_][token_] += creditAmount_;
-        payable(depositTo_).transfer(nativeAmount_);
+
+        // if native transfer fails, add to credit
+        bool success = SafeTransferLib.trySafeTransferETH(depositTo_, nativeAmount_, gasleft());
+        if (!success) userCredit.totalCredits += nativeAmount_;
 
         emit CreditsDeposited(chainSlug_, depositTo_, token_, creditAmount_);
     }
 
-    function wrap(address receiver_) external payable {
+    function wrap(address receiver_) external payable override {
         UserCredits storage userCredit = userCredits[receiver_];
         userCredit.totalCredits += msg.value;
         emit CreditsWrapped(receiver_, msg.value);
     }
 
-    function unwrap(uint256 amount_) external {
+    function unwrap(uint256 amount_, address receiver_) external {
         UserCredits storage userCredit = userCredits[msg.sender];
         if (userCredit.totalCredits < amount_) revert InsufficientCreditsAvailable();
         userCredit.totalCredits -= amount_;
 
         if (address(this).balance < amount_) revert InsufficientBalance();
-        payable(msg.sender).transfer(amount_);
+        SafeTransferLib.safeTransferETH(receiver_, amount_);
 
-        emit CreditsUnwrapped(msg.sender, amount_);
+        emit CreditsUnwrapped(receiver_, amount_);
     }
 
     /// @notice Returns available (unblocked) credits for a gateway
     /// @param consumeFrom_ The app gateway address
     /// @return The available credit amount
-    function getAvailableCredits(address consumeFrom_) public view returns (uint256) {
+    function getAvailableCredits(address consumeFrom_) public view override returns (uint256) {
         UserCredits memory userCredit = userCredits[consumeFrom_];
         return userCredit.totalCredits - userCredit.blockedCredits;
     }
 
     /// @notice Checks if the user has enough credits
-    /// @param from_ The app gateway address
-    /// @param to_ The app gateway address
-    /// @param amount_ The amount
+    /// @param consumeFrom_ address to consume from
+    /// @param spender_ address to spend from
+    /// @param amount_ amount to spend
     /// @return True if the user has enough credits, false otherwise
-    function isUserCreditsEnough(
-        address from_,
-        address to_,
+    function isCreditSpendable(
+        address consumeFrom_,
+        address spender_,
         uint256 amount_
-    ) external view returns (bool) {
-        // If from_ is not same as to_ or to_ is not watcher, check if it is whitelisted
-        if (
-            to_ != address(watcherPrecompile__()) &&
-            from_ != to_ &&
-            !isAppGatewayWhitelisted[from_][to_]
-        ) revert AppGatewayNotWhitelisted();
+    ) public view override returns (bool) {
+        // If consumeFrom_ is not same as spender_ or spender_ is not watcher, check if it is approved
+        if (!_isWatcher(spender_) && consumeFrom_ != spender_) {
+            if (!isApproved[consumeFrom_][spender_]) return false;
+        }
 
-        return getAvailableCredits(from_) >= amount_;
+        return getAvailableCredits(consumeFrom_) >= amount_;
     }
 
-    function transferCredits(address from_, address to_, uint256 amount_) external {
-        if (!isUserCreditsEnough(from_, msg.sender, amount_)) revert InsufficientCreditsAvailable();
+    function transferCredits(address from_, address to_, uint256 amount_) external override {
+        if (!isCreditSpendable(from_, msg.sender, amount_)) revert InsufficientCreditsAvailable();
         userCredits[from_].totalCredits -= amount_;
         userCredits[to_].totalCredits += amount_;
 
         emit CreditsTransferred(from_, to_, amount_);
     }
 
-    function whitelistAppGatewayWithSignature(
-        bytes memory feeApprovalData_
-    ) external returns (address consumeFrom, address appGateway, bool isApproved) {
-        return _processFeeApprovalData(feeApprovalData_);
-    }
-
-    /// @notice Whitelists multiple app gateways for the caller
-    /// @param params_ Array of app gateway addresses to whitelist
-    function whitelistAppGateways(AppGatewayWhitelistParams[] calldata params_) external {
+    /// @notice Approves multiple app gateways for the caller
+    /// @param params_ Array of app gateway addresses to approve
+    function approveAppGateways(AppGatewayApprovals[] calldata params_) external override {
         for (uint256 i = 0; i < params_.length; i++) {
-            isAppGatewayWhitelisted[msg.sender][params_[i].appGateway] = params_[i].isApproved;
+            isApproved[msg.sender][params_[i].appGateway] = params_[i].approval;
         }
     }
 
-    function _processFeeApprovalData(
+    /// @notice Approves an app gateway for the caller
+    /// @dev Approval data is encoded to make app gateways compatible with future changes
+    /// @param feeApprovalData_ The fee approval data
+    /// @return consumeFrom The consume from address
+    /// @return spender The app gateway address
+    /// @return approval The approval status
+    function approveAppGatewayWithSignature(
         bytes memory feeApprovalData_
-    ) internal returns (address, address, bool) {
-        (
-            address consumeFrom,
-            address appGateway,
-            bool isApproved,
-            uint256 nonce,
-            bytes memory signature_
-        ) = abi.decode(feeApprovalData_, (address, address, bool, uint256, bytes));
+    ) external returns (address consumeFrom, address spender, bool approval) {
+        uint256 nonce;
+        bytes memory signature_;
+        (spender, approval, nonce, signature_) = abi.decode(
+            feeApprovalData_,
+            (address, bool, uint256, bytes)
+        );
+        bytes32 digest = keccak256(abi.encode(address(this), evmxSlug, spender, nonce, approval));
+        consumeFrom = _recoverSigner(digest, signature_);
 
         if (isNonceUsed[consumeFrom][nonce]) revert NonceUsed();
-        // todo: check
-        if (signature_.length == 0) {
-            // If no signature, consumeFrom is appGateway
-            return (appGateway, appGateway, isApproved);
-        }
-
-        bytes32 digest = keccak256(
-            abi.encode(address(this), evmxSlug, consumeFrom, appGateway, nonce, isApproved)
-        );
-        if (_recoverSigner(digest, signature_) != consumeFrom) revert InvalidUserSignature();
-        isAppGatewayWhitelisted[consumeFrom][appGateway] = isApproved;
         isNonceUsed[consumeFrom][nonce] = true;
-
-        return (consumeFrom, appGateway, isApproved);
+        isApproved[consumeFrom][spender] = approval;
+        return (consumeFrom, spender, approval);
     }
 
     /// @notice Withdraws funds to a specified receiver
@@ -147,31 +182,31 @@ abstract contract Credit is FeesStorage, Initializable, Ownable, AddressResolver
     /// @dev assumed that transmitter can bid for their request on AM
     /// @param chainSlug_ The chain identifier
     /// @param token_ The address of the token
-    /// @param amount_ The amount of tokens to withdraw
-    /// @param maxFees_ The fees needed for the request
+    /// @param credits_ The amount of tokens to withdraw
+    /// @param maxFees_ The fees needed to process the withdraw
     /// @param receiver_ The address of the receiver
     function withdrawCredits(
         uint32 chainSlug_,
         address token_,
-        uint256 amount_,
+        uint256 credits_,
         uint256 maxFees_,
         address receiver_
-    ) public {
-        address consumeFrom = _getCoreAppGateway(msg.sender);
+    ) public override {
+        address consumeFrom = getCoreAppGateway(msg.sender);
 
         // Check if amount is available in fees plug
-        uint256 availableAmount = getAvailableCredits(consumeFrom);
-        if (availableAmount < amount_) revert InsufficientCreditsAvailable();
+        uint256 availableCredits = getAvailableCredits(consumeFrom);
+        if (availableCredits < credits_ + maxFees_) revert InsufficientCreditsAvailable();
 
-        userCredits[consumeFrom].totalCredits -= amount_;
-        tokenPoolBalances[chainSlug_][token_] -= amount_;
+        userCredits[consumeFrom].totalCredits -= credits_;
+        tokenOnChainBalances[chainSlug_][token_] -= credits_;
 
         // Add it to the queue and submit request
         _createRequest(
             chainSlug_,
             consumeFrom,
             maxFees_,
-            abi.encodeCall(IFeesPlug.withdrawFees, (token_, receiver_, amount_))
+            abi.encodeCall(IFeesPlug.withdrawFees, (token_, receiver_, credits_))
         );
     }
 
@@ -183,7 +218,6 @@ abstract contract Credit is FeesStorage, Initializable, Ownable, AddressResolver
     ) internal {
         OverrideParams memory overrideParams;
         overrideParams.callType = WRITE;
-        overrideParams.gasLimit = 10000000;
         overrideParams.writeFinality = WriteFinality.LOW;
 
         QueueParams memory queueParams;
@@ -196,17 +230,12 @@ abstract contract Credit is FeesStorage, Initializable, Ownable, AddressResolver
         queueParams.switchboardType = sbType;
 
         // queue and create request
-        watcherPrecompile__().queueAndRequest(
-            queueParams,
-            maxFees_,
-            address(0),
-            consumeFrom_,
-            bytes("")
-        );
+        watcher__().queueAndSubmit(queueParams, maxFees_, address(0), consumeFrom_, bytes(""));
     }
 
     function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (address) {
-        return configuration__().feesPlug(chainSlug_);
+        if (feesPlugs[chainSlug_] == address(0)) revert InvalidChainSlug();
+        return feesPlugs[chainSlug_];
     }
 
     function _getRequestParams(uint40 requestCount_) internal view returns (RequestParams memory) {

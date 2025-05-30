@@ -5,25 +5,18 @@ import "../../contracts/evmx/interfaces/IAppGateway.sol";
 import "../../contracts/evmx/interfaces/IWatcher.sol";
 import "../../contracts/evmx/interfaces/IPromise.sol";
 
-import {TimeoutRequest, TriggerParams, PlugConfig, ResolvedPromises, AppGatewayConfig} from "../../contracts/utils/common/Structs.sol";
-import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/utils/common/Constants.sol";
-import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../../contracts/utils/common/Errors.sol";
+import "../../contracts/utils/common/Structs.sol";
+import "../../contracts/utils/common/Constants.sol";
+import "../../contracts/utils/common/Errors.sol";
 import "solady/utils/ERC1967Factory.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
 contract MockWatcherPrecompile {
-    uint256 public maxTimeoutDelayInSeconds = 24 * 60 * 60; // 24 hours
     /// @notice Counter for tracking payload execution requests
     uint256 public payloadCounter;
-    /// @notice Mapping to store timeout requests
-    /// @dev timeoutId => TimeoutRequest struct
-    mapping(bytes32 => TimeoutRequest) public timeoutRequests;
 
     mapping(uint32 => mapping(address => PlugConfig)) internal _plugConfigs;
-
-    /// @notice Error thrown when an invalid chain slug is provided
-    error InvalidChainSlug();
 
     event CalledAppGateway(bytes32 triggerId);
 
@@ -64,82 +57,12 @@ contract MockWatcherPrecompile {
     /// @param _owner Address of the contract owner
     constructor(address _owner, address addressResolver_) {}
 
-    // ================== Timeout functions ==================
-
-    /// @notice Sets a timeout for a payload execution on app gateway
-    /// @param payload_ The payload data
-    /// @param delayInSeconds_ The delay in seconds
-    function setTimeout(bytes calldata payload_, uint256 delayInSeconds_) external {
-        uint256 executeAt = block.timestamp + delayInSeconds_;
-        bytes32 timeoutId = _encodeTimeoutId();
-        timeoutRequests[timeoutId] = TimeoutRequest(
-            msg.sender,
-            delayInSeconds_,
-            executeAt,
-            0,
-            false,
-            payload_
-        );
-        emit TimeoutRequested(timeoutId, msg.sender, payload_, executeAt);
-    }
-
-    /// @notice Ends the timeouts and calls the target address with the callback payload
-    /// @param timeoutId The unique identifier for the timeout
-    /// @dev Only callable by the contract owner
-    function resolveTimeout(bytes32 timeoutId) external {
-        TimeoutRequest storage timeoutRequest = timeoutRequests[timeoutId];
-
-        (bool success, ) = address(timeoutRequest.target).call(timeoutRequest.payload);
-        if (!success) revert CallFailed();
-        emit TimeoutResolved(
-            timeoutId,
-            timeoutRequest.target,
-            timeoutRequest.payload,
-            block.timestamp
-        );
-    }
-
-    // ================== Finalize functions ==================
-
-    /// @notice Finalizes a payload request, requests the watcher to release the proofs to execute on chain
-    /// @param params_ The finalization parameters
-    /// @return digest The digest of the payload parameters
-    function finalize(PayloadParams memory params_) external returns (bytes32 digest) {
-        digest = keccak256(abi.encode(block.timestamp));
-        // Generate a unique payload ID by combining chain, target, and counter
-        emit FinalizeRequested(digest, params_);
-    }
-
-    // ================== Query functions ==================
-    /// @notice Creates a new query request
-    /// @param chainSlug The identifier of the destination chain
-    /// @param targetAddress The address of the target contract
-    /// @param payload The query payload data
-    /// @return payloadId The unique identifier for the query
-    function query(
-        uint32 chainSlug,
-        address targetAddress,
-        address[] memory,
-        bytes memory payload
-    ) public returns (bytes32 payloadId) {
-        payloadId = bytes32(payloadCounter++);
-        emit QueryRequested(chainSlug, targetAddress, payloadId, payload);
-    }
-
-    /// @notice Marks a request as finalized with a proof
-    /// @param payloadId_ The unique identifier of the request
-    /// @param proof_ The watcher's proof
-    /// @dev Only callable by the contract owner
-    function finalized(bytes32 payloadId_, bytes calldata proof_) external {
-        emit Finalized(payloadId_, proof_);
-    }
-
     /// @notice Resolves multiple promises with their return data
-    /// @param resolvedPromises_ Array of resolved promises and their return data
+    /// @param promiseReturnData_ Array of resolved promises and their return data
     /// @dev Only callable by the contract owner
-    function resolvePromises(ResolvedPromises[] calldata resolvedPromises_) external {
-        for (uint256 i = 0; i < resolvedPromises_.length; i++) {
-            emit PromiseResolved(resolvedPromises_[i].payloadId);
+    function resolvePromises(PromiseReturnData[] calldata promiseReturnData_) external {
+        for (uint256 i = 0; i < promiseReturnData_.length; i++) {
+            emit PromiseResolved(promiseReturnData_[i].payloadId);
         }
     }
 
@@ -149,33 +72,6 @@ contract MockWatcherPrecompile {
         for (uint256 i = 0; i < params_.length; i++) {
             emit CalledAppGateway(params_[i].triggerId);
         }
-    }
-
-    /// @notice Encodes a unique payload ID from chain slug, plug address, and counter
-    /// @param chainSlug_ The identifier of the chain
-    /// @param plug_ The plug address
-    /// @param counter_ The current counter value
-    /// @return The encoded payload ID as bytes32
-    /// @dev Reverts if chainSlug is 0
-    function encodePayloadId(
-        uint32 chainSlug_,
-        address plug_,
-        uint256 counter_
-    ) internal view returns (bytes32) {
-        if (chainSlug_ == 0) revert InvalidChainSlug();
-        (, address switchboard) = getPlugConfigs(chainSlug_, plug_);
-        // Encode payload ID by bit-shifting and combining:
-        // chainSlug (32 bits) | switchboard address (160 bits) | counter (64 bits)
-
-        return
-            bytes32(
-                (uint256(chainSlug_) << 224) | (uint256(uint160(switchboard)) << 64) | counter_
-            );
-    }
-
-    function _encodeTimeoutId() internal returns (bytes32) {
-        // watcher address (160 bits) | counter (64 bits)
-        return bytes32((uint256(uint160(address(this))) << 64) | payloadCounter++);
     }
 
     /// @notice Retrieves the configuration for a specific plug on a network

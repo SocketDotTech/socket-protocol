@@ -3,17 +3,19 @@ pragma solidity ^0.8.21;
 
 import {Ownable} from "solady/auth/Ownable.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
-import "./interfaces/IAddressResolver.sol";
+import "../interfaces/IAddressResolver.sol";
 
 abstract contract AddressResolverStorage is IAddressResolver {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
     IWatcher public override watcher__;
-    IFeesManager public override feesManager;
-    IAsyncDeployer public override asyncDeployer;
+    IFeesManager public override feesManager__;
+    IAsyncDeployer public override asyncDeployer__;
+    IDeployForwarder public override deployForwarder__;
 
     address public override defaultAuctionManager;
+    mapping(bytes32 => address) public override contractAddresses;
 
     // slots [61-110] reserved for gap
     uint256[50] _gap_after;
@@ -23,9 +25,9 @@ abstract contract AddressResolverStorage is IAddressResolver {
 /// @notice This contract is responsible for fetching latest core addresses and deploying Forwarder and AsyncPromise contracts.
 /// @dev Inherits the Ownable contract and implements the IAddressResolver interface.
 contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
-    /// @notice Error thrown if AppGateway contract was already set by a different address
-    error InvalidAppGateway(address contractAddress_);
-
+    /// @notice Constructor to initialize the contract
+    /// @dev it deploys the forwarder and async promise implementations and beacons for them
+    /// @dev this contract is owner of the beacons for upgrading later
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -35,35 +37,52 @@ contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
     /// @dev this contract is owner of the beacons for upgrading later
     /// @param owner_ The address of the contract owner
     function initialize(address owner_) public reinitializer(1) {
-        version = 1;
         _initializeOwner(owner_);
     }
 
-    /// @notice Updates the address of the fees manager
-    /// @param feesManager_ The address of the fees manager
-    function setFeesManager(address feesManager_) external onlyOwner {
-        feesManager = IFeesManager(feesManager_);
-        emit FeesManagerUpdated(feesManager_);
-    }
-
-    /// @notice Updates the address of the default auction manager
-    /// @param defaultAuctionManager_ The address of the default auction manager
-    function setDefaultAuctionManager(address defaultAuctionManager_) external onlyOwner {
-        defaultAuctionManager = defaultAuctionManager_;
-        emit DefaultAuctionManagerUpdated(defaultAuctionManager_);
-    }
-
-    /// @notice Updates the address of the watcher precompile contract
-    /// @param watcher_ The address of the watcher precompile contract
-    function setWatcher(address watcher_) external onlyOwner {
+    /// @notice Updates the address of the watcher contract
+    /// @param watcher_ The address of the watcher contract
+    function setWatcher(address watcher_) external override onlyOwner {
         watcher__ = IWatcher(watcher_);
         emit WatcherUpdated(watcher_);
     }
 
-    /// @notice Returns the address of the async deployer
-    /// @return The address of the async deployer
-    function setAsyncDeployer(address asyncDeployer_) external onlyOwner {
-        asyncDeployer = IAsyncDeployer(asyncDeployer_);
+    /// @notice Updates the address of the fees manager
+    /// @param feesManager_ The address of the fees manager
+    function setFeesManager(address feesManager_) external override onlyOwner {
+        feesManager__ = IFeesManager(feesManager_);
+        emit FeesManagerUpdated(feesManager_);
+    }
+
+    /// @notice Updates the address of the async deployer
+    /// @param asyncDeployer_ The address of the async deployer
+    function setAsyncDeployer(address asyncDeployer_) external override onlyOwner {
+        asyncDeployer__ = IAsyncDeployer(asyncDeployer_);
         emit AsyncDeployerUpdated(asyncDeployer_);
+    }
+
+    /// @notice Updates the address of the default auction manager
+    /// @param defaultAuctionManager_ The address of the default auction manager
+    function setDefaultAuctionManager(address defaultAuctionManager_) external override onlyOwner {
+        defaultAuctionManager = defaultAuctionManager_;
+        emit DefaultAuctionManagerUpdated(defaultAuctionManager_);
+    }
+
+    /// @notice Updates the address of the deploy forwarder
+    /// @param deployForwarder_ The address of the deploy forwarder
+    function setDeployForwarder(address deployForwarder_) external override onlyOwner {
+        deployForwarder__ = IDeployForwarder(deployForwarder_);
+        emit DeployForwarderUpdated(deployForwarder_);
+    }
+
+    /// @notice Updates the address of a contract
+    /// @param contractId_ The id of the contract
+    /// @param contractAddress_ The address of the contract
+    function setContractAddress(
+        bytes32 contractId_,
+        address contractAddress_
+    ) external override onlyOwner {
+        contractAddresses[contractId_] = contractAddress_;
+        emit ContractAddressUpdated(contractId_, contractAddress_);
     }
 }

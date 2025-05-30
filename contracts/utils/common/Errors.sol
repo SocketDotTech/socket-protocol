@@ -1,48 +1,76 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-error NotSocket();
 error ZeroAddress();
-error TimeoutDelayTooLarge();
+error InvalidTransmitter();
+error InvalidTokenAddress();
+error InvalidSwitchboard();
+error SocketAlreadyInitialized();
+
+// Socket
+error NotSocket();
+error PlugNotFound();
+
+// EVMx
 error TimeoutAlreadyResolved();
 error ResolvingTimeoutTooEarly();
-error LimitReached();
-error FeesAlreadyPaid();
-error NotAuctionManager();
 error CallFailed();
-error PlugNotFound();
 error InvalidAppGateway();
 error AppGatewayAlreadyCalled();
-error InvalidInboxCaller();
 error InvalidCallerTriggered();
-error PromisesNotResolved();
 error InvalidPromise();
-error InvalidTransmitter();
-error FeesNotSet();
-error InvalidTokenAddress();
 error InvalidWatcherSignature();
 error NonceUsed();
+error AsyncModifierNotSet();
+error WatcherNotSet();
+error InvalidTarget();
+error InvalidIndex();
+error InvalidChainSlug();
+error InvalidPayloadSize();
+error InvalidScheduleDelay();
+error InvalidTimeoutRequest();
 /// @notice Error thrown when trying to start or bid a closed auction
 error AuctionClosed();
-/// @notice Error thrown when trying to start an ongoing auction
-error AuctionAlreadyStarted();
+/// @notice Error thrown when trying to start or bid an auction that is not open
+error AuctionNotOpen();
 /// @notice Error thrown if fees exceed the maximum set fees
 error BidExceedsMaxFees();
 /// @notice Error thrown if a lower bid already exists
 error LowerBidAlreadyExists();
-error AsyncModifierNotUsed();
-error InvalidIndex();
-error RequestAlreadyExecuted();
-/// @notice Error thrown when no async promise is found
-error NoAsyncPromiseFound();
-/// @notice Error thrown when promise caller mismatch
-error PromiseCallerMismatch();
 /// @notice Error thrown when request count mismatch
 error RequestCountMismatch();
-/// @notice Error thrown when delivery helper is not set
-error DeliveryHelperNotSet();
 
-error InvalidTarget();
-error InvalidPayloadSize();
-error InvalidScheduleDelay();
-error InvalidTimeoutRequest();
+error InvalidAmount();
+error InsufficientCreditsAvailable();
+error InsufficientBalance();
+/// @notice Error thrown when a caller is invalid
+error InvalidCaller();
+
+/// @notice Error thrown when a gateway is invalid
+error InvalidGateway();
+/// @notice Error thrown when a request is already cancelled
+error RequestAlreadyCancelled();
+error DeadlineNotPassedForOnChainRevert();
+
+error InvalidBid();
+error MaxReAuctionCountReached();
+error MaxMsgValueLimitExceeded();
+/// @notice Error thrown when an invalid address attempts to call the Watcher only function
+error OnlyWatcherAllowed();
+error InvalidPrecompileData();
+error InvalidCallType();
+error NotRequestHandler();
+error NotInvoker();
+error NotPromiseResolver();
+error RequestPayloadCountLimitExceeded();
+error InsufficientFees();
+error RequestAlreadySettled();
+error NoWriteRequest();
+error AlreadyAssigned();
+
+error OnlyAppGateway();
+error NewMaxFeesLowerThanCurrent(uint256 currentMaxFees, uint256 newMaxFees);
+error InvalidContract();
+error InvalidData();
+error InvalidNonce();
+error InvalidSignature();

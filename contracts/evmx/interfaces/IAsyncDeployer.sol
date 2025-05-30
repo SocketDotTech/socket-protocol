@@ -22,7 +22,6 @@ interface IAsyncDeployer {
 
     // Forwarder Management
     function getOrDeployForwarderContract(
-        address appGateway_,
         address chainContractAddress_,
         uint32 chainSlug_
     ) external returns (address);

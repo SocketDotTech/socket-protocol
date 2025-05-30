@@ -4,7 +4,6 @@ pragma solidity ^0.8.21;
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {FeesManager} from "../../contracts/evmx/fees/FeesManager.sol";
-import {ETH_ADDRESS} from "../../contracts/utils/common/Constants.sol";
 import {CounterAppGateway} from "../../test/apps/app-gateways/counter/CounterAppGateway.sol";
 
 // @notice This script is used to withdraw fees from EVMX to Arbitrum Sepolia
@@ -15,9 +14,10 @@ contract WithdrawFees is Script {
         vm.createSelectFork(vm.envString("EVMX_RPC"));
         FeesManager feesManager = FeesManager(payable(vm.envAddress("FEES_MANAGER")));
         address appGatewayAddress = vm.envAddress("APP_GATEWAY");
+        address token = vm.envAddress("USDC");
 
         CounterAppGateway appGateway = CounterAppGateway(appGatewayAddress);
-        uint256 availableFees = feesManager.getMaxCreditsAvailableForWithdraw(appGatewayAddress);
+        uint256 availableFees = feesManager.getAvailableCredits(appGatewayAddress);
         console.log("Available fees:", availableFees);
 
         if (availableFees > 0) {
@@ -45,7 +45,13 @@ contract WithdrawFees is Script {
                 vm.createSelectFork(vm.envString("EVMX_RPC"));
                 vm.startBroadcast(privateKey);
                 console.log("Withdrawing amount:", amountToWithdraw);
-                appGateway.withdrawFeeTokens(421614, ETH_ADDRESS, amountToWithdraw, sender);
+                appGateway.withdrawCredits(
+                    421614,
+                    token,
+                    amountToWithdraw,
+                    estimatedGasCost,
+                    sender
+                );
                 vm.stopBroadcast();
 
                 // Switch back to Arbitrum Sepolia to check final balance

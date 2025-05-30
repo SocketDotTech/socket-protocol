@@ -5,9 +5,10 @@ import {Ownable} from "solady/auth/Ownable.sol";
 import {LibClone} from "solady/utils/LibClone.sol";
 import {UpgradeableBeacon} from "solady/utils/UpgradeableBeacon.sol";
 import {Initializable} from "solady/utils/Initializable.sol";
-import "./interfaces/IAsyncDeployer.sol";
+import "../interfaces/IAsyncDeployer.sol";
 import {Forwarder} from "./Forwarder.sol";
 import {AsyncPromise} from "./AsyncPromise.sol";
+import {AddressResolverUtil} from "./AddressResolverUtil.sol";
 
 abstract contract AsyncDeployerStorage is IAsyncDeployer {
     // slots [0-49] reserved for gap
@@ -38,7 +39,7 @@ abstract contract AsyncDeployerStorage is IAsyncDeployer {
 /// @title AsyncDeployer Contract
 /// @notice This contract is responsible for deploying Forwarder and AsyncPromise contracts.
 /// @dev Inherits the Ownable contract and implements the IAddressResolver interface.
-contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable {
+contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable, AddressResolverUtil {
     constructor(address addressResolver_) {
         _disableInitializers(); // disable for implementation
         addressResolver = addressResolver_;
@@ -49,7 +50,6 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable {
     /// @dev this contract is owner of the beacons for upgrading later
     /// @param owner_ The address of the contract owner
     function initialize(address owner_) public reinitializer(1) {
-        version = 1;
         _initializeOwner(owner_);
 
         forwarderImplementation = address(new Forwarder());
@@ -67,10 +67,9 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable {
     /// @param chainSlug_ The chain slug
     /// @return newForwarder The address of the deployed Forwarder proxy contract
     function getOrDeployForwarderContract(
-        address appGateway_,
         address chainContractAddress_,
         uint32 chainSlug_
-    ) public returns (address newForwarder) {
+    ) public override returns (address newForwarder) {
         // predict address
         address forwarderAddress = getForwarderAddress(chainContractAddress_, chainSlug_);
 
@@ -87,9 +86,6 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable {
 
         // deploys the proxy
         newForwarder = _deployProxy(salt, address(forwarderBeacon), initData);
-
-        // sets the config
-        _setConfig(appGateway_, newForwarder);
 
         // emits the event
         emit ForwarderDeployed(newForwarder, salt);
@@ -132,7 +128,7 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable {
     /// @return newAsyncPromise The address of the deployed AsyncPromise proxy contract
     function deployAsyncPromiseContract(
         address invoker_
-    ) external onlyWatcher returns (address newAsyncPromise) {
+    ) external override onlyWatcher returns (address newAsyncPromise) {
         // creates init data and salt
         (bytes32 salt, bytes memory initData) = _createAsyncPromiseParams(invoker_);
         asyncPromiseCounter++;
@@ -164,7 +160,7 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable {
     function getForwarderAddress(
         address chainContractAddress_,
         uint32 chainSlug_
-    ) public view returns (address) {
+    ) public view override returns (address) {
         (bytes32 salt, ) = _createForwarderParams(chainContractAddress_, chainSlug_);
         return _predictProxyAddress(salt, address(forwarderBeacon));
     }
@@ -172,7 +168,7 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable {
     /// @notice Gets the predicted address of an AsyncPromise proxy contract
     /// @param invoker_ The address of the invoker
     /// @return The predicted address of the AsyncPromise proxy contract
-    function getAsyncPromiseAddress(address invoker_) public view returns (address) {
+    function getAsyncPromiseAddress(address invoker_) public view override returns (address) {
         (bytes32 salt, ) = _createAsyncPromiseParams(invoker_);
         return _predictProxyAddress(salt, address(asyncPromiseBeacon));
     }
@@ -186,21 +182,16 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, Ownable {
             LibClone.predictDeterministicAddressERC1967BeaconProxy(beacon_, salt_, address(this));
     }
 
-    function _setConfig(address appGateway_, address newForwarder_) internal {
-        address gateway = contractsToGateways[appGateway_];
-        contractsToGateways[newForwarder_] = gateway;
-    }
-
     /// @notice Updates the implementation contract for Forwarder
     /// @param implementation_ The new implementation address
-    function setForwarderImplementation(address implementation_) external onlyOwner {
+    function setForwarderImplementation(address implementation_) external override onlyOwner {
         forwarderBeacon.upgradeTo(implementation_);
         emit ImplementationUpdated("Forwarder", implementation_);
     }
 
     /// @notice Updates the implementation contract for AsyncPromise
     /// @param implementation_ The new implementation address
-    function setAsyncPromiseImplementation(address implementation_) external onlyOwner {
+    function setAsyncPromiseImplementation(address implementation_) external override onlyOwner {
         asyncPromiseBeacon.upgradeTo(implementation_);
         emit ImplementationUpdated("AsyncPromise", implementation_);
     }

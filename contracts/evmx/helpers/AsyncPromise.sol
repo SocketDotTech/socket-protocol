@@ -3,31 +3,34 @@ pragma solidity ^0.8.21;
 
 import {Initializable} from "solady/utils/Initializable.sol";
 import {LibCall} from "solady/utils/LibCall.sol";
-import {IPromise} from "./interfaces/IPromise.sol";
-import {IAppGateway} from "./interfaces/IAppGateway.sol";
 import {AddressResolverUtil} from "./AddressResolverUtil.sol";
-import {AsyncPromiseState} from "../utils/common/Structs.sol";
-import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
+import {IAppGateway} from "../interfaces/IAppGateway.sol";
+import "../interfaces/IPromise.sol";
+import {NotInvoker, RequestCountMismatch} from "../../utils/common/Errors.sol";
 
 abstract contract AsyncPromiseStorage is IPromise {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
-    // bytes1
     /// @notice The callback selector to be called on the invoker.
     bytes4 public callbackSelector;
-    // bytes8
+
     /// @notice The current state of the async promise.
-    AsyncPromiseState public state;
-    // bytes20
+    AsyncPromiseState public override state;
+
     /// @notice The local contract which initiated the async call.
     /// @dev The callback will be executed on this address
-    address public localInvoker;
+    address public override localInvoker;
 
     /// @notice The request count of the promise
-    uint256 public requestCount;
+    uint256 public override requestCount;
 
-    // slot 52
+    /// @notice The flag to check if the promise exceeded the max copy limit
+    bool public override exceededMaxCopy;
+
+    /// @notice The return data of the promise
+    bytes public override returnData;
+
     /// @notice The callback data to be used when the promise is resolved.
     bytes public callbackData;
 
@@ -42,6 +45,7 @@ abstract contract AsyncPromiseStorage is IPromise {
 /// This promise expires once the callback is executed
 contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil {
     using LibCall for address;
+
     /// @notice Error thrown when attempting to resolve an already resolved promise.
     error PromiseAlreadyResolved();
     /// @notice Only the local invoker can set then's promise callback
@@ -128,7 +132,7 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     /// @dev handleRevert function can be retried till it succeeds
     function _handleRevert(bytes32 payloadId_) internal {
         try IAppGateway(localInvoker).handleRevert(payloadId_) {} catch {
-            // todo-later: in this case, promise will stay unresolved
+            // todo: in this case, promise will stay unresolved
             revert PromiseRevertFailed();
         }
     }
@@ -136,15 +140,14 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     /// @notice Sets the callback selector and data for the promise.
     /// @param selector_ The function selector for the callback.
     /// @param data_ The data to be passed to the callback.
-    /// @return promise_ The address of the current promise.
     function then(bytes4 selector_, bytes memory data_) external override {
         if (msg.sender != localInvoker) revert NotInvoker();
         // if the promise is already set up, revert
         if (state != AsyncPromiseState.WAITING_FOR_CALLBACK_SELECTOR) {
             revert PromiseAlreadySetUp();
         }
-        if (watcher__().latestAsyncPromise != address(this)) revert PromiseAlreadySetUp();
-        if (requestCount != watcher__().latestRequestCount) revert RequestCountMismatch();
+        if (watcher__().latestAsyncPromise() != address(this)) revert PromiseAlreadySetUp();
+        if (requestCount != watcher__().getCurrentRequestCount()) revert RequestCountMismatch();
 
         // if the promise is waiting for the callback selector, set it and update the state
         callbackSelector = selector_;

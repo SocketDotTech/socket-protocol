@@ -1,37 +1,54 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {QueueParams, OverrideParams, Transaction} from "../../utils/common/Structs.sol";
+import {IAppGateway} from "../interfaces/IAppGateway.sol";
+import {IContractFactoryPlug} from "../interfaces/IContractFactoryPlug.sol";
+import {IDeployForwarder} from "../interfaces/IDeployForwarder.sol";
 import "./AddressResolverUtil.sol";
+import {AsyncModifierNotSet} from "../../utils/common/Errors.sol";
+import {QueueParams, OverrideParams, Transaction} from "../../utils/common/Structs.sol";
+import {encodeAppGatewayId} from "../../utils/common/IdUtils.sol";
 
 /// @title DeployerGateway
 /// @notice App gateway contract responsible for handling deployment requests
 /// @dev Extends AppGatewayBase to provide deployment queueing functionality
-contract DeployForwarder is AddressResolverUtil {
+contract DeployForwarder is AddressResolverUtil, IDeployForwarder {
     /// @notice The counter for the salt used to generate/deploy the contract address
-    uint256 public saltCounter;
+    uint256 public override saltCounter;
+
+    bytes32 public override deployerSwitchboardType;
+
+    mapping(uint32 => address) public override contractFactoryPlugs;
 
     /// @notice Deploys a contract
     /// @param chainSlug_ The chain slug
     function deploy(
-        address sbType_,
+        IsPlug isPlug_,
         uint32 chainSlug_,
-        OverrideParams memory overrideParams_,
         bytes memory initCallData_,
         bytes memory payload_
     ) external {
+        address msgSender = msg.sender;
+        bool isAsyncModifierSet = IAppGateway(msgSender).isAsyncModifierSet();
+        if (!isAsyncModifierSet) revert AsyncModifierNotSet();
+
+        // fetch the override params from app gateway
+        (OverrideParams memory overrideParams, bytes32 plugSwitchboardType) = IAppGateway(msgSender)
+            .getOverrideParams();
+
         QueueParams memory queueParams;
-        queueParams.overrideParams = overrideParams_;
-        queueParams.switchboardType = sbType_;
+        queueParams.overrideParams = overrideParams;
+        queueParams.switchboardType = deployerSwitchboardType;
         queueParams.transaction = Transaction({
             chainSlug: chainSlug_,
-            target: configurations__.contractFactoryPlug(chainSlug_),
+            target: address(0),
             payload: _createPayload(
-                msg.sender,
+                isPlug_,
+                plugSwitchboardType,
+                msgSender,
                 chainSlug_,
                 payload_,
-                initCallData_,
-                overrideParams_
+                initCallData_
             )
         });
 
@@ -39,21 +56,22 @@ contract DeployForwarder is AddressResolverUtil {
     }
 
     function _createPayload(
+        IsPlug isPlug_,
+        bytes32 plugSwitchboardType_,
         address appGateway_,
         uint32 chainSlug_,
         bytes memory payload_,
-        bytes memory initCallData_,
-        OverrideParams memory overrideParams_
+        bytes memory initCallData_
     ) internal returns (bytes memory payload) {
         bytes32 salt = keccak256(abi.encode(appGateway_, chainSlug_, saltCounter++));
 
         // app gateway is set in the plug deployed on chain
         payload = abi.encodeWithSelector(
             IContractFactoryPlug.deployContract.selector,
-            overrideParams_.isPlug,
+            isPlug_,
             salt,
-            bytes32(uint256(uint160(appGateway_))),
-            switchboardType_,
+            encodeAppGatewayId(appGateway_),
+            watcher__().configurations__().switchboards(chainSlug_, plugSwitchboardType_),
             payload_,
             initCallData_
         );

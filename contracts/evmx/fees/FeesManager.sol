@@ -25,10 +25,12 @@ abstract contract FeesManager is Credit {
 
     /// @notice Emitted when fees are unblocked and assigned to a transmitter
     /// @param requestCount The batch identifier
+    /// @param consumeFrom The consume from address
     /// @param transmitter The transmitter address
     /// @param amount The unblocked amount
     event CreditsUnblockedAndAssigned(
         uint40 indexed requestCount,
+        address indexed consumeFrom,
         address indexed transmitter,
         uint256 amount
     );
@@ -44,6 +46,11 @@ abstract contract FeesManager is Credit {
         address token,
         address consumeFrom
     );
+
+    modifier onlyRequestHandler() {
+        if (msg.sender != address(watcher__().requestHandler__())) revert NotRequestHandler();
+        _;
+    }
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -68,22 +75,21 @@ abstract contract FeesManager is Credit {
     /////////////////////// FEES MANAGEMENT ///////////////////////
 
     /// @notice Blocks fees for a request count
-    /// @param consumeFrom_ The fees payer address
-    /// @param transmitterCredits_ The total fees to block
     /// @param requestCount_ The batch identifier
+    /// @param consumeFrom_ The fees payer address
+    /// @param credits_ The total fees to block
     /// @dev Only callable by delivery helper
     function blockCredits(
         uint40 requestCount_,
         address consumeFrom_,
         uint256 credits_
-    ) external onlyRequestHandler {
-        address consumeFrom = _getCoreAppGateway(consumeFrom_);
-        if (getAvailableCredits(consumeFrom) < credits_) revert InsufficientCreditsAvailable();
+    ) external override onlyRequestHandler {
+        if (getAvailableCredits(consumeFrom_) < credits_) revert InsufficientCreditsAvailable();
 
-        UserCredits storage userCredit = userCredits[consumeFrom];
+        UserCredits storage userCredit = userCredits[consumeFrom_];
         userCredit.blockedCredits += credits_;
-        requestCountCredits[requestCount_] = credits_;
-        emit CreditsBlocked(requestCount_, consumeFrom, credits_);
+        requestBlockedCredits[requestCount_] = credits_;
+        emit CreditsBlocked(requestCount_, consumeFrom_, credits_);
     }
 
     /// @notice Unblocks fees after successful execution and assigns them to the transmitter
@@ -93,42 +99,33 @@ abstract contract FeesManager is Credit {
         uint40 requestCount_,
         address assignTo_
     ) external override onlyRequestHandler {
-        uint256 blockedCredits = requestCountCredits[requestCount_];
+        uint256 blockedCredits = requestBlockedCredits[requestCount_];
         if (blockedCredits == 0) return;
 
+        address consumeFrom = _getRequestParams(requestCount_).requestFeesDetails.consumeFrom;
         // Unblock fees from deposit
-        _consumeUserCredits(
-            _getRequestParams(requestCount_).consumeFrom,
-            blockedCredits,
-            blockedCredits
-        );
+        UserCredits storage userCredit = userCredits[consumeFrom];
+        userCredit.blockedCredits -= blockedCredits;
+        userCredit.totalCredits -= blockedCredits;
 
         // Assign fees to transmitter
         userCredits[assignTo_].totalCredits += blockedCredits;
 
         // Clean up storage
-        delete requestCountCredits[requestCount_];
-        emit CreditsUnblockedAndAssigned(requestCount_, assignTo_, blockedCredits);
+        delete requestBlockedCredits[requestCount_];
+        emit CreditsUnblockedAndAssigned(requestCount_, consumeFrom, assignTo_, blockedCredits);
     }
 
-    function unblockCredits(uint40 requestCount_) external onlyRequestHandler {
-        RequestParams memory r = _getRequestParams(requestCount_);
-        uint256 blockedCredits = requestCountCredits[requestCount_];
+    function unblockCredits(uint40 requestCount_) external override onlyRequestHandler {
+        uint256 blockedCredits = requestBlockedCredits[requestCount_];
         if (blockedCredits == 0) return;
 
         // Unblock fees from deposit
-        _consumeUserCredits(r.requestFeesDetails.consumeFrom, blockedCredits, 0);
-        delete requestCountCredits[requestCount_];
-        emit CreditsUnblocked(requestCount_, r.requestFeesDetails.consumeFrom);
-    }
+        address consumeFrom = _getRequestParams(requestCount_).requestFeesDetails.consumeFrom;
+        UserCredits storage userCredit = userCredits[consumeFrom];
+        userCredit.blockedCredits -= blockedCredits;
 
-    function _consumeUserCredits(
-        address consumeFrom_,
-        uint256 toConsumeFromBlocked_,
-        uint256 toConsumeFromTotal_
-    ) internal {
-        UserCredits storage userCredit = userCredits[consumeFrom_];
-        userCredit.blockedCredits -= toConsumeFromBlocked_;
-        userCredit.totalCredits -= toConsumeFromTotal_;
+        delete requestBlockedCredits[requestCount_];
+        emit CreditsUnblocked(requestCount_, consumeFrom);
     }
 }

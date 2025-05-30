@@ -3,23 +3,17 @@ pragma solidity ^0.8.21;
 
 import {ECDSA} from "solady/utils/ECDSA.sol";
 import "solady/utils/Initializable.sol";
-import "../interfaces/IAuctionManager.sol";
-import "../../utils/AccessControl.sol";
-import {AuctionClosed, AuctionAlreadyStarted, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter} from "../../utils/common/Errors.sol";
-import {TRANSMITTER_ROLE} from "../../utils/common/AccessRoles.sol";
-import {AppGatewayBase} from "../base/AppGatewayBase.sol";
+import "./interfaces/IAuctionManager.sol";
+import "../utils/AccessControl.sol";
+import {AuctionNotOpen, AuctionClosed, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter, MaxReAuctionCountReached, InvalidBid} from "../utils/common/Errors.sol";
+import {SCHEDULE} from "../utils/common/Constants.sol";
+
+import {TRANSMITTER_ROLE} from "../utils/common/AccessRoles.sol";
+import {AppGatewayBase} from "./base/AppGatewayBase.sol";
 
 /// @title AuctionManagerStorage
 /// @notice Storage for the AuctionManager contract
 abstract contract AuctionManagerStorage is IAuctionManager {
-    enum AuctionStatus {
-        NOT_STARTED,
-        OPEN,
-        CLOSED,
-        RESTARTED,
-        EXPIRED
-    }
-
     // slot 50
     uint32 public evmxSlug;
 
@@ -53,12 +47,10 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     event AuctionEnded(uint40 requestCount, Bid winningBid);
     event BidPlaced(uint40 requestCount, Bid bid);
     event AuctionEndDelaySecondsSet(uint256 auctionEndDelaySeconds);
+    event MaxReAuctionCountSet(uint256 maxReAuctionCount);
 
-    error InvalidBid();
-    error MaxReAuctionCountReached();
-
-    constructor() {
-        // todo-later: evmx slug can be immutable and set here
+    constructor(address addressResolver_) AppGatewayBase(addressResolver_) {
+        // todo-tests: evmx slug can be immutable and set here
         _disableInitializers(); // disable for implementation
     }
 
@@ -69,8 +61,8 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     /// @param maxReAuctionCount_ The maximum number of re-auctions allowed
     function initialize(
         uint32 evmxSlug_,
+        uint128 bidTimeout_,
         uint256 auctionEndDelaySeconds_,
-        uint256 bidTimeout_,
         uint256 maxReAuctionCount_,
         address addressResolver_,
         address owner_
@@ -95,6 +87,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     }
 
     /// @notice Places a bid for an auction
+    /// @dev transmitters should approve credits to the auction manager contract for scheduling requests
     /// @param requestCount_ The ID of the auction
     /// @param bidFees The bid amount
     /// @param transmitterSignature The signature of the transmitter
@@ -103,7 +96,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         uint256 bidFees,
         bytes memory transmitterSignature,
         bytes memory extraData
-    ) external {
+    ) external override {
         if (
             auctionStatus[requestCount_] != AuctionStatus.OPEN &&
             auctionStatus[requestCount_] != AuctionStatus.RESTARTED
@@ -120,15 +113,8 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         if (bidFees >= winningBids[requestCount_].fee && bidFees != 0)
             revert LowerBidAlreadyExists();
 
-        uint256 transmitterCredits = get(requestCount_);
+        uint256 transmitterCredits = getMaxFees(requestCount_);
         if (bidFees > transmitterCredits) revert BidExceedsMaxFees();
-
-        deductScheduleFees(
-            transmitter,
-            winningBids[requestCount_].transmitter == address(0)
-                ? address(this)
-                : winningBids[requestCount_].transmitter
-        );
 
         // create a new bid
         Bid memory newBid = Bid({fee: bidFees, transmitter: transmitter, extraData: extraData});
@@ -139,6 +125,13 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
             _startAuction(requestCount_);
             _createRequest(
                 auctionEndDelaySeconds,
+                deductScheduleFees(
+                    transmitter,
+                    winningBids[requestCount_].transmitter == address(0)
+                        ? address(this)
+                        : winningBids[requestCount_].transmitter,
+                    auctionEndDelaySeconds
+                ),
                 address(this),
                 abi.encodeWithSelector(this.endAuction.selector, requestCount_)
             );
@@ -157,7 +150,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
 
     /// @notice Ends an auction
     /// @param requestCount_ The ID of the auction
-    function endAuction(uint40 requestCount_) external onlyWatcher {
+    function endAuction(uint40 requestCount_) external override onlyWatcher {
         if (
             auctionStatus[requestCount_] == AuctionStatus.CLOSED ||
             auctionStatus[requestCount_] == AuctionStatus.NOT_STARTED
@@ -171,18 +164,20 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         auctionStatus[requestCount_] = AuctionStatus.CLOSED;
 
         if (winningBid.transmitter != address(0)) {
-            // todo-later: might block the request processing if transmitter don't have enough balance
+            // todo: might block the request processing if transmitter don't have enough balance for this schedule
+            // this case can hit when bid timeout is more than 0
+
             // set the timeout for the bid expiration
             // useful in case a transmitter did bid but did not execute payloads
             _createRequest(
                 bidTimeout,
-                deductScheduleFees(winningBid.transmitter, address(this)),
+                deductScheduleFees(winningBid.transmitter, address(this), bidTimeout),
                 winningBid.transmitter,
                 abi.encodeWithSelector(this.expireBid.selector, requestCount_)
             );
 
             // start the request processing, it will queue the request
-            IWatcher(watcherPrecompile__()).assignTransmitter(requestCount_, winningBid);
+            watcher__().requestHandler__().assignTransmitter(requestCount_, winningBid);
         }
 
         emit AuctionEnded(requestCount_, winningBid);
@@ -192,7 +187,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     /// @dev Auction can be restarted only for `maxReAuctionCount` times.
     /// @dev It also unblocks the fees from last transmitter to be assigned to the new winner.
     /// @param requestCount_ The request id
-    function expireBid(uint40 requestCount_) external onlyWatcher {
+    function expireBid(uint40 requestCount_) external override onlyWatcher {
         if (reAuctionCount[requestCount_] >= maxReAuctionCount) revert MaxReAuctionCountReached();
         RequestParams memory requestParams = _getRequestParams(requestCount_);
 
@@ -206,7 +201,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         auctionStatus[requestCount_] = AuctionStatus.RESTARTED;
         reAuctionCount[requestCount_]++;
 
-        IWatcher(watcherPrecompile__()).assignTransmitter(
+        watcher__().requestHandler__().assignTransmitter(
             requestCount_,
             Bid({fee: 0, transmitter: address(0), extraData: ""})
         );
@@ -219,34 +214,21 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         address consumeFrom_,
         bytes memory payload_
     ) internal {
-        QueueParams memory queueParams = QueueParams({
-            overrideParams: OverrideParams({
-                isPlug: IsPlug.NO,
-                callType: SCHEDULE,
-                isParallelCall: Parallel.OFF,
-                gasLimit: 0,
-                value: 0,
-                readAtBlockNumber: 0,
-                writeFinality: WriteFinality.LOW,
-                delayInSeconds: delayInSeconds_
-            }),
-            transaction: Transaction({
-                chainSlug: evmxSlug,
-                target: address(this),
-                payload: payload_
-            }),
-            asyncPromise: address(0),
-            switchboardType: sbType
+        OverrideParams memory overrideParams;
+        overrideParams.callType = SCHEDULE;
+        overrideParams.delayInSeconds = delayInSeconds_;
+
+        QueueParams memory queueParams;
+        queueParams.overrideParams = overrideParams;
+        queueParams.transaction = Transaction({
+            chainSlug: evmxSlug,
+            target: address(this),
+            payload: payload_
         });
+        queueParams.switchboardType = sbType;
 
         // queue and create request
-        watcherPrecompile__().queueAndRequest(
-            queueParams,
-            maxFees_,
-            address(this),
-            address(this),
-            bytes("")
-        );
+        watcher__().queueAndSubmit(queueParams, maxFees_, address(this), consumeFrom_, bytes(""));
     }
 
     /// @notice Returns the quoted transmitter fees for a request
@@ -261,19 +243,23 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         return requestParams.requestFeesDetails.maxFees;
     }
 
-    function deductScheduleFees(address from_, address to_) internal returns (uint256 watcherFees) {
-        watcherFees = watcher__().getPrecompileFees(SCHEDULE);
+    function deductScheduleFees(
+        address from_,
+        address to_,
+        uint256 delayInSeconds_
+    ) internal returns (uint256 watcherFees) {
+        watcherFees = watcher__().getPrecompileFees(SCHEDULE, abi.encode(delayInSeconds_));
         feesManager__().transferCredits(from_, to_, watcherFees);
     }
 
     function _getRequestParams(uint40 requestCount_) internal view returns (RequestParams memory) {
-        return watcherPrecompile__().getRequestParams(requestCount_);
+        return watcher__().getRequestParams(requestCount_);
     }
 
     /// @notice Recovers the signer of a message
     /// @param digest_ The digest of the message
     /// @param signature_ The signature of the message
-    /// @return The signer of the message
+    /// @return signer The signer of the message
     function _recoverSigner(
         bytes32 digest_,
         bytes memory signature_

@@ -4,7 +4,6 @@ pragma solidity ^0.8.21;
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {CounterAppGateway} from "../../test/apps/app-gateways/counter/CounterAppGateway.sol";
-import {ETH_ADDRESS} from "../../contracts/utils/common/Constants.sol";
 
 // source .env && forge script script/counter/deployEVMxCounterApp.s.sol --broadcast --skip-simulation --legacy --gas-price 0
 contract CounterDeploy is Script {

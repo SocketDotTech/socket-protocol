@@ -7,18 +7,12 @@ import {AppGatewayConfig, PlugConfig} from "../../utils/common/Structs.sol";
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
 /// @dev Defines core functionality for payload processing and promise resolution
 interface IConfigurations {
-    struct SocketConfig {
-        address socket;
-        address contractFactoryPlug;
-        address feesPlug;
-    }
-
     /// @notice Verifies connections between components
     function verifyConnections(
         uint32 chainSlug_,
         address target_,
         address appGateway_,
-        address switchboard_
+        bytes32 switchboardType_
     ) external view;
 
     /// @notice Maps contract address to their associated app gateway
@@ -38,7 +32,14 @@ interface IConfigurations {
     ) external view returns (bytes32, address);
 
     /// @notice Maps chain slug to their associated socket
-    function socketConfigs(uint32 chainSlug) external view returns (SocketConfig memory);
+    /// @param chainSlug_ The chain slug
+    /// @return The socket
+    function sockets(uint32 chainSlug_) external view returns (address);
+
+    /// @notice Returns the socket for a given chain slug
+    /// @param chainSlug_ The chain slug
+    /// @return The socket
+    function switchboards(uint32 chainSlug_, bytes32 sbType_) external view returns (address);
 
     /// @notice Sets the switchboard for a network
     function setSwitchboard(uint32 chainSlug_, bytes32 sbType_, address switchboard_) external;
@@ -49,7 +50,8 @@ interface IConfigurations {
 
     function setPlugConfigs(AppGatewayConfig[] calldata configs_) external;
 
-    function setOnChainContracts(uint32 chainSlug_, SocketConfig memory socketConfig_) external;
+    /// @notice Sets the socket for a chain slug
+    function setSocket(uint32 chainSlug_, address socket_) external;
 
     /// @notice Sets the core app gateway for the watcher precompile
     function setCoreAppGateway(address appGateway_) external;

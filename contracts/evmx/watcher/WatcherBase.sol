@@ -2,37 +2,49 @@
 pragma solidity ^0.8.21;
 
 import "../interfaces/IWatcher.sol";
+import "../interfaces/IConfigurations.sol";
+import "../interfaces/IPromiseResolver.sol";
+import "../interfaces/IRequestHandler.sol";
 
 /// @title WatcherBase
+/// @notice Base contract for the Watcher contract
 contract WatcherBase {
-    // The address of the WatcherPrecompileStorage contract
-    address public watcher;
+    // The address of the Watcher contract
+    IWatcher public watcher__;
 
-    // Only WatcherPrecompileStorage can call functions
+    // Only Watcher can call functions
     modifier onlyWatcher() {
-        require(msg.sender == watcher, "Only Watcher can call");
+        require(msg.sender == address(watcher__), "Only Watcher can call");
         _;
     }
 
-    /// @notice Sets the WatcherPrecompileStorage address
-    /// @param watcher_ The address of the WatcherPrecompileStorage contract
+    /// @notice Sets the Watcher address
+    /// @param watcher_ The address of the Watcher contract
     constructor(address watcher_) {
-        watcher = watcher_;
+        watcher__ = IWatcher(watcher_);
     }
 
-    /// @notice Updates the WatcherPrecompileStorage address
-    /// @param watcher_ The new address of the WatcherPrecompileStorage contract
+    /// @notice Updates the Watcher address
+    /// @param watcher_ The new address of the Watcher contract
     function setWatcher(address watcher_) external onlyWatcher {
-        watcher = watcher_;
+        watcher__ = IWatcher(watcher_);
     }
 
-    /// @notice Returns the configurations of the WatcherPrecompileStorage contract
-    /// @return configurations The configurations of the WatcherPrecompileStorage contract
-    function configurations__() external view returns (IConfigurations) {
-        return IWatcher(watcher).configurations__();
+    /// @notice Returns the configurations of the Watcher contract
+    /// @return configurations The configurations of the Watcher contract
+    function configurations__() internal view returns (IConfigurations) {
+        return watcher__.configurations__();
     }
 
-    function getCoreAppGateway(address appGateway_) external view returns (address) {
-        return IWatcher(watcher).configurations__().getCoreAppGateway(appGateway_);
+    /// @notice Returns the promise resolver of the Watcher contract
+    /// @return promiseResolver The promise resolver of the Watcher contract
+    function promiseResolver__() internal view returns (IPromiseResolver) {
+        return watcher__.promiseResolver__();
+    }
+
+    /// @notice Returns the request handler of the Watcher contract
+    /// @return requestHandler The request handler of the Watcher contract
+    function requestHandler__() internal view returns (IRequestHandler) {
+        return watcher__.requestHandler__();
     }
 }

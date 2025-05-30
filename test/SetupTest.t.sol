@@ -5,27 +5,25 @@ import "forge-std/Test.sol";
 import "../contracts/utils/common/Structs.sol";
 import "../contracts/utils/common/Errors.sol";
 import "../contracts/utils/common/Constants.sol";
-import "../contracts/evmx/watcherPrecompile/core/WatcherPrecompile.sol";
-import "../contracts/evmx/watcherPrecompile/WatcherPrecompileConfig.sol";
-import "../contracts/evmx/watcherPrecompile/WatcherPrecompileLimits.sol";
-import "../contracts/evmx/watcherPrecompile/PayloadHeaderDecoder.sol";
+import "../contracts/evmx/watcher/Watcher.sol";
+import "../contracts/evmx/watcher/Configurations.sol";
 import "../contracts/evmx/interfaces/IForwarder.sol";
 import "../contracts/utils/common/AccessRoles.sol";
 import {Socket} from "../contracts/protocol/Socket.sol";
 import "../contracts/protocol/switchboard/FastSwitchboard.sol";
 import "../contracts/protocol/SocketBatcher.sol";
-import "../contracts/evmx/AddressResolver.sol";
-import {ContractFactoryPlug} from "../contracts/evmx/payload-delivery/ContractFactoryPlug.sol";
-import {FeesPlug} from "../contracts/evmx/payload-delivery/FeesPlug.sol";
+import "../contracts/evmx/helpers/AddressResolver.sol";
+import {ContractFactoryPlug} from "../contracts/evmx/plugs/ContractFactoryPlug.sol";
+import {FeesPlug} from "../contracts/evmx/plugs/FeesPlug.sol";
 import {SocketFeeManager} from "../contracts/protocol/SocketFeeManager.sol";
-import {ETH_ADDRESS} from "../contracts/utils/common/Constants.sol";
-import {ResolvedPromises, OnChainFees} from "../contracts/utils/common/Structs.sol";
+import "../contracts/utils/common/Structs.sol";
+
+import "../contracts/evmx/helpers/AsyncDeployer.sol";
 
 import "solady/utils/ERC1967Factory.sol";
 import "./apps/app-gateways/USDC.sol";
 
 contract SetupTest is Test {
-    using PayloadHeaderDecoder for bytes32;
     uint public c = 1;
     address owner = address(uint160(c++));
 
@@ -63,17 +61,19 @@ contract SetupTest is Test {
     }
 
     AddressResolver public addressResolver;
-    WatcherPrecompile public watcherPrecompile;
-    WatcherPrecompileConfig public watcherPrecompileConfig;
-    WatcherPrecompileLimits public watcherPrecompileLimits;
+    Watcher public watcher;
+    Configurations public configurations;
+    AsyncDeployer public asyncDeployer;
+    AsyncPromise public asyncPromise;
 
     SocketContracts public arbConfig;
     SocketContracts public optConfig;
 
     // Add new variables for proxy admin and implementation contracts
-    WatcherPrecompile public watcherPrecompileImpl;
-    WatcherPrecompileConfig public watcherPrecompileConfigImpl;
-    WatcherPrecompileLimits public watcherPrecompileLimitsImpl;
+    Watcher public watcherImpl;
+    Configurations public configurationsImpl;
+    AsyncDeployer public asyncDeployerImpl;
+    AsyncPromise public asyncPromiseImpl;
     AddressResolver public addressResolverImpl;
     ERC1967Factory public proxyFactory;
 
@@ -102,15 +102,14 @@ contract SetupTest is Test {
         vm.stopPrank();
 
         hoax(watcherEOA);
-        watcherPrecompileConfig.setOnChainContracts(
-            chainSlug_,
-            address(socket),
-            address(contractFactoryPlug),
-            address(feesPlug)
-        );
+        configurations.setSocket(chainSlug_, address(socket));
+        
+        // todo: setters
+        // address(contractFactoryPlug),
+        //     address(feesPlug)
         SocketFeeManager socketFeeManager = new SocketFeeManager(owner, socketFees);
         hoax(watcherEOA);
-        watcherPrecompileConfig.setSwitchboard(chainSlug_, FAST, address(switchboard));
+        configurations.setSwitchboard(chainSlug_, FAST, address(switchboard));
 
         return
             SocketContracts({
@@ -128,9 +127,10 @@ contract SetupTest is Test {
     function deployEVMxCore() internal {
         // Deploy implementations
         addressResolverImpl = new AddressResolver();
-        watcherPrecompileImpl = new WatcherPrecompile();
-        watcherPrecompileConfigImpl = new WatcherPrecompileConfig();
-        watcherPrecompileLimitsImpl = new WatcherPrecompileLimits();
+        watcherImpl = new Watcher();
+        configurationsImpl = new Configurations();
+        asyncDeployerImpl = new AsyncDeployer();
+        asyncPromiseImpl = new AsyncPromise();
         proxyFactory = new ERC1967Factory();
 
         // Deploy and initialize proxies
@@ -146,63 +146,49 @@ contract SetupTest is Test {
             addressResolverData
         );
 
-        bytes memory watcherPrecompileLimitsData = abi.encodeWithSelector(
-            WatcherPrecompileLimits.initialize.selector,
-            watcherEOA,
-            address(addressResolverProxy),
-            defaultLimit
-        );
-        vm.expectEmit(true, true, true, false);
-        emit Initialized(version);
-        address watcherPrecompileLimitsProxy = proxyFactory.deployAndCall(
-            address(watcherPrecompileLimitsImpl),
-            watcherEOA,
-            watcherPrecompileLimitsData
-        );
-
-        bytes memory watcherPrecompileConfigData = abi.encodeWithSelector(
-            WatcherPrecompileConfig.initialize.selector,
+        bytes memory configurationsData = abi.encodeWithSelector(
+            Configurations.initialize.selector,
             watcherEOA,
             address(addressResolverProxy),
             evmxSlug
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(version);
-        address watcherPrecompileConfigProxy = proxyFactory.deployAndCall(
-            address(watcherPrecompileConfigImpl),
+        address configurationsProxy = proxyFactory.deployAndCall(
+            address(configurationsImpl),
             watcherEOA,
-            watcherPrecompileConfigData
+            configurationsData
         );
 
-        bytes memory watcherPrecompileData = abi.encodeWithSelector(
-            WatcherPrecompile.initialize.selector,
+        bytes memory watcherData = abi.encodeWithSelector(
+            Watcher.initialize.selector,
             watcherEOA,
             address(addressResolverProxy),
             expiryTime,
             evmxSlug,
-            address(watcherPrecompileLimitsProxy),
-            address(watcherPrecompileConfigProxy)
+            address(configurationsProxy)
         );
         vm.expectEmit(true, true, true, false);
         emit Initialized(version);
-        address watcherPrecompileProxy = proxyFactory.deployAndCall(
-            address(watcherPrecompileImpl),
+        address watcherProxy = proxyFactory.deployAndCall(
+            address(watcherImpl),
             watcherEOA,
-            watcherPrecompileData
+            watcherData
         );
 
         // Assign proxy addresses to public variables
         addressResolver = AddressResolver(address(addressResolverProxy));
-        watcherPrecompile = WatcherPrecompile(address(watcherPrecompileProxy));
-        watcherPrecompileConfig = WatcherPrecompileConfig(address(watcherPrecompileConfigProxy));
-        watcherPrecompileLimits = WatcherPrecompileLimits(address(watcherPrecompileLimitsProxy));
+        watcher = Watcher(address(watcherProxy));
+        configurations = Configurations(address(configurationsProxy));
+        // asyncDeployer = AsyncDeployer(address(asyncDeployerProxy));
+        // asyncPromise = AsyncPromise(address(asyncPromiseProxy));
 
         vm.startPrank(watcherEOA);
-        addressResolver.setWatcherPrecompile(address(watcherPrecompile));
-        watcherPrecompileLimits.setCallBackFees(1);
-        watcherPrecompileLimits.setFinalizeFees(1);
-        watcherPrecompileLimits.setQueryFees(1);
-        watcherPrecompileLimits.setTimeoutFees(1);
+        addressResolver.setWatcher(address(watcher));
+        watcher.setCallBackFees(1);
+        watcher.setFinalizeFees(1);
+        watcher.setQueryFees(1);
+        watcher.setTimeoutFees(1);
 
         vm.stopPrank();
     }
@@ -210,11 +196,11 @@ contract SetupTest is Test {
     //////////////////////////////////// Watcher precompiles ////////////////////////////////////
 
     function _checkIfOnlyReads(uint40 batchCount_) internal view returns (bool) {
-        bytes32[] memory payloadIds = watcherPrecompile.getBatchPayloadIds(batchCount_);
+        bytes32[] memory payloadIds = watcher.getBatchPayloadIds(batchCount_);
 
         for (uint i = 0; i < payloadIds.length; i++) {
-            PayloadParams memory payloadParams = watcherPrecompile.getPayloadParams(payloadIds[i]);
-            if (payloadParams.payloadHeader.getCallType() != CallType.READ) {
+            PayloadParams memory payloadParams = watcher.getPayloadParams(payloadIds[i]);
+            if (payloadParams.payloadHeader.getCallType() != READ) {
                 return false;
             }
         }
@@ -242,13 +228,13 @@ contract SetupTest is Test {
         uint256 readCount_,
         bool hasMoreBatches
     ) internal returns (uint256) {
-        bytes32[] memory payloadIds = watcherPrecompile.getBatchPayloadIds(batchCount_);
+        bytes32[] memory payloadIds = watcher.getBatchPayloadIds(batchCount_);
 
         for (uint i = 0; i < payloadIds.length; i++) {
-            PayloadParams memory payloadParams = watcherPrecompile.getPayloadParams(payloadIds[i]);
+            PayloadParams memory payloadParams = watcher.getPayloadParams(payloadIds[i]);
             bool isLastPayload = i == payloadIds.length - 1 && hasMoreBatches;
 
-            if (payloadParams.payloadHeader.getCallType() == CallType.READ) {
+            if (payloadParams.payloadHeader.getCallType() == READ) {
                 _resolveAndExpectFinalizeRequested(
                     payloadParams.payloadId,
                     payloadParams,
@@ -321,7 +307,7 @@ contract SetupTest is Test {
             _encodeAppGatewayId(params_.appGateway),
             params_.prevDigestsHash
         );
-        bytes32 digest = watcherPrecompile.getDigest(digestParams_);
+        bytes32 digest = watcher.getDigest(digestParams_);
 
         bytes32 sigDigest = keccak256(
             abi.encode(address(socketConfig.switchboard), socketConfig.chainSlug, digest)
@@ -332,16 +318,13 @@ contract SetupTest is Test {
 
     function _writeProof(bytes32 payloadId_, bytes memory watcherProof_) internal {
         bytes memory bytesInput = abi.encode(
-            IWatcherPrecompile.finalized.selector,
+            IWatcher.finalized.selector,
             payloadId_,
             watcherProof_
         );
-        bytes memory watcherSignature = _createWatcherSignature(
-            address(watcherPrecompile),
-            bytesInput
-        );
-        watcherPrecompile.finalized(payloadId_, watcherProof_, signatureNonce++, watcherSignature);
-        assertEq(watcherPrecompile.watcherProofs(payloadId_), watcherProof_);
+        bytes memory watcherSignature = _createWatcherSignature(address(watcher), bytesInput);
+        watcher.finalized(payloadId_, watcherProof_, signatureNonce++, watcherSignature);
+        assertEq(watcher.watcherProofs(payloadId_), watcherProof_);
     }
 
     function _getExecuteParams(
@@ -385,14 +368,14 @@ contract SetupTest is Test {
     }
 
     function _resolvePromise(bytes32 payloadId, bytes memory returnData) internal {
-        ResolvedPromises[] memory resolvedPromises = new ResolvedPromises[](1);
-        resolvedPromises[0] = ResolvedPromises({payloadId: payloadId, returnData: returnData});
+        PromiseReturnData[] memory promiseReturnData = new PromiseReturnData[](1);
+        promiseReturnData[0] = PromiseReturnData({payloadId: payloadId, returnData: returnData});
 
         bytes memory watcherSignature = _createWatcherSignature(
-            address(watcherPrecompile),
-            abi.encode(WatcherPrecompile.resolvePromises.selector, resolvedPromises)
+            address(watcher),
+            abi.encode(Watcher.resolvePromises.selector, promiseReturnData)
         );
-        watcherPrecompile.resolvePromises(resolvedPromises, signatureNonce++, watcherSignature);
+        watcher.resolvePromises(promiseReturnData, signatureNonce++, watcherSignature);
     }
 
     function _createWatcherSignature(

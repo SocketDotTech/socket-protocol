@@ -3,6 +3,7 @@ pragma solidity ^0.8.21;
 import "./IWatcher.sol";
 import "./IFeesManager.sol";
 import "./IAsyncDeployer.sol";
+import "./IDeployForwarder.sol";
 
 /// @title IAddressResolver
 /// @notice Interface for resolving system contract addresses
@@ -12,11 +13,14 @@ interface IAddressResolver {
     event FeesManagerUpdated(address feesManager_);
     /// @notice Event emitted when the watcher precompile is updated
     event WatcherUpdated(address watcher_);
-
-    // any other address resolution
-    function getAddress(bytes32 name) external view returns (address);
-
-    function setAddress(bytes32 name, address addr) external;
+    /// @notice Event emitted when the async deployer is updated
+    event AsyncDeployerUpdated(address asyncDeployer_);
+    /// @notice Event emitted when the default auction manager is updated
+    event DefaultAuctionManagerUpdated(address defaultAuctionManager_);
+    /// @notice Event emitted when the deploy forwarder is updated
+    event DeployForwarderUpdated(address deployForwarder_);
+    /// @notice Event emitted when the contract address is updated
+    event ContractAddressUpdated(bytes32 contractId_, address contractAddress_);
 
     // System component addresses
     function watcher__() external view returns (IWatcher);
@@ -27,11 +31,19 @@ interface IAddressResolver {
 
     function defaultAuctionManager() external view returns (address);
 
-    function setFeesManager(address feesManager_) external;
+    function deployForwarder__() external view returns (IDeployForwarder);
 
-    function setDefaultAuctionManager(address defaultAuctionManager_) external;
+    function contractAddresses(bytes32 contractId_) external view returns (address);
 
     function setWatcher(address watcher_) external;
 
+    function setFeesManager(address feesManager_) external;
+
     function setAsyncDeployer(address asyncDeployer_) external;
+
+    function setDefaultAuctionManager(address defaultAuctionManager_) external;
+
+    function setDeployForwarder(address deployForwarder_) external;
+
+    function setContractAddress(bytes32 contractId_, address contractAddress_) external;
 }

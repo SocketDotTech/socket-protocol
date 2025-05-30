@@ -72,27 +72,6 @@ abstract contract SocketUtils is SocketConfig {
     }
 
     /**
-     * @notice creates the payload ID
-     * @param switchboard_ The address of the switchboard
-     * @param executeParams_ The parameters of the payload
-     */
-    function _createPayloadId(
-        address switchboard_,
-        ExecuteParams calldata executeParams_
-    ) internal view returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    executeParams_.requestCount,
-                    executeParams_.batchCount,
-                    executeParams_.payloadCount,
-                    chainSlug,
-                    switchboard_
-                )
-            );
-    }
-
-    /**
      * @notice recovers the signer from the signature
      * @param digest_ The digest of the payload
      * @param signature_ The signature of the payload

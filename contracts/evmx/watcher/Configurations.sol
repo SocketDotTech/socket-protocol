@@ -3,13 +3,14 @@ pragma solidity ^0.8.21;
 
 import "solady/utils/Initializable.sol";
 import "../interfaces/IConfigurations.sol";
-import {AddressResolverUtil} from "../AddressResolverUtil.sol";
-import "./core/WatcherIdUtils.sol";
+import {WatcherBase} from "./WatcherBase.sol";
+import {encodeAppGatewayId} from "../../utils/common/IdUtils.sol";
+import {InvalidGateway, InvalidSwitchboard} from "../../utils/common/Errors.sol";
 
 /// @title Configurations
 /// @notice Configuration contract for the Watcher Precompile system
 /// @dev Handles the mapping between networks, plugs, and app gateways for payload execution
-contract Configurations is IConfigurations, Initializable, AddressResolverUtil {
+contract Configurations is IConfigurations, Initializable, WatcherBase {
     // slots 0-50 (51) reserved for addr resolver util
 
     // slots [51-100]: gap for future storage variables
@@ -25,10 +26,14 @@ contract Configurations is IConfigurations, Initializable, AddressResolverUtil {
     /// @dev chainSlug => sb type => switchboard address
     mapping(uint32 => mapping(bytes32 => address)) public switchboards;
 
-    // slot 104: sockets
+    // slot 104: deployedForwarders
+    /// @notice Maps contract id to their associated forwarder
+    /// @dev contractId => forwarder address
+
+    // slot 105: sockets
     /// @notice Maps chain slug to their associated socket
     /// @dev chainSlug => socket address
-    mapping(uint32 => SocketConfig) public socketConfigs;
+    mapping(uint32 => address) public sockets;
 
     // slot 107: contractsToGateways
     /// @notice Maps contract address to their associated app gateway
@@ -52,17 +57,10 @@ contract Configurations is IConfigurations, Initializable, AddressResolverUtil {
     /// @param switchboard The address of the switchboard
     event SwitchboardSet(uint32 chainSlug, bytes32 sbType, address switchboard);
 
-    /// @notice Emitted when contracts are set for a network
+    /// @notice Emitted when socket is set for a network
     /// @param chainSlug The identifier of the network
     /// @param socket The address of the socket
-    /// @param contractFactoryPlug The address of the contract factory plug
-    /// @param feesPlug The address of the fees plug
-    event OnChainContractSet(
-        uint32 chainSlug,
-        address socket,
-        address contractFactoryPlug,
-        address feesPlug
-    );
+    event SocketSet(uint32 chainSlug, address socket);
 
     /// @notice Emitted when a valid plug is set for an app gateway
     /// @param appGateway The address of the app gateway
@@ -71,13 +69,12 @@ contract Configurations is IConfigurations, Initializable, AddressResolverUtil {
     /// @param isValid Whether the plug is valid
     event IsValidPlugSet(address appGateway, uint32 chainSlug, address plug, bool isValid);
 
-    error InvalidGateway();
-    error InvalidSwitchboard();
+    /// @notice Emitted when a core app gateway is set for an app gateway
+    /// @param appGateway The address of the app gateway
+    /// @param coreAppGateway The address of the core app gateway
+    event CoreAppGatewaySet(address appGateway, address coreAppGateway);
 
-    /// @notice Initial initialization (version 1)
-    function initialize(address addressResolver_) public reinitializer(1) {
-        _setAddressResolver(addressResolver_);
-    }
+    constructor(address watcher_) WatcherBase(watcher_) {}
 
     /// @notice Configures app gateways with their respective plugs and switchboards
     /// @dev Only callable by the watcher
@@ -87,27 +84,24 @@ contract Configurations is IConfigurations, Initializable, AddressResolverUtil {
         for (uint256 i = 0; i < configs_.length; i++) {
             // Store the plug configuration for this network and plug
             _plugConfigs[configs_[i].chainSlug][configs_[i].plug] = PlugConfig({
-                appGatewayId: configs_[i].appGatewayId,
-                switchboard: configs_[i].switchboard
+                appGatewayId: configs_[i].plugConfig.appGatewayId,
+                switchboard: configs_[i].plugConfig.switchboard
             });
 
-            emit PlugAdded(configs_[i].appGatewayId, configs_[i].chainSlug, configs_[i].plug);
+            emit PlugAdded(
+                configs_[i].plugConfig.appGatewayId,
+                configs_[i].chainSlug,
+                configs_[i].plug
+            );
         }
     }
 
-    /// @notice Sets the socket, contract factory plug, and fees plug for a network
+    /// @notice Sets the socket for a network
     /// @param chainSlug_ The identifier of the network
-    function setOnChainContracts(
-        uint32 chainSlug_,
-        SocketConfig memory socketConfig_
-    ) external onlyWatcher {
-        socketConfigs[chainSlug_] = socketConfig_;
-        emit OnChainContractSet(
-            chainSlug_,
-            socketConfig_.socket,
-            socketConfig_.contractFactoryPlug,
-            socketConfig_.feesPlug
-        );
+    /// @param socket_ The address of the socket
+    function setSocket(uint32 chainSlug_, address socket_) external onlyWatcher {
+        sockets[chainSlug_] = socket_;
+        emit SocketSet(chainSlug_, socket_);
     }
 
     /// @notice Sets the switchboard for a network
@@ -173,7 +167,6 @@ contract Configurations is IConfigurations, Initializable, AddressResolverUtil {
         bytes32 switchboardType_
     ) external view {
         (bytes32 appGatewayId, address switchboard) = getPlugConfigs(chainSlug_, target_);
-
         if (appGatewayId != encodeAppGatewayId(appGateway_)) revert InvalidGateway();
         if (switchboard != switchboards[chainSlug_][switchboardType_]) revert InvalidSwitchboard();
     }

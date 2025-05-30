@@ -44,26 +44,12 @@ enum ExecutionStatus {
     Reverted
 }
 
-struct AppGatewayWhitelistParams {
+struct AppGatewayApprovals {
     address appGateway;
-    bool isApproved;
+    bool approval;
 }
 
 //// STRUCTS ////
-// plug:
-struct LimitParams {
-    uint256 lastUpdateTimestamp;
-    uint256 ratePerSecond;
-    uint256 maxLimit;
-    uint256 lastUpdateLimit;
-}
-struct UpdateLimitParams {
-    bytes32 limitType;
-    address appGateway;
-    uint256 maxLimit;
-    uint256 ratePerSecond;
-}
-
 struct AppGatewayConfig {
     PlugConfig plugConfig;
     address plug;
@@ -83,7 +69,8 @@ struct TriggerParams {
     bytes overrides;
     bytes payload;
 }
-struct ResolvedPromises {
+struct PromiseReturnData {
+    bool maxCopyExceeded;
     bytes32 payloadId;
     bytes returnData;
 }
@@ -115,15 +102,17 @@ struct TransmissionParams {
     bytes transmitterSignature;
 }
 
-struct OnChainFees {
-    uint32 chainSlug;
-    address token;
-    uint256 amount;
-}
-
 struct UserCredits {
     uint256 totalCredits;
     uint256 blockedCredits;
+}
+
+struct WatcherMultiCallParams {
+    address contractAddress;
+    uint256 value;
+    bytes data;
+    uint256 nonce;
+    bytes signature;
 }
 
 // digest:
@@ -159,11 +148,6 @@ struct Transaction {
     bytes payload;
 }
 
-struct DeployParam {
-    IsPlug isPlug;
-    bytes initCallData;
-}
-
 struct QueueParams {
     OverrideParams overrideParams;
     Transaction transaction;
@@ -176,43 +160,34 @@ struct PayloadParams {
     uint40 batchCount;
     uint40 payloadCount;
     bytes4 callType;
-    address asyncPromise; // todo: multiple promise support?
+    address asyncPromise;
     address appGateway;
     bytes32 payloadId;
-    uint256 resolvedAt; // replaced isPromiseExecuted
+    uint256 resolvedAt;
+    uint256 deadline;
     bytes precompileData;
-
-    // uint256 deadline;
-    // OverrideParams overrideParams;
-    // TimeoutRequest timeoutRequest;
 }
-// timeout:
-// struct TimeoutRequest {
-//     uint256 delayInSeconds;
-//     uint256 executeAt;
-//     bool isResolved;
-// }
 
 // request
 struct RequestTrackingParams {
     bool isRequestCancelled;
-    bool isRequestExecuted; //
-    uint40 currentBatch; //
-    uint256 currentBatchPayloadsLeft; //
-    uint256 payloadsRemaining; //
+    bool isRequestExecuted;
+    uint40 currentBatch;
+    uint256 currentBatchPayloadsLeft;
+    uint256 payloadsRemaining;
 }
 
 struct RequestFeesDetails {
-    uint256 maxFees; //
-    address consumeFrom; //
-    Bid winningBid; //
+    uint256 maxFees;
+    address consumeFrom;
+    Bid winningBid;
 }
 
 struct RequestParams {
     RequestTrackingParams requestTrackingParams;
     RequestFeesDetails requestFeesDetails;
-    address appGateway; //
-    address auctionManager; //
-    uint256 writeCount; //
-    bytes onCompleteData; //
+    address appGateway;
+    address auctionManager;
+    uint256 writeCount;
+    bytes onCompleteData;
 }

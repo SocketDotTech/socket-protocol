@@ -19,7 +19,7 @@ contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
 
     /// @notice Error thrown if it failed to deploy the create2 contract
     error DeploymentFailed();
-    error ExecutionFailed();
+    error ExecutionFailed(bytes32 appGatewayId, bytes returnData);
 
     /// @notice Constructor for the ContractFactoryPlug
     /// @param socket_ The socket address
@@ -65,16 +65,7 @@ contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
                 initCallData_
             );
 
-            if (!success) {
-                // Additional error logging
-                assembly {
-                    let ptr := mload(0x40)
-                    returndatacopy(ptr, 0, returndatasize())
-                    log0(ptr, returndatasize())
-                }
-
-                revert ExecutionFailed();
-            }
+            if (!success) revert ExecutionFailed(appGatewayId_, returnData_);
             returnData = returnData_;
         }
 
