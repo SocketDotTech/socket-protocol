@@ -1,5 +1,5 @@
 import { ChainSlug } from "../../src";
-import { BigNumber, BigNumberish, providers } from "ethers";
+import { BigNumber, BigNumberish, Contract, providers, Signer } from "ethers";
 import { EVMX_CHAIN_ID } from "../config/config";
 import { getProviderFromChainSlug } from "./networks";
 
