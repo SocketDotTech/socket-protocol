@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import "./SetupTest.t.sol";
-import "../contracts/evmx/helpers/AddressResolver.sol";
-import "../contracts/evmx/watcher/Watcher.sol";
-import "../contracts/evmx/helpers/Forwarder.sol";
-import "../contracts/evmx/helpers/AsyncPromise.sol";
+import "./ProxyStorage.t.sol";
+import "./mock/MockWatcherPrecompile.sol";
 
-contract MigrationTest is AppGatewayBaseSetup {
+contract MigrationTest is ProxyStorageAssertions {
     // ERC1967Factory emits this event with both proxy and implementation addresses
     event Upgraded(address indexed proxy, address indexed implementation);
     event ImplementationUpdated(string contractName, address newImplementation);
@@ -45,92 +42,92 @@ contract MigrationTest is AppGatewayBaseSetup {
         return address(uint160(uint256(value)));
     }
 
-    function testAddressResolverUpgrade() public {
-        // Deploy new implementation
-        AddressResolver newImpl = new AddressResolver();
+    function upgradeAndCall(address proxy, address newImpl, bytes memory data) internal {
+        address oldImpl = getImplementation(proxy);
 
-        // Store old implementation address
-        address oldImpl = getImplementation(address(addressResolver));
-
-        // Upgrade proxy to new implementation
-        vm.startPrank(watcherEOA);
+        hoax(watcherEOA);
         vm.expectEmit(true, true, true, true, address(proxyFactory));
-        emit Upgraded(address(addressResolver), address(newImpl));
-        proxyFactory.upgradeAndCall(address(addressResolver), address(newImpl), "");
-        vm.stopPrank();
+        emit Upgraded(proxy, address(newImpl));
+        proxyFactory.upgradeAndCall(proxy, address(newImpl), data);
 
         // Verify upgrade was successful
-        address newImplAddr = getImplementation(address(addressResolver));
+        address newImplAddr = getImplementation(address(proxy));
         assertNotEq(oldImpl, newImplAddr, "Implementation should have changed");
         assertEq(newImplAddr, address(newImpl), "New implementation not set correctly");
+    }
 
-        // Verify state is preserved
-        assertEq(addressResolver.owner(), watcherEOA, "Owner should be preserved after upgrade");
-        assertEq(
-            address(addressResolver.watcher__()),
-            address(watcher),
-            "Watcher address should be preserved"
-        );
+    function testFeesManagerUpgrade() public {
+        FeesManager newImpl = new FeesManager();
+        upgradeAndCall(address(feesManager), address(newImpl), "");
+        assertFeesManagerSlot();
+    }
+
+    function testAddressResolverUpgrade() public {
+        AddressResolver newImpl = new AddressResolver();
+        upgradeAndCall(address(addressResolver), address(newImpl), "");
+        assertAddressResolverSlot();
+    }
+
+    function testAsyncDeployerUpgrade() public {
+        AsyncDeployer newImpl = new AsyncDeployer();
+        upgradeAndCall(address(asyncDeployer), address(newImpl), "");
+        assertAsyncDeployerSlot();
     }
 
     function testWatcherUpgrade() public {
-        // Deploy new implementation
         Watcher newImpl = new Watcher();
-
-        // Store old implementation address
-        address oldImpl = getImplementation(address(watcher));
-
-        // Upgrade proxy to new implementation
-        vm.startPrank(watcherEOA);
-        vm.expectEmit(true, true, true, true, address(proxyFactory));
-        emit Upgraded(address(watcher), address(newImpl));
-        proxyFactory.upgradeAndCall(address(watcher), address(newImpl), "");
-        vm.stopPrank();
-
-        // Verify upgrade was successful
-        address newImplAddr = getImplementation(address(watcher));
-        assertNotEq(oldImpl, newImplAddr, "Implementation should have changed");
-        assertEq(newImplAddr, address(newImpl), "New implementation not set correctly");
-
-        // Verify state is preserved
-        assertEq(watcher.owner(), watcherEOA, "Owner should be preserved after upgrade");
-        assertEq(
-            address(watcher.configurations__()),
-            address(configurations),
-            "Configurations should be preserved"
-        );
-        assertEq(watcher.evmxSlug(), evmxSlug, "EvmxSlug should be preserved");
+        upgradeAndCall(address(watcher), address(newImpl), "");
+        assertWatcherSlot();
     }
 
-    // function testUpgradeWithInitializationData() public {
-    //     // Deploy new implementation
-    //     MockWatcherImpl newImpl = new MockWatcherImpl();
+    function testAuctionManagerUpgrade() public {
+        AuctionManager newImpl = new AuctionManager();
+        upgradeAndCall(address(auctionManager), address(newImpl), "");
+        assertAuctionManagerSlot();
+    }
 
-    //     // Store old implementation address for verification
-    //     address oldImpl = getImplementation(address(watcher));
+    function testDeployForwarderUpgrade() public {
+        DeployForwarder newImpl = new DeployForwarder();
+        upgradeAndCall(address(deployForwarder), address(newImpl), "");
+        assertDeployForwarderSlot();
+    }
 
-    //     // Prepare initialization data with new defaultLimit
-    //     uint256 newDefaultLimit = 2000;
-    //     bytes memory initData = abi.encodeWithSelector(
-    //         MockWatcherImpl.mockReinitialize.selector,
-    //         watcherEOA,
-    //         address(addressResolver),
-    //         newDefaultLimit
-    //     );
+    function testConfigurationsUpgrade() public {
+        Configurations newImpl = new Configurations();
+        upgradeAndCall(address(configurations), address(newImpl), "");
+        assertConfigurationsSlot();
+    }
 
-    //     // Upgrade proxy with initialization data
-    //     vm.startPrank(watcherEOA);
-    //     vm.expectEmit(true, true, true, true, address(proxyFactory));
-    //     emit Upgraded(address(watcher), address(newImpl));
-    //     proxyFactory.upgradeAndCall(address(watcher), address(newImpl), initData);
-    //     vm.stopPrank();
+    function testRequestHandlerUpgrade() public {
+        RequestHandler newImpl = new RequestHandler();
+        upgradeAndCall(address(requestHandler), address(newImpl), "");
+        assertRequestHandlerSlot();
+    }
 
-    //     // Verify upgrade and initialization was successful
-    //     address newImplAddr = getImplementation(address(watcher));
-    //     assertNotEq(oldImpl, newImplAddr, "Implementation should have changed");
-    //     assertEq(newImplAddr, address(newImpl), "New implementation not set correctly");
-    //     assertEq(watcher.evmxSlug(), evmxSlug, "EvmxSlug should be preserved");
-    // }
+    function testWritePrecompileUpgrade() public {
+        WritePrecompile newImpl = new WritePrecompile();
+        upgradeAndCall(address(writePrecompile), address(newImpl), "");
+        assertWritePrecompileSlot();
+    }
+
+    function testUpgradeWithInitializationData() public {
+        // Deploy new implementation
+        MockWatcherPrecompile newImpl = new MockWatcherPrecompile();
+
+        // Prepare initialization data with new defaultLimit
+        uint256 newValue = 2000;
+        bytes memory initData = abi.encodeWithSelector(
+            MockWatcherPrecompile.initialize.selector,
+            newValue
+        );
+
+        upgradeAndCall(address(watcher), address(newImpl), initData);
+        assertWatcherSlot();
+
+        // Verify new value is set
+        bytes32 slotValue = vm.load(address(watcher), bytes32(uint256(160)));
+        assertEq(uint256(slotValue), newValue, "newValue mismatch");
+    }
 
     function testUnauthorizedUpgrade() public {
         // Deploy new implementation

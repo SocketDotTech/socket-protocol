@@ -48,16 +48,16 @@ abstract contract WatcherStorage is IWatcher, Initializable, Ownable {
     QueueParams[] public payloadQueue;
 
     // slot 58
-    /// @notice Maps nonce to whether it has been used
-    /// @dev Used to prevent replay attacks with signature nonces
-    /// @dev signatureNonce => isValid
-    mapping(uint256 => bool) public isNonceUsed;
-
-    // slot 59
     /// @notice Mapping to store if appGateway has been called with trigger from on-chain Inbox
     /// @dev Maps call ID to boolean indicating if the appGateway has been called
     /// @dev callId => bool
     mapping(bytes32 => bool) public isAppGatewayCalled;
+
+    // slot 59
+    /// @notice Maps nonce to whether it has been used
+    /// @dev Used to prevent replay attacks with signature nonces
+    /// @dev signatureNonce => isValid
+    mapping(uint256 => bool) public isNonceUsed;
 
     // slots [60-109]: gap for future storage variables
     uint256[50] _gap_after;

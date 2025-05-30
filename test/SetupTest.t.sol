@@ -81,6 +81,16 @@ contract SetupStore is Test {
     SocketContracts public arbConfig;
     SocketContracts public optConfig;
 
+    FeesManager feesManagerImpl;
+    AddressResolver addressResolverImpl;
+    AsyncDeployer asyncDeployerImpl;
+    Watcher watcherImpl;
+    AuctionManager auctionManagerImpl;
+    DeployForwarder deployForwarderImpl;
+    Configurations configurationsImpl;
+    RequestHandler requestHandlerImpl;
+    WritePrecompile writePrecompileImpl;
+
     ERC1967Factory public proxyFactory;
     FeesManager feesManager;
     FeesPool feesPool;
@@ -262,15 +272,15 @@ contract DeploySetup is SetupStore {
         feesPool = new FeesPool(watcherEOA);
 
         // Deploy implementations for upgradeable contracts
-        FeesManager feesManagerImpl = new FeesManager();
-        AddressResolver addressResolverImpl = new AddressResolver();
-        AsyncDeployer asyncDeployerImpl = new AsyncDeployer();
-        Watcher watcherImpl = new Watcher();
-        AuctionManager auctionManagerImpl = new AuctionManager();
-        DeployForwarder deployForwarderImpl = new DeployForwarder();
-        Configurations configurationsImpl = new Configurations();
-        RequestHandler requestHandlerImpl = new RequestHandler();
-        WritePrecompile writePrecompileImpl = new WritePrecompile();
+        feesManagerImpl = new FeesManager();
+        addressResolverImpl = new AddressResolver();
+        asyncDeployerImpl = new AsyncDeployer();
+        watcherImpl = new Watcher();
+        auctionManagerImpl = new AuctionManager();
+        deployForwarderImpl = new DeployForwarder();
+        configurationsImpl = new Configurations();
+        requestHandlerImpl = new RequestHandler();
+        writePrecompileImpl = new WritePrecompile();
 
         // Deploy and initialize proxies
         address addressResolverProxy = _deployAndVerifyProxy(

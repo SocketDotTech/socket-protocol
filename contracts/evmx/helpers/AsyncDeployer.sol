@@ -18,22 +18,22 @@ abstract contract AsyncDeployerStorage is IAsyncDeployer {
     // slot 50
     UpgradeableBeacon public forwarderBeacon;
 
-    // slot 52
+    // slot 51
     UpgradeableBeacon public asyncPromiseBeacon;
 
-    // slot 53
+    // slot 52
     address public forwarderImplementation;
 
-    // slot 54
+    // slot 53
     address public asyncPromiseImplementation;
 
-    // slot 55
+    // slot 54
     uint256 public asyncPromiseCounter;
 
-    // slots [56-105] reserved for gap
+    // slots [55-104] reserved for gap
     uint256[50] _gap_after;
 
-    // slots [106-155] 50 slots reserved for address resolver util
+    // slots [105-154] 50 slots reserved for address resolver util
 }
 
 /// @title AsyncDeployer Contract

@@ -28,9 +28,6 @@ abstract contract AddressResolverStorage is IAddressResolver {
 
     // slot 55
     mapping(bytes32 => address) public override contractAddresses;
-
-    // slots [56-105] reserved for gap
-    uint256[50] _gap_after;
 }
 
 /// @title AddressResolver Contract
