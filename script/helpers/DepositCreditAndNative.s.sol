@@ -9,10 +9,10 @@ import {TestUSDC} from "../../contracts/evmx/mocks/TestUSDC.sol";
 // source .env && forge script script/helpers/DepositCreditAndNative.s.sol --broadcast --skip-simulation
 contract DepositCreditAndNative is Script {
     function run() external {
-        uint256 feesAmount = 100000000;
+        uint256 feesAmount = 100000000; // 100 USDC
         vm.createSelectFork(vm.envString("ARBITRUM_SEPOLIA_RPC"));
 
-        uint256 privateKey = vm.envUint("SPONSOR_KEY");
+        uint256 privateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(privateKey);
         FeesPlug feesPlug = FeesPlug(payable(vm.envAddress("ARBITRUM_FEES_PLUG")));
         address appGateway = vm.envAddress("APP_GATEWAY");

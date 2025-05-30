@@ -1,4 +1,4 @@
-import { ChainSlug } from "../../src";
+import { ChainSlug, Contracts } from "../../src";
 import fs from "fs";
 import path from "path";
 import { EVMX_CHAIN_ID, mode } from "../config/config";
@@ -20,28 +20,28 @@ const latestEVMxAddresses = latestAddresses[EVMX_CHAIN_ID];
 // Create a new array to hold the updated lines
 const updatedLines = lines.map((line) => {
   if (line.startsWith("ADDRESS_RESOLVER=")) {
-    return `ADDRESS_RESOLVER=${latestEVMxAddresses["AddressResolver"]}`;
-  } else if (line.startsWith("WATCHER_PRECOMPILE=")) {
-    return `WATCHER_PRECOMPILE=${latestEVMxAddresses["Watcher"]}`;
+    return `ADDRESS_RESOLVER=${latestEVMxAddresses[Contracts.AddressResolver]}`;
+  } else if (line.startsWith("WATCHER=")) {
+    return `WATCHER=${latestEVMxAddresses[Contracts.Watcher]}`;
   } else if (line.startsWith("AUCTION_MANAGER=")) {
-    return `AUCTION_MANAGER=${latestEVMxAddresses["AuctionManager"]}`;
+    return `AUCTION_MANAGER=${latestEVMxAddresses[Contracts.AuctionManager]}`;
   } else if (line.startsWith("FEES_MANAGER=")) {
-    return `FEES_MANAGER=${latestEVMxAddresses["FeesManager"]}`;
+    return `FEES_MANAGER=${latestEVMxAddresses[Contracts.FeesManager]}`;
   } else if (line.startsWith("ARBITRUM_SOCKET=")) {
     return `ARBITRUM_SOCKET=${
-      latestAddresses[ChainSlug.ARBITRUM_SEPOLIA]["Socket"]
+      latestAddresses[ChainSlug.ARBITRUM_SEPOLIA][Contracts.Socket]
     }`;
   } else if (line.startsWith("ARBITRUM_SWITCHBOARD=")) {
     return `ARBITRUM_SWITCHBOARD=${
-      latestAddresses[ChainSlug.ARBITRUM_SEPOLIA]["FastSwitchboard"]
+      latestAddresses[ChainSlug.ARBITRUM_SEPOLIA][Contracts.FastSwitchboard]
     }`;
   } else if (line.startsWith("ARBITRUM_FEES_PLUG=")) {
     return `ARBITRUM_FEES_PLUG=${
-      latestAddresses[ChainSlug.ARBITRUM_SEPOLIA]["FeesPlug"]
+      latestAddresses[ChainSlug.ARBITRUM_SEPOLIA][Contracts.FeesPlug]
     }`;
   } else if (line.startsWith("ARBITRUM_TEST_USDC=")) {
     return `ARBITRUM_TEST_USDC=${
-      latestAddresses[ChainSlug.ARBITRUM_SEPOLIA]["TestUSDC"]
+      latestAddresses[ChainSlug.ARBITRUM_SEPOLIA][Contracts.TestUSDC]
     }`;
   }
   return line; // Return the line unchanged if it doesn't match any of the above
