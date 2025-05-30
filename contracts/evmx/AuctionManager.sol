@@ -89,12 +89,12 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AppGatewayBase,
         _initializeAppGateway(addressResolver_);
     }
 
-    function setAuctionEndDelaySeconds(uint256 auctionEndDelaySeconds_) external onlyOwner {
+    function setAuctionEndDelaySeconds(uint256 auctionEndDelaySeconds_) external onlyWatcher {
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
         emit AuctionEndDelaySecondsSet(auctionEndDelaySeconds_);
     }
 
-    function setMaxReAuctionCount(uint256 maxReAuctionCount_) external onlyOwner {
+    function setMaxReAuctionCount(uint256 maxReAuctionCount_) external onlyWatcher {
         maxReAuctionCount = maxReAuctionCount_;
         emit MaxReAuctionCountSet(maxReAuctionCount_);
     }

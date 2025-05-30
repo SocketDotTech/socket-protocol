@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 import "solady/utils/Initializable.sol";
 import "solady/utils/ECDSA.sol";
 import "solady/utils/SafeTransferLib.sol";
+import "solady/auth/Ownable.sol";
 
 import "../interfaces/IFeesManager.sol";
 import "../interfaces/IFeesPlug.sol";
@@ -12,10 +13,7 @@ import "../interfaces/IFeesPool.sol";
 import {AddressResolverUtil} from "../helpers/AddressResolverUtil.sol";
 import {NonceUsed, InvalidAmount, InsufficientCreditsAvailable, InsufficientBalance, InvalidChainSlug, NotRequestHandler} from "../../utils/common/Errors.sol";
 import {WRITE} from "../../utils/common/Constants.sol";
-
-import {RESCUE_ROLE} from "../../utils/common/AccessRoles.sol";
 import "../../utils/RescueFundsLib.sol";
-import "../../utils/AccessControl.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
     // slots [0-49] reserved for gap
@@ -70,7 +68,7 @@ abstract contract FeesManagerStorage is IFeesManager {
 
 /// @title UserUtils
 /// @notice Contract for managing user utils
-abstract contract Credit is FeesManagerStorage, Initializable, AccessControl, AddressResolverUtil {
+abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressResolverUtil {
     /// @notice Emitted when fees deposited are updated
     /// @param chainSlug The chain identifier
     /// @param token The token address

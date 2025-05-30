@@ -2,10 +2,9 @@
 pragma solidity ^0.8.21;
 
 import {Initializable} from "solady/utils/Initializable.sol";
-import {RESCUE_ROLE} from "../../utils/common/AccessRoles.sol";
+import "solady/auth/Ownable.sol";
 import "../../utils/RescueFundsLib.sol";
-import "../../utils/AccessControl.sol";
-
+import "../../utils/common/Errors.sol";
 import "../interfaces/IAddressResolver.sol";
 
 abstract contract AddressResolverStorage is IAddressResolver {
@@ -32,14 +31,17 @@ abstract contract AddressResolverStorage is IAddressResolver {
 
     // slots [56-105] reserved for gap
     uint256[50] _gap_after;
-
-    // slots [106-155] 50 slots reserved for access control
 }
 
 /// @title AddressResolver Contract
 /// @notice This contract is responsible for fetching latest core addresses and deploying Forwarder and AsyncPromise contracts.
 /// @dev Inherits the Ownable contract and implements the IAddressResolver interface.
-contract AddressResolver is AddressResolverStorage, Initializable, AccessControl {
+contract AddressResolver is AddressResolverStorage, Initializable, Ownable {
+    modifier onlyWatcher() {
+        if (msg.sender != address(watcher__)) revert OnlyWatcherAllowed();
+        _;
+    }
+
     /// @notice Constructor to initialize the contract
     /// @dev it deploys the forwarder and async promise implementations and beacons for them
     /// @dev this contract is owner of the beacons for upgrading later
@@ -108,11 +110,7 @@ contract AddressResolver is AddressResolverStorage, Initializable, AccessControl
      * @param rescueTo_ The address where rescued tokens need to be sent.
      * @param amount_ The amount of tokens to be rescued.
      */
-    function rescueFunds(
-        address token_,
-        address rescueTo_,
-        uint256 amount_
-    ) external onlyRole(RESCUE_ROLE) {
+    function rescueFunds(address token_, address rescueTo_, uint256 amount_) external onlyWatcher {
         RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }
