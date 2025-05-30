@@ -5,23 +5,12 @@ import "./Credit.sol";
 
 /// @title FeesManager
 /// @notice Contract for managing fees
-abstract contract FeesManager is Credit {
+contract FeesManager is Credit {
     /// @notice Emitted when fees are blocked for a batch
     /// @param requestCount The batch identifier
     /// @param consumeFrom The consume from address
     /// @param amount The blocked amount
     event CreditsBlocked(uint40 indexed requestCount, address indexed consumeFrom, uint256 amount);
-
-    /// @notice Emitted when transmitter fees are updated
-    /// @param requestCount The batch identifier
-    /// @param transmitter The transmitter address
-    /// @param amount The new amount deposited
-    event TransmitterCreditsUpdated(
-        uint40 indexed requestCount,
-        address indexed transmitter,
-        uint256 amount
-    );
-    event WatcherPrecompileCreditsAssigned(uint256 amount, address consumeFrom);
 
     /// @notice Emitted when fees are unblocked and assigned to a transmitter
     /// @param requestCount The batch identifier
@@ -37,15 +26,8 @@ abstract contract FeesManager is Credit {
 
     /// @notice Emitted when fees are unblocked
     /// @param requestCount The batch identifier
-    /// @param appGateway The app gateway address
-    event CreditsUnblocked(uint40 indexed requestCount, address indexed appGateway);
-
-    /// @notice Emitted when insufficient watcher precompile fees are available
-    event InsufficientWatcherPrecompileCreditsAvailable(
-        uint32 chainSlug,
-        address token,
-        address consumeFrom
-    );
+    /// @param consumeFrom The consume from address
+    event CreditsUnblocked(uint40 indexed requestCount, address indexed consumeFrom);
 
     modifier onlyRequestHandler() {
         if (msg.sender != address(watcher__().requestHandler__())) revert NotRequestHandler();
@@ -61,13 +43,15 @@ abstract contract FeesManager is Credit {
     /// @param owner_ The address of the owner
     /// @param evmxSlug_ The evmx chain slug
     function initialize(
-        address addressResolver_,
-        address owner_,
         uint32 evmxSlug_,
+        address addressResolver_,
+        address feesPool_,
+        address owner_,
         bytes32 sbType_
     ) public reinitializer(1) {
         evmxSlug = evmxSlug_;
         sbType = sbType_;
+        feesPool = IFeesPool(feesPool_);
         _setAddressResolver(addressResolver_);
         _initializeOwner(owner_);
     }
@@ -93,7 +77,7 @@ abstract contract FeesManager is Credit {
     }
 
     /// @notice Unblocks fees after successful execution and assigns them to the transmitter
-    /// @param requestCount_ The async ID of the executed batch
+    /// @param requestCount_ The request count of the executed batch
     /// @param assignTo_ The address of the transmitter
     function unblockAndAssignCredits(
         uint40 requestCount_,

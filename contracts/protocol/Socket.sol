@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {LibCall} from "solady/utils/LibCall.sol";
 import "./SocketUtils.sol";
 import {WRITE} from "../utils/common/Constants.sol";
 import {createPayloadId} from "../utils/common/IdUtils.sol";
@@ -39,17 +38,9 @@ contract Socket is SocketUtils {
      */
     error LowGasLimit();
     /**
-     * @dev Error emitted when the deadline has passed
-     */
-    error DeadlinePassed();
-    /**
      * @dev Error emitted when the message value is insufficient
      */
     error InsufficientMsgValue();
-    /**
-     * @dev Error emitted when the call type is read
-     */
-    error InvalidCallType();
 
     /**
      * @notice Constructor for the Socket contract

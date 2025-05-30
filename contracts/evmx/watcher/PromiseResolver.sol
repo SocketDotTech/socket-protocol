@@ -46,26 +46,25 @@ contract PromiseResolver is IPromiseResolver, WatcherBase {
     function _processPromiseResolution(
         PromiseReturnData memory resolvedPromise_
     ) internal returns (uint40 requestCount, bool success) {
-        PayloadParams memory payloadParams = watcher__.getPayloadParams(resolvedPromise_.payloadId);
+        bytes32 payloadId = resolvedPromise_.payloadId;
+        PayloadParams memory payloadParams = watcher__.getPayloadParams(payloadId);
+        if (payloadParams.deadline < block.timestamp) revert DeadlinePassed();
+
         address asyncPromise = payloadParams.asyncPromise;
         requestCount = payloadParams.requestCount;
 
         if (asyncPromise != address(0)) {
-            success = IPromise(asyncPromise).markResolved(
-                resolvedPromise_.maxCopyExceeded,
-                resolvedPromise_.payloadId,
-                resolvedPromise_.returnData
-            );
+            success = IPromise(asyncPromise).markResolved(resolvedPromise_);
 
             if (!success) {
-                emit PromiseNotResolved(resolvedPromise_.payloadId, asyncPromise);
+                emit PromiseNotResolved(payloadId, asyncPromise);
                 return (requestCount, false);
             }
         } else {
             success = true;
         }
 
-        emit PromiseResolved(resolvedPromise_.payloadId, asyncPromise);
+        emit PromiseResolved(payloadId, asyncPromise);
     }
 
     /// @notice Marks a request as reverting
@@ -78,7 +77,8 @@ contract PromiseResolver is IPromiseResolver, WatcherBase {
         bool isRevertingOnchain_
     ) external onlyWatcher {
         // Get payload params from Watcher
-        PayloadParams memory payloadParams = watcher__.getPayloadParams(resolvedPromise_.payloadId);
+        bytes32 payloadId = resolvedPromise_.payloadId;
+        PayloadParams memory payloadParams = watcher__.getPayloadParams(payloadId);
         if (payloadParams.deadline > block.timestamp) revert DeadlineNotPassedForOnChainRevert();
 
         // marks the request as cancelled and settles the fees
@@ -86,12 +86,8 @@ contract PromiseResolver is IPromiseResolver, WatcherBase {
 
         // marks the promise as onchain reverting if the request is reverting onchain
         if (isRevertingOnchain_ && payloadParams.asyncPromise != address(0))
-            IPromise(payloadParams.asyncPromise).markOnchainRevert(
-                resolvedPromise_.maxCopyExceeded,
-                resolvedPromise_.payloadId,
-                resolvedPromise_.returnData
-            );
+            IPromise(payloadParams.asyncPromise).markOnchainRevert(resolvedPromise_);
 
-        emit MarkedRevert(resolvedPromise_.payloadId, isRevertingOnchain_);
+        emit MarkedRevert(payloadId, isRevertingOnchain_);
     }
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {AsyncPromiseState} from "../../utils/common/Structs.sol";
+import {AsyncPromiseState, PromiseReturnData} from "../../utils/common/Structs.sol";
 
 /// @title IPromise
 interface IPromise {
@@ -13,7 +13,7 @@ interface IPromise {
     function localInvoker() external view returns (address);
 
     /// @notice The request count of the promise
-    function requestCount() external view returns (uint256);
+    function requestCount() external view returns (uint40);
 
     /// @notice The flag to check if the promise exceeded the max copy limit
     function exceededMaxCopy() external view returns (bool);
@@ -28,18 +28,12 @@ interface IPromise {
 
     /// @notice Marks the promise as resolved and executes the callback if set.
     /// @dev Only callable by the watcher precompile.
-    /// @param returnData_ The data returned from the async payload execution.
+    /// @param resolvedPromise_ The data returned from the async payload execution.
     function markResolved(
-        bool exceededMaxCopy_,
-        bytes32 payloadId_,
-        bytes memory returnData_
+        PromiseReturnData memory resolvedPromise_
     ) external returns (bool success);
 
     /// @notice Marks the promise as onchain reverting.
     /// @dev Only callable by the watcher precompile.
-    function markOnchainRevert(
-        bool exceededMaxCopy_,
-        bytes32 payloadId_,
-        bytes memory returnData_
-    ) external;
+    function markOnchainRevert(PromiseReturnData memory resolvedPromise_) external;
 }

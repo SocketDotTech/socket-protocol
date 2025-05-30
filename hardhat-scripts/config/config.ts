@@ -61,13 +61,13 @@ export const transmitter = "0x138e9840861C983DC0BB9b3e941FB7C0e9Ade320";
 // Chain config
 export const EVMX_CHAIN_ID = EVM_CHAIN_ID_MAP[mode];
 export const MAX_FEES = ethers.utils.parseEther("0.001");
+export const MAX_MSG_VALUE_LIMIT = ethers.utils.parseEther("0.001");
 
 // Auction parameters
-export const auctionEndDelaySeconds = 0;
+export const AUCTION_END_DELAY_SECONDS = 0;
 export const BID_TIMEOUT = 600; // 10 minutes
 export const EXPIRY_TIME = 300; // 5 minutes
 export const MAX_RE_AUCTION_COUNT = 5;
-export const AUCTION_MANAGER_FUNDING_AMOUNT = ethers.utils.parseEther("100");
 // TestUSDC
 export const TEST_USDC_NAME = "testUSDC";
 export const TEST_USDC_SYMBOL = "testUSDC";
@@ -76,12 +76,22 @@ export const TEST_USDC_INITIAL_SUPPLY = ethers.utils.parseEther(
 );
 export const TEST_USDC_DECIMALS = 6;
 
+// Fees Pool Funding Amount
+export const FEES_POOL_FUNDING_AMOUNT_THRESHOLD =
+  ethers.utils.parseEther("10000");
+
 // Watcher Precompile Fees
-export const QUERY_FEES = utils.parseEther("0.000001");
-export const FINALIZE_FEES = utils.parseEther("0.000001");
-export const TIMEOUT_FEES = utils.parseEther("0.000001");
-export const CALLBACK_FEES = utils.parseEther("0.000001");
+export const READ_FEES = utils.parseEther("0.000001");
+export const TRIGGER_FEES = utils.parseEther("0.000001");
+export const WRITE_FEES = utils.parseEther("0.000001");
+export const SCHEDULE_FEES_PER_SECOND = utils.parseEther("0.000001");
+export const SCHEDULE_CALLBACK_FEES = utils.parseEther("0.000001");
+export const MAX_SCHEDULE_DELAY_SECONDS = 60 * 60 * 24;
 
 // Other constants
 export const DEFAULT_MAX_LIMIT = 100;
 export const UPGRADE_VERSION = 1;
+
+// Transmitter constants
+export const TRANSMITTER_CREDIT_THRESHOLD = ethers.utils.parseEther("100"); // 100 ETH threshold
+export const TRANSMITTER_NATIVE_THRESHOLD = ethers.utils.parseEther("100"); // 100 ETH threshold

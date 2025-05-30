@@ -21,17 +21,22 @@ export type ChainAddressesObj = {
   FastSwitchboard: string;
   FeesPlug: string;
   ContractFactoryPlug: string;
+  TestUSDC: string;
   startBlock: number;
 };
 
 export type EVMxAddressesObj = {
   AddressResolver: string;
-  WatcherPrecompile: string;
-  WatcherPrecompileLimits: string;
-  WatcherPrecompileConfig: string;
+  Watcher: string;
+  RequestHandler: string;
+  Configurations: string;
+  PromiseResolver: string;
+  WritePrecompile: string;
+  ReadPrecompile: string;
+  SchedulePrecompile: string;
   AuctionManager: string;
   FeesManager: string;
-  DeliveryHelper: string;
+  FeesPool: string;
   startBlock: number;
 };
 

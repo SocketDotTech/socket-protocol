@@ -4,18 +4,30 @@ pragma solidity ^0.8.21;
 import "./Trigger.sol";
 
 contract Watcher is Trigger {
-    constructor(
+    constructor() {
+        _disableInitializers(); // disable for implementation
+    }
+
+    function initialize(
+        uint32 evmxSlug_,
+        uint256 triggerFees_,
+        address owner_,
+        address addressResolver_
+    ) public reinitializer(1) {
+        evmxSlug = evmxSlug_;
+        triggerFees = triggerFees_;
+        _initializeOwner(owner_);
+        _setAddressResolver(addressResolver_);
+    }
+
+    function setCoreContracts(
         address requestHandler_,
         address configManager_,
-        address promiseResolver_,
-        address addressResolver_,
-        address owner_
-    ) {
+        address promiseResolver_
+    ) external onlyOwner {
         requestHandler__ = IRequestHandler(requestHandler_);
         configurations__ = IConfigurations(configManager_);
         promiseResolver__ = IPromiseResolver(promiseResolver_);
-        addressResolver__ = IAddressResolver(addressResolver_);
-        _initializeOwner(owner_);
     }
 
     function isWatcher(address account_) public view override returns (bool) {
@@ -49,17 +61,18 @@ contract Watcher is Trigger {
         QueueParams memory queue_,
         address appGateway_
     ) internal returns (address, uint40) {
-        address coreAppGateway = getCoreAppGateway(appGateway_);
-
         // checks if app gateway passed by forwarder is coming from same core app gateway group
         if (appGatewayTemp != address(0))
-            if (appGatewayTemp != coreAppGateway || coreAppGateway == address(0))
+            if (appGatewayTemp != appGateway_ || appGateway_ == address(0))
                 revert InvalidAppGateway();
 
         uint40 requestCount = getCurrentRequestCount();
         // Deploy a new async promise contract.
-        latestAsyncPromise = asyncDeployer__().deployAsyncPromiseContract(appGateway_);
-        appGatewayTemp = coreAppGateway;
+        latestAsyncPromise = asyncDeployer__().deployAsyncPromiseContract(
+            appGateway_,
+            requestCount
+        );
+        appGatewayTemp = appGateway_;
         queue_.asyncPromise = latestAsyncPromise;
 
         // Add the promise to the queue.
@@ -83,19 +96,22 @@ contract Watcher is Trigger {
         address consumeFrom,
         bytes memory onCompleteData
     ) internal returns (uint40 requestCount, address[] memory promiseList) {
+        address appGateway = msg.sender;
+
         // this check is to verify that msg.sender (app gateway base) belongs to correct app gateway
-        address coreAppGateway = getCoreAppGateway(msg.sender);
-        if (coreAppGateway != appGatewayTemp) revert InvalidAppGateway();
+        if (appGateway != appGatewayTemp) revert InvalidAppGateway();
         latestAsyncPromise = address(0);
+        appGatewayTemp = address(0);
 
         (requestCount, promiseList) = requestHandler__.submitRequest(
             maxFees,
             auctionManager,
             consumeFrom,
-            coreAppGateway,
+            appGateway,
             payloadQueue,
             onCompleteData
         );
+
         clearQueue();
     }
 
@@ -104,12 +120,22 @@ contract Watcher is Trigger {
         delete payloadQueue;
     }
 
-    function callAppGateways(WatcherMultiCallParams[] memory params_) external {
-        for (uint40 i = 0; i < params_.length; i++) {
-            _validateSignature(params_[i].data, params_[i].nonce, params_[i].signature);
-            TriggerParams memory params = abi.decode(params_[i].data, (TriggerParams));
-            _callAppGateways(params);
+    function callAppGateways(WatcherMultiCallParams memory params_) external {
+        _validateSignature(address(this), params_.data, params_.nonce, params_.signature);
+        TriggerParams[] memory params = abi.decode(params_.data, (TriggerParams[]));
+
+        for (uint40 i = 0; i < params.length; i++) {
+            _callAppGateways(params[i]);
         }
+    }
+
+    function setTriggerFees(
+        uint256 triggerFees_,
+        uint256 nonce_,
+        bytes memory signature_
+    ) external {
+        _validateSignature(address(this), abi.encode(triggerFees_), nonce_, signature_);
+        _setTriggerFees(triggerFees_);
     }
 
     function getCurrentRequestCount() public view returns (uint40) {
@@ -117,11 +143,23 @@ contract Watcher is Trigger {
     }
 
     function getRequestParams(uint40 requestCount_) external view returns (RequestParams memory) {
-        return requestHandler__.requests(requestCount_);
+        return requestHandler__.getRequest(requestCount_);
     }
 
     function getPayloadParams(bytes32 payloadId_) external view returns (PayloadParams memory) {
-        return requestHandler__.payloads(payloadId_);
+        return requestHandler__.getPayload(payloadId_);
+    }
+
+    function setIsValidPlug(bool isValid_, uint32 chainSlug_, address plug_) external override {
+        configurations__.setIsValidPlug(isValid_, chainSlug_, plug_, msg.sender);
+    }
+
+    function cancelRequest(uint40 requestCount_) external override {
+        requestHandler__.cancelRequest(requestCount_, msg.sender);
+    }
+
+    function increaseFees(uint40 requestCount_, uint256 newFees_) external override {
+        requestHandler__.increaseFees(requestCount_, newFees_, msg.sender);
     }
 
     function getPrecompileFees(
@@ -131,64 +169,58 @@ contract Watcher is Trigger {
         return requestHandler__.getPrecompileFees(precompile_, precompileData_);
     }
 
-    function setTriggerFees(
-        uint256 triggerFees_,
-        uint256 nonce_,
-        bytes memory signature_
-    ) external {
-        _validateSignature(abi.encode(triggerFees_), nonce_, signature_);
-        _setTriggerFees(triggerFees_);
-    }
-
     // all function from watcher requiring signature
     // can be also used to do msg.sender check related function in other contracts like withdraw credits from fees manager and set core app-gateways in configurations
     function watcherMultiCall(WatcherMultiCallParams[] memory params_) external payable {
         for (uint40 i = 0; i < params_.length; i++) {
-            if (params_[i].contractAddress == address(0)) revert InvalidContract();
-            _validateSignature(params_[i].data, params_[i].nonce, params_[i].signature);
+            _validateSignature(
+                params_[i].contractAddress,
+                params_[i].data,
+                params_[i].nonce,
+                params_[i].signature
+            );
 
             // call the contract
-            // trusting watcher to send enough value for all calls
-            (bool success, ) = params_[i].contractAddress.call{value: params_[i].value}(
-                params_[i].data
-            );
+            (bool success, ) = params_[i].contractAddress.call(params_[i].data);
             if (!success) revert CallFailed();
         }
     }
 
+    /// @notice Verifies that a watcher signature is valid
+    /// @param data_ The data to verify
+    /// @param nonce_ The nonce of the signature
+    /// @param signature_ The signature to verify
     function _validateSignature(
+        address contractAddress_,
         bytes memory data_,
         uint256 nonce_,
         bytes memory signature_
     ) internal {
+        if (contractAddress_ == address(0)) revert InvalidContract();
         if (data_.length == 0) revert InvalidData();
-        if (nonce_ == 0) revert InvalidNonce();
         if (signature_.length == 0) revert InvalidSignature();
-
-        // check if signature is valid
-        if (!_isWatcherSignatureValid(nonce_, data_, signature_)) revert InvalidSignature();
-    }
-
-    /// @notice Verifies that a watcher signature is valid
-    /// @param signatureNonce_ The nonce of the signature
-    /// @param inputData_ The input data to verify
-    /// @param signature_ The signature to verify
-    /// @dev This function verifies that the signature was created by the watcher and that the nonce has not been used before
-    function _isWatcherSignatureValid(
-        uint256 signatureNonce_,
-        bytes memory inputData_,
-        bytes memory signature_
-    ) internal returns (bool) {
-        if (isNonceUsed[signatureNonce_]) revert NonceUsed();
-        isNonceUsed[signatureNonce_] = true;
+        if (isNonceUsed[nonce_]) revert NonceUsed();
+        isNonceUsed[nonce_] = true;
 
         bytes32 digest = keccak256(
-            abi.encode(address(this), evmxSlug, signatureNonce_, inputData_)
+            abi.encode(address(this), evmxSlug, nonce_, contractAddress_, data_)
         );
-        digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest));
+
+        // check if signature is valid
+        if (_recoverSigner(digest, signature_) != owner()) revert InvalidSignature();
+    }
+
+    /// @notice Recovers the signer of a message
+    /// @param digest_ The digest of the input data
+    /// @param signature_ The signature to verify
+    /// @dev This function verifies that the signature was created by the watcher and that the nonce has not been used before
+    function _recoverSigner(
+        bytes32 digest_,
+        bytes memory signature_
+    ) internal view returns (address signer) {
+        bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", digest_));
 
         // recovered signer is checked for the valid roles later
-        address signer = ECDSA.recover(digest, signature_);
-        return signer == owner();
+        signer = ECDSA.recover(digest, signature_);
     }
 }

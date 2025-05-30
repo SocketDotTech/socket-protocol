@@ -1,32 +1,34 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {CounterAppGateway} from "./apps/app-gateways/counter/CounterAppGateway.sol";
-import {Counter} from "./apps/app-gateways/counter/Counter.sol";
-import "./SetupTest.t.sol";
 import {SocketFeeManager} from "../contracts/protocol/SocketFeeManager.sol";
 import {MockFastSwitchboard} from "./mock/MockFastSwitchboard.sol";
-import {ExecuteParams, TransmissionParams} from "../contracts/utils/common/Structs.sol";
-import {GOVERNANCE_ROLE, RESCUE_ROLE} from "../contracts/utils/common/AccessRoles.sol";
-import {Test} from "forge-std/Test.sol";
+import "./SetupTest.t.sol";
+import "./apps/Counter.t.sol";
 
-contract SocketFeeManagerTest is SetupTest {
+contract SocketFeeManagerTest is AppGatewayBaseSetup {
     Counter public counter;
-    address public gateway = address(5);
+
+    address public owner = address(uint160(c++));
+    address public gateway = address(uint160(c++));
+
     MockFastSwitchboard public mockSwitchboard;
     Socket public socket;
     SocketFeeManager public socketFeeManager;
 
     function setUp() public {
+        socketFees = 0.001 ether;
+
         socket = new Socket(arbChainSlug, owner, "test");
-        vm.prank(owner);
-        socket.grantRole(GOVERNANCE_ROLE, address(owner));
         socketFeeManager = new SocketFeeManager(owner, socketFees);
         mockSwitchboard = new MockFastSwitchboard(arbChainSlug, address(socket), owner);
-        mockSwitchboard.registerSwitchboard();
-
         counter = new Counter();
-        counter.initSocket(_encodeAppGatewayId(gateway), address(socket), address(mockSwitchboard));
+
+        mockSwitchboard.registerSwitchboard();
+        counter.initSocket(encodeAppGatewayId(gateway), address(socket), address(mockSwitchboard));
+
+        vm.prank(owner);
+        socket.grantRole(GOVERNANCE_ROLE, address(owner));
     }
 
     function testSuccessfulExecutionWithFeeManagerNotSet() public {

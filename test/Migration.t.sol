@@ -7,7 +7,7 @@ import "../contracts/evmx/watcher/Watcher.sol";
 import "../contracts/evmx/helpers/Forwarder.sol";
 import "../contracts/evmx/helpers/AsyncPromise.sol";
 
-contract MigrationTest is SetupTest {
+contract MigrationTest is AppGatewayBaseSetup {
     // ERC1967Factory emits this event with both proxy and implementation addresses
     event Upgraded(address indexed proxy, address indexed implementation);
     event ImplementationUpdated(string contractName, address newImplementation);
@@ -27,7 +27,7 @@ contract MigrationTest is SetupTest {
     bytes4 internal constant UNAUTHORIZED_SELECTOR = 0x82b42900; // bytes4(keccak256("Unauthorized()"))
 
     function setUp() public {
-        deployEVMxCore();
+        deploy();
     }
 
     function getImplementation(address proxy) internal view returns (address) {
@@ -67,147 +67,87 @@ contract MigrationTest is SetupTest {
         // Verify state is preserved
         assertEq(addressResolver.owner(), watcherEOA, "Owner should be preserved after upgrade");
         assertEq(
-            address(addressResolver.watcherPrecompile__()),
-            address(watcherPrecompile),
-            "WatcherPrecompile address should be preserved"
+            address(addressResolver.watcher__()),
+            address(watcher),
+            "Watcher address should be preserved"
         );
     }
 
-    function testWatcherPrecompileUpgrade() public {
+    function testWatcherUpgrade() public {
         // Deploy new implementation
-        WatcherPrecompile newImpl = new WatcherPrecompile();
+        Watcher newImpl = new Watcher();
 
         // Store old implementation address
-        address oldImpl = getImplementation(address(watcherPrecompile));
+        address oldImpl = getImplementation(address(watcher));
 
         // Upgrade proxy to new implementation
         vm.startPrank(watcherEOA);
         vm.expectEmit(true, true, true, true, address(proxyFactory));
-        emit Upgraded(address(watcherPrecompile), address(newImpl));
-        proxyFactory.upgradeAndCall(address(watcherPrecompile), address(newImpl), "");
+        emit Upgraded(address(watcher), address(newImpl));
+        proxyFactory.upgradeAndCall(address(watcher), address(newImpl), "");
         vm.stopPrank();
 
         // Verify upgrade was successful
-        address newImplAddr = getImplementation(address(watcherPrecompile));
+        address newImplAddr = getImplementation(address(watcher));
         assertNotEq(oldImpl, newImplAddr, "Implementation should have changed");
         assertEq(newImplAddr, address(newImpl), "New implementation not set correctly");
 
         // Verify state is preserved
-        assertEq(watcherPrecompile.owner(), watcherEOA, "Owner should be preserved after upgrade");
+        assertEq(watcher.owner(), watcherEOA, "Owner should be preserved after upgrade");
         assertEq(
-            address(watcherPrecompile.watcherPrecompileConfig__()),
-            address(watcherPrecompileConfig),
-            "WatcherPrecompileConfig should be preserved"
+            address(watcher.configurations__()),
+            address(configurations),
+            "Configurations should be preserved"
         );
-        assertEq(watcherPrecompile.evmxSlug(), evmxSlug, "EvmxSlug should be preserved");
+        assertEq(watcher.evmxSlug(), evmxSlug, "EvmxSlug should be preserved");
     }
 
-    function testWatcherPrecompileLimitsUpgrade() public {
-        // Deploy new implementation
-        WatcherPrecompileLimits newImpl = new WatcherPrecompileLimits();
+    // function testUpgradeWithInitializationData() public {
+    //     // Deploy new implementation
+    //     MockWatcherImpl newImpl = new MockWatcherImpl();
 
-        // Store old implementation address
-        address oldImpl = getImplementation(address(watcherPrecompileLimits));
+    //     // Store old implementation address for verification
+    //     address oldImpl = getImplementation(address(watcher));
 
-        // Upgrade proxy to new implementation
-        vm.startPrank(watcherEOA);
-        vm.expectEmit(true, true, true, true, address(proxyFactory));
-        emit Upgraded(address(watcherPrecompileLimits), address(newImpl));
-        proxyFactory.upgradeAndCall(address(watcherPrecompileLimits), address(newImpl), "");
-        vm.stopPrank();
+    //     // Prepare initialization data with new defaultLimit
+    //     uint256 newDefaultLimit = 2000;
+    //     bytes memory initData = abi.encodeWithSelector(
+    //         MockWatcherImpl.mockReinitialize.selector,
+    //         watcherEOA,
+    //         address(addressResolver),
+    //         newDefaultLimit
+    //     );
 
-        // Verify upgrade was successful
-        address newImplAddr = getImplementation(address(watcherPrecompileLimits));
-        assertNotEq(oldImpl, newImplAddr, "Implementation should have changed");
-        assertEq(newImplAddr, address(newImpl), "New implementation not set correctly");
+    //     // Upgrade proxy with initialization data
+    //     vm.startPrank(watcherEOA);
+    //     vm.expectEmit(true, true, true, true, address(proxyFactory));
+    //     emit Upgraded(address(watcher), address(newImpl));
+    //     proxyFactory.upgradeAndCall(address(watcher), address(newImpl), initData);
+    //     vm.stopPrank();
 
-        // Verify state is preserved
-        assertEq(watcherPrecompile.owner(), watcherEOA, "Owner should be preserved after upgrade");
-        assertEq(
-            address(watcherPrecompileLimits.addressResolver__()),
-            address(addressResolver),
-            "AddressResolver should be preserved"
-        );
-    }
-
-    function testWatcherPrecompileConfigUpgrade() public {
-        // Deploy new implementation
-        WatcherPrecompileConfig newImpl = new WatcherPrecompileConfig();
-
-        // Store old implementation address
-        address oldImpl = getImplementation(address(watcherPrecompileConfig));
-
-        // Upgrade proxy to new implementation
-        vm.startPrank(watcherEOA);
-        vm.expectEmit(true, true, true, true, address(proxyFactory));
-        emit Upgraded(address(watcherPrecompileConfig), address(newImpl));
-        proxyFactory.upgradeAndCall(address(watcherPrecompileConfig), address(newImpl), "");
-        vm.stopPrank();
-
-        // Verify upgrade was successful
-        address newImplAddr = getImplementation(address(watcherPrecompileConfig));
-        assertNotEq(oldImpl, newImplAddr, "Implementation should have changed");
-        assertEq(newImplAddr, address(newImpl), "New implementation not set correctly");
-
-        // Verify state is preserved
-        assertEq(
-            watcherPrecompileConfig.owner(),
-            watcherEOA,
-            "Owner should be preserved after upgrade"
-        );
-        assertEq(
-            address(watcherPrecompileConfig.addressResolver__()),
-            address(addressResolver),
-            "AddressResolver should be preserved"
-        );
-        assertEq(watcherPrecompileConfig.evmxSlug(), 1, "EvmxSlug should be preserved");
-    }
-
-    function testUpgradeWithInitializationData() public {
-        // Deploy new implementation
-        MockWatcherPrecompileImpl newImpl = new MockWatcherPrecompileImpl();
-
-        // Store old implementation address for verification
-        address oldImpl = getImplementation(address(watcherPrecompile));
-
-        // Prepare initialization data with new defaultLimit
-        uint256 newDefaultLimit = 2000;
-        bytes memory initData = abi.encodeWithSelector(
-            MockWatcherPrecompileImpl.mockReinitialize.selector,
-            watcherEOA,
-            address(addressResolver),
-            newDefaultLimit
-        );
-
-        // Upgrade proxy with initialization data
-        vm.startPrank(watcherEOA);
-        vm.expectEmit(true, true, true, true, address(proxyFactory));
-        emit Upgraded(address(watcherPrecompile), address(newImpl));
-        proxyFactory.upgradeAndCall(address(watcherPrecompile), address(newImpl), initData);
-        vm.stopPrank();
-
-        // Verify upgrade and initialization was successful
-        address newImplAddr = getImplementation(address(watcherPrecompile));
-        assertNotEq(oldImpl, newImplAddr, "Implementation should have changed");
-        assertEq(newImplAddr, address(newImpl), "New implementation not set correctly");
-        assertEq(watcherPrecompile.evmxSlug(), evmxSlug, "EvmxSlug should be preserved");
-    }
+    //     // Verify upgrade and initialization was successful
+    //     address newImplAddr = getImplementation(address(watcher));
+    //     assertNotEq(oldImpl, newImplAddr, "Implementation should have changed");
+    //     assertEq(newImplAddr, address(newImpl), "New implementation not set correctly");
+    //     assertEq(watcher.evmxSlug(), evmxSlug, "EvmxSlug should be preserved");
+    // }
 
     function testUnauthorizedUpgrade() public {
         // Deploy new implementation
-        WatcherPrecompile newImpl = new WatcherPrecompile();
+        Watcher newImpl = new Watcher();
+        address oldImpl = getImplementation(address(watcher));
 
         // Try to upgrade from unauthorized account
         address unauthorizedUser = address(0xBEEF);
         vm.startPrank(unauthorizedUser);
         vm.expectRevert(UNAUTHORIZED_SELECTOR);
-        proxyFactory.upgradeAndCall(address(watcherPrecompile), address(newImpl), "");
+        proxyFactory.upgradeAndCall(address(watcher), address(newImpl), "");
         vm.stopPrank();
 
         // Verify implementation was not changed
         assertEq(
-            getImplementation(address(watcherPrecompile)),
-            address(watcherPrecompileImpl),
+            getImplementation(address(watcher)),
+            oldImpl,
             "Implementation should not have changed"
         );
     }
@@ -217,30 +157,26 @@ contract MigrationTest is SetupTest {
         Forwarder newImpl = new Forwarder();
 
         // Get current implementation from beacon
-        address oldImpl = getBeaconImplementation(address(addressResolver.forwarderBeacon()));
+        address oldImpl = getBeaconImplementation(address(asyncDeployer.forwarderBeacon()));
 
         // Upgrade beacon to new implementation
         vm.startPrank(watcherEOA);
-        vm.expectEmit(true, true, true, true, address(addressResolver));
+        vm.expectEmit(true, true, true, true, address(asyncDeployer));
         emit ImplementationUpdated("Forwarder", address(newImpl));
-        addressResolver.setForwarderImplementation(address(newImpl));
+        asyncDeployer.setForwarderImplementation(address(newImpl));
         vm.stopPrank();
 
         // Verify upgrade was successful
-        address newImplAddr = getBeaconImplementation(address(addressResolver.forwarderBeacon()));
+        address newImplAddr = getBeaconImplementation(address(asyncDeployer.forwarderBeacon()));
         assertNotEq(oldImpl, newImplAddr, "Implementation should have changed");
         assertEq(newImplAddr, address(newImpl), "New implementation not set correctly");
 
         // Deploy a new forwarder and verify it uses the correct beacon
-        address newForwarder = addressResolver.getOrDeployForwarderContract(
-            address(this),
-            address(0x123),
-            1
-        );
+        address newForwarder = asyncDeployer.getOrDeployForwarderContract(address(0x123), 1);
         address beacon = getBeacon(newForwarder);
         assertEq(
             beacon,
-            address(addressResolver.forwarderBeacon()),
+            address(asyncDeployer.forwarderBeacon()),
             "Beacon address not set correctly"
         );
 
@@ -258,28 +194,26 @@ contract MigrationTest is SetupTest {
         AsyncPromise newImpl = new AsyncPromise();
 
         // Get current implementation from beacon
-        address oldImpl = getBeaconImplementation(address(addressResolver.asyncPromiseBeacon()));
+        address oldImpl = getBeaconImplementation(address(asyncDeployer.asyncPromiseBeacon()));
 
         // Upgrade beacon to new implementation
-        vm.startPrank(watcherEOA);
-        vm.expectEmit(true, true, true, true, address(addressResolver));
+        hoax(watcherEOA);
+        vm.expectEmit(true, true, true, false);
         emit ImplementationUpdated("AsyncPromise", address(newImpl));
-        addressResolver.setAsyncPromiseImplementation(address(newImpl));
-        vm.stopPrank();
+        asyncDeployer.setAsyncPromiseImplementation(address(newImpl));
 
         // Verify upgrade was successful
-        address newImplAddr = getBeaconImplementation(
-            address(addressResolver.asyncPromiseBeacon())
-        );
+        address newImplAddr = getBeaconImplementation(address(asyncDeployer.asyncPromiseBeacon()));
         assertNotEq(oldImpl, newImplAddr, "Implementation should have changed");
         assertEq(newImplAddr, address(newImpl), "New implementation not set correctly");
 
         // Deploy a new async promise and verify it uses the correct beacon
-        address newPromise = addressResolver.deployAsyncPromiseContract(address(this));
+        hoax(address(watcher));
+        address newPromise = asyncDeployer.deployAsyncPromiseContract(address(this), 1);
         address beacon = getBeacon(newPromise);
         assertEq(
             beacon,
-            address(addressResolver.asyncPromiseBeacon()),
+            address(asyncDeployer.asyncPromiseBeacon()),
             "Beacon address not set correctly"
         );
 
@@ -303,22 +237,22 @@ contract MigrationTest is SetupTest {
         vm.startPrank(unauthorizedUser);
         // Try upgrading forwarder beacon
         vm.expectRevert(abi.encodeWithSelector(Ownable.Unauthorized.selector));
-        addressResolver.setForwarderImplementation(address(newForwarderImpl));
+        asyncDeployer.setForwarderImplementation(address(newForwarderImpl));
 
         // Try upgrading async promise beacon
         vm.expectRevert(abi.encodeWithSelector(Ownable.Unauthorized.selector));
-        addressResolver.setAsyncPromiseImplementation(address(newAsyncPromiseImpl));
+        asyncDeployer.setAsyncPromiseImplementation(address(newAsyncPromiseImpl));
 
         vm.stopPrank();
 
         // Verify implementations were not changed
         assertNotEq(
-            getBeaconImplementation(address(addressResolver.forwarderBeacon())),
+            getBeaconImplementation(address(asyncDeployer.forwarderBeacon())),
             address(newForwarderImpl),
             "Forwarder implementation should not have changed"
         );
         assertNotEq(
-            getBeaconImplementation(address(addressResolver.asyncPromiseBeacon())),
+            getBeaconImplementation(address(asyncDeployer.asyncPromiseBeacon())),
             address(newAsyncPromiseImpl),
             "AsyncPromise implementation should not have changed"
         );

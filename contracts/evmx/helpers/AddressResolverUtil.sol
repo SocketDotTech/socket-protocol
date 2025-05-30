@@ -64,8 +64,4 @@ abstract contract AddressResolverUtil {
     function _setAddressResolver(address _addressResolver) internal {
         addressResolver__ = IAddressResolver(_addressResolver);
     }
-
-    function getCoreAppGateway(address appGateway_) internal view returns (address) {
-        return addressResolver__.watcher__().configurations__().getCoreAppGateway(appGateway_);
-    }
 }

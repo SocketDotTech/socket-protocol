@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 import "../../utils/common/Errors.sol";
-import {Bid, AppGatewayConfig, WriteFinality, PlugConfig, DigestParams, QueueParams, PayloadParams, RequestParams, WatcherMultiCallParams} from "../../utils/common/Structs.sol";
+import "../../utils/common/Structs.sol";
 
 import "./IRequestHandler.sol";
 import "./IConfigurations.sol";
@@ -76,6 +76,12 @@ interface IWatcher {
         bytes4 precompile_,
         bytes memory precompileData_
     ) external view returns (uint256);
+
+    function cancelRequest(uint40 requestCount_) external;
+
+    function increaseFees(uint40 requestCount_, uint256 newFees_) external;
+
+    function setIsValidPlug(bool isValid_, uint32 chainSlug_, address onchainAddress_) external;
 
     function isWatcher(address account_) external view returns (bool);
 }

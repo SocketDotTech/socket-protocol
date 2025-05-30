@@ -2,7 +2,6 @@
 pragma solidity ^0.8.21;
 
 import {ECDSA} from "solady/utils/ECDSA.sol";
-import "solady/utils/Initializable.sol";
 import "./interfaces/IAuctionManager.sol";
 import "../utils/AccessControl.sol";
 import {AuctionNotOpen, AuctionClosed, BidExceedsMaxFees, LowerBidAlreadyExists, InvalidTransmitter, MaxReAuctionCountReached, InvalidBid} from "../utils/common/Errors.sol";
@@ -15,10 +14,10 @@ import {AppGatewayBase} from "./base/AppGatewayBase.sol";
 /// @notice Storage for the AuctionManager contract
 abstract contract AuctionManagerStorage is IAuctionManager {
     // slot 50
-    uint32 public evmxSlug;
+    uint32 public immutable evmxSlug;
 
     // slot 50
-    /// @notice The timeout after which a bid expires
+    /// @notice The time after which a bid expires
     uint128 public bidTimeout;
 
     // slot 51
@@ -41,7 +40,7 @@ abstract contract AuctionManagerStorage is IAuctionManager {
 
 /// @title AuctionManager
 /// @notice Contract for managing auctions and placing bids
-contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, AppGatewayBase {
+contract AuctionManager is AuctionManagerStorage, AccessControl, AppGatewayBase {
     event AuctionRestarted(uint40 requestCount);
     event AuctionStarted(uint40 requestCount);
     event AuctionEnded(uint40 requestCount, Bid winningBid);
@@ -49,31 +48,27 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
     event AuctionEndDelaySecondsSet(uint256 auctionEndDelaySeconds);
     event MaxReAuctionCountSet(uint256 maxReAuctionCount);
 
-    constructor(address addressResolver_) AppGatewayBase(addressResolver_) {
-        // todo-tests: evmx slug can be immutable and set here
-        _disableInitializers(); // disable for implementation
-    }
-
-    /// @notice Initializer function to replace constructor
+    /// @param evmxSlug_ The evmx chain slug
+    /// @param bidTimeout_ The timeout after which a bid expires
+    /// @param maxReAuctionCount_ The maximum number of re-auctions allowed
     /// @param auctionEndDelaySeconds_ The delay in seconds before an auction can end
     /// @param addressResolver_ The address of the address resolver
     /// @param owner_ The address of the contract owner
-    /// @param maxReAuctionCount_ The maximum number of re-auctions allowed
-    function initialize(
+
+    constructor(
         uint32 evmxSlug_,
         uint128 bidTimeout_,
-        uint256 auctionEndDelaySeconds_,
         uint256 maxReAuctionCount_,
+        uint256 auctionEndDelaySeconds_,
         address addressResolver_,
         address owner_
-    ) public reinitializer(1) {
-        _setAddressResolver(addressResolver_);
+    ) AppGatewayBase(addressResolver_) {
         _initializeOwner(owner_);
 
         evmxSlug = evmxSlug_;
-        auctionEndDelaySeconds = auctionEndDelaySeconds_;
         bidTimeout = bidTimeout_;
         maxReAuctionCount = maxReAuctionCount_;
+        auctionEndDelaySeconds = auctionEndDelaySeconds_;
     }
 
     function setAuctionEndDelaySeconds(uint256 auctionEndDelaySeconds_) external onlyOwner {
@@ -97,7 +92,13 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         bytes memory transmitterSignature,
         bytes memory extraData
     ) external override {
-        if (
+        if (auctionEndDelaySeconds == 0) {
+            // todo: temp fix, can be called for random request
+            if (
+                auctionStatus[requestCount_] != AuctionStatus.NOT_STARTED &&
+                auctionStatus[requestCount_] != AuctionStatus.RESTARTED
+            ) revert AuctionNotOpen();
+        } else if (
             auctionStatus[requestCount_] != AuctionStatus.OPEN &&
             auctionStatus[requestCount_] != AuctionStatus.RESTARTED
         ) revert AuctionNotOpen();
@@ -110,7 +111,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         if (!_hasRole(TRANSMITTER_ROLE, transmitter)) revert InvalidTransmitter();
 
         // check if the bid is lower than the existing bid
-        if (bidFees >= winningBids[requestCount_].fee && bidFees != 0)
+        if (bidFees > 0 && winningBids[requestCount_].fee >= bidFees)
             revert LowerBidAlreadyExists();
 
         uint256 transmitterCredits = getMaxFees(requestCount_);
@@ -118,6 +119,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
 
         // create a new bid
         Bid memory newBid = Bid({fee: bidFees, transmitter: transmitter, extraData: extraData});
+        address oldTransmitter = winningBids[requestCount_].transmitter;
         winningBids[requestCount_] = newBid;
 
         // end the auction if the no auction end delay
@@ -127,9 +129,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
                 auctionEndDelaySeconds,
                 deductScheduleFees(
                     transmitter,
-                    winningBids[requestCount_].transmitter == address(0)
-                        ? address(this)
-                        : winningBids[requestCount_].transmitter,
+                    oldTransmitter == address(0) ? address(this) : newBid.transmitter,
                     auctionEndDelaySeconds
                 ),
                 address(this),
@@ -167,7 +167,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
             // todo: might block the request processing if transmitter don't have enough balance for this schedule
             // this case can hit when bid timeout is more than 0
 
-            // set the timeout for the bid expiration
+            // set the bid expiration time
             // useful in case a transmitter did bid but did not execute payloads
             _createRequest(
                 bidTimeout,
@@ -191,7 +191,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
         if (reAuctionCount[requestCount_] >= maxReAuctionCount) revert MaxReAuctionCountReached();
         RequestParams memory requestParams = _getRequestParams(requestCount_);
 
-        // if executed, bid is not expired
+        // if executed or cancelled, bid is not expired
         if (
             requestParams.requestTrackingParams.payloadsRemaining == 0 ||
             requestParams.requestTrackingParams.isRequestCancelled
@@ -220,13 +220,6 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AccessControl, 
 
         QueueParams memory queueParams;
         queueParams.overrideParams = overrideParams;
-        queueParams.transaction = Transaction({
-            chainSlug: evmxSlug,
-            target: address(this),
-            payload: payload_
-        });
-        queueParams.switchboardType = sbType;
-
         // queue and create request
         watcher__().queueAndSubmit(queueParams, maxFees_, address(this), consumeFrom_, bytes(""));
     }

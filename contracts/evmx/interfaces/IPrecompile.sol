@@ -6,6 +6,11 @@ import {QueueParams, PayloadParams} from "../../utils/common/Structs.sol";
 /// @title IPrecompile
 /// @notice Interface for precompile functionality
 interface IPrecompile {
+    /// @notice Gets precompile fees
+    /// @param precompileData_ The precompile data
+    /// @return fees The fees required for processing
+    function getPrecompileFees(bytes memory precompileData_) external view returns (uint256 fees);
+
     /// @notice Gets precompile data and fees for queue parameters
     /// @param queueParams_ The queue parameters to process
     /// @return precompileData The encoded precompile data
@@ -20,10 +25,11 @@ interface IPrecompile {
     /// @param payloadParams The payload parameters to handle
     /// @return fees The fees required for processing
     /// @return deadline The deadline for processing
+    /// @return precompileData The encoded precompile data
     function handlePayload(
         address transmitter,
         PayloadParams calldata payloadParams
-    ) external returns (uint256 fees, uint256 deadline);
+    ) external returns (uint256 fees, uint256 deadline, bytes memory precompileData);
 
     /// @notice Resolves a payload
     /// @param payloadParams The payload parameters to resolve

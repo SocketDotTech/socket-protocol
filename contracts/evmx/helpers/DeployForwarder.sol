@@ -7,6 +7,7 @@ import {IDeployForwarder} from "../interfaces/IDeployForwarder.sol";
 import "./AddressResolverUtil.sol";
 import {AsyncModifierNotSet} from "../../utils/common/Errors.sol";
 import {QueueParams, OverrideParams, Transaction} from "../../utils/common/Structs.sol";
+import {WRITE} from "../../utils/common/Constants.sol";
 import {encodeAppGatewayId} from "../../utils/common/IdUtils.sol";
 
 /// @title DeployerGateway
@@ -18,7 +19,10 @@ contract DeployForwarder is AddressResolverUtil, IDeployForwarder {
 
     bytes32 public override deployerSwitchboardType;
 
-    mapping(uint32 => address) public override contractFactoryPlugs;
+    constructor(address addressResolver_, bytes32 deployerSwitchboardType_) {
+        _setAddressResolver(addressResolver_);
+        deployerSwitchboardType = deployerSwitchboardType_;
+    }
 
     /// @notice Deploys a contract
     /// @param chainSlug_ The chain slug
@@ -38,6 +42,7 @@ contract DeployForwarder is AddressResolverUtil, IDeployForwarder {
 
         QueueParams memory queueParams;
         queueParams.overrideParams = overrideParams;
+        queueParams.overrideParams.callType = WRITE;
         queueParams.switchboardType = deployerSwitchboardType;
         queueParams.transaction = Transaction({
             chainSlug: chainSlug_,

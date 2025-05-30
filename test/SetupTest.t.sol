@@ -5,50 +5,69 @@ import "forge-std/Test.sol";
 import "../contracts/utils/common/Structs.sol";
 import "../contracts/utils/common/Errors.sol";
 import "../contracts/utils/common/Constants.sol";
-import "../contracts/evmx/watcher/Watcher.sol";
-import "../contracts/evmx/watcher/Configurations.sol";
-import "../contracts/evmx/interfaces/IForwarder.sol";
 import "../contracts/utils/common/AccessRoles.sol";
-import {Socket} from "../contracts/protocol/Socket.sol";
+import "../contracts/utils/common/IdUtils.sol";
+
+import "../contracts/evmx/interfaces/IForwarder.sol";
+
+import "../contracts/protocol/Socket.sol";
 import "../contracts/protocol/switchboard/FastSwitchboard.sol";
 import "../contracts/protocol/SocketBatcher.sol";
-import "../contracts/evmx/helpers/AddressResolver.sol";
-import {ContractFactoryPlug} from "../contracts/evmx/plugs/ContractFactoryPlug.sol";
-import {FeesPlug} from "../contracts/evmx/plugs/FeesPlug.sol";
-import {SocketFeeManager} from "../contracts/protocol/SocketFeeManager.sol";
-import "../contracts/utils/common/Structs.sol";
+import "../contracts/protocol/SocketFeeManager.sol";
 
+import "../contracts/evmx/watcher/Watcher.sol";
+import "../contracts/evmx/watcher/Configurations.sol";
+import "../contracts/evmx/watcher/RequestHandler.sol";
+import "../contracts/evmx/watcher/PromiseResolver.sol";
+import "../contracts/evmx/watcher/precompiles/WritePrecompile.sol";
+import "../contracts/evmx/watcher/precompiles/ReadPrecompile.sol";
+import "../contracts/evmx/watcher/precompiles/SchedulePrecompile.sol";
+
+import "../contracts/evmx/helpers/AddressResolver.sol";
 import "../contracts/evmx/helpers/AsyncDeployer.sol";
+import "../contracts/evmx/helpers/DeployForwarder.sol";
+import "../contracts/evmx/plugs/ContractFactoryPlug.sol";
+import "../contracts/evmx/fees/FeesManager.sol";
+import "../contracts/evmx/fees/FeesPool.sol";
+import "../contracts/evmx/plugs/FeesPlug.sol";
+import "../contracts/evmx/AuctionManager.sol";
+import "../contracts/evmx/mocks/TestUSDC.sol";
 
 import "solady/utils/ERC1967Factory.sol";
-import "./apps/app-gateways/USDC.sol";
 
-contract SetupTest is Test {
-    uint public c = 1;
-    address owner = address(uint160(c++));
+contract SetupStore is Test {
+    uint256 c = 1;
+    uint64 version = 1;
 
     uint256 watcherPrivateKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
     uint256 transmitterPrivateKey =
         0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d;
-
     address watcherEOA = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     address transmitterEOA = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
+    address socketOwner = address(uint160(c++));
 
     uint32 arbChainSlug = 421614;
     uint32 optChainSlug = 11155420;
     uint32 evmxSlug = 1;
-    uint256 expiryTime = 10000000;
+
+    uint256 expiryTime = 864000;
+    uint256 bidTimeout = 86400;
     uint256 maxReAuctionCount = 10;
-    uint256 socketFees = 0.01 ether;
-    uint256 public signatureNonce;
+    uint256 auctionEndDelaySeconds = 0;
+    uint256 maxScheduleDelayInSeconds = 86400;
+    uint256 maxMsgValueLimit = 1 ether;
+
+    uint256 writeFees = 10000;
+    uint256 readFees = 10000;
+    uint256 scheduleCallbackFees = 10000;
+    uint256 scheduleFeesPerSecond = 10000;
+    uint256 triggerFees = 10000;
+    uint256 socketFees = 0;
+
+    uint256 public watcherNonce;
     uint256 public payloadIdCounter;
-    uint256 public timeoutIdCounter;
     uint256 public triggerCounter;
-    uint256 public defaultLimit = 1000;
-
-    bytes public asyncPromiseBytecode = type(AsyncPromise).creationCode;
-    uint64 public version = 1;
-
+    uint256 public asyncPromiseCounter;
     struct SocketContracts {
         uint32 chainSlug;
         Socket socket;
@@ -57,333 +76,299 @@ contract SetupTest is Test {
         SocketBatcher socketBatcher;
         ContractFactoryPlug contractFactoryPlug;
         FeesPlug feesPlug;
-        ERC20 feesTokenUSDC;
+        TestUSDC testUSDC;
     }
-
-    AddressResolver public addressResolver;
-    Watcher public watcher;
-    Configurations public configurations;
-    AsyncDeployer public asyncDeployer;
-    AsyncPromise public asyncPromise;
-
     SocketContracts public arbConfig;
     SocketContracts public optConfig;
 
-    // Add new variables for proxy admin and implementation contracts
-    Watcher public watcherImpl;
-    Configurations public configurationsImpl;
-    AsyncDeployer public asyncDeployerImpl;
-    AsyncPromise public asyncPromiseImpl;
-    AddressResolver public addressResolverImpl;
     ERC1967Factory public proxyFactory;
+    FeesManager feesManager;
+    FeesPool feesPool;
+    AddressResolver public addressResolver;
+    AsyncDeployer public asyncDeployer;
+    DeployForwarder public deployForwarder;
+    AuctionManager auctionManager;
 
+    Watcher public watcher;
+    Configurations public configurations;
+    RequestHandler public requestHandler;
+    PromiseResolver public promiseResolver;
+    WritePrecompile public writePrecompile;
+    ReadPrecompile public readPrecompile;
+    SchedulePrecompile public schedulePrecompile;
+}
+
+contract DeploySetup is SetupStore {
     event Initialized(uint64 version);
-    event FinalizeRequested(bytes32 digest, PayloadParams payloadParams);
 
     //////////////////////////////////// Setup ////////////////////////////////////
+    function _deploy() internal {
+        _deployEVMxCore();
 
-    function deploySocket(uint32 chainSlug_) internal returns (SocketContracts memory) {
-        Socket socket = new Socket(chainSlug_, owner, "test");
-        SocketBatcher socketBatcher = new SocketBatcher(owner, socket);
-        FastSwitchboard switchboard = new FastSwitchboard(chainSlug_, socket, owner);
+        // chain core contracts
+        arbConfig = _deploySocket(arbChainSlug);
+        _configureChain(arbChainSlug);
+        optConfig = _deploySocket(optChainSlug);
+        _configureChain(optChainSlug);
 
-        ERC20 feesTokenUSDC = new USDC("USDC", "USDC", 6, owner, 1000000000000000000000000);
-        FeesPlug feesPlug = new FeesPlug(address(socket), owner);
-        ContractFactoryPlug contractFactoryPlug = new ContractFactoryPlug(address(socket), owner);
-        vm.startPrank(owner);
-        // feePlug whitelist token
-        feesPlug.whitelistToken(address(feesTokenUSDC));
-        // socket
-        socket.grantRole(GOVERNANCE_ROLE, address(owner));
+        // transfer eth to fees pool for native fee payouts
+        vm.deal(address(feesPool), 100000 ether);
 
-        // switchboard
-        switchboard.registerSwitchboard();
-        switchboard.grantRole(WATCHER_ROLE, watcherEOA);
+        vm.startPrank(watcherEOA);
+        auctionManager.grantRole(TRANSMITTER_ROLE, transmitterEOA);
+        feesPool.grantRole(FEE_MANAGER_ROLE, address(feesManager));
+
+        // setup address resolver
+        addressResolver.setWatcher(address(watcher));
+        addressResolver.setAsyncDeployer(address(asyncDeployer));
+        addressResolver.setDefaultAuctionManager(address(auctionManager));
+        addressResolver.setFeesManager(address(feesManager));
+        addressResolver.setDeployForwarder(address(deployForwarder));
+
+        requestHandler.setPrecompile(WRITE, writePrecompile);
+        requestHandler.setPrecompile(READ, readPrecompile);
+        requestHandler.setPrecompile(SCHEDULE, schedulePrecompile);
+
+        watcher.setCoreContracts(
+            address(requestHandler),
+            address(configurations),
+            address(promiseResolver)
+        );
         vm.stopPrank();
 
-        hoax(watcherEOA);
-        configurations.setSocket(chainSlug_, address(socket));
-        
-        // todo: setters
-        // address(contractFactoryPlug),
-        //     address(feesPlug)
-        SocketFeeManager socketFeeManager = new SocketFeeManager(owner, socketFees);
-        hoax(watcherEOA);
-        configurations.setSwitchboard(chainSlug_, FAST, address(switchboard));
+        _connectCorePlugs();
+
+        vm.startPrank(transmitterEOA);
+        arbConfig.testUSDC.mint(address(transmitterEOA), 100 ether);
+        arbConfig.testUSDC.approve(address(arbConfig.feesPlug), 100 ether);
+
+        arbConfig.feesPlug.depositCreditAndNative(
+            address(arbConfig.testUSDC),
+            address(transmitterEOA),
+            100 ether
+        );
+
+        AppGatewayApprovals[] memory approvals = new AppGatewayApprovals[](1);
+        approvals[0] = AppGatewayApprovals({appGateway: address(auctionManager), approval: true});
+        feesManager.approveAppGateways(approvals);
+        vm.stopPrank();
+    }
+
+    function _connectCorePlugs() internal {
+        AppGatewayConfig[] memory configs = new AppGatewayConfig[](4);
+        configs[0] = AppGatewayConfig({
+            chainSlug: arbChainSlug,
+            plug: address(arbConfig.feesPlug),
+            plugConfig: PlugConfig({
+                appGatewayId: encodeAppGatewayId(address(feesManager)),
+                switchboard: address(arbConfig.switchboard)
+            })
+        });
+        configs[1] = AppGatewayConfig({
+            chainSlug: optChainSlug,
+            plug: address(optConfig.feesPlug),
+            plugConfig: PlugConfig({
+                appGatewayId: encodeAppGatewayId(address(feesManager)),
+                switchboard: address(optConfig.switchboard)
+            })
+        });
+        configs[2] = AppGatewayConfig({
+            chainSlug: arbChainSlug,
+            plug: address(arbConfig.contractFactoryPlug),
+            plugConfig: PlugConfig({
+                appGatewayId: encodeAppGatewayId(address(writePrecompile)),
+                switchboard: address(arbConfig.switchboard)
+            })
+        });
+        configs[3] = AppGatewayConfig({
+            chainSlug: optChainSlug,
+            plug: address(optConfig.contractFactoryPlug),
+            plugConfig: PlugConfig({
+                appGatewayId: encodeAppGatewayId(address(writePrecompile)),
+                switchboard: address(optConfig.switchboard)
+            })
+        });
+
+        watcherMultiCall(
+            address(configurations),
+            abi.encodeWithSelector(Configurations.setAppGatewayConfigs.selector, configs)
+        );
+    }
+
+    function _deploySocket(uint32 chainSlug_) internal returns (SocketContracts memory) {
+        // socket
+        Socket socket = new Socket(chainSlug_, socketOwner, "test");
 
         return
             SocketContracts({
                 chainSlug: chainSlug_,
                 socket: socket,
-                socketFeeManager: socketFeeManager,
-                switchboard: switchboard,
-                socketBatcher: socketBatcher,
-                contractFactoryPlug: contractFactoryPlug,
-                feesPlug: feesPlug,
-                feesTokenUSDC: feesTokenUSDC
+                socketFeeManager: new SocketFeeManager(socketOwner, socketFees),
+                switchboard: new FastSwitchboard(chainSlug_, socket, socketOwner),
+                socketBatcher: new SocketBatcher(socketOwner, socket),
+                contractFactoryPlug: new ContractFactoryPlug(address(socket), socketOwner),
+                feesPlug: new FeesPlug(address(socket), socketOwner),
+                testUSDC: new TestUSDC("USDC", "USDC", 6, socketOwner, 1000000000000000000000000)
             });
     }
 
-    function deployEVMxCore() internal {
-        // Deploy implementations
-        addressResolverImpl = new AddressResolver();
-        watcherImpl = new Watcher();
-        configurationsImpl = new Configurations();
-        asyncDeployerImpl = new AsyncDeployer();
-        asyncPromiseImpl = new AsyncPromise();
-        proxyFactory = new ERC1967Factory();
+    function _configureChain(uint32 chainSlug_) internal {
+        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
+        Socket socket = socketConfig.socket;
+        FastSwitchboard switchboard = socketConfig.switchboard;
+        FeesPlug feesPlug = socketConfig.feesPlug;
+        ContractFactoryPlug contractFactoryPlug = socketConfig.contractFactoryPlug;
 
-        // Deploy and initialize proxies
-        bytes memory addressResolverData = abi.encodeWithSelector(
-            AddressResolver.initialize.selector,
-            watcherEOA
-        );
-        vm.expectEmit(true, true, true, false);
-        emit Initialized(version);
-        address addressResolverProxy = proxyFactory.deployAndCall(
-            address(addressResolverImpl),
-            watcherEOA,
-            addressResolverData
-        );
+        vm.startPrank(socketOwner);
+        // socket
+        socket.grantRole(GOVERNANCE_ROLE, address(socketOwner));
 
-        bytes memory configurationsData = abi.encodeWithSelector(
-            Configurations.initialize.selector,
-            watcherEOA,
-            address(addressResolverProxy),
-            evmxSlug
-        );
-        vm.expectEmit(true, true, true, false);
-        emit Initialized(version);
-        address configurationsProxy = proxyFactory.deployAndCall(
-            address(configurationsImpl),
-            watcherEOA,
-            configurationsData
+        // switchboard
+        switchboard.registerSwitchboard();
+        switchboard.grantRole(WATCHER_ROLE, watcherEOA);
+
+        feesPlug.whitelistToken(address(socketConfig.testUSDC));
+
+        feesPlug.connectSocket(
+            encodeAppGatewayId(address(feesManager)),
+            address(socket),
+            address(switchboard)
         );
 
-        bytes memory watcherData = abi.encodeWithSelector(
-            Watcher.initialize.selector,
-            watcherEOA,
-            address(addressResolverProxy),
-            expiryTime,
-            evmxSlug,
-            address(configurationsProxy)
-        );
-        vm.expectEmit(true, true, true, false);
-        emit Initialized(version);
-        address watcherProxy = proxyFactory.deployAndCall(
-            address(watcherImpl),
-            watcherEOA,
-            watcherData
+        contractFactoryPlug.connectSocket(
+            encodeAppGatewayId(address(writePrecompile)),
+            address(socket),
+            address(switchboard)
         );
 
-        // Assign proxy addresses to public variables
-        addressResolver = AddressResolver(address(addressResolverProxy));
-        watcher = Watcher(address(watcherProxy));
-        configurations = Configurations(address(configurationsProxy));
-        // asyncDeployer = AsyncDeployer(address(asyncDeployerProxy));
-        // asyncPromise = AsyncPromise(address(asyncPromiseProxy));
+        vm.stopPrank();
 
         vm.startPrank(watcherEOA);
-        addressResolver.setWatcher(address(watcher));
-        watcher.setCallBackFees(1);
-        watcher.setFinalizeFees(1);
-        watcher.setQueryFees(1);
-        watcher.setTimeoutFees(1);
+        configurations.setSocket(chainSlug_, address(socket));
+        configurations.setSwitchboard(chainSlug_, FAST, address(switchboard));
+
+        // plugs
+        feesManager.setFeesPlug(chainSlug_, address(feesPlug));
+
+        // precompiles
+        writePrecompile.updateChainMaxMsgValueLimits(chainSlug_, maxMsgValueLimit);
+        writePrecompile.setContractFactoryPlugs(chainSlug_, address(contractFactoryPlug));
 
         vm.stopPrank();
     }
 
-    //////////////////////////////////// Watcher precompiles ////////////////////////////////////
+    function _deployEVMxCore() internal {
+        proxyFactory = new ERC1967Factory();
+        feesPool = new FeesPool(watcherEOA);
 
-    function _checkIfOnlyReads(uint40 batchCount_) internal view returns (bool) {
-        bytes32[] memory payloadIds = watcher.getBatchPayloadIds(batchCount_);
+        // Deploy implementations for upgradeable contracts
+        FeesManager feesManagerImpl = new FeesManager();
+        AddressResolver addressResolverImpl = new AddressResolver();
+        AsyncDeployer asyncDeployerImpl = new AsyncDeployer();
+        Watcher watcherImpl = new Watcher();
 
-        for (uint i = 0; i < payloadIds.length; i++) {
-            PayloadParams memory payloadParams = watcher.getPayloadParams(payloadIds[i]);
-            if (payloadParams.payloadHeader.getCallType() != READ) {
-                return false;
-            }
-        }
+        // Deploy and initialize proxies
+        address addressResolverProxy = _deployAndVerifyProxy(
+            address(addressResolverImpl),
+            watcherEOA,
+            abi.encodeWithSelector(AddressResolver.initialize.selector, watcherEOA)
+        );
+        addressResolver = AddressResolver(addressResolverProxy);
 
-        return true;
+        address feesManagerProxy = _deployAndVerifyProxy(
+            address(feesManagerImpl),
+            watcherEOA,
+            abi.encodeWithSelector(
+                FeesManager.initialize.selector,
+                evmxSlug,
+                address(addressResolver),
+                address(feesPool),
+                watcherEOA,
+                FAST
+            )
+        );
+        feesManager = FeesManager(feesManagerProxy);
+
+        address asyncDeployerProxy = _deployAndVerifyProxy(
+            address(asyncDeployerImpl),
+            watcherEOA,
+            abi.encodeWithSelector(
+                AsyncDeployer.initialize.selector,
+                watcherEOA,
+                address(addressResolver)
+            )
+        );
+        asyncDeployer = AsyncDeployer(asyncDeployerProxy);
+
+        address watcherProxy = _deployAndVerifyProxy(
+            address(watcherImpl),
+            watcherEOA,
+            abi.encodeWithSelector(
+                Watcher.initialize.selector,
+                evmxSlug,
+                triggerFees,
+                watcherEOA,
+                address(addressResolver)
+            )
+        );
+        watcher = Watcher(watcherProxy);
+
+        // non proxy contracts
+        auctionManager = new AuctionManager(
+            evmxSlug,
+            uint128(bidTimeout),
+            maxReAuctionCount,
+            auctionEndDelaySeconds,
+            address(addressResolver),
+            watcherEOA
+        );
+        deployForwarder = new DeployForwarder(address(addressResolver), FAST);
+        configurations = new Configurations(address(watcher), watcherEOA);
+        requestHandler = new RequestHandler(watcherEOA, address(addressResolver));
+        promiseResolver = new PromiseResolver(address(watcher));
+        writePrecompile = new WritePrecompile(watcherEOA, address(watcher), writeFees, expiryTime);
+        readPrecompile = new ReadPrecompile(address(watcher), readFees, expiryTime);
+        schedulePrecompile = new SchedulePrecompile(
+            address(watcher),
+            maxScheduleDelayInSeconds,
+            scheduleFeesPerSecond,
+            scheduleCallbackFees,
+            expiryTime
+        );
     }
 
-    function _resolveAndExpectFinalizeRequested(
-        bytes32 payloadId_,
-        PayloadParams memory payloadParams,
-        bytes memory returnData,
-        bool isLastPayload
-    ) internal {
-        if (isLastPayload) {
-            vm.expectEmit(false, false, false, false);
-            emit FinalizeRequested(payloadId_, payloadParams);
-        }
-
-        _resolvePromise(payloadId_, returnData);
+    function _deployAndVerifyProxy(
+        address implementation_,
+        address owner_,
+        bytes memory data_
+    ) internal returns (address) {
+        vm.expectEmit(true, true, true, false);
+        emit Initialized(version);
+        return address(proxyFactory.deployAndCall(implementation_, owner_, data_));
     }
 
-    function _finalizeBatch(
-        uint40 batchCount_,
-        bytes[] memory readReturnData_,
-        uint256 readCount_,
-        bool hasMoreBatches
-    ) internal returns (uint256) {
-        bytes32[] memory payloadIds = watcher.getBatchPayloadIds(batchCount_);
-
-        for (uint i = 0; i < payloadIds.length; i++) {
-            PayloadParams memory payloadParams = watcher.getPayloadParams(payloadIds[i]);
-            bool isLastPayload = i == payloadIds.length - 1 && hasMoreBatches;
-
-            if (payloadParams.payloadHeader.getCallType() == READ) {
-                _resolveAndExpectFinalizeRequested(
-                    payloadParams.payloadId,
-                    payloadParams,
-                    readReturnData_[readCount_++],
-                    isLastPayload
-                );
-            } else {
-                (, bytes memory returnData) = _uploadProofAndExecute(payloadParams);
-                _resolveAndExpectFinalizeRequested(
-                    payloadParams.payloadId,
-                    payloadParams,
-                    returnData,
-                    isLastPayload
-                );
-            }
-        }
-        return readCount_;
-    }
-
-    function _uploadProofAndExecute(
-        PayloadParams memory payloadParams
-    ) internal returns (bool, bytes memory) {
-        (bytes memory watcherProof, bytes32 digest) = _generateWatcherProof(payloadParams);
-        _writeProof(payloadParams.payloadId, watcherProof);
-
-        (
-            ExecuteParams memory params,
-            SocketBatcher socketBatcher,
-            ,
-            bytes memory transmitterSig,
-            address refundAddress
-        ) = _getExecuteParams(payloadParams);
-
-        return
-            socketBatcher.attestAndExecute(
-                params,
-                payloadParams.switchboard,
-                digest,
-                watcherProof,
-                transmitterSig,
-                refundAddress
-            );
-    }
-
-    function resolvePromises(bytes32[] memory payloadIds, bytes[] memory returnData) internal {
-        for (uint i = 0; i < payloadIds.length; i++) {
-            _resolvePromise(payloadIds[i], returnData[i]);
-        }
-    }
-
-    //////////////////////////////////// Helpers ////////////////////////////////////
     function getSocketConfig(uint32 chainSlug_) internal view returns (SocketContracts memory) {
         return chainSlug_ == arbChainSlug ? arbConfig : optConfig;
     }
 
-    function _generateWatcherProof(
-        PayloadParams memory params_
-    ) internal view returns (bytes memory, bytes32) {
-        SocketContracts memory socketConfig = getSocketConfig(params_.payloadHeader.getChainSlug());
-        DigestParams memory digestParams_ = DigestParams(
-            address(socketConfig.socket),
-            transmitterEOA,
-            params_.payloadId,
-            params_.deadline,
-            params_.payloadHeader.getCallType(),
-            params_.gasLimit,
-            params_.value,
-            params_.payload,
-            params_.target,
-            _encodeAppGatewayId(params_.appGateway),
-            params_.prevDigestsHash
-        );
-        bytes32 digest = watcher.getDigest(digestParams_);
-
-        bytes32 sigDigest = keccak256(
-            abi.encode(address(socketConfig.switchboard), socketConfig.chainSlug, digest)
-        );
-        bytes memory proof = _createSignature(sigDigest, watcherPrivateKey);
-        return (proof, digest);
-    }
-
-    function _writeProof(bytes32 payloadId_, bytes memory watcherProof_) internal {
-        bytes memory bytesInput = abi.encode(
-            IWatcher.finalized.selector,
-            payloadId_,
-            watcherProof_
-        );
-        bytes memory watcherSignature = _createWatcherSignature(address(watcher), bytesInput);
-        watcher.finalized(payloadId_, watcherProof_, signatureNonce++, watcherSignature);
-        assertEq(watcher.watcherProofs(payloadId_), watcherProof_);
-    }
-
-    function _getExecuteParams(
-        PayloadParams memory payloadParams
-    )
-        internal
-        view
-        returns (
-            ExecuteParams memory params,
-            SocketBatcher socketBatcher,
-            uint256 value,
-            bytes memory transmitterSig,
-            address refundAddress
-        )
-    {
-        SocketContracts memory socketConfig = getSocketConfig(
-            payloadParams.payloadHeader.getChainSlug()
-        );
-        bytes32 transmitterDigest = keccak256(
-            abi.encode(address(socketConfig.socket), payloadParams.payloadId)
-        );
-        transmitterSig = _createSignature(transmitterDigest, transmitterPrivateKey);
-
-        params = ExecuteParams({
-            callType: payloadParams.payloadHeader.getCallType(),
-            deadline: payloadParams.deadline,
-            gasLimit: payloadParams.gasLimit,
-            value: payloadParams.value,
-            payload: payloadParams.payload,
-            target: payloadParams.target,
-            requestCount: payloadParams.payloadHeader.getRequestCount(),
-            batchCount: payloadParams.payloadHeader.getBatchCount(),
-            payloadCount: payloadParams.payloadHeader.getPayloadCount(),
-            prevDigestsHash: payloadParams.prevDigestsHash,
-            extraData: bytes("")
+    function watcherMultiCall(address contractAddress_, bytes memory data_) internal {
+        WatcherMultiCallParams[] memory params = new WatcherMultiCallParams[](1);
+        params[0] = WatcherMultiCallParams({
+            contractAddress: contractAddress_,
+            data: data_,
+            nonce: watcherNonce,
+            signature: _createWatcherSignature(contractAddress_, data_)
         });
-
-        value = payloadParams.value;
-        socketBatcher = socketConfig.socketBatcher;
-        refundAddress = transmitterEOA;
-    }
-
-    function _resolvePromise(bytes32 payloadId, bytes memory returnData) internal {
-        PromiseReturnData[] memory promiseReturnData = new PromiseReturnData[](1);
-        promiseReturnData[0] = PromiseReturnData({payloadId: payloadId, returnData: returnData});
-
-        bytes memory watcherSignature = _createWatcherSignature(
-            address(watcher),
-            abi.encode(Watcher.resolvePromises.selector, promiseReturnData)
-        );
-        watcher.resolvePromises(promiseReturnData, signatureNonce++, watcherSignature);
+        watcherNonce++;
+        watcher.watcherMultiCall(params);
     }
 
     function _createWatcherSignature(
-        address watcherPrecompile_,
-        bytes memory params_
+        address contractAddress_,
+        bytes memory data_
     ) internal view returns (bytes memory) {
         bytes32 digest = keccak256(
-            abi.encode(watcherPrecompile_, evmxSlug, signatureNonce, params_)
+            abi.encode(address(watcher), evmxSlug, watcherNonce, contractAddress_, data_)
         );
         return _createSignature(digest, watcherPrivateKey);
     }
@@ -396,7 +381,6 @@ contract SetupTest is Test {
         (uint8 sigV, bytes32 sigR, bytes32 sigS) = vm.sign(privateKey_, digest);
         sig = new bytes(65);
         bytes1 v32 = bytes1(sigV);
-
         assembly {
             mstore(add(sig, 96), v32)
             mstore(add(sig, 32), sigR)
@@ -404,11 +388,655 @@ contract SetupTest is Test {
         }
     }
 
-    function _encodeAppGatewayId(address appGateway_) internal pure returns (bytes32) {
-        return bytes32(uint256(uint160(appGateway_)));
+    function predictAsyncPromiseAddress(
+        address invoker_,
+        address forwarder_
+    ) internal returns (address) {
+        bytes memory asyncPromiseBytecode = type(AsyncPromise).creationCode;
+        bytes memory constructorArgs = abi.encode(invoker_, forwarder_, address(addressResolver));
+        bytes memory combinedBytecode = abi.encodePacked(asyncPromiseBytecode, constructorArgs);
+
+        bytes32 salt = keccak256(abi.encodePacked(constructorArgs, asyncPromiseCounter++));
+
+        bytes32 hash = keccak256(
+            abi.encodePacked(
+                bytes1(0xff),
+                address(addressResolver),
+                salt,
+                keccak256(combinedBytecode)
+            )
+        );
+
+        return address(uint160(uint256(hash)));
+    }
+}
+
+contract FeesSetup is DeploySetup {
+    event Deposited(
+        uint32 indexed chainSlug,
+        address indexed token,
+        address indexed appGateway,
+        uint256 creditAmount,
+        uint256 nativeAmount
+    );
+    event CreditsWrapped(address indexed consumeFrom, uint256 amount);
+    event CreditsUnwrapped(address indexed consumeFrom, uint256 amount);
+    event CreditsTransferred(address indexed from, address indexed to, uint256 amount);
+
+    function deploy() internal {
+        _deploy();
+
+        depositNativeAndCredits(arbChainSlug, 100 ether, 100 ether, address(transmitterEOA));
+        approveAppGateway(address(auctionManager), address(transmitterEOA));
     }
 
-    function _decodeAppGatewayId(bytes32 appGatewayId_) internal pure returns (address) {
-        return address(uint160(uint256(appGatewayId_)));
+    // mints test token and deposits the given  native and credits to given `user_`
+    function depositNativeAndCredits(
+        uint32 chainSlug_,
+        uint256 credits_,
+        uint256 native_,
+        address user_
+    ) internal {
+        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
+        TestUSDC token = socketConfig.testUSDC;
+
+        uint256 userBalance = token.balanceOf(user_);
+        uint256 feesPlugBalance = token.balanceOf(address(socketConfig.feesPlug));
+
+        token.mint(address(user_), 100 ether);
+        assertEq(
+            token.balanceOf(user_),
+            userBalance + 100 ether,
+            "User should have 100 more test tokens"
+        );
+
+        vm.startPrank(user_);
+        token.approve(address(socketConfig.feesPlug), 100 ether);
+        socketConfig.feesPlug.depositCreditAndNative(address(token), address(user_), 100 ether);
+        vm.stopPrank();
+
+        assertEq(
+            token.balanceOf(address(socketConfig.feesPlug)),
+            feesPlugBalance + 100 ether,
+            "Fees plug should have 100 more test tokens"
+        );
+
+        uint256 currentCredits = feesManager.getAvailableCredits(user_);
+        uint256 currentNative = address(user_).balance;
+
+        vm.expectEmit(true, true, true, false);
+        emit Deposited(chainSlug_, address(token), user_, credits_, native_);
+
+        watcherMultiCall(
+            address(feesManager),
+            abi.encodeWithSelector(
+                Credit.deposit.selector,
+                chainSlug_,
+                address(token),
+                user_,
+                native_,
+                credits_
+            )
+        );
+
+        assertEq(
+            feesManager.getAvailableCredits(user_),
+            currentCredits + credits_,
+            "User should have more credits"
+        );
+        assertEq(address(user_).balance, currentNative + native_, "User should have more native");
+    }
+
+    function approveAppGateway(address appGateway_, address user_) internal {
+        bool approval = feesManager.isApproved(user_, appGateway_);
+        if (approval) return;
+
+        AppGatewayApprovals[] memory approvals = new AppGatewayApprovals[](1);
+        approvals[0] = AppGatewayApprovals({appGateway: appGateway_, approval: true});
+
+        hoax(user_);
+        feesManager.approveAppGateways(approvals);
+
+        assertEq(
+            feesManager.isApproved(user_, appGateway_),
+            true,
+            "App gateway should be approved"
+        );
+    }
+
+    function approveAppGatewayWithSignature(
+        address appGateway_,
+        address user_,
+        uint256 userPrivateKey_
+    ) internal {
+        bool approval = feesManager.isApproved(user_, appGateway_);
+        if (approval) return;
+
+        // Create fee approval data with signature
+        bytes32 digest = keccak256(
+            abi.encode(address(feesManager), evmxSlug, appGateway_, block.timestamp, true)
+        );
+
+        // Sign with consumeFrom's private key
+        bytes memory signature = _createSignature(digest, userPrivateKey_);
+
+        // Encode approval data
+        bytes memory feeApprovalData = abi.encode(appGateway_, true, block.timestamp, signature);
+
+        // Call whitelistAppGatewayWithSignature with approval data
+        feesManager.approveAppGatewayWithSignature(feeApprovalData);
+        assertEq(
+            feesManager.isApproved(user_, appGateway_),
+            true,
+            "App gateway should be approved"
+        );
+    }
+}
+
+contract AuctionSetup is FeesSetup {
+    event BidPlaced(uint40 requestCount, Bid bid);
+    event AuctionStarted(uint40 requestCount);
+    event AuctionEnded(uint40 requestCount, Bid winningBid);
+
+    function getBidAmount(uint40 requestCount) internal view returns (uint256) {
+        return watcher.getRequestParams(requestCount).requestFeesDetails.maxFees / 2;
+    }
+
+    function placeBid(uint40 requestCount) internal {
+        uint256 bidAmount = getBidAmount(requestCount);
+
+        bytes memory transmitterSignature = _createSignature(
+            keccak256(abi.encode(address(auctionManager), evmxSlug, requestCount, bidAmount, "")),
+            transmitterPrivateKey
+        );
+
+        if (auctionEndDelaySeconds == 0) {
+            vm.expectEmit(true, true, true, false);
+            emit AuctionEnded(
+                requestCount,
+                Bid({fee: bidAmount, transmitter: transmitterEOA, extraData: bytes("")})
+            );
+        } else {
+            vm.expectEmit(true, true, true, false);
+            emit AuctionStarted(requestCount);
+        }
+
+        vm.expectEmit(true, true, true, false);
+        emit BidPlaced(
+            requestCount,
+            Bid({transmitter: transmitterEOA, fee: bidAmount, extraData: bytes("")})
+        );
+        auctionManager.bid(requestCount, bidAmount, transmitterSignature, bytes(""));
+    }
+
+    function endAuction(uint40 requestCount_) internal {
+        if (auctionEndDelaySeconds == 0) return;
+
+        // todo: handle other cases
+
+        uint256 bidAmount = getBidAmount(requestCount_);
+        bytes memory watcherSignature = _createSignature(
+            keccak256(abi.encode(address(watcher), evmxSlug, requestCount_, bidAmount, "")),
+            watcherPrivateKey
+        );
+
+        vm.expectEmit(true, true, true, true);
+        emit AuctionEnded(
+            requestCount_,
+            Bid({fee: bidAmount, transmitter: transmitterEOA, extraData: ""})
+        );
+
+        // promiseResolver.resolvePromises();
+    }
+
+    function bidAndEndAuction(uint40 requestCount) internal {
+        placeBid(requestCount);
+        endAuction(requestCount);
+    }
+
+    // tests:
+    // bid and end auction with delay
+    // bid and end auction with delay and expire bid
+}
+
+contract WatcherSetup is AuctionSetup {
+    event ReadRequested(Transaction transaction, uint256 readAtBlockNumber, bytes32 payloadId);
+    event ScheduleRequested(bytes32 payloadId, uint256 deadline);
+    event ScheduleResolved(bytes32 payloadId);
+    event WriteProofRequested(
+        address transmitter,
+        bytes32 digest,
+        bytes32 prevBatchDigestHash,
+        uint256 deadline,
+        PayloadParams payloadParams
+    );
+    event WriteProofUploaded(bytes32 indexed payloadId, bytes proof);
+
+    function executeDeployMultiChain(
+        IAppGateway appGateway_,
+        uint32[] memory chainSlugs_,
+        bytes32[] memory contractIds_
+    ) internal returns (uint40 requestCount) {
+        return _executeDeploy(appGateway_, chainSlugs_, contractIds_);
+    }
+
+    function executeDeploy(
+        IAppGateway appGateway_,
+        uint32 chainSlug_,
+        bytes32[] memory contractIds_
+    ) internal returns (uint40 requestCount) {
+        uint32[] memory chainSlugs = new uint32[](1);
+        chainSlugs[0] = chainSlug_;
+        return _executeDeploy(appGateway_, chainSlugs, contractIds_);
+    }
+
+    function _executeDeploy(
+        IAppGateway appGateway_,
+        uint32[] memory chainSlugs_,
+        bytes32[] memory contractIds_
+    ) internal returns (uint40 requestCount) {
+        requestCount = executeRequest();
+        for (uint i = 0; i < chainSlugs_.length; i++) {
+            setupGatewayAndPlugs(chainSlugs_[i], appGateway_, contractIds_);
+        }
+    }
+
+    function executeRequest() internal returns (uint40 requestCount) {
+        requestCount = watcher.getCurrentRequestCount();
+        requestCount = requestCount == 0 ? 0 : requestCount - 1;
+
+        RequestParams memory requestParams = requestHandler.getRequest(requestCount);
+        uint40[] memory batches = requestHandler.getRequestBatchIds(requestCount);
+
+        // bids and executes schedule request if created for endAuction
+        if (requestParams.writeCount != 0) bidAndEndAuction(requestCount);
+
+        for (uint i = 0; i < batches.length; i++) _processBatch(batches[i]);
+        requestParams = requestHandler.getRequest(requestCount);
+        assertEq(requestParams.requestTrackingParams.isRequestExecuted, true);
+    }
+
+    function _processBatch(uint40 batchCount_) internal {
+        bytes32[] memory payloadIds = requestHandler.getBatchPayloadIds(batchCount_);
+
+        PromiseReturnData[] memory promiseReturnData = new PromiseReturnData[](1);
+        bool success;
+        for (uint i = 0; i < payloadIds.length; i++) {
+            PayloadParams memory payloadParams = watcher.getPayloadParams(payloadIds[i]);
+
+            if (payloadParams.callType == READ) {
+                (success, promiseReturnData[0]) = _processRead(payloadParams);
+            } else if (payloadParams.callType == WRITE) {
+                (success, promiseReturnData[0]) = _processWrite(payloadParams);
+            } else if (payloadParams.callType == SCHEDULE) {
+                vm.warp(payloadParams.deadline - expiryTime);
+                promiseReturnData[0] = PromiseReturnData({
+                    exceededMaxCopy: false,
+                    payloadId: payloadParams.payloadId,
+                    returnData: bytes("")
+                });
+                success = true;
+            }
+
+            if (success) {
+                _resolvePromise(promiseReturnData);
+            } else {
+                vm.warp(payloadParams.deadline);
+                _markRevert(promiseReturnData[0], true);
+            }
+        }
+    }
+
+    function _processRead(
+        PayloadParams memory payloadParams
+    ) internal returns (bool success, PromiseReturnData memory promiseReturnData) {
+        (Transaction memory transaction, ) = abi.decode(
+            payloadParams.precompileData,
+            (Transaction, uint256)
+        );
+
+        bytes memory returnData;
+        (success, returnData) = transaction.target.call(transaction.payload);
+        promiseReturnData = PromiseReturnData({
+            exceededMaxCopy: false,
+            payloadId: payloadParams.payloadId,
+            returnData: returnData
+        });
+    }
+
+    function _processWrite(
+        PayloadParams memory payloadParams
+    ) internal returns (bool success, PromiseReturnData memory promiseReturnData) {
+        bytes32 payloadId = payloadParams.payloadId;
+
+        (
+            uint32 chainSlug,
+            address switchboard,
+            bytes32 digest,
+            DigestParams memory digestParams
+        ) = _validateAndGetDigest(payloadParams);
+
+        bytes memory watcherProof = _uploadProof(payloadId, digest, switchboard, chainSlug);
+
+        return
+            _executeWrite(
+                chainSlug,
+                switchboard,
+                digest,
+                digestParams,
+                payloadParams,
+                watcherProof
+            );
+    }
+
+    function _uploadProof(
+        bytes32 payloadId,
+        bytes32 digest,
+        address switchboard,
+        uint32 chainSlug
+    ) internal returns (bytes memory proof) {
+        proof = _createSignature(
+            keccak256(abi.encode(address(switchboard), chainSlug, digest)),
+            watcherPrivateKey
+        );
+
+        vm.expectEmit(true, true, true, false);
+        emit WriteProofUploaded(payloadId, proof);
+        watcherMultiCall(
+            address(writePrecompile),
+            abi.encodeWithSelector(WritePrecompile.uploadProof.selector, payloadId, proof)
+        );
+        assertEq(writePrecompile.watcherProofs(payloadId), proof);
+    }
+
+    function _validateAndGetDigest(
+        PayloadParams memory payloadParams
+    )
+        internal
+        view
+        returns (
+            uint32 chainSlug,
+            address switchboard,
+            bytes32 digest,
+            DigestParams memory digestParams
+        )
+    {
+        (
+            address appGateway,
+            Transaction memory transaction,
+            ,
+            uint256 gasLimit,
+            uint256 value,
+            address switchboard_
+        ) = abi.decode(
+                payloadParams.precompileData,
+                (address, Transaction, WriteFinality, uint256, uint256, address)
+            );
+
+        chainSlug = transaction.chainSlug;
+        switchboard = switchboard_;
+
+        bytes32 prevDigestsHash = writePrecompile.getPrevBatchDigestHash(payloadParams.batchCount);
+        digestParams = DigestParams(
+            address(getSocketConfig(transaction.chainSlug).socket),
+            transmitterEOA,
+            payloadParams.payloadId,
+            payloadParams.deadline,
+            payloadParams.callType,
+            gasLimit,
+            value,
+            transaction.payload,
+            transaction.target,
+            encodeAppGatewayId(appGateway),
+            prevDigestsHash,
+            bytes("")
+        );
+
+        digest = writePrecompile.getDigest(digestParams);
+        assertEq(writePrecompile.digestHashes(payloadParams.payloadId), digest);
+    }
+
+    function _executeWrite(
+        uint32 chainSlug,
+        address switchboard,
+        bytes32 digest,
+        DigestParams memory digestParams,
+        PayloadParams memory payloadParams,
+        bytes memory watcherProof
+    ) internal returns (bool success, PromiseReturnData memory promiseReturnData) {
+        bytes memory transmitterSig = _createSignature(
+            keccak256(
+                abi.encode(address(getSocketConfig(chainSlug).socket), payloadParams.payloadId)
+            ),
+            transmitterPrivateKey
+        );
+        bytes memory returnData;
+        (success, returnData) = getSocketConfig(chainSlug).socketBatcher.attestAndExecute(
+            ExecuteParams({
+                callType: digestParams.callType,
+                deadline: digestParams.deadline,
+                gasLimit: digestParams.gasLimit,
+                value: digestParams.value,
+                payload: digestParams.payload,
+                target: digestParams.target,
+                requestCount: payloadParams.requestCount,
+                batchCount: payloadParams.batchCount,
+                payloadCount: payloadParams.payloadCount,
+                prevDigestsHash: digestParams.prevDigestsHash,
+                extraData: digestParams.extraData
+            }),
+            switchboard,
+            digest,
+            watcherProof,
+            transmitterSig,
+            transmitterEOA
+        );
+
+        promiseReturnData = PromiseReturnData({
+            exceededMaxCopy: false,
+            payloadId: payloadParams.payloadId,
+            returnData: returnData
+        });
+    }
+
+    function _resolvePromise(PromiseReturnData[] memory promiseReturnData) internal {
+        watcherMultiCall(
+            address(promiseResolver),
+            abi.encodeWithSelector(PromiseResolver.resolvePromises.selector, promiseReturnData)
+        );
+    }
+
+    function _markRevert(
+        PromiseReturnData memory promiseReturnData,
+        bool isRevertingOnchain_
+    ) internal {
+        watcherMultiCall(
+            address(promiseResolver),
+            abi.encodeWithSelector(
+                PromiseResolver.markRevert.selector,
+                promiseReturnData,
+                isRevertingOnchain_
+            )
+        );
+    }
+
+    function setupGatewayAndPlugs(
+        uint32 chainSlug_,
+        IAppGateway appGateway_,
+        bytes32[] memory contractIds_
+    ) internal {
+        AppGatewayConfig[] memory configs = new AppGatewayConfig[](contractIds_.length);
+
+        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
+        for (uint i = 0; i < contractIds_.length; i++) {
+            address plug = appGateway_.getOnChainAddress(contractIds_[i], chainSlug_);
+
+            configs[i] = AppGatewayConfig({
+                plug: plug,
+                chainSlug: chainSlug_,
+                plugConfig: PlugConfig({
+                    appGatewayId: encodeAppGatewayId(address(appGateway_)),
+                    switchboard: address(socketConfig.switchboard)
+                })
+            });
+        }
+        watcherMultiCall(
+            address(configurations),
+            abi.encodeWithSelector(Configurations.setAppGatewayConfigs.selector, configs)
+        );
+    }
+}
+
+contract AppGatewayBaseSetup is WatcherSetup {
+    function getOnChainAndForwarderAddresses(
+        uint32 chainSlug_,
+        bytes32 contractId_,
+        IAppGateway appGateway_
+    ) internal view returns (address, address) {
+        address app = appGateway_.getOnChainAddress(contractId_, chainSlug_);
+        address forwarder = appGateway_.forwarderAddresses(contractId_, chainSlug_);
+        return (app, forwarder);
+    }
+
+    // todo: add checks for request params and payload params created to match what is expected
+
+    function checkRequestParams(
+        uint40 requestCount,
+        RequestParams memory expectedRequest
+    ) internal view {
+        RequestParams memory actualRequest = watcher.getRequestParams(requestCount);
+        // RequestParams checks
+        assertEq(
+            actualRequest.appGateway,
+            expectedRequest.appGateway,
+            "Request: appGateway mismatch"
+        );
+        assertEq(
+            actualRequest.auctionManager,
+            expectedRequest.auctionManager,
+            "Request: auctionManager mismatch"
+        );
+        assertEq(
+            actualRequest.writeCount,
+            expectedRequest.writeCount,
+            "Request: writeCount mismatch"
+        );
+        assertEq(
+            keccak256(actualRequest.onCompleteData),
+            keccak256(expectedRequest.onCompleteData),
+            "Request: onCompleteData mismatch"
+        );
+        // Nested struct checks (RequestTrackingParams)
+        assertEq(
+            actualRequest.requestTrackingParams.isRequestCancelled,
+            expectedRequest.requestTrackingParams.isRequestCancelled,
+            "RequestTrackingParams: isRequestCancelled mismatch"
+        );
+        assertEq(
+            actualRequest.requestTrackingParams.isRequestExecuted,
+            expectedRequest.requestTrackingParams.isRequestExecuted,
+            "RequestTrackingParams: isRequestExecuted mismatch"
+        );
+        assertEq(
+            actualRequest.requestTrackingParams.currentBatch,
+            expectedRequest.requestTrackingParams.currentBatch,
+            "RequestTrackingParams: currentBatch mismatch"
+        );
+        assertEq(
+            actualRequest.requestTrackingParams.currentBatchPayloadsLeft,
+            expectedRequest.requestTrackingParams.currentBatchPayloadsLeft,
+            "RequestTrackingParams: currentBatchPayloadsLeft mismatch"
+        );
+        assertEq(
+            actualRequest.requestTrackingParams.payloadsRemaining,
+            expectedRequest.requestTrackingParams.payloadsRemaining,
+            "RequestTrackingParams: payloadsRemaining mismatch"
+        );
+        // Nested struct checks (RequestFeesDetails)
+        assertEq(
+            actualRequest.requestFeesDetails.maxFees,
+            expectedRequest.requestFeesDetails.maxFees,
+            "RequestFeesDetails: maxFees mismatch"
+        );
+        assertEq(
+            actualRequest.requestFeesDetails.consumeFrom,
+            expectedRequest.requestFeesDetails.consumeFrom,
+            "RequestFeesDetails: consumeFrom mismatch"
+        );
+        assertEq(
+            actualRequest.requestFeesDetails.winningBid.fee,
+            expectedRequest.requestFeesDetails.winningBid.fee,
+            "RequestFeesDetails: winningBid.fee mismatch"
+        );
+        assertEq(
+            actualRequest.requestFeesDetails.winningBid.transmitter,
+            expectedRequest.requestFeesDetails.winningBid.transmitter,
+            "RequestFeesDetails: winningBid.transmitter mismatch"
+        );
+        assertEq(
+            keccak256(actualRequest.requestFeesDetails.winningBid.extraData),
+            keccak256(expectedRequest.requestFeesDetails.winningBid.extraData),
+            "RequestFeesDetails: winningBid.extraData mismatch"
+        );
+    }
+
+    function checkPayloadParams(PayloadParams[] memory expectedPayloads) internal view {
+        for (uint i = 0; i < expectedPayloads.length; i++) {
+            PayloadParams memory expectedPayload = expectedPayloads[i];
+            PayloadParams memory actualPayload = watcher.getPayloadParams(
+                expectedPayload.payloadId
+            );
+            // PayloadParams checks
+            assertEq(
+                actualPayload.requestCount,
+                expectedPayload.requestCount,
+                "Payload: requestCount mismatch"
+            );
+            assertEq(
+                actualPayload.batchCount,
+                expectedPayload.batchCount,
+                "Payload: batchCount mismatch"
+            );
+            assertEq(
+                actualPayload.payloadCount,
+                expectedPayload.payloadCount,
+                "Payload: payloadCount mismatch"
+            );
+            assertEq(
+                actualPayload.callType,
+                expectedPayload.callType,
+                "Payload: callType mismatch"
+            );
+            assertEq(
+                actualPayload.asyncPromise,
+                expectedPayload.asyncPromise,
+                "Payload: asyncPromise mismatch"
+            );
+            assertEq(
+                actualPayload.appGateway,
+                expectedPayload.appGateway,
+                "Payload: appGateway mismatch"
+            );
+            assertEq(
+                actualPayload.payloadId,
+                expectedPayload.payloadId,
+                "Payload: payloadId mismatch"
+            );
+            assertEq(
+                actualPayload.resolvedAt,
+                expectedPayload.resolvedAt,
+                "Payload: resolvedAt mismatch"
+            );
+            assertEq(
+                actualPayload.deadline,
+                expectedPayload.deadline,
+                "Payload: deadline mismatch"
+            );
+            assertEq(
+                keccak256(actualPayload.precompileData),
+                keccak256(expectedPayload.precompileData),
+                "Payload: precompileData mismatch"
+            );
+        }
     }
 }

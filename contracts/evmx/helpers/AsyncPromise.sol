@@ -15,18 +15,18 @@ abstract contract AsyncPromiseStorage is IPromise {
     /// @notice The callback selector to be called on the invoker.
     bytes4 public callbackSelector;
 
+    /// @notice The flag to check if the promise exceeded the max copy limit
+    bool public override exceededMaxCopy;
+
     /// @notice The current state of the async promise.
     AsyncPromiseState public override state;
 
-    /// @notice The local contract which initiated the async call.
+    /// @notice The request count of the promise
+    uint40 public override requestCount;
+
+    /// @notice The local contract which initiated the call.
     /// @dev The callback will be executed on this address
     address public override localInvoker;
-
-    /// @notice The request count of the promise
-    uint256 public override requestCount;
-
-    /// @notice The flag to check if the promise exceeded the max copy limit
-    bool public override exceededMaxCopy;
 
     /// @notice The return data of the promise
     bytes public override returnData;
@@ -63,9 +63,9 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     /// @param invoker_ The address of the local invoker
     /// @param addressResolver_ The address resolver contract address
     function initialize(
+        uint40 requestCount_,
         address invoker_,
-        address addressResolver_,
-        uint256 requestCount_
+        address addressResolver_
     ) public initializer {
         localInvoker = invoker_;
         requestCount = requestCount_;
@@ -74,11 +74,9 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
 
     /// @notice Marks the promise as resolved and executes the callback if set.
     /// @dev Only callable by the watcher precompile.
-    /// @param returnData_ The data returned from the async payload execution.
+    /// @param resolvedPromise_ The data returned from the async payload execution.
     function markResolved(
-        bool exceededMaxCopy_,
-        bytes32 payloadId_,
-        bytes memory returnData_
+        PromiseReturnData memory resolvedPromise_
     ) external override onlyWatcher returns (bool success) {
         if (
             state == AsyncPromiseState.CALLBACK_REVERTING ||
@@ -91,18 +89,18 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
         if (callbackSelector == bytes4(0)) {
             success = true;
         } else {
-            exceededMaxCopy = exceededMaxCopy_;
-            returnData = returnData_;
+            exceededMaxCopy = resolvedPromise_.exceededMaxCopy;
+            returnData = resolvedPromise_.returnData;
 
             bytes memory combinedCalldata = abi.encodePacked(
                 callbackSelector,
-                abi.encode(callbackData, returnData_)
+                abi.encode(callbackData, resolvedPromise_.returnData)
             );
 
             (success, , ) = localInvoker.tryCall(0, gasleft(), 0, combinedCalldata);
             if (!success) {
                 state = AsyncPromiseState.CALLBACK_REVERTING;
-                _handleRevert(payloadId_);
+                _handleRevert(resolvedPromise_.payloadId);
             }
         }
     }
@@ -110,9 +108,7 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
     /// @notice Marks the promise as onchain reverting.
     /// @dev Only callable by the watcher precompile.
     function markOnchainRevert(
-        bool exceededMaxCopy_,
-        bytes32 payloadId_,
-        bytes memory returnData_
+        PromiseReturnData memory resolvedPromise_
     ) external override onlyWatcher {
         if (
             state == AsyncPromiseState.CALLBACK_REVERTING ||
@@ -122,9 +118,9 @@ contract AsyncPromise is AsyncPromiseStorage, Initializable, AddressResolverUtil
 
         // to update the state in case selector is bytes(0) but reverting onchain
         state = AsyncPromiseState.ONCHAIN_REVERTING;
-        exceededMaxCopy_ = exceededMaxCopy_;
-        returnData_ = returnData_;
-        _handleRevert(payloadId_);
+        exceededMaxCopy = resolvedPromise_.exceededMaxCopy;
+        returnData = resolvedPromise_.returnData;
+        _handleRevert(resolvedPromise_.payloadId);
     }
 
     /// @notice Handles the revert of the promise.

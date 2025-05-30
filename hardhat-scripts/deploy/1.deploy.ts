@@ -1,44 +1,40 @@
-import { ChainAddressesObj, ChainSlug } from "../../src";
 import { config } from "dotenv";
-import { BigNumber, Contract, Signer, utils, Wallet } from "ethers";
+import { Contract, utils, Wallet } from "ethers";
 import { formatEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
+import { ChainAddressesObj, ChainSlug, Contracts } from "../../src";
 import {
-  CORE_CONTRACTS,
+  AUCTION_END_DELAY_SECONDS,
+  BID_TIMEOUT,
+  chains,
+  EVMX_CHAIN_ID,
+  EXPIRY_TIME,
+  logConfig,
+  MAX_RE_AUCTION_COUNT,
+  MAX_SCHEDULE_DELAY_SECONDS,
+  mode,
+  READ_FEES,
+  SCHEDULE_CALLBACK_FEES,
+  SCHEDULE_FEES_PER_SECOND,
+  TEST_USDC_DECIMALS,
+  TEST_USDC_INITIAL_SUPPLY,
+  TEST_USDC_NAME,
+  TEST_USDC_SYMBOL,
+  TRIGGER_FEES,
+  WRITE_FEES,
+} from "../config/config";
+import {
   DeploymentAddresses,
-  ETH_ADDRESS,
-  EVMxCoreContracts,
   FAST_SWITCHBOARD_TYPE,
   IMPLEMENTATION_SLOT,
 } from "../constants";
 import {
   DeployParams,
   getAddresses,
-  getInstance,
   getOrDeploy,
   storeAddresses,
 } from "../utils";
 import { getSocketSigner, getWatcherSigner } from "../utils/sign";
-import {
-  auctionEndDelaySeconds,
-  BID_TIMEOUT,
-  chains,
-  EVMX_CHAIN_ID,
-  EXPIRY_TIME,
-  logConfig,
-  DEFAULT_MAX_LIMIT,
-  MAX_RE_AUCTION_COUNT,
-  mode,
-  TEST_USDC_INITIAL_SUPPLY,
-  TEST_USDC_DECIMALS,
-  TEST_USDC_NAME,
-  TEST_USDC_SYMBOL,
-  QUERY_FEES,
-  FINALIZE_FEES,
-  TIMEOUT_FEES,
-  CALLBACK_FEES,
-  AUCTION_MANAGER_FUNDING_AMOUNT,
-} from "../config/config";
 config();
 
 let EVMxOwner: string;
@@ -111,169 +107,152 @@ const deployEVMxContracts = async () => {
       );
       deployUtils.addresses[contractName] = proxyFactory.address;
 
+      const feesPool = await getOrDeploy(
+        Contracts.FeesPool,
+        Contracts.FeesPool,
+        "contracts/evmx/fees/FeesPool.sol",
+        [EVMxOwner],
+        deployUtils
+      );
+      deployUtils.addresses[Contracts.FeesPool] = feesPool.address;
+
       deployUtils = await deployContractWithProxy(
-        EVMxCoreContracts.AddressResolver,
-        `contracts/protocol/AddressResolver.sol`,
+        Contracts.AddressResolver,
+        `contracts/evmx/helpers/AddressResolver.sol`,
         [EVMxOwner],
         proxyFactory,
         deployUtils
       );
 
       const addressResolver = await ethers.getContractAt(
-        EVMxCoreContracts.AddressResolver,
-        deployUtils.addresses[EVMxCoreContracts.AddressResolver]
+        Contracts.AddressResolver,
+        deployUtils.addresses[Contracts.AddressResolver]
       );
 
       deployUtils = await deployContractWithProxy(
-        EVMxCoreContracts.WatcherPrecompileLimits,
-        `contracts/protocol/watcherPrecompile/WatcherPrecompileLimits.sol`,
-        [EVMxOwner, addressResolver.address, DEFAULT_MAX_LIMIT],
-        proxyFactory,
-        deployUtils
-      );
-
-      deployUtils = await deployContractWithProxy(
-        EVMxCoreContracts.WatcherPrecompileConfig,
-        `contracts/protocol/watcherPrecompile/WatcherPrecompileConfig.sol`,
-        [EVMxOwner, addressResolver.address, EVMX_CHAIN_ID],
-        proxyFactory,
-        deployUtils
-      );
-
-      deployUtils = await deployContractWithProxy(
-        EVMxCoreContracts.WatcherPrecompile,
-        `contracts/protocol/watcherPrecompile/core/WatcherPrecompile.sol`,
+        Contracts.FeesManager,
+        `contracts/evmx/fees/FeesManager.sol`,
         [
-          EVMxOwner,
-          addressResolver.address,
-          EXPIRY_TIME,
           EVMX_CHAIN_ID,
-          deployUtils.addresses[EVMxCoreContracts.WatcherPrecompileLimits],
-          deployUtils.addresses[EVMxCoreContracts.WatcherPrecompileConfig],
-        ],
-        proxyFactory,
-        deployUtils
-      );
-
-      deployUtils = await deployContractWithProxy(
-        EVMxCoreContracts.FeesManager,
-        `contracts/protocol/payload-delivery/FeesManager.sol`,
-        [
           addressResolver.address,
+          feesPool.address,
           EVMxOwner,
-          EVMX_CHAIN_ID,
           FAST_SWITCHBOARD_TYPE,
         ],
         proxyFactory,
         deployUtils
       );
-      const feesManagerAddress =
-        deployUtils.addresses[EVMxCoreContracts.FeesManager];
-
-      console.log("Deploying DeliveryHelper");
 
       deployUtils = await deployContractWithProxy(
-        EVMxCoreContracts.DeliveryHelper,
-        `contracts/protocol/payload-delivery/app-gateway/DeliveryHelper.sol`,
-        [addressResolver.address, EVMxOwner, BID_TIMEOUT],
+        Contracts.AsyncDeployer,
+        `contracts/evmx/helpers/AsyncDeployer.sol`,
+        [EVMxOwner, addressResolver.address],
         proxyFactory,
         deployUtils
       );
 
       deployUtils = await deployContractWithProxy(
-        EVMxCoreContracts.AuctionManager,
-        `contracts/protocol/payload-delivery/AuctionManager.sol`,
+        Contracts.Watcher,
+        `contracts/evmx/watcher/Watcher.sol`,
+        [EVMX_CHAIN_ID, TRIGGER_FEES, EVMxOwner, addressResolver.address],
+        proxyFactory,
+        deployUtils
+      );
+
+      const auctionManager = await getOrDeploy(
+        Contracts.AuctionManager,
+        Contracts.AuctionManager,
+        "contracts/evmx/AuctionManager.sol",
         [
           EVMX_CHAIN_ID,
-          auctionEndDelaySeconds,
+          BID_TIMEOUT,
+          MAX_RE_AUCTION_COUNT,
+          AUCTION_END_DELAY_SECONDS,
           addressResolver.address,
           EVMxOwner,
-          MAX_RE_AUCTION_COUNT,
         ],
-        proxyFactory,
         deployUtils
       );
+      deployUtils.addresses[Contracts.AuctionManager] = auctionManager.address;
 
-      await updateContractSettings(
-        addressResolver,
-        "deliveryHelper",
-        "setDeliveryHelper",
-        deployUtils.addresses[EVMxCoreContracts.DeliveryHelper],
-        deployUtils.signer
+      const deployForwarder = await getOrDeploy(
+        Contracts.DeployForwarder,
+        Contracts.DeployForwarder,
+        "contracts/evmx/helpers/DeployForwarder.sol",
+        [addressResolver.address, FAST_SWITCHBOARD_TYPE],
+        deployUtils
       );
+      deployUtils.addresses[Contracts.DeployForwarder] =
+        deployForwarder.address;
 
-      await updateContractSettings(
-        addressResolver,
-        "feesManager",
-        "setFeesManager",
-        feesManagerAddress,
-        deployUtils.signer
+      const configurations = await getOrDeploy(
+        Contracts.Configurations,
+        Contracts.Configurations,
+        "contracts/evmx/watcher/Configurations.sol",
+        [deployUtils.addresses[Contracts.Watcher], EVMxOwner],
+        deployUtils
       );
+      deployUtils.addresses[Contracts.Configurations] = configurations.address;
 
-      await updateContractSettings(
-        addressResolver,
-        "defaultAuctionManager",
-        "setDefaultAuctionManager",
-        deployUtils.addresses[EVMxCoreContracts.AuctionManager],
-        deployUtils.signer
+      const requestHandler = await getOrDeploy(
+        Contracts.RequestHandler,
+        Contracts.RequestHandler,
+        "contracts/evmx/watcher/RequestHandler.sol",
+        [EVMxOwner, addressResolver.address],
+        deployUtils
       );
+      deployUtils.addresses[Contracts.RequestHandler] = requestHandler.address;
 
-      await updateContractSettings(
-        addressResolver,
-        "watcherPrecompile__",
-        "setWatcherPrecompile",
-        deployUtils.addresses[EVMxCoreContracts.WatcherPrecompile],
-        deployUtils.signer
+      const promiseResolver = await getOrDeploy(
+        Contracts.PromiseResolver,
+        Contracts.PromiseResolver,
+        "contracts/evmx/watcher/PromiseResolver.sol",
+        [deployUtils.addresses[Contracts.Watcher]],
+        deployUtils
       );
+      deployUtils.addresses[Contracts.PromiseResolver] =
+        promiseResolver.address;
 
-      let watcherPrecompileLimits = await getInstance(
-        EVMxCoreContracts.WatcherPrecompileLimits,
-        deployUtils.addresses[EVMxCoreContracts.WatcherPrecompileLimits]
+      const writePrecompile = await getOrDeploy(
+        Contracts.WritePrecompile,
+        Contracts.WritePrecompile,
+        "contracts/evmx/watcher/precompiles/WritePrecompile.sol",
+        [
+          EVMxOwner,
+          deployUtils.addresses[Contracts.Watcher],
+          WRITE_FEES,
+          EXPIRY_TIME,
+        ],
+        deployUtils
       );
-      watcherPrecompileLimits = watcherPrecompileLimits.connect(
-        deployUtils.signer
-      );
-      await updateContractSettings(
-        watcherPrecompileLimits,
-        "queryFees",
-        "setQueryFees",
-        QUERY_FEES,
-        deployUtils.signer
-      );
+      deployUtils.addresses[Contracts.WritePrecompile] =
+        writePrecompile.address;
 
-      await updateContractSettings(
-        watcherPrecompileLimits,
-        "finalizeFees",
-        "setFinalizeFees",
-        FINALIZE_FEES,
-        deployUtils.signer
+      const readPrecompile = await getOrDeploy(
+        Contracts.ReadPrecompile,
+        Contracts.ReadPrecompile,
+        "contracts/evmx/watcher/precompiles/ReadPrecompile.sol",
+        [deployUtils.addresses[Contracts.Watcher], READ_FEES, EXPIRY_TIME],
+        deployUtils
       );
+      deployUtils.addresses[Contracts.ReadPrecompile] = readPrecompile.address;
 
-      await updateContractSettings(
-        watcherPrecompileLimits,
-        "timeoutFees",
-        "setTimeoutFees",
-        TIMEOUT_FEES,
-        deployUtils.signer
+      const schedulePrecompile = await getOrDeploy(
+        Contracts.SchedulePrecompile,
+        Contracts.SchedulePrecompile,
+        "contracts/evmx/watcher/precompiles/SchedulePrecompile.sol",
+        [
+          deployUtils.addresses[Contracts.Watcher],
+          MAX_SCHEDULE_DELAY_SECONDS,
+          SCHEDULE_FEES_PER_SECOND,
+          SCHEDULE_CALLBACK_FEES,
+          EXPIRY_TIME,
+        ],
+        deployUtils
       );
+      deployUtils.addresses[Contracts.SchedulePrecompile] =
+        schedulePrecompile.address;
 
-      await updateContractSettings(
-        watcherPrecompileLimits,
-        "callBackFees",
-        "setCallBackFees",
-        CALLBACK_FEES,
-        deployUtils.signer
-      );
-
-      const feesManager = await getInstance(
-        EVMxCoreContracts.FeesManager,
-        deployUtils.addresses[EVMxCoreContracts.FeesManager]
-      );
-      await fundAuctionManager(
-        feesManager.connect(deployUtils.signer),
-        deployUtils.addresses[EVMxCoreContracts.AuctionManager],
-        deployUtils.signer
-      );
       deployUtils.addresses.startBlock =
         (deployUtils.addresses.startBlock
           ? deployUtils.addresses.startBlock
@@ -289,56 +268,6 @@ const deployEVMxContracts = async () => {
   }
 };
 
-export const fundAuctionManager = async (
-  feesManager: Contract,
-  auctionManagerAddress: string,
-  watcherSigner: Signer
-) => {
-  const currentCredits = await feesManager.getAvailableCredits(
-    auctionManagerAddress
-  );
-  console.log("Current credits:", currentCredits.toString());
-  if (currentCredits.gte(BigNumber.from(AUCTION_MANAGER_FUNDING_AMOUNT))) {
-    console.log(
-      `Auction manager ${auctionManagerAddress} already has credits, skipping funding`
-    );
-    return;
-  }
-  const signatureNonce = Date.now();
-  const digest = ethers.utils.keccak256(
-    ethers.utils.defaultAbiCoder.encode(
-      ["address", "uint32", "address", "uint256", "address", "uint32"],
-      [
-        auctionManagerAddress,
-        EVMX_CHAIN_ID,
-        ETH_ADDRESS,
-        AUCTION_MANAGER_FUNDING_AMOUNT,
-        feesManager.address,
-        EVMX_CHAIN_ID,
-      ]
-    )
-  );
-  const signature = await watcherSigner.signMessage(
-    ethers.utils.arrayify(digest)
-  );
-  const tx = await feesManager
-    .connect(watcherSigner)
-    .depositCredits(
-      auctionManagerAddress,
-      EVMX_CHAIN_ID,
-      ETH_ADDRESS,
-      signatureNonce,
-      signature,
-      {
-        value: AUCTION_MANAGER_FUNDING_AMOUNT,
-      }
-    );
-  console.log(
-    `Funding auction manager ${auctionManagerAddress} with ${AUCTION_MANAGER_FUNDING_AMOUNT} ETH, txHash: `,
-    tx.hash
-  );
-  await tx.wait();
-};
 const deploySocketContracts = async () => {
   try {
     let addresses: DeploymentAddresses;
@@ -367,42 +296,42 @@ const deploySocketContracts = async () => {
           currentChainSlug: chain as ChainSlug,
         };
 
-        let contractName = CORE_CONTRACTS.Socket;
+        let contractName = Contracts.Socket;
         const socket: Contract = await getOrDeploy(
           contractName,
           contractName,
-          `contracts/protocol/socket/${contractName}.sol`,
+          `contracts/protocol/${contractName}.sol`,
           [chain as ChainSlug, socketOwner, "EVMX"],
           deployUtils
         );
         deployUtils.addresses[contractName] = socket.address;
 
-        contractName = CORE_CONTRACTS.SocketBatcher;
+        contractName = Contracts.SocketBatcher;
         const batcher: Contract = await getOrDeploy(
           contractName,
           contractName,
-          `contracts/protocol/socket/${contractName}.sol`,
+          `contracts/protocol/${contractName}.sol`,
           [socketOwner, socket.address],
           deployUtils
         );
         deployUtils.addresses[contractName] = batcher.address;
 
-        contractName = CORE_CONTRACTS.FastSwitchboard;
+        contractName = Contracts.FastSwitchboard;
         const sb: Contract = await getOrDeploy(
           contractName,
           contractName,
-          `contracts/protocol/socket/switchboard/${contractName}.sol`,
+          `contracts/protocol/switchboard/${contractName}.sol`,
           [chain as ChainSlug, socket.address, socketOwner],
           deployUtils
         );
         deployUtils.addresses[contractName] = sb.address;
 
-        contractName = CORE_CONTRACTS.TestUSDC;
+        contractName = Contracts.TestUSDC;
 
         const testUSDC: Contract = await getOrDeploy(
           contractName,
           contractName,
-          `contracts/helpers/${contractName}.sol`,
+          `contracts/evmx/mocks/${contractName}.sol`,
           [
             TEST_USDC_NAME,
             TEST_USDC_SYMBOL,
@@ -414,23 +343,21 @@ const deploySocketContracts = async () => {
         );
         deployUtils.addresses[contractName] = testUSDC.address;
 
-        contractName = CORE_CONTRACTS.FeesPlug;
+        contractName = Contracts.FeesPlug;
         const feesPlug: Contract = await getOrDeploy(
           contractName,
           contractName,
-          `contracts/protocol/payload-delivery/${contractName}.sol`,
+          `contracts/evmx/plugs/${contractName}.sol`,
           [socket.address, socketOwner],
           deployUtils
         );
         deployUtils.addresses[contractName] = feesPlug.address;
 
-        await whitelistToken(feesPlug, testUSDC.address, deployUtils.signer);
-
-        contractName = CORE_CONTRACTS.ContractFactoryPlug;
+        contractName = Contracts.ContractFactoryPlug;
         const contractFactoryPlug: Contract = await getOrDeploy(
           contractName,
           contractName,
-          `contracts/protocol/payload-delivery/${contractName}.sol`,
+          `contracts/evmx/plugs/${contractName}.sol`,
           [socket.address, socketOwner],
           deployUtils
         );
@@ -455,50 +382,6 @@ const deploySocketContracts = async () => {
     console.error("Error in socket deployment:", error);
   }
 };
-
-async function whitelistToken(
-  feesPlug: Contract,
-  tokenAddress: string,
-  signer: Signer
-) {
-  const isWhitelisted = await feesPlug
-    .connect(signer)
-    .whitelistedTokens(tokenAddress);
-  if (!isWhitelisted) {
-    const tx = await feesPlug.connect(signer).whitelistToken(tokenAddress);
-    console.log(
-      `Whitelisting token ${tokenAddress} for ${feesPlug.address}`,
-      tx.hash
-    );
-    await tx.wait();
-  }
-}
-
-async function updateContractSettings(
-  contract: Contract,
-  getterMethod: string,
-  setterMethod: string,
-  requiredValue: string | BigNumber,
-  signer: Signer
-) {
-  const currentValue = await contract.connect(signer)[getterMethod]();
-
-  if (
-    (typeof currentValue === "string" &&
-      currentValue.toLowerCase() !== String(requiredValue).toLowerCase()) ||
-    (BigNumber.isBigNumber(currentValue) &&
-      currentValue.toString() !== requiredValue.toString())
-  ) {
-    console.log({
-      setterMethod,
-      current: currentValue,
-      required: requiredValue,
-    });
-    const tx = await contract.connect(signer)[setterMethod](requiredValue);
-    console.log(`Setting ${getterMethod} for ${contract.address} to`, tx.hash);
-    await tx.wait();
-  }
-}
 
 /**
  * @notice Deploys a contract implementation and its transparent proxy, then initializes it

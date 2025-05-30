@@ -12,10 +12,10 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     bytes32 public counter1 = _createContractId("counter1");
 
     uint256 public counterVal;
-
     uint256 public arbCounter;
     uint256 public optCounter;
-    event TimeoutResolved(uint256 creationTimestamp, uint256 executionTimestamp);
+
+    event CounterScheduleResolved(uint256 creationTimestamp, uint256 executionTimestamp);
 
     constructor(address addressResolver_, uint256 fees_) AppGatewayBase(addressResolver_) {
         creationCodeWithArgs[counter] = abi.encodePacked(type(Counter).creationCode);
@@ -55,7 +55,6 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
 
     function incrementCounters(address[] memory instances_) public async {
         // the increase function is called on given list of instances
-        // this
         for (uint256 i = 0; i < instances_.length; i++) {
             ICounter(instances_[i]).increase();
         }
@@ -98,22 +97,22 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     }
 
     // trigger from a chain
-    function setIsValidPlug(uint32 chainSlug_, address plug_) public {
-        watcher__().configurations__().setIsValidPlug(true, chainSlug_, plug_);
+    function setIsValidPlug(uint32 chainSlug_, bytes32 contractId_) public {
+        _setValidPlug(true, chainSlug_, contractId_);
     }
 
     function increase(uint256 value_) external onlyWatcher {
         counterVal += value_;
     }
 
-    // TIMEOUT
-    function setTimeout(uint256 delayInSeconds_) public async {
-        _setTimeout(delayInSeconds_);
-        then(this.resolveTimeout.selector, abi.encode(block.timestamp));
+    // Schedule
+    function setSchedule(uint256 delayInSeconds_) public async {
+        _setSchedule(delayInSeconds_);
+        then(this.resolveSchedule.selector, abi.encode(block.timestamp));
     }
 
-    function resolveTimeout(uint256 creationTimestamp_) external onlyPromises {
-        emit TimeoutResolved(creationTimestamp_, block.timestamp);
+    function resolveSchedule(uint256 creationTimestamp_) external onlyPromises {
+        emit CounterScheduleResolved(creationTimestamp_, block.timestamp);
     }
 
     // UTILS

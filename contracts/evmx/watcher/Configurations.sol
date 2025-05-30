@@ -6,11 +6,12 @@ import "../interfaces/IConfigurations.sol";
 import {WatcherBase} from "./WatcherBase.sol";
 import {encodeAppGatewayId} from "../../utils/common/IdUtils.sol";
 import {InvalidGateway, InvalidSwitchboard} from "../../utils/common/Errors.sol";
+import "solady/auth/Ownable.sol";
 
 /// @title Configurations
 /// @notice Configuration contract for the Watcher Precompile system
 /// @dev Handles the mapping between networks, plugs, and app gateways for payload execution
-contract Configurations is IConfigurations, Initializable, WatcherBase {
+contract Configurations is IConfigurations, Initializable, WatcherBase, Ownable {
     // slots 0-50 (51) reserved for addr resolver util
 
     // slots [51-100]: gap for future storage variables
@@ -34,11 +35,6 @@ contract Configurations is IConfigurations, Initializable, WatcherBase {
     /// @notice Maps chain slug to their associated socket
     /// @dev chainSlug => socket address
     mapping(uint32 => address) public sockets;
-
-    // slot 107: contractsToGateways
-    /// @notice Maps contract address to their associated app gateway
-    /// @dev contractAddress => appGateway
-    mapping(address => address) public coreAppGateways;
 
     // slot 109: isValidPlug
     /// @notice Maps app gateway, chain slug, and plug to whether it is valid
@@ -69,24 +65,18 @@ contract Configurations is IConfigurations, Initializable, WatcherBase {
     /// @param isValid Whether the plug is valid
     event IsValidPlugSet(address appGateway, uint32 chainSlug, address plug, bool isValid);
 
-    /// @notice Emitted when a core app gateway is set for an app gateway
-    /// @param appGateway The address of the app gateway
-    /// @param coreAppGateway The address of the core app gateway
-    event CoreAppGatewaySet(address appGateway, address coreAppGateway);
-
-    constructor(address watcher_) WatcherBase(watcher_) {}
+    constructor(address watcher_, address owner_) WatcherBase(watcher_) {
+        _initializeOwner(owner_);
+    }
 
     /// @notice Configures app gateways with their respective plugs and switchboards
     /// @dev Only callable by the watcher
     /// @dev This helps in verifying that plugs are called by respective app gateways
     /// @param configs_ Array of configurations containing app gateway, network, plug, and switchboard details
-    function setPlugConfigs(AppGatewayConfig[] calldata configs_) external onlyWatcher {
+    function setAppGatewayConfigs(AppGatewayConfig[] calldata configs_) external onlyWatcher {
         for (uint256 i = 0; i < configs_.length; i++) {
             // Store the plug configuration for this network and plug
-            _plugConfigs[configs_[i].chainSlug][configs_[i].plug] = PlugConfig({
-                appGatewayId: configs_[i].plugConfig.appGatewayId,
-                switchboard: configs_[i].plugConfig.switchboard
-            });
+            _plugConfigs[configs_[i].chainSlug][configs_[i].plug] = configs_[i].plugConfig;
 
             emit PlugAdded(
                 configs_[i].plugConfig.appGatewayId,
@@ -99,7 +89,7 @@ contract Configurations is IConfigurations, Initializable, WatcherBase {
     /// @notice Sets the socket for a network
     /// @param chainSlug_ The identifier of the network
     /// @param socket_ The address of the socket
-    function setSocket(uint32 chainSlug_, address socket_) external onlyWatcher {
+    function setSocket(uint32 chainSlug_, address socket_) external onlyOwner {
         sockets[chainSlug_] = socket_;
         emit SocketSet(chainSlug_, socket_);
     }
@@ -112,7 +102,7 @@ contract Configurations is IConfigurations, Initializable, WatcherBase {
         uint32 chainSlug_,
         bytes32 sbType_,
         address switchboard_
-    ) external onlyWatcher {
+    ) external onlyOwner {
         switchboards[chainSlug_][sbType_] = switchboard_;
         emit SwitchboardSet(chainSlug_, sbType_, switchboard_);
     }
@@ -123,19 +113,14 @@ contract Configurations is IConfigurations, Initializable, WatcherBase {
     /// @param chainSlug_ The identifier of the network
     /// @param plug_ The address of the plug
     /// @param isValid_ Whether the plug is valid
-    function setIsValidPlug(bool isValid_, uint32 chainSlug_, address plug_) external {
-        isValidPlug[msg.sender][chainSlug_][plug_] = isValid_;
-        emit IsValidPlugSet(msg.sender, chainSlug_, plug_, isValid_);
-    }
-
-    function setCoreAppGateway(address appGateway_) external {
-        coreAppGateways[appGateway_] = msg.sender;
-        emit CoreAppGatewaySet(appGateway_, msg.sender);
-    }
-
-    function getCoreAppGateway(address appGateway_) external view returns (address coreAppGateway) {
-        coreAppGateway = coreAppGateways[appGateway_];
-        if (coreAppGateway == address(0)) coreAppGateway = appGateway_;
+    function setIsValidPlug(
+        bool isValid_,
+        uint32 chainSlug_,
+        address plug_,
+        address appGateway_
+    ) external onlyWatcher {
+        isValidPlug[appGateway_][chainSlug_][plug_] = isValid_;
+        emit IsValidPlugSet(appGateway_, chainSlug_, plug_, isValid_);
     }
 
     /// @notice Retrieves the configuration for a specific plug on a network

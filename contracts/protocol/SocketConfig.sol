@@ -8,7 +8,7 @@ import "./interfaces/ISocketFeeManager.sol";
 import "../utils/AccessControl.sol";
 import {GOVERNANCE_ROLE, RESCUE_ROLE, SWITCHBOARD_DISABLER_ROLE} from "../utils/common/AccessRoles.sol";
 import {PlugConfig, SwitchboardStatus, ExecutionStatus} from "../utils/common/Structs.sol";
-import {PlugNotFound, InvalidAppGateway, InvalidTransmitter, InvalidSwitchboard} from "../utils/common/Errors.sol";
+import "../utils/common/Errors.sol";
 import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
 
 /**
