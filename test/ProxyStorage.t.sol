@@ -138,7 +138,7 @@ contract ProxyStorageAssertions is AppGatewayBaseSetup {
         assertEq(uint32(uint256(slotValue)), 0, "saltCounter mismatch");
 
         slotValue = vm.load(address(deployForwarder), bytes32(uint256(101)));
-        assertEq(bytes32(slotValue), FAST, "deployerSwitchboardType mismatch");
+        assertEq(bytes32(uint256(slotValue)), FAST, "deployerSwitchboardType mismatch");
     }
 
     function assertConfigurationsSlot() internal {
@@ -227,7 +227,7 @@ contract ProxyStorageAssertions is AppGatewayBaseSetup {
         // first
         bytes32 slotValue = vm.load(address(asyncPromise), bytes32(uint256(FIRST_SLOT)));
         assertEq(
-            bytes4(bytes32(slotValue)),
+            bytes4(uint32(uint256(slotValue))),
             bytes4(AsyncPromise(asyncPromise).callbackSelector()),
             "callbackSelector mismatch"
         );
@@ -235,7 +235,7 @@ contract ProxyStorageAssertions is AppGatewayBaseSetup {
         // last
         slotValue = vm.load(address(asyncPromise), bytes32(uint256(52)));
         assertEq(
-            bytes32(slotValue),
+            bytes32(uint256(slotValue)),
             bytes32(AsyncPromise(asyncPromise).callbackData()),
             "callbackData mismatch"
         );
