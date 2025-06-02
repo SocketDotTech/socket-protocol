@@ -1,6 +1,12 @@
 import { config as dotenvConfig } from "dotenv";
 import { ChainConfig, ChainSlug, S3Config, getFinalityBlocks } from "../../src";
-import { EVMX_CHAIN_ID, chains, mode } from "../config/config";
+import {
+  EVMX_CHAIN_ID,
+  chains,
+  mainnetChains,
+  mode,
+  testnetChains,
+} from "../config/config";
 import { getAddresses } from "../utils/address";
 import { getChainName, rpcKeys, wssRpcKeys } from "../utils/networks";
 import { getChainType } from "./utils";
@@ -15,6 +21,8 @@ export const getS3Config = () => {
     supportedChainSlugs,
     version: version[mode],
     chains: {},
+    testnetChainSlugs: testnetChains,
+    mainnetChainSlugs: mainnetChains,
   };
   supportedChainSlugs.forEach((chainSlug) => {
     config.chains[chainSlug] = getChainConfig(chainSlug);

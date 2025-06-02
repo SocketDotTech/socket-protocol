@@ -26,7 +26,8 @@
 | `grantRole`                  | `0x2f2ff15d` |
 | `handleRevert`               | `0x44792f25` |
 | `hasRole`                    | `0x91d14854` |
-| `initialize`                 | `0x8d8965bd` |
+| `initialize`                 | `0x86891c9b` |
+| `initializeOnChain`          | `0x86f01739` |
 | `isAsyncModifierSet`         | `0xb69e0c4a` |
 | `isValidPromise`             | `0xb690b962` |
 | `maxFees`                    | `0xe83e34b1` |
@@ -39,6 +40,7 @@
 | `reAuctionCount`             | `0x9b4b22d3` |
 | `renounceOwnership`          | `0x715018a6` |
 | `requestOwnershipHandover`   | `0x25692962` |
+| `rescueFunds`                | `0x6ccae054` |
 | `revokeRole`                 | `0xd547741f` |
 | `sbType`                     | `0x745de344` |
 | `setAddress`                 | `0x85bf312c` |
@@ -145,6 +147,7 @@
 | `renounceOwnership`              | `0x715018a6` |
 | `requestBlockedCredits`          | `0xb62d25ac` |
 | `requestOwnershipHandover`       | `0x25692962` |
+| `rescueFunds`                    | `0x6ccae054` |
 | `sbType`                         | `0x745de344` |
 | `setFeesPlug`                    | `0xeab75f36` |
 | `setFeesPool`                    | `0xd6684588` |
@@ -192,6 +195,7 @@
 | `ownershipHandoverExpiresAt` | `0xfee81cf4` |
 | `renounceOwnership`          | `0x715018a6` |
 | `requestOwnershipHandover`   | `0x25692962` |
+| `rescueFunds`                | `0x6ccae054` |
 | `setAsyncDeployer`           | `0xcb0ffff8` |
 | `setContractAddress`         | `0xe001f841` |
 | `setDefaultAuctionManager`   | `0xede8b4b5` |
@@ -225,6 +229,7 @@
 | `ownershipHandoverExpiresAt`    | `0xfee81cf4` |
 | `renounceOwnership`             | `0x715018a6` |
 | `requestOwnershipHandover`      | `0x25692962` |
+| `rescueFunds`                   | `0x6ccae054` |
 | `setAsyncPromiseImplementation` | `0xeb506eab` |
 | `setForwarderImplementation`    | `0x83b1e974` |
 | `transferOwnership`             | `0xf2fde38b` |
@@ -246,6 +251,7 @@
 | `markOnchainRevert` | `0xd0e7af1b` |
 | `markResolved`      | `0x822d5d1f` |
 | `requestCount`      | `0x5badbe4c` |
+| `rescueFunds`       | `0x6ccae054` |
 | `returnData`        | `0xebddbaf6` |
 | `state`             | `0xc19d93fb` |
 | `then`              | `0x0bf2ba15` |
@@ -253,16 +259,25 @@
 
 ## DeployForwarder
 
-| Function                  | Signature    |
-| ------------------------- | ------------ |
-| `addressResolver__`       | `0x6a750469` |
-| `asyncDeployer__`         | `0x2a39e801` |
-| `deploy`                  | `0x940f11af` |
-| `deployForwarder__`       | `0xd4e3b034` |
-| `deployerSwitchboardType` | `0xaa381f9a` |
-| `feesManager__`           | `0x70568b58` |
-| `saltCounter`             | `0xa04c6809` |
-| `watcher__`               | `0x300bb063` |
+| Function                     | Signature    |
+| ---------------------------- | ------------ |
+| `addressResolver__`          | `0x6a750469` |
+| `asyncDeployer__`            | `0x2a39e801` |
+| `cancelOwnershipHandover`    | `0x54d1f13d` |
+| `completeOwnershipHandover`  | `0xf04e283e` |
+| `deploy`                     | `0x940f11af` |
+| `deployForwarder__`          | `0xd4e3b034` |
+| `deployerSwitchboardType`    | `0xaa381f9a` |
+| `feesManager__`              | `0x70568b58` |
+| `initialize`                 | `0x6133f985` |
+| `owner`                      | `0x8da5cb5b` |
+| `ownershipHandoverExpiresAt` | `0xfee81cf4` |
+| `renounceOwnership`          | `0x715018a6` |
+| `requestOwnershipHandover`   | `0x25692962` |
+| `rescueFunds`                | `0x6ccae054` |
+| `saltCounter`                | `0xa04c6809` |
+| `transferOwnership`          | `0xf2fde38b` |
+| `watcher__`                  | `0x300bb063` |
 
 ## Forwarder
 
@@ -277,6 +292,7 @@
 | `getOnChainAddress` | `0x9da48789` |
 | `initialize`        | `0x647c576c` |
 | `onChainAddress`    | `0x8bd0b363` |
+| `rescueFunds`       | `0x6ccae054` |
 | `watcher__`         | `0x300bb063` |
 
 ## ProxyFactory
@@ -344,11 +360,13 @@
 | `cancelOwnershipHandover`    | `0x54d1f13d` |
 | `completeOwnershipHandover`  | `0xf04e283e` |
 | `getPlugConfigs`             | `0x8a028c38` |
+| `initialize`                 | `0x485cc955` |
 | `isValidPlug`                | `0xec8aef74` |
 | `owner`                      | `0x8da5cb5b` |
 | `ownershipHandoverExpiresAt` | `0xfee81cf4` |
 | `renounceOwnership`          | `0x715018a6` |
 | `requestOwnershipHandover`   | `0x25692962` |
+| `rescueFunds`                | `0x6ccae054` |
 | `setAppGatewayConfigs`       | `0xd137fcbb` |
 | `setIsValidPlug`             | `0xf41332b0` |
 | `setSocket`                  | `0x075c40be` |
@@ -364,6 +382,7 @@
 | Function          | Signature    |
 | ----------------- | ------------ |
 | `markRevert`      | `0x56501015` |
+| `rescueFunds`     | `0x6ccae054` |
 | `resolvePromises` | `0xbf8484b8` |
 | `watcher__`       | `0x300bb063` |
 
@@ -387,6 +406,7 @@
 | `getRequestBatchIds`           | `0xe138fadb` |
 | `handleRevert`                 | `0xcc88d3f9` |
 | `increaseFees`                 | `0x10205541` |
+| `initialize`                   | `0x485cc955` |
 | `nextBatchCount`               | `0x333a3963` |
 | `nextRequestCount`             | `0xfef72893` |
 | `owner`                        | `0x8da5cb5b` |
@@ -395,6 +415,7 @@
 | `precompiles`                  | `0x9932450b` |
 | `renounceOwnership`            | `0x715018a6` |
 | `requestOwnershipHandover`     | `0x25692962` |
+| `rescueFunds`                  | `0x6ccae054` |
 | `setPrecompile`                | `0x122e0042` |
 | `submitRequest`                | `0xbb299a2c` |
 | `transferOwnership`            | `0xf2fde38b` |
@@ -436,6 +457,7 @@
 | `renounceOwnership`          | `0x715018a6` |
 | `requestHandler__`           | `0x55184561` |
 | `requestOwnershipHandover`   | `0x25692962` |
+| `rescueFunds`                | `0xa58c6fc5` |
 | `setCoreContracts`           | `0xefa891c4` |
 | `setIsValidPlug`             | `0x7fc82ff6` |
 | `setTriggerFees`             | `0xaeb30511` |
@@ -477,6 +499,7 @@
 | `getPrecompileFees`            | `0xb7a3d04c` |
 | `handlePayload`                | `0x1d5e1d98` |
 | `readFees`                     | `0xe06357a2` |
+| `rescueFunds`                  | `0x6ccae054` |
 | `resolvePayload`               | `0xea92e825` |
 | `setExpiryTime`                | `0x30fc4cff` |
 | `setFees`                      | `0x3d18678e` |
@@ -491,6 +514,7 @@
 | `getPrecompileFees`            | `0xb7a3d04c` |
 | `handlePayload`                | `0x1d5e1d98` |
 | `maxScheduleDelayInSeconds`    | `0x3ef01cdb` |
+| `rescueFunds`                  | `0x6ccae054` |
 | `resolvePayload`               | `0xea92e825` |
 | `scheduleCallbackFees`         | `0x4c5b6007` |
 | `scheduleFeesPerSecond`        | `0x852a74c1` |
@@ -515,10 +539,12 @@
 | `getPrecompileFees`            | `0xb7a3d04c` |
 | `getPrevBatchDigestHash`       | `0x82b35b69` |
 | `handlePayload`                | `0x1d5e1d98` |
+| `initialize`                   | `0xeb990c59` |
 | `owner`                        | `0x8da5cb5b` |
 | `ownershipHandoverExpiresAt`   | `0xfee81cf4` |
 | `renounceOwnership`            | `0x715018a6` |
 | `requestOwnershipHandover`     | `0x25692962` |
+| `rescueFunds`                  | `0x6ccae054` |
 | `resolvePayload`               | `0xea92e825` |
 | `setContractFactoryPlugs`      | `0xc067b6dd` |
 | `setExpiryTime`                | `0x30fc4cff` |

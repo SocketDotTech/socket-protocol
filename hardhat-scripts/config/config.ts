@@ -34,6 +34,9 @@ export const getChains = () => {
         ChainSlug.OPTIMISM_SEPOLIA,
         ChainSlug.ARBITRUM_SEPOLIA,
         ChainSlug.BASE_SEPOLIA,
+        ChainSlug.BASE,
+        ChainSlug.ARBITRUM,
+        ChainSlug.OPTIMISM,
       ];
     case DeploymentMode.PROD:
       return [
@@ -46,6 +49,16 @@ export const getChains = () => {
       throw new Error(`Invalid deployment mode: ${mode}`);
   }
 };
+export const testnetChains: Array<ChainSlug> = [
+  ChainSlug.OPTIMISM_SEPOLIA,
+  ChainSlug.ARBITRUM_SEPOLIA,
+  ChainSlug.BASE_SEPOLIA,
+];
+export const mainnetChains: Array<ChainSlug> = [
+  ChainSlug.OPTIMISM,
+  ChainSlug.ARBITRUM,
+  ChainSlug.BASE,
+];
 
 export const chains: Array<ChainSlug> = getChains();
 export const EVM_CHAIN_ID_MAP: Record<DeploymentMode, number> = {
@@ -78,7 +91,7 @@ export const TEST_USDC_DECIMALS = 6;
 
 // Fees Pool Funding Amount
 export const FEES_POOL_FUNDING_AMOUNT_THRESHOLD =
-  ethers.utils.parseEther("10000");
+  ethers.utils.parseEther("1000");
 
 // Watcher Precompile Fees
 export const READ_FEES = utils.parseEther("0.000001");

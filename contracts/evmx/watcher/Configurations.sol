@@ -170,11 +170,7 @@ contract Configurations is ConfigurationsStorage, Initializable, Ownable, Watche
      * @param rescueTo_ The address where rescued tokens need to be sent.
      * @param amount_ The amount of tokens to be rescued.
      */
-    function rescueFunds(
-        address token_,
-        address rescueTo_,
-        uint256 amount_
-    ) external onlyWatcher {
+    function rescueFunds(address token_, address rescueTo_, uint256 amount_) external onlyWatcher {
         RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 }

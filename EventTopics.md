@@ -9,6 +9,7 @@
 | `AuctionRestarted`           | `(requestCount: uint40)`                    | `0x071867b21946ec4655665f0d4515d3757a5a52f144c762ecfdfb11e1da542b82` |
 | `AuctionStarted`             | `(requestCount: uint40)`                    | `0xcd040613cf8ef0cfcaa3af0d711783e827a275fc647c116b74595bf17cb9364f` |
 | `BidPlaced`                  | `(requestCount: uint40, bid: tuple)`        | `0x7f79485e4c9aeea5d4899bc6f7c63b22ac1f4c01d2d28c801e94732fee657b5d` |
+| `Initialized`                | `(version: uint64)`                         | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
 | `MaxReAuctionCountSet`       | `(maxReAuctionCount: uint256)`              | `0x2f6fadde7ab8ab83d21ab10c3bc09dde179f8696d47c4176581facf0c6f96bbf` |
 | `OwnershipHandoverCanceled`  | `(pendingOwner: address)`                   | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
 | `OwnershipHandoverRequested` | `(pendingOwner: address)`                   | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
@@ -118,8 +119,12 @@
 
 ## DeployForwarder
 
-| Event | Arguments | Topic |
-| ----- | --------- | ----- |
+| Event                        | Arguments                                | Topic                                                                |
+| ---------------------------- | ---------------------------------------- | -------------------------------------------------------------------- |
+| `Initialized`                | `(version: uint64)`                      | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
+| `OwnershipHandoverCanceled`  | `(pendingOwner: address)`                | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
+| `OwnershipHandoverRequested` | `(pendingOwner: address)`                | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
+| `OwnershipTransferred`       | `(oldOwner: address, newOwner: address)` | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
 
 ## Forwarder
 
@@ -195,6 +200,7 @@
 | Event                        | Arguments                                                                                                                       | Topic                                                                |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | `FeesIncreased`              | `(requestCount: uint40, newMaxFees: uint256)`                                                                                   | `0xf258fca4e49b803ee2a4c2e33b6fcf18bc3982df21f111c00677025bf1ccbb6a` |
+| `Initialized`                | `(version: uint64)`                                                                                                             | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
 | `OwnershipHandoverCanceled`  | `(pendingOwner: address)`                                                                                                       | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
 | `OwnershipHandoverRequested` | `(pendingOwner: address)`                                                                                                       | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
 | `OwnershipTransferred`       | `(oldOwner: address, newOwner: address)`                                                                                        | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
@@ -255,6 +261,7 @@
 | `ContractFactoryPlugSet`        | `(chainSlug: uint32, contractFactoryPlug: address)`                                                              | `0x85bfa413b9e5e225278f51af2ac872988e0a9374263b118d963c50945ea888bb` |
 | `ExpiryTimeSet`                 | `(expiryTime: uint256)`                                                                                          | `0x07e837e13ad9a34715a6bd45f49bbf12de19f06df79cb0be12b3a7d7f2397fa9` |
 | `FeesSet`                       | `(writeFees: uint256)`                                                                                           | `0x3346af6da1932164d501f2ec28f8c5d686db5828a36b77f2da4332d89184fe7b` |
+| `Initialized`                   | `(version: uint64)`                                                                                              | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
 | `OwnershipHandoverCanceled`     | `(pendingOwner: address)`                                                                                        | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
 | `OwnershipHandoverRequested`    | `(pendingOwner: address)`                                                                                        | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
 | `OwnershipTransferred`          | `(oldOwner: address, newOwner: address)`                                                                         | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
