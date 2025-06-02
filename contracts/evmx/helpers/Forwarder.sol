@@ -7,7 +7,7 @@ import "../interfaces/IAddressResolver.sol";
 import "../interfaces/IAppGateway.sol";
 import "../interfaces/IForwarder.sol";
 import {QueueParams, OverrideParams, Transaction} from "../../utils/common/Structs.sol";
-import {AsyncModifierNotSet, WatcherNotSet} from "../../utils/common/Errors.sol";
+import {AsyncModifierNotSet, WatcherNotSet, InvalidOnChainAddress} from "../../utils/common/Errors.sol";
 import "../../utils/RescueFundsLib.sol";
 
 /// @title Forwarder Storage
@@ -44,6 +44,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
         address onChainAddress_,
         address addressResolver_
     ) public reinitializer(1) {
+        if (onChainAddress_ == address(0)) revert InvalidOnChainAddress();
         chainSlug = chainSlug_;
         onChainAddress = onChainAddress_;
         _setAddressResolver(addressResolver_);
