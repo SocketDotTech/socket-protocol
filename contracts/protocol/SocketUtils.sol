@@ -84,7 +84,7 @@ abstract contract SocketUtils is SocketConfig {
                     executeParams_.payload,
                     executeParams_.target,
                     appGatewayId_,
-                    executeParams_.prevDigestsHash,
+                    executeParams_.prevBatchDigestHash,
                     executeParams_.extraData
                 )
             );

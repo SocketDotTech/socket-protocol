@@ -84,7 +84,7 @@ struct ExecuteParams {
     uint256 deadline;
     uint256 gasLimit;
     uint256 value;
-    bytes32 prevDigestsHash;
+    bytes32 prevBatchDigestHash;
     address target;
     bytes payload;
     bytes extraData;
@@ -134,7 +134,7 @@ struct DigestParams {
     bytes payload;
     address target;
     bytes32 appGatewayId;
-    bytes32 prevDigestsHash;
+    bytes32 prevBatchDigestHash;
     bytes extraData;
 }
 
