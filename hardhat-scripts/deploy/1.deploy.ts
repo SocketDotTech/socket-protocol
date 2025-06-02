@@ -22,6 +22,7 @@ import {
 import {
   DeploymentAddresses,
   FAST_SWITCHBOARD_TYPE,
+  getFeePool,
   IMPLEMENTATION_SLOT,
 } from "../constants";
 import {
@@ -103,14 +104,19 @@ const deployEVMxContracts = async () => {
       );
       deployUtils.addresses[contractName] = proxyFactory.address;
 
-      const feesPool = await getOrDeploy(
-        Contracts.FeesPool,
-        Contracts.FeesPool,
-        "contracts/evmx/fees/FeesPool.sol",
-        [EVMxOwner],
-        deployUtils
-      );
-      deployUtils.addresses[Contracts.FeesPool] = feesPool.address;
+      const feePool = getFeePool(mode);
+      if (feePool == "") {
+        const feesPool = await getOrDeploy(
+          Contracts.FeesPool,
+          Contracts.FeesPool,
+          "contracts/evmx/fees/FeesPool.sol",
+          [EVMxOwner],
+          deployUtils
+        );
+        deployUtils.addresses[Contracts.FeesPool] = feesPool.address;
+      } else {
+        deployUtils.addresses[Contracts.FeesPool] = feePool;
+      }
 
       deployUtils = await deployContractWithProxy(
         Contracts.AddressResolver,
@@ -131,7 +137,7 @@ const deployEVMxContracts = async () => {
         [
           EVMX_CHAIN_ID,
           addressResolver.address,
-          feesPool.address,
+          deployUtils.addresses[Contracts.FeesPool],
           EVMxOwner,
           FAST_SWITCHBOARD_TYPE,
         ],

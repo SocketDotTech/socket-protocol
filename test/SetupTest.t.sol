@@ -232,19 +232,23 @@ contract DeploySetup is SetupStore {
         vm.startPrank(socketOwner);
         // socket
         socket.grantRole(GOVERNANCE_ROLE, address(socketOwner));
+        socket.grantRole(RESCUE_ROLE, address(socketOwner));
+        socket.grantRole(SWITCHBOARD_DISABLER_ROLE, address(socketOwner));
 
         // switchboard
         switchboard.registerSwitchboard();
         switchboard.grantRole(WATCHER_ROLE, watcherEOA);
+        switchboard.grantRole(RESCUE_ROLE, address(socketOwner));
 
+        feesPlug.grantRole(RESCUE_ROLE, address(socketOwner));
         feesPlug.whitelistToken(address(socketConfig.testUSDC));
-
         feesPlug.connectSocket(
             encodeAppGatewayId(address(feesManager)),
             address(socket),
             address(switchboard)
         );
 
+        contractFactoryPlug.grantRole(RESCUE_ROLE, address(socketOwner));
         contractFactoryPlug.connectSocket(
             encodeAppGatewayId(address(writePrecompile)),
             address(socket),
