@@ -387,19 +387,24 @@ const deployContractWithProxy = async (
     );
     const newImplementation = implementation.address;
 
-    console.log("Current implementation:", currentImplAddress);
-    console.log("New implementation:", newImplementation);
+    console.log(
+      "Current implementation for",
+      contractName,
+      ":",
+      currentImplAddress
+    );
+    console.log("New implementation for", contractName, ":", newImplementation);
 
     if (currentImplAddress.toLowerCase() === newImplementation.toLowerCase())
       return deployUtils;
 
-    console.log("Upgrading contract");
+    console.log("Upgrading contract: ", contractName);
 
     const tx = await proxyFactory
       .connect(deployUtils.signer)
       .upgrade(deployUtils.addresses[contractName], newImplementation);
 
-    console.log("Upgraded contract", tx.hash);
+    console.log("Upgraded contract", contractName, tx.hash);
 
     await tx.wait();
 

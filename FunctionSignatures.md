@@ -537,7 +537,7 @@
 | `expiryTime`                   | `0x99bc0aea` |
 | `getDigest`                    | `0xdd4bf97b` |
 | `getPrecompileFees`            | `0xb7a3d04c` |
-| `getPrevBatchDigestHash`       | `0x82b35b69` |
+| `getPrevBatchDigestHash`       | `0x372863a1` |
 | `handlePayload`                | `0x1d5e1d98` |
 | `initialize`                   | `0xeb990c59` |
 | `owner`                        | `0x8da5cb5b` |
