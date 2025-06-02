@@ -12,3 +12,12 @@ export interface WatcherMultiCallParams {
   nonce: number;
   signature: string;
 }
+
+export type AppGatewayConfig = {
+  plugConfig: {
+    appGatewayId: string;
+    switchboard: string;
+  };
+  plug: string;
+  chainSlug: number;
+};

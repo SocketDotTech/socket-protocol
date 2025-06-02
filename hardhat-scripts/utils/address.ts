@@ -20,3 +20,15 @@ export const getAddresses = (
       throw new Error(`Invalid deployment mode: ${mode}`);
   }
 };
+
+export const checkIfAddressExists = (address: string, name: string) => {
+  if (
+    address == "0x0000000000000000000000000000000000000000" ||
+    !address ||
+    address == "0x" ||
+    address.length != 42
+  ) {
+    throw Error(`${name} not found : ${address}`);
+  }
+  return address;
+};
