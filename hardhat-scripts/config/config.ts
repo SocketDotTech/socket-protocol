@@ -50,7 +50,6 @@ export const getChains = () => {
   }
 };
 
-
 export const getFeesPlugChains = (): Array<ChainSlug> => {
   switch (mode) {
     case DeploymentMode.LOCAL:

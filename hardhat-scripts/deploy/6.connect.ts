@@ -89,7 +89,7 @@ export const isConfigSetOnSocket = async (
   const plugConfigRegistered = await socket.getPlugConfig(plug.address);
   return (
     plugConfigRegistered.appGatewayId.toLowerCase() ===
-    appGatewayId.toLowerCase() &&
+      appGatewayId.toLowerCase() &&
     plugConfigRegistered.switchboard.toLowerCase() === switchboard.toLowerCase()
   );
 };

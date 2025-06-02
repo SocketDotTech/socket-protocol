@@ -4,7 +4,11 @@ dotenvConfig();
 import { Contract, Signer, Wallet } from "ethers";
 import { ChainAddressesObj, ChainSlug, Contracts } from "../../src";
 import { chains, EVMX_CHAIN_ID, MAX_MSG_VALUE_LIMIT, mode } from "../config";
-import { DeploymentAddresses, FAST_SWITCHBOARD_TYPE, getFeeTokens } from "../constants";
+import {
+  DeploymentAddresses,
+  FAST_SWITCHBOARD_TYPE,
+  getFeeTokens,
+} from "../constants";
 import {
   getAddresses,
   getInstance,
@@ -43,11 +47,7 @@ export const configureChains = async (addresses: DeploymentAddresses) => {
     );
 
     if (chainAddresses[Contracts.FeesPlug]) {
-      await whitelistToken(
-        chain,
-        chainAddresses[Contracts.FeesPlug],
-        signer
-      );
+      await whitelistToken(chain, chainAddresses[Contracts.FeesPlug], signer);
     }
 
     await setMaxMsgValueLimit(chain);
@@ -168,8 +168,7 @@ export const whitelistToken = async (
   if (tokens.length == 0) return;
 
   for (const token of tokens) {
-    const isWhitelisted = await feesPlugContract
-      .whitelistedTokens(token);
+    const isWhitelisted = await feesPlugContract.whitelistedTokens(token);
 
     if (!isWhitelisted) {
       const tx = await feesPlugContract.whitelistToken(token);

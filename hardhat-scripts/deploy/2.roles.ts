@@ -4,12 +4,7 @@ dotenvConfig();
 import { Wallet } from "ethers";
 import { chains, EVMX_CHAIN_ID, mode, watcher, transmitter } from "../config";
 import { DeploymentAddresses } from "../constants";
-import {
-  getAddresses,
-  getInstance,
-  getRoleHash,
-  overrides,
-} from "../utils";
+import { getAddresses, getInstance, getRoleHash, overrides } from "../utils";
 import { ChainAddressesObj, ChainSlug, Contracts } from "../../src";
 import { ROLES } from "../constants/roles";
 import { getWatcherSigner, getSocketSigner } from "../utils/sign";
@@ -28,7 +23,7 @@ export const REQUIRED_ROLES = {
     ],
     FeesPlug: [ROLES.RESCUE_ROLE],
     ContractFactoryPlug: [ROLES.RESCUE_ROLE],
-  }
+  },
 };
 
 async function setRoleForContract(
@@ -86,7 +81,7 @@ async function setRolesOnChain(chain: number, addresses: DeploymentAddresses) {
     for (const roleName of roles) {
       const targetAddress =
         contractName === Contracts.FastSwitchboard &&
-          roleName === ROLES.WATCHER_ROLE
+        roleName === ROLES.WATCHER_ROLE
           ? watcher
           : signer.address;
 

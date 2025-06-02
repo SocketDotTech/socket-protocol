@@ -45,12 +45,7 @@ contract WithdrawFees is Script {
                 vm.createSelectFork(vm.envString("EVMX_RPC"));
                 vm.startBroadcast(privateKey);
                 console.log("Withdrawing amount:", amountToWithdraw);
-                appGateway.withdrawCredits(
-                    421614,
-                    token,
-                    amountToWithdraw,
-                    sender
-                );
+                appGateway.withdrawCredits(421614, token, amountToWithdraw, sender);
                 vm.stopBroadcast();
 
                 // Switch back to Arbitrum Sepolia to check final balance
