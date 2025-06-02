@@ -36,20 +36,21 @@ const updatedLines = lines.map((line) => {
     return `ARBITRUM_SWITCHBOARD=${
       latestAddresses[ChainSlug.ARBITRUM_SEPOLIA][Contracts.FastSwitchboard]
     }`;
-  } else if (
-    line.startsWith("ARBITRUM_FEES_PLUG=") &&
-    latestAddresses[ChainSlug.ARBITRUM_SEPOLIA][Contracts.FeesPlug]
-  ) {
-    return `ARBITRUM_FEES_PLUG=${
-      latestAddresses[ChainSlug.ARBITRUM_SEPOLIA][Contracts.FeesPlug]
-    }`;
-  } else if (
-    line.startsWith("ARBITRUM_TEST_USDC=") &&
-    getFeeTokens(mode, ChainSlug.ARBITRUM_SEPOLIA).length > 0
-  ) {
-    return `ARBITRUM_TEST_USDC=${
-      getFeeTokens(mode, ChainSlug.ARBITRUM_SEPOLIA)[0]
-    }`;
+  } else if (line.startsWith("ARBITRUM_FEES_PLUG=")) {
+    const feesPlug =
+      latestAddresses[ChainSlug.ARBITRUM_SEPOLIA][Contracts.FeesPlug];
+    if (feesPlug) {
+      return `ARBITRUM_FEES_PLUG=${feesPlug}`;
+    } else {
+      return line;
+    }
+  } else if (line.startsWith("ARBITRUM_TEST_USDC=")) {
+    const testUSDC = getFeeTokens(mode, ChainSlug.ARBITRUM_SEPOLIA)[0];
+    if (testUSDC) {
+      return `ARBITRUM_TEST_USDC=${testUSDC}`;
+    } else {
+      return line;
+    }
   }
   return line; // Return the line unchanged if it doesn't match any of the above
 });
