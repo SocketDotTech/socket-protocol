@@ -9,6 +9,7 @@ import {
   chains,
   EVMX_CHAIN_ID,
   EXPIRY_TIME,
+  getFeesPlugChains,
   logConfig,
   MAX_RE_AUCTION_COUNT,
   MAX_SCHEDULE_DELAY_SECONDS,
@@ -321,15 +322,17 @@ const deploySocketContracts = async () => {
         );
         deployUtils.addresses[contractName] = sb.address;
 
-        contractName = Contracts.FeesPlug;
-        const feesPlug: Contract = await getOrDeploy(
-          contractName,
-          contractName,
-          `contracts/evmx/plugs/${contractName}.sol`,
-          [socket.address, socketOwner],
-          deployUtils
-        );
-        deployUtils.addresses[contractName] = feesPlug.address;
+        if (getFeesPlugChains().includes(chain as ChainSlug)) {
+          contractName = Contracts.FeesPlug;
+          const feesPlug: Contract = await getOrDeploy(
+            contractName,
+            contractName,
+            `contracts/evmx/plugs/${contractName}.sol`,
+            [socket.address, socketOwner],
+            deployUtils
+          );
+          deployUtils.addresses[contractName] = feesPlug.address;
+        }
 
         contractName = Contracts.ContractFactoryPlug;
         const contractFactoryPlug: Contract = await getOrDeploy(

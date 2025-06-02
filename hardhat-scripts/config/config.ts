@@ -49,6 +49,23 @@ export const getChains = () => {
       throw new Error(`Invalid deployment mode: ${mode}`);
   }
 };
+
+
+export const getFeesPlugChains = (): Array<ChainSlug> => {
+  switch (mode) {
+    case DeploymentMode.LOCAL:
+      return getChains();
+    case DeploymentMode.DEV:
+      return getChains();
+    case DeploymentMode.STAGE:
+      return getChains();
+    case DeploymentMode.PROD:
+      return getChains();
+    default:
+      throw new Error(`Invalid deployment mode: ${mode}`);
+  }
+};
+
 export const testnetChains: Array<ChainSlug> = [
   ChainSlug.OPTIMISM_SEPOLIA,
   ChainSlug.ARBITRUM_SEPOLIA,

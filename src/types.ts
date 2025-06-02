@@ -19,9 +19,8 @@ export type ChainAddressesObj = {
   Socket: string;
   SocketBatcher: string;
   FastSwitchboard: string;
-  FeesPlug: string;
   ContractFactoryPlug: string;
-  TestUSDC: string;
+  FeesPlug?: string;
   startBlock: number;
 };
 

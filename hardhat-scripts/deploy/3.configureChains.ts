@@ -42,10 +42,14 @@ export const configureChains = async (addresses: DeploymentAddresses) => {
       socketContract
     );
 
-    await whitelistToken(
-      chain,
-      chainAddresses[Contracts.FeesPlug], signer
-    );
+    if (chainAddresses[Contracts.FeesPlug]) {
+      await whitelistToken(
+        chain,
+        chainAddresses[Contracts.FeesPlug],
+        signer
+      );
+    }
+
     await setMaxMsgValueLimit(chain);
 
     await setOnchainContracts(chain, addresses);
@@ -96,16 +100,17 @@ async function setOnchainContracts(
     signer
   );
 
-  await updateContractSettings(
-    EVMX_CHAIN_ID,
-    Contracts.FeesManager,
-    "feesPlugs",
-    [chain],
-    chainAddresses[Contracts.FeesPlug],
-    "setFeesPlug",
-    [chain, chainAddresses[Contracts.FeesPlug]],
-    signer
-  );
+  if (chainAddresses[Contracts.FeesPlug])
+    await updateContractSettings(
+      EVMX_CHAIN_ID,
+      Contracts.FeesManager,
+      "feesPlugs",
+      [chain],
+      chainAddresses[Contracts.FeesPlug],
+      "setFeesPlug",
+      [chain, chainAddresses[Contracts.FeesPlug]],
+      signer
+    );
 
   await updateContractSettings(
     EVMX_CHAIN_ID,

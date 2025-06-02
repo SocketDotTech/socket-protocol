@@ -89,7 +89,7 @@ export const isConfigSetOnSocket = async (
   const plugConfigRegistered = await socket.getPlugConfig(plug.address);
   return (
     plugConfigRegistered.appGatewayId.toLowerCase() ===
-      appGatewayId.toLowerCase() &&
+    appGatewayId.toLowerCase() &&
     plugConfigRegistered.switchboard.toLowerCase() === switchboard.toLowerCase()
   );
 };
@@ -147,7 +147,9 @@ export const connectPlugsOnSocket = async () => {
       const addr = addresses[chain]!;
       // Connect each plug contract
       for (const plugContract of plugs) {
-        await connectPlug(chain, plugContract, socketSigner, addresses, addr);
+        if (addr[plugContract]) {
+          await connectPlug(chain, plugContract, socketSigner, addresses, addr);
+        }
       }
     })
   );
@@ -195,6 +197,11 @@ export const updateConfigEVMx = async () => {
           const switchboard = addr[Contracts.FastSwitchboard];
           checkIfAddressExists(switchboard, "Switchboard");
           checkIfAppGatewayIdExists(appGatewayId, "AppGatewayId");
+
+          if (!addr[plugContract]) {
+            console.log(`${plugContract} not found on ${chain}`);
+            continue;
+          }
 
           if (
             await isConfigSetOnEVMx(
