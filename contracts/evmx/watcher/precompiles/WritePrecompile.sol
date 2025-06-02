@@ -211,13 +211,13 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
         uint40 prevBatchCount = batchCount_ - 1;
 
         bytes32[] memory payloadIds = requestHandler__().getBatchPayloadIds(prevBatchCount);
-        bytes32 prevDigestsHash = bytes32(0);
+        bytes32 prevBatchDigestHash = bytes32(0);
         for (uint40 i = 0; i < payloadIds.length; i++) {
-            prevDigestsHash = keccak256(
-                abi.encodePacked(prevDigestsHash, digestHashes[payloadIds[i]])
+            prevBatchDigestHash = keccak256(
+                abi.encodePacked(prevBatchDigestHash, digestHashes[payloadIds[i]])
             );
         }
-        return prevDigestsHash;
+        return prevBatchDigestHash;
     }
 
     /// @notice Calculates the digest hash of payload parameters
@@ -238,7 +238,7 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
                 params_.payload,
                 params_.target,
                 params_.appGatewayId,
-                params_.prevDigestsHash,
+                params_.prevBatchDigestHash,
                 params_.extraData
             )
         );

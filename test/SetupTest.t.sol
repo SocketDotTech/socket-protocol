@@ -837,7 +837,7 @@ contract WatcherSetup is AuctionSetup {
         chainSlug = transaction.chainSlug;
         switchboard = switchboard_;
 
-        bytes32 prevDigestsHash = writePrecompile.getPrevBatchDigestHash(payloadParams.batchCount);
+        bytes32 prevBatchDigestHash = writePrecompile.getPrevBatchDigestHash(payloadParams.batchCount);
         digestParams = DigestParams(
             address(getSocketConfig(transaction.chainSlug).socket),
             transmitterEOA,
@@ -849,7 +849,7 @@ contract WatcherSetup is AuctionSetup {
             transaction.payload,
             transaction.target,
             encodeAppGatewayId(appGateway),
-            prevDigestsHash,
+            prevBatchDigestHash,
             bytes("")
         );
 
@@ -883,7 +883,7 @@ contract WatcherSetup is AuctionSetup {
                 requestCount: payloadParams.requestCount,
                 batchCount: payloadParams.batchCount,
                 payloadCount: payloadParams.payloadCount,
-                prevDigestsHash: digestParams.prevDigestsHash,
+                prevBatchDigestHash: digestParams.prevBatchDigestHash,
                 extraData: digestParams.extraData
             }),
             switchboard,

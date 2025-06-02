@@ -137,7 +137,7 @@ contract SocketFeeManagerTest is AppGatewayBaseSetup {
             requestCount: 0,
             batchCount: 0,
             payloadCount: 0,
-            prevDigestsHash: bytes32(0),
+            prevBatchDigestHash: bytes32(0),
             extraData: bytes("")
         });
 
