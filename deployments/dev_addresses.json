@@ -5,8 +5,7 @@
     "FeesPlug": "0xb0cbd56A86568BB4cBBE59B0EcA029A4F2D7f235",
     "Socket": "0xEb907f52eAF6e81439F8807AE2F143Bd3482e6b6",
     "SocketBatcher": "0xc498A63eE84143A15A7D3080E1E51af700f35e41",
-    "startBlock": 159285686,
-    "TestUSDC": "0x2321BF7AdFaf49b1338F1Cd474859dBc0D8dfA96"
+    "startBlock": 159285686
   },
   "7625382": {
     "AddressResolver": "0xF7efc3886b225A571d35C2DF736eD515F132911F",
@@ -40,7 +39,6 @@
     "FeesPlug": "0x64b7157Fe0878880b180d9BD2a0bd0D1794Cf44A",
     "Socket": "0xd8C787c27Cc6F4BF143855Bb50c880FB2DE38267",
     "SocketBatcher": "0xc6Fe653dAfeDd76d50e3F971dDA650917824f948",
-    "startBlock": 28522517,
-    "TestUSDC": "0x15dbE4B96306Cc9Eba15D834d6c1a895cF4e1697"
+    "startBlock": 28522517
   }
 }
