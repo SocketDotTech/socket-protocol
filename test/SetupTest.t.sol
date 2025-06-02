@@ -837,7 +837,9 @@ contract WatcherSetup is AuctionSetup {
         chainSlug = transaction.chainSlug;
         switchboard = switchboard_;
 
-        bytes32 prevBatchDigestHash = writePrecompile.getPrevBatchDigestHash(payloadParams.batchCount);
+        bytes32 prevBatchDigestHash = writePrecompile.getPrevBatchDigestHash(
+            payloadParams.batchCount
+        );
         digestParams = DigestParams(
             address(getSocketConfig(transaction.chainSlug).socket),
             transmitterEOA,

@@ -14,6 +14,7 @@
 | `OnlyInvoker()`            | `0x74ed21f5` |
 | `PromiseAlreadySetUp()`    | `0x927c53d5` |
 | `PromiseRevertFailed()`    | `0x0175b9de` |
+| `NotLatestPromise()`       | `0x39ca95d3` |
 
 ## evmx/plugs/ContractFactoryPlug.sol
 

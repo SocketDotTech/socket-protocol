@@ -44,6 +44,8 @@ export type S3Config = {
   version: string;
   chains: { [chainSlug: number]: ChainConfig };
   supportedChainSlugs: number[];
+  testnetChainSlugs: number[];
+  mainnetChainSlugs: number[];
 };
 
 export type ChainConfig = {

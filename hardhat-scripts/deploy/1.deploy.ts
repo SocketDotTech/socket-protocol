@@ -16,10 +16,6 @@ import {
   READ_FEES,
   SCHEDULE_CALLBACK_FEES,
   SCHEDULE_FEES_PER_SECOND,
-  TEST_USDC_DECIMALS,
-  TEST_USDC_INITIAL_SUPPLY,
-  TEST_USDC_NAME,
-  TEST_USDC_SYMBOL,
   TRIGGER_FEES,
   WRITE_FEES,
 } from "../config/config";
@@ -318,23 +314,6 @@ const deploySocketContracts = async () => {
           deployUtils
         );
         deployUtils.addresses[contractName] = sb.address;
-
-        contractName = Contracts.TestUSDC;
-
-        const testUSDC: Contract = await getOrDeploy(
-          contractName,
-          contractName,
-          `contracts/evmx/mocks/${contractName}.sol`,
-          [
-            TEST_USDC_NAME,
-            TEST_USDC_SYMBOL,
-            TEST_USDC_DECIMALS,
-            socketOwner,
-            TEST_USDC_INITIAL_SUPPLY,
-          ],
-          deployUtils
-        );
-        deployUtils.addresses[contractName] = testUSDC.address;
 
         contractName = Contracts.FeesPlug;
         const feesPlug: Contract = await getOrDeploy(

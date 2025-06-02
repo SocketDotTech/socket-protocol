@@ -22,7 +22,7 @@ abstract contract FeesManagerStorage is IFeesManager {
     // slot 50
     /// @notice evmx slug
     uint32 public evmxSlug;
-    
+
     IFeesPool public feesPool;
 
     // slot 51
