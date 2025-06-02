@@ -125,10 +125,9 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         uint32 chainSlug_,
         address token_,
         uint256 amount_,
-        uint256 maxFees_,
         address receiver_
     ) external {
-        _withdrawCredits(chainSlug_, token_, amount_, maxFees_, receiver_);
+        _withdrawCredits(chainSlug_, token_, amount_, receiver_);
     }
 
     function testOnChainRevert(uint32 chainSlug) public async {

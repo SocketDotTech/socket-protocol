@@ -166,8 +166,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
-            .getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -234,10 +233,9 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         uint32 chainSlug_,
         address token_,
         uint256 amount_,
-        uint256 maxFees_,
         address receiver_
     ) internal {
-        feesManager__().withdrawCredits(chainSlug_, token_, amount_, maxFees_, receiver_);
+        feesManager__().withdrawCredits(chainSlug_, token_, amount_, maxFees, receiver_);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

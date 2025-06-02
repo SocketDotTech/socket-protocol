@@ -49,7 +49,6 @@ contract WithdrawFees is Script {
                     421614,
                     token,
                     amountToWithdraw,
-                    estimatedGasCost,
                     sender
                 );
                 vm.stopBroadcast();
