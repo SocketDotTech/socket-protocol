@@ -4,7 +4,7 @@ dotenvConfig();
 import { Contract, Signer, Wallet } from "ethers";
 import { ChainAddressesObj, ChainSlug, Contracts } from "../../src";
 import { chains, EVMX_CHAIN_ID, MAX_MSG_VALUE_LIMIT, mode } from "../config";
-import { DeploymentAddresses, FAST_SWITCHBOARD_TYPE } from "../constants";
+import { DeploymentAddresses, FAST_SWITCHBOARD_TYPE, getFeeTokens } from "../constants";
 import {
   getAddresses,
   getInstance,
@@ -43,9 +43,8 @@ export const configureChains = async (addresses: DeploymentAddresses) => {
     );
 
     await whitelistToken(
-      chainAddresses[Contracts.FeesPlug],
-      chainAddresses[Contracts.TestUSDC],
-      signer
+      chain,
+      chainAddresses[Contracts.FeesPlug], signer
     );
     await setMaxMsgValueLimit(chain);
 
@@ -150,27 +149,33 @@ const registerSb = async (
 };
 
 export const whitelistToken = async (
+  chain: number,
   feesPlugAddress: string,
-  tokenAddress: string,
   signer: Signer
 ) => {
   console.log("Whitelisting token");
-  const feesPlugContract = await getInstance(
-    Contracts.FeesPlug,
-    feesPlugAddress
-  );
-  const isWhitelisted = await feesPlugContract
-    .connect(signer)
-    .whitelistedTokens(tokenAddress);
-  if (!isWhitelisted) {
-    const tx = await feesPlugContract
-      .connect(signer)
-      .whitelistToken(tokenAddress);
-    console.log(
-      `Whitelisting token ${tokenAddress} for ${feesPlugContract.address}`,
-      tx.hash
-    );
-    await tx.wait();
+
+  const feesPlugContract = (
+    await getInstance(Contracts.FeesPlug, feesPlugAddress)
+  ).connect(signer);
+
+  const tokens = getFeeTokens(mode, chain);
+  if (tokens.length == 0) return;
+
+  for (const token of tokens) {
+    const isWhitelisted = await feesPlugContract
+      .whitelistedTokens(token);
+
+    if (!isWhitelisted) {
+      const tx = await feesPlugContract.whitelistToken(token);
+      console.log(
+        `Whitelisting token ${token} for ${feesPlugContract.address}`,
+        tx.hash
+      );
+      await tx.wait();
+    } else {
+      console.log(`Token ${token} is already whitelisted`);
+    }
   }
 };
 
