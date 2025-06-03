@@ -15,7 +15,7 @@ const tokens: TokenMap = {
 
 const feePools: { [key: string]: string } = {
   [DeploymentMode.DEV]: "0xc20Be67ef742202dc93A78aa741E7C3715eA1DFd",
-  [DeploymentMode.STAGE]: "",
+  [DeploymentMode.STAGE]: "0xe2054B575664dfDBD7a7FbAf2B12420ae88DE0FF",
 };
 
 export const getFeeTokens = (

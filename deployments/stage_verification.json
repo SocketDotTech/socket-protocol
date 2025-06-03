@@ -41,11 +41,7 @@
       "0x5e1641B190B71ECCc85b1ECe934F31cD9b3dcF7a",
       "Socket",
       "contracts/protocol/Socket.sol",
-      [
-        10,
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "EVMX"
-      ]
+      [10, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
     ]
   ],
   "43": [
@@ -90,9 +86,7 @@
       "0x38e24A2F157817b830F36A35b862F24B1494d1aD",
       "PromiseResolver",
       "contracts/evmx/watcher/PromiseResolver.sol",
-      [
-        "0x4C846eCa55ad8cF19B9D5d906225da7b565174C1"
-      ]
+      ["0x4C846eCa55ad8cF19B9D5d906225da7b565174C1"]
     ],
     [
       "0xD38ae1a6C410c7681ac464bd60009198406035Ed",
@@ -146,9 +140,7 @@
       "0xe2054B575664dfDBD7a7FbAf2B12420ae88DE0FF",
       "FeesPool",
       "contracts/evmx/fees/FeesPool.sol",
-      [
-        "0xb62505feacC486e809392c65614Ce4d7b051923b"
-      ]
+      ["0xb62505feacC486e809392c65614Ce4d7b051923b"]
     ],
     [
       "0x526796AC60e45CBB9b17c654C9447Baf160C084d",
@@ -197,9 +189,7 @@
       "0xd0bd7837E66eEd7Be04C88354e75F5bA3cd19959",
       "PromiseResolver",
       "contracts/evmx/watcher/PromiseResolver.sol",
-      [
-        "0x03Aa399188E2741f89cc4265493DC5b544C52134"
-      ]
+      ["0x03Aa399188E2741f89cc4265493DC5b544C52134"]
     ],
     [
       "0x446C6B4086d1888cB15cF62735Bf57A4647E31A4",
@@ -235,9 +225,7 @@
       "0x69DD00B8a250e0A1bFF1b59db2EA99792faAbC66",
       "FeesPool",
       "contracts/evmx/fees/FeesPool.sol",
-      [
-        "0xb62505feacC486e809392c65614Ce4d7b051923b"
-      ]
+      ["0xb62505feacC486e809392c65614Ce4d7b051923b"]
     ],
     [
       "0xfddb38811a0774E66ABD5F3Ae960bFB7E7415029",
@@ -330,11 +318,7 @@
       "0xee1Aef0b06f63Aa1c881838794Dd0876462c2B0d",
       "Socket",
       "contracts/protocol/Socket.sol",
-      [
-        8453,
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "EVMX"
-      ]
+      [8453, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
     ],
     [
       "0xbDE0D2da12F703Ccd275d721214745BccDCAD124",
@@ -359,11 +343,7 @@
       "0x5e1641B190B71ECCc85b1ECe934F31cD9b3dcF7a",
       "Socket",
       "contracts/protocol/Socket.sol",
-      [
-        8453,
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "EVMX"
-      ]
+      [8453, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
     ]
   ],
   "42161": [
@@ -408,11 +388,7 @@
       "0x5e1641B190B71ECCc85b1ECe934F31cD9b3dcF7a",
       "Socket",
       "contracts/protocol/Socket.sol",
-      [
-        42161,
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "EVMX"
-      ]
+      [42161, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
     ]
   ],
   "84532": [
@@ -448,11 +424,7 @@
       "0xa09217Cfc47F399C382E982778f6128685e13aD4",
       "Socket",
       "contracts/protocol/Socket.sol",
-      [
-        84532,
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "EVMX"
-      ]
+      [84532, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
     ]
   ],
   "421614": [
@@ -488,11 +460,7 @@
       "0x468cA4bB968FD86eD752A7bD453c6869E27204f0",
       "Socket",
       "contracts/protocol/Socket.sol",
-      [
-        421614,
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "EVMX"
-      ]
+      [421614, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
     ]
   ],
   "11155420": [
@@ -528,11 +496,7 @@
       "0x790E894C59d6275503e2Ff4ba95A42E38c071195",
       "Socket",
       "contracts/protocol/Socket.sol",
-      [
-        11155420,
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "EVMX"
-      ]
+      [11155420, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
     ]
   ]
 }

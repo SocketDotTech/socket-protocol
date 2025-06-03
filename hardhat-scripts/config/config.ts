@@ -31,12 +31,12 @@ export const getChains = () => {
       return [ChainSlug.ARBITRUM_SEPOLIA, ChainSlug.OPTIMISM_SEPOLIA];
     case DeploymentMode.STAGE:
       return [
-        ChainSlug.OPTIMISM_SEPOLIA,
-        ChainSlug.ARBITRUM_SEPOLIA,
-        ChainSlug.BASE_SEPOLIA,
         ChainSlug.BASE,
         ChainSlug.ARBITRUM,
         ChainSlug.OPTIMISM,
+        ChainSlug.OPTIMISM_SEPOLIA,
+        ChainSlug.ARBITRUM_SEPOLIA,
+        ChainSlug.BASE_SEPOLIA,
       ];
     case DeploymentMode.PROD:
       return [
@@ -57,11 +57,7 @@ export const getFeesPlugChains = (): Array<ChainSlug> => {
     case DeploymentMode.DEV:
       return getChains();
     case DeploymentMode.STAGE:
-      return [
-        ChainSlug.OPTIMISM,
-        ChainSlug.ARBITRUM,
-        ChainSlug.BASE,
-      ];
+      return [ChainSlug.OPTIMISM, ChainSlug.ARBITRUM, ChainSlug.BASE];
     case DeploymentMode.PROD:
       return getChains();
     default:

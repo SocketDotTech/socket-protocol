@@ -61,6 +61,9 @@ let liveNetworks = {
   ),
   [HardhatChainName.SEPOLIA]: getChainConfig(ChainSlug.SEPOLIA),
   [HardhatChainName.BASE_SEPOLIA]: getChainConfig(ChainSlug.BASE_SEPOLIA),
+  [HardhatChainName.BASE]: getChainConfig(ChainSlug.BASE),
+  [HardhatChainName.ARBITRUM]: getChainConfig(ChainSlug.ARBITRUM),
+  [HardhatChainName.OPTIMISM]: getChainConfig(ChainSlug.OPTIMISM),
   EVMX: {
     accounts: [`0x${privateKey}`],
     chainId: EVMX_CHAIN_ID,
@@ -122,6 +125,14 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: "https://api-sepolia.basescan.org/api",
           browserURL: "https://sepolia.basescan.org/",
+        },
+      },
+      {
+        network: "base",
+        chainId: ChainId.BASE,
+        urls: {
+          apiURL: "https://api.basescan.org/api",
+          browserURL: "https://basescan.org/",
         },
       },
       {
