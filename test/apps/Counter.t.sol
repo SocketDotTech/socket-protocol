@@ -3,39 +3,32 @@ pragma solidity ^0.8.21;
 
 import {CounterAppGateway} from "./app-gateways/counter/CounterAppGateway.sol";
 import {Counter} from "./app-gateways/counter/Counter.sol";
-import "../DeliveryHelper.t.sol";
+import "../SetupTest.t.sol";
 
-contract CounterTest is DeliveryHelperTest {
+contract CounterTest is AppGatewayBaseSetup {
     uint256 feesAmount = 0.01 ether;
 
     bytes32 counterId;
     bytes32[] contractIds = new bytes32[](1);
-
     CounterAppGateway counterGateway;
 
-    function deploySetup() internal {
-        setUpDeliveryHelper();
+    event CounterScheduleResolved(uint256 creationTimestamp, uint256 executionTimestamp);
+
+    function setUp() public {
+        deploy();
 
         counterGateway = new CounterAppGateway(address(addressResolver), feesAmount);
-        depositUSDCFees(
-            address(counterGateway),
-            OnChainFees({
-                chainSlug: arbChainSlug,
-                token: address(arbConfig.feesTokenUSDC),
-                amount: 1 ether
-            })
-        );
-
+        depositNativeAndCredits(arbChainSlug, 1 ether, 0, address(counterGateway));
         counterId = counterGateway.counter();
         contractIds[0] = counterId;
     }
 
     function deployCounterApp(uint32 chainSlug) internal returns (uint40 requestCount) {
-        requestCount = _deploy(chainSlug, counterGateway, contractIds);
+        counterGateway.deployContracts(chainSlug);
+        requestCount = executeDeploy(counterGateway, chainSlug, contractIds);
     }
 
     function testCounterDeployment() external {
-        deploySetup();
         deployCounterApp(arbChainSlug);
 
         (address onChain, address forwarder) = getOnChainAndForwarderAddresses(
@@ -57,14 +50,11 @@ contract CounterTest is DeliveryHelperTest {
     }
 
     function testCounterDeploymentWithoutAsync() external {
-        deploySetup();
-
-        vm.expectRevert(abi.encodeWithSelector(AsyncModifierNotUsed.selector));
+        vm.expectRevert(abi.encodeWithSelector(AsyncModifierNotSet.selector));
         counterGateway.deployContractsWithoutAsync(arbChainSlug);
     }
 
     function testCounterIncrement() external {
-        deploySetup();
         deployCounterApp(arbChainSlug);
 
         (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
@@ -78,13 +68,12 @@ contract CounterTest is DeliveryHelperTest {
         address[] memory instances = new address[](1);
         instances[0] = arbCounterForwarder;
         counterGateway.incrementCounters(instances);
-        executeRequest(new bytes[](0));
+        executeRequest();
 
         assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
     }
 
     function testCounterIncrementMultipleChains() public {
-        deploySetup();
         deployCounterApp(arbChainSlug);
         deployCounterApp(optChainSlug);
 
@@ -111,7 +100,7 @@ contract CounterTest is DeliveryHelperTest {
         chains[0] = arbChainSlug;
         chains[1] = optChainSlug;
 
-        executeRequest(new bytes[](0));
+        executeRequest();
         assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
         assertEq(Counter(optCounter).counter(), optCounterBefore + 1);
     }
@@ -135,11 +124,19 @@ contract CounterTest is DeliveryHelperTest {
         instances[1] = optCounterForwarder;
 
         counterGateway.readCounters(instances);
+        executeRequest();
+    }
 
-        bytes[] memory readReturnData = new bytes[](2);
-        readReturnData[0] = abi.encode(10);
-        readReturnData[1] = abi.encode(10);
+    function testCounterSchedule() external {
+        deployCounterApp(arbChainSlug);
 
-        executeRequest(readReturnData);
+        uint256 creationTimestamp = block.timestamp;
+        counterGateway.setSchedule(100);
+
+        vm.expectEmit(true, true, true, false);
+        emit CounterScheduleResolved(creationTimestamp, block.timestamp);
+        executeRequest();
+
+        assertLe(block.timestamp, creationTimestamp + 100 + expiryTime);
     }
 }

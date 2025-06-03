@@ -7,8 +7,8 @@ import {IPlug} from "./interfaces/IPlug.sol";
 import "./interfaces/ISocketFeeManager.sol";
 import "../utils/AccessControl.sol";
 import {GOVERNANCE_ROLE, RESCUE_ROLE, SWITCHBOARD_DISABLER_ROLE} from "../utils/common/AccessRoles.sol";
-import {CallType, PlugConfig, SwitchboardStatus, ExecutionStatus} from "../utils/common/Structs.sol";
-import {PlugNotFound, InvalidAppGateway, InvalidTransmitter} from "../utils/common/Errors.sol";
+import {PlugConfig, SwitchboardStatus, ExecutionStatus} from "../utils/common/Structs.sol";
+import "../utils/common/Errors.sol";
 import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
 
 /**
@@ -30,10 +30,6 @@ abstract contract SocketConfig is ISocket, AccessControl {
     // @notice max copy bytes for socket
     uint16 public maxCopyBytes = 2048; // 2KB
 
-    // @notice error triggered when a connection is invalid
-    error InvalidConnection();
-    // @notice error triggered when a switchboard is invalid
-    error InvalidSwitchboard();
     // @notice error triggered when a switchboard already exists
     error SwitchboardExists();
     // @notice error triggered when a switchboard already exists or is disabled

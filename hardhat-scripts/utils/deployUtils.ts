@@ -1,4 +1,4 @@
-import { Wallet, utils } from "ethers";
+import { BigNumber, Signer, Wallet, utils } from "ethers";
 import { network, ethers, run } from "hardhat";
 
 import { ContractFactory, Contract } from "ethers";
@@ -7,9 +7,10 @@ import path from "path";
 import fs from "fs";
 import { ChainAddressesObj, ChainSlug, DeploymentMode } from "../../src";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { overrides } from "../utils";
+import { getAddresses, overrides } from "../utils";
 import { VerifyArgs } from "../verify";
 import { DeploymentAddresses } from "../constants";
+import { EVMX_CHAIN_ID, mode } from "../config";
 
 export const deploymentsPath = path.join(__dirname, `/../../deployments/`);
 
@@ -318,3 +319,44 @@ export function getChainSlugFromId(chainId: number) {
   // avoid conflict for now
   return parseInt(utils.id(chainId.toString()).substring(0, 10));
 }
+
+export const updateContractSettings = async (
+  chainSlug: number,
+  contractName: string,
+  getterMethod: string,
+  getterArgs: any[],
+  requiredValue: string | BigNumber,
+  setterMethod: string,
+  setterArgs: any[],
+  signer: SignerWithAddress | Wallet
+) => {
+  const addresses = getAddresses(mode);
+  const contractAddress = addresses[chainSlug][contractName];
+  const contractInstance = await getInstance(contractName, contractAddress);
+  const currentValue = await contractInstance
+    .connect(signer)
+    [getterMethod](...getterArgs);
+
+  if (
+    (typeof currentValue === "string" &&
+      currentValue.toLowerCase() !== String(requiredValue).toLowerCase()) ||
+    (BigNumber.isBigNumber(currentValue) &&
+      currentValue.toString() !== requiredValue.toString())
+  ) {
+    console.log({
+      setterMethod,
+      current: currentValue,
+      required: requiredValue,
+    });
+    const tx = await contractInstance
+      .connect(signer)
+      [setterMethod](...setterArgs);
+    console.log(
+      `Setting ${getterMethod} for ${contractInstance.address} to`,
+      tx.hash
+    );
+    await tx.wait();
+  } else {
+    console.log(`${getterMethod} is already set to ${requiredValue}`);
+  }
+};

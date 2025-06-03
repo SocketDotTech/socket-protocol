@@ -1,5 +1,5 @@
 import { ChainSlug } from "../../src";
-import { BigNumber, BigNumberish, providers } from "ethers";
+import { BigNumber, BigNumberish, Contract, providers, Signer } from "ethers";
 import { EVMX_CHAIN_ID } from "../config/config";
 import { getProviderFromChainSlug } from "./networks";
 
@@ -27,6 +27,9 @@ export const chainOverrides: {
     // gasLimit: 1_000_000,
     // gasPrice: 212_000_000_000,
   },
+  [ChainSlug.BASE]: {
+    gasLimit: 2_000_000,
+  },
   [EVMX_CHAIN_ID as ChainSlug]: {
     type: 0,
     // gasLimit: 1_000_000_000,
@@ -41,7 +44,10 @@ export const overrides = async (
   gasLimit?: BigNumberish | undefined;
   gasPrice?: BigNumberish | undefined;
 }> => {
-  return await getOverrides(chain, getProviderFromChainSlug(chain));
+  return await getOverrides(
+    chain as ChainSlug,
+    getProviderFromChainSlug(chain)
+  );
 };
 
 export const getOverrides = async (

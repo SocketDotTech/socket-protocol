@@ -11,55 +11,66 @@ export enum Events {
   ExecutionFailed = "ExecutionFailed",
   PlugConnected = "PlugConnected",
   AppGatewayCallRequested = "AppGatewayCallRequested",
-  AppGatewayCallFailed = "AppGatewayCallFailed",
 
   // FeesPlug
   FeesDeposited = "FeesDeposited",
 
-  // WatcherPrecompile
+  // Watcher
   CalledAppGateway = "CalledAppGateway",
-  QueryRequested = "QueryRequested",
-  FinalizeRequested = "FinalizeRequested",
+  AppGatewayCallFailed = "AppGatewayCallFailed",
+
+  // PromiseResolver
   PromiseResolved = "PromiseResolved",
   PromiseNotResolved = "PromiseNotResolved",
-  TimeoutRequested = "TimeoutRequested",
-  TimeoutResolved = "TimeoutResolved",
-  RequestSubmitted = "RequestSubmitted",
-  Finalized = "Finalized",
   MarkedRevert = "MarkedRevert",
+
+  // RequestHandler
+  RequestSubmitted = "RequestSubmitted",
+  RequestCancelled = "RequestCancelled",
+  FeesIncreased = "FeesIncreased",
+
+  // WritePrecompile
+  WriteProofRequested = "WriteProofRequested",
+  WriteProofUploaded = "WriteProofUploaded",
+
+  // ReadPrecompile
+  ReadRequested = "ReadRequested",
+
+  // SchedulePrecompile
+  ScheduleRequested = "ScheduleRequested",
+  ScheduleResolved = "ScheduleResolved",
+
   // AuctionManager
   AuctionEnded = "AuctionEnded",
   AuctionRestarted = "AuctionRestarted",
-
-  // DeliveryHelper
-  PayloadSubmitted = "PayloadSubmitted",
-  PayloadAsyncRequested = "PayloadAsyncRequested",
-  FeesIncreased = "FeesIncreased",
-  RequestCancelled = "RequestCancelled",
 }
 
 export enum Contracts {
   Socket = "Socket",
   FeesPlug = "FeesPlug",
-  WatcherPrecompile = "WatcherPrecompile",
-  WatcherPrecompileLimits = "WatcherPrecompileLimits",
-  WatcherPrecompileConfig = "WatcherPrecompileConfig",
+  ContractFactoryPlug = "ContractFactoryPlug",
+  FastSwitchboard = "FastSwitchboard",
+  SocketBatcher = "SocketBatcher",
+  SocketFeeManager = "SocketFeeManager",
+  AddressResolver = "AddressResolver",
+  Watcher = "Watcher",
+  RequestHandler = "RequestHandler",
+  Configurations = "Configurations",
+  PromiseResolver = "PromiseResolver",
   AuctionManager = "AuctionManager",
-  DeliveryHelper = "DeliveryHelper",
-}
-
-export enum CallType {
-  READ,
-  WRITE,
-  DEPLOY,
-  WITHDRAW,
+  FeesManager = "FeesManager",
+  WritePrecompile = "WritePrecompile",
+  ReadPrecompile = "ReadPrecompile",
+  SchedulePrecompile = "SchedulePrecompile",
+  FeesPool = "FeesPool",
+  AsyncDeployer = "AsyncDeployer",
+  DeployForwarder = "DeployForwarder",
 }
 
 export enum CallTypeNames {
   READ = "READ",
   WRITE = "WRITE",
-  DEPLOY = "DEPLOY",
-  WITHDRAW = "WITHDRAW",
+  SCHEDULE = "SCHEDULE",
 }
 
 export enum FinalityBucket {

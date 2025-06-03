@@ -31,7 +31,7 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         address owner_,
         uint256 fees_,
         ConstructorParams memory params_
-    ) AppGatewayBase(addressResolver_) {
+    ) {
         creationCodeWithArgs[superToken] = abi.encodePacked(
             type(SuperToken).creationCode,
             abi.encode(
@@ -47,24 +47,25 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
         // they can be updated for each transfer as well
         _setMaxFees(fees_);
         _initializeOwner(owner_);
+        _initializeAppGateway(addressResolver_);
     }
 
-    function deployContracts(uint32 chainSlug_) external async(bytes("")) {
+    function deployContracts(uint32 chainSlug_) external async {
         bytes memory initData = abi.encodeWithSelector(SuperToken.setOwner.selector, owner());
         _deploy(superToken, chainSlug_, IsPlug.YES, initData);
     }
 
     // no need to call this directly, will be called automatically after all contracts are deployed.
     // check AppGatewayBase._deploy and AppGatewayBase.onRequestComplete
-    function initialize(uint32) public pure override {
+    function initializeOnChain(uint32) public pure override {
         return;
     }
 
-    function transfer(bytes memory order_) external async(bytes("")) {
+    function transfer(bytes memory order_) external async {
         TransferOrder memory order = abi.decode(order_, (TransferOrder));
         ISuperToken(order.srcToken).burn(order.user, order.srcAmount);
         ISuperToken(order.dstToken).mint(order.user, order.srcAmount);
 
-        emit Transferred(_getCurrentAsyncId());
+        emit Transferred(_getCurrentRequestCount());
     }
 }

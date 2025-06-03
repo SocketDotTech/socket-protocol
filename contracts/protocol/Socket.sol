@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {LibCall} from "solady/utils/LibCall.sol";
 import "./SocketUtils.sol";
+import {WRITE} from "../utils/common/Constants.sol";
+import {createPayloadId} from "../utils/common/IdUtils.sol";
 
 /**
  * @title Socket
@@ -37,21 +38,9 @@ contract Socket is SocketUtils {
      */
     error LowGasLimit();
     /**
-     * @dev Error emitted when the chain slug is invalid
-     */
-    error InvalidSlug();
-    /**
-     * @dev Error emitted when the deadline has passed
-     */
-    error DeadlinePassed();
-    /**
      * @dev Error emitted when the message value is insufficient
      */
     error InsufficientMsgValue();
-    /**
-     * @dev Error emitted when the call type is read
-     */
-    error ReadOnlyCall();
 
     /**
      * @notice Constructor for the Socket contract
@@ -74,8 +63,9 @@ contract Socket is SocketUtils {
     ) external payable returns (bool, bytes memory) {
         // check if the deadline has passed
         if (executeParams_.deadline < block.timestamp) revert DeadlinePassed();
+
         // check if the call type is valid
-        if (executeParams_.callType == CallType.READ) revert ReadOnlyCall();
+        if (executeParams_.callType != WRITE) revert InvalidCallType();
 
         PlugConfig memory plugConfig = _plugConfigs[executeParams_.target];
         // check if the plug is disconnected
@@ -84,7 +74,13 @@ contract Socket is SocketUtils {
         if (msg.value < executeParams_.value + transmissionParams_.socketFees)
             revert InsufficientMsgValue();
 
-        bytes32 payloadId = _createPayloadId(plugConfig.switchboard, executeParams_);
+        bytes32 payloadId = createPayloadId(
+            executeParams_.requestCount,
+            executeParams_.batchCount,
+            executeParams_.payloadCount,
+            plugConfig.switchboard,
+            chainSlug
+        );
 
         // validate the execution status
         _validateExecutionStatus(payloadId);
@@ -168,6 +164,8 @@ contract Socket is SocketUtils {
         return (success, returnData);
     }
 
+    /// @notice Validates the execution status of a payload
+    /// @dev This function can be retried till execution status is executed
     function _validateExecutionStatus(bytes32 payloadId_) internal {
         if (payloadExecuted[payloadId_] == ExecutionStatus.Executed)
             revert PayloadAlreadyExecuted(payloadExecuted[payloadId_]);
