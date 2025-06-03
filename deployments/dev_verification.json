@@ -2,6 +2,12 @@
   "421614": [],
   "7625382": [
     [
+      "0x09A1A0A7BB8266171855871c4c0Af200a30922BE",
+      "WritePrecompile",
+      "contracts/evmx/watcher/precompiles/WritePrecompile.sol",
+      []
+    ],
+    [
       "0xDa60303321dc6aA8AeF32557bDe914008a3196eC",
       "SchedulePrecompile",
       "contracts/evmx/watcher/precompiles/SchedulePrecompile.sol",
@@ -105,64 +111,5 @@
       []
     ]
   ],
-  "11155420": [
-    [
-      "0xf134E3a725DdbBebf9e0f66D6767B44468cdBB48",
-      "ContractFactoryPlug",
-      "contracts/evmx/plugs/ContractFactoryPlug.sol",
-      [
-        "0xd8C787c27Cc6F4BF143855Bb50c880FB2DE38267",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0x64b7157Fe0878880b180d9BD2a0bd0D1794Cf44A",
-      "FeesPlug",
-      "contracts/evmx/plugs/FeesPlug.sol",
-      [
-        "0xd8C787c27Cc6F4BF143855Bb50c880FB2DE38267",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0x15dbE4B96306Cc9Eba15D834d6c1a895cF4e1697",
-      "TestUSDC",
-      "contracts/evmx/mocks/TestUSDC.sol",
-      [
-        "testUSDC",
-        "testUSDC",
-        6,
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        {
-          "type": "BigNumber",
-          "hex": "0x0b7abc627050305adf14a3d9e40000000000"
-        }
-      ]
-    ],
-    [
-      "0xa2E9eC2B0e035650744B6F489e8dDd471B502b2b",
-      "FastSwitchboard",
-      "contracts/protocol/switchboard/FastSwitchboard.sol",
-      [
-        11155420,
-        "0xd8C787c27Cc6F4BF143855Bb50c880FB2DE38267",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0xc6Fe653dAfeDd76d50e3F971dDA650917824f948",
-      "SocketBatcher",
-      "contracts/protocol/SocketBatcher.sol",
-      [
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "0xd8C787c27Cc6F4BF143855Bb50c880FB2DE38267"
-      ]
-    ],
-    [
-      "0xd8C787c27Cc6F4BF143855Bb50c880FB2DE38267",
-      "Socket",
-      "contracts/protocol/Socket.sol",
-      [11155420, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
-    ]
-  ]
+  "11155420": []
 }
