@@ -417,6 +417,7 @@
 | `requestOwnershipHandover`     | `0x25692962` |
 | `rescueFunds`                  | `0x6ccae054` |
 | `setPrecompile`                | `0x122e0042` |
+| `setRequestPayloadCountLimit`  | `0x8526582b` |
 | `submitRequest`                | `0xbb299a2c` |
 | `transferOwnership`            | `0xf2fde38b` |
 | `updateRequestAndProcessBatch` | `0x46464471` |

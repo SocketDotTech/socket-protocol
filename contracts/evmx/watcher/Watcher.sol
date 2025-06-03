@@ -98,6 +98,7 @@ contract Watcher is Trigger {
         address consumeFrom,
         bytes memory onCompleteData
     ) internal returns (uint40 requestCount, address[] memory promiseList) {
+        if (payloadQueue.length == 0) return (0, new address[](0));
         address appGateway = msg.sender;
 
         // this check is to verify that msg.sender (app gateway base) belongs to correct app gateway

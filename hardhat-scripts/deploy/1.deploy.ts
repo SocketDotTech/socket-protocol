@@ -9,6 +9,7 @@ import {
   chains,
   EVMX_CHAIN_ID,
   EXPIRY_TIME,
+  getFeesPlugChains,
   logConfig,
   MAX_RE_AUCTION_COUNT,
   MAX_SCHEDULE_DELAY_SECONDS,
@@ -22,6 +23,7 @@ import {
 import {
   DeploymentAddresses,
   FAST_SWITCHBOARD_TYPE,
+  getFeePool,
   IMPLEMENTATION_SLOT,
 } from "../constants";
 import {
@@ -103,14 +105,19 @@ const deployEVMxContracts = async () => {
       );
       deployUtils.addresses[contractName] = proxyFactory.address;
 
-      const feesPool = await getOrDeploy(
-        Contracts.FeesPool,
-        Contracts.FeesPool,
-        "contracts/evmx/fees/FeesPool.sol",
-        [EVMxOwner],
-        deployUtils
-      );
-      deployUtils.addresses[Contracts.FeesPool] = feesPool.address;
+      const feePool = getFeePool(mode);
+      if (feePool.length == 0) {
+        const feesPool = await getOrDeploy(
+          Contracts.FeesPool,
+          Contracts.FeesPool,
+          "contracts/evmx/fees/FeesPool.sol",
+          [EVMxOwner],
+          deployUtils
+        );
+        deployUtils.addresses[Contracts.FeesPool] = feesPool.address;
+      } else {
+        deployUtils.addresses[Contracts.FeesPool] = feePool;
+      }
 
       deployUtils = await deployContractWithProxy(
         Contracts.AddressResolver,
@@ -131,7 +138,7 @@ const deployEVMxContracts = async () => {
         [
           EVMX_CHAIN_ID,
           addressResolver.address,
-          feesPool.address,
+          deployUtils.addresses[Contracts.FeesPool],
           EVMxOwner,
           FAST_SWITCHBOARD_TYPE,
         ],
@@ -315,15 +322,17 @@ const deploySocketContracts = async () => {
         );
         deployUtils.addresses[contractName] = sb.address;
 
-        contractName = Contracts.FeesPlug;
-        const feesPlug: Contract = await getOrDeploy(
-          contractName,
-          contractName,
-          `contracts/evmx/plugs/${contractName}.sol`,
-          [socket.address, socketOwner],
-          deployUtils
-        );
-        deployUtils.addresses[contractName] = feesPlug.address;
+        if (getFeesPlugChains().includes(chain as ChainSlug)) {
+          contractName = Contracts.FeesPlug;
+          const feesPlug: Contract = await getOrDeploy(
+            contractName,
+            contractName,
+            `contracts/evmx/plugs/${contractName}.sol`,
+            [socket.address, socketOwner],
+            deployUtils
+          );
+          deployUtils.addresses[contractName] = feesPlug.address;
+        }
 
         contractName = Contracts.ContractFactoryPlug;
         const contractFactoryPlug: Contract = await getOrDeploy(

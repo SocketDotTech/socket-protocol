@@ -356,5 +356,7 @@ export const updateContractSettings = async (
       tx.hash
     );
     await tx.wait();
+  } else {
+    console.log(`${getterMethod} is already set to ${requiredValue}`);
   }
 };

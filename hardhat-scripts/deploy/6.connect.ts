@@ -1,28 +1,18 @@
-import { constants, Contract, ethers, Wallet } from "ethers";
+import { Contract, Wallet } from "ethers";
 import { ChainAddressesObj, ChainSlug, Contracts } from "../../src";
 import { chains, EVMX_CHAIN_ID, mode } from "../config";
-import { DeploymentAddresses } from "../constants";
+import { AppGatewayConfig, DeploymentAddresses } from "../constants";
 import {
+  checkIfAddressExists,
+  checkIfAppGatewayIdExists,
   getAddresses,
+  getAppGatewayId,
   getInstance,
   getSocketSigner,
-  overrides,
 } from "../utils";
-import {
-  getWatcherSigner,
-  sendWatcherMultiCallWithNonce,
-  signWatcherMessage,
-} from "../utils/sign";
+import { getWatcherSigner, sendWatcherMultiCallWithNonce } from "../utils/sign";
 
 const plugs = [Contracts.ContractFactoryPlug, Contracts.FeesPlug];
-export type AppGatewayConfig = {
-  plugConfig: {
-    appGatewayId: string;
-    switchboard: string;
-  };
-  plug: string;
-  chainSlug: number;
-};
 
 // Main function to connect plugs on all chains
 export const main = async () => {
@@ -32,52 +22,6 @@ export const main = async () => {
   } catch (error) {
     console.log("Error while sending transaction", error);
   }
-};
-
-// Maps plug contracts to their corresponding app gateways
-export const getAppGatewayId = (
-  plug: string,
-  addresses: DeploymentAddresses
-) => {
-  let address: string = "";
-  switch (plug) {
-    case Contracts.ContractFactoryPlug:
-      address = addresses?.[EVMX_CHAIN_ID]?.[Contracts.WritePrecompile];
-      if (!address) throw new Error(`WritePrecompile not found on EVMX`);
-      return ethers.utils.hexZeroPad(address, 32);
-    case Contracts.FeesPlug:
-      address = addresses?.[EVMX_CHAIN_ID]?.[Contracts.FeesManager];
-      if (!address) throw new Error(`FeesManager not found on EVMX`);
-      return ethers.utils.hexZeroPad(address, 32);
-    default:
-      throw new Error(`Unknown plug: ${plug}`);
-  }
-};
-
-export const checkIfAddressExists = (address: string, name: string) => {
-  if (
-    address == "0x0000000000000000000000000000000000000000" ||
-    !address ||
-    address == "0x" ||
-    address.length != 42
-  ) {
-    throw Error(`${name} not found : ${address}`);
-  }
-  return address;
-};
-export const checkIfAppGatewayIdExists = (
-  appGatewayId: string,
-  name: string
-) => {
-  if (
-    appGatewayId == constants.HashZero ||
-    !appGatewayId ||
-    appGatewayId == "0x" ||
-    appGatewayId.length != 66
-  ) {
-    throw Error(`${name} not found : ${appGatewayId}`);
-  }
-  return appGatewayId;
 };
 
 export const isConfigSetOnSocket = async (
@@ -147,7 +91,9 @@ export const connectPlugsOnSocket = async () => {
       const addr = addresses[chain]!;
       // Connect each plug contract
       for (const plugContract of plugs) {
-        await connectPlug(chain, plugContract, socketSigner, addresses, addr);
+        if (addr[plugContract]) {
+          await connectPlug(chain, plugContract, socketSigner, addresses, addr);
+        }
       }
     })
   );
@@ -195,6 +141,11 @@ export const updateConfigEVMx = async () => {
           const switchboard = addr[Contracts.FastSwitchboard];
           checkIfAddressExists(switchboard, "Switchboard");
           checkIfAppGatewayIdExists(appGatewayId, "AppGatewayId");
+
+          if (!addr[plugContract]) {
+            console.log(`${plugContract} not found on ${chain}`);
+            continue;
+          }
 
           if (
             await isConfigSetOnEVMx(

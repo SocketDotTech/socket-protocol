@@ -38,7 +38,6 @@ abstract contract AsyncDeployerStorage is IAsyncDeployer {
 
 /// @title AsyncDeployer Contract
 /// @notice This contract is responsible for deploying Forwarder and AsyncPromise contracts.
-/// @dev Inherits the AccessControl contract and implements the IAddressResolver interface.
 contract AsyncDeployer is AsyncDeployerStorage, Initializable, AddressResolverUtil, Ownable {
     constructor() {
         _disableInitializers(); // disable for implementation

@@ -52,8 +52,6 @@ export enum Contracts {
   FastSwitchboard = "FastSwitchboard",
   SocketBatcher = "SocketBatcher",
   SocketFeeManager = "SocketFeeManager",
-  TestUSDC = "TestUSDC",
-
   AddressResolver = "AddressResolver",
   Watcher = "Watcher",
   RequestHandler = "RequestHandler",

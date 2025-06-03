@@ -4,25 +4,26 @@ dotenvConfig();
 import { Wallet } from "ethers";
 import { chains, EVMX_CHAIN_ID, mode, watcher, transmitter } from "../config";
 import { DeploymentAddresses } from "../constants";
-import {
-  getAddresses,
-  getInstance,
-  getProviderFromChainSlug,
-  getRoleHash,
-  overrides,
-} from "../utils";
+import { getAddresses, getInstance, getRoleHash, overrides } from "../utils";
 import { ChainAddressesObj, ChainSlug, Contracts } from "../../src";
 import { ROLES } from "../constants/roles";
 import { getWatcherSigner, getSocketSigner } from "../utils/sign";
+
 export const REQUIRED_ROLES = {
-  FastSwitchboard: [ROLES.WATCHER_ROLE, ROLES.RESCUE_ROLE],
-  Socket: [
-    ROLES.GOVERNANCE_ROLE,
-    ROLES.RESCUE_ROLE,
-    ROLES.SWITCHBOARD_DISABLER_ROLE,
-  ],
-  FeesPlug: [ROLES.RESCUE_ROLE],
-  ContractFactoryPlug: [ROLES.RESCUE_ROLE],
+  EVMx: {
+    AuctionManager: [ROLES.TRANSMITTER_ROLE],
+    FeesPool: [ROLES.FEE_MANAGER_ROLE],
+  },
+  Chain: {
+    FastSwitchboard: [ROLES.WATCHER_ROLE, ROLES.RESCUE_ROLE],
+    Socket: [
+      ROLES.GOVERNANCE_ROLE,
+      ROLES.RESCUE_ROLE,
+      ROLES.SWITCHBOARD_DISABLER_ROLE,
+    ],
+    FeesPlug: [ROLES.RESCUE_ROLE],
+    ContractFactoryPlug: [ROLES.RESCUE_ROLE],
+  },
 };
 
 async function setRoleForContract(
@@ -67,15 +68,12 @@ async function getSigner(chain: number, isWatcher: boolean = false) {
   return signer;
 }
 
-async function setRolesForOnChain(
-  chain: number,
-  addresses: DeploymentAddresses
-) {
+async function setRolesOnChain(chain: number, addresses: DeploymentAddresses) {
   const chainAddresses: ChainAddressesObj = (addresses[chain] ??
     {}) as ChainAddressesObj;
   const signer = await getSigner(chain);
 
-  for (const [contractName, roles] of Object.entries(REQUIRED_ROLES)) {
+  for (const [contractName, roles] of Object.entries(REQUIRED_ROLES["Chain"])) {
     const contractAddress =
       chainAddresses[contractName as keyof ChainAddressesObj];
     if (!contractAddress) continue;
@@ -104,9 +102,6 @@ async function setRolesForEVMx(addresses: DeploymentAddresses) {
     {}) as ChainAddressesObj;
   const signer = await getSigner(EVMX_CHAIN_ID, true);
 
-  const contractAddress = chainAddresses[Contracts.Watcher];
-  if (!contractAddress) return;
-
   await setRoleForContract(
     Contracts.AuctionManager,
     chainAddresses[Contracts.AuctionManager],
@@ -132,7 +127,7 @@ export const main = async () => {
     const addresses = getAddresses(mode) as unknown as DeploymentAddresses;
     console.log("Setting Roles for On Chain");
     for (const chain of chains) {
-      await setRolesForOnChain(chain, addresses);
+      await setRolesOnChain(chain, addresses);
     }
     await setRolesForEVMx(addresses);
   } catch (error) {

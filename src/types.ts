@@ -19,24 +19,27 @@ export type ChainAddressesObj = {
   Socket: string;
   SocketBatcher: string;
   FastSwitchboard: string;
-  FeesPlug: string;
   ContractFactoryPlug: string;
-  TestUSDC: string;
+  SocketFeesManager?: string;
+  FeesPlug?: string;
   startBlock: number;
 };
 
 export type EVMxAddressesObj = {
   AddressResolver: string;
-  Watcher: string;
-  RequestHandler: string;
-  Configurations: string;
-  PromiseResolver: string;
-  WritePrecompile: string;
-  ReadPrecompile: string;
-  SchedulePrecompile: string;
+  AsyncDeployer: string;
   AuctionManager: string;
+  Configurations: string;
+  DeployForwarder: string;
   FeesManager: string;
   FeesPool: string;
+  PromiseResolver: string;
+  ReadPrecompile: string;
+  RequestHandler: string;
+  SchedulePrecompile: string;
+  Watcher: string;
+  WritePrecompile: string;
+  ERC1967Factory: string;
   startBlock: number;
 };
 

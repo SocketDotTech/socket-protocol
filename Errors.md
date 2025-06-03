@@ -106,6 +106,7 @@
 | `InvalidIndex()`                              | `0x63df8171` |
 | `InvalidChainSlug()`                          | `0xbff6b106` |
 | `InvalidPayloadSize()`                        | `0xfbdf7954` |
+| `InvalidOnChainAddress()`                     | `0xb758c606` |
 | `InvalidScheduleDelay()`                      | `0x9a993219` |
 | `AuctionClosed()`                             | `0x36b6b46d` |
 | `AuctionNotOpen()`                            | `0xf0460077` |

@@ -1,22 +1,13 @@
 import { config as dotenvConfig } from "dotenv";
 dotenvConfig();
 
-import {
-  ChainAddressesObj,
-  ChainSlug,
-  Contracts,
-  EVMxAddressesObj,
-  READ,
-  SCHEDULE,
-  WRITE,
-} from "../../src";
-import { Contract, Wallet } from "ethers";
-import { chains, EVMX_CHAIN_ID, mode } from "../config";
-import { DeploymentAddresses, FAST_SWITCHBOARD_TYPE } from "../constants";
+import { Contracts, EVMxAddressesObj, READ, SCHEDULE, WRITE } from "../../src";
+import { Wallet } from "ethers";
+import { EVMX_CHAIN_ID, mode } from "../config";
+import { DeploymentAddresses } from "../constants";
 import {
   getAddresses,
   getInstance,
-  getSocketSigner,
   getWatcherSigner,
   updateContractSettings,
 } from "../utils";
@@ -134,14 +125,18 @@ export const setWatcherCoreContracts = async (
   const watcherContract = (
     await getInstance(Contracts.Watcher, evmxAddresses[Contracts.Watcher])
   ).connect(getWatcherSigner());
+
   const requestHandlerSet = await watcherContract.requestHandler__();
   const PromiseResolverSet = await watcherContract.promiseResolver__();
   const ConfigurationsSet = await watcherContract.configurations__();
 
   if (
-    requestHandlerSet !== evmxAddresses[Contracts.RequestHandler] ||
-    PromiseResolverSet !== evmxAddresses[Contracts.PromiseResolver] ||
-    ConfigurationsSet !== evmxAddresses[Contracts.Configurations]
+    requestHandlerSet.toLowerCase() !==
+      evmxAddresses[Contracts.RequestHandler].toLowerCase() ||
+    PromiseResolverSet.toLowerCase() !==
+      evmxAddresses[Contracts.PromiseResolver].toLowerCase() ||
+    ConfigurationsSet.toLowerCase() !==
+      evmxAddresses[Contracts.Configurations].toLowerCase()
   ) {
     console.log("Setting watcher core contracts");
     const tx = await watcherContract.setCoreContracts(
@@ -151,6 +146,8 @@ export const setWatcherCoreContracts = async (
     );
     console.log("Watcher core contracts set tx: ", tx.hash);
     await tx.wait();
+  } else {
+    console.log("Watcher core contracts are already set");
   }
 };
 

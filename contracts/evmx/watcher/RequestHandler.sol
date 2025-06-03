@@ -16,7 +16,7 @@ abstract contract RequestHandlerStorage is IRequestHandler {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
-    // slot 50 (40 + 40 + 40)
+    // slot 50 (40 + 40 + 40 + 128)
     /// @notice Counter for tracking request counts
     uint40 public nextRequestCount = 1;
 
@@ -25,6 +25,9 @@ abstract contract RequestHandlerStorage is IRequestHandler {
 
     /// @notice Counter for tracking batch counts
     uint40 public nextBatchCount;
+
+    /// @notice max number of payloads in single request
+    uint128 requestPayloadCountLimit;
 
     // slot 51
     /// @notice Mapping to store the precompiles for each call type
@@ -88,12 +91,17 @@ contract RequestHandler is RequestHandlerStorage, Initializable, Ownable, Addres
     }
 
     function initialize(address owner_, address addressResolver_) external reinitializer(1) {
+        requestPayloadCountLimit = 100;
         _initializeOwner(owner_);
         _setAddressResolver(addressResolver_);
     }
 
     function setPrecompile(bytes4 callType_, IPrecompile precompile_) external onlyOwner {
         precompiles[callType_] = precompile_;
+    }
+
+    function setRequestPayloadCountLimit(uint128 requestPayloadCountLimit_) external onlyOwner {
+        requestPayloadCountLimit = requestPayloadCountLimit_;
     }
 
     function getPrecompileFees(
@@ -128,7 +136,7 @@ contract RequestHandler is RequestHandlerStorage, Initializable, Ownable, Addres
         bytes memory onCompleteData_
     ) external onlyWatcher returns (uint40 requestCount, address[] memory promiseList) {
         if (queueParams_.length == 0) return (0, new address[](0));
-        if (queueParams_.length > REQUEST_PAYLOAD_COUNT_LIMIT)
+        if (queueParams_.length > requestPayloadCountLimit)
             revert RequestPayloadCountLimitExceeded();
 
         if (!feesManager__().isCreditSpendable(consumeFrom_, appGateway_, maxFees_))

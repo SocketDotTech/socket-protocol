@@ -26,6 +26,7 @@ error InvalidTarget();
 error InvalidIndex();
 error InvalidChainSlug();
 error InvalidPayloadSize();
+error InvalidOnChainAddress();
 error InvalidScheduleDelay();
 /// @notice Error thrown when trying to start or bid a closed auction
 error AuctionClosed();

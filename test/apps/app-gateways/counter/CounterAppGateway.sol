@@ -2,8 +2,6 @@
 pragma solidity ^0.8.21;
 
 import "../../../../contracts/evmx/base/AppGatewayBase.sol";
-import "../../../../contracts/evmx/interfaces/IForwarder.sol";
-import "../../../../contracts/evmx/interfaces/IPromise.sol";
 import "./Counter.sol";
 import "./ICounter.sol";
 
@@ -84,7 +82,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         uint32 chainSlug = IForwarder(instance_).getChainSlug();
         _setOverrides(Read.ON, Parallel.ON, blockNumber_);
         ICounter(instance_).getCounter();
-        IPromise(instance_).then(this.setCounterValues.selector, abi.encode(chainSlug));
+        then(this.setCounterValues.selector, abi.encode(chainSlug));
     }
 
     function setCounterValues(bytes memory data, bytes memory returnData) external onlyPromises {
@@ -125,10 +123,9 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         uint32 chainSlug_,
         address token_,
         uint256 amount_,
-        uint256 maxFees_,
         address receiver_
     ) external {
-        _withdrawCredits(chainSlug_, token_, amount_, maxFees_, receiver_);
+        _withdrawCredits(chainSlug_, token_, amount_, receiver_);
     }
 
     function testOnChainRevert(uint32 chainSlug) public async {
@@ -142,7 +139,7 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
         address instance = forwarderAddresses[counter][chainSlug];
         ICounter(instance).getCounter();
         // wrong function call in callback so it reverts
-        IPromise(instance).then(this.withdrawCredits.selector, abi.encode(chainSlug));
+        then(this.withdrawCredits.selector, abi.encode(chainSlug));
         _setOverrides(Read.OFF, Parallel.OFF);
     }
 
