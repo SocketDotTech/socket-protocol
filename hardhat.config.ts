@@ -93,6 +93,7 @@ const config: HardhatUserConfig = {
       arbitrumOne: process.env.ARBISCAN_API_KEY || "",
       arbitrumTestnet: process.env.ARBISCAN_API_KEY || "",
       baseTestnet: process.env.BASESCAN_API_KEY || "",
+      base: process.env.BASESCAN_API_KEY || "",
       bsc: process.env.BSCSCAN_API_KEY || "",
       bscTestnet: process.env.BSCSCAN_API_KEY || "",
       goerli: process.env.ETHERSCAN_API_KEY || "",
@@ -100,7 +101,7 @@ const config: HardhatUserConfig = {
       sepolia: process.env.ETHERSCAN_API_KEY || "",
       optimisticEthereum: process.env.OPTIMISM_API_KEY || "",
       optimisticTestnet: process.env.OPTIMISM_API_KEY || "",
-      evmx: "none",
+      EVMX: "none",
     },
     customChains: [
       {
@@ -136,7 +137,7 @@ const config: HardhatUserConfig = {
         },
       },
       {
-        network: "evmx",
+        network: "EVMX",
         chainId: EVMX_CHAIN_ID,
         urls: {
           apiURL: "https://evmx.cloud.blockscout.com/api",
@@ -144,11 +145,6 @@ const config: HardhatUserConfig = {
         },
       },
     ],
-  },
-  sourcify: {
-    // Disabled by default
-    // Doesn't need an API key
-    enabled: true,
   },
   // This fully resolves paths for imports in the ./lib directory for Hardhat
   preprocess: {
