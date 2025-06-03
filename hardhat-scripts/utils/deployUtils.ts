@@ -335,7 +335,7 @@ export const updateContractSettings = async (
   const contractInstance = await getInstance(contractName, contractAddress);
   const currentValue = await contractInstance
     .connect(signer)
-  [getterMethod](...getterArgs);
+    [getterMethod](...getterArgs);
 
   if (
     (typeof currentValue === "string" &&
@@ -350,7 +350,7 @@ export const updateContractSettings = async (
     });
     const tx = await contractInstance
       .connect(signer)
-    [setterMethod](...setterArgs);
+      [setterMethod](...setterArgs);
     console.log(
       `Setting ${getterMethod} for ${contractInstance.address} to`,
       tx.hash

@@ -132,11 +132,11 @@ export const setWatcherCoreContracts = async (
 
   if (
     requestHandlerSet.toLowerCase() !==
-    evmxAddresses[Contracts.RequestHandler].toLowerCase() ||
+      evmxAddresses[Contracts.RequestHandler].toLowerCase() ||
     PromiseResolverSet.toLowerCase() !==
-    evmxAddresses[Contracts.PromiseResolver].toLowerCase() ||
+      evmxAddresses[Contracts.PromiseResolver].toLowerCase() ||
     ConfigurationsSet.toLowerCase() !==
-    evmxAddresses[Contracts.Configurations].toLowerCase()
+      evmxAddresses[Contracts.Configurations].toLowerCase()
   ) {
     console.log("Setting watcher core contracts");
     const tx = await watcherContract.setCoreContracts(
