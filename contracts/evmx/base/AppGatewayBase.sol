@@ -236,7 +236,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         uint256 amount_,
         address receiver_
     ) internal {
-        feesManager__().withdrawCredits(chainSlug_, token_, amount_, maxFees, receiver_);
+        AppGatewayApprovals[] memory approvals = new AppGatewayApprovals[](1);
+        approvals[0] = AppGatewayApprovals({appGateway: address(feesManager__()), approval: true});
+        feesManager__().approveAppGateways(approvals);
+        feesManager__().withdrawCredits(chainSlug_, token_, amount_, maxFees_, receiver_);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
