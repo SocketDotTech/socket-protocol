@@ -7,16 +7,15 @@ const tokens: TokenMap = {
     11155420: ["0x15dbE4B96306Cc9Eba15D834d6c1a895cF4e1697"],
   },
   [DeploymentMode.STAGE]: {
-    84532: ["0xfD51918C0572512901fFA79F822c99A475d22BB4"],
-    421614: ["0xa03Cbf13f331aF7c0fD7F2E28E6Cbc13F879E3F3"],
-    11155420: ["0xa0E1738a9Fc0698789866e09d7A335d30128C5C5"],
-    11155111: ["0xbcaDE56f86a819994d0F66b98e921C484bE6FE4e"],
+    8453: ["0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"],
+    42161: ["0xaf88d065e77c8cc2239327c5edb3a432268e5831"],
+    10: ["0x0b2c639c533813f4aa9d7837caf62653d097ff85"],
   },
 };
 
 const feePools: { [key: string]: string } = {
   [DeploymentMode.DEV]: "0xc20Be67ef742202dc93A78aa741E7C3715eA1DFd",
-  [DeploymentMode.STAGE]: "",
+  [DeploymentMode.STAGE]: "0xe2054B575664dfDBD7a7FbAf2B12420ae88DE0FF",
 };
 
 export const getFeeTokens = (

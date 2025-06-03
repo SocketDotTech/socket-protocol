@@ -9,6 +9,7 @@ import {
   getAppGatewayId,
   getInstance,
   getSocketSigner,
+  overrides,
 } from "../utils";
 import { getWatcherSigner, sendWatcherMultiCallWithNonce } from "../utils/sign";
 
@@ -71,7 +72,8 @@ async function connectPlug(
   const tx = await plug.functions["connectSocket"](
     appGatewayId,
     socket.address,
-    switchboard
+    switchboard,
+    { ...(await overrides(chain)) }
   );
   console.log(
     `Connecting ${plugContract} on ${chain} to ${appGatewayId} tx hash: ${tx.hash}`

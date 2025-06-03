@@ -14,6 +14,7 @@ import {
   getInstance,
   getSocketSigner,
   getWatcherSigner,
+  overrides,
   updateContractSettings,
 } from "../utils";
 
@@ -41,6 +42,7 @@ export const configureChains = async (addresses: DeploymentAddresses) => {
     ).connect(signer);
 
     await registerSb(
+      chain,
       chainAddresses[Contracts.FastSwitchboard],
       signer,
       socketContract
@@ -125,6 +127,7 @@ async function setOnchainContracts(
 }
 
 const registerSb = async (
+  chain: number,
   sbAddress: string,
   signer: Wallet,
   socket: Contract
@@ -144,7 +147,9 @@ const registerSb = async (
     });
 
     if (Number(sb) == 0) {
-      const registerTx = await switchboard.registerSwitchboard();
+      const registerTx = await switchboard.registerSwitchboard({
+        ...(await overrides(chain)),
+      });
       console.log(`Registering Switchboard ${sbAddress}: ${registerTx.hash}`);
       await registerTx.wait();
     }
@@ -171,7 +176,9 @@ export const whitelistToken = async (
     const isWhitelisted = await feesPlugContract.whitelistedTokens(token);
 
     if (!isWhitelisted) {
-      const tx = await feesPlugContract.whitelistToken(token);
+      const tx = await feesPlugContract.whitelistToken(token, {
+        ...(await overrides(chain)),
+      });
       console.log(
         `Whitelisting token ${token} for ${feesPlugContract.address}`,
         tx.hash

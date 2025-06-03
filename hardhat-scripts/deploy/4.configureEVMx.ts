@@ -9,6 +9,7 @@ import {
   getAddresses,
   getInstance,
   getWatcherSigner,
+  overrides,
   updateContractSettings,
 } from "../utils";
 
@@ -142,7 +143,8 @@ export const setWatcherCoreContracts = async (
     const tx = await watcherContract.setCoreContracts(
       evmxAddresses[Contracts.RequestHandler],
       evmxAddresses[Contracts.Configurations],
-      evmxAddresses[Contracts.PromiseResolver]
+      evmxAddresses[Contracts.PromiseResolver],
+      { ...(await overrides(EVMX_CHAIN_ID)) }
     );
     console.log("Watcher core contracts set tx: ", tx.hash);
     await tx.wait();
