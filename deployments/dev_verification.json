@@ -46,6 +46,12 @@
   ],
   "7625382": [
     [
+      "0x872bb254118a2210e3C491918133F2ab4D7Bc362",
+      "Watcher",
+      "contracts/evmx/watcher/Watcher.sol",
+      []
+    ],
+    [
       "0x7D6F2A4aDf7e5Cfcf9627CC7FCA1d39fD19C07fc",
       "SchedulePrecompile",
       "contracts/evmx/watcher/precompiles/SchedulePrecompile.sol",

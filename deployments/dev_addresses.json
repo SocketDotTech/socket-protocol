@@ -29,7 +29,7 @@
     "SchedulePrecompile": "0x7D6F2A4aDf7e5Cfcf9627CC7FCA1d39fD19C07fc",
     "startBlock": 8355289,
     "Watcher": "0xD5b30DC89D96ee7303Dc2726491996B46089F693",
-    "WatcherImpl": "0xFa9B9271A4153eEABa76ae10bfc4F128651c25D7",
+    "WatcherImpl": "0x872bb254118a2210e3C491918133F2ab4D7Bc362",
     "WritePrecompile": "0x10eaDbd1a2787ebbF4Abe9b6D79e669C0c8E8B26",
     "WritePrecompileImpl": "0xD3aEb53da0a72788C16eAf5a23a5aBae6708C073"
   },
