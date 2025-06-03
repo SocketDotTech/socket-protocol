@@ -49,7 +49,7 @@ async function setRoleForContract(
 
   if (!hasRole) {
     let tx = await contract.grantRole(roleHash, targetAddress, {
-      ...overrides(chain),
+      ...await overrides(chain as ChainSlug),
     });
     console.log(
       `granting ${roleName} role to ${targetAddress} for ${contractName}`,
@@ -81,7 +81,7 @@ async function setRolesOnChain(chain: number, addresses: DeploymentAddresses) {
     for (const roleName of roles) {
       const targetAddress =
         contractName === Contracts.FastSwitchboard &&
-        roleName === ROLES.WATCHER_ROLE
+          roleName === ROLES.WATCHER_ROLE
           ? watcher
           : signer.address;
 
