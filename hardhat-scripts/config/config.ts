@@ -57,7 +57,11 @@ export const getFeesPlugChains = (): Array<ChainSlug> => {
     case DeploymentMode.DEV:
       return getChains();
     case DeploymentMode.STAGE:
-      return getChains();
+      return [
+        ChainSlug.OPTIMISM_SEPOLIA,
+        ChainSlug.ARBITRUM_SEPOLIA,
+        ChainSlug.BASE_SEPOLIA
+      ];
     case DeploymentMode.PROD:
       return getChains();
     default:
@@ -83,6 +87,7 @@ export const EVM_CHAIN_ID_MAP: Record<DeploymentMode, number> = {
   [DeploymentMode.STAGE]: 43,
   [DeploymentMode.PROD]: 3605,
 };
+
 // Addresses
 export const watcher = "0xb62505feacC486e809392c65614Ce4d7b051923b";
 export const transmitter = "0x138e9840861C983DC0BB9b3e941FB7C0e9Ade320";
@@ -97,13 +102,6 @@ export const AUCTION_END_DELAY_SECONDS = 0;
 export const BID_TIMEOUT = 600; // 10 minutes
 export const EXPIRY_TIME = 300; // 5 minutes
 export const MAX_RE_AUCTION_COUNT = 5;
-// TestUSDC
-export const TEST_USDC_NAME = "testUSDC";
-export const TEST_USDC_SYMBOL = "testUSDC";
-export const TEST_USDC_INITIAL_SUPPLY = ethers.utils.parseEther(
-  "1000000000000000000000000"
-);
-export const TEST_USDC_DECIMALS = 6;
 
 // Fees Pool Funding Amount
 export const FEES_POOL_FUNDING_AMOUNT_THRESHOLD =
@@ -118,7 +116,6 @@ export const SCHEDULE_CALLBACK_FEES = utils.parseEther("0.000001");
 export const MAX_SCHEDULE_DELAY_SECONDS = 60 * 60 * 24;
 
 // Other constants
-export const DEFAULT_MAX_LIMIT = 100;
 export const UPGRADE_VERSION = 1;
 
 // Transmitter constants
