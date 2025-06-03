@@ -44,7 +44,10 @@ export const overrides = async (
   gasLimit?: BigNumberish | undefined;
   gasPrice?: BigNumberish | undefined;
 }> => {
-  return await getOverrides(chain as ChainSlug, getProviderFromChainSlug(chain));
+  return await getOverrides(
+    chain as ChainSlug,
+    getProviderFromChainSlug(chain)
+  );
 };
 
 export const getOverrides = async (
