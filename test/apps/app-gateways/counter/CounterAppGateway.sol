@@ -146,6 +146,4 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     function increaseFees(uint40 requestCount_, uint256 newMaxFees_) public {
         _increaseFees(requestCount_, newMaxFees_);
     }
-
-    function initialize(uint32 chainSlug_) external override {}
 }
