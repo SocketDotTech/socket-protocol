@@ -31,7 +31,7 @@
     "Watcher": "0x60005b459Dc46D9a63bcb61D01Ad002130644a4F",
     "WatcherImpl": "0x812EcdF5366036B045e41Fe2dD95B72ecc26d8f3",
     "WritePrecompile": "0xF221bAA9AEA24c366258309ab09C2C7ce80610Fc",
-    "WritePrecompileImpl": "0xb64D07B0dDb23cc54eE5EDe294E0cD15f08CC971"
+    "WritePrecompileImpl": "0x09A1A0A7BB8266171855871c4c0Af200a30922BE"
   },
   "11155420": {
     "ContractFactoryPlug": "0xf134E3a725DdbBebf9e0f66D6767B44468cdBB48",

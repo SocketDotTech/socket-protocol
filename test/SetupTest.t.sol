@@ -842,6 +842,7 @@ contract WatcherSetup is AuctionSetup {
         switchboard = switchboard_;
 
         bytes32 prevBatchDigestHash = writePrecompile.getPrevBatchDigestHash(
+            payloadParams.requestCount,
             payloadParams.batchCount
         );
         digestParams = DigestParams(

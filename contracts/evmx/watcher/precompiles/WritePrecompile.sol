@@ -170,7 +170,10 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
         deadline = block.timestamp + expiryTime;
         fees = getPrecompileFees(payloadParams.precompileData);
 
-        bytes32 prevBatchDigestHash = getPrevBatchDigestHash(payloadParams.batchCount);
+        bytes32 prevBatchDigestHash = getPrevBatchDigestHash(
+            payloadParams.requestCount,
+            payloadParams.batchCount
+        );
 
         // create digest
         DigestParams memory digestParams_ = DigestParams(
@@ -201,11 +204,14 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
         );
     }
 
-    function getPrevBatchDigestHash(uint40 batchCount_) public view returns (bytes32) {
+    function getPrevBatchDigestHash(
+        uint40 requestCount_,
+        uint40 batchCount_
+    ) public view returns (bytes32) {
         if (batchCount_ == 0) return bytes32(0);
 
         // if first batch, return bytes32(0)
-        uint40[] memory requestBatchIds = requestHandler__().getRequestBatchIds(batchCount_);
+        uint40[] memory requestBatchIds = requestHandler__().getRequestBatchIds(requestCount_);
         if (requestBatchIds[0] == batchCount_) return bytes32(0);
 
         uint40 prevBatchCount = batchCount_ - 1;

@@ -111,8 +111,8 @@ contract RequestHandler is RequestHandlerStorage, Initializable, Ownable, Addres
         return precompiles[callType_].getPrecompileFees(precompileData_);
     }
 
-    function getRequestBatchIds(uint40 batchCount_) external view returns (uint40[] memory) {
-        return _requestBatchIds[batchCount_];
+    function getRequestBatchIds(uint40 requestCount_) external view returns (uint40[] memory) {
+        return _requestBatchIds[requestCount_];
     }
 
     function getBatchPayloadIds(uint40 batchCount_) external view returns (bytes32[] memory) {
