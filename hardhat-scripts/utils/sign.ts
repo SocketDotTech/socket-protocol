@@ -4,7 +4,7 @@ import { EVMX_CHAIN_ID, mode } from "../config/config";
 import { getProviderFromChainSlug } from "./networks";
 import { signWatcherMultiCallMessage } from "../../src/signer";
 import { getAddresses } from "./address";
-import { getOverrides, overrides } from "./overrides";
+import { overrides } from "./overrides";
 import { getInstance } from "./deployUtils";
 import { WatcherMultiCallParams } from "../constants/types";
 

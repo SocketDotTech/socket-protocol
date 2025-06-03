@@ -94,7 +94,6 @@ export const transmitter = "0x138e9840861C983DC0BB9b3e941FB7C0e9Ade320";
 
 // Chain config
 export const EVMX_CHAIN_ID = EVM_CHAIN_ID_MAP[mode];
-export const MAX_FEES = ethers.utils.parseEther("0.001");
 export const MAX_MSG_VALUE_LIMIT = ethers.utils.parseEther("0.001");
 
 // Auction parameters
@@ -111,7 +110,7 @@ export const FEES_POOL_FUNDING_AMOUNT_THRESHOLD =
 export const READ_FEES = utils.parseEther("0.000001");
 export const TRIGGER_FEES = utils.parseEther("0.000001");
 export const WRITE_FEES = utils.parseEther("0.000001");
-export const SCHEDULE_FEES_PER_SECOND = utils.parseEther("0.000001");
+export const SCHEDULE_FEES_PER_SECOND = utils.parseEther("0.00000001");
 export const SCHEDULE_CALLBACK_FEES = utils.parseEther("0.000001");
 export const MAX_SCHEDULE_DELAY_SECONDS = 60 * 60 * 24;
 
