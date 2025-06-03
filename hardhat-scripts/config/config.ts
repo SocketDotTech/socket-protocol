@@ -58,9 +58,9 @@ export const getFeesPlugChains = (): Array<ChainSlug> => {
       return getChains();
     case DeploymentMode.STAGE:
       return [
-        ChainSlug.OPTIMISM_SEPOLIA,
-        ChainSlug.ARBITRUM_SEPOLIA,
-        ChainSlug.BASE_SEPOLIA
+        ChainSlug.OPTIMISM,
+        ChainSlug.ARBITRUM,
+        ChainSlug.BASE,
       ];
     case DeploymentMode.PROD:
       return getChains();
