@@ -2,9 +2,10 @@
 pragma solidity ^0.8.21;
 
 import {CounterAppGateway} from "./app-gateways/counter/CounterAppGateway.sol";
-import "../DeliveryHelper.t.sol";
+import {Counter} from "./app-gateways/counter/Counter.sol";
+import "../SetupTest.t.sol";
 
-contract ParallelCounterTest is DeliveryHelperTest {
+contract ParallelCounterTest is AppGatewayBaseSetup {
     uint256 feesAmount = 0.01 ether;
 
     bytes32 counterId1;
@@ -13,35 +14,28 @@ contract ParallelCounterTest is DeliveryHelperTest {
 
     CounterAppGateway parallelCounterGateway;
 
-    function deploySetup() internal {
-        setUpDeliveryHelper();
+    function setUp() public {
+        deploy();
 
         parallelCounterGateway = new CounterAppGateway(address(addressResolver), feesAmount);
-        depositUSDCFees(
-            address(parallelCounterGateway),
-            OnChainFees({
-                chainSlug: arbChainSlug,
-                token: address(arbConfig.feesTokenUSDC),
-                amount: 1 ether
-            })
-        );
-        counterId1 = parallelCounterGateway.counter1();
+        depositNativeAndCredits(arbChainSlug, 1 ether, 0, address(parallelCounterGateway));
+
         counterId2 = parallelCounterGateway.counter();
+        counterId1 = parallelCounterGateway.counter1();
         contractIds[0] = counterId1;
         contractIds[1] = counterId2;
     }
 
-    function deployCounterApps(uint32[] memory chainSlugs) internal {
+    function deployCounterApp(uint32[] memory chainSlugs) internal {
         parallelCounterGateway.deployMultiChainContracts(chainSlugs);
-        executeRequest(new bytes[](0));
+        executeDeployMultiChain(parallelCounterGateway, chainSlugs, contractIds);
     }
 
     function testParallelCounterDeployment() external {
-        deploySetup();
         uint32[] memory chainSlugs = new uint32[](2);
         chainSlugs[0] = arbChainSlug;
         chainSlugs[1] = optChainSlug;
-        deployCounterApps(chainSlugs);
+        deployCounterApp(chainSlugs);
 
         (address onChainArb1, address forwarderArb1) = getOnChainAndForwarderAddresses(
             arbChainSlug,
@@ -107,75 +101,55 @@ contract ParallelCounterTest is DeliveryHelperTest {
         );
     }
 
-    function testAsyncModifierNotSet() external {
-        deploySetup();
+    function testCounterIncrement() external {
         uint32[] memory chainSlugs = new uint32[](1);
         chainSlugs[0] = arbChainSlug;
-        deployCounterApps(chainSlugs);
+        deployCounterApp(chainSlugs);
 
-        (, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
+        (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId1,
             parallelCounterGateway
         );
 
+        uint256 arbCounterBefore = Counter(arbCounter).counter();
+
         address[] memory instances = new address[](1);
         instances[0] = arbCounterForwarder;
+        parallelCounterGateway.incrementCounters(instances);
 
-        // Should revert with AsyncModifierNotUsed error
-        vm.expectRevert(abi.encodeWithSignature("AsyncModifierNotUsed()"));
-        parallelCounterGateway.incrementCountersWithoutAsync(instances);
+        executeRequest();
+        assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
     }
 
-    // function testCounterIncrement() external {
-    //     deploySetup();
-    //     deployCounterApp(arbChainSlug);
+    function testCounterIncrementMultipleChains() external {
+        uint32[] memory chainSlugs = new uint32[](2);
+        chainSlugs[0] = arbChainSlug;
+        chainSlugs[1] = optChainSlug;
+        deployCounterApp(chainSlugs);
 
-    //     (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
-    //         arbChainSlug,
-    //         counterId,
-    //         counterDeployer
-    //     );
+        (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
+            arbChainSlug,
+            counterId1,
+            parallelCounterGateway
+        );
+        (address optCounter, address optCounterForwarder) = getOnChainAndForwarderAddresses(
+            optChainSlug,
+            counterId1,
+            parallelCounterGateway
+        );
 
-    //     uint256 arbCounterBefore = Counter(arbCounter).counter();
+        uint256 arbCounterBefore = Counter(arbCounter).counter();
+        uint256 optCounterBefore = Counter(optCounter).counter();
 
-    //     address[] memory instances = new address[](1);
-    //     instances[0] = arbCounterForwarder;
-    //     counterGateway.incrementCounters(instances);
+        address[] memory instances = new address[](2);
+        instances[0] = arbCounterForwarder;
+        instances[1] = optCounterForwarder;
+        parallelCounterGateway.incrementCounters(instances);
 
-    //     _executeRequestSingleChain(arbChainSlug, 1);
-    //     assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
-    // }
+        executeRequest();
 
-    // function testCounterIncrementMultipleChains() external {
-    //     deploySetup();
-    //     deployCounterApp(arbChainSlug);
-    //     deployCounterApp(optChainSlug);
-
-    //     (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
-    //         arbChainSlug,
-    //         counterId,
-    //         counterDeployer
-    //     );
-    //     (address optCounter, address optCounterForwarder) = getOnChainAndForwarderAddresses(
-    //         optChainSlug,
-    //         counterId,
-    //         counterDeployer
-    //     );
-
-    //     uint256 arbCounterBefore = Counter(arbCounter).counter();
-    //     uint256 optCounterBefore = Counter(optCounter).counter();
-
-    //     address[] memory instances = new address[](2);
-    //     instances[0] = arbCounterForwarder;
-    //     instances[1] = optCounterForwarder;
-    //     counterGateway.incrementCounters(instances);
-
-    //     uint32[] memory chains = new uint32[](2);
-    //     chains[0] = arbChainSlug;
-    //     chains[1] = optChainSlug;
-    //     _executeRequestMultiChain(chains);
-    //     assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
-    //     assertEq(Counter(optCounter).counter(), optCounterBefore + 1);
-    // }
+        assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
+        assertEq(Counter(optCounter).counter(), optCounterBefore + 1);
+    }
 }

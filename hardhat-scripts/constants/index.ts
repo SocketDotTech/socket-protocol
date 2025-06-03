@@ -1,3 +1,3 @@
 export * from "./constants";
-export * from "./enums";
+export * from "./feeConstants";
 export * from "./types";

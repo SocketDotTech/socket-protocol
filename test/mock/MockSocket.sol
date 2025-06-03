@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {InvalidAppGateway} from "../../contracts/utils/common/Errors.sol";
-import "../../contracts/protocol/interfaces/ISwitchboard.sol";
+import "../../contracts/utils/common/Errors.sol";
 import "../../contracts/protocol/interfaces/ISocket.sol";
+import "../../contracts/protocol/interfaces/ISwitchboard.sol";
 
 /**
  * @title SocketDst

@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {FeesPlug} from "../../contracts/evmx/payload-delivery/FeesPlug.sol";
+import {FeesPlug} from "../../contracts/evmx/plugs/FeesPlug.sol";
 
 contract RescueFundsScript is Script {
     address constant NATIVE_TOKEN = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;

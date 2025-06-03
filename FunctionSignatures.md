@@ -1,5 +1,300 @@
 # Function Signatures
 
+## AuctionManager
+
+| Function                     | Signature    |
+| ---------------------------- | ------------ |
+| `addressResolver__`          | `0x6a750469` |
+| `asyncDeployer__`            | `0x2a39e801` |
+| `auctionEndDelaySeconds`     | `0x9087dfdb` |
+| `auctionManager`             | `0xb0192f9a` |
+| `auctionStatus`              | `0xd7d5fbf6` |
+| `bid`                        | `0xfcdf49c2` |
+| `bidTimeout`                 | `0x94090d0b` |
+| `cancelOwnershipHandover`    | `0x54d1f13d` |
+| `completeOwnershipHandover`  | `0xf04e283e` |
+| `consumeFrom`                | `0x40dd78be` |
+| `creationCodeWithArgs`       | `0xc126dcc4` |
+| `deployForwarder__`          | `0xd4e3b034` |
+| `endAuction`                 | `0x1212e653` |
+| `evmxSlug`                   | `0x8bae77c2` |
+| `expireBid`                  | `0x1dd5022c` |
+| `feesManager__`              | `0x70568b58` |
+| `forwarderAddresses`         | `0x5390fdcb` |
+| `getOnChainAddress`          | `0xb6abffd7` |
+| `getOverrideParams`          | `0x54f0a866` |
+| `grantRole`                  | `0x2f2ff15d` |
+| `handleRevert`               | `0x44792f25` |
+| `hasRole`                    | `0x91d14854` |
+| `initialize`                 | `0x86891c9b` |
+| `initializeOnChain`          | `0x86f01739` |
+| `isAsyncModifierSet`         | `0xb69e0c4a` |
+| `isValidPromise`             | `0xb690b962` |
+| `maxFees`                    | `0xe83e34b1` |
+| `maxReAuctionCount`          | `0xc367b376` |
+| `onCompleteData`             | `0xb52fa926` |
+| `onRequestComplete`          | `0x5ed1f959` |
+| `overrideParams`             | `0xec5490fe` |
+| `owner`                      | `0x8da5cb5b` |
+| `ownershipHandoverExpiresAt` | `0xfee81cf4` |
+| `reAuctionCount`             | `0x9b4b22d3` |
+| `renounceOwnership`          | `0x715018a6` |
+| `requestOwnershipHandover`   | `0x25692962` |
+| `rescueFunds`                | `0x6ccae054` |
+| `revokeRole`                 | `0xd547741f` |
+| `sbType`                     | `0x745de344` |
+| `setAddress`                 | `0x85bf312c` |
+| `setAuctionEndDelaySeconds`  | `0x88606b1a` |
+| `setMaxReAuctionCount`       | `0x64c71403` |
+| `transferOwnership`          | `0xf2fde38b` |
+| `watcher__`                  | `0x300bb063` |
+| `winningBids`                | `0x9133f232` |
+
+## Socket
+
+| Function                     | Signature    |
+| ---------------------------- | ------------ |
+| `OFF_CHAIN_CALLER`           | `0xcb2cb4f6` |
+| `cancelOwnershipHandover`    | `0x54d1f13d` |
+| `chainSlug`                  | `0xb349ba65` |
+| `completeOwnershipHandover`  | `0xf04e283e` |
+| `connect`                    | `0xb3bde1aa` |
+| `disableSwitchboard`         | `0xe545b261` |
+| `enableSwitchboard`          | `0xf97a498a` |
+| `execute`                    | `0xafa8b480` |
+| `getPlugConfig`              | `0xf9778ee0` |
+| `grantRole`                  | `0x2f2ff15d` |
+| `hasRole`                    | `0x91d14854` |
+| `isValidSwitchboard`         | `0xb2d67675` |
+| `maxCopyBytes`               | `0x212249d4` |
+| `owner`                      | `0x8da5cb5b` |
+| `ownershipHandoverExpiresAt` | `0xfee81cf4` |
+| `payloadExecuted`            | `0x3eaeac3d` |
+| `payloadIdToDigest`          | `0x7c8552b2` |
+| `registerSwitchboard`        | `0x74f5b1fc` |
+| `renounceOwnership`          | `0x715018a6` |
+| `requestOwnershipHandover`   | `0x25692962` |
+| `rescueFunds`                | `0x6ccae054` |
+| `revokeRole`                 | `0xd547741f` |
+| `setMaxCopyBytes`            | `0x4fc7d6e9` |
+| `setSocketFeeManager`        | `0x25bd97e5` |
+| `simulate`                   | `0x91bf8275` |
+| `socketFeeManager`           | `0xde5b8838` |
+| `transferOwnership`          | `0xf2fde38b` |
+| `triggerCounter`             | `0x8b0021de` |
+| `version`                    | `0x54fd4d50` |
+
+## SocketBatcher
+
+| Function                     | Signature    |
+| ---------------------------- | ------------ |
+| `attestAndExecute`           | `0x66c7748a` |
+| `cancelOwnershipHandover`    | `0x54d1f13d` |
+| `completeOwnershipHandover`  | `0xf04e283e` |
+| `owner`                      | `0x8da5cb5b` |
+| `ownershipHandoverExpiresAt` | `0xfee81cf4` |
+| `renounceOwnership`          | `0x715018a6` |
+| `requestOwnershipHandover`   | `0x25692962` |
+| `rescueFunds`                | `0x6ccae054` |
+| `socket__`                   | `0xc6a261d2` |
+| `transferOwnership`          | `0xf2fde38b` |
+
+## SocketFeeManager
+
+| Function                     | Signature    |
+| ---------------------------- | ------------ |
+| `cancelOwnershipHandover`    | `0x54d1f13d` |
+| `completeOwnershipHandover`  | `0xf04e283e` |
+| `getMinSocketFees`           | `0xd383b688` |
+| `grantRole`                  | `0x2f2ff15d` |
+| `hasRole`                    | `0x91d14854` |
+| `owner`                      | `0x8da5cb5b` |
+| `ownershipHandoverExpiresAt` | `0xfee81cf4` |
+| `payAndCheckFees`            | `0xd9d29ae3` |
+| `renounceOwnership`          | `0x715018a6` |
+| `requestOwnershipHandover`   | `0x25692962` |
+| `rescueFunds`                | `0x6ccae054` |
+| `revokeRole`                 | `0xd547741f` |
+| `setSocketFees`              | `0x47a406f6` |
+| `socketFees`                 | `0xab1b33a8` |
+| `transferOwnership`          | `0xf2fde38b` |
+
+## FeesManager
+
+| Function                         | Signature    |
+| -------------------------------- | ------------ |
+| `addressResolver__`              | `0x6a750469` |
+| `approveAppGatewayWithSignature` | `0x94b649ec` |
+| `approveAppGateways`             | `0x86d23ab2` |
+| `asyncDeployer__`                | `0x2a39e801` |
+| `blockCredits`                   | `0x9e434307` |
+| `cancelOwnershipHandover`        | `0x54d1f13d` |
+| `completeOwnershipHandover`      | `0xf04e283e` |
+| `deployForwarder__`              | `0xd4e3b034` |
+| `deposit`                        | `0x5671d329` |
+| `evmxSlug`                       | `0x8bae77c2` |
+| `feesManager__`                  | `0x70568b58` |
+| `feesPlugs`                      | `0x23f5ee8a` |
+| `feesPool`                       | `0x6b259690` |
+| `getAvailableCredits`            | `0xb065a8e5` |
+| `initialize`                     | `0xbf2c8539` |
+| `isApproved`                     | `0xa389783e` |
+| `isCreditSpendable`              | `0x4f8990fd` |
+| `isNonceUsed`                    | `0xcab7e8eb` |
+| `onRequestComplete`              | `0x5ed1f959` |
+| `owner`                          | `0x8da5cb5b` |
+| `ownershipHandoverExpiresAt`     | `0xfee81cf4` |
+| `renounceOwnership`              | `0x715018a6` |
+| `requestBlockedCredits`          | `0xb62d25ac` |
+| `requestOwnershipHandover`       | `0x25692962` |
+| `rescueFunds`                    | `0x6ccae054` |
+| `sbType`                         | `0x745de344` |
+| `setFeesPlug`                    | `0xeab75f36` |
+| `setFeesPool`                    | `0xd6684588` |
+| `tokenOnChainBalances`           | `0x3b27866d` |
+| `transferCredits`                | `0xf1686c89` |
+| `transferOwnership`              | `0xf2fde38b` |
+| `unblockAndAssignCredits`        | `0x01958181` |
+| `unblockCredits`                 | `0xa0b32314` |
+| `unwrap`                         | `0x7647691d` |
+| `userCredits`                    | `0x20babb92` |
+| `watcher__`                      | `0x300bb063` |
+| `withdrawCredits`                | `0xcfc6dbd9` |
+| `wrap`                           | `0x023276f0` |
+
+## FeesPool
+
+| Function                     | Signature    |
+| ---------------------------- | ------------ |
+| `cancelOwnershipHandover`    | `0x54d1f13d` |
+| `completeOwnershipHandover`  | `0xf04e283e` |
+| `getBalance`                 | `0x12065fe0` |
+| `grantRole`                  | `0x2f2ff15d` |
+| `hasRole`                    | `0x91d14854` |
+| `owner`                      | `0x8da5cb5b` |
+| `ownershipHandoverExpiresAt` | `0xfee81cf4` |
+| `renounceOwnership`          | `0x715018a6` |
+| `requestOwnershipHandover`   | `0x25692962` |
+| `revokeRole`                 | `0xd547741f` |
+| `transferOwnership`          | `0xf2fde38b` |
+| `withdraw`                   | `0xf3fef3a3` |
+
+## AddressResolver
+
+| Function                     | Signature    |
+| ---------------------------- | ------------ |
+| `asyncDeployer__`            | `0x2a39e801` |
+| `cancelOwnershipHandover`    | `0x54d1f13d` |
+| `completeOwnershipHandover`  | `0xf04e283e` |
+| `contractAddresses`          | `0xf689e892` |
+| `defaultAuctionManager`      | `0x8f27cdc6` |
+| `deployForwarder__`          | `0xd4e3b034` |
+| `feesManager__`              | `0x70568b58` |
+| `initialize`                 | `0xc4d66de8` |
+| `owner`                      | `0x8da5cb5b` |
+| `ownershipHandoverExpiresAt` | `0xfee81cf4` |
+| `renounceOwnership`          | `0x715018a6` |
+| `requestOwnershipHandover`   | `0x25692962` |
+| `rescueFunds`                | `0x6ccae054` |
+| `setAsyncDeployer`           | `0xcb0ffff8` |
+| `setContractAddress`         | `0xe001f841` |
+| `setDefaultAuctionManager`   | `0xede8b4b5` |
+| `setDeployForwarder`         | `0xaeaee8a6` |
+| `setFeesManager`             | `0x1c89382a` |
+| `setWatcher`                 | `0x24f48bc5` |
+| `transferOwnership`          | `0xf2fde38b` |
+| `watcher__`                  | `0x300bb063` |
+
+## AsyncDeployer
+
+| Function                        | Signature    |
+| ------------------------------- | ------------ |
+| `addressResolver__`             | `0x6a750469` |
+| `asyncDeployer__`               | `0x2a39e801` |
+| `asyncPromiseBeacon`            | `0xc0fbc0ef` |
+| `asyncPromiseCounter`           | `0x97cdbf4c` |
+| `asyncPromiseImplementation`    | `0x59531b8d` |
+| `cancelOwnershipHandover`       | `0x54d1f13d` |
+| `completeOwnershipHandover`     | `0xf04e283e` |
+| `deployAsyncPromiseContract`    | `0x9851be0b` |
+| `deployForwarder__`             | `0xd4e3b034` |
+| `feesManager__`                 | `0x70568b58` |
+| `forwarderBeacon`               | `0x945709ae` |
+| `forwarderImplementation`       | `0xe38d60a1` |
+| `getAsyncPromiseAddress`        | `0x104f39b4` |
+| `getForwarderAddress`           | `0x48c0b3e0` |
+| `getOrDeployForwarderContract`  | `0x0aa178de` |
+| `initialize`                    | `0x485cc955` |
+| `owner`                         | `0x8da5cb5b` |
+| `ownershipHandoverExpiresAt`    | `0xfee81cf4` |
+| `renounceOwnership`             | `0x715018a6` |
+| `requestOwnershipHandover`      | `0x25692962` |
+| `rescueFunds`                   | `0x6ccae054` |
+| `setAsyncPromiseImplementation` | `0xeb506eab` |
+| `setForwarderImplementation`    | `0x83b1e974` |
+| `transferOwnership`             | `0xf2fde38b` |
+| `watcher__`                     | `0x300bb063` |
+
+## AsyncPromise
+
+| Function            | Signature    |
+| ------------------- | ------------ |
+| `addressResolver__` | `0x6a750469` |
+| `asyncDeployer__`   | `0x2a39e801` |
+| `callbackData`      | `0xef44c272` |
+| `callbackSelector`  | `0x2764f92f` |
+| `deployForwarder__` | `0xd4e3b034` |
+| `exceededMaxCopy`   | `0xaf598c7c` |
+| `feesManager__`     | `0x70568b58` |
+| `initialize`        | `0x0ece6089` |
+| `localInvoker`      | `0x45eb87f4` |
+| `markOnchainRevert` | `0xd0e7af1b` |
+| `markResolved`      | `0x822d5d1f` |
+| `requestCount`      | `0x5badbe4c` |
+| `rescueFunds`       | `0x6ccae054` |
+| `returnData`        | `0xebddbaf6` |
+| `state`             | `0xc19d93fb` |
+| `then`              | `0x0bf2ba15` |
+| `watcher__`         | `0x300bb063` |
+
+## DeployForwarder
+
+| Function                     | Signature    |
+| ---------------------------- | ------------ |
+| `addressResolver__`          | `0x6a750469` |
+| `asyncDeployer__`            | `0x2a39e801` |
+| `cancelOwnershipHandover`    | `0x54d1f13d` |
+| `completeOwnershipHandover`  | `0xf04e283e` |
+| `deploy`                     | `0x940f11af` |
+| `deployForwarder__`          | `0xd4e3b034` |
+| `deployerSwitchboardType`    | `0xaa381f9a` |
+| `feesManager__`              | `0x70568b58` |
+| `initialize`                 | `0x6133f985` |
+| `owner`                      | `0x8da5cb5b` |
+| `ownershipHandoverExpiresAt` | `0xfee81cf4` |
+| `renounceOwnership`          | `0x715018a6` |
+| `requestOwnershipHandover`   | `0x25692962` |
+| `rescueFunds`                | `0x6ccae054` |
+| `saltCounter`                | `0xa04c6809` |
+| `transferOwnership`          | `0xf2fde38b` |
+| `watcher__`                  | `0x300bb063` |
+
+## Forwarder
+
+| Function            | Signature    |
+| ------------------- | ------------ |
+| `addressResolver__` | `0x6a750469` |
+| `asyncDeployer__`   | `0x2a39e801` |
+| `chainSlug`         | `0xb349ba65` |
+| `deployForwarder__` | `0xd4e3b034` |
+| `feesManager__`     | `0x70568b58` |
+| `getChainSlug`      | `0x0b8c6568` |
+| `getOnChainAddress` | `0x9da48789` |
+| `initialize`        | `0x647c576c` |
+| `onChainAddress`    | `0x8bd0b363` |
+| `rescueFunds`       | `0x6ccae054` |
+| `watcher__`         | `0x300bb063` |
+
 ## ProxyFactory
 
 | Function                      | Signature    |
@@ -34,115 +329,6 @@
 | `transfer`         | `0xa9059cbb` |
 | `transferFrom`     | `0x23b872dd` |
 
-## AddressResolver
-
-| Function                        | Signature    |
-| ------------------------------- | ------------ |
-| `asyncPromiseBeacon`            | `0xc0fbc0ef` |
-| `asyncPromiseCounter`           | `0x97cdbf4c` |
-| `asyncPromiseImplementation`    | `0x59531b8d` |
-| `cancelOwnershipHandover`       | `0x54d1f13d` |
-| `clearPromises`                 | `0x96e03234` |
-| `completeOwnershipHandover`     | `0xf04e283e` |
-| `contractsToGateways`           | `0x5bc03a67` |
-| `defaultAuctionManager`         | `0x8f27cdc6` |
-| `deliveryHelper`                | `0x71eaa36f` |
-| `deployAsyncPromiseContract`    | `0x00afbf9d` |
-| `feesManager`                   | `0x05a9e073` |
-| `forwarderBeacon`               | `0x945709ae` |
-| `forwarderImplementation`       | `0xe38d60a1` |
-| `getAsyncPromiseAddress`        | `0xb6400df5` |
-| `getForwarderAddress`           | `0x48c0b3e0` |
-| `getOrDeployForwarderContract`  | `0xe8d616a8` |
-| `getPromises`                   | `0xa01afb0d` |
-| `initialize`                    | `0xc4d66de8` |
-| `owner`                         | `0x8da5cb5b` |
-| `ownershipHandoverExpiresAt`    | `0xfee81cf4` |
-| `renounceOwnership`             | `0x715018a6` |
-| `requestOwnershipHandover`      | `0x25692962` |
-| `setAsyncPromiseImplementation` | `0xeb506eab` |
-| `setContractsToGateways`        | `0xb08dd08b` |
-| `setDefaultAuctionManager`      | `0xede8b4b5` |
-| `setDeliveryHelper`             | `0x75523822` |
-| `setFeesManager`                | `0x1c89382a` |
-| `setForwarderImplementation`    | `0x83b1e974` |
-| `setWatcherPrecompile`          | `0x5ca44c9b` |
-| `transferOwnership`             | `0xf2fde38b` |
-| `version`                       | `0x54fd4d50` |
-| `watcherPrecompile__`           | `0x1de360c3` |
-
-## AsyncPromise
-
-| Function                  | Signature    |
-| ------------------------- | ------------ |
-| `addressResolver__`       | `0x6a750469` |
-| `callbackData`            | `0xef44c272` |
-| `callbackSelector`        | `0x2764f92f` |
-| `deliveryHelper__`        | `0xc031dfb4` |
-| `forwarder`               | `0xf645d4f9` |
-| `initialize`              | `0xc0c53b8b` |
-| `localInvoker`            | `0x45eb87f4` |
-| `markOnchainRevert`       | `0x7734a84e` |
-| `markResolved`            | `0xdd94d9b2` |
-| `resolved`                | `0x3f6fa655` |
-| `state`                   | `0xc19d93fb` |
-| `then`                    | `0x0bf2ba15` |
-| `watcherPrecompileConfig` | `0x8618a912` |
-| `watcherPrecompileLimits` | `0xa71cd97d` |
-| `watcherPrecompile__`     | `0x1de360c3` |
-
-## Forwarder
-
-| Function                  | Signature    |
-| ------------------------- | ------------ |
-| `addressResolver__`       | `0x6a750469` |
-| `chainSlug`               | `0xb349ba65` |
-| `deliveryHelper__`        | `0xc031dfb4` |
-| `getChainSlug`            | `0x0b8c6568` |
-| `getOnChainAddress`       | `0x9da48789` |
-| `initialize`              | `0x647c576c` |
-| `latestAsyncPromise`      | `0xb8a8ba52` |
-| `latestPromiseCaller`     | `0xdfe580a8` |
-| `latestRequestCount`      | `0x198b9a47` |
-| `onChainAddress`          | `0x8bd0b363` |
-| `then`                    | `0x0bf2ba15` |
-| `watcherPrecompileConfig` | `0x8618a912` |
-| `watcherPrecompileLimits` | `0xa71cd97d` |
-| `watcherPrecompile__`     | `0x1de360c3` |
-
-## AuctionManager
-
-| Function                         | Signature    |
-| -------------------------------- | ------------ |
-| `addressResolver__`              | `0x6a750469` |
-| `auctionClosed`                  | `0x6862ebb0` |
-| `auctionEndDelaySeconds`         | `0x9087dfdb` |
-| `auctionStarted`                 | `0x7c9c5bb8` |
-| `bid`                            | `0xfcdf49c2` |
-| `cancelOwnershipHandover`        | `0x54d1f13d` |
-| `completeOwnershipHandover`      | `0xf04e283e` |
-| `deliveryHelper__`               | `0xc031dfb4` |
-| `endAuction`                     | `0x1212e653` |
-| `evmxSlug`                       | `0x8bae77c2` |
-| `expireBid`                      | `0x1dd5022c` |
-| `getTransmitterMaxFeesAvailable` | `0xa70f18ea` |
-| `grantRole`                      | `0x2f2ff15d` |
-| `hasRole`                        | `0x91d14854` |
-| `initialize`                     | `0x5f24043b` |
-| `maxReAuctionCount`              | `0xc367b376` |
-| `owner`                          | `0x8da5cb5b` |
-| `ownershipHandoverExpiresAt`     | `0xfee81cf4` |
-| `reAuctionCount`                 | `0x9b4b22d3` |
-| `renounceOwnership`              | `0x715018a6` |
-| `requestOwnershipHandover`       | `0x25692962` |
-| `revokeRole`                     | `0xd547741f` |
-| `setAuctionEndDelaySeconds`      | `0x88606b1a` |
-| `transferOwnership`              | `0xf2fde38b` |
-| `watcherPrecompileConfig`        | `0x8618a912` |
-| `watcherPrecompileLimits`        | `0xa71cd97d` |
-| `watcherPrecompile__`            | `0x1de360c3` |
-| `winningBids`                    | `0x9133f232` |
-
 ## ContractFactoryPlug
 
 | Function                     | Signature    |
@@ -167,249 +353,122 @@
 | `socket__`                   | `0xc6a261d2` |
 | `transferOwnership`          | `0xf2fde38b` |
 
-## FeesManager
-
-| Function                                         | Signature    |
-| ------------------------------------------------ | ------------ |
-| `addressResolver__`                              | `0x6a750469` |
-| `assignWatcherPrecompileCreditsFromAddress`      | `0xd699b6c8` |
-| `assignWatcherPrecompileCreditsFromRequestCount` | `0x7a483022` |
-| `blockCredits`                                   | `0x2d64fc91` |
-| `cancelOwnershipHandover`                        | `0x54d1f13d` |
-| `completeOwnershipHandover`                      | `0xf04e283e` |
-| `deliveryHelper__`                               | `0xc031dfb4` |
-| `depositCredits`                                 | `0x211998c8` |
-| `evmxSlug`                                       | `0x8bae77c2` |
-| `feesCounter`                                    | `0xb94f4778` |
-| `getAvailableCredits`                            | `0xb065a8e5` |
-| `getMaxCreditsAvailableForWithdraw`              | `0x6ef9efe2` |
-| `getWithdrawTransmitterCreditsPayloadParams`     | `0x27be4536` |
-| `initialize`                                     | `0x6f6186bd` |
-| `isAppGatewayWhitelisted`                        | `0x2a83b813` |
-| `isNonceUsed`                                    | `0x5d00bb12` |
-| `isUserCreditsEnough`                            | `0x5bee3a67` |
-| `onRequestComplete`                              | `0x5ed1f959` |
-| `owner`                                          | `0x8da5cb5b` |
-| `ownershipHandoverExpiresAt`                     | `0xfee81cf4` |
-| `renounceOwnership`                              | `0x715018a6` |
-| `requestCountCredits`                            | `0x0c9b8a49` |
-| `requestOwnershipHandover`                       | `0x25692962` |
-| `sbType`                                         | `0x745de344` |
-| `tokenPoolBalances`                              | `0x2eda3bfd` |
-| `transferOwnership`                              | `0xf2fde38b` |
-| `unblockAndAssignCredits`                        | `0x01958181` |
-| `unblockCredits`                                 | `0xa0b32314` |
-| `unwrap`                                         | `0xde0e9a3e` |
-| `userCredits`                                    | `0x20babb92` |
-| `userNonce`                                      | `0x2e04b8e7` |
-| `watcherPrecompileConfig`                        | `0x8618a912` |
-| `watcherPrecompileCredits`                       | `0x052e1f6a` |
-| `watcherPrecompileLimits`                        | `0xa71cd97d` |
-| `watcherPrecompile__`                            | `0x1de360c3` |
-| `whitelistAppGatewayWithSignature`               | `0x28cbf83d` |
-| `whitelistAppGateways`                           | `0x6c2499e3` |
-| `withdrawCredits`                                | `0xc22f8cf3` |
-| `wrap`                                           | `0xd46eb119` |
-
-## FeesPlug
-
-| Function                     | Signature    |
-| ---------------------------- | ------------ |
-| `appGatewayId`               | `0x1c335f49` |
-| `cancelOwnershipHandover`    | `0x54d1f13d` |
-| `completeOwnershipHandover`  | `0xf04e283e` |
-| `connectSocket`              | `0x258d19c8` |
-| `depositToFee`               | `0xef0db49f` |
-| `depositToFeeAndNative`      | `0x5f952be8` |
-| `depositToNative`            | `0xe2665889` |
-| `grantRole`                  | `0x2f2ff15d` |
-| `hasRole`                    | `0x91d14854` |
-| `initSocket`                 | `0xa07d8545` |
-| `isSocketInitialized`        | `0x9a7d9a9b` |
-| `overrides`                  | `0x4a85f041` |
-| `owner`                      | `0x8da5cb5b` |
-| `ownershipHandoverExpiresAt` | `0xfee81cf4` |
-| `removeTokenFromWhitelist`   | `0x306275be` |
-| `renounceOwnership`          | `0x715018a6` |
-| `requestOwnershipHandover`   | `0x25692962` |
-| `rescueFunds`                | `0x6ccae054` |
-| `revokeRole`                 | `0xd547741f` |
-| `socket__`                   | `0xc6a261d2` |
-| `transferOwnership`          | `0xf2fde38b` |
-| `whitelistToken`             | `0x6247f6f2` |
-| `whitelistedTokens`          | `0xdaf9c210` |
-| `withdrawFees`               | `0xe55dc4e6` |
-
-## Socket
-
-| Function                     | Signature    |
-| ---------------------------- | ------------ |
-| `cancelOwnershipHandover`    | `0x54d1f13d` |
-| `chainSlug`                  | `0xb349ba65` |
-| `completeOwnershipHandover`  | `0xf04e283e` |
-| `connect`                    | `0xb3bde1aa` |
-| `disableSwitchboard`         | `0xe545b261` |
-| `enableSwitchboard`          | `0xf97a498a` |
-| `execute`                    | `0x68ef086b` |
-| `getPlugConfig`              | `0xf9778ee0` |
-| `grantRole`                  | `0x2f2ff15d` |
-| `hasRole`                    | `0x91d14854` |
-| `isValidSwitchboard`         | `0xb2d67675` |
-| `maxCopyBytes`               | `0x212249d4` |
-| `owner`                      | `0x8da5cb5b` |
-| `ownershipHandoverExpiresAt` | `0xfee81cf4` |
-| `payloadExecuted`            | `0x3eaeac3d` |
-| `payloadIdToDigest`          | `0x7c8552b2` |
-| `registerSwitchboard`        | `0x74f5b1fc` |
-| `renounceOwnership`          | `0x715018a6` |
-| `requestOwnershipHandover`   | `0x25692962` |
-| `rescueFunds`                | `0x6ccae054` |
-| `revokeRole`                 | `0xd547741f` |
-| `setMaxCopyBytes`            | `0x4fc7d6e9` |
-| `setSocketFeeManager`        | `0x25bd97e5` |
-| `socketFeeManager`           | `0xde5b8838` |
-| `transferOwnership`          | `0xf2fde38b` |
-| `triggerCounter`             | `0x8b0021de` |
-| `version`                    | `0x54fd4d50` |
-
-## SocketBatcher
-
-| Function                     | Signature    |
-| ---------------------------- | ------------ |
-| `attestAndExecute`           | `0xa11d3bdc` |
-| `cancelOwnershipHandover`    | `0x54d1f13d` |
-| `completeOwnershipHandover`  | `0xf04e283e` |
-| `owner`                      | `0x8da5cb5b` |
-| `ownershipHandoverExpiresAt` | `0xfee81cf4` |
-| `renounceOwnership`          | `0x715018a6` |
-| `requestOwnershipHandover`   | `0x25692962` |
-| `rescueFunds`                | `0x6ccae054` |
-| `socket__`                   | `0xc6a261d2` |
-| `transferOwnership`          | `0xf2fde38b` |
-
-## SocketFeeManager
+## Configurations
 
 | Function                     | Signature    |
 | ---------------------------- | ------------ |
 | `cancelOwnershipHandover`    | `0x54d1f13d` |
 | `completeOwnershipHandover`  | `0xf04e283e` |
-| `getMinSocketFees`           | `0xd383b688` |
-| `grantRole`                  | `0x2f2ff15d` |
-| `hasRole`                    | `0x91d14854` |
-| `owner`                      | `0x8da5cb5b` |
-| `ownershipHandoverExpiresAt` | `0xfee81cf4` |
-| `payAndCheckFees`            | `0xbaa56229` |
-| `renounceOwnership`          | `0x715018a6` |
-| `requestOwnershipHandover`   | `0x25692962` |
-| `rescueFunds`                | `0x6ccae054` |
-| `revokeRole`                 | `0xd547741f` |
-| `setSocketFees`              | `0x47a406f6` |
-| `socketFees`                 | `0xab1b33a8` |
-| `transferOwnership`          | `0xf2fde38b` |
-
-## WatcherPrecompileConfig
-
-| Function                     | Signature    |
-| ---------------------------- | ------------ |
-| `addressResolver__`          | `0x6a750469` |
-| `cancelOwnershipHandover`    | `0x54d1f13d` |
-| `completeOwnershipHandover`  | `0xf04e283e` |
-| `contractFactoryPlug`        | `0xd8427483` |
-| `deliveryHelper__`           | `0xc031dfb4` |
-| `evmxSlug`                   | `0x8bae77c2` |
-| `feesPlug`                   | `0xd1ba159d` |
 | `getPlugConfigs`             | `0x8a028c38` |
-| `initialize`                 | `0x6ecf2b22` |
-| `isNonceUsed`                | `0x5d00bb12` |
+| `initialize`                 | `0x485cc955` |
 | `isValidPlug`                | `0xec8aef74` |
 | `owner`                      | `0x8da5cb5b` |
 | `ownershipHandoverExpiresAt` | `0xfee81cf4` |
 | `renounceOwnership`          | `0x715018a6` |
 | `requestOwnershipHandover`   | `0x25692962` |
-| `setAppGateways`             | `0xdd8539d4` |
-| `setIsValidPlug`             | `0xb3a6bbcf` |
-| `setOnChainContracts`        | `0x33fa78c2` |
+| `rescueFunds`                | `0x6ccae054` |
+| `setAppGatewayConfigs`       | `0xd137fcbb` |
+| `setIsValidPlug`             | `0xf41332b0` |
+| `setSocket`                  | `0x075c40be` |
 | `setSwitchboard`             | `0x61706f1e` |
 | `sockets`                    | `0xb44a23ab` |
 | `switchboards`               | `0xaa539546` |
 | `transferOwnership`          | `0xf2fde38b` |
-| `verifyConnections`          | `0xf269ab50` |
-| `watcherPrecompileConfig`    | `0x8618a912` |
-| `watcherPrecompileLimits`    | `0xa71cd97d` |
-| `watcherPrecompile__`        | `0x1de360c3` |
+| `verifyConnections`          | `0xa53b6fad` |
+| `watcher__`                  | `0x300bb063` |
 
-## WatcherPrecompileLimits
+## PromiseResolver
 
-| Function                          | Signature    |
-| --------------------------------- | ------------ |
-| `addressResolver__`               | `0x6a750469` |
-| `callBackFees`                    | `0xf9554ecc` |
-| `cancelOwnershipHandover`         | `0x54d1f13d` |
-| `completeOwnershipHandover`       | `0xf04e283e` |
-| `consumeLimit`                    | `0xc22f5a13` |
-| `defaultLimit`                    | `0xe26b013b` |
-| `defaultRatePerSecond`            | `0x16d7acdf` |
-| `deliveryHelper__`                | `0xc031dfb4` |
-| `finalizeFees`                    | `0x09207879` |
-| `getCurrentLimit`                 | `0x1a065507` |
-| `getLimitParams`                  | `0x2ff81ee0` |
-| `getTotalFeesRequired`            | `0x964500b5` |
-| `initialize`                      | `0x1794bb3c` |
-| `limitDecimals`                   | `0xee185533` |
-| `owner`                           | `0x8da5cb5b` |
-| `ownershipHandoverExpiresAt`      | `0xfee81cf4` |
-| `queryFees`                       | `0xcfcbafb6` |
-| `renounceOwnership`               | `0x715018a6` |
-| `requestOwnershipHandover`        | `0x25692962` |
-| `setCallBackFees`                 | `0x622be814` |
-| `setDefaultLimitAndRatePerSecond` | `0x7e434156` |
-| `setFinalizeFees`                 | `0xbce0a88c` |
-| `setQueryFees`                    | `0x877135d7` |
-| `setTimeoutFees`                  | `0x571db4f9` |
-| `timeoutFees`                     | `0xeab12f7e` |
-| `transferOwnership`               | `0xf2fde38b` |
-| `updateLimitParams`               | `0x01b2a5a0` |
-| `watcherPrecompileConfig`         | `0x8618a912` |
-| `watcherPrecompileLimits`         | `0xa71cd97d` |
-| `watcherPrecompile__`             | `0x1de360c3` |
+| Function          | Signature    |
+| ----------------- | ------------ |
+| `markRevert`      | `0x56501015` |
+| `rescueFunds`     | `0x6ccae054` |
+| `resolvePromises` | `0xbf8484b8` |
+| `watcher__`       | `0x300bb063` |
 
-## DeliveryHelper
+## RequestHandler
 
 | Function                       | Signature    |
 | ------------------------------ | ------------ |
 | `addressResolver__`            | `0x6a750469` |
-| `batch`                        | `0xd9307dd8` |
-| `bidTimeout`                   | `0x94090d0b` |
+| `assignTransmitter`            | `0xae5e9c48` |
+| `asyncDeployer__`              | `0x2a39e801` |
 | `cancelOwnershipHandover`      | `0x54d1f13d` |
-| `cancelRequest`                | `0x50ad0779` |
-| `chainMaxMsgValueLimit`        | `0x01d1e126` |
-| `clearQueue`                   | `0xf22cb874` |
+| `cancelRequest`                | `0x3b5fd6fb` |
+| `cancelRequestForReverts`      | `0x82970278` |
 | `completeOwnershipHandover`    | `0xf04e283e` |
-| `deliveryHelper__`             | `0xc031dfb4` |
-| `finishRequest`                | `0xeab148c0` |
-| `getDeliveryHelperPlugAddress` | `0xb709bd9f` |
-| `getFees`                      | `0xfbf4ec4b` |
-| `getRequestMetadata`           | `0x5f1dde51` |
-| `handleRequestReverts`         | `0x8fe9734f` |
-| `increaseFees`                 | `0xe9b304da` |
-| `initialize`                   | `0x7265580f` |
+| `deployForwarder__`            | `0xd4e3b034` |
+| `feesManager__`                | `0x70568b58` |
+| `getBatchPayloadIds`           | `0xfd83cd1f` |
+| `getPayload`                   | `0xb48fd0fe` |
+| `getPrecompileFees`            | `0xabac263c` |
+| `getRequest`                   | `0xcf39abf6` |
+| `getRequestBatchIds`           | `0xe138fadb` |
+| `handleRevert`                 | `0xcc88d3f9` |
+| `increaseFees`                 | `0x10205541` |
+| `initialize`                   | `0x485cc955` |
+| `nextBatchCount`               | `0x333a3963` |
+| `nextRequestCount`             | `0xfef72893` |
 | `owner`                        | `0x8da5cb5b` |
 | `ownershipHandoverExpiresAt`   | `0xfee81cf4` |
-| `queue`                        | `0x1b9396f5` |
-| `queuePayloadParams`           | `0x3c362159` |
+| `payloadCounter`               | `0x550ce1d5` |
+| `precompiles`                  | `0x9932450b` |
 | `renounceOwnership`            | `0x715018a6` |
 | `requestOwnershipHandover`     | `0x25692962` |
-| `requests`                     | `0xb71a5e58` |
-| `saltCounter`                  | `0xa04c6809` |
-| `startRequestProcessing`       | `0x5ca2100f` |
+| `rescueFunds`                  | `0x6ccae054` |
+| `setPrecompile`                | `0x122e0042` |
+| `setRequestPayloadCountLimit`  | `0x8526582b` |
+| `submitRequest`                | `0xbb299a2c` |
 | `transferOwnership`            | `0xf2fde38b` |
-| `updateBidTimeout`             | `0xa29f83d1` |
-| `updateChainMaxMsgValueLimits` | `0x0b32de76` |
-| `watcherPrecompileConfig`      | `0x8618a912` |
-| `watcherPrecompileLimits`      | `0xa71cd97d` |
-| `watcherPrecompile__`          | `0x1de360c3` |
-| `withdrawTo`                   | `0x2ba9d5bb` |
-| `withdrawTransmitterFees`      | `0x38ff6dd2` |
+| `updateRequestAndProcessBatch` | `0x46464471` |
+| `watcher__`                    | `0x300bb063` |
+
+## Watcher
+
+| Function                     | Signature    |
+| ---------------------------- | ------------ |
+| `addressResolver__`          | `0x6a750469` |
+| `appGatewayTemp`             | `0x1394c029` |
+| `asyncDeployer__`            | `0x2a39e801` |
+| `callAppGateways`            | `0x0050bef1` |
+| `cancelOwnershipHandover`    | `0x54d1f13d` |
+| `cancelRequest`              | `0x50ad0779` |
+| `clearQueue`                 | `0xf22cb874` |
+| `completeOwnershipHandover`  | `0xf04e283e` |
+| `configurations__`           | `0x52a3bbeb` |
+| `deployForwarder__`          | `0xd4e3b034` |
+| `evmxSlug`                   | `0x8bae77c2` |
+| `feesManager__`              | `0x70568b58` |
+| `getCurrentRequestCount`     | `0x5715abbb` |
+| `getPayloadParams`           | `0xae5eeb77` |
+| `getPrecompileFees`          | `0xabac263c` |
+| `getRequestParams`           | `0x71263d0d` |
+| `increaseFees`               | `0xe9b304da` |
+| `initialize`                 | `0xaaf7fc1a` |
+| `isAppGatewayCalled`         | `0xa79da6c7` |
+| `isNonceUsed`                | `0x5d00bb12` |
+| `isWatcher`                  | `0x84785ecd` |
+| `latestAsyncPromise`         | `0xb8a8ba52` |
+| `owner`                      | `0x8da5cb5b` |
+| `ownershipHandoverExpiresAt` | `0xfee81cf4` |
+| `payloadQueue`               | `0x74f00ffb` |
+| `promiseResolver__`          | `0xdee152be` |
+| `queue`                      | `0xf03ca7f7` |
+| `queueAndSubmit`             | `0xf0fb9665` |
+| `renounceOwnership`          | `0x715018a6` |
+| `requestHandler__`           | `0x55184561` |
+| `requestOwnershipHandover`   | `0x25692962` |
+| `rescueFunds`                | `0xa58c6fc5` |
+| `setCoreContracts`           | `0xefa891c4` |
+| `setIsValidPlug`             | `0x7fc82ff6` |
+| `setTriggerFees`             | `0xaeb30511` |
+| `submitRequest`              | `0x4890b5ef` |
+| `transferOwnership`          | `0xf2fde38b` |
+| `triggerFees`                | `0x73f76aec` |
+| `triggerFromChainSlug`       | `0xd12b4f12` |
+| `triggerFromPlug`            | `0x3b847d12` |
+| `watcherMultiCall`           | `0x8021e82b` |
+| `watcher__`                  | `0x300bb063` |
 
 ## FastSwitchboard
 
@@ -433,61 +492,68 @@
 | `socket__`                   | `0xc6a261d2` |
 | `transferOwnership`          | `0xf2fde38b` |
 
-## WatcherPrecompile
+## ReadPrecompile
 
-| Function                      | Signature    |
-| ----------------------------- | ------------ |
-| `addressResolver__`           | `0x6a750469` |
-| `appGatewayCalled`            | `0xc6767cf1` |
-| `appGatewayCaller`            | `0x712b193a` |
-| `batchPayloadIds`             | `0x02b74f98` |
-| `callAppGateways`             | `0x5c38ded5` |
-| `cancelOwnershipHandover`     | `0x54d1f13d` |
-| `cancelRequest`               | `0x50ad0779` |
-| `completeOwnershipHandover`   | `0xf04e283e` |
-| `deliveryHelper__`            | `0xc031dfb4` |
-| `evmxSlug`                    | `0x8bae77c2` |
-| `expiryTime`                  | `0x99bc0aea` |
-| `finalized`                   | `0x81c051de` |
-| `getBatchPayloadIds`          | `0xfd83cd1f` |
-| `getBatches`                  | `0xcb95b7b3` |
-| `getCurrentRequestCount`      | `0x5715abbb` |
-| `getDigest`                   | `0xa7993154` |
-| `getPayloadParams`            | `0xae5eeb77` |
-| `getRequestParams`            | `0x71263d0d` |
-| `initialize`                  | `0xb7dc6b77` |
-| `isNonceUsed`                 | `0x5d00bb12` |
-| `isPromiseExecuted`           | `0x17a2cdf0` |
-| `markRevert`                  | `0x1c75dad5` |
-| `maxTimeoutDelayInSeconds`    | `0x46fbc9d7` |
-| `nextBatchCount`              | `0x333a3963` |
-| `nextRequestCount`            | `0xfef72893` |
-| `owner`                       | `0x8da5cb5b` |
-| `ownershipHandoverExpiresAt`  | `0xfee81cf4` |
-| `payloadCounter`              | `0x550ce1d5` |
-| `payloads`                    | `0x58722672` |
-| `query`                       | `0x16ad71bc` |
-| `renounceOwnership`           | `0x715018a6` |
-| `requestBatchIds`             | `0xf865c4a7` |
-| `requestMetadata`             | `0x875b3f7e` |
-| `requestOwnershipHandover`    | `0x25692962` |
-| `requestParams`               | `0x5ce2d853` |
-| `resolvePromises`             | `0xccb1caff` |
-| `resolveTimeout`              | `0xa67c0781` |
-| `setExpiryTime`               | `0x30fc4cff` |
-| `setMaxTimeoutDelayInSeconds` | `0x65d480fc` |
-| `setTimeout`                  | `0x9c29ec74` |
-| `setWatcherPrecompileConfig`  | `0x794edeb4` |
-| `setWatcherPrecompileLimits`  | `0x712a6f07` |
-| `startProcessingRequest`      | `0x77290f24` |
-| `submitRequest`               | `0x16b47482` |
-| `timeoutIdPrefix`             | `0x96ec119f` |
-| `timeoutRequests`             | `0xcdf85751` |
-| `transferOwnership`           | `0xf2fde38b` |
-| `updateTransmitter`           | `0xb228a22c` |
-| `watcherPrecompileConfig`     | `0x8618a912` |
-| `watcherPrecompileConfig__`   | `0xa816cbd9` |
-| `watcherPrecompileLimits`     | `0xa71cd97d` |
-| `watcherPrecompileLimits__`   | `0xb2ad6c48` |
-| `watcherPrecompile__`         | `0x1de360c3` |
-| `watcherProofs`               | `0x3fa3166b` |
+| Function                       | Signature    |
+| ------------------------------ | ------------ |
+| `expiryTime`                   | `0x99bc0aea` |
+| `getPrecompileFees`            | `0xb7a3d04c` |
+| `handlePayload`                | `0x1d5e1d98` |
+| `readFees`                     | `0xe06357a2` |
+| `rescueFunds`                  | `0x6ccae054` |
+| `resolvePayload`               | `0xea92e825` |
+| `setExpiryTime`                | `0x30fc4cff` |
+| `setFees`                      | `0x3d18678e` |
+| `validateAndGetPrecompileData` | `0xab172aab` |
+| `watcher__`                    | `0x300bb063` |
+
+## SchedulePrecompile
+
+| Function                       | Signature    |
+| ------------------------------ | ------------ |
+| `expiryTime`                   | `0x99bc0aea` |
+| `getPrecompileFees`            | `0xb7a3d04c` |
+| `handlePayload`                | `0x1d5e1d98` |
+| `maxScheduleDelayInSeconds`    | `0x3ef01cdb` |
+| `rescueFunds`                  | `0x6ccae054` |
+| `resolvePayload`               | `0xea92e825` |
+| `scheduleCallbackFees`         | `0x4c5b6007` |
+| `scheduleFeesPerSecond`        | `0x852a74c1` |
+| `setExpiryTime`                | `0x30fc4cff` |
+| `setMaxScheduleDelayInSeconds` | `0x12953318` |
+| `setScheduleCallbackFees`      | `0xec8fd71e` |
+| `setScheduleFeesPerSecond`     | `0x28e59e57` |
+| `validateAndGetPrecompileData` | `0xab172aab` |
+| `watcher__`                    | `0x300bb063` |
+
+## WritePrecompile
+
+| Function                       | Signature    |
+| ------------------------------ | ------------ |
+| `cancelOwnershipHandover`      | `0x54d1f13d` |
+| `chainMaxMsgValueLimit`        | `0x01d1e126` |
+| `completeOwnershipHandover`    | `0xf04e283e` |
+| `contractFactoryPlugs`         | `0x35426631` |
+| `digestHashes`                 | `0xd1a862bf` |
+| `expiryTime`                   | `0x99bc0aea` |
+| `getDigest`                    | `0xdd4bf97b` |
+| `getPrecompileFees`            | `0xb7a3d04c` |
+| `getPrevBatchDigestHash`       | `0x372863a1` |
+| `handlePayload`                | `0x1d5e1d98` |
+| `initialize`                   | `0xeb990c59` |
+| `owner`                        | `0x8da5cb5b` |
+| `ownershipHandoverExpiresAt`   | `0xfee81cf4` |
+| `renounceOwnership`            | `0x715018a6` |
+| `requestOwnershipHandover`     | `0x25692962` |
+| `rescueFunds`                  | `0x6ccae054` |
+| `resolvePayload`               | `0xea92e825` |
+| `setContractFactoryPlugs`      | `0xc067b6dd` |
+| `setExpiryTime`                | `0x30fc4cff` |
+| `setFees`                      | `0x3d18678e` |
+| `transferOwnership`            | `0xf2fde38b` |
+| `updateChainMaxMsgValueLimits` | `0x6a7aa6ac` |
+| `uploadProof`                  | `0x81b48fcf` |
+| `validateAndGetPrecompileData` | `0xab172aab` |
+| `watcherProofs`                | `0x3fa3166b` |
+| `watcher__`                    | `0x300bb063` |
+| `writeFees`                    | `0x5c664aeb` |

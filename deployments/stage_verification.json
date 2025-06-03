@@ -1,5 +1,165 @@
 {
+  "10": [],
   "43": [
+    [
+      "0x0026c4736E57fE2817b53f6df1E0808c3a61984d",
+      "WritePrecompile",
+      "contracts/evmx/watcher/precompiles/WritePrecompile.sol",
+      []
+    ],
+    [
+      "0x38e24A2F157817b830F36A35b862F24B1494d1aD",
+      "PromiseResolver",
+      "contracts/evmx/watcher/PromiseResolver.sol",
+      [
+        "0x4C846eCa55ad8cF19B9D5d906225da7b565174C1"
+      ]
+    ],
+    [
+      "0xD38ae1a6C410c7681ac464bd60009198406035Ed",
+      "RequestHandler",
+      "contracts/evmx/watcher/RequestHandler.sol",
+      []
+    ],
+    [
+      "0x351De7e4275dA7f49F75363e4E7ea86Dfe050501",
+      "Configurations",
+      "contracts/evmx/watcher/Configurations.sol",
+      []
+    ],
+    [
+      "0x1b7752F0039E80Aa38f7CF8b5d18798dD2ac1597",
+      "DeployForwarder",
+      "contracts/evmx/helpers/DeployForwarder.sol",
+      []
+    ],
+    [
+      "0xC72BE9e639DA23570fa1eF2fF2cb7901a081916F",
+      "AuctionManager",
+      "contracts/evmx/AuctionManager.sol",
+      []
+    ],
+    [
+      "0x2920F4FB50343EF2b33096650cE234E8aF9E8556",
+      "Watcher",
+      "contracts/evmx/watcher/Watcher.sol",
+      []
+    ],
+    [
+      "0x1B0ea1b79B526dD3d5889Bb33Dbd24f790C23102",
+      "AsyncDeployer",
+      "contracts/evmx/helpers/AsyncDeployer.sol",
+      []
+    ],
+    [
+      "0xbD22EDD6559B28614f44D1c768EC26491CDE1cDD",
+      "FeesManager",
+      "contracts/evmx/fees/FeesManager.sol",
+      []
+    ],
+    [
+      "0xD1586EaaA0d473E6655c11A927cE4FbED648F3BF",
+      "AddressResolver",
+      "contracts/evmx/helpers/AddressResolver.sol",
+      []
+    ],
+    [
+      "0xe2054B575664dfDBD7a7FbAf2B12420ae88DE0FF",
+      "FeesPool",
+      "contracts/evmx/fees/FeesPool.sol",
+      [
+        "0xb62505feacC486e809392c65614Ce4d7b051923b"
+      ]
+    ],
+    [
+      "0x526796AC60e45CBB9b17c654C9447Baf160C084d",
+      "ERC1967Factory",
+      "lib/solady/src/utils/ERC1967Factory.sol",
+      []
+    ],
+    [
+      "0xFaa00117ED72CAE3399669a1E3FEedaF93020853",
+      "SchedulePrecompile",
+      "contracts/evmx/watcher/precompiles/SchedulePrecompile.sol",
+      [
+        "0x03Aa399188E2741f89cc4265493DC5b544C52134",
+        86400,
+        {
+          "type": "BigNumber",
+          "hex": "0x02540be400"
+        },
+        {
+          "type": "BigNumber",
+          "hex": "0xe8d4a51000"
+        },
+        300
+      ]
+    ],
+    [
+      "0xD38d0Dfd8e7d61B45Cce6Ec58E1Ec4c514c00e7F",
+      "ReadPrecompile",
+      "contracts/evmx/watcher/precompiles/ReadPrecompile.sol",
+      [
+        "0x03Aa399188E2741f89cc4265493DC5b544C52134",
+        {
+          "type": "BigNumber",
+          "hex": "0xe8d4a51000"
+        },
+        300
+      ]
+    ],
+    [
+      "0x702EfE1DfABc3963114E2356aFaF36c8b67CA961",
+      "WritePrecompile",
+      "contracts/evmx/watcher/precompiles/WritePrecompile.sol",
+      []
+    ],
+    [
+      "0xd0bd7837E66eEd7Be04C88354e75F5bA3cd19959",
+      "PromiseResolver",
+      "contracts/evmx/watcher/PromiseResolver.sol",
+      [
+        "0x03Aa399188E2741f89cc4265493DC5b544C52134"
+      ]
+    ],
+    [
+      "0x446C6B4086d1888cB15cF62735Bf57A4647E31A4",
+      "RequestHandler",
+      "contracts/evmx/watcher/RequestHandler.sol",
+      []
+    ],
+    [
+      "0x2dc671B87d1A9dc7C1cf06C74C2db06673b31FFf",
+      "Configurations",
+      "contracts/evmx/watcher/Configurations.sol",
+      []
+    ],
+    [
+      "0x4ab75b62c0E2A09E428Ce73043C36d54c78C8CFd",
+      "DeployForwarder",
+      "contracts/evmx/helpers/DeployForwarder.sol",
+      []
+    ],
+    [
+      "0xed8255097DFB0BB2135870bb342335dCC0C30e21",
+      "Watcher",
+      "contracts/evmx/watcher/Watcher.sol",
+      []
+    ],
+    [
+      "0xF946503b3bF14b39468AEce46E7Ce1A08404D109",
+      "AsyncDeployer",
+      "contracts/evmx/helpers/AsyncDeployer.sol",
+      []
+    ],
+    [
+      "0x69DD00B8a250e0A1bFF1b59db2EA99792faAbC66",
+      "FeesPool",
+      "contracts/evmx/fees/FeesPool.sol",
+      [
+        "0xb62505feacC486e809392c65614Ce4d7b051923b"
+      ]
+    ],
     [
       "0xfddb38811a0774E66ABD5F3Ae960bFB7E7415029",
       "AuctionManager",
@@ -49,8 +209,9 @@
       []
     ]
   ],
+  "8453": [],
+  "42161": [],
   "84532": [],
   "421614": [],
-  "11155111": [],
   "11155420": []
 }

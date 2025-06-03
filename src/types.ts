@@ -19,19 +19,27 @@ export type ChainAddressesObj = {
   Socket: string;
   SocketBatcher: string;
   FastSwitchboard: string;
-  FeesPlug: string;
   ContractFactoryPlug: string;
+  SocketFeesManager?: string;
+  FeesPlug?: string;
   startBlock: number;
 };
 
 export type EVMxAddressesObj = {
   AddressResolver: string;
-  WatcherPrecompile: string;
-  WatcherPrecompileLimits: string;
-  WatcherPrecompileConfig: string;
+  AsyncDeployer: string;
   AuctionManager: string;
+  Configurations: string;
+  DeployForwarder: string;
   FeesManager: string;
-  DeliveryHelper: string;
+  FeesPool: string;
+  PromiseResolver: string;
+  ReadPrecompile: string;
+  RequestHandler: string;
+  SchedulePrecompile: string;
+  Watcher: string;
+  WritePrecompile: string;
+  ERC1967Factory: string;
   startBlock: number;
 };
 
@@ -39,6 +47,8 @@ export type S3Config = {
   version: string;
   chains: { [chainSlug: number]: ChainConfig };
   supportedChainSlugs: number[];
+  testnetChainSlugs: number[];
+  mainnetChainSlugs: number[];
 };
 
 export type ChainConfig = {

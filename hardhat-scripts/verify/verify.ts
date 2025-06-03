@@ -43,7 +43,6 @@ export const main = async () => {
     for (let chainIndex = 0; chainIndex < chains.length; chainIndex++) {
       const chain = parseInt(chains[chainIndex]) as ChainSlug;
       let chainName: string;
-      console.log({ chain });
       if (chain == (EVMX_CHAIN_ID as ChainSlug)) {
         chainName = "EVMX";
       } else {
@@ -51,10 +50,10 @@ export const main = async () => {
       }
       console.log({ chainName });
       hre.changeNetwork(chainName);
-      console.log(chainName);
 
       const chainParams: VerifyArgs[] = verificationParams[chain];
       const unverifiedChainParams: VerifyArgs[] = [];
+
       if (chainParams.length) {
         const len = chainParams.length;
         for (let index = 0; index < len!; index++) {

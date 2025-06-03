@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {Read, Parallel, QueuePayloadParams, OverrideParams, WriteFinality, PayloadParams} from "../../utils/common/Structs.sol";
+import {OverrideParams} from "../../utils/common/Structs.sol";
 
 /// @title IAppGateway
 /// @notice Interface for the app gateway
@@ -11,17 +11,9 @@ interface IAppGateway {
     function isAsyncModifierSet() external view returns (bool);
 
     /// @notice Gets the override parameters
-    /// @return read_ The read parameters
-    /// @return parallel_ The parallel parameters
-    /// @return writeFinality_ The write finality parameters
-    /// @return readTimeout_ The read timeout
-    /// @return writeTimeout_ The write timeout
-    /// @return writeFinalityTimeout_ The write finality timeout
+    /// @return overrideParams_ The override parameters
     /// @return sbType_ The switchboard type
-    function getOverrideParams()
-        external
-        view
-        returns (Read, Parallel, WriteFinality, uint256, uint256, uint256, bytes32);
+    function getOverrideParams() external view returns (OverrideParams memory, bytes32);
 
     /// @notice Handles the request complete event
     /// @param requestCount_ The request count
@@ -29,13 +21,12 @@ interface IAppGateway {
     function onRequestComplete(uint40 requestCount_, bytes calldata onCompleteData_) external;
 
     /// @notice Handles the revert event
-    /// @param requestCount_ The request count
     /// @param payloadId_ The payload id
-    function handleRevert(uint40 requestCount_, bytes32 payloadId_) external;
+    function handleRevert(bytes32 payloadId_) external;
 
     /// @notice initialize the contracts on chain
     /// @param chainSlug_ The chain slug
-    function initialize(uint32 chainSlug_) external;
+    function initializeOnChain(uint32 chainSlug_) external;
 
     /// @notice get the on-chain address of a contract
     /// @param contractId_ The contract id
