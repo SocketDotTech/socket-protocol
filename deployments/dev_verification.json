@@ -1,50 +1,13 @@
 {
-  "421614": [
-    [
-      "0x7b9928b01272b915050aDfcba7e0a11b22271BAd",
-      "ContractFactoryPlug",
-      "contracts/evmx/plugs/ContractFactoryPlug.sol",
-      [
-        "0xb7378ae43b135988C8a83dfD1AcD71Ff39381396",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0x6FdF04Cbcbd40414BF12e0b4Ce0e331e4657EB03",
-      "FeesPlug",
-      "contracts/evmx/plugs/FeesPlug.sol",
-      [
-        "0xb7378ae43b135988C8a83dfD1AcD71Ff39381396",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0x2974E94c0d1323D3A24f7B4F924fbdB325Be1aa3",
-      "FastSwitchboard",
-      "contracts/protocol/switchboard/FastSwitchboard.sol",
-      [
-        421614,
-        "0xb7378ae43b135988C8a83dfD1AcD71Ff39381396",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0x60541d31Fda60163480CAb486be3762b5793B650",
-      "SocketBatcher",
-      "contracts/protocol/SocketBatcher.sol",
-      [
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "0xb7378ae43b135988C8a83dfD1AcD71Ff39381396"
-      ]
-    ],
-    [
-      "0xb7378ae43b135988C8a83dfD1AcD71Ff39381396",
-      "Socket",
-      "contracts/protocol/Socket.sol",
-      [421614, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
-    ]
-  ],
+  "421614": [],
+  "11155420": [],
   "7625382": [
+    [
+      "0x5b460B29750648f6D569Ed57139967BE589174F8",
+      "FeesManager",
+      "contracts/evmx/fees/FeesManager.sol",
+      []
+    ],
     [
       "0x872bb254118a2210e3C491918133F2ab4D7Bc362",
       "Watcher",
@@ -92,7 +55,9 @@
       "0xcfFda1dF8668266E6A77809EcA9CCA8A632ecaF3",
       "PromiseResolver",
       "contracts/evmx/watcher/PromiseResolver.sol",
-      ["0xD5b30DC89D96ee7303Dc2726491996B46089F693"]
+      [
+        "0xD5b30DC89D96ee7303Dc2726491996B46089F693"
+      ]
     ],
     [
       "0x3d9578B252ed1F5A66348Cc40E482dacc32Ae790",
@@ -195,7 +160,9 @@
       "0xF24B41A8C9F814d70FAD9E617CE32C74EcCB1A25",
       "PromiseResolver",
       "contracts/evmx/watcher/PromiseResolver.sol",
-      ["0x60005b459Dc46D9a63bcb61D01Ad002130644a4F"]
+      [
+        "0x60005b459Dc46D9a63bcb61D01Ad002130644a4F"
+      ]
     ],
     [
       "0x1fa5D12C7dC1F3615c28B842A6053f5f151230F8",
@@ -249,58 +216,15 @@
       "0xc20Be67ef742202dc93A78aa741E7C3715eA1DFd",
       "FeesPool",
       "contracts/evmx/fees/FeesPool.sol",
-      ["0xb62505feacC486e809392c65614Ce4d7b051923b"]
+      [
+        "0xb62505feacC486e809392c65614Ce4d7b051923b"
+      ]
     ],
     [
       "0x1b0F1aA38F8BBbe779A6C1fCe7e3Ff00380fa9CE",
       "ERC1967Factory",
       "lib/solady/src/utils/ERC1967Factory.sol",
       []
-    ]
-  ],
-  "11155420": [
-    [
-      "0x0279A18d5FC235A92fB4ABd5F7e9258e78E27948",
-      "ContractFactoryPlug",
-      "contracts/evmx/plugs/ContractFactoryPlug.sol",
-      [
-        "0xB260A4DD0952e9A5b5F6652019469F05Fb137dC5",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0x99f7441292EB7f0b127Db204ba269Abd9F912d4C",
-      "FeesPlug",
-      "contracts/evmx/plugs/FeesPlug.sol",
-      [
-        "0xB260A4DD0952e9A5b5F6652019469F05Fb137dC5",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0x6b4EF1452265193798bfa3ef6D29421da9e7E222",
-      "FastSwitchboard",
-      "contracts/protocol/switchboard/FastSwitchboard.sol",
-      [
-        11155420,
-        "0xB260A4DD0952e9A5b5F6652019469F05Fb137dC5",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0xc320FC7b06D4491A9E7e6fa55a3305b12548519e",
-      "SocketBatcher",
-      "contracts/protocol/SocketBatcher.sol",
-      [
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "0xB260A4DD0952e9A5b5F6652019469F05Fb137dC5"
-      ]
-    ],
-    [
-      "0xB260A4DD0952e9A5b5F6652019469F05Fb137dC5",
-      "Socket",
-      "contracts/protocol/Socket.sol",
-      [11155420, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
     ]
   ]
 }
