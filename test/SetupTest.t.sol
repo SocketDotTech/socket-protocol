@@ -147,7 +147,10 @@ contract DeploySetup is SetupStore {
         vm.stopPrank();
 
         _connectCorePlugs();
+        _setupTransmitter();
+    }
 
+    function _setupTransmitter() internal {
         vm.startPrank(transmitterEOA);
         arbConfig.testUSDC.mint(address(transmitterEOA), 100 ether);
         arbConfig.testUSDC.approve(address(arbConfig.feesPlug), 100 ether);
@@ -716,12 +719,17 @@ contract WatcherSetup is AuctionSetup {
         // bids and executes schedule request if created for endAuction
         if (requestParams.writeCount != 0) bidAndEndAuction(requestCount);
 
-        for (uint i = 0; i < batches.length; i++) _processBatch(batches[i]);
+        bool isRequestExecuted;
+        for (uint i = 0; i < batches.length; i++) {
+            isRequestExecuted = _processBatch(batches[i]);
+            if (!isRequestExecuted) break;
+        }
+
         requestParams = requestHandler.getRequest(requestCount);
-        assertEq(requestParams.requestTrackingParams.isRequestExecuted, true);
+        assertEq(requestParams.requestTrackingParams.isRequestExecuted, isRequestExecuted);
     }
 
-    function _processBatch(uint40 batchCount_) internal {
+    function _processBatch(uint40 batchCount_) internal returns (bool) {
         bytes32[] memory payloadIds = requestHandler.getBatchPayloadIds(batchCount_);
 
         PromiseReturnData[] memory promiseReturnData = new PromiseReturnData[](1);
@@ -748,8 +756,11 @@ contract WatcherSetup is AuctionSetup {
             } else {
                 vm.warp(payloadParams.deadline);
                 _markRevert(promiseReturnData[0], true);
+                return false;
             }
         }
+
+        return true;
     }
 
     function _processRead(

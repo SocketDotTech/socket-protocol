@@ -97,6 +97,9 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
     /// @notice Emitted when fees pool is set
     event FeesPoolSet(address indexed feesPool);
 
+    /// @notice Emitted when withdraw fails
+    event WithdrawFailed(bytes32 indexed payloadId);
+
     function setFeesPlug(uint32 chainSlug_, address feesPlug_) external onlyOwner {
         feesPlugs[chainSlug_] = feesPlug_;
         emit FeesPlugSet(chainSlug_, feesPlug_);
@@ -305,4 +308,11 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
 
     /// @notice hook called by watcher precompile when request is finished
     function onRequestComplete(uint40, bytes memory) external {}
+
+    /// @notice hook to handle the revert while withdrawing credits
+    /// @param payloadId_ The payload ID
+    function handleRevert(bytes32 payloadId_) external {
+        if (watcher__().getPayloadParams(payloadId_).asyncPromise != msg.sender) return;
+        emit WithdrawFailed(payloadId_);
+    }
 }
