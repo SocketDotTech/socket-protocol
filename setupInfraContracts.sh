@@ -8,12 +8,12 @@ time npx hardhat run hardhat-scripts/deploy/3.configureChains.ts --no-compile
 time npx hardhat run hardhat-scripts/deploy/4.configureEVMx.ts --no-compile
 time npx hardhat run hardhat-scripts/deploy/5.fundTransfers.ts --no-compile
 time npx hardhat run hardhat-scripts/deploy/6.connect.ts --no-compile
-time npx hardhat run hardhat-scripts/deploy/7.upload.ts --no-compile
-time npx hardhat run hardhat-scripts/deploy/8.setupEnv.ts --no-compile
+time npx ts-node hardhat-scripts/deploy/7.upload.ts
+time npx ts-node hardhat-scripts/deploy/8.setupEnv.ts
 time npx hardhat run hardhat-scripts/deploy/9.setupTransmitter.ts --no-compile
 time npx hardhat run hardhat-scripts/misc-scripts/errorCodes.ts --no-compile
 time npx hardhat run hardhat-scripts/misc-scripts/eventTopics.ts --no-compile
 time npx hardhat run hardhat-scripts/misc-scripts/functionSigs.ts --no-compile
-time npx hardhat run hardhat-scripts/misc-scripts/createLabels.ts --no-compile
+time npx ts-node hardhat-scripts/misc-scripts/createLabels.ts
 time npx hardhat run hardhat-scripts/verify/verify.ts --no-compile
 yarn lint 

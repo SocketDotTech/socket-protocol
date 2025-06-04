@@ -20,7 +20,7 @@
     "compile": "forge build",
     "deploy": "bash setupInfraContracts.sh",
     "publish-core": "yarn build && yarn publish --patch --no-git-tag-version",
-    "trace":"npx hardhat run hardhat-scripts/misc-scripts/createLabels.ts --no-compile && cast run --la "
+    "trace":"bash trace.sh"
   },
   "pre-commit": [],
   "author": "",

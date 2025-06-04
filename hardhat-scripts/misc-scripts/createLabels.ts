@@ -1,39 +1,53 @@
 // scripts/generate-labels.ts
-import fs from 'fs';
-import path from 'path';
-import { getAddresses } from '../utils';
-import { mode } from '../config';
+import fs from "fs";
+import path from "path";
+import { getAddresses } from "../utils/address";
+import { EVMX_CHAIN_ID, mode } from "../config";
 
-
-function generateFoundryLabels() {
+function generateFoundryLabels(chainSlug?: string) {
   // Read deployed addresses
   const deployedAddresses = getAddresses(mode);
 
+  console.log(`chainSlug: ${chainSlug}`);
   // Read existing foundry.toml
   const foundryPath = path.join(__dirname, "../../foundry.toml");
-  let foundryContent = fs.existsSync(foundryPath) 
-    ? fs.readFileSync(foundryPath, 'utf8') 
-    : '';
+  let foundryContent = fs.existsSync(foundryPath)
+    ? fs.readFileSync(foundryPath, "utf8")
+    : "";
 
   // Remove existing [labels] section
-  foundryContent = foundryContent.replace(/\[labels\][\s\S]*?(?=\[|$)/g, '');
+  foundryContent = foundryContent.replace(/\[labels\][\s\S]*?(?=\[|$)/g, "");
 
   // Generate new labels section
-  let labelsSection = '\n[labels]\n';
+  let labelsSection = "[labels]\n";
 
-  // Track seen addresses to avoid duplicates
-  const seenAddresses = new Set<string>();
+  const chainIds = [EVMX_CHAIN_ID];
+  if (chainSlug) {
+    const additionalChainId = parseInt(chainSlug, 10);
+    if (isNaN(additionalChainId)) {
+      console.error(`❌ Invalid chain ID: ${chainSlug}`);
+      process.exit(1);
+    }
+    chainIds.push(additionalChainId);
+  }
 
-  // Loop through each chain's addresses
-  for (const [chainId, contracts] of Object.entries(deployedAddresses)) {
-    // Loop through each contract in the chain
-    for (const [contractName, address] of Object.entries(contracts)) {
-      if (typeof address === 'string' && !seenAddresses.has(address)) {
-        seenAddresses.add(address);
+  for (const chainId of chainIds) {
+    const chainAddresses = deployedAddresses[chainId];
+
+    if (!chainAddresses) {
+      console.error(`❌ No addresses found for chain ${chainId}`);
+      process.exit(1);
+    }
+
+    // Add all addresses to the labels section
+    for (const [contractName, address] of Object.entries(chainAddresses)) {
+      if (typeof address === "string") {
         labelsSection += `${address} = "${contractName}"\n`;
       }
     }
+    console.log(`✅ Added labels for chain ${chainId}`);
   }
+
   // Add APP_GATEWAY label if environment variable exists
   if (process.env.APP_GATEWAY) {
     labelsSection += `${process.env.APP_GATEWAY} = "APP_GATEWAY"\n`;
@@ -44,7 +58,9 @@ function generateFoundryLabels() {
 
   // Write back to foundry.toml
   fs.writeFileSync(foundryPath, foundryContent);
-  console.log('✅ Updated foundry.toml with contract labels');
+  console.log("✅ Updated foundry.toml with contract labels");
 }
 
-generateFoundryLabels();
+// Get chainSlug from command line arguments
+const chainSlug = process.argv[2];
+generateFoundryLabels(chainSlug);
