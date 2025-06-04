@@ -199,6 +199,13 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         emit CreditsTransferred(from_, to_, amount_);
     }
 
+    /// @notice Approves app gateway for the caller
+    /// @param appGateway_ app gateway address
+    /// @param approval_ approval
+    function approveAppGateway(address appGateway_, bool approval_) external override {
+        isApproved[msg.sender][appGateway_] = approval_;
+    }
+
     /// @notice Approves multiple app gateways for the caller
     /// @param params_ Array of app gateway addresses to approve
     function approveAppGateways(AppGatewayApprovals[] calldata params_) external override {

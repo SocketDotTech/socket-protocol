@@ -25,6 +25,8 @@ interface IFeesManager {
 
     function transferCredits(address from_, address to_, uint256 amount_) external;
 
+    function approveAppGateway(address appGateway_, bool approval_) external;
+
     function approveAppGateways(AppGatewayApprovals[] calldata params_) external;
 
     function approveAppGatewayWithSignature(

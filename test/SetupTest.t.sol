@@ -161,9 +161,7 @@ contract DeploySetup is SetupStore {
             100 ether
         );
 
-        AppGatewayApprovals[] memory approvals = new AppGatewayApprovals[](1);
-        approvals[0] = AppGatewayApprovals({appGateway: address(auctionManager), approval: true});
-        feesManager.approveAppGateways(approvals);
+        feesManager.approveAppGateway(address(auctionManager), true);
         vm.stopPrank();
     }
 
