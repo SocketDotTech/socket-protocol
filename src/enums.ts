@@ -16,8 +16,8 @@ export enum Events {
   FeesDeposited = "FeesDeposited",
 
   // Watcher
-  CalledAppGateway = "CalledAppGateway",
-  AppGatewayCallFailed = "AppGatewayCallFailed",
+  TriggerFailed = "TriggerFailed",
+  TriggerSucceeded = "TriggerSucceeded",
 
   // PromiseResolver
   PromiseResolved = "PromiseResolved",
