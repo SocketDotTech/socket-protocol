@@ -36,6 +36,8 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
     constructor(address socket_, address owner_) {
         _setSocket(socket_);
         _initializeOwner(owner_);
+
+        isSocketInitialized = 1;
     }
 
     /////////////////////// DEPOSIT AND WITHDRAWAL ///////////////////////
