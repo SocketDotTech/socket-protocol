@@ -34,6 +34,10 @@ function generateFoundryLabels() {
       }
     }
   }
+  // Add APP_GATEWAY label if environment variable exists
+  if (process.env.APP_GATEWAY) {
+    labelsSection += `${process.env.APP_GATEWAY} = "APP_GATEWAY"\n`;
+  }
 
   // Append labels section
   foundryContent += labelsSection;

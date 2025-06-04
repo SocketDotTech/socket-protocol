@@ -10,8 +10,6 @@ evm_version = 'paris'
 via_ir = false
 
 
-
-
 [labels]
 0xee1Aef0b06f63Aa1c881838794Dd0876462c2B0d = "ContractFactoryPlug"
 0xbDE0D2da12F703Ccd275d721214745BccDCAD124 = "FastSwitchboard"
@@ -57,3 +55,4 @@ via_ir = false
 0x74388051BcCfA2D28690a98242A259aD94f2B1f3 = "FastSwitchboard"
 0x790E894C59d6275503e2Ff4ba95A42E38c071195 = "Socket"
 0xa13B9b5e797e13316B23EfC01E506c8c0c2BFeF2 = "SocketBatcher"
+0xe2C2494Ea3eb297a2fe05d1d787f17dB5ad3368D = "APP_GATEWAY"
