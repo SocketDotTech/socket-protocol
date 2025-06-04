@@ -1,50 +1,12 @@
 {
-  "421614": [
-    [
-      "0x7b9928b01272b915050aDfcba7e0a11b22271BAd",
-      "ContractFactoryPlug",
-      "contracts/evmx/plugs/ContractFactoryPlug.sol",
-      [
-        "0xb7378ae43b135988C8a83dfD1AcD71Ff39381396",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0x6FdF04Cbcbd40414BF12e0b4Ce0e331e4657EB03",
-      "FeesPlug",
-      "contracts/evmx/plugs/FeesPlug.sol",
-      [
-        "0xb7378ae43b135988C8a83dfD1AcD71Ff39381396",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0x2974E94c0d1323D3A24f7B4F924fbdB325Be1aa3",
-      "FastSwitchboard",
-      "contracts/protocol/switchboard/FastSwitchboard.sol",
-      [
-        421614,
-        "0xb7378ae43b135988C8a83dfD1AcD71Ff39381396",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0x60541d31Fda60163480CAb486be3762b5793B650",
-      "SocketBatcher",
-      "contracts/protocol/SocketBatcher.sol",
-      [
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "0xb7378ae43b135988C8a83dfD1AcD71Ff39381396"
-      ]
-    ],
-    [
-      "0xb7378ae43b135988C8a83dfD1AcD71Ff39381396",
-      "Socket",
-      "contracts/protocol/Socket.sol",
-      [421614, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
-    ]
-  ],
+  "421614": [],
   "7625382": [
+    [
+      "0x5b460B29750648f6D569Ed57139967BE589174F8",
+      "FeesManager",
+      "contracts/evmx/fees/FeesManager.sol",
+      []
+    ],
     [
       "0x872bb254118a2210e3C491918133F2ab4D7Bc362",
       "Watcher",
@@ -258,49 +220,5 @@
       []
     ]
   ],
-  "11155420": [
-    [
-      "0x0279A18d5FC235A92fB4ABd5F7e9258e78E27948",
-      "ContractFactoryPlug",
-      "contracts/evmx/plugs/ContractFactoryPlug.sol",
-      [
-        "0xB260A4DD0952e9A5b5F6652019469F05Fb137dC5",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0x99f7441292EB7f0b127Db204ba269Abd9F912d4C",
-      "FeesPlug",
-      "contracts/evmx/plugs/FeesPlug.sol",
-      [
-        "0xB260A4DD0952e9A5b5F6652019469F05Fb137dC5",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0x6b4EF1452265193798bfa3ef6D29421da9e7E222",
-      "FastSwitchboard",
-      "contracts/protocol/switchboard/FastSwitchboard.sol",
-      [
-        11155420,
-        "0xB260A4DD0952e9A5b5F6652019469F05Fb137dC5",
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18"
-      ]
-    ],
-    [
-      "0xc320FC7b06D4491A9E7e6fa55a3305b12548519e",
-      "SocketBatcher",
-      "contracts/protocol/SocketBatcher.sol",
-      [
-        "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18",
-        "0xB260A4DD0952e9A5b5F6652019469F05Fb137dC5"
-      ]
-    ],
-    [
-      "0xB260A4DD0952e9A5b5F6652019469F05Fb137dC5",
-      "Socket",
-      "contracts/protocol/Socket.sol",
-      [11155420, "0x3339Cf48f1F9cf31b6F8c2664d144c7444eBBB18", "EVMX"]
-    ]
-  ]
+  "11155420": []
 }
