@@ -62,7 +62,7 @@ async function disconnectPlug(
     ZERO_APP_GATEWAY_ID,
     socket.address,
     switchboard,
-    { ...await overrides(chain as ChainSlug) }
+    { ...(await overrides(chain as ChainSlug)) }
   );
   console.log(
     `Connecting ${plugContract} on ${chain} to ${ZERO_APP_GATEWAY_ID} tx hash: ${tx.hash}`
@@ -99,7 +99,10 @@ export const updateConfigEVMx = async () => {
     const signer = getWatcherSigner();
     const EVMxAddresses = addresses[EVMX_CHAIN_ID]!;
     const feesManagerContract = (
-      await getInstance(Contracts.FeesManager, EVMxAddresses[Contracts.FeesManager])
+      await getInstance(
+        Contracts.FeesManager,
+        EVMxAddresses[Contracts.FeesManager]
+      )
     ).connect(signer);
 
     const configurationsContract = (
@@ -154,7 +157,7 @@ export const updateConfigEVMx = async () => {
         const tx = await feesManagerContract.functions["setFeesPlug"](
           Number(chain),
           constants.AddressZero,
-          { ...await overrides(EVMX_CHAIN_ID as ChainSlug) }
+          { ...(await overrides(EVMX_CHAIN_ID as ChainSlug)) }
         );
         console.log(`Updating Fees Manager tx hash: ${tx.hash}`);
         await tx.wait();
@@ -170,7 +173,7 @@ export const updateConfigEVMx = async () => {
       );
       const tx = await sendWatcherMultiCallWithNonce(
         configurationsContract.address,
-        calldata,
+        calldata
       );
       console.log(`Updating EVMx Config tx hash: ${tx.hash}`);
       await tx.wait();
