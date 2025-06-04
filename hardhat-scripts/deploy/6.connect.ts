@@ -1,4 +1,4 @@
-import { Contract, Wallet } from "ethers";
+import { Wallet } from "ethers";
 import { ChainAddressesObj, ChainSlug, Contracts } from "../../src";
 import { chains, EVMX_CHAIN_ID, mode } from "../config";
 import { AppGatewayConfig, DeploymentAddresses } from "../constants";
@@ -12,6 +12,7 @@ import {
   overrides,
 } from "../utils";
 import { getWatcherSigner, sendWatcherMultiCallWithNonce } from "../utils/sign";
+import { isConfigSetOnEVMx, isConfigSetOnSocket } from "../utils";
 
 const plugs = [Contracts.ContractFactoryPlug, Contracts.FeesPlug];
 
@@ -23,20 +24,6 @@ export const main = async () => {
   } catch (error) {
     console.log("Error while sending transaction", error);
   }
-};
-
-export const isConfigSetOnSocket = async (
-  plug: Contract,
-  socket: Contract,
-  appGatewayId: string,
-  switchboard: string
-) => {
-  const plugConfigRegistered = await socket.getPlugConfig(plug.address);
-  return (
-    plugConfigRegistered.appGatewayId.toLowerCase() ===
-      appGatewayId.toLowerCase() &&
-    plugConfigRegistered.switchboard.toLowerCase() === switchboard.toLowerCase()
-  );
 };
 
 // Connect a single plug contract to its app gateway and switchboard
@@ -98,20 +85,6 @@ export const connectPlugsOnSocket = async () => {
         }
       }
     })
-  );
-};
-
-export const isConfigSetOnEVMx = async (
-  watcher: Contract,
-  chain: number,
-  plug: string,
-  appGatewayId: string,
-  switchboard: string
-) => {
-  const plugConfigRegistered = await watcher.getPlugConfigs(chain, plug);
-  return (
-    plugConfigRegistered[0].toLowerCase() === appGatewayId?.toLowerCase() &&
-    plugConfigRegistered[1].toLowerCase() === switchboard.toLowerCase()
   );
 };
 

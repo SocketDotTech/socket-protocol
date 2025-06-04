@@ -11,9 +11,10 @@ import {
   getAddresses,
   getInstance,
   getSocketSigner,
+  overrides,
 } from "../utils";
 import { getWatcherSigner, sendWatcherMultiCallWithNonce } from "../utils/sign";
-import { isConfigSetOnEVMx, isConfigSetOnSocket } from "../deploy/6.connect";
+import { isConfigSetOnEVMx, isConfigSetOnSocket } from "../utils";
 
 // update this map to disconnect plugs from chains not in this list
 const feesPlugChains = getFeesPlugChains();
@@ -60,7 +61,8 @@ async function disconnectPlug(
   const tx = await plug.functions["connectSocket"](
     ZERO_APP_GATEWAY_ID,
     socket.address,
-    switchboard
+    switchboard,
+    { ...await overrides(chain as ChainSlug) }
   );
   console.log(
     `Connecting ${plugContract} on ${chain} to ${ZERO_APP_GATEWAY_ID} tx hash: ${tx.hash}`
@@ -96,6 +98,10 @@ export const updateConfigEVMx = async () => {
     // Set up Watcher contract
     const signer = getWatcherSigner();
     const EVMxAddresses = addresses[EVMX_CHAIN_ID]!;
+    const feesManagerContract = (
+      await getInstance(Contracts.FeesManager, EVMxAddresses[Contracts.FeesManager])
+    ).connect(signer);
+
     const configurationsContract = (
       await getInstance(
         Contracts.Configurations,
@@ -126,27 +132,32 @@ export const updateConfigEVMx = async () => {
           )
         ) {
           console.log(`Config already set on ${chain} for ${plugContract}`);
-          return;
+        } else {
+          appConfigs.push({
+            plugConfig: {
+              appGatewayId: appGatewayId,
+              switchboard: switchboard,
+            },
+            plug: addr[plugContract],
+            chainSlug: chain,
+          });
         }
-        appConfigs.push({
-          plugConfig: {
-            appGatewayId: appGatewayId,
-            switchboard: switchboard,
-          },
-          plug: addr[plugContract],
-          chainSlug: chain,
-        });
 
         // update fees manager
-        const feesManager = (
-          await getInstance(Contracts.FeesManager, addr[Contracts.FeesManager])
-        ).connect(signer);
 
-        const tx = await feesManager.functions["setFeesPlug"](
-          chain,
-          constants.AddressZero
+        const currentFeesPlug = await feesManagerContract.feesPlugs(chain);
+        if (currentFeesPlug === constants.AddressZero) {
+          console.log(`Fees plug already set on ${chain}`);
+          return;
+        }
+
+        const tx = await feesManagerContract.functions["setFeesPlug"](
+          Number(chain),
+          constants.AddressZero,
+          { ...await overrides(EVMX_CHAIN_ID as ChainSlug) }
         );
         console.log(`Updating Fees Manager tx hash: ${tx.hash}`);
+        await tx.wait();
       })
     );
 
@@ -159,7 +170,7 @@ export const updateConfigEVMx = async () => {
       );
       const tx = await sendWatcherMultiCallWithNonce(
         configurationsContract.address,
-        calldata
+        calldata,
       );
       console.log(`Updating EVMx Config tx hash: ${tx.hash}`);
       await tx.wait();
