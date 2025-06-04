@@ -11,6 +11,8 @@ import {InvalidTokenAddress} from "../../utils/common/Errors.sol";
 
 interface IERC20 {
     function balanceOf(address account) external view returns (uint256);
+
+    function decimals() external view returns (uint8);
 }
 
 /// @title FeesPlug
@@ -84,6 +86,13 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
         uint256 amount_
     ) external override onlySocket {
         uint256 balance = IERC20(token_).balanceOf(address(this));
+        uint8 decimals = IERC20(token_).decimals();
+
+        if (decimals < 18) {
+            amount_ = amount_ / 10 ** (18 - decimals);
+        } else if (decimals > 18) {
+            amount_ = amount_ * 10 ** (decimals - 18);
+        }
         if (balance < amount_) revert InsufficientTokenBalance(token_, balance, amount_);
 
         token_.safeTransfer(receiver_, amount_);

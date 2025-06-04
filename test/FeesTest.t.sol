@@ -52,8 +52,9 @@ contract FeesTest is AppGatewayBaseSetup {
         withdrawAmount = withdrawAmount - feesAmount;
         withdrawCredits(transmitterEOA, withdrawAmount);
 
+        uint256 withdrawAmountInTokens = withdrawAmount / 10 ** (18 - 6);
         assertEq(
-            transmitterReceiverBalanceBefore + withdrawAmount,
+            transmitterReceiverBalanceBefore + withdrawAmountInTokens,
             feesConfig.testUSDC.balanceOf(receiver),
             "Transmitter Balance should be correct"
         );
@@ -65,8 +66,9 @@ contract FeesTest is AppGatewayBaseSetup {
 
         withdrawCredits(address(counterGateway), withdrawAmount);
 
+        uint256 withdrawAmountInTokens = withdrawAmount / 10 ** (18 - 6);
         assertEq(
-            receiverBalanceBefore + withdrawAmount,
+            receiverBalanceBefore + withdrawAmountInTokens,
             feesConfig.testUSDC.balanceOf(receiver),
             "Receiver Balance should be correct"
         );
@@ -79,8 +81,9 @@ contract FeesTest is AppGatewayBaseSetup {
         uint256 withdrawAmount = 0.5 ether;
         withdrawCredits(user, withdrawAmount);
 
+        uint256 withdrawAmountInTokens = withdrawAmount / 10 ** (18 - 6);
         assertEq(
-            receiverBalanceBefore + withdrawAmount,
+            receiverBalanceBefore + withdrawAmountInTokens,
             feesConfig.testUSDC.balanceOf(receiver),
             "Receiver Balance should be correct"
         );
@@ -170,6 +173,7 @@ contract FeesTest is AppGatewayBaseSetup {
         );
 
         uint256 withdrawAmount = 0.5 ether;
+        uint256 withdrawAmountInTokens = withdrawAmount / 10 ** (18 - 6);
         approveAppGateway(address(feesManager), address(counterGateway));
 
         uint256 receiverBalanceBefore = arbConfig.testUSDC.balanceOf(receiver);
@@ -195,7 +199,7 @@ contract FeesTest is AppGatewayBaseSetup {
 
         assertEq(
             arbConfig.testUSDC.balanceOf(receiver),
-            receiverBalanceBefore + withdrawAmount,
+            receiverBalanceBefore + withdrawAmountInTokens,
             "Receiver balance should increase"
         );
     }
