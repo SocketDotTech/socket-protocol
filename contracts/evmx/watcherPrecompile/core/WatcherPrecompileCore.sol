@@ -122,7 +122,8 @@ abstract contract WatcherPrecompileCore is
     /// @dev This function creates a keccak256 hash of the payload parameters
     function getDigest(DigestParams memory params_) public pure returns (bytes32 digest) {
         digest = keccak256(
-            abi.encode(
+            // TODO:GW: change into abi.encodePacked
+            abi.encodePacked(
                 params_.socket,
                 params_.transmitter, // TODO: this later will have to moved to bytes32 format as transmitter on solana side is bytes32 address
                 params_.payloadId,

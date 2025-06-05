@@ -30,7 +30,7 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         address srcEvmToken;
         bytes32 dstSolanaToken;
         address userEvm;
-        bytes32 userSolana;
+        bytes32 destUserTokenAddress;
         uint256 srcAmount;
         uint256 deadline;
     }
@@ -83,7 +83,16 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         TransferOrderEvmToSolana memory order = abi.decode(order_, (TransferOrderEvmToSolana));
         // ISuperToken(order.srcEvmToken).burn(order.userEvm, order.srcAmount);
 
-        SolanaInstruction memory solanaInstruction = buildSolanaInstruction(order);
+        // SolanaInstruction memory solanaInstruction = buildSolanaInstruction(order);
+
+        // // we are directly calling the ForwarderSolana
+        // forwarderSolana.callSolana(solanaInstruction, switchboardSolana);
+
+        emit Transferred(_getCurrentAsyncId());
+    }
+
+    function transferForDebug(SolanaInstruction memory solanaInstruction, bytes32 switchboardSolana) external async(bytes("")) {
+        // ISuperToken(order.srcEvmToken).burn(order.userEvm, order.srcAmount);
 
         // we are directly calling the ForwarderSolana
         forwarderSolana.callSolana(solanaInstruction, switchboardSolana);
@@ -91,13 +100,14 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         emit Transferred(_getCurrentAsyncId());
     }
 
+    /*
     function buildSolanaInstruction(
         TransferOrderEvmToSolana memory order
     ) internal view returns (SolanaInstruction memory) {
         // May be subject to change
         bytes32[] memory accounts = new bytes32[](5);
         // accounts 0 - destination user wallet
-        accounts[0] = order.userSolana;
+        accounts[0] = order.destUserTokenAddress;
         // accounts 1 - mint account
         accounts[1] = order.dstSolanaToken;
         // accounts 2 - user ata account for mint                   // TODO:GW: this is random value
@@ -138,4 +148,5 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
                 })
             });
     }
+    */
 }

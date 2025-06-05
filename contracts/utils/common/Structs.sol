@@ -253,14 +253,15 @@ struct RequestMetadata {
 
 struct ExecuteParams {
     CallType callType;
+    // TODO:GW: what is the difference between requestCount and payloadCount?
     uint40 requestCount;
-    uint40 batchCount;
+    uint40 batchCount; // TODO:GW: when batching is used ?
     uint40 payloadCount;
     uint256 deadline;
     uint256 gasLimit;
     uint256 value;
     bytes32 prevDigestsHash;
-    address target;
+    address target; // TODO:GW: this is part of the digest (either change type here or add bytes32 conversion)
     bytes payload;
     bytes extraData;
 }
@@ -295,9 +296,8 @@ struct SolanaInstructionData {
 }
 
 struct SolanaInstructionDataDescription {
-    // flags for accounts
+    // flags for accounts, we only need isWritable for now
     // 0 bit - isWritable (0|1)
-    // 1 bit - isSigner (0|1)
     bytes1[] accountFlags;
     // names for function argument types used later in data decoding in watcher and transmitter
     string[] functionArgumentTypeNames;

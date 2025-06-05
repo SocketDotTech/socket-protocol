@@ -75,15 +75,18 @@ contract Socket is SocketUtils {
         // check if the deadline has passed
         if (executeParams_.deadline < block.timestamp) revert DeadlinePassed();
         // check if the call type is valid
+        // TODO:GW: ask why call can have different call type and show example (why here we check that call could be READ ?) - it is never used in the smart contract later - is this even needed to pass it?
         if (executeParams_.callType == CallType.READ) revert ReadOnlyCall();
 
         PlugConfigEvm memory plugConfig = _plugConfigs[executeParams_.target];
         // check if the plug is disconnected
         if (plugConfig.appGatewayId == bytes32(0)) revert PlugNotFound();
 
+        // TODO:GW: on Solana socketFees will taken from the caller account using to sign the tz (which is the Transmitter)
         if (msg.value < executeParams_.value + transmissionParams_.socketFees)
             revert InsufficientMsgValue();
 
+        // TODO:GW: this part might be wrong now - no abi encode on Solana
         bytes32 payloadId = _createPayloadId(plugConfig.switchboard, executeParams_);
 
         // validate the execution status

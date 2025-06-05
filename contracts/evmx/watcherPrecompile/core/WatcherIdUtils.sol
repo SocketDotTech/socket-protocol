@@ -9,6 +9,7 @@ library WatcherIdUtils {
     /// @param switchboard_ The switchboard address
     /// @param chainSlug_ The chain slug
     /// @return The created payload ID
+    // TODO:GW: this has to change as we need to recreate the payloadId on Solana in Socket program
     function createPayloadId(
         uint40 requestCount_,
         uint40 batchCount_,
@@ -18,7 +19,7 @@ library WatcherIdUtils {
     ) internal pure returns (bytes32) {
         return
             keccak256(
-                abi.encode(requestCount_, batchCount_, payloadCount_, chainSlug_, switchboard_)
+                abi.encodePacked(requestCount_, batchCount_, payloadCount_, chainSlug_, switchboard_)
             );
     }
 }

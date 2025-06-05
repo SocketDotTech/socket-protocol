@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 import {ECDSA} from "solady/utils/ECDSA.sol";
 import "../utils/RescueFundsLib.sol";
 import "./SocketConfig.sol";
+import {toBytes32Format} from "../utils/common/Converters.sol";
 
 /**
  * @title SocketUtils
@@ -54,8 +55,9 @@ abstract contract SocketUtils is SocketConfig {
     ) internal view returns (bytes32) {
         return
             keccak256(
-                abi.encode(
-                    address(this),
+                // TODO:GW: change into abi.encodePacked
+                abi.encodePacked(
+                    toBytes32Format(address(this)), // TODO:GW: this must be bytes32 to match the WatcherPrecompileCore.getDigest format
                     transmitter_,
                     payloadId_,
                     executeParams_.deadline,
@@ -63,7 +65,8 @@ abstract contract SocketUtils is SocketConfig {
                     executeParams_.gasLimit,
                     executeParams_.value,
                     executeParams_.payload,
-                    executeParams_.target,
+                    // TODO:GW: this must be bytes32 to match the WatcherPrecompileCore.getDigest format
+                    toBytes32Format(executeParams_.target),
                     appGatewayId_,
                     executeParams_.prevDigestsHash,
                     executeParams_.extraData
@@ -82,7 +85,7 @@ abstract contract SocketUtils is SocketConfig {
     ) internal view returns (bytes32) {
         return
             keccak256(
-                abi.encode(
+                abi.encodePacked(
                     executeParams_.requestCount,
                     executeParams_.batchCount,
                     executeParams_.payloadCount,
