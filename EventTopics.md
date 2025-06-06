@@ -214,8 +214,6 @@
 
 | Event                        | Arguments                                | Topic                                                                |
 | ---------------------------- | ---------------------------------------- | -------------------------------------------------------------------- |
-| `AppGatewayCallFailed`       | `(triggerId: bytes32)`                   | `0xcaf8475fdade8465ea31672463949e6cf1797fdcdd11eeddbbaf857e1e5907b7` |
-| `CalledAppGateway`           | `(triggerId: bytes32)`                   | `0xf659ffb3875368f54fb4ab8f5412ac4518af79701a48076f7a58d4448e4bdd0b` |
 | `Initialized`                | `(version: uint64)`                      | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
 | `OwnershipHandoverCanceled`  | `(pendingOwner: address)`                | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
 | `OwnershipHandoverRequested` | `(pendingOwner: address)`                | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |

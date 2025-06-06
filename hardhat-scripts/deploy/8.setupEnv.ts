@@ -1,4 +1,9 @@
-import { ChainAddressesObj, ChainSlug, Contracts, EVMxAddressesObj } from "../../src";
+import {
+  ChainAddressesObj,
+  ChainSlug,
+  Contracts,
+  EVMxAddressesObj,
+} from "../../src";
 import fs from "fs";
 import path from "path";
 import { EVMX_CHAIN_ID, mode } from "../config/config";
@@ -17,7 +22,9 @@ const lines = envContent.split("\n");
 // Get the latest addresses
 const latestAddresses = getAddresses(mode);
 const latestEVMxAddresses = latestAddresses[EVMX_CHAIN_ID] as EVMxAddressesObj;
-const arbSepoliaAddresses = latestAddresses[ChainSlug.ARBITRUM_SEPOLIA] as ChainAddressesObj;
+const arbSepoliaAddresses = latestAddresses[
+  ChainSlug.ARBITRUM_SEPOLIA
+] as ChainAddressesObj;
 // Create a new array to hold the updated lines
 const updatedLines = lines.map((line) => {
   if (line.startsWith("ADDRESS_RESOLVER=")) {
@@ -29,23 +36,23 @@ const updatedLines = lines.map((line) => {
   } else if (line.startsWith("FEES_MANAGER=")) {
     return `FEES_MANAGER=${latestEVMxAddresses[Contracts.FeesManager]}`;
   } else if (line.startsWith("ARBITRUM_SOCKET=")) {
-    return `ARBITRUM_SOCKET=${
-      arbSepoliaAddresses[Contracts.Socket]
-    }`;
+    return `ARBITRUM_SOCKET=${arbSepoliaAddresses[Contracts.Socket]}`;
   } else if (line.startsWith("ARBITRUM_SWITCHBOARD=")) {
     return `ARBITRUM_SWITCHBOARD=${
       arbSepoliaAddresses[Contracts.FastSwitchboard]
     }`;
   } else if (line.startsWith("ARBITRUM_FEES_PLUG=")) {
-    const feesPlug =
-      arbSepoliaAddresses[Contracts.FeesPlug];
+    const feesPlug = arbSepoliaAddresses[Contracts.FeesPlug];
     if (feesPlug) {
       return `ARBITRUM_FEES_PLUG=${feesPlug}`;
     } else {
       return line;
     }
   } else if (line.startsWith("ARBITRUM_TEST_USDC=")) {
-    const testUSDC = getFeeTokens(mode, ChainSlug.ARBITRUM_SEPOLIA)[0] as string;
+    const testUSDC = getFeeTokens(
+      mode,
+      ChainSlug.ARBITRUM_SEPOLIA
+    )[0] as string;
     if (testUSDC) {
       return `ARBITRUM_TEST_USDC=${testUSDC}`;
     } else {
