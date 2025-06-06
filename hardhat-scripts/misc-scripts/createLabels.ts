@@ -8,7 +8,6 @@ function generateFoundryLabels(chainSlug?: string) {
   // Read deployed addresses
   const deployedAddresses = getAddresses(mode);
 
-  console.log(`chainSlug: ${chainSlug}`);
   // Read existing foundry.toml
   const foundryPath = path.join(__dirname, "../../foundry.toml");
   let foundryContent = fs.existsSync(foundryPath)
@@ -20,7 +19,6 @@ function generateFoundryLabels(chainSlug?: string) {
 
   // Generate new labels section
   let labelsSection = "[labels]\n";
-
   const chainIds = [EVMX_CHAIN_ID];
   if (chainSlug) {
     const additionalChainId = parseInt(chainSlug, 10);
@@ -28,7 +26,7 @@ function generateFoundryLabels(chainSlug?: string) {
       console.error(`❌ Invalid chain ID: ${chainSlug}`);
       process.exit(1);
     }
-    chainIds.push(additionalChainId);
+    if (additionalChainId !== EVMX_CHAIN_ID) chainIds.push(additionalChainId);
   }
 
   for (const chainId of chainIds) {
@@ -36,7 +34,7 @@ function generateFoundryLabels(chainSlug?: string) {
 
     if (!chainAddresses) {
       console.error(`❌ No addresses found for chain ${chainId}`);
-      process.exit(1);
+      continue;
     }
 
     // Add all addresses to the labels section
