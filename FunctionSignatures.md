@@ -124,6 +124,7 @@
 | Function                         | Signature    |
 | -------------------------------- | ------------ |
 | `addressResolver__`              | `0x6a750469` |
+| `approveAppGateway`              | `0xa3b53d8b` |
 | `approveAppGatewayWithSignature` | `0x94b649ec` |
 | `approveAppGateways`             | `0x86d23ab2` |
 | `asyncDeployer__`                | `0x2a39e801` |
@@ -137,6 +138,7 @@
 | `feesPlugs`                      | `0x23f5ee8a` |
 | `feesPool`                       | `0x6b259690` |
 | `getAvailableCredits`            | `0xb065a8e5` |
+| `handleRevert`                   | `0x44792f25` |
 | `initialize`                     | `0xbf2c8539` |
 | `isApproved`                     | `0xa389783e` |
 | `isCreditSpendable`              | `0x4f8990fd` |

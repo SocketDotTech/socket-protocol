@@ -71,6 +71,7 @@
 | `OwnershipHandoverCanceled`   | `(pendingOwner: address)`                                                                               | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
 | `OwnershipHandoverRequested`  | `(pendingOwner: address)`                                                                               | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
 | `OwnershipTransferred`        | `(oldOwner: address, newOwner: address)`                                                                | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
+| `WithdrawFailed`              | `(payloadId: bytes32)`                                                                                  | `0xea147eb2109f71b4bda9e57528ba08b84821087a31cb43a7851dc6ff743d9be7` |
 
 ## FeesPool
 

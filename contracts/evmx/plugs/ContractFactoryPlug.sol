@@ -27,6 +27,8 @@ contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
     constructor(address socket_, address owner_) {
         _initializeOwner(owner_);
         _setSocket(socket_);
+
+        isSocketInitialized = 1;
     }
 
     /// @notice Deploys a contract

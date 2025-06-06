@@ -30,6 +30,9 @@ export const chainOverrides: {
   [ChainSlug.BASE]: {
     gasLimit: 2_000_000,
   },
+  [ChainSlug.ARBITRUM]: {
+    gasPrice: 100_629_157,
+  },
   [EVMX_CHAIN_ID as ChainSlug]: {
     type: 0,
     // gasLimit: 1_000_000_000,
