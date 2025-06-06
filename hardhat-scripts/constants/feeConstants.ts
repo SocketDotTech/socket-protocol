@@ -2,6 +2,10 @@ import { DeploymentMode } from "../../src";
 import { TokenMap } from "./types";
 
 const tokens: TokenMap = {
+  [DeploymentMode.LOCAL]: {
+    421614: ["0x5e732b6f5DC56dDAe4dBDbf844348F87C3B0b957"],
+    11155420: ["0xb669f76f781dC75E06183DcdB7fd8bcD8Ef700E6"],
+  },
   [DeploymentMode.DEV]: {
     421614: ["0x2321BF7AdFaf49b1338F1Cd474859dBc0D8dfA96"],
     11155420: ["0x15dbE4B96306Cc9Eba15D834d6c1a895cF4e1697"],
@@ -14,6 +18,7 @@ const tokens: TokenMap = {
 };
 
 const feePools: { [key: string]: string } = {
+  [DeploymentMode.LOCAL]: "0x9De353dD1131aB4e502590D3a1832652FA316268",
   [DeploymentMode.DEV]: "0xc20Be67ef742202dc93A78aa741E7C3715eA1DFd",
   [DeploymentMode.STAGE]: "0xe2054B575664dfDBD7a7FbAf2B12420ae88DE0FF",
 };

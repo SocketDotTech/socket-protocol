@@ -9,10 +9,7 @@ export const socketEvents = [
 
 export const feesPlugEvents = [Events.FeesDeposited];
 
-export const watcherEvents = [
-  Events.CalledAppGateway,
-  Events.AppGatewayCallFailed,
-];
+export const watcherEvents = [Events.TriggerFailed, Events.TriggerSucceeded];
 
 export const promiseResolverEvents = [
   Events.PromiseResolved,
