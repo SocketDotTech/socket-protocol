@@ -55,9 +55,9 @@ abstract contract SocketConfig is ISocket, AccessControl {
 
     // @notice function to disable a switchboard
     // @dev only callable by governance role
-    function disableSwitchboard() external onlyRole(SWITCHBOARD_DISABLER_ROLE) {
-        isValidSwitchboard[msg.sender] = SwitchboardStatus.DISABLED;
-        emit SwitchboardDisabled(msg.sender);
+    function disableSwitchboard(address switchboard_) external onlyRole(SWITCHBOARD_DISABLER_ROLE) {
+        isValidSwitchboard[switchboard_] = SwitchboardStatus.DISABLED;
+        emit SwitchboardDisabled(switchboard_);
     }
 
     // @notice function to enable a switchboard

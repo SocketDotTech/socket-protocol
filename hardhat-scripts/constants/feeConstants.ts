@@ -1,4 +1,5 @@
 import { DeploymentMode } from "../../src";
+import { mode } from "../config";
 import { TokenMap } from "./types";
 
 const tokens: TokenMap = {
@@ -23,13 +24,10 @@ const feePools: { [key: string]: string } = {
   [DeploymentMode.STAGE]: "0xe2054B575664dfDBD7a7FbAf2B12420ae88DE0FF",
 };
 
-export const getFeeTokens = (
-  mode: DeploymentMode,
-  chainSlug: number
-): string[] => {
+export const getFeeTokens = (chainSlug: number): string[] => {
   return tokens[mode][chainSlug] || [];
 };
 
-export const getFeePool = (mode: DeploymentMode): string => {
+export const getFeePool = (): string => {
   return feePools[mode];
 };

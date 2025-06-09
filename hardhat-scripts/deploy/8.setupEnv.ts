@@ -49,10 +49,7 @@ const updatedLines = lines.map((line) => {
       return line;
     }
   } else if (line.startsWith("ARBITRUM_TEST_USDC=")) {
-    const testUSDC = getFeeTokens(
-      mode,
-      ChainSlug.ARBITRUM_SEPOLIA
-    )[0] as string;
+    const testUSDC = getFeeTokens(ChainSlug.ARBITRUM_SEPOLIA)[0] as string;
     if (testUSDC) {
       return `ARBITRUM_TEST_USDC=${testUSDC}`;
     } else {
