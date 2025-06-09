@@ -11,14 +11,6 @@ import "./IPromiseResolver.sol";
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
 /// @dev Defines core functionality for payload processing and promise resolution
 interface IWatcher {
-    /// @notice Emitted when a new call is made to an app gateway
-    /// @param triggerId The unique identifier for the trigger
-    event CalledAppGateway(bytes32 triggerId);
-
-    /// @notice Emitted when a call to an app gateway fails
-    /// @param triggerId The unique identifier for the trigger
-    event AppGatewayCallFailed(bytes32 triggerId);
-
     function requestHandler__() external view returns (IRequestHandler);
 
     function configurations__() external view returns (IConfigurations);

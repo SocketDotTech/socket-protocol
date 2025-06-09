@@ -16,7 +16,6 @@ import type {
 import { resolve } from "path";
 import fs from "fs";
 
-import "./hardhat-scripts/utils/accounts";
 import { getJsonRpcUrl } from "./hardhat-scripts/utils/networks";
 import {
   ChainId,

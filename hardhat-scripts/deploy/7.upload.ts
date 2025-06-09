@@ -24,7 +24,7 @@ const getBucketName = () => {
 const getFileName = () => {
   switch (mode) {
     case DeploymentMode.LOCAL:
-      return "pocConfig.json";
+      return process.env.CONFIG_FILE_NAME || "pocConfig.json";
     case DeploymentMode.DEV:
       return "devConfig.json";
     case DeploymentMode.STAGE:
