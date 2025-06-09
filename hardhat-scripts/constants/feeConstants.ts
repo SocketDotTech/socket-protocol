@@ -19,9 +19,7 @@ const feePools: { [key: string]: string } = {
   [DeploymentMode.STAGE]: "0xe2054B575664dfDBD7a7FbAf2B12420ae88DE0FF",
 };
 
-export const getFeeTokens = (
-  chainSlug: number
-): string[] => {
+export const getFeeTokens = (chainSlug: number): string[] => {
   return tokens[mode][chainSlug] || [];
 };
 
