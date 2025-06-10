@@ -47,8 +47,8 @@ contract EvmSolanaOnchainCalls is Script {
                     // mint on local-testnet: BdUzPsaAicEWinR7b14YLtvavwM8zYn8BaHKqGQ8by2q
                     dstSolanaToken: 0x9ded6d20f1f5b9c56cb90ef89fc52d355aaaa868c42738eff11f50d1f81f522a,
                     userEvm: 0x4200000000000000000000000000000000000005,
-                    // alice super token ata: 5HSCbkEGDhSKW7iAZAfDqa2ZvC1CZFCzo6GWgrXrULNS
-                    destUserTokenAddress: 0x44419ffe200970bf084fa4713da27d7dff551179adac93fc552787c7555f3482,
+                    // alice super token ata: LVuCmGaoHjAGu54dFppzujS1Ti61CBac57taeQbokUr
+                    destUserTokenAddress: 0x04feb6778939c89983aac734e237dc22f49d7b4418d378a516df15a255d084cb,
                     srcAmount: 1000000,
                     deadline: 1715702400
                 })

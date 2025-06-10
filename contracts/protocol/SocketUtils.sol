@@ -90,7 +90,7 @@ abstract contract SocketUtils is SocketConfig {
                     executeParams_.batchCount,
                     executeParams_.payloadCount,
                     chainSlug,
-                    switchboard_
+                    toBytes32Format(switchboard_)
                 )
             );
     }

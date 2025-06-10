@@ -207,6 +207,7 @@
 | ----- | --------- | ----- |
 | `AppGatewayCallFailed` | `(triggerId: bytes32)` | `0xcaf8475fdade8465ea31672463949e6cf1797fdcdd11eeddbbaf857e1e5907b7` |
 | `CalledAppGateway` | `(triggerId: bytes32)` | `0xf659ffb3875368f54fb4ab8f5412ac4518af79701a48076f7a58d4448e4bdd0b` |
+| `DigestWithSourceParams` | `(digest: bytes32, digestParams: tuple)` | `0x367acb448a0c17af68ddaab657b5fff8554cf0de38b7d10218219137614e7c03` |
 | `ExpiryTimeSet` | `(expiryTime: uint256)` | `0x07e837e13ad9a34715a6bd45f49bbf12de19f06df79cb0be12b3a7d7f2397fa9` |
 | `FinalizeRequested` | `(digest: bytes32, params: tuple)` | `0xc5a38a366c2b21c3cf453db4dbcd46537dcf1790f6d7a5652cbcc586717db2eb` |
 | `Finalized` | `(payloadId: bytes32, proof: bytes)` | `0x7e6e3e411317567fb9eabe3eb86768c3e33c46e38a50790726e916939b4918d6` |
@@ -216,6 +217,7 @@
 | `OwnershipHandoverCanceled` | `(pendingOwner: address)` | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
 | `OwnershipHandoverRequested` | `(pendingOwner: address)` | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
 | `OwnershipTransferred` | `(oldOwner: address, newOwner: address)` | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
+| `PayloadIdData` | `(requestCount: uint40, batchCount: uint40, payloadCount: uint40, switchboard: bytes32, chainSlug: uint32, packed: bytes)` | `0x65a23528b0124171c5ee6e13b818afcfb0766a73f96771ee23665e05e77f7560` |
 | `PromiseNotResolved` | `(payloadId: bytes32, asyncPromise: address)` | `0xbcf0d0c678940566e9e64f0c871439395bd5fb5c39bca3547b126fe6ee467937` |
 | `PromiseResolved` | `(payloadId: bytes32, asyncPromise: address)` | `0x1b1b5810494fb3e17f7c46547e6e67cd6ad3e6001ea6fb7d12ea0241ba13c4ba` |
 | `QueryRequested` | `(params: tuple)` | `0xe72d5e75e1f983e5594c83cc941173348201105a3660bbe19e34231f31e82b88` |

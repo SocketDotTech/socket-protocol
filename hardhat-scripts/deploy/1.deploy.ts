@@ -44,8 +44,14 @@ config();
 let EVMxOwner: string;
 
 // mocked address of Solana target program associated with ForwarderSolana - later make it a real address of solana super-token program
+// 6n7CQvhsnfKnRK2ZK1FCWr3aRrbWBy95hiYntYGGVf4m
+// export const mockForwarderSolanaOnChainAddress32Bytes = Buffer.from(
+//   "55d893e742d43eafc1e6509eefca9ceb635a39bd3394041d334203ed35720922",
+//   "hex"
+// );
+// cT9tVQf8NAwHk849ctDqeLhbN2B6JJi3LfR6GfuN751 - super-token test program id
 export const mockForwarderSolanaOnChainAddress32Bytes = Buffer.from(
-  "55d893e742d43eafc1e6509eefca9ceb635a39bd3394041d334203ed35720922",
+  "0914e65e59622aeeefb7f007aef36df62d4c380895553b0643fcc4383c7c2448",
   "hex"
 );
 

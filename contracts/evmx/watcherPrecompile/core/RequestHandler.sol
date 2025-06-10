@@ -14,6 +14,15 @@ abstract contract RequestHandler is WatcherPrecompileCore {
     // slots [266-315] reserved for gap
     uint256[50] _request_handler_gap;
 
+    event PayloadIdData(
+        uint40 requestCount,
+        uint40 batchCount,
+        uint40 payloadCount,
+        bytes32 switchboard,
+        uint32 chainSlug,
+        bytes packed
+    );
+
     /// @notice Submits a batch of payload requests from middleware
     /// @param payloadSubmitParams_ Array of payload submit parameters
     /// @return requestCount The unique identifier for the submitted request
@@ -57,6 +66,14 @@ abstract contract RequestHandler is WatcherPrecompileCore {
                 localPayloadCount,
                 p.switchboard,
                 p.chainSlug
+            );
+            emit PayloadIdData(
+                requestCount,
+                batchCount,
+                localPayloadCount,
+                p.switchboard,
+                p.chainSlug,
+                abi.encodePacked(requestCount, batchCount, localPayloadCount, p.chainSlug, p.switchboard)
             );
             batchPayloadIds[batchCount].push(payloadId);
 

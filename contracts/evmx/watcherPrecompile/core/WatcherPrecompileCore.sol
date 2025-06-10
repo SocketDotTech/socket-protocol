@@ -28,6 +28,8 @@ abstract contract WatcherPrecompileCore is
     // slots [216-265] reserved for gap
     uint256[50] _core_gap;
 
+    event DigestWithSourceParams(bytes32 digest, DigestParams digestParams);
+
     // ================== Timeout functions ==================
 
     /// @notice Sets a timeout for a payload execution on app gateway
@@ -91,8 +93,12 @@ abstract contract WatcherPrecompileCore is
             digestParams_ = _createEvmDigestParams(params_, transmitter_, prevDigestsHash, deadline);
         }
         
+        
         // Calculate digest from payload parameters
         digest = getDigest(digestParams_);
+
+        emit DigestWithSourceParams(digest, digestParams_);
+
         emit FinalizeRequested(digest, payloads[params_.payloadId]);
     }
 
@@ -271,11 +277,15 @@ abstract contract WatcherPrecompileCore is
         bytes memory payloadPacked = abi.encodePacked(
             instruction.data.programId,
             instruction.data.accounts,
-            instruction.data.instructionDiscriminator, // TODO: check discriminator should also be encoded in Borsh style
+            instruction.data.instructionDiscriminator,
             functionArgsPacked
         );
+
+        // bytes32 of Solana Socket address : 9vFEQ5e3xf4eo17WttfqmXmnqN3gUicrhFGppmmNwyqV
+        bytes32 hardcodedSocket = 0x84815e8ca2f6dad7e12902c39a51bc72e13c48139b4fb10025d94e7abea2969c;
         return DigestParams(
-            watcherPrecompileConfig__.sockets(params_.payloadHeader.getChainSlug()),
+            // watcherPrecompileConfig__.sockets(params_.payloadHeader.getChainSlug()), // TODO: this does not work, for some reason it returns 0x000.... address
+            hardcodedSocket,
             transmitter_,
             params_.payloadId,
             deadline_,
