@@ -320,6 +320,7 @@ export function getChainSlugFromId(chainId: number) {
   return parseInt(utils.id(chainId.toString()).substring(0, 10));
 }
 
+// TODO: move this to socket-common
 export function toBytes32FormatHexString(hexString: string): string {
   // this means that the string is already in bytes32 format with or without 0x prefix
   if (hexString.length == 64 || hexString.length == 66) {

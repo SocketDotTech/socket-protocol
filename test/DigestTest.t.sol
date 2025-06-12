@@ -3,6 +3,7 @@ pragma solidity ^0.8.21;
 
 import "forge-std/Test.sol";
 import {DigestParams, CallType} from "../contracts/utils/common/Structs.sol";
+import {SuperToken} from "./apps/app-gateways/super-token/SuperToken.sol";
 
 /**
 digest: 0x0d5f3c04cb78dbf9d1f41e39fe052563a15d7f1c01eabe3c05e4516092ac45c6, digestParams: DigestParams({ socket: 0x0000000000000000000000000000000000000000000000000000000000000000, transmitter: 0x138e9840861C983DC0BB9b3e941FB7C0e9Ade320, payloadId: 0x311d3ef34ac57397de0ea68d335f1cdfee6f5c3fc8984b251fd12fc33186ae3f, deadline: 1749226992 [1.749e9], callType: 1, gasLimit: 10000000 [1e7], value: 0, payload: 0x0914e65e59622aeeefb7f007aef36df62d4c380895553b0643fcc4383c7c24480af77affb0a5db632e9bafb98525232515d440861c9942e447c20eefd8883d349ded6d20f1f5b9c56cb90ef89fc52d355aaaa868c42738eff11f50d1f81f522a04feb6778939c89983aac734e237dc22f49d7b4418d378a516df15a255d084cb000000000000000000000000000000000000000000000000000000000000000006ddf6e1d765a193d9cbe146ceeb79ac1cb485ed5f5b37913a8cf5857eff00a93339e12fb69289a640420f0000000000, target: 0x55d893e742d43eafc1e6509eefca9ceb635a39bd3394041d334203ed35720922, appGatewayId: 0x000000000000000000000000751085ca028d2bcfc58cee2514def1ed72c843cd, prevDigestsHash: 0xb753c805881ef95a23d0c9cdc862cdcb78313b28ba791736312b6e24b0ba98fb */
@@ -121,5 +122,15 @@ contract DigestTest is Test {
                 bytes("")
             )
         );
+    }
+
+    function testDeploy() pure public {
+        // bytes4 selector = SuperToken.setOwner.selector;
+        // console.log("selector for SuperToken.setOwner.selector");
+        // console.logBytes4(selector);
+
+        bytes32 superTokenEvm = keccak256(abi.encode("superTokenEvm"));
+        console.log("super token contract id:");
+        console.logBytes32(superTokenEvm);
     }
 }

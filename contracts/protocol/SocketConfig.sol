@@ -88,6 +88,7 @@ abstract contract SocketConfig is ISocket, AccessControl {
         _plugConfig.appGatewayId = appGatewayId_;
         _plugConfig.switchboard = switchboard_;
 
+        // TODO:GW: msg.sender and switchboard should be bytes32 ???
         emit PlugConnected(msg.sender, appGatewayId_, switchboard_);
     }
 

@@ -24,7 +24,7 @@ contract DeployEVMSolanaApps is Script {
 
         // fill with correct values after deployment
         bytes32 solanaProgramId = vm.envBytes32("SOLANA_TARGET_PROGRAM");
-        address forwarderSolanaAddress = 0x30ac86A62033344025423bd050897664Cfc9Ed11;
+        address forwarderSolanaAddress = 0xCEC0c6c88217c687FcdE60bccfc7c14c1c0c72eB;
 
         // Setting fee payment on Arbitrum Sepolia
         uint256 fees = 10 ether;
@@ -36,9 +36,9 @@ contract DeployEVMSolanaApps is Script {
             EvmSolanaAppGateway.SuperTokenEvmConstructorParams({
                 name_: "SuperToken-Evm",
                 symbol_: "SUPER",
-                decimals_: 18,
+                decimals_: 6,
                 initialSupplyHolder_: owner,
-                initialSupply_: 1000000000000000000000000
+                initialSupply_: 100000000000
             }),
             solanaProgramId,
             forwarderSolanaAddress
@@ -64,9 +64,7 @@ contract DeployEVMSolanaApps is Script {
         console.log("Address resolver from vars:");
         console.log(addressResolver);
 
-        address addressResolverFromLogs = 0x7FC254EA88B06FA31E26ACAeF1E190A9c925948F;
-        console.log("Address resolver owner:");
+        // console.log("Address resolver owner:");
         // console.log(AddressResolver(address(ForwarderSolana(forwarderSolanaAddress).addressResolver__())).owner());
-        console.log(AddressResolver(addressResolverFromLogs).owner());
     }
 }

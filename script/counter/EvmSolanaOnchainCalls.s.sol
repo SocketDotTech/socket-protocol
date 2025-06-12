@@ -19,10 +19,12 @@ contract EvmSolanaOnchainCalls is Script {
 
         EvmSolanaAppGateway appGateway = EvmSolanaAppGateway(vm.envAddress("APP_GATEWAY"));
         bytes32 switchboardSolana = vm.envBytes32("SWITCHBOARD_SOLANA");
+        address userEvmAddress = vm.envAddress("EVM_TEST_ACCOUNT");
 
         console.log("EvmSolanaAppGateway:", address(appGateway));
         console.log("Switchboard solana:");
         console.logBytes32(switchboardSolana);
+        console.log("User address: ", userEvmAddress);
 
         // console.log("Deploying SuperToken on Optimism Sepolia...");
         // appGateway.deployEvmContract(11155420);
@@ -40,21 +42,104 @@ contract EvmSolanaOnchainCalls is Script {
         //     ),
         //     switchboardSolana
         // );
-        appGateway.transferForDebug(
-            buildSolanaInstruction(
-                EvmSolanaAppGateway.TransferOrderEvmToSolana({
-                    srcEvmToken: 0x4200000000000000000000000000000000000006,
-                    // mint on local-testnet: BdUzPsaAicEWinR7b14YLtvavwM8zYn8BaHKqGQ8by2q
-                    dstSolanaToken: 0x9ded6d20f1f5b9c56cb90ef89fc52d355aaaa868c42738eff11f50d1f81f522a,
-                    userEvm: 0x4200000000000000000000000000000000000005,
-                    // alice super token ata: LVuCmGaoHjAGu54dFppzujS1Ti61CBac57taeQbokUr
-                    destUserTokenAddress: 0x04feb6778939c89983aac734e237dc22f49d7b4418d378a516df15a255d084cb,
-                    srcAmount: 1000000,
-                    deadline: 1715702400
-                })
-            ),
-            switchboardSolana
+
+        uint256 srcAmount = 10000000;         
+        mintOnEvm(srcAmount, userEvmAddress, appGateway);
+        // mintOnSolana(srcAmount, userEvmAddress, switchboardSolana, appGateway);
+        // transferEvmToSolana(srcAmount, userEvmAddress, switchboardSolana, appGateway);
+
+        // This works:
+        // appGateway.transferForDebug(
+        //     buildSolanaInstruction(
+        //         EvmSolanaAppGateway.TransferOrderEvmToSolana({
+        //             srcEvmToken: 0x4200000000000000000000000000000000000006,
+        //             // mint on local-testnet: BdUzPsaAicEWinR7b14YLtvavwM8zYn8BaHKqGQ8by2q
+        //             dstSolanaToken: 0x9ded6d20f1f5b9c56cb90ef89fc52d355aaaa868c42738eff11f50d1f81f522a,
+        //             userEvm: 0x4200000000000000000000000000000000000005,
+        //             // alice super token ata: LVuCmGaoHjAGu54dFppzujS1Ti61CBac57taeQbokUr
+        //             destUserTokenAddress: 0x04feb6778939c89983aac734e237dc22f49d7b4418d378a516df15a255d084cb,
+        //             srcAmount: 1000000,
+        //             deadline: 1715702400
+        //         })
+        //     ),
+        //     switchboardSolana
+        // );
+
+        
+    }
+
+    function transferEvmToSolana(
+        uint256 srcAmount,
+        address userEvmAddress,
+        bytes32 switchboardSolana,
+        EvmSolanaAppGateway appGateway
+    ) public {
+        console.log("Transfer EVM to Solana");
+
+        EvmSolanaAppGateway.TransferOrderEvmToSolana memory order = EvmSolanaAppGateway.TransferOrderEvmToSolana({
+            srcEvmToken: 0xd912E5870212FC22D56f3C7Cc04aAFfa54eFde31, // Forwarder(!!) for Super-token contract on given chain
+            // mint on local-testnet: BdUzPsaAicEWinR7b14YLtvavwM8zYn8BaHKqGQ8by2q
+            dstSolanaToken: 0x9ded6d20f1f5b9c56cb90ef89fc52d355aaaa868c42738eff11f50d1f81f522a,
+            userEvm: userEvmAddress,
+            // alice super token ata: LVuCmGaoHjAGu54dFppzujS1Ti61CBac57taeQbokUr
+            destUserTokenAddress: 0x04feb6778939c89983aac734e237dc22f49d7b4418d378a516df15a255d084cb,
+            srcAmount: srcAmount,
+            deadline: 1715702400
+        });
+
+        SolanaInstruction memory solanaInstruction = buildSolanaInstruction(order);
+
+        bytes memory orderEncoded = abi.encode(order);
+
+        appGateway.transfer(orderEncoded, solanaInstruction, switchboardSolana);
+    }
+
+    function mintOnEvm(
+        uint256 srcAmount,
+        address userEvmAddress,
+        EvmSolanaAppGateway appGateway
+    ) public {
+        console.log("Mint on EVM");
+
+        bytes memory order = abi.encode(EvmSolanaAppGateway.TransferOrderEvmToSolana({
+            srcEvmToken: 0xd912E5870212FC22D56f3C7Cc04aAFfa54eFde31, // Forwarder(!!) for Super-token contract on given chain
+            dstSolanaToken: 0x9ded6d20f1f5b9c56cb90ef89fc52d355aaaa868c42738eff11f50d1f81f522a,       // irrelevant for EVM minting
+            userEvm: userEvmAddress,
+            destUserTokenAddress: 0x04feb6778939c89983aac734e237dc22f49d7b4418d378a516df15a255d084cb, // irrelevant for EVM minting
+            srcAmount: srcAmount,
+            deadline: 1715702400
+        }));
+
+        EvmSolanaAppGateway.TransferOrderEvmToSolana memory orderObj = abi.decode(order, (EvmSolanaAppGateway.TransferOrderEvmToSolana));
+        console.log("Order srcEvmToken:", orderObj.srcEvmToken);
+        console.log("Order userEvm:", orderObj.userEvm);
+        console.log("Order srcAmount:", orderObj.srcAmount);
+
+        appGateway.mintSuperTokenEvm(order);
+    }
+
+    function mintOnSolana(
+        uint256 srcAmount,
+        address userEvmAddress,
+        bytes32 switchboardSolana,
+        EvmSolanaAppGateway appGateway
+    ) public {
+        console.log("Mint on Solana");
+
+        SolanaInstruction memory solanaInstruction = buildSolanaInstruction(
+            EvmSolanaAppGateway.TransferOrderEvmToSolana({
+                srcEvmToken: 0xD4a20b34D0dE11e3382Aaa7E0839844f154B6191,
+                // mint on local-testnet: BdUzPsaAicEWinR7b14YLtvavwM8zYn8BaHKqGQ8by2q
+                dstSolanaToken: 0x9ded6d20f1f5b9c56cb90ef89fc52d355aaaa868c42738eff11f50d1f81f522a,
+                userEvm: userEvmAddress,
+                // alice super token ata: LVuCmGaoHjAGu54dFppzujS1Ti61CBac57taeQbokUr
+                destUserTokenAddress: 0x04feb6778939c89983aac734e237dc22f49d7b4418d378a516df15a255d084cb,
+                srcAmount: srcAmount,
+                deadline: 1715702400
+            })
         );
+
+        appGateway.mintSuperTokenSolana(solanaInstruction, switchboardSolana);
     }
 
     function buildSolanaInstruction(

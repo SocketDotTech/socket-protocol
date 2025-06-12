@@ -79,14 +79,28 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         return address(forwarderSolana.addressResolver__());
     }
 
-    function transfer(bytes memory order_, bytes32 switchboardSolana) external async(bytes("")) {
+    function transfer(bytes memory order_, SolanaInstruction memory solanaInstruction, bytes32 switchboardSolana) external async(bytes("")) {
         TransferOrderEvmToSolana memory order = abi.decode(order_, (TransferOrderEvmToSolana));
-        // ISuperToken(order.srcEvmToken).burn(order.userEvm, order.srcAmount);
+        ISuperToken(order.srcEvmToken).burn(order.userEvm, order.srcAmount);
 
         // SolanaInstruction memory solanaInstruction = buildSolanaInstruction(order);
 
-        // // we are directly calling the ForwarderSolana
-        // forwarderSolana.callSolana(solanaInstruction, switchboardSolana);
+        /// we are directly calling the ForwarderSolana
+        forwarderSolana.callSolana(solanaInstruction, switchboardSolana);
+
+        emit Transferred(_getCurrentAsyncId());
+    }
+
+    function mintSuperTokenEvm(bytes memory order_) external async(bytes("")) {
+        TransferOrderEvmToSolana memory order = abi.decode(order_, (TransferOrderEvmToSolana));
+        ISuperToken(order.srcEvmToken).mint(order.userEvm, order.srcAmount);
+
+        emit Transferred(_getCurrentAsyncId());
+    }
+
+    function mintSuperTokenSolana(SolanaInstruction memory solanaInstruction, bytes32 switchboardSolana) external async(bytes("")) {
+        // we are directly calling the ForwarderSolana
+        forwarderSolana.callSolana(solanaInstruction, switchboardSolana);
 
         emit Transferred(_getCurrentAsyncId());
     }

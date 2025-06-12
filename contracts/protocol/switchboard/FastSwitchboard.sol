@@ -3,6 +3,8 @@ pragma solidity ^0.8.21;
 
 import "./SwitchboardBase.sol";
 import {WATCHER_ROLE} from "../../utils/common/AccessRoles.sol";
+import {toBytes32Format} from "../../utils/common/Converters.sol";
+
 
 /**
  * @title FastSwitchboard contract
@@ -43,8 +45,7 @@ contract FastSwitchboard is SwitchboardBase {
         if (isAttested[digest_]) revert AlreadyAttested();
 
         address watcher = _recoverSigner(
-            // Must match the watcher-processor which generates the proof (this encodePacked more chain agnostic)
-            keccak256(abi.encodePacked(address(this), chainSlug, digest_)),
+            keccak256(abi.encodePacked(toBytes32Format(address(this)), chainSlug, digest_)),
             proof_
         );
         if (!_hasRole(WATCHER_ROLE, watcher)) revert WatcherNotFound();
