@@ -45,4 +45,8 @@ interface IAppGateway {
         bytes32 contractId_,
         uint32 chainSlug_
     ) external view returns (address forwarderAddress);
+
+    /// @notice get the switchboard type
+    /// @return sbType The switchboard type
+    function sbType() external view returns (bytes32);
 }
