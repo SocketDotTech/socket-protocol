@@ -68,4 +68,8 @@ contract SuperTokenAppGateway is AppGatewayBase, Ownable {
 
         emit Transferred(_getCurrentRequestCount());
     }
+
+    function setSbType(bytes32 sbType_) external onlyOwner {
+        _setSbType(sbType_);
+    }
 }

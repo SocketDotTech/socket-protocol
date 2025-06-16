@@ -5,8 +5,10 @@ import "solady/auth/Ownable.sol";
 import "./interfaces/ISocket.sol";
 import "./interfaces/ISocketBatcher.sol";
 import "./interfaces/ISwitchboard.sol";
+import "./interfaces/ICCTPSwitchboard.sol";
 import "../utils/RescueFundsLib.sol";
-import {ExecuteParams, TransmissionParams} from "../utils/common/Structs.sol";
+import {ExecuteParams, TransmissionParams, CCTPBatchParams, CCTPExecutionParams} from "../utils/common/Structs.sol";
+import {createPayloadId} from "../utils/common/IdUtils.sol";
 
 /**
  * @title SocketBatcher
@@ -52,6 +54,52 @@ contract SocketBatcher is ISocketBatcher, Ownable {
                     extraData: executeParams_.extraData,
                     refundAddress: refundAddress_
                 })
+            );
+    }
+
+    function attestCCTPAndProveAndExecute(
+        CCTPExecutionParams calldata execParams_,
+        CCTPBatchParams calldata cctpParams_,
+        address switchboard_
+    ) external payable returns (bool, bytes memory) {
+        bytes32 payloadId = _createPayloadId(execParams_.executeParams, switchboard_);
+        ICCTPSwitchboard(switchboard_).attest(payloadId, execParams_.digest, execParams_.proof);
+
+        ICCTPSwitchboard(switchboard_).verifyAttestations(
+            cctpParams_.messages,
+            cctpParams_.attestations
+        );
+        ICCTPSwitchboard(switchboard_).proveRemoteExecutions(
+            cctpParams_.previousPayloadIds,
+            payloadId,
+            execParams_.transmitterSignature,
+            execParams_.executeParams
+        );
+        (bool success, bytes memory returnData) = socket__.execute{value: msg.value}(
+            execParams_.executeParams,
+            TransmissionParams({
+                transmitterSignature: execParams_.transmitterSignature,
+                socketFees: 0,
+                extraData: execParams_.executeParams.extraData,
+                refundAddress: execParams_.refundAddress
+            })
+        );
+
+        ICCTPSwitchboard(switchboard_).syncOut(payloadId, cctpParams_.nextBatchRemoteChainSlugs);
+        return (success, returnData);
+    }
+
+    function _createPayloadId(
+        ExecuteParams memory executeParams_,
+        address switchboard_
+    ) internal view returns (bytes32) {
+        return
+            createPayloadId(
+                executeParams_.requestCount,
+                executeParams_.batchCount,
+                executeParams_.payloadCount,
+                switchboard_,
+                socket__.chainSlug()
             );
     }
 

@@ -11,7 +11,6 @@ import "./IPromiseResolver.sol";
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
 /// @dev Defines core functionality for payload processing and promise resolution
 interface IWatcher {
-
     function requestHandler__() external view returns (IRequestHandler);
 
     function configurations__() external view returns (IConfigurations);
