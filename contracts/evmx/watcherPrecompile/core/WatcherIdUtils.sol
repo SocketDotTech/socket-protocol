@@ -2,14 +2,6 @@
 pragma solidity ^0.8.22;
 
 library WatcherIdUtils {
-    function encodeAppGatewayId(address appGateway_) internal pure returns (bytes32) {
-        return bytes32(uint256(uint160(appGateway_)));
-    }
-
-    function decodeAppGatewayId(bytes32 appGatewayId_) internal pure returns (address) {
-        return address(uint160(uint256(appGatewayId_)));
-    }
-
     /// @notice Creates a payload ID from the given parameters
     /// @param requestCount_ The request count
     /// @param batchCount_ The batch count
@@ -17,16 +9,17 @@ library WatcherIdUtils {
     /// @param switchboard_ The switchboard address
     /// @param chainSlug_ The chain slug
     /// @return The created payload ID
+    // TODO:GW: this has to change as we need to recreate the payloadId on Solana in Socket program
     function createPayloadId(
         uint40 requestCount_,
         uint40 batchCount_,
         uint40 payloadCount_,
-        address switchboard_,
+        bytes32 switchboard_,
         uint32 chainSlug_
     ) internal pure returns (bytes32) {
         return
             keccak256(
-                abi.encode(requestCount_, batchCount_, payloadCount_, chainSlug_, switchboard_)
+                abi.encodePacked(requestCount_, batchCount_, payloadCount_, chainSlug_, switchboard_)
             );
     }
 }

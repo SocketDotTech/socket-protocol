@@ -9,6 +9,7 @@ import "../interfaces/IPromise.sol";
 
 import {InvalidPromise, FeesNotSet, AsyncModifierNotUsed} from "../../utils/common/Errors.sol";
 import {FAST} from "../../utils/common/Constants.sol";
+import {toBytes32Format} from "../../utils/common/Converters.sol";
 
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway
@@ -122,7 +123,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /// @param isValid Boolean flag indicating whether the contract is authorized (true) or not (false)
     /// @dev This function retrieves the onchain address using the contractId and chainSlug, then calls the watcher precompile to update the plug's validity status
     function _setValidPlug(uint32 chainSlug_, bytes32 contractId, bool isValid) internal {
-        address onchainAddress = getOnChainAddress(contractId, chainSlug_);
+        bytes32 onchainAddress = getOnChainAddress(contractId, chainSlug_);
         watcherPrecompileConfig().setIsValidPlug(chainSlug_, onchainAddress, isValid);
     }
 
@@ -154,6 +155,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         isValidPromise[asyncPromise] = true;
         onCompleteData = abi.encode(chainSlug_, true);
 
+        bytes32 switchboardAddress = watcherPrecompileConfig().switchboards(chainSlug_, sbType);
+
         QueuePayloadParams memory queuePayloadParams = QueuePayloadParams({
             chainSlug: chainSlug_,
             callType: CallType.DEPLOY,
@@ -161,8 +164,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
             isPlug: isPlug_,
             writeFinality: overrideParams.writeFinality,
             asyncPromise: asyncPromise,
-            switchboard: watcherPrecompileConfig().switchboards(chainSlug_, sbType),
-            target: address(0),
+            switchboard: switchboardAddress,
+            target: toBytes32Format(address(0)),
             appGateway: address(this),
             gasLimit: overrideParams.gasLimit,
             value: overrideParams.value,
@@ -190,7 +193,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /// @notice Gets the socket address
     /// @param chainSlug_ The chain slug
     /// @return socketAddress_ The socket address
-    function getSocketAddress(uint32 chainSlug_) public view returns (address) {
+    function getSocketAddress(uint32 chainSlug_) public view returns (bytes32) {
         return watcherPrecompileConfig().sockets(chainSlug_);
     }
 
@@ -201,9 +204,9 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     function getOnChainAddress(
         bytes32 contractId_,
         uint32 chainSlug_
-    ) public view returns (address onChainAddress) {
+    ) public view returns (bytes32 onChainAddress) {
         if (forwarderAddresses[contractId_][chainSlug_] == address(0)) {
-            return address(0);
+            return bytes32(0x0);
         }
 
         onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])

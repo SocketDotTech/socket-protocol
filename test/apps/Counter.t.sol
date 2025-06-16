@@ -38,7 +38,7 @@ contract CounterTest is DeliveryHelperTest {
         deploySetup();
         deployCounterApp(arbChainSlug);
 
-        (address onChain, address forwarder) = getOnChainAndForwarderAddresses(
+        (bytes32 onChain, address forwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId,
             counterGateway
@@ -67,20 +67,21 @@ contract CounterTest is DeliveryHelperTest {
         deploySetup();
         deployCounterApp(arbChainSlug);
 
-        (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
+        (bytes32 arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId,
             counterGateway
         );
+        address arbCounterAddress = fromBytes32Format(arbCounter);
 
-        uint256 arbCounterBefore = Counter(arbCounter).counter();
+        uint256 arbCounterBefore = Counter(arbCounterAddress).counter();
 
         address[] memory instances = new address[](1);
         instances[0] = arbCounterForwarder;
         counterGateway.incrementCounters(instances);
         executeRequest(new bytes[](0));
 
-        assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
+        assertEq(Counter(arbCounterAddress).counter(), arbCounterBefore + 1);
     }
 
     function testCounterIncrementMultipleChains() public {
@@ -88,19 +89,21 @@ contract CounterTest is DeliveryHelperTest {
         deployCounterApp(arbChainSlug);
         deployCounterApp(optChainSlug);
 
-        (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
+        (bytes32 arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId,
             counterGateway
         );
-        (address optCounter, address optCounterForwarder) = getOnChainAndForwarderAddresses(
+        address arbCounterAddress = fromBytes32Format(arbCounter);
+        (bytes32 optCounter, address optCounterForwarder) = getOnChainAndForwarderAddresses(
             optChainSlug,
             counterId,
             counterGateway
         );
+        address optCounterAddress = fromBytes32Format(optCounter);
 
-        uint256 arbCounterBefore = Counter(arbCounter).counter();
-        uint256 optCounterBefore = Counter(optCounter).counter();
+        uint256 arbCounterBefore = Counter(arbCounterAddress).counter();
+        uint256 optCounterBefore = Counter(optCounterAddress).counter();
 
         address[] memory instances = new address[](2);
         instances[0] = arbCounterForwarder;
@@ -112,8 +115,8 @@ contract CounterTest is DeliveryHelperTest {
         chains[1] = optChainSlug;
 
         executeRequest(new bytes[](0));
-        assertEq(Counter(arbCounter).counter(), arbCounterBefore + 1);
-        assertEq(Counter(optCounter).counter(), optCounterBefore + 1);
+        assertEq(Counter(arbCounterAddress).counter(), arbCounterBefore + 1);
+        assertEq(Counter(optCounterAddress).counter(), optCounterBefore + 1);
     }
 
     function testCounterReadMultipleChains() external {

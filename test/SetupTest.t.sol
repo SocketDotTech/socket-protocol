@@ -20,6 +20,7 @@ import {FeesPlug} from "../contracts/evmx/payload-delivery/FeesPlug.sol";
 import {SocketFeeManager} from "../contracts/protocol/SocketFeeManager.sol";
 import {ETH_ADDRESS} from "../contracts/utils/common/Constants.sol";
 import {ResolvedPromises, OnChainFees} from "../contracts/utils/common/Structs.sol";
+import {toBytes32Format, fromBytes32Format} from "../contracts/utils/common/Converters.sol";
 
 import "solady/utils/ERC1967Factory.sol";
 import "./apps/app-gateways/USDC.sol";
@@ -104,13 +105,17 @@ contract SetupTest is Test {
         hoax(watcherEOA);
         watcherPrecompileConfig.setOnChainContracts(
             chainSlug_,
-            address(socket),
-            address(contractFactoryPlug),
-            address(feesPlug)
+            toBytes32Format(address(socket)),
+            toBytes32Format(address(contractFactoryPlug)),
+            toBytes32Format(address(feesPlug))
         );
         SocketFeeManager socketFeeManager = new SocketFeeManager(owner, socketFees);
         hoax(watcherEOA);
-        watcherPrecompileConfig.setSwitchboard(chainSlug_, FAST, address(switchboard));
+        watcherPrecompileConfig.setSwitchboard(
+            chainSlug_,
+            FAST,
+            toBytes32Format(address(switchboard))
+        );
 
         return
             SocketContracts({
@@ -256,7 +261,7 @@ contract SetupTest is Test {
                     isLastPayload
                 );
             } else {
-                (, bytes memory returnData) = _uploadProofAndExecute(payloadParams);
+                (, bytes memory returnData) = _uploadProofAndExecute(payloadParams); //TODO:GW: test for solana apigateway and forwarder should reach this point
                 _resolveAndExpectFinalizeRequested(
                     payloadParams.payloadId,
                     payloadParams,
@@ -285,7 +290,8 @@ contract SetupTest is Test {
         return
             socketBatcher.attestAndExecute(
                 params,
-                payloadParams.switchboard,
+                // SocketBatcher is only used in EVM so we convert to address
+                fromBytes32Format(payloadParams.switchboard),
                 digest,
                 watcherProof,
                 transmitterSig,
@@ -309,7 +315,7 @@ contract SetupTest is Test {
     ) internal view returns (bytes memory, bytes32) {
         SocketContracts memory socketConfig = getSocketConfig(params_.payloadHeader.getChainSlug());
         DigestParams memory digestParams_ = DigestParams(
-            address(socketConfig.socket),
+            toBytes32Format(address(socketConfig.socket)),
             transmitterEOA,
             params_.payloadId,
             params_.deadline,
@@ -324,7 +330,7 @@ contract SetupTest is Test {
         bytes32 digest = watcherPrecompile.getDigest(digestParams_);
 
         bytes32 sigDigest = keccak256(
-            abi.encode(address(socketConfig.switchboard), socketConfig.chainSlug, digest)
+            abi.encodePacked(address(socketConfig.switchboard), socketConfig.chainSlug, digest)
         );
         bytes memory proof = _createSignature(sigDigest, watcherPrivateKey);
         return (proof, digest);
@@ -371,7 +377,7 @@ contract SetupTest is Test {
             gasLimit: payloadParams.gasLimit,
             value: payloadParams.value,
             payload: payloadParams.payload,
-            target: payloadParams.target,
+            target: fromBytes32Format(payloadParams.target),
             requestCount: payloadParams.payloadHeader.getRequestCount(),
             batchCount: payloadParams.payloadHeader.getBatchCount(),
             payloadCount: payloadParams.payloadHeader.getPayloadCount(),

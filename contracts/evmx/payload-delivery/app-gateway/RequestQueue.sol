@@ -176,7 +176,7 @@ abstract contract RequestQueue is DeliveryUtils {
 
     function _createDeployPayloadDetails(
         QueuePayloadParams memory queuePayloadParams_
-    ) internal returns (bytes memory payload, address target) {
+    ) internal returns (bytes memory payload, bytes32 target) {
         bytes32 salt = keccak256(
             abi.encode(queuePayloadParams_.appGateway, queuePayloadParams_.chainSlug, saltCounter++)
         );
@@ -204,7 +204,7 @@ abstract contract RequestQueue is DeliveryUtils {
         QueuePayloadParams memory queuePayloadParams_
     ) internal returns (PayloadSubmitParams memory) {
         bytes memory payload = queuePayloadParams_.payload;
-        address target = queuePayloadParams_.target;
+        bytes32 target = queuePayloadParams_.target;
         if (queuePayloadParams_.callType == CallType.DEPLOY) {
             (payload, target) = _createDeployPayloadDetails(queuePayloadParams_);
         }

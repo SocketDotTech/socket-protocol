@@ -26,6 +26,7 @@ export const logConfig = () => {
 export const getChains = () => {
   switch (mode) {
     case DeploymentMode.LOCAL:
+      // TODO:GW: for later (now mock all): return [ChainSlug.ARBITRUM_SEPOLIA, ChainSlug.OPTIMISM_SEPOLIA, ChainSlug.SOLANA_DEVNET];
       return [ChainSlug.ARBITRUM_SEPOLIA, ChainSlug.OPTIMISM_SEPOLIA];
     case DeploymentMode.DEV:
       return [ChainSlug.ARBITRUM_SEPOLIA, ChainSlug.OPTIMISM_SEPOLIA];

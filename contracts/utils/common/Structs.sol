@@ -82,20 +82,27 @@ struct UpdateLimitParams {
 }
 
 struct AppGatewayConfig {
-    address plug;
+    bytes32 plug;
     bytes32 appGatewayId;
-    address switchboard;
+    bytes32 switchboard;
     uint32 chainSlug;
 }
 // Plug config:
-struct PlugConfig {
+struct PlugConfigGeneric {
+    bytes32 appGatewayId;
+    bytes32 switchboard;
+}
+
+// Plug config:
+struct PlugConfigEvm {
     bytes32 appGatewayId;
     address switchboard;
 }
+
 //trigger:
 struct TriggerParams {
     bytes32 triggerId;
-    address plug;
+    bytes32 plug;
     bytes32 appGatewayId;
     uint32 chainSlug;
     bytes overrides;
@@ -146,15 +153,15 @@ struct UserCredits {
 
 // digest:
 struct DigestParams {
-    address socket;
-    address transmitter;
+    bytes32 socket;
+    address transmitter; // TODO:GW: this later will have to moved to bytes32 format as transmitter on solana side is bytes32 address
     bytes32 payloadId;
     uint256 deadline;
     CallType callType;
     uint256 gasLimit;
     uint256 value;
     bytes payload;
-    address target;
+    bytes32 target;
     bytes32 appGatewayId;
     bytes32 prevDigestsHash;
 }
@@ -166,8 +173,8 @@ struct QueuePayloadParams {
     IsPlug isPlug;
     WriteFinality writeFinality;
     address asyncPromise;
-    address switchboard;
-    address target;
+    bytes32 switchboard;
+    bytes32 target;
     address appGateway;
     uint256 gasLimit;
     uint256 value;
@@ -183,8 +190,8 @@ struct PayloadSubmitParams {
     Parallel isParallel;
     WriteFinality writeFinality;
     address asyncPromise;
-    address switchboard;
-    address target;
+    bytes32 switchboard;
+    bytes32 target;
     address appGateway;
     uint256 gasLimit;
     uint256 value;
@@ -204,8 +211,8 @@ struct PayloadParams {
     // Parallel isParallel;
     // WriteFinality writeFinality;
     address asyncPromise;
-    address switchboard;
-    address target;
+    bytes32 switchboard;
+    bytes32 target;
     address appGateway;
     bytes32 payloadId;
     bytes32 prevDigestsHash;
@@ -246,14 +253,15 @@ struct RequestMetadata {
 
 struct ExecuteParams {
     CallType callType;
+    // TODO:GW: what is the difference between requestCount and payloadCount?
     uint40 requestCount;
-    uint40 batchCount;
+    uint40 batchCount; // TODO:GW: when batching is used ?
     uint40 payloadCount;
     uint256 deadline;
     uint256 gasLimit;
     uint256 value;
     bytes32 prevDigestsHash;
-    address target;
+    address target; // TODO:GW: this is part of the digest (either change type here or add bytes32 conversion)
     bytes payload;
     bytes extraData;
 }
@@ -271,4 +279,26 @@ struct PayloadIdParams {
     uint40 payloadCount;
     uint32 chainSlug;
     address switchboard;
+}
+
+struct SolanaInstruction {
+    SolanaInstructionData data;
+    SolanaInstructionDataDescription description;
+}
+
+struct SolanaInstructionData {
+    bytes32 programId;
+    bytes32[] accounts;
+    bytes8 instructionDiscriminator;
+    // TODO:GW: in one of functionArguments is an array it might need a special handling and encoding
+    // for now we assume the all functionArguments are simple types (uint256, address, bool, etc.) not complex types (struct, array, etc.)
+    bytes[] functionArguments;
+}
+
+struct SolanaInstructionDataDescription {
+    // flags for accounts, we only need isWritable for now
+    // 0 bit - isWritable (0|1)
+    bytes1[] accountFlags;
+    // names for function argument types used later in data decoding in watcher and transmitter
+    string[] functionArgumentTypeNames;
 }

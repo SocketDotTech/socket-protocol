@@ -101,14 +101,15 @@ contract SuperTokenTest is DeliveryHelperTest {
     function testContractDeployment() public {
         _deploy(arbChainSlug, IAppGateway(appContracts.superTokenApp), contractIds);
 
-        (address onChain, address forwarder) = getOnChainAndForwarderAddresses(
+        (bytes32 onChain, address forwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             appContracts.superToken,
             IAppGateway(appContracts.superTokenApp)
         );
+        address onChainAddress = fromBytes32Format(onChain);
 
         assertEq(
-            SuperToken(onChain).name(),
+            SuperToken(onChainAddress).name(),
             "SUPER TOKEN",
             "OnChain SuperToken name should be SUPER TOKEN"
         );
@@ -122,7 +123,7 @@ contract SuperTokenTest is DeliveryHelperTest {
             onChain,
             "Forwarder SuperToken onChainAddress should be correct"
         );
-        assertEq(SuperToken(onChain).owner(), owner, "SuperToken owner should be correct");
+        assertEq(SuperToken(onChainAddress).owner(), owner, "SuperToken owner should be correct");
     }
 
     /**
@@ -145,20 +146,22 @@ contract SuperTokenTest is DeliveryHelperTest {
     function testTransfer() public {
         beforeTransfer();
 
-        (address onChainArb, address forwarderArb) = getOnChainAndForwarderAddresses(
+        (bytes32 onChainArb, address forwarderArb) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             appContracts.superToken,
             IAppGateway(appContracts.superTokenApp)
         );
+        address onChainArbAddress = fromBytes32Format(onChainArb);
 
-        (address onChainOpt, address forwarderOpt) = getOnChainAndForwarderAddresses(
+        (bytes32 onChainOpt, address forwarderOpt) = getOnChainAndForwarderAddresses(
             optChainSlug,
             appContracts.superToken,
             IAppGateway(appContracts.superTokenApp)
         );
+        address onChainOptAddress = fromBytes32Format(onChainOpt);
 
-        uint256 arbBalanceBefore = SuperToken(onChainArb).balanceOf(owner);
-        uint256 optBalanceBefore = SuperToken(onChainOpt).balanceOf(owner);
+        uint256 arbBalanceBefore = SuperToken(onChainArbAddress).balanceOf(owner);
+        uint256 optBalanceBefore = SuperToken(onChainOptAddress).balanceOf(owner);
 
         transferOrder = SuperTokenAppGateway.TransferOrder({
             srcToken: forwarderArb,
@@ -173,12 +176,12 @@ contract SuperTokenTest is DeliveryHelperTest {
         executeRequest(new bytes[](0));
 
         assertEq(
-            SuperToken(onChainArb).balanceOf(owner),
+            SuperToken(onChainArbAddress).balanceOf(owner),
             arbBalanceBefore - srcAmount,
             "Arb balance should be decreased by srcAmount"
         );
         assertEq(
-            SuperToken(onChainOpt).balanceOf(owner),
+            SuperToken(onChainOptAddress).balanceOf(owner),
             optBalanceBefore + srcAmount,
             "Opt balance should be increased by srcAmount"
         );

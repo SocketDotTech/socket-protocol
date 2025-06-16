@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 import {CounterAppGateway} from "./apps/app-gateways/counter/CounterAppGateway.sol";
 import {Counter} from "./apps/app-gateways/counter/Counter.sol";
 import "./DeliveryHelper.t.sol";
+import {toBytes32Format} from "../contracts/utils/common/Converters.sol";
 
 contract TriggerTest is DeliveryHelperTest {
     uint256 constant feesAmount = 0.01 ether;
@@ -40,10 +41,10 @@ contract TriggerTest is DeliveryHelperTest {
         // Setup gateway config for the watcher
         AppGatewayConfig[] memory gateways = new AppGatewayConfig[](1);
         gateways[0] = AppGatewayConfig({
-            plug: address(counter),
+            plug: toBytes32Format(address(counter)),
             chainSlug: arbChainSlug,
             appGatewayId: _encodeAppGatewayId(address(gateway)),
-            switchboard: address(arbConfig.switchboard)
+            switchboard: toBytes32Format(address(arbConfig.switchboard))
         });
 
         bytes memory watcherSignature = _createWatcherSignature(
@@ -54,7 +55,11 @@ contract TriggerTest is DeliveryHelperTest {
         watcherPrecompileConfig.setAppGateways(gateways, signatureNonce++, watcherSignature);
 
         hoax(watcherEOA);
-        watcherPrecompileConfig.setIsValidPlug(arbChainSlug, address(counter), true);
+        watcherPrecompileConfig.setIsValidPlug(
+            arbChainSlug,
+            toBytes32Format(address(counter)),
+            true
+        );
     }
 
     function testIncrementAfterTrigger() public {
@@ -92,7 +97,7 @@ contract TriggerTest is DeliveryHelperTest {
             triggerId: triggerId,
             chainSlug: arbChainSlug,
             appGatewayId: _encodeAppGatewayId(address(gateway)),
-            plug: address(counter),
+            plug: toBytes32Format(address(counter)),
             payload: payload,
             overrides: bytes("")
         });

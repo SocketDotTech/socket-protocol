@@ -1,5 +1,5 @@
 import { constants, Contract, ethers, Wallet } from "ethers";
-import { ChainAddressesObj, ChainSlug } from "../../src";
+import { ChainAddressesObj, ChainId, ChainSlug } from "../../src";
 import { chains, EVMX_CHAIN_ID, mode } from "../config";
 import {
   CORE_CONTRACTS,
@@ -11,8 +11,11 @@ import {
   getInstance,
   getSocketSigner,
   overrides,
+  toBytes32Format,
+  toBytes32FormatHexString,
 } from "../utils";
 import { getWatcherSigner, signWatcherMessage } from "../utils/sign";
+import { mockForwarderSolanaOnChainAddress32Bytes } from "./1.deploy";
 const plugs = [CORE_CONTRACTS.ContractFactoryPlug, CORE_CONTRACTS.FeesPlug];
 export type AppGatewayConfig = {
   plug: string;
@@ -142,14 +145,18 @@ export const connectPlugsOnSocket = async () => {
 export const isConfigSetOnEVMx = async (
   watcher: Contract,
   chain: number,
-  plug: string,
+  plugHexStringBytes32: string,
   appGatewayId: string,
-  switchboard: string
+  switchboardHexStringBytes32: string
 ) => {
-  const plugConfigRegistered = await watcher.getPlugConfigs(chain, plug);
+  const plugConfigRegistered = await watcher.getPlugConfigs(
+    chain,
+    toBytes32Format(plugHexStringBytes32)
+  );
   return (
     plugConfigRegistered[0].toLowerCase() === appGatewayId?.toLowerCase() &&
-    plugConfigRegistered[1].toLowerCase() === switchboard.toLowerCase()
+    plugConfigRegistered[1].toLowerCase() ===
+      switchboardHexStringBytes32.toLowerCase()
   );
 };
 
@@ -179,30 +186,55 @@ export const updateConfigEVMx = async () => {
         for (const plugContract of plugs) {
           const appGatewayId = getAppGatewayId(plugContract, addresses);
           const switchboard = addr[CORE_CONTRACTS.FastSwitchboard];
+          const plugAddress = addr[plugContract];
           checkIfAddressExists(switchboard, "Switchboard");
           checkIfAppGatewayIdExists(appGatewayId, "AppGatewayId");
+          const plugAddressHexStringBytes32 = toBytes32FormatHexString(plugAddress);
+          const switchboardHexStringBytes32 = toBytes32FormatHexString(switchboard);
 
           if (
             await isConfigSetOnEVMx(
               watcherPrecompileConfig,
               chain,
-              addr[plugContract],
+              plugAddressHexStringBytes32,
               appGatewayId,
-              switchboard
+              switchboardHexStringBytes32
             )
           ) {
             console.log(`Config already set on ${chain} for ${plugContract}`);
             continue;
           }
           appConfigs.push({
-            plug: addr[plugContract],
-            appGatewayId: appGatewayId,
-            switchboard: addr[CORE_CONTRACTS.FastSwitchboard],
-            chainSlug: chain,
+            plug: plugAddressHexStringBytes32,  // mock address from ForwaderSolana on-chain address
+            appGatewayId: appGatewayId,  // genrate as above
+            switchboard: switchboardHexStringBytes32, // mock it manually 
+            chainSlug: chain,   // use Solana chain slug
           });
         }
+        
       })
     );
+    //TODO:GW: This is a temporary workaround for th Solana POC
+    //---
+    const appGatewayAddress = process.env.APP_GATEWAY;
+    if (!appGatewayAddress) throw new Error("APP_GATEWAY is not set");
+    const solanaSwitchboard = (process.env.SWITCHBOARD_SOLANA!).slice(2); // remove 0x prefix for Buffer from conversion
+    if (!solanaSwitchboard) throw new Error("SWITCHBOARD_SOLANA is not set");
+
+    const solanaSwitchboardBytes32 = Buffer.from(solanaSwitchboard, "hex");
+    const solanaAppGatewayId = ethers.utils.hexZeroPad(appGatewayAddress, 32);
+
+    console.log("SolanaAppGatewayId: ", solanaAppGatewayId);
+    console.log("SolanaSwitchboardBytes32: ", solanaSwitchboardBytes32.toString("hex"));
+
+    appConfigs.push({
+      plug: "0x" + mockForwarderSolanaOnChainAddress32Bytes.toString("hex"),
+      appGatewayId: solanaAppGatewayId,
+      // switchboard: "0x" + mockSwitchboardSolanaAddress32Bytes.toString("hex"),
+      switchboard: "0x" + solanaSwitchboardBytes32.toString("hex"),
+      chainSlug: ChainSlug.SOLANA_DEVNET,
+    });
+    //---
 
     // Update configs if any changes needed
     if (appConfigs.length > 0) {
@@ -210,7 +242,7 @@ export const updateConfigEVMx = async () => {
       const encodedMessage = ethers.utils.defaultAbiCoder.encode(
         [
           "bytes4",
-          "tuple(address plug,bytes32 appGatewayId,address switchboard,uint32 chainSlug)[]",
+          "tuple(bytes32 plug,bytes32 appGatewayId,bytes32 switchboard,uint32 chainSlug)[]",
         ],
         [
           watcherPrecompileConfig.interface.getSighash("setAppGateways"),

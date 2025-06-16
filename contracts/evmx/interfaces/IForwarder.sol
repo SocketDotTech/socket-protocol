@@ -6,7 +6,7 @@ pragma solidity ^0.8.21;
 interface IForwarder {
     /// @notice Returns the on-chain address of the contract being referenced
     /// @return The on-chain address
-    function getOnChainAddress() external view returns (address);
+    function getOnChainAddress() external view returns (bytes32);
 
     /// @notice Returns the chain slug of the on chain contract
     /// @return The chain slug

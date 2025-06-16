@@ -5,10 +5,11 @@ import "../../contracts/evmx/interfaces/IAppGateway.sol";
 import "../../contracts/evmx/interfaces/IWatcherPrecompile.sol";
 import "../../contracts/evmx/interfaces/IPromise.sol";
 
-import {TimeoutRequest, TriggerParams, PlugConfig, ResolvedPromises, AppGatewayConfig} from "../../contracts/utils/common/Structs.sol";
+import {TimeoutRequest, TriggerParams, PlugConfigGeneric, ResolvedPromises, AppGatewayConfig} from "../../contracts/utils/common/Structs.sol";
 import {QUERY, FINALIZE, SCHEDULE} from "../../contracts/utils/common/Constants.sol";
 import {TimeoutDelayTooLarge, TimeoutAlreadyResolved, ResolvingTimeoutTooEarly, CallFailed, AppGatewayAlreadyCalled} from "../../contracts/utils/common/Errors.sol";
 import "solady/utils/ERC1967Factory.sol";
+import {fromBytes32Format} from "../../contracts/utils/common/Converters.sol";
 
 /// @title WatcherPrecompile
 /// @notice Contract that handles payload verification, execution and app configurations
@@ -20,7 +21,7 @@ contract MockWatcherPrecompile {
     /// @dev timeoutId => TimeoutRequest struct
     mapping(bytes32 => TimeoutRequest) public timeoutRequests;
 
-    mapping(uint32 => mapping(address => PlugConfig)) internal _plugConfigs;
+    mapping(uint32 => mapping(bytes32 => PlugConfigGeneric)) internal _plugConfigs;
 
     /// @notice Error thrown when an invalid chain slug is provided
     error InvalidChainSlug();
@@ -159,17 +160,19 @@ contract MockWatcherPrecompile {
     /// @dev Reverts if chainSlug is 0
     function encodePayloadId(
         uint32 chainSlug_,
-        address plug_,
+        bytes32 plug_,
         uint256 counter_
     ) internal view returns (bytes32) {
         if (chainSlug_ == 0) revert InvalidChainSlug();
-        (, address switchboard) = getPlugConfigs(chainSlug_, plug_);
+        (, bytes32 switchboard) = getPlugConfigs(chainSlug_, plug_);
         // Encode payload ID by bit-shifting and combining:
         // chainSlug (32 bits) | switchboard address (160 bits) | counter (64 bits)
 
+        address switchboardAsAddress = fromBytes32Format(switchboard);
         return
             bytes32(
-                (uint256(chainSlug_) << 224) | (uint256(uint160(switchboard)) << 64) | counter_
+                (uint256(chainSlug_) << 224) | (uint256(uint160(switchboardAsAddress)) << 64) |
+                counter_
             );
     }
 
@@ -185,8 +188,8 @@ contract MockWatcherPrecompile {
     /// @dev Returns zero addresses if configuration doesn't exist
     function getPlugConfigs(
         uint32 chainSlug_,
-        address plug_
-    ) public view returns (bytes32, address) {
+        bytes32 plug_
+    ) public view returns (bytes32, bytes32) {
         return (
             _plugConfigs[chainSlug_][plug_].appGatewayId,
             _plugConfigs[chainSlug_][plug_].switchboard

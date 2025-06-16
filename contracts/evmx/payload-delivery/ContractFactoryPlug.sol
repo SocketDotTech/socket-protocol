@@ -93,6 +93,7 @@ contract ContractFactoryPlug is PlugBase, AccessControl, IContractFactoryPlug {
         return address(uint160(uint256(hash)));
     }
 
+    // This is only for Evm contracts, so we keep socket and switchboard as address
     function connectSocket(
         bytes32 appGatewayId_,
         address socket_,

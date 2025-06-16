@@ -445,7 +445,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         return transmitterCredits > watcherFees ? transmitterCredits - watcherFees : 0;
     }
 
-    function _getSwitchboard(uint32 chainSlug_) internal view returns (address) {
+    function _getSwitchboard(uint32 chainSlug_) internal view returns (bytes32) {
         return watcherPrecompile__().watcherPrecompileConfig__().switchboards(chainSlug_, sbType);
     }
 
@@ -483,7 +483,7 @@ contract FeesManager is FeesManagerStorage, Initializable, Ownable, AddressResol
         deliveryHelper__().queue(queuePayloadParams);
     }
 
-    function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (address) {
+    function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (bytes32) {
         return watcherPrecompileConfig().feesPlug(chainSlug_);
     }
 

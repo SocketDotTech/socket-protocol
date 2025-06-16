@@ -9,7 +9,8 @@ import "./interfaces/IForwarder.sol";
 import {AddressResolverUtil} from "./AddressResolverUtil.sol";
 import {AsyncModifierNotUsed, NoAsyncPromiseFound, PromiseCallerMismatch, RequestCountMismatch, DeliveryHelperNotSet} from "../utils/common/Errors.sol";
 import "solady/utils/Initializable.sol";
-
+import {SolanaInstruction} from "../utils/common/Structs.sol";
+import {CHAIN_SLUG_SOLANA_MAINNET, CHAIN_SLUG_SOLANA_DEVNET} from "../utils/common/Constants.sol";
 /// @title Forwarder Storage
 /// @notice Storage contract for the Forwarder contract that contains the state variables
 abstract contract ForwarderStorage is IForwarder {
@@ -19,7 +20,7 @@ abstract contract ForwarderStorage is IForwarder {
     // slot 50
     /// @notice chain slug on which the contract is deployed
     uint32 public chainSlug;
-    /// @notice on-chain address associated with this forwarder
+    /// @notice Solana on-chain address associated with this forwarder
     bytes32 public onChainAddress;
 
     // slot 51
@@ -33,6 +34,7 @@ abstract contract ForwarderStorage is IForwarder {
     uint40 public latestRequestCount;
 
     // slots [53-102] reserved for gap
+    // TODO:remove-after-review: - 12 for using bytes32 onChainAddress - is there any mainnet deployment which storage could be affected?
     uint256[50] _gap_after;
 
     // slots 103-154 (51) reserved for addr resolver util
@@ -40,21 +42,28 @@ abstract contract ForwarderStorage is IForwarder {
 
 /// @title Forwarder Contract
 /// @notice This contract acts as a forwarder for async calls to the on-chain contracts.
-contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
+contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil {
+
+    error InvalidSolanaChainSlug();
+
     constructor() {
         _disableInitializers(); // disable for implementation
     }
 
     /// @notice Initializer to replace constructor for upgradeable contracts
     /// @param chainSlug_ chain slug on which the contract is deployed
-    /// @param onChainAddress_ on-chain address associated with this forwarder
+    //// @param onChainAddress_ on-chain address associated with this forwarder
     /// @param addressResolver_ address resolver contract
     function initialize(
         uint32 chainSlug_,
         bytes32 onChainAddress_,
         address addressResolver_
     ) public initializer {
-        chainSlug = chainSlug_;
+        if (chainSlug_ == CHAIN_SLUG_SOLANA_MAINNET || chainSlug_ == CHAIN_SLUG_SOLANA_DEVNET) {
+            chainSlug = chainSlug_;
+        } else {
+            revert InvalidSolanaChainSlug();
+        }
         onChainAddress = onChainAddress_;
         _setAddressResolver(addressResolver_);
     }
@@ -65,17 +74,18 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
     /// @param selector_ The function selector for callback
     /// @param data_ The data to be passed to callback
     /// @return promise_ The address of the new promise
-    function then(bytes4 selector_, bytes memory data_) external returns (address promise_) {
-        if (latestAsyncPromise == address(0)) revert NoAsyncPromiseFound();
-        if (latestPromiseCaller != msg.sender) revert PromiseCallerMismatch();
-        if (latestRequestCount != watcherPrecompile__().nextRequestCount())
-            revert RequestCountMismatch();
+    // TODO:GW: uncommenting this is making the deployment fail silently
+    // function then(bytes4 selector_, bytes memory data_) external returns (address promise_) {
+    //     if (latestAsyncPromise == address(0)) revert NoAsyncPromiseFound();
+    //     if (latestPromiseCaller != msg.sender) revert PromiseCallerMismatch();
+    //     if (latestRequestCount != watcherPrecompile__().nextRequestCount())
+    //         revert RequestCountMismatch();
 
-        address latestAsyncPromise_ = latestAsyncPromise;
-        latestAsyncPromise = address(0);
+    //     address latestAsyncPromise_ = latestAsyncPromise;
+    //     latestAsyncPromise = address(0);
 
-        promise_ = IPromise(latestAsyncPromise_).then(selector_, data_);
-    }
+    //     promise_ = IPromise(latestAsyncPromise_).then(selector_, data_);
+    // }
 
     /// @notice Returns the on-chain address associated with this forwarder.
     /// @return The on-chain address.
@@ -91,7 +101,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
 
     /// @notice Fallback function to process the contract calls to onChainAddress
     /// @dev It queues the calls in the middleware and deploys the promise contract
-    fallback() external {
+    function callSolana(SolanaInstruction memory solanaInstruction, bytes32 switchboardSolana) external {
         if (address(deliveryHelper__()) == address(0)) {
             revert DeliveryHelperNotSet();
         }
@@ -118,8 +128,11 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
             bytes32 sbType
         ) = IAppGateway(msg.sender).getOverrideParams();
 
+        // TODO:GW: after POC make it work like below
         // get the switchboard address from the watcher precompile config
-        bytes32 switchboard = watcherPrecompileConfig().switchboards(chainSlug, sbType);
+        // address switchboard = watcherPrecompileConfig().switchboards(chainSlug, sbType);
+
+        bytes memory solanaPayload = abi.encode(solanaInstruction);
 
         // Queue the call in the middleware.
         deliveryHelper__().queue(
@@ -130,13 +143,13 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
                 isPlug: IsPlug.NO,
                 writeFinality: writeFinality,
                 asyncPromise: latestAsyncPromise,
-                switchboard: switchboard,
+                switchboard: switchboardSolana,
                 target: onChainAddress,
                 appGateway: msg.sender,
                 gasLimit: gasLimit,
                 value: value,
                 readAt: readAt,
-                payload: msg.data,
+                payload: solanaPayload,
                 initCallData: bytes("")
             })
         );

@@ -17,6 +17,8 @@ import {
   getSocketSigner,
   getWatcherSigner,
   storeAddresses,
+  toBytes32Format,
+  toBytes32FormatHexString,
 } from "../utils";
 
 export const main = async () => {
@@ -91,9 +93,9 @@ async function setOnchainContracts(chain: number, addresses) {
       .connect(signer)
       .setOnChainContracts(
         chain,
-        socketAddress,
-        contractFactoryPlugAddress,
-        feesPlugAddress
+        toBytes32Format(socketAddress),
+        toBytes32Format(contractFactoryPlugAddress),
+        toBytes32Format(feesPlugAddress)
       );
 
     console.log(`Setting onchain contracts for ${chain}, txHash: `, tx.hash);
@@ -104,7 +106,7 @@ async function setOnchainContracts(chain: number, addresses) {
   if (currentSbAddress.toLowerCase() !== sbAddress.toLowerCase()) {
     const tx = await watcherPrecompileConfig
       .connect(signer)
-      .setSwitchboard(chain, FAST_SWITCHBOARD_TYPE, sbAddress);
+      .setSwitchboard(chain, FAST_SWITCHBOARD_TYPE, toBytes32Format(sbAddress));
 
     console.log(`Setting switchboard for ${chain}, txHash: `, tx.hash);
     await tx.wait();
