@@ -1,57 +1,21 @@
 import { config as dotenvConfig } from "dotenv";
-
 dotenvConfig();
 
-import { formatEther } from "ethers/lib/utils";
+import { formatUnits } from "ethers/lib/utils";
 import { Contract, ethers } from "ethers";
-import { mainnetChains, mode, testnetChains } from "../config";
+import { EVMX_CHAIN_ID, mainnetChains, mode, testnetChains } from "../config";
 import { getAddresses, getSocketSigner, overrides } from "../utils";
-import { DeploymentAddresses } from "../constants";
-import { ChainAddressesObj, ChainSlug } from "../../src";
+import { DeploymentAddresses, getFeeTokens } from "../constants";
+import { ChainAddressesObj } from "../../src";
 
-/**
- * Usable flags
- * --sendtx         Send rescue tx along with checking balance.
- *                  Default is only check balance.
- *                  Eg. npx --sendtx ts-node scripts/admin/rescueFunds.ts
- *
- * --amount         Specify amount to rescue, can be used only with --sendtx
- *                  If this much is not available then less is rescued.
- *                  Full amount is rescued if not mentioned.
- *                  Eg. npx --chains=2999 --sendtx --amount=0.2 ts-node scripts/admin/rescueFunds.ts
- *
- * --chains         Run only for specified chains.
- *                  Default is all chains.
- *                  Eg. npx --chains=10,2999 ts-node scripts/admin/rescueFunds.ts
- *
- * --testnets       Run for testnets.
- *                  Default is false.
- */
+const rescueConfig = {
+  sendTx: false,
+  chains: [...mainnetChains, ...testnetChains],
+};
 
-const addresses: DeploymentAddresses = getAddresses(
-  mode
-) as unknown as DeploymentAddresses;
+const activeChainSlugs: string[] = rescueConfig.chains.map((c) => c.toString());
+const sendTx = rescueConfig.sendTx;
 
-const testnets = process.env.npm_config_testnets == "true";
-let activeChainSlugs: string[];
-if (testnets)
-  activeChainSlugs = Object.keys(addresses).filter((c) =>
-    testnetChains.includes(parseInt(c) as ChainSlug)
-  );
-else
-  activeChainSlugs = Object.keys(addresses).filter((c) =>
-    mainnetChains.includes(parseInt(c) as ChainSlug)
-  );
-
-const sendTx = process.env.npm_config_sendtx == "true";
-const filterChains = process.env.npm_config_chains
-  ? process.env.npm_config_chains.split(",")
-  : activeChainSlugs;
-const maxRescueAmount = ethers.utils.parseEther(
-  process.env.npm_config_amount || "0"
-);
-
-const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const rescueFundsABI = [
   {
     inputs: [
@@ -78,10 +42,30 @@ const rescueFundsABI = [
   },
 ];
 
+const tokenABI = [
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "account",
+        type: "address",
+      },
+    ],
+    name: "balanceOf",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+];
+
 const createContractAddrArray = (chainSlug: number): string[] => {
+  const addresses: DeploymentAddresses = getAddresses(
+    mode
+  ) as unknown as DeploymentAddresses;
+
   let chainAddresses = addresses[chainSlug] as unknown as ChainAddressesObj;
   if (!chainAddresses) {
-    console.log("addresses not found for ", chainSlug, chainAddresses);
+    console.log("addresses not found for ", chainSlug);
     return [];
   }
 
@@ -99,61 +83,58 @@ const createContractAddrArray = (chainSlug: number): string[] => {
 export const main = async () => {
   // parallelize chains
   await Promise.all(
-    activeChainSlugs
-      .filter((c) => filterChains.includes(c))
-      .map(async (chainSlug) => {
-        const signer = await getSocketSigner(parseInt(chainSlug));
-        const contractAddr = createContractAddrArray(parseInt(chainSlug));
+    activeChainSlugs.map(async (chainSlug) => {
+      if (chainSlug === EVMX_CHAIN_ID.toString()) return;
+      const signer = await getSocketSigner(parseInt(chainSlug));
+      const contractAddr = createContractAddrArray(parseInt(chainSlug));
+      if (contractAddr.length === 0) return;
 
-        for (let index = 0; index < contractAddr.length; index++) {
-          const rescueableAmount = await signer.provider.getBalance(
+      // rescue first token
+      const tokenAddr = getFeeTokens(parseInt(chainSlug))[0];
+      if (!tokenAddr) return;
+      const tokenInstance: Contract = new ethers.Contract(
+        tokenAddr,
+        tokenABI,
+        signer
+      );
+
+      for (let index = 0; index < contractAddr.length; index++) {
+        const rescueAmount = await tokenInstance.balanceOf(contractAddr[index]);
+
+        console.log(
+          `rescueAmount on ${
             contractAddr[index]
-          );
-          const fundingAmount = await signer.provider.getBalance(
-            "0x0240c3151FE3e5bdBB1894F59C5Ed9fE71ba0a5E"
-          );
-          console.log(
-            `rescueableAmount on ${chainSlug} : ${formatEther(
-              rescueableAmount
-            )}`
-          );
-          console.log(
-            `fundingAmount on ${chainSlug}: ${formatEther(fundingAmount)}`
-          );
+          } on ${chainSlug} : ${formatUnits(rescueAmount.toString(), 6)}`
+        );
+        if (rescueAmount.toString() === "0") continue;
+        const contractInstance: Contract = new ethers.Contract(
+          contractAddr[index],
+          rescueFundsABI,
+          signer
+        );
 
-          const rescueAmount =
-            maxRescueAmount.eq(0) || rescueableAmount.lt(maxRescueAmount)
-              ? rescueableAmount
-              : maxRescueAmount;
-          if (rescueAmount.toString() === "0") continue;
+        if (sendTx) {
+          console.log("rescuing funds for: ", chainSlug);
+          try {
+            const tx = await contractInstance.rescueFunds(
+              tokenAddr,
+              signer.address,
+              rescueAmount,
+              { ...(await overrides(parseInt(chainSlug))) }
+            );
+            console.log(
+              `Rescuing ${rescueAmount} from ${contractAddr[index]} on ${chainSlug}: ${tx.hash}`
+            );
 
-          const contractInstance: Contract = new ethers.Contract(
-            contractAddr[index],
-            rescueFundsABI,
-            signer
-          );
-
-          if (sendTx) {
-            try {
-              const tx = await contractInstance.rescueFunds(
-                ETH_ADDRESS,
-                signer.address,
-                rescueAmount,
-                { ...(await overrides(parseInt(chainSlug))) }
-              );
-              console.log(
-                `Rescuing ${rescueAmount} from ${contractAddr[index]} on ${chainSlug}: ${tx.hash}`
-              );
-
-              await tx.wait();
-            } catch (e) {
-              console.log(
-                `Error while rescuing ${rescueAmount} from ${contractAddr[index]} on ${chainSlug}`
-              );
-            }
+            await tx.wait();
+          } catch (e) {
+            console.log(
+              `Error while rescuing ${rescueAmount} from ${contractAddr[index]} on ${chainSlug}`
+            );
           }
         }
-      })
+      }
+    })
   );
 };
 

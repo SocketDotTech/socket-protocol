@@ -34,3 +34,4 @@ deployContracts.sh
 images/
 setupInfraContracts.sh
 testScript.sh
+trace.sh
