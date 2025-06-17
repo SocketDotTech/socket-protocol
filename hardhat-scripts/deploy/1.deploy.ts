@@ -13,6 +13,7 @@ import {
   logConfig,
   MAX_RE_AUCTION_COUNT,
   MAX_SCHEDULE_DELAY_SECONDS,
+  MESSAGE_TRANSMITTER,
   mode,
   READ_FEES,
   SCHEDULE_CALLBACK_FEES,
@@ -321,6 +322,21 @@ const deploySocketContracts = async () => {
           deployUtils
         );
         deployUtils.addresses[contractName] = sb.address;
+
+        contractName = Contracts.CCTPSwitchboard;
+        const cctpSwitchboard: Contract = await getOrDeploy(
+          contractName,
+          contractName,
+          `contracts/protocol/switchboard/${contractName}.sol`,
+          [
+            chain as ChainSlug,
+            socket.address,
+            socketOwner,
+            MESSAGE_TRANSMITTER[chain as ChainSlug],
+          ],
+          deployUtils
+        );
+        deployUtils.addresses[contractName] = cctpSwitchboard.address;
 
         if (getFeesPlugChains().includes(chain as ChainSlug)) {
           contractName = Contracts.FeesPlug;

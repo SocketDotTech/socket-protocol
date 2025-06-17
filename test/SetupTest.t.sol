@@ -1039,7 +1039,9 @@ contract WatcherSetup is AuctionSetup {
         return requestHandler.getBatchPayloadIds(currentBatchCount + 1);
     }
 
-    function _getRemoteChainSlugs(bytes32[] memory payloadIds) internal view returns (uint32[] memory) {
+    function _getRemoteChainSlugs(
+        bytes32[] memory payloadIds
+    ) internal view returns (uint32[] memory) {
         uint32[] memory chainSlugs = new uint32[](payloadIds.length);
         for (uint i = 0; i < payloadIds.length; i++) {
             PayloadParams memory params = requestHandler.getPayload(payloadIds[i]);

@@ -34,7 +34,6 @@ contract CCTPSwitchboard is FastSwitchboard, IMessageHandler {
     error InvalidDomain();
     error InvalidSender();
     error OnlyMessageTransmitter();
-    event Attested(bytes32 payloadId, bytes32 digest, address watcher);
 
     constructor(
         uint32 chainSlug_,
@@ -56,7 +55,7 @@ contract CCTPSwitchboard is FastSwitchboard, IMessageHandler {
 
         isAttested[digest_] = true;
         payloadIdToDigest[payloadId_] = digest_;
-        emit Attested(payloadId_, digest_, watcher);
+        emit Attested(payloadId_, watcher);
     }
 
     function allowPacket(bytes32 digest_, bytes32 payloadId_) external view returns (bool) {

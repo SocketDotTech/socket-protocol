@@ -222,6 +222,22 @@
 | `TriggerFeesSet`             | `(triggerFees: uint256)`                 | `0x7df3967b7c8727af5ac0ee9825d88aafeb899d769bc428b91f8967fa0b623084` |
 | `TriggerSucceeded`           | `(triggerId: bytes32)`                   | `0x92d20fbcbf31370b8218e10ed00c5aad0e689022da30a08905ba5ced053219eb` |
 
+## ICCTPSwitchboard
+
+| Event | Arguments | Topic |
+| ----- | --------- | ----- |
+
+## CCTPSwitchboard
+
+| Event                        | Arguments                                 | Topic                                                                |
+| ---------------------------- | ----------------------------------------- | -------------------------------------------------------------------- |
+| `Attested`                   | `(payloadId_: bytes32, watcher: address)` | `0x3d83c7bc55c269e0bc853ddc0d7b9fca30216ecc43779acb4e36b7e0ad1c71e4` |
+| `OwnershipHandoverCanceled`  | `(pendingOwner: address)`                 | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
+| `OwnershipHandoverRequested` | `(pendingOwner: address)`                 | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
+| `OwnershipTransferred`       | `(oldOwner: address, newOwner: address)`  | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
+| `RoleGranted`                | `(role: bytes32, grantee: address)`       | `0x2ae6a113c0ed5b78a53413ffbb7679881f11145ccfba4fb92e863dfcd5a1d2f3` |
+| `RoleRevoked`                | `(role: bytes32, revokee: address)`       | `0x155aaafb6329a2098580462df33ec4b7441b19729b9601c5fc17ae1cf99a8a52` |
+
 ## FastSwitchboard
 
 | Event                        | Arguments                                 | Topic                                                                |

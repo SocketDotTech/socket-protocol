@@ -3,8 +3,17 @@ dotenvConfig();
 
 import { Contract, Signer, Wallet } from "ethers";
 import { ChainAddressesObj, ChainSlug, Contracts } from "../../src";
-import { chains, EVMX_CHAIN_ID, MAX_MSG_VALUE_LIMIT, mode } from "../config";
 import {
+  CCTP_DOMAINS,
+  chains,
+  EVMX_CHAIN_ID,
+  mainnetChains,
+  MAX_MSG_VALUE_LIMIT,
+  mode,
+  testnetChains,
+} from "../config";
+import {
+  CCTP_SWITCHBOARD_TYPE,
   DeploymentAddresses,
   FAST_SWITCHBOARD_TYPE,
   getFeeTokens,
@@ -48,6 +57,13 @@ export const configureChains = async (addresses: DeploymentAddresses) => {
       socketContract
     );
 
+    await registerSb(
+      chain,
+      chainAddresses[Contracts.CCTPSwitchboard],
+      signer,
+      socketContract
+    );
+
     if (chainAddresses[Contracts.FeesPlug]) {
       await whitelistToken(chain, chainAddresses[Contracts.FeesPlug], signer);
     }
@@ -55,6 +71,13 @@ export const configureChains = async (addresses: DeploymentAddresses) => {
     await setMaxMsgValueLimit(chain);
 
     await setOnchainContracts(chain, addresses);
+
+    await addRemoteEndpointsToCCTPSwitchboard(
+      chain,
+      addresses,
+      signer,
+      socketContract
+    );
   }
 };
 
@@ -94,6 +117,16 @@ async function setOnchainContracts(
   await updateContractSettings(
     EVMX_CHAIN_ID,
     Contracts.Configurations,
+    "switchboards",
+    [chain, CCTP_SWITCHBOARD_TYPE],
+    chainAddresses[Contracts.CCTPSwitchboard],
+    "setSwitchboard",
+    [chain, CCTP_SWITCHBOARD_TYPE, chainAddresses[Contracts.CCTPSwitchboard]],
+    signer
+  );
+  await updateContractSettings(
+    EVMX_CHAIN_ID,
+    Contracts.Configurations,
     "sockets",
     [chain],
     chainAddresses[Contracts.Socket],
@@ -125,6 +158,66 @@ async function setOnchainContracts(
     signer
   );
 }
+
+const addRemoteEndpointsToCCTPSwitchboard = async (
+  chain: number,
+  addresses: DeploymentAddresses,
+  signer: Wallet,
+  socket: Contract
+) => {
+  try {
+    console.log("Adding remote endpoints to CCTP switchboard");
+    const chainAddresses = addresses[chain] as ChainAddressesObj;
+    const sbAddress = chainAddresses[Contracts.CCTPSwitchboard];
+    const switchboard = (
+      await getInstance(Contracts.CCTPSwitchboard, sbAddress)
+    ).connect(signer);
+    const remoteChainSlugs = getRemoteChainSlugs(chain);
+    console.log(chain, " remoteChainSlugs: ", remoteChainSlugs);
+
+    for (const remoteChainSlug of remoteChainSlugs) {
+      const remoteSwitchboardAddress =
+        addresses[remoteChainSlug]?.[Contracts.CCTPSwitchboard];
+      const currentRemoteEndpoint = await switchboard.remoteEndpoints(
+        remoteChainSlug
+      );
+      if (currentRemoteEndpoint.remoteAddress == remoteSwitchboardAddress) {
+        console.log(`Remote endpoint ${remoteChainSlug} already exists`);
+        continue;
+      }
+
+      const registerTx = await switchboard.addRemoteEndpoint(
+        remoteChainSlug,
+        remoteChainSlug,
+        remoteSwitchboardAddress,
+        CCTP_DOMAINS[remoteChainSlug],
+        {
+          ...(await overrides(chain)),
+        }
+      );
+      console.log(
+        `Adding remote endpoint ${remoteChainSlug} to ${sbAddress}: ${registerTx.hash}`
+      );
+      await registerTx.wait();
+    }
+  } catch (error) {
+    throw error;
+  }
+};
+
+const getRemoteChainSlugs = (chain: number) => {
+  if (testnetChains.includes(chain)) {
+    return chains.filter(
+      (c) => c !== chain && testnetChains.includes(c as ChainSlug)
+    );
+  }
+  if (mainnetChains.includes(chain)) {
+    return chains.filter(
+      (c) => c !== chain && mainnetChains.includes(c as ChainSlug)
+    );
+  }
+  return chains.filter((c) => c !== chain);
+};
 
 const registerSb = async (
   chain: number,

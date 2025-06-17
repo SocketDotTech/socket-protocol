@@ -53,8 +53,8 @@ contract CCTPMessageTransmitter is IMessageTransmitter {
     ) external override returns (bool) {
         (
             uint32 sourceDomain,
-            bytes32 sender,
-            , // destinationDomain
+            bytes32 sender, // destinationDomain
+            ,
             bytes32 recipient,
             bytes memory messageBody
         ) = abi.decode(message, (uint32, bytes32, uint32, bytes32, bytes));

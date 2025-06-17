@@ -116,3 +116,18 @@ export const UPGRADE_VERSION = 1;
 // Transmitter constants
 export const TRANSMITTER_CREDIT_THRESHOLD = ethers.utils.parseEther("100"); // 100 ETH threshold
 export const TRANSMITTER_NATIVE_THRESHOLD = ethers.utils.parseEther("100"); // 100 ETH threshold
+
+// CCTP
+export const MESSAGE_TRANSMITTER: {
+  [chainSlug: number]: string;
+} = {
+  421614: "0xaCF1ceeF35caAc005e15888dDb8A3515C41B4872",
+  11155420: "0x7865fAfC2db2093669d92c0F33AeEF291086BEFD",
+};
+
+export const CCTP_DOMAINS: {
+  [chainSlug: number]: number;
+} = {
+  421614: 3,
+  11155420: 2,
+};

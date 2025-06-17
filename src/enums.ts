@@ -50,6 +50,7 @@ export enum Contracts {
   FeesPlug = "FeesPlug",
   ContractFactoryPlug = "ContractFactoryPlug",
   FastSwitchboard = "FastSwitchboard",
+  CCTPSwitchboard = "CCTPSwitchboard",
   SocketBatcher = "SocketBatcher",
   SocketFeeManager = "SocketFeeManager",
   AddressResolver = "AddressResolver",
