@@ -64,7 +64,7 @@ contract DeployForwarder is IDeployForwarder, Initializable, AddressResolverUtil
         queueParams.switchboardType = deployerSwitchboardType;
         queueParams.transaction = Transaction({
             chainSlug: chainSlug_,
-            target: address(0),
+            target: bytes32(0),
             payload: _createPayload(
                 isPlug_,
                 plugSwitchboardType,

@@ -51,19 +51,30 @@ struct AppGatewayApprovals {
 
 //// STRUCTS ////
 struct AppGatewayConfig {
-    PlugConfig plugConfig;
-    address plug;
+    PlugConfigGeneric plugConfig;
+    bytes32 plug;
     uint32 chainSlug;
 }
 // Plug config:
-struct PlugConfig {
+// struct PlugConfig {
+//     bytes32 appGatewayId;
+//     address switchboard;
+// }
+struct PlugConfigGeneric {
+    bytes32 appGatewayId;
+    bytes32 switchboard;
+}
+
+// Plug config:
+struct PlugConfigEvm {
     bytes32 appGatewayId;
     address switchboard;
 }
+
 //trigger:
 struct TriggerParams {
     bytes32 triggerId;
-    address plug;
+    bytes32 plug;
     bytes32 appGatewayId;
     uint32 chainSlug;
     bytes overrides;
@@ -113,7 +124,7 @@ struct CreateRequestResult {
 
 struct Bid {
     uint256 fee;
-    address transmitter;
+    address transmitter; // TODO:GW: for later - in Solana it will be bytes32
     bytes extraData;
 }
 
@@ -124,15 +135,15 @@ struct UserCredits {
 
 // digest:
 struct DigestParams {
-    address socket;
-    address transmitter;
+    bytes32 socket;
+    address transmitter; // TODO:GW: for later - in Solana it will be bytes32
     bytes32 payloadId;
     uint256 deadline;
     bytes4 callType;
     uint256 gasLimit;
     uint256 value;
     bytes payload;
-    address target;
+    bytes32 target;
     bytes32 appGatewayId;
     bytes32 prevBatchDigestHash;
     bytes extraData;
@@ -149,10 +160,10 @@ struct OverrideParams {
     uint256 delayInSeconds;
 }
 
-// payload
+// payload // TODO:GW: change target to bytes32 - no more QueuePayloadParams ?
 struct Transaction {
     uint32 chainSlug;
-    address target;
+    bytes32 target;
     bytes payload;
 }
 

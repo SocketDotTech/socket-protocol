@@ -14,6 +14,7 @@ import {AddressResolverUtil} from "../helpers/AddressResolverUtil.sol";
 import {NonceUsed, InvalidAmount, InsufficientCreditsAvailable, InsufficientBalance, InvalidChainSlug, NotRequestHandler} from "../../utils/common/Errors.sol";
 import {WRITE} from "../../utils/common/Constants.sol";
 import "../../utils/RescueFundsLib.sol";
+import {toBytes32Format} from "../../utils/common/Converters.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
     // slots [0-49] reserved for gap
@@ -31,7 +32,7 @@ abstract contract FeesManagerStorage is IFeesManager {
 
     // slot 52
     /// @notice user credits => stores fees for user, app gateway, transmitters and watcher precompile
-    mapping(address => UserCredits) public userCredits;
+    mapping(address => UserCredits) public userCredits;   // TODO:GW: what is the "userAddress" ? is is just EVMx address ?
 
     // slot 53
     /// @notice Mapping to track request credits details for each request count
@@ -41,23 +42,23 @@ abstract contract FeesManagerStorage is IFeesManager {
     // slot 54
     // user approved app gateways
     // userAddress => appGateway => isApproved
-    mapping(address => mapping(address => bool)) public isApproved;
+    mapping(address => mapping(address => bool)) public isApproved; //TODO:GW: what is the "userAddress" ? is this an on-chain address ? if yes than it needs to be bytes32
 
     // slot 55
     // token pool balances
     //  chainSlug => token address => amount
-    mapping(uint32 => mapping(address => uint256)) public tokenOnChainBalances;
+    mapping(uint32 => mapping(address => uint256)) public tokenOnChainBalances; // TODO:GW: what is that ? // how does it map to multi-chain with Solana
 
     // slot 56
     /// @notice Mapping to track nonce to whether it has been used
     /// @dev address => signatureNonce => isNonceUsed
     /// @dev used by watchers or other users in signatures
-    mapping(address => mapping(uint256 => bool)) public isNonceUsed;
+    mapping(address => mapping(uint256 => bool)) public isNonceUsed; // TODO:GW: earlier it was just "uint256 => bool" now it has "address" why ? if it is a watcher address it is just for evm or should be bytes32 ?  
 
     // slot 57
     /// @notice Mapping to track fees plug for each chain slug
     /// @dev chainSlug => fees plug address
-    mapping(uint32 => address) public feesPlugs;
+    mapping(uint32 => bytes32) public feesPlugs;
 
     // slots [58-107] reserved for gap
     uint256[50] _gap_after;
@@ -92,7 +93,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
     event CreditsTransferred(address indexed from, address indexed to, uint256 amount);
 
     /// @notice Emitted when fees plug is set
-    event FeesPlugSet(uint32 indexed chainSlug, address indexed feesPlug);
+    event FeesPlugSet(uint32 indexed chainSlug, bytes32 indexed feesPlug);
 
     /// @notice Emitted when fees pool is set
     event FeesPoolSet(address indexed feesPool);
@@ -100,7 +101,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
     /// @notice Emitted when withdraw fails
     event WithdrawFailed(bytes32 indexed payloadId);
 
-    function setFeesPlug(uint32 chainSlug_, address feesPlug_) external onlyOwner {
+    function setFeesPlug(uint32 chainSlug_, bytes32 feesPlug_) external onlyOwner {
         feesPlugs[chainSlug_] = feesPlug_;
         emit FeesPlugSet(chainSlug_, feesPlug_);
     }
@@ -295,8 +296,8 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         watcher__().queueAndSubmit(queueParams, maxFees_, address(0), consumeFrom_, bytes(""));
     }
 
-    function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (address) {
-        if (feesPlugs[chainSlug_] == address(0)) revert InvalidChainSlug();
+    function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (bytes32) {
+        if (feesPlugs[chainSlug_] == bytes32(0)) revert InvalidChainSlug();
         return feesPlugs[chainSlug_];
     }
 

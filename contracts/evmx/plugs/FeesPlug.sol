@@ -116,6 +116,7 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
         emit TokenRemovedFromWhitelist(token_);
     }
 
+    // TODO:GW: what is calling this function ? - is it only EVM specific ?
     function connectSocket(
         bytes32 appGatewayId_,
         address socket_,

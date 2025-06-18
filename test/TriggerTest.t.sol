@@ -13,8 +13,8 @@ contract TriggerTest is AppGatewayBaseSetup {
     event AppGatewayCallRequested(
         bytes32 triggerId,
         bytes32 appGatewayId,
-        address switchboard,
-        address plug,
+        bytes32 switchboard,
+        bytes32 plug,
         bytes overrides,
         bytes payload
     );
@@ -35,11 +35,12 @@ contract TriggerTest is AppGatewayBaseSetup {
         gateway.deployContracts(arbChainSlug);
         executeDeploy(gateway, arbChainSlug, contractIds);
 
-        (address counterAddress, ) = getOnChainAndForwarderAddresses(
+        (bytes32 counterBytes32, ) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId,
             gateway
         );
+        address counterAddress = fromBytes32Format(counterBytes32);
         counter = Counter(counterAddress);
         gateway.setIsValidPlug(arbChainSlug, counterId);
     }
@@ -60,8 +61,8 @@ contract TriggerTest is AppGatewayBaseSetup {
         emit AppGatewayCallRequested(
             triggerId,
             encodeAppGatewayId(address(gateway)),
-            address(arbConfig.switchboard),
-            address(counter),
+            toBytes32Format(address(arbConfig.switchboard)),
+            toBytes32Format(address(counter)),
             bytes(""),
             payload
         );
@@ -72,7 +73,7 @@ contract TriggerTest is AppGatewayBaseSetup {
             triggerId: triggerId,
             chainSlug: arbChainSlug,
             appGatewayId: encodeAppGatewayId(address(gateway)),
-            plug: address(counter),
+            plug:  toBytes32Format(address(counter)),
             payload: payload,
             overrides: bytes("")
         });

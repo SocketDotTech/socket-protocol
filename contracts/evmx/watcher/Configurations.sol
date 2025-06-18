@@ -8,6 +8,8 @@ import {encodeAppGatewayId} from "../../utils/common/IdUtils.sol";
 import {InvalidGateway, InvalidSwitchboard} from "../../utils/common/Errors.sol";
 import "solady/auth/Ownable.sol";
 import "../../utils/RescueFundsLib.sol";
+import {toBytes32Format} from "../../utils/common/Converters.sol";
+import {PlugConfigGeneric} from "../../utils/common/Structs.sol";
 
 abstract contract ConfigurationsStorage is IConfigurations {
     // slots [0-49] reserved for gap
@@ -16,22 +18,22 @@ abstract contract ConfigurationsStorage is IConfigurations {
     // slot 50
     /// @notice Maps network and plug to their configuration
     /// @dev chainSlug => plug => PlugConfig
-    mapping(uint32 => mapping(address => PlugConfig)) internal _plugConfigs;
+    mapping(uint32 => mapping(bytes32 => PlugConfigGeneric)) internal _plugConfigs;
 
     // slot 51
     /// @notice Maps chain slug to their associated switchboard
     /// @dev chainSlug => sb type => switchboard address
-    mapping(uint32 => mapping(bytes32 => address)) public switchboards;
+    mapping(uint32 => mapping(bytes32 => bytes32)) public switchboards;
 
     // slot 52
     /// @notice Maps chain slug to their associated socket
     /// @dev chainSlug => socket address
-    mapping(uint32 => address) public sockets;
+    mapping(uint32 => bytes32) public sockets;
 
     // slot 53
     /// @notice Maps app gateway, chain slug, and plug to whether it is valid
     /// @dev appGateway => chainSlug => plug => isValid
-    mapping(address => mapping(uint32 => mapping(address => bool))) public isValidPlug;
+    mapping(address => mapping(uint32 => mapping(bytes32 => bool))) public isValidPlug;
 
     // slots [54-103] reserved for gap
     uint256[50] _gap_after;
@@ -47,25 +49,25 @@ contract Configurations is ConfigurationsStorage, Initializable, Ownable, Watche
     /// @param appGatewayId The id of the app gateway
     /// @param chainSlug The identifier of the destination network
     /// @param plug The address of the plug
-    event PlugAdded(bytes32 appGatewayId, uint32 chainSlug, address plug);
+    event PlugAdded(bytes32 appGatewayId, uint32 chainSlug, bytes32 plug);
 
     /// @notice Emitted when a switchboard is set for a network
     /// @param chainSlug The identifier of the network
     /// @param sbType The type of switchboard
     /// @param switchboard The address of the switchboard
-    event SwitchboardSet(uint32 chainSlug, bytes32 sbType, address switchboard);
+    event SwitchboardSet(uint32 chainSlug, bytes32 sbType, bytes32 switchboard);
 
     /// @notice Emitted when socket is set for a network
     /// @param chainSlug The identifier of the network
     /// @param socket The address of the socket
-    event SocketSet(uint32 chainSlug, address socket);
+    event SocketSet(uint32 chainSlug, bytes32 socket);
 
     /// @notice Emitted when a valid plug is set for an app gateway
     /// @param appGateway The address of the app gateway
     /// @param chainSlug The identifier of the network
     /// @param plug The address of the plug
     /// @param isValid Whether the plug is valid
-    event IsValidPlugSet(address appGateway, uint32 chainSlug, address plug, bool isValid);
+    event IsValidPlugSet(address appGateway, uint32 chainSlug, bytes32 plug, bool isValid);
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -96,7 +98,7 @@ contract Configurations is ConfigurationsStorage, Initializable, Ownable, Watche
     /// @notice Sets the socket for a network
     /// @param chainSlug_ The identifier of the network
     /// @param socket_ The address of the socket
-    function setSocket(uint32 chainSlug_, address socket_) external onlyOwner {
+    function setSocket(uint32 chainSlug_, bytes32 socket_) external onlyOwner {
         sockets[chainSlug_] = socket_;
         emit SocketSet(chainSlug_, socket_);
     }
@@ -108,7 +110,7 @@ contract Configurations is ConfigurationsStorage, Initializable, Ownable, Watche
     function setSwitchboard(
         uint32 chainSlug_,
         bytes32 sbType_,
-        address switchboard_
+        bytes32 switchboard_
     ) external onlyOwner {
         switchboards[chainSlug_][sbType_] = switchboard_;
         emit SwitchboardSet(chainSlug_, sbType_, switchboard_);
@@ -123,7 +125,7 @@ contract Configurations is ConfigurationsStorage, Initializable, Ownable, Watche
     function setIsValidPlug(
         bool isValid_,
         uint32 chainSlug_,
-        address plug_,
+        bytes32 plug_,
         address appGateway_
     ) external onlyWatcher {
         isValidPlug[appGateway_][chainSlug_][plug_] = isValid_;
@@ -138,8 +140,8 @@ contract Configurations is ConfigurationsStorage, Initializable, Ownable, Watche
     /// @dev Returns zero addresses if configuration doesn't exist
     function getPlugConfigs(
         uint32 chainSlug_,
-        address plug_
-    ) public view returns (bytes32, address) {
+        bytes32 plug_
+    ) public view returns (bytes32, bytes32) {
         return (
             _plugConfigs[chainSlug_][plug_].appGatewayId,
             _plugConfigs[chainSlug_][plug_].switchboard
@@ -154,12 +156,12 @@ contract Configurations is ConfigurationsStorage, Initializable, Ownable, Watche
     /// @param switchboardType_ The type of switchboard
     function verifyConnections(
         uint32 chainSlug_,
-        address target_,
+        bytes32 target_,
         address appGateway_,
         bytes32 switchboardType_
     ) external view {
-        (bytes32 appGatewayId, address switchboard) = getPlugConfigs(chainSlug_, target_);
-        if (appGatewayId != encodeAppGatewayId(appGateway_)) revert InvalidGateway();
+        (bytes32 appGatewayId, bytes32 switchboard) = getPlugConfigs(chainSlug_, target_);
+        if (appGatewayId != toBytes32Format(appGateway_)) revert InvalidGateway();
         if (switchboard != switchboards[chainSlug_][switchboardType_]) revert InvalidSwitchboard();
     }
 

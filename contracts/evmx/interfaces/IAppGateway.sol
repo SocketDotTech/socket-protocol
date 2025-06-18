@@ -35,7 +35,7 @@ interface IAppGateway {
     function getOnChainAddress(
         bytes32 contractId_,
         uint32 chainSlug_
-    ) external view returns (address onChainAddress);
+    ) external view returns (bytes32 onChainAddress);
 
     /// @notice get the forwarder address of a contract
     /// @param contractId_ The contract id

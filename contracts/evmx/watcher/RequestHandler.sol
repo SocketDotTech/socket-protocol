@@ -228,8 +228,8 @@ contract RequestHandler is RequestHandlerStorage, Initializable, Ownable, Addres
             }
 
             // get the switchboard address from the configurations
-            // returns address(0) for schedule precompile and reads if sb type not set
-            address switchboard = watcher__().configurations__().switchboards(
+            // returns bytes32(0) for schedule precompile and reads if sb type not set
+            bytes32 switchboard = watcher__().configurations__().switchboards(
                 queuePayloadParam.transaction.chainSlug,
                 queuePayloadParam.switchboardType
             );

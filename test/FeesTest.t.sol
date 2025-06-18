@@ -100,15 +100,15 @@ contract FeesTest is AppGatewayBaseSetup {
         );
 
         hoax(watcherEOA);
-        feesManager.setFeesPlug(arbChainSlug, address(0));
+        feesManager.setFeesPlug(arbChainSlug, bytes32(0));
 
         AppGatewayConfig[] memory configs = new AppGatewayConfig[](1);
         configs[0] = AppGatewayConfig({
             chainSlug: arbChainSlug,
-            plug: address(arbConfig.feesPlug),
-            plugConfig: PlugConfig({
-                appGatewayId: encodeAppGatewayId(address(0)),
-                switchboard: address(0)
+            plug: toBytes32Format(address(arbConfig.feesPlug)),
+            plugConfig: PlugConfigGeneric({
+                appGatewayId: bytes32(0),
+                switchboard: bytes32(0)
             })
         });
         watcherMultiCall(
@@ -156,15 +156,15 @@ contract FeesTest is AppGatewayBaseSetup {
         vm.stopPrank();
 
         hoax(watcherEOA);
-        feesManager.setFeesPlug(arbChainSlug, address(arbConfig.feesPlug));
+        feesManager.setFeesPlug(arbChainSlug, toBytes32Format(address(arbConfig.feesPlug)));
 
         AppGatewayConfig[] memory configs = new AppGatewayConfig[](1);
         configs[0] = AppGatewayConfig({
             chainSlug: arbChainSlug,
-            plug: address(arbConfig.feesPlug),
-            plugConfig: PlugConfig({
-                appGatewayId: encodeAppGatewayId(address(feesManager)),
-                switchboard: address(arbConfig.switchboard)
+            plug: toBytes32Format(address(arbConfig.feesPlug)),
+            plugConfig: PlugConfigGeneric({
+                appGatewayId: toBytes32Format(address(feesManager)),
+                switchboard: toBytes32Format(address(arbConfig.switchboard))
             })
         });
         watcherMultiCall(

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
+// TODO:GW:remove this
 function encodeAppGatewayId(address appGateway_) pure returns (bytes32) {
     return bytes32(uint256(uint160(appGateway_)));
 }
@@ -20,9 +21,17 @@ function createPayloadId(
     uint40 requestCount_,
     uint40 batchCount_,
     uint40 payloadCount_,
-    address switchboard_,
+    bytes32 switchboard_,
     uint32 chainSlug_
 ) pure returns (bytes32) {
     return
-        keccak256(abi.encode(requestCount_, batchCount_, payloadCount_, chainSlug_, switchboard_));
+        keccak256(
+            abi.encodePacked(
+                requestCount_,
+                batchCount_,
+                payloadCount_,
+                chainSlug_,
+                switchboard_
+            )
+        );
 }

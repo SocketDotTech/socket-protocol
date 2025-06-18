@@ -99,11 +99,12 @@ contract SuperTokenTest is AppGatewayBaseSetup {
     function testContractDeployment() public {
         deploySuperToken(arbChainSlug);
 
-        (address onChain, address forwarder) = getOnChainAndForwarderAddresses(
+        (bytes32 onChainBytes32, address forwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             appContracts.superToken,
             IAppGateway(appContracts.superTokenApp)
         );
+        address onChain = fromBytes32Format(onChainBytes32);
 
         assertEq(
             SuperToken(onChain).name(),
@@ -119,7 +120,7 @@ contract SuperTokenTest is AppGatewayBaseSetup {
 
         assertEq(
             IForwarder(forwarder).getOnChainAddress(),
-            onChain,
+            onChainBytes32,
             "Forwarder SuperToken onChainAddress should be correct"
         );
         assertEq(SuperToken(onChain).owner(), owner, "SuperToken owner should be correct");
@@ -137,18 +138,20 @@ contract SuperTokenTest is AppGatewayBaseSetup {
         deploySuperToken(arbChainSlug);
         deploySuperToken(optChainSlug);
 
-        (address onChainArb, address forwarderArb) = getOnChainAndForwarderAddresses(
+        (bytes32 onChainArbBytes32, address forwarderArb) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             appContracts.superToken,
             IAppGateway(appContracts.superTokenApp)
         );
+        address onChainArb = fromBytes32Format(onChainArbBytes32);
 
-        (address onChainOpt, address forwarderOpt) = getOnChainAndForwarderAddresses(
+        (bytes32 onChainOptBytes32, address forwarderOpt) = getOnChainAndForwarderAddresses(
             optChainSlug,
             appContracts.superToken,
             IAppGateway(appContracts.superTokenApp)
         );
-
+        address onChainOpt = fromBytes32Format(onChainOptBytes32);
+        
         uint256 arbBalanceBefore = SuperToken(onChainArb).balanceOf(owner);
         uint256 optBalanceBefore = SuperToken(onChainOpt).balanceOf(owner);
 

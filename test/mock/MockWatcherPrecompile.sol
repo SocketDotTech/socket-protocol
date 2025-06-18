@@ -56,7 +56,7 @@ contract MockWatcherPrecompile is Trigger {
     function setIsValidPlug(
         bool isValid_,
         uint32 chainSlug_,
-        address onchainAddress_
+        bytes32 onchainAddress_
     ) external override {}
 
     function isWatcher(address account_) external view override returns (bool) {}

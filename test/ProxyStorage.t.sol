@@ -41,7 +41,7 @@ contract ProxyStorageAssertions is AppGatewayBaseSetup {
 
         // last
         hoax(watcherEOA);
-        feesManager.setFeesPlug(evmxSlug, address(addressResolver));
+        feesManager.setFeesPlug(evmxSlug, toBytes32Format(address(addressResolver)));
         bytes32 mappingSlot = keccak256(abi.encode(uint256(evmxSlug), uint256(57)));
         slotValue = vm.load(address(feesManager), mappingSlot);
         assertEq(
@@ -211,11 +211,17 @@ contract ProxyStorageAssertions is AppGatewayBaseSetup {
     }
 
     function assertForwarderSlot() internal {
-        address forwarder = asyncDeployer.getOrDeployForwarderContract(address(this), evmxSlug);
+        bytes32 chainContractAddress = toBytes32Format(address(this));
+        address forwarder = asyncDeployer.getOrDeployForwarderContract(chainContractAddress, evmxSlug);
+
+        console.log("forwarder: ", forwarder);
 
         // first
         bytes32 slotValue = vm.load(address(forwarder), bytes32(uint256(FIRST_SLOT)));
         assertEq(uint32(uint256(slotValue)), evmxSlug);
+
+        slotValue = vm.load(address(forwarder), bytes32(uint256(FIRST_SLOT + 1)));
+        assertEq(slotValue, IForwarder(forwarder).getOnChainAddress());
 
         assertAddressResolverUtilSlot(101, address(forwarder));
     }

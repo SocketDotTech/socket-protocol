@@ -9,6 +9,7 @@ import "../interfaces/IPromise.sol";
 import {InvalidPromise, AsyncModifierNotSet} from "../../utils/common/Errors.sol";
 import {FAST, READ, WRITE, SCHEDULE} from "../../utils/common/Constants.sol";
 import {IsPlug, QueueParams, Read, WriteFinality, Parallel} from "../../utils/common/Structs.sol";
+import {toBytes32Format} from "../../utils/common/Converters.sol";
 
 /// @title AppGatewayBase
 /// @notice Abstract contract for the app gateway
@@ -137,7 +138,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     function setAddress(bytes memory data_, bytes memory returnData_) external onlyPromises {
         (uint32 chainSlug, bytes32 contractId) = abi.decode(data_, (uint32, bytes32));
         forwarderAddresses[contractId][chainSlug] = asyncDeployer__().getOrDeployForwarderContract(
-            abi.decode(returnData_, (address)),
+            // TODO:GW: where does returnData_ come from - maybe it is already bytes32 ? - is it EVM specific ?
+            toBytes32Format(abi.decode(returnData_, (address))),
             chainSlug
         );
     }
@@ -161,9 +163,9 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     function getOnChainAddress(
         bytes32 contractId_,
         uint32 chainSlug_
-    ) public view returns (address onChainAddress) {
+    ) public view returns (bytes32 onChainAddress) {
         if (forwarderAddresses[contractId_][chainSlug_] == address(0)) {
-            return address(0);
+            return bytes32(0);
         }
 
         onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
@@ -216,7 +218,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /// @param isValid Boolean flag indicating whether the contract is authorized (true) or not (false)
     /// @dev This function retrieves the onchain address using the contractId_ and chainSlug, then calls the watcher precompile to update the plug's validity status
     function _setValidPlug(bool isValid, uint32 chainSlug_, bytes32 contractId_) internal {
-        address onchainAddress = getOnChainAddress(contractId_, chainSlug_);
+        bytes32 onchainAddress = getOnChainAddress(contractId_, chainSlug_);
         watcher__().setIsValidPlug(isValid, chainSlug_, onchainAddress);
     }
 

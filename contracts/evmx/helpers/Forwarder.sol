@@ -9,6 +9,7 @@ import "../interfaces/IForwarder.sol";
 import {QueueParams, OverrideParams, Transaction} from "../../utils/common/Structs.sol";
 import {AsyncModifierNotSet, WatcherNotSet, InvalidOnChainAddress} from "../../utils/common/Errors.sol";
 import "../../utils/RescueFundsLib.sol";
+import {toBytes32Format} from "../../utils/common/Converters.sol";
 
 /// @title Forwarder Storage
 /// @notice Storage contract for the Forwarder contract that contains the state variables
@@ -19,11 +20,16 @@ abstract contract ForwarderStorage is IForwarder {
     // slot 50
     /// @notice chain slug on which the contract is deployed
     uint32 public chainSlug;
-    /// @notice on-chain address associated with this forwarder
-    address public onChainAddress;
 
-    // slots [51-100] reserved for gap
-    uint256[50] _gap_after;
+    /// @notice old on-chain address kep for storage compatibility - can be removed after redeployment
+    address internal oldOnChainAddress;
+
+    // slot 51
+    /// @notice on-chain address associated with this forwarder
+    bytes32 public onChainAddress;
+
+    // slots [52-100] reserved for gap
+    uint256[49] _gap_after;
 
     // slots [101-150] 50 slots reserved for address resolver util
 }
@@ -41,10 +47,10 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
     /// @param addressResolver_ address resolver contract
     function initialize(
         uint32 chainSlug_,
-        address onChainAddress_,
+        bytes32 onChainAddress_,
         address addressResolver_
     ) public reinitializer(1) {
-        if (onChainAddress_ == address(0)) revert InvalidOnChainAddress();
+        if (onChainAddress_ == bytes32(0)) revert InvalidOnChainAddress();
         chainSlug = chainSlug_;
         onChainAddress = onChainAddress_;
         _setAddressResolver(addressResolver_);
@@ -52,7 +58,10 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
 
     /// @notice Returns the on-chain address associated with this forwarder.
     /// @return The on-chain address.
-    function getOnChainAddress() external view override returns (address) {
+    function getOnChainAddress() external view override returns (bytes32) {
+        if (oldOnChainAddress != address(0)) {
+            return toBytes32Format(oldOnChainAddress);
+        }
         return onChainAddress;
     }
 
