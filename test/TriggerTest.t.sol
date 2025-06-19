@@ -60,7 +60,7 @@ contract TriggerTest is AppGatewayBaseSetup {
         vm.expectEmit(true, true, true, true);
         emit AppGatewayCallRequested(
             triggerId,
-            encodeAppGatewayId(address(gateway)),
+            toBytes32Format(address(gateway)),
             toBytes32Format(address(arbConfig.switchboard)),
             toBytes32Format(address(counter)),
             bytes(""),
@@ -72,7 +72,7 @@ contract TriggerTest is AppGatewayBaseSetup {
         params[0] = TriggerParams({
             triggerId: triggerId,
             chainSlug: arbChainSlug,
-            appGatewayId: encodeAppGatewayId(address(gateway)),
+            appGatewayId: toBytes32Format(address(gateway)),
             plug:  toBytes32Format(address(counter)),
             payload: payload,
             overrides: bytes("")

@@ -7,7 +7,6 @@ import "solady/auth/Ownable.sol";
 import "../../interfaces/IPrecompile.sol";
 import {WRITE, PAYLOAD_SIZE_LIMIT} from "../../../utils/common/Constants.sol";
 import {InvalidIndex, MaxMsgValueLimitExceeded, InvalidPayloadSize} from "../../../utils/common/Errors.sol";
-import {encodeAppGatewayId} from "../../../utils/common/IdUtils.sol";
 import "../../../utils/RescueFundsLib.sol";
 import "../WatcherBase.sol";
 import {toBytes32Format} from "../../../utils/common/Converters.sol";

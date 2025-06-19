@@ -244,14 +244,14 @@ contract DeploySetup is SetupStore {
         feesPlug.grantRole(RESCUE_ROLE, address(socketOwner));
         feesPlug.whitelistToken(address(socketConfig.testUSDC));
         feesPlug.connectSocket(
-            encodeAppGatewayId(address(feesManager)),
+            toBytes32Format(address(feesManager)),
             address(socket),
             address(switchboard)
         );
 
         contractFactoryPlug.grantRole(RESCUE_ROLE, address(socketOwner));
         contractFactoryPlug.connectSocket(
-            encodeAppGatewayId(address(writePrecompile)),
+            toBytes32Format(address(writePrecompile)),
             address(socket),
             address(switchboard)
         );

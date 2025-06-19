@@ -4,7 +4,6 @@ pragma solidity ^0.8.21;
 import "solady/utils/Initializable.sol";
 import "../interfaces/IConfigurations.sol";
 import {WatcherBase} from "./WatcherBase.sol";
-import {encodeAppGatewayId} from "../../utils/common/IdUtils.sol";
 import {InvalidGateway, InvalidSwitchboard} from "../../utils/common/Errors.sol";
 import "solady/auth/Ownable.sol";
 import "../../utils/RescueFundsLib.sol";

@@ -3,7 +3,6 @@ pragma solidity ^0.8.21;
 
 import {LibCall} from "solady/utils/LibCall.sol";
 import "./WatcherStorage.sol";
-import {decodeAppGatewayId} from "../../utils/common/IdUtils.sol";
 import {fromBytes32Format} from "../../utils/common/Converters.sol";
 
 /// @title Trigger

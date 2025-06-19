@@ -1,15 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
-// TODO:GW:remove this
-function encodeAppGatewayId(address appGateway_) pure returns (bytes32) {
-    return bytes32(uint256(uint160(appGateway_)));
-}
-
-function decodeAppGatewayId(bytes32 appGatewayId_) pure returns (address) {
-    return address(uint160(uint256(appGatewayId_)));
-}
-
 /// @notice Creates a payload ID from the given parameters
 /// @param requestCount_ The request count
 /// @param batchCount_ The batch count

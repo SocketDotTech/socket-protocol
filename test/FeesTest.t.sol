@@ -149,7 +149,7 @@ contract FeesTest is AppGatewayBaseSetup {
         arbConfig.feesPlug.grantRole(RESCUE_ROLE, address(socketOwner));
         arbConfig.feesPlug.whitelistToken(address(arbConfig.testUSDC));
         arbConfig.feesPlug.connectSocket(
-            encodeAppGatewayId(address(feesManager)),
+            toBytes32Format(address(feesManager)),
             address(arbConfig.socket),
             address(arbConfig.switchboard)
         );
