@@ -114,7 +114,9 @@ export const updateConfigEVMx = async () => {
 
         for (const plugContract of plugs) {
           const appGatewayId = getAppGatewayId(plugContract, addresses);
-          const switchboardBytes32Hex = toBytes32FormatHexString(addr[Contracts.FastSwitchboard]);
+          const switchboardBytes32Hex = toBytes32FormatHexString(
+            addr[Contracts.FastSwitchboard]
+          );
           const plugBytes32Hex = toBytes32FormatHexString(addr[plugContract]);
           // checkIfAddressExists(switchboard, "Switchboard");
           checkIfAppGatewayIdExists(appGatewayId, "AppGatewayId");

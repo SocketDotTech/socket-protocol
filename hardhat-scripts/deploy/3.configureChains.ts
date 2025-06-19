@@ -83,10 +83,16 @@ async function setOnchainContracts(
   const signer: Wallet = getWatcherSigner();
   const chainAddresses = addresses[chain] as ChainAddressesObj;
 
-  const switchboard = toBytes32FormatHexString(chainAddresses[Contracts.FastSwitchboard]);
+  const switchboard = toBytes32FormatHexString(
+    chainAddresses[Contracts.FastSwitchboard]
+  );
   const socket = toBytes32FormatHexString(chainAddresses[Contracts.Socket]);
-  const feesPlug = toBytes32FormatHexString(chainAddresses[Contracts.FeesPlug]!);
-  const contractFactory = toBytes32FormatHexString(chainAddresses[Contracts.ContractFactoryPlug]);
+  const feesPlug = toBytes32FormatHexString(
+    chainAddresses[Contracts.FeesPlug]!
+  );
+  const contractFactory = toBytes32FormatHexString(
+    chainAddresses[Contracts.ContractFactoryPlug]
+  );
 
   await updateContractSettings(
     EVMX_CHAIN_ID,

@@ -32,7 +32,7 @@ abstract contract FeesManagerStorage is IFeesManager {
 
     // slot 52
     /// @notice user credits => stores fees for user, app gateway, transmitters and watcher precompile
-    mapping(address => UserCredits) public userCredits;   // TODO:GW: what is the "userAddress" ? is is just EVMx address ?
+    mapping(address => UserCredits) public userCredits; // TODO:GW: what is the "userAddress" ? is is just EVMx address ?
 
     // slot 53
     /// @notice Mapping to track request credits details for each request count
@@ -53,7 +53,7 @@ abstract contract FeesManagerStorage is IFeesManager {
     /// @notice Mapping to track nonce to whether it has been used
     /// @dev address => signatureNonce => isNonceUsed
     /// @dev used by watchers or other users in signatures
-    mapping(address => mapping(uint256 => bool)) public isNonceUsed; // TODO:GW: earlier it was just "uint256 => bool" now it has "address" why ? if it is a watcher address it is just for evm or should be bytes32 ?  
+    mapping(address => mapping(uint256 => bool)) public isNonceUsed; // TODO:GW: earlier it was just "uint256 => bool" now it has "address" why ? if it is a watcher address it is just for evm or should be bytes32 ?
 
     // slot 57
     /// @notice Mapping to track fees plug for each chain slug

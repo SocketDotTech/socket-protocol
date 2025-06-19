@@ -73,7 +73,7 @@ contract TriggerTest is AppGatewayBaseSetup {
             triggerId: triggerId,
             chainSlug: arbChainSlug,
             appGatewayId: toBytes32Format(address(gateway)),
-            plug:  toBytes32Format(address(counter)),
+            plug: toBytes32Format(address(counter)),
             payload: payload,
             overrides: bytes("")
         });

@@ -267,7 +267,10 @@ contract DeploySetup is SetupStore {
 
         // precompiles
         writePrecompile.updateChainMaxMsgValueLimits(chainSlug_, maxMsgValueLimit);
-        writePrecompile.setContractFactoryPlugs(chainSlug_, toBytes32Format(address(contractFactoryPlug)));
+        writePrecompile.setContractFactoryPlugs(
+            chainSlug_,
+            toBytes32Format(address(contractFactoryPlug))
+        );
 
         vm.stopPrank();
     }

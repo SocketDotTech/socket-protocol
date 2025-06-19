@@ -12,18 +12,15 @@ contract CheckCounters is Script {
         CounterAppGateway gateway = CounterAppGateway(vm.envAddress("APP_GATEWAY"));
 
         vm.createSelectFork(vm.envString("EVMX_RPC"));
-        address counterInstanceArbitrumSepolia = fromBytes32Format(gateway.getOnChainAddress(
-            gateway.counter(),
-            421614
-        ));
-        address counterInstanceOptimismSepolia = fromBytes32Format(gateway.getOnChainAddress(
-            gateway.counter(),
-            11155420
-        ));
-        address counterInstanceBaseSepolia = fromBytes32Format(gateway.getOnChainAddress(
-            gateway.counter(),
-            84532
-        ));
+        address counterInstanceArbitrumSepolia = fromBytes32Format(
+            gateway.getOnChainAddress(gateway.counter(), 421614)
+        );
+        address counterInstanceOptimismSepolia = fromBytes32Format(
+            gateway.getOnChainAddress(gateway.counter(), 11155420)
+        );
+        address counterInstanceBaseSepolia = fromBytes32Format(
+            gateway.getOnChainAddress(gateway.counter(), 84532)
+        );
 
         if (counterInstanceArbitrumSepolia != address(0)) {
             vm.createSelectFork(vm.envString("ARBITRUM_SEPOLIA_RPC"));

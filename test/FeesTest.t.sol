@@ -106,10 +106,7 @@ contract FeesTest is AppGatewayBaseSetup {
         configs[0] = AppGatewayConfig({
             chainSlug: arbChainSlug,
             plug: toBytes32Format(address(arbConfig.feesPlug)),
-            plugConfig: PlugConfigGeneric({
-                appGatewayId: bytes32(0),
-                switchboard: bytes32(0)
-            })
+            plugConfig: PlugConfigGeneric({appGatewayId: bytes32(0), switchboard: bytes32(0)})
         });
         watcherMultiCall(
             address(configurations),

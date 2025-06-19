@@ -212,7 +212,10 @@ contract ProxyStorageAssertions is AppGatewayBaseSetup {
 
     function assertForwarderSlot() internal {
         bytes32 chainContractAddress = toBytes32Format(address(this));
-        address forwarder = asyncDeployer.getOrDeployForwarderContract(chainContractAddress, evmxSlug);
+        address forwarder = asyncDeployer.getOrDeployForwarderContract(
+            chainContractAddress,
+            evmxSlug
+        );
 
         console.log("forwarder: ", forwarder);
 
