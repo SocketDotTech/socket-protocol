@@ -209,3 +209,25 @@ struct RequestParams {
     uint256 writeCount;
     bytes onCompleteData;
 }
+
+struct SolanaInstruction {
+    SolanaInstructionData data;
+    SolanaInstructionDataDescription description;
+}
+
+struct SolanaInstructionData {
+    bytes32 programId;
+    bytes32[] accounts;
+    bytes8 instructionDiscriminator;
+    // TODO:GW: in one of functionArguments is an array it might need a special handling and encoding
+    // for now we assume the all functionArguments are simple types (uint256, address, bool, etc.) not complex types (struct, array, etc.)
+    bytes[] functionArguments;
+}
+
+struct SolanaInstructionDataDescription {
+    // flags for accounts, we only need isWritable for now
+    // 0 bit - isWritable (0|1)
+    bytes1[] accountFlags;
+    // names for function argument types used later in data decoding in watcher and transmitter
+    string[] functionArgumentTypeNames;
+}

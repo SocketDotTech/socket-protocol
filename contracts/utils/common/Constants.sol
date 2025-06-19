@@ -16,3 +16,6 @@ bytes32 constant FAST = keccak256("FAST");
 
 uint256 constant PAYLOAD_SIZE_LIMIT = 24_500;
 uint16 constant MAX_COPY_BYTES = 2048; // 2KB
+
+uint32 constant CHAIN_SLUG_SOLANA_MAINNET = 10000001;
+uint32 constant CHAIN_SLUG_SOLANA_DEVNET  = 10000002;
