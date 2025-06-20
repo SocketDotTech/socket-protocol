@@ -30,7 +30,6 @@ contract DeployEVMSolanaApps is Script {
         uint256 fees = 10 ether;
 
         EvmSolanaAppGateway gateway = new EvmSolanaAppGateway(
-            addressResolver,
             owner,
             fees,
             EvmSolanaAppGateway.SuperTokenEvmConstructorParams({
