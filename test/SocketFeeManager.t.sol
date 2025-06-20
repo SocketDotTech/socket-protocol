@@ -25,7 +25,7 @@ contract SocketFeeManagerTest is AppGatewayBaseSetup {
         counter = new Counter();
 
         mockSwitchboard.registerSwitchboard();
-        counter.initSocket(encodeAppGatewayId(gateway), address(socket), address(mockSwitchboard));
+        counter.initSocket(toBytes32Format(gateway), address(socket), address(mockSwitchboard));
 
         vm.prank(owner);
         socket.grantRole(GOVERNANCE_ROLE, address(owner));

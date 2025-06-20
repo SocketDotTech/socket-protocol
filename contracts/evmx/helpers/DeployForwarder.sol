@@ -9,9 +9,9 @@ import {IDeployForwarder} from "../interfaces/IDeployForwarder.sol";
 import {AsyncModifierNotSet} from "../../utils/common/Errors.sol";
 import {QueueParams, OverrideParams, Transaction} from "../../utils/common/Structs.sol";
 import {WRITE} from "../../utils/common/Constants.sol";
-import {encodeAppGatewayId} from "../../utils/common/IdUtils.sol";
 import "../../utils/RescueFundsLib.sol";
 import "./AddressResolverUtil.sol";
+import {toBytes32Format} from "../../utils/common/Converters.sol";
 
 /// @title DeployForwarder
 /// @notice contract responsible for handling deployment requests
@@ -64,7 +64,7 @@ contract DeployForwarder is IDeployForwarder, Initializable, AddressResolverUtil
         queueParams.switchboardType = deployerSwitchboardType;
         queueParams.transaction = Transaction({
             chainSlug: chainSlug_,
-            target: address(0),
+            target: bytes32(0),
             payload: _createPayload(
                 isPlug_,
                 plugSwitchboardType,
@@ -93,7 +93,7 @@ contract DeployForwarder is IDeployForwarder, Initializable, AddressResolverUtil
             IContractFactoryPlug.deployContract.selector,
             isPlug_,
             salt,
-            encodeAppGatewayId(appGateway_),
+            toBytes32Format(appGateway_),
             watcher__().configurations__().switchboards(chainSlug_, plugSwitchboardType_),
             payload_,
             initCallData_

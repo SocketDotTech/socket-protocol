@@ -7,7 +7,7 @@ import {IPlug} from "./interfaces/IPlug.sol";
 import "./interfaces/ISocketFeeManager.sol";
 import "../utils/AccessControl.sol";
 import {GOVERNANCE_ROLE, RESCUE_ROLE, SWITCHBOARD_DISABLER_ROLE} from "../utils/common/AccessRoles.sol";
-import {PlugConfig, SwitchboardStatus, ExecutionStatus} from "../utils/common/Structs.sol";
+import {PlugConfigEvm, SwitchboardStatus, ExecutionStatus} from "../utils/common/Structs.sol";
 import "../utils/common/Errors.sol";
 import {MAX_COPY_BYTES} from "../utils/common/Constants.sol";
 
@@ -25,7 +25,7 @@ abstract contract SocketConfig is ISocket, AccessControl {
     mapping(address => SwitchboardStatus) public isValidSwitchboard;
 
     // @notice mapping of plug address to its config
-    mapping(address => PlugConfig) internal _plugConfigs;
+    mapping(address => PlugConfigEvm) internal _plugConfigs;
 
     // @notice max copy bytes for socket
     uint16 public maxCopyBytes = 2048; // 2KB
@@ -79,7 +79,7 @@ abstract contract SocketConfig is ISocket, AccessControl {
         if (isValidSwitchboard[switchboard_] != SwitchboardStatus.REGISTERED)
             revert InvalidSwitchboard();
 
-        PlugConfig storage _plugConfig = _plugConfigs[msg.sender];
+        PlugConfigEvm storage _plugConfig = _plugConfigs[msg.sender];
 
         _plugConfig.appGatewayId = appGatewayId_;
         _plugConfig.switchboard = switchboard_;
@@ -103,7 +103,7 @@ abstract contract SocketConfig is ISocket, AccessControl {
     function getPlugConfig(
         address plugAddress_
     ) external view returns (bytes32 appGatewayId, address switchboard) {
-        PlugConfig memory _plugConfig = _plugConfigs[plugAddress_];
+        PlugConfigEvm memory _plugConfig = _plugConfigs[plugAddress_];
         return (_plugConfig.appGatewayId, _plugConfig.switchboard);
     }
 }
