@@ -46,7 +46,7 @@ contract EvmSolanaOnchainCalls is Script {
         uint256 srcAmount = 1000000;         
         //mintOnEvm(srcAmount, userEvmAddress, appGateway);
         // mintOnSolana(srcAmount, userEvmAddress, switchboardSolana, appGateway);
-        transferEvmToSolana(srcAmount, userEvmAddress, switchboardSolana, appGateway);
+        transferEvmToSolana(srcAmount, userEvmAddress, appGateway);
 
         // This works:
         // appGateway.transferForDebug(
@@ -71,7 +71,6 @@ contract EvmSolanaOnchainCalls is Script {
     function transferEvmToSolana(
         uint256 srcAmount,
         address userEvmAddress,
-        bytes32 switchboardSolana,
         EvmSolanaAppGateway appGateway
     ) public {
         console.log("Transfer EVM to Solana");
@@ -91,7 +90,7 @@ contract EvmSolanaOnchainCalls is Script {
 
         bytes memory orderEncoded = abi.encode(order);
 
-        appGateway.transfer(orderEncoded, solanaInstruction, switchboardSolana);
+        appGateway.transfer(orderEncoded, solanaInstruction);
     }
 
     function mintOnEvm(
@@ -121,7 +120,6 @@ contract EvmSolanaOnchainCalls is Script {
     function mintOnSolana(
         uint256 srcAmount,
         address userEvmAddress,
-        bytes32 switchboardSolana,
         EvmSolanaAppGateway appGateway
     ) public {
         console.log("Mint on Solana");
@@ -139,7 +137,7 @@ contract EvmSolanaOnchainCalls is Script {
             })
         );
 
-        appGateway.mintSuperTokenSolana(solanaInstruction, switchboardSolana);
+        appGateway.mintSuperTokenSolana(solanaInstruction);
     }
 
     function buildSolanaInstruction(

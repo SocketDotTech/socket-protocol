@@ -35,13 +35,12 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
     }
 
     constructor(
-        address addressResolver_,
         address owner_,
         uint256 fees_,
         SuperTokenEvmConstructorParams memory params_,
         bytes32 solanaProgramId_,
         address forwarderSolanaAddress_
-    ) AppGatewayBase(addressResolver_) {
+    ) {
         // for evm we use standard mode with contract deployment using EVMx
         creationCodeWithArgs[superTokenEvm] = abi.encodePacked(
             type(SuperToken).creationCode,
@@ -63,14 +62,14 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         _initializeOwner(owner_);
     }
 
-    function deployEvmContract(uint32 chainSlug_) external async(bytes("")) {
+    function deployEvmContract(uint32 chainSlug_) external async {
         bytes memory initData = abi.encodeWithSelector(SuperToken.setOwner.selector, owner());
         _deploy(superTokenEvm, chainSlug_, IsPlug.YES, initData);
     }
 
     // no need to call this directly, will be called automatically after all contracts are deployed.
     // check AppGatewayBase._deploy and AppGatewayBase.onRequestComplete
-    function initialize(uint32) public pure override {
+    function initializeOnChain(uint32) public pure override {
         return;
     }
 
@@ -78,39 +77,40 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         return address(forwarderSolana.addressResolver__());
     }
 
-    function transfer(bytes memory order_, SolanaInstruction memory solanaInstruction, bytes32 switchboardSolana) external async(bytes("")) {
+    function transfer(bytes memory order_, SolanaInstruction memory solanaInstruction) external async {
         TransferOrderEvmToSolana memory order = abi.decode(order_, (TransferOrderEvmToSolana));
         ISuperToken(order.srcEvmToken).burn(order.userEvm, order.srcAmount);
 
         // SolanaInstruction memory solanaInstruction = buildSolanaInstruction(order);
 
         /// we are directly calling the ForwarderSolana
-        forwarderSolana.callSolana(solanaInstruction, switchboardSolana);
+        forwarderSolana.callSolana(solanaInstruction);
 
-        emit Transferred(_getCurrentAsyncId());
+        emit Transferred(_getCurrentRequestCount());
     }
 
-    function mintSuperTokenEvm(bytes memory order_) external async(bytes("")) {
+    function mintSuperTokenEvm(bytes memory order_) external async {
         TransferOrderEvmToSolana memory order = abi.decode(order_, (TransferOrderEvmToSolana));
         ISuperToken(order.srcEvmToken).mint(order.userEvm, order.srcAmount);
 
-        emit Transferred(_getCurrentAsyncId());
+        emit Transferred(_getCurrentRequestCount());
     }
 
-    function mintSuperTokenSolana(SolanaInstruction memory solanaInstruction, bytes32 switchboardSolana) external async(bytes("")) {
+    function mintSuperTokenSolana(SolanaInstruction memory solanaInstruction) external async {
         // we are directly calling the ForwarderSolana
-        forwarderSolana.callSolana(solanaInstruction, switchboardSolana);
+        forwarderSolana.callSolana(solanaInstruction);
 
-        emit Transferred(_getCurrentAsyncId());
+        emit Transferred(_getCurrentRequestCount());
     }
 
-    function transferForDebug(SolanaInstruction memory solanaInstruction, bytes32 switchboardSolana) external async(bytes("")) {
+    function transferForDebug(SolanaInstruction memory solanaInstruction) external async {
         // ISuperToken(order.srcEvmToken).burn(order.userEvm, order.srcAmount);
 
         // we are directly calling the ForwarderSolana
-        forwarderSolana.callSolana(solanaInstruction, switchboardSolana);
+        forwarderSolana.callSolana(solanaInstruction);
 
-        emit Transferred(_getCurrentAsyncId());
+        emit Transferred(_getCurrentRequestCount());
+
     }
 
     /*
