@@ -124,7 +124,7 @@ struct CreateRequestResult {
 
 struct Bid {
     uint256 fee;
-    address transmitter; // TODO:GW: for later - in Solana it will be bytes32
+    address transmitter;
     bytes extraData;
 }
 
@@ -136,7 +136,7 @@ struct UserCredits {
 // digest:
 struct DigestParams {
     bytes32 socket;
-    address transmitter; // TODO:GW: for later - in Solana it will be bytes32
+    address transmitter;
     bytes32 payloadId;
     uint256 deadline;
     bytes4 callType;
@@ -160,7 +160,6 @@ struct OverrideParams {
     uint256 delayInSeconds;
 }
 
-// payload // TODO:GW: change target to bytes32 - no more QueuePayloadParams ?
 struct Transaction {
     uint32 chainSlug;
     bytes32 target;

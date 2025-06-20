@@ -138,7 +138,6 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     function setAddress(bytes memory data_, bytes memory returnData_) external onlyPromises {
         (uint32 chainSlug, bytes32 contractId) = abi.decode(data_, (uint32, bytes32));
         forwarderAddresses[contractId][chainSlug] = asyncDeployer__().getOrDeployForwarderContract(
-            // TODO:GW: where does returnData_ come from - maybe it is already bytes32 ? - is it EVM specific ?
             toBytes32Format(abi.decode(returnData_, (address))),
             chainSlug
         );
