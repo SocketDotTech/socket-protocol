@@ -70,7 +70,8 @@ contract SetupStore is Test {
     uint256 public payloadIdCounter;
     uint256 public triggerCounter;
     uint256 public asyncPromiseCounter;
-
+    uint32 public optCCTPDomain = 2;
+    uint32 public arbCCTPDomain = 3;
     struct SocketContracts {
         uint32 chainSlug;
         Socket socket;
@@ -129,15 +130,13 @@ contract DeploySetup is SetupStore {
         vm.startPrank(socketOwner);
         arbConfig.cctpSwitchboard.addRemoteEndpoint(
             optChainSlug,
-            optChainSlug,
-            address(optConfig.cctpSwitchboard),
-            optChainSlug
+            addressToBytes32(address(optConfig.cctpSwitchboard)),
+            optCCTPDomain
         );
         optConfig.cctpSwitchboard.addRemoteEndpoint(
             arbChainSlug,
-            arbChainSlug,
-            address(arbConfig.cctpSwitchboard),
-            arbChainSlug
+            addressToBytes32(address(arbConfig.cctpSwitchboard)),
+            arbCCTPDomain
         );
         vm.stopPrank();
         // transfer eth to fees pool for native fee payouts
@@ -1072,13 +1071,6 @@ contract WatcherSetup is AuctionSetup {
         return messages;
     }
 
-    function addressToBytes32(address addr_) internal pure returns (bytes32) {
-        return bytes32(uint256(uint160(addr_)));
-    }
-    function bytes32ToAddress(bytes32 addrBytes32_) internal pure returns (address) {
-        return address(uint160(uint256(addrBytes32_)));
-    }
-
     function _resolvePromise(PromiseReturnData[] memory promiseReturnData) internal {
         watcherMultiCall(
             address(promiseResolver),
@@ -1296,4 +1288,11 @@ contract AppGatewayBaseSetup is WatcherSetup {
             );
         }
     }
+}
+
+function addressToBytes32(address addr_) pure returns (bytes32) {
+    return bytes32(uint256(uint160(addr_)));
+}
+function bytes32ToAddress(bytes32 addrBytes32_) pure returns (address) {
+    return address(uint160(uint256(addrBytes32_)));
 }

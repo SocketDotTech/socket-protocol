@@ -80,4 +80,6 @@ interface ISocket {
     function payloadExecuted(bytes32 payloadId_) external view returns (ExecutionStatus);
 
     function chainSlug() external view returns (uint32);
+
+    function payloadIdToDigest(bytes32 payloadId_) external view returns (bytes32);
 }

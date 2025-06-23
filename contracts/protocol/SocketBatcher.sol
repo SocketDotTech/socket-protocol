@@ -62,18 +62,17 @@ contract SocketBatcher is ISocketBatcher, Ownable {
         CCTPBatchParams calldata cctpParams_,
         address switchboard_
     ) external payable returns (bool, bytes memory) {
-        bytes32 payloadId = _createPayloadId(execParams_.executeParams, switchboard_);
-        ICCTPSwitchboard(switchboard_).attest(payloadId, execParams_.digest, execParams_.proof);
-
-        ICCTPSwitchboard(switchboard_).verifyAttestations(
-            cctpParams_.messages,
-            cctpParams_.attestations
+        bytes32 payloadId = createPayloadId(
+            execParams_.executeParams.requestCount,
+            execParams_.executeParams.batchCount,
+            execParams_.executeParams.payloadCount,
+            switchboard_,
+            socket__.chainSlug()
         );
-        ICCTPSwitchboard(switchboard_).proveRemoteExecutions(
-            cctpParams_.previousPayloadIds,
-            payloadId,
-            execParams_.transmitterSignature,
-            execParams_.executeParams
+        ICCTPSwitchboard(switchboard_).attestVerifyAndProveExecutions(
+            execParams_,
+            cctpParams_,
+            payloadId
         );
         (bool success, bytes memory returnData) = socket__.execute{value: msg.value}(
             execParams_.executeParams,
@@ -87,20 +86,6 @@ contract SocketBatcher is ISocketBatcher, Ownable {
 
         ICCTPSwitchboard(switchboard_).syncOut(payloadId, cctpParams_.nextBatchRemoteChainSlugs);
         return (success, returnData);
-    }
-
-    function _createPayloadId(
-        ExecuteParams memory executeParams_,
-        address switchboard_
-    ) internal view returns (bytes32) {
-        return
-            createPayloadId(
-                executeParams_.requestCount,
-                executeParams_.batchCount,
-                executeParams_.payloadCount,
-                switchboard_,
-                socket__.chainSlug()
-            );
     }
 
     /**

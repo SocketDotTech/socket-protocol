@@ -24,6 +24,8 @@ contract MockSocket is ISocket {
     // plug => (appGateway, switchboard__)
     mapping(address => PlugConfig) internal _plugConfigs;
 
+    mapping(bytes32 => bytes32) public payloadIdToDigest;
+
     function getPlugConfig(
         address plugAddress_
     ) external view returns (bytes32 appGatewayId, address switchboard__) {

@@ -39,7 +39,7 @@ contract FastSwitchboard is SwitchboardBase {
      * @param proof_ proof from watcher
      * @notice we are attesting a payload uniquely identified with digest.
      */
-    function attest(bytes32 digest_, bytes calldata proof_) external {
+    function attest(bytes32 digest_, bytes calldata proof_) public virtual {
         if (isAttested[digest_]) revert AlreadyAttested();
 
         address watcher = _recoverSigner(

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 import "./ISwitchboard.sol";
-import {ExecuteParams} from "../../utils/common/Structs.sol";
+import {ExecuteParams, CCTPExecutionParams, CCTPBatchParams} from "../../utils/common/Structs.sol";
 
 /**
  * @title ISwitchboard
@@ -10,13 +10,6 @@ import {ExecuteParams} from "../../utils/common/Structs.sol";
  * digest is executed.
  */
 interface ICCTPSwitchboard is ISwitchboard {
-    /**
-     * @notice Attests a payload
-     * @param digest_ The digest of the payload
-     * @param proof_ The proof of the payload
-     */
-    function attest(bytes32 payloadId_, bytes32 digest_, bytes calldata proof_) external;
-
     /**
      * @notice Syncs out a payload to the remote chains
      * @param payloadId_ The unique identifier for the payload
@@ -58,5 +51,11 @@ interface ICCTPSwitchboard is ISwitchboard {
     function verifyAttestations(
         bytes[] calldata messages_,
         bytes[] calldata attestations_
+    ) external;
+
+    function attestVerifyAndProveExecutions(
+        CCTPExecutionParams calldata execParams_,
+        CCTPBatchParams calldata cctpParams_,
+        bytes32 payloadId_
     ) external;
 }
