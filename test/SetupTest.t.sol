@@ -1105,24 +1105,43 @@ contract WatcherSetup is AuctionSetup {
         IAppGateway appGateway_,
         bytes32[] memory contractIds_
     ) internal {
-        AppGatewayConfig[] memory configs = new AppGatewayConfig[](contractIds_.length);
+        // Count valid plugs first. In some cases we might have contractIds such that oly a subset is
+        // deployed on a chain. for ex, vault on source, and supertoken on destination.
+        uint256 validPlugCount = 0;
+        for (uint i = 0; i < contractIds_.length; i++) {
+            address plug = appGateway_.getOnChainAddress(contractIds_[i], chainSlug_);
+            if (plug != address(0)) {
+                validPlugCount++;
+            }
+        }
+
+        // Create array with exact size needed
+        AppGatewayConfig[] memory configs = new AppGatewayConfig[](validPlugCount);
+        uint256 configIndex = 0;
 
         for (uint i = 0; i < contractIds_.length; i++) {
             address plug = appGateway_.getOnChainAddress(contractIds_[i], chainSlug_);
             address switchboard = configurations.switchboards(chainSlug_, appGateway_.sbType());
-            configs[i] = AppGatewayConfig({
-                plug: plug,
-                chainSlug: chainSlug_,
-                plugConfig: PlugConfig({
-                    appGatewayId: encodeAppGatewayId(address(appGateway_)),
-                    switchboard: switchboard
-                })
-            });
+            if (plug != address(0)) {
+                configs[configIndex] = AppGatewayConfig({
+                    plug: plug,
+                    chainSlug: chainSlug_,
+                    plugConfig: PlugConfig({
+                        appGatewayId: encodeAppGatewayId(address(appGateway_)),
+                        switchboard: switchboard
+                    })
+                });
+                configIndex++;
+            }
         }
-        watcherMultiCall(
-            address(configurations),
-            abi.encodeWithSelector(Configurations.setAppGatewayConfigs.selector, configs)
-        );
+
+        // Only call watcher if we have valid configs
+        if (validPlugCount > 0) {
+            watcherMultiCall(
+                address(configurations),
+                abi.encodeWithSelector(Configurations.setAppGatewayConfigs.selector, configs)
+            );
+        }
     }
 }
 contract AppGatewayBaseSetup is WatcherSetup {
