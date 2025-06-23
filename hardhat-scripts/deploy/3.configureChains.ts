@@ -266,7 +266,7 @@ export const whitelistToken = async (
     await getInstance(Contracts.FeesPlug, feesPlugAddress)
   ).connect(signer);
 
-  const tokens = getFeeTokens(mode, chain);
+  const tokens = getFeeTokens(chain);
   if (tokens.length == 0) return;
 
   for (const token of tokens) {

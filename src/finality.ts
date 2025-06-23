@@ -4,7 +4,7 @@ import { ChainFinalityBlocks, FinalityBucket } from "./types";
 export const DEFAULT_FINALITY_BUCKET = FinalityBucket.LOW;
 
 export const defaultFinalityBlocks: ChainFinalityBlocks = {
-  [FinalityBucket.LOW]: 1,
+  [FinalityBucket.LOW]: 0,
   [FinalityBucket.MEDIUM]: "safe",
   [FinalityBucket.HIGH]: "finalized",
 };
