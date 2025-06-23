@@ -52,19 +52,25 @@ export const main = async () => {
       hre.changeNetwork(chainName);
 
       const chainParams: VerifyArgs[] = verificationParams[chain];
-      const unverifiedChainParams: VerifyArgs[] = [];
+      let retryCount = 0;
 
-      if (chainParams.length) {
-        const len = chainParams.length;
-        for (let index = 0; index < len!; index++) {
-          const res = await verify(...chainParams[index]);
-          if (!res) {
-            unverifiedChainParams.push(chainParams[index]);
+      while (retryCount < 5) {
+        const unverifiedChainParams: VerifyArgs[] = [];
+        if (chainParams.length) {
+          const len = chainParams.length;
+          for (let index = 0; index < len!; index++) {
+            const res = await verify(...chainParams[index]);
+            if (!res) {
+              unverifiedChainParams.push(chainParams[index]);
+            }
           }
         }
-      }
+        await storeUnVerifiedParams(unverifiedChainParams, chain, mode);
 
-      await storeUnVerifiedParams(unverifiedChainParams, chain, mode);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        retryCount++;
+        if (unverifiedChainParams.length == 0) break;
+      }
     }
   } catch (error) {
     console.log("Error in verifying contracts", error);
