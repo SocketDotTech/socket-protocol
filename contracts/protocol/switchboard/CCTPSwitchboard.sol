@@ -28,7 +28,7 @@ contract CCTPSwitchboard is FastSwitchboard, IMessageHandler {
 
     error RemoteExecutionNotFound();
     error DigestMismatch();
-    error PreviousDigestsHashMismatch();
+    error PrevBatchDigestHashMismatch();
     error NotAttested();
     error NotExecuted();
     error InvalidDomain();
@@ -121,18 +121,18 @@ contract CCTPSwitchboard is FastSwitchboard, IMessageHandler {
         bytes calldata transmitterSignature_,
         ExecuteParams calldata executeParams_
     ) external {
-        // Calculate previousDigestsHash from stored remoteExecutedDigests
-        bytes32 previousDigestsHash = bytes32(0);
+        // Calculate prevBatchDigestHash from stored remoteExecutedDigests
+        bytes32 prevBatchDigestHash = bytes32(0);
         for (uint256 i = 0; i < previousPayloadIds_.length; i++) {
             if (remoteExecutedDigests[previousPayloadIds_[i]] == bytes32(0))
                 revert RemoteExecutionNotFound();
-            previousDigestsHash = keccak256(
-                abi.encodePacked(previousDigestsHash, remoteExecutedDigests[previousPayloadIds_[i]])
+            prevBatchDigestHash = keccak256(
+                abi.encodePacked(prevBatchDigestHash, remoteExecutedDigests[previousPayloadIds_[i]])
             );
         }
-        // Check if the calculated previousDigestsHash matches the one in executeParams_
-        if (previousDigestsHash != executeParams_.prevBatchDigestHash)
-            revert PreviousDigestsHashMismatch();
+        // Check if the calculated prevBatchDigestHash matches the one in executeParams_
+        if (prevBatchDigestHash != executeParams_.prevBatchDigestHash)
+            revert PrevBatchDigestHashMismatch();
 
         address transmitter = _recoverSigner(
             keccak256(abi.encode(address(socket__), payloadId_)),
