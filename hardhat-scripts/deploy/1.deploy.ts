@@ -2,7 +2,12 @@ import { config } from "dotenv";
 import { Contract, utils, Wallet } from "ethers";
 import { formatEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { ChainAddressesObj, ChainSlug, Contracts } from "../../src";
+import {
+  ChainAddressesObj,
+  ChainSlug,
+  Contracts,
+  MESSAGE_TRANSMITTER,
+} from "../../src";
 import {
   AUCTION_END_DELAY_SECONDS,
   BID_TIMEOUT,
@@ -13,7 +18,6 @@ import {
   logConfig,
   MAX_RE_AUCTION_COUNT,
   MAX_SCHEDULE_DELAY_SECONDS,
-  MESSAGE_TRANSMITTER,
   mode,
   READ_FEES,
   SCHEDULE_CALLBACK_FEES,

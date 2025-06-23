@@ -2,9 +2,13 @@ import { config as dotenvConfig } from "dotenv";
 dotenvConfig();
 
 import { Contract, Signer, Wallet } from "ethers";
-import { ChainAddressesObj, ChainSlug, Contracts } from "../../src";
 import {
+  ChainAddressesObj,
+  ChainSlug,
+  Contracts,
   CCTP_DOMAINS,
+} from "../../src";
+import {
   chains,
   EVMX_CHAIN_ID,
   mainnetChains,

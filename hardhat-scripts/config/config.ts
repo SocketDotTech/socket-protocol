@@ -26,9 +26,17 @@ export const logConfig = () => {
 export const getChains = () => {
   switch (mode) {
     case DeploymentMode.LOCAL:
-      return [ChainSlug.ARBITRUM_SEPOLIA, ChainSlug.OPTIMISM_SEPOLIA];
+      return [
+        ChainSlug.ARBITRUM_SEPOLIA,
+        ChainSlug.OPTIMISM_SEPOLIA,
+        ChainSlug.BASE_SEPOLIA,
+      ];
     case DeploymentMode.DEV:
-      return [ChainSlug.ARBITRUM_SEPOLIA, ChainSlug.OPTIMISM_SEPOLIA];
+      return [
+        ChainSlug.ARBITRUM_SEPOLIA,
+        ChainSlug.OPTIMISM_SEPOLIA,
+        ChainSlug.BASE_SEPOLIA,
+      ];
     case DeploymentMode.STAGE:
       return [
         ChainSlug.BASE,
@@ -95,7 +103,7 @@ export const MAX_MSG_VALUE_LIMIT = ethers.utils.parseEther("0.001");
 // Auction parameters
 export const AUCTION_END_DELAY_SECONDS = 0;
 export const BID_TIMEOUT = 600; // 10 minutes
-export const EXPIRY_TIME = 300; // 5 minutes
+export const EXPIRY_TIME = 3600; // 1 hour
 export const MAX_RE_AUCTION_COUNT = 5;
 
 // Fees Pool Funding Amount
@@ -116,18 +124,3 @@ export const UPGRADE_VERSION = 1;
 // Transmitter constants
 export const TRANSMITTER_CREDIT_THRESHOLD = ethers.utils.parseEther("100"); // 100 ETH threshold
 export const TRANSMITTER_NATIVE_THRESHOLD = ethers.utils.parseEther("100"); // 100 ETH threshold
-
-// CCTP
-export const MESSAGE_TRANSMITTER: {
-  [chainSlug: number]: string;
-} = {
-  421614: "0xaCF1ceeF35caAc005e15888dDb8A3515C41B4872",
-  11155420: "0x7865fAfC2db2093669d92c0F33AeEF291086BEFD",
-};
-
-export const CCTP_DOMAINS: {
-  [chainSlug: number]: number;
-} = {
-  421614: 3,
-  11155420: 2,
-};
