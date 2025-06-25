@@ -22,12 +22,12 @@ interface IAsyncDeployer {
 
     // Forwarder Management
     function getOrDeployForwarderContract(
-        address chainContractAddress_,
+        bytes32 chainContractAddress_,
         uint32 chainSlug_
     ) external returns (address);
 
     function getForwarderAddress(
-        address chainContractAddress_,
+        bytes32 chainContractAddress_,
         uint32 chainSlug_
     ) external view returns (address);
 

@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 import "../../contracts/utils/common/Errors.sol";
 import "../../contracts/protocol/interfaces/ISocket.sol";
 import "../../contracts/protocol/interfaces/ISwitchboard.sol";
+import {toBytes32Format} from "../../contracts/utils/common/Converters.sol";
 
 /**
  * @title SocketDst
@@ -14,7 +15,7 @@ import "../../contracts/protocol/interfaces/ISwitchboard.sol";
  * It also includes functions for payload execution and verification
  */
 contract MockSocket is ISocket {
-    struct PlugConfig {
+    struct PlugConfigEvm {
         // address of the sibling plug on the remote chain
         bytes32 appGatewayId;
         // switchboard instance for the plug connection
@@ -22,12 +23,12 @@ contract MockSocket is ISocket {
     }
 
     // plug => (appGateway, switchboard__)
-    mapping(address => PlugConfig) internal _plugConfigs;
+    mapping(address => PlugConfigEvm) internal _plugConfigs;
 
     function getPlugConfig(
         address plugAddress_
     ) external view returns (bytes32 appGatewayId, address switchboard__) {
-        PlugConfig memory _plugConfig = _plugConfigs[plugAddress_];
+        PlugConfigEvm memory _plugConfig = _plugConfigs[plugAddress_];
         return (_plugConfig.appGatewayId, address(_plugConfig.switchboard__));
     }
 
@@ -91,14 +92,14 @@ contract MockSocket is ISocket {
         bytes calldata payload,
         bytes calldata overrides
     ) external returns (bytes32 triggerId) {
-        PlugConfig memory plugConfig = _plugConfigs[msg.sender];
+        PlugConfigEvm memory plugConfig = _plugConfigs[msg.sender];
         // creates a unique ID for the message
         triggerId = _encodeTriggerId(plugConfig.appGatewayId);
         emit AppGatewayCallRequested(
             triggerId,
             plugConfig.appGatewayId,
-            address(plugConfig.switchboard__),
-            msg.sender,
+            toBytes32Format(address(plugConfig.switchboard__)),
+            toBytes32Format(msg.sender),
             overrides,
             payload
         );

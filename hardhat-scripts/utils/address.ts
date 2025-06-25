@@ -33,3 +33,29 @@ export const checkIfAddressExists = (address: string, name: string) => {
   }
   return address;
 };
+
+// TODO: move this to socket-common
+export function toBytes32FormatHexString(hexString: string): string {
+  // this means that the string is already in bytes32 format with or without 0x prefix
+  if (hexString.length == 64 || hexString.length == 66) {
+    return hexString;
+  }
+  // Remove the '0x' prefix from the input string if it's present
+  const cleanedHexString = hexString.startsWith("0x")
+    ? hexString.slice(2)
+    : hexString;
+
+  const buffer = Buffer.alloc(32);
+  buffer.write(cleanedHexString, 32 - cleanedHexString.length / 2, "hex"); // each hex char is 2 bytes
+
+  return "0x" + buffer.toString("hex");
+}
+
+export function toBytes32Format(hexString: string): number[] {
+  const hex32Format = toBytes32FormatHexString(hexString);
+  const cleanedHex32String = hex32Format.startsWith("0x")
+    ? hex32Format.slice(2)
+    : hex32Format;
+
+  return Array.from(Buffer.from(cleanedHex32String, "hex"));
+}

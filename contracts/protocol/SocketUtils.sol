@@ -5,6 +5,7 @@ import {ECDSA} from "solady/utils/ECDSA.sol";
 import "../utils/RescueFundsLib.sol";
 import "./SocketConfig.sol";
 import {LibCall} from "solady/utils/LibCall.sol";
+import {toBytes32Format} from "../utils/common/Converters.sol";
 
 /**
  * @title SocketUtils
@@ -73,8 +74,8 @@ abstract contract SocketUtils is SocketConfig {
     ) internal view returns (bytes32) {
         return
             keccak256(
-                abi.encode(
-                    address(this),
+                abi.encodePacked(
+                    toBytes32Format(address(this)),
                     transmitter_,
                     payloadId_,
                     executeParams_.deadline,
@@ -82,7 +83,7 @@ abstract contract SocketUtils is SocketConfig {
                     executeParams_.gasLimit,
                     executeParams_.value,
                     executeParams_.payload,
-                    executeParams_.target,
+                    toBytes32Format(executeParams_.target),
                     appGatewayId_,
                     executeParams_.prevBatchDigestHash,
                     executeParams_.extraData

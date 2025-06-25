@@ -43,8 +43,8 @@ interface ISocket {
     event AppGatewayCallRequested(
         bytes32 triggerId,
         bytes32 appGatewayId,
-        address switchboard,
-        address plug,
+        bytes32 switchboard,
+        bytes32 plug,
         bytes overrides,
         bytes payload
     );

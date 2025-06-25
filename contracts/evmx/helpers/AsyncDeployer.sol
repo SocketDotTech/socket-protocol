@@ -66,7 +66,7 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, AddressResolverUt
     /// @param chainSlug_ The chain slug
     /// @return newForwarder The address of the deployed Forwarder proxy contract
     function getOrDeployForwarderContract(
-        address chainContractAddress_,
+        bytes32 chainContractAddress_,
         uint32 chainSlug_
     ) public override returns (address newForwarder) {
         // predict address
@@ -107,7 +107,7 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, AddressResolverUt
     }
 
     function _createForwarderParams(
-        address chainContractAddress_,
+        bytes32 chainContractAddress_,
         uint32 chainSlug_
     ) internal view returns (bytes32 salt, bytes memory initData) {
         bytes memory constructorArgs = abi.encode(
@@ -168,7 +168,7 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, AddressResolverUt
     /// @param chainSlug_ The chain slug
     /// @return The predicted address of the Forwarder proxy contract
     function getForwarderAddress(
-        address chainContractAddress_,
+        bytes32 chainContractAddress_,
         uint32 chainSlug_
     ) public view override returns (address) {
         (bytes32 salt, ) = _createForwarderParams(chainContractAddress_, chainSlug_);

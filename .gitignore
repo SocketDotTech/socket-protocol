@@ -31,3 +31,5 @@ deployments/local_verification.json
 
 testScript.sh
 CLAUDE.md
+
+.idea/
