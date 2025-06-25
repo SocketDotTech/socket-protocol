@@ -1,17 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-// import "./interfaces/IAddressResolver.sol";
-// import "./interfaces/IMiddleware.sol";
-// import "./interfaces/IAppGateway.sol";
-// import "./interfaces/IPromise.sol";
-// import "./interfaces/IForwarder.sol";
-// import {AddressResolverUtil} from "./AddressResolverUtil.sol";
-// import {AsyncModifierNotUsed, NoAsyncPromiseFound, PromiseCallerMismatch, RequestCountMismatch, DeliveryHelperNotSet} from "../utils/common/Errors.sol";
-// import "solady/utils/Initializable.sol";
-// import {SolanaInstruction} from "../utils/common/Structs.sol";
-// import {CHAIN_SLUG_SOLANA_MAINNET, CHAIN_SLUG_SOLANA_DEVNET} from "../utils/common/Constants.sol";
-
 import "solady/utils/Initializable.sol";
 import "./AddressResolverUtil.sol";
 import "../interfaces/IAddressResolver.sol";
@@ -23,14 +12,13 @@ import "../../utils/RescueFundsLib.sol";
 import {toBytes32Format} from "../../utils/common/Converters.sol";
 import {SolanaInstruction} from "../../utils/common/Structs.sol";
 import {CHAIN_SLUG_SOLANA_MAINNET, CHAIN_SLUG_SOLANA_DEVNET} from "../../utils/common/Constants.sol";
-import { ForwarderStorage } from "./Forwarder.sol";
-
+import {ForwarderStorage} from "./Forwarder.sol";
 
 /// @title Forwarder Contract
 /// @notice This contract acts as a forwarder for async calls to the on-chain contracts.
 contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil {
-
     error InvalidSolanaChainSlug();
+    error AddressResolverNotSet();
 
     constructor() {
         _disableInitializers(); // disable for implementation
@@ -89,7 +77,10 @@ contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil
     /// @dev It queues the calls in the middleware and deploys the promise contract
     // function callSolana(SolanaInstruction memory solanaInstruction, bytes32 switchboardSolana) external {
     function callSolana(SolanaInstruction memory solanaInstruction) external {
-         if (address(watcher__()) == address(0)) {
+        if (address(addressResolver__) == address(0)) {
+            revert AddressResolverNotSet();
+        }
+        if (address(watcher__()) == address(0)) {
             revert WatcherNotSet();
         }
 

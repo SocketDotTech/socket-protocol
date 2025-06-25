@@ -65,6 +65,7 @@ export enum Contracts {
   FeesPool = "FeesPool",
   AsyncDeployer = "AsyncDeployer",
   DeployForwarder = "DeployForwarder",
+  ForwarderSolana = "ForwarderSolana",
 }
 
 export enum CallTypeNames {
