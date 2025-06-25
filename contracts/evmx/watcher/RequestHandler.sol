@@ -75,6 +75,16 @@ contract RequestHandler is RequestHandlerStorage, Initializable, Ownable, Addres
     event RequestCompletedWithErrors(uint40 requestCount);
     event RequestCancelled(uint40 requestCount);
 
+    // TODO: remove after testing Solana
+    event PayloadIdData(
+        uint40 requestCount,
+        uint40 batchCount,
+        uint40 payloadCount,
+        uint32 chainSlug,
+        bytes32 switchboard,
+        bytes packed
+    );
+
     modifier isRequestCancelled(uint40 requestCount_) {
         if (_requests[requestCount_].requestTrackingParams.isRequestCancelled)
             revert RequestAlreadyCancelled();
@@ -253,6 +263,24 @@ contract RequestHandler is RequestHandlerStorage, Initializable, Ownable, Addres
                 queuePayloadParam.transaction.chainSlug
             );
             _batchPayloadIds[nextBatchCount].push(payloadId);
+
+            // TODO: remove after testing Solana
+            uint32 chainSlugParam = queuePayloadParam.transaction.chainSlug;
+            bytes memory packed = abi.encodePacked(
+                requestCount_,
+                nextBatchCount,
+                payloadCount,
+                chainSlugParam,
+                switchboard
+            );
+            emit PayloadIdData(
+                requestCount_,
+                nextBatchCount,
+                payloadCount,
+                chainSlugParam,
+                switchboard,
+                packed
+            );
 
             // create prev digest hash
             PayloadParams memory p;

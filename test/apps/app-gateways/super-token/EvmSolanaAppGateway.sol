@@ -8,7 +8,6 @@ import "./SuperToken.sol";
 import {SolanaInstruction, SolanaInstructionData, SolanaInstructionDataDescription} from "../../../../contracts/utils/common/Structs.sol";
 import {ForwarderSolana} from "../../../../contracts/evmx/helpers/ForwarderSolana.sol";
 
-
 contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
     bytes32 public superTokenEvm = _createContractId("superTokenEvm");
     // solana program address
@@ -39,7 +38,8 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         uint256 fees_,
         SuperTokenEvmConstructorParams memory params_,
         bytes32 solanaProgramId_,
-        address forwarderSolanaAddress_
+        address forwarderSolanaAddress_,
+        address addressResolver_
     ) {
         // for evm we use standard mode with contract deployment using EVMx
         creationCodeWithArgs[superTokenEvm] = abi.encodePacked(
@@ -60,6 +60,7 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         // they can be updated for each transfer as well
         _setMaxFees(fees_);
         _initializeOwner(owner_);
+        _initializeAppGateway(addressResolver_);
     }
 
     function deployEvmContract(uint32 chainSlug_) external async {
@@ -77,7 +78,10 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         return address(forwarderSolana.addressResolver__());
     }
 
-    function transfer(bytes memory order_, SolanaInstruction memory solanaInstruction) external async {
+    function transfer(
+        bytes memory order_,
+        SolanaInstruction memory solanaInstruction
+    ) external async {
         TransferOrderEvmToSolana memory order = abi.decode(order_, (TransferOrderEvmToSolana));
         ISuperToken(order.srcEvmToken).burn(order.userEvm, order.srcAmount);
 
@@ -110,7 +114,6 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         forwarderSolana.callSolana(solanaInstruction);
 
         emit Transferred(_getCurrentRequestCount());
-
     }
 
     /*

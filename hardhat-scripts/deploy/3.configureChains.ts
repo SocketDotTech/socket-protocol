@@ -104,6 +104,22 @@ async function setOnchainContracts(
     [chain, FAST_SWITCHBOARD_TYPE, toBytes32Format(switchboard)],
     signer
   );
+  console.log("XXX Setting solana switchboard");
+  console.log("FAST_SWITCHBOARD_TYPE: ", FAST_SWITCHBOARD_TYPE);
+  const solanaSwitchboard = process.env.SWITCHBOARD_SOLANA;
+  if (!solanaSwitchboard) throw new Error("SWITCHBOARD_SOLANA is not set");
+  console.log("solanaSwitchboard as bytes32 reversed: ", Buffer.from(toBytes32Format(solanaSwitchboard)).toString("hex"));
+  await updateContractSettings(
+    EVMX_CHAIN_ID,
+    Contracts.Configurations,
+    "switchboards",
+    [ChainSlug.SOLANA_DEVNET, FAST_SWITCHBOARD_TYPE],
+    solanaSwitchboard,
+    "setSwitchboard",
+    [ChainSlug.SOLANA_DEVNET, FAST_SWITCHBOARD_TYPE, toBytes32Format(solanaSwitchboard)],
+    signer
+  );
+  
   await updateContractSettings(
     EVMX_CHAIN_ID,
     Contracts.Configurations,

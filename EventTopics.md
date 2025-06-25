@@ -133,6 +133,12 @@
 | ----- | --------- | ----- |
 | `Initialized` | `(version: uint64)` | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
 
+## ForwarderSolana
+
+| Event | Arguments | Topic |
+| ----- | --------- | ----- |
+| `Initialized` | `(version: uint64)` | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
+
 ## ProxyFactory
 
 | Event | Arguments | Topic |
@@ -187,6 +193,7 @@
 | `PlugAdded` | `(appGatewayId: bytes32, chainSlug: uint32, plug: bytes32)` | `0x3734a2406c5c2f2556c82a0819c51e42a135dd102465cc9856594481ea2f1637` |
 | `SocketSet` | `(chainSlug: uint32, socket: bytes32)` | `0x3200bf6ad2ab31b9220ed9d2f83089d7a1332f55aaa3825c57510743a315165b` |
 | `SwitchboardSet` | `(chainSlug: uint32, sbType: bytes32, switchboard: bytes32)` | `0xcdfbfa261040f4dffb03c7d9493f74b575f2ae533bb43fd7b5d5b24ac9d804f4` |
+| `VerifyConnectionsSB` | `(switchboard: bytes32, switchboardExpected: bytes32)` | `0xf55cb41249952cf17b38f1473238606bcd5048a5202d544f5d401c24a1208403` |
 
 ## PromiseResolver
 
@@ -205,6 +212,7 @@
 | `OwnershipHandoverCanceled` | `(pendingOwner: address)` | `0xfa7b8eab7da67f412cc9575ed43464468f9bfbae89d1675917346ca6d8fe3c92` |
 | `OwnershipHandoverRequested` | `(pendingOwner: address)` | `0xdbf36a107da19e49527a7176a1babf963b4b0ff8cde35ee35d6cd8f1f9ac7e1d` |
 | `OwnershipTransferred` | `(oldOwner: address, newOwner: address)` | `0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0` |
+| `PayloadIdData` | `(requestCount: uint40, batchCount: uint40, payloadCount: uint40, chainSlug: uint32, switchboard: bytes32, packed: bytes)` | `0x40cd955f96207785cb90a63920257959a7ca0c5f89377eaefbe53ccaa8e4b380` |
 | `RequestCancelled` | `(requestCount: uint40)` | `0xff191657769be72fc08def44c645014c60d18cb24b9ca05c9a33406a28253245` |
 | `RequestCompletedWithErrors` | `(requestCount: uint40)` | `0xd8d9915dc14b5a29b66cb263e1ea1e99e60418fc21d97f0fbf09cae1281291e2` |
 | `RequestSettled` | `(requestCount: uint40, winner: address)` | `0x1234f98acbe1548b214f4528461a5377f1e2349569c04caa59325e488e7d2aa4` |
@@ -258,6 +266,7 @@
 | ----- | --------- | ----- |
 | `ChainMaxMsgValueLimitsUpdated` | `(chainSlug: uint32, maxMsgValueLimit: uint256)` | `0x439087d094fe7dacbba3f0c67032041952d8bd58a891e15af10ced28fed0eb91` |
 | `ContractFactoryPlugSet` | `(chainSlug: uint32, contractFactoryPlug: bytes32)` | `0xfad552a6feb82bef23201b8dce04b2460bff41b00f26fef3d791572cfdab49c2` |
+| `DigestWithSourceParams` | `(digest: bytes32, digestParams: tuple)` | `0x093e9b93d5aafe2a01beeb5ad1e80356601b533260651c08eda18b79912f315b` |
 | `ExpiryTimeSet` | `(expiryTime: uint256)` | `0x07e837e13ad9a34715a6bd45f49bbf12de19f06df79cb0be12b3a7d7f2397fa9` |
 | `FeesSet` | `(writeFees: uint256)` | `0x3346af6da1932164d501f2ec28f8c5d686db5828a36b77f2da4332d89184fe7b` |
 | `Initialized` | `(version: uint64)` | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
