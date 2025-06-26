@@ -182,18 +182,22 @@ const addRemoteEndpointsToCCTPSwitchboard = async (
     for (const remoteChainSlug of remoteChainSlugs) {
       const remoteSwitchboardAddress =
         addresses[remoteChainSlug]?.[Contracts.CCTPSwitchboard];
-      const currentRemoteEndpoint = await switchboard.remoteEndpoints(
+      const currentRemoteEndpoint = await switchboard.chainSlugToRemoteEndpoint(
         remoteChainSlug
       );
       if (currentRemoteEndpoint.remoteAddress == remoteSwitchboardAddress) {
         console.log(`Remote endpoint ${remoteChainSlug} already exists`);
         continue;
       }
-
+      if (!remoteSwitchboardAddress) {
+        console.log(
+          `Remote switchboard address not found for ${remoteChainSlug}`
+        );
+        continue;
+      }
       const registerTx = await switchboard.addRemoteEndpoint(
         remoteChainSlug,
-        remoteChainSlug,
-        remoteSwitchboardAddress,
+        `0x${remoteSwitchboardAddress.slice(2).padStart(64, "0")}`,
         CCTP_DOMAINS[remoteChainSlug],
         {
           ...(await overrides(chain)),

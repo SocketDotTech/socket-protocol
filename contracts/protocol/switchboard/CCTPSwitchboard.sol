@@ -15,7 +15,10 @@ contract CCTPSwitchboard is FastSwitchboard, IMessageHandler {
     IMessageTransmitter public immutable messageTransmitter;
 
     // remoteChainSlug => remoteEndpoint
-    mapping(uint32 => RemoteEndpoint) public remoteEndpoints;
+    mapping(uint32 => RemoteEndpoint) public chainSlugToRemoteEndpoint;
+    // remoteDomain => remoteEndpoint
+    mapping(uint32 => RemoteEndpoint) public domainToRemoteEndpoint;
+
     mapping(bytes32 => bool) public isSyncedOut;
     mapping(bytes32 => bytes32) public remoteExecutedDigests;
     mapping(bytes32 => bool) public isRemoteExecuted;
@@ -56,7 +59,7 @@ contract CCTPSwitchboard is FastSwitchboard, IMessageHandler {
 
         bytes memory message = abi.encode(payloadId_, digest);
         for (uint256 i = 0; i < remoteChainSlugs_.length; i++) {
-            RemoteEndpoint memory endpoint = remoteEndpoints[remoteChainSlugs_[i]];
+            RemoteEndpoint memory endpoint = chainSlugToRemoteEndpoint[remoteChainSlugs_[i]];
             messageTransmitter.sendMessage(endpoint.remoteDomain, endpoint.remoteAddress, message);
         }
     }
@@ -67,7 +70,7 @@ contract CCTPSwitchboard is FastSwitchboard, IMessageHandler {
         bytes calldata messageBody
     ) external returns (bool) {
         if (msg.sender != address(messageTransmitter)) revert OnlyMessageTransmitter();
-        if (remoteEndpoints[sourceDomain].remoteAddress != sender) revert InvalidSender();
+        if (domainToRemoteEndpoint[sourceDomain].remoteAddress != sender) revert InvalidSender();
 
         (bytes32 payloadId, bytes32 digest) = abi.decode(messageBody, (bytes32, bytes32));
         remoteExecutedDigests[payloadId] = digest;
@@ -156,7 +159,11 @@ contract CCTPSwitchboard is FastSwitchboard, IMessageHandler {
         bytes32 remoteAddress_,
         uint32 remoteDomain_
     ) external onlyOwner {
-        remoteEndpoints[remoteChainSlug_] = RemoteEndpoint({
+        chainSlugToRemoteEndpoint[remoteChainSlug_] = RemoteEndpoint({
+            remoteAddress: remoteAddress_,
+            remoteDomain: remoteDomain_
+        });
+        domainToRemoteEndpoint[remoteDomain_] = RemoteEndpoint({
             remoteAddress: remoteAddress_,
             remoteDomain: remoteDomain_
         });

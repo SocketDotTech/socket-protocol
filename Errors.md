@@ -73,11 +73,9 @@
 | Error                           | Signature    |
 | ------------------------------- | ------------ |
 | `RemoteExecutionNotFound()`     | `0xbd506972` |
-| `DigestMismatch()`              | `0x582e0907` |
 | `PrevBatchDigestHashMismatch()` | `0xc9864e9d` |
 | `NotAttested()`                 | `0x99efb890` |
 | `NotExecuted()`                 | `0xec84b1da` |
-| `InvalidDomain()`               | `0xeb127982` |
 | `InvalidSender()`               | `0xddb5de5e` |
 | `OnlyMessageTransmitter()`      | `0x935ac89c` |
 
