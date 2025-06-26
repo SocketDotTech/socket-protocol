@@ -24,6 +24,8 @@ contract MockSocket is ISocket {
     // plug => (appGateway, switchboard__)
     mapping(address => PlugConfig) internal _plugConfigs;
 
+    mapping(bytes32 => bytes32) public payloadIdToDigest;
+
     function getPlugConfig(
         address plugAddress_
     ) external view returns (bytes32 appGatewayId, address switchboard__) {
@@ -64,12 +66,6 @@ contract MockSocket is ISocket {
     ////////////////////////////////////////////////////////////
     uint64 public triggerCounter;
     uint32 public chainSlug;
-
-    enum ExecutionStatus {
-        NotExecuted,
-        Executed,
-        Reverted
-    }
 
     /**
      * @dev keeps track of whether a payload has been executed or not using payload id

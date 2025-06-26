@@ -16,6 +16,7 @@ export const REQUIRED_ROLES = {
   },
   Chain: {
     FastSwitchboard: [ROLES.WATCHER_ROLE, ROLES.RESCUE_ROLE],
+    CCTPSwitchboard: [ROLES.WATCHER_ROLE, ROLES.RESCUE_ROLE],
     Socket: [
       ROLES.GOVERNANCE_ROLE,
       ROLES.RESCUE_ROLE,
@@ -80,8 +81,9 @@ async function setRolesOnChain(chain: number, addresses: DeploymentAddresses) {
 
     for (const roleName of roles) {
       const targetAddress =
-        contractName === Contracts.FastSwitchboard &&
-        roleName === ROLES.WATCHER_ROLE
+        [Contracts.FastSwitchboard, Contracts.CCTPSwitchboard].includes(
+          contractName as Contracts
+        ) && roleName === ROLES.WATCHER_ROLE
           ? watcher
           : signer.address;
 

@@ -54,7 +54,7 @@ echo "txHash: $2"
 echo "rpcUrl: $RPC_URL"
 
 npx ts-node hardhat-scripts/misc-scripts/createLabels.ts $1
-cast run --la $2 --rpc-url $RPC_URL
+cast run --la $2 --rpc-url $RPC_URL --quick
 
 # usage :
 # yarn trace <chainSlug> <txHash> <rpcUrl>

@@ -19,6 +19,7 @@ export type ChainAddressesObj = {
   Socket: string;
   SocketBatcher: string;
   FastSwitchboard: string;
+  CCTPSwitchboard: string;
   ContractFactoryPlug: string;
   SocketFeesManager?: string;
   FeesPlug?: string;
