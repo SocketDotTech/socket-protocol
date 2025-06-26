@@ -24,10 +24,15 @@ export enum Events {
   PromiseNotResolved = "PromiseNotResolved",
   MarkedRevert = "MarkedRevert",
 
+  // Configurations
+  PlugAdded = "PlugAdded",
+
   // RequestHandler
   RequestSubmitted = "RequestSubmitted",
   RequestCancelled = "RequestCancelled",
   FeesIncreased = "FeesIncreased",
+  RequestSettled = "RequestSettled",
+  RequestCompletedWithErrors = "RequestCompletedWithErrors",
 
   // WritePrecompile
   WriteProofRequested = "WriteProofRequested",
