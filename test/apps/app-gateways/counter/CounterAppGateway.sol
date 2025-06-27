@@ -13,6 +13,8 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     uint256 public arbCounter;
     uint256 public optCounter;
 
+    bool public incremented;
+
     event CounterScheduleResolved(uint256 creationTimestamp, uint256 executionTimestamp);
 
     constructor(address addressResolver_, uint256 fees_) {
@@ -53,10 +55,17 @@ contract CounterAppGateway is AppGatewayBase, Ownable {
     }
 
     function incrementCounters(address[] memory instances_) public async {
+        incremented = false;
         // the increase function is called on given list of instances
         for (uint256 i = 0; i < instances_.length; i++) {
             ICounter(instances_[i]).increase();
         }
+
+        onCompleteData = abi.encodeWithSelector(this.onIncrementComplete.selector);
+    }
+
+    function onIncrementComplete() public {
+        incremented = true;
     }
 
     // for testing purposes
