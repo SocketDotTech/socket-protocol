@@ -366,7 +366,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /// @param onCompleteData_ The on complete data
     /// @dev only payload delivery can call this
     /// @dev callback in pd promise to be called after all contracts are deployed
-    function onDeployComplete(uint40, bytes calldata onCompleteData_) external onlyWatcher {
+    function onDeployComplete(uint40, bytes calldata onCompleteData_) external virtual onlyWatcher {
         if (onCompleteData_.length == 0) return;
         uint32 chainSlug = abi.decode(onCompleteData_, (uint32));
         initializeOnChain(chainSlug);
@@ -380,5 +380,5 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /// @notice hook to handle the revert in callbacks or onchain executions
     /// @dev can be overridden by the app gateway to add custom logic
     /// @param payloadId_ The payload ID
-    function handleRevert(bytes32 payloadId_) external override onlyPromises {}
+    function handleRevert(bytes32 payloadId_) external virtual onlyPromises {}
 }
