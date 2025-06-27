@@ -313,9 +313,6 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         signer = ECDSA.recover(digest, signature_);
     }
 
-    /// @notice hook called by watcher precompile when request is finished
-    function onRequestComplete(uint40, bytes memory) external {}
-
     /// @notice hook to handle the revert while withdrawing credits
     /// @param payloadId_ The payload ID
     function handleRevert(bytes32 payloadId_) external {
