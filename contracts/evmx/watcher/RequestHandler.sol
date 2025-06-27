@@ -11,6 +11,7 @@ import "../interfaces/IAppGateway.sol";
 import "../interfaces/IPromise.sol";
 import "../interfaces/IRequestHandler.sol";
 import "../../utils/RescueFundsLib.sol";
+import "solady/utils/LibCall.sol";
 
 abstract contract RequestHandlerStorage is IRequestHandler {
     // slots [0-49] reserved for gap
@@ -60,6 +61,8 @@ abstract contract RequestHandlerStorage is IRequestHandler {
 /// @notice Contract that handles request processing and management, including request submission, batch processing, and request lifecycle management
 /// @dev Handles request submission, batch processing, transmitter assignment, request cancellation and settlement
 contract RequestHandler is RequestHandlerStorage, Initializable, Ownable, AddressResolverUtil {
+    using LibCall for address;
+
     error InsufficientMaxFees();
 
     event RequestSubmitted(
@@ -419,7 +422,7 @@ contract RequestHandler is RequestHandlerStorage, Initializable, Ownable, Addres
         );
 
         if (r.onCompleteData.length > 0) {
-            (bool success, ) = r.appGateway.call(r.onCompleteData);
+            (bool success, , ) = r.appGateway.tryCall(0, gasleft(), 0, r.onCompleteData);
             if (!success) emit RequestCompletedWithErrors(requestCount_);
         }
         emit RequestSettled(requestCount_, r.requestFeesDetails.winningBid.transmitter);

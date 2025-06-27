@@ -10,6 +10,7 @@ import {Forwarder} from "./Forwarder.sol";
 import {AsyncPromise} from "./AsyncPromise.sol";
 import {AddressResolverUtil} from "./AddressResolverUtil.sol";
 import "../../utils/RescueFundsLib.sol";
+import "solady/utils/LibCall.sol";
 
 abstract contract AsyncDeployerStorage is IAsyncDeployer {
     // slots [0-49] reserved for gap
@@ -39,6 +40,8 @@ abstract contract AsyncDeployerStorage is IAsyncDeployer {
 /// @title AsyncDeployer Contract
 /// @notice This contract is responsible for deploying Forwarder and AsyncPromise contracts.
 contract AsyncDeployer is AsyncDeployerStorage, Initializable, AddressResolverUtil, Ownable {
+    using LibCall for address;
+
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -157,7 +160,7 @@ contract AsyncDeployer is AsyncDeployerStorage, Initializable, AddressResolverUt
         address proxy = LibClone.deployDeterministicERC1967BeaconProxy(beacon_, salt_);
 
         // Explicitly initialize after deployment
-        (bool success, ) = proxy.call(initData_);
+        (bool success, , ) = proxy.tryCall(0, gasleft(), 0, initData_);
         require(success, "Initialization failed");
 
         return proxy;

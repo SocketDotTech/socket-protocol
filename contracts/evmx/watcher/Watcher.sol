@@ -5,6 +5,8 @@ import "./Trigger.sol";
 import "../interfaces/IPromise.sol";
 
 contract Watcher is Trigger {
+    using LibCall for address;
+
     constructor() {
         _disableInitializers(); // disable for implementation
     }
@@ -184,7 +186,12 @@ contract Watcher is Trigger {
             );
 
             // call the contract
-            (bool success, ) = params_[i].contractAddress.call(params_[i].data);
+            (bool success, , ) = params_[i].contractAddress.tryCall(
+                0,
+                gasleft(),
+                0,
+                params_[i].data
+            );
             if (!success) revert CallFailed();
         }
     }
