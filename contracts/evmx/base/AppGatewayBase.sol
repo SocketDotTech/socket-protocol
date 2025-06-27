@@ -120,6 +120,12 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         IsPlug isPlug_,
         bytes memory initCallData_
     ) internal {
+        onCompleteData = abi.encodeWithSelector(
+            this.onDeployComplete.selector,
+            watcher__().getCurrentRequestCount(),
+            abi.encode(chainSlug_)
+        );
+
         deployForwarder__().deploy(
             isPlug_,
             chainSlug_,
@@ -128,7 +134,6 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
         );
 
         then(this.setAddress.selector, abi.encode(chainSlug_, contractId_));
-        onCompleteData = abi.encode(chainSlug_, true);
     }
 
     /// @notice Sets the address for a deployed contract
@@ -166,8 +171,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
             return address(0);
         }
 
-        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_])
-            .getOnChainAddress();
+        onChainAddress = IForwarder(forwarderAddresses[contractId_][chainSlug_]).getOnChainAddress();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -362,15 +366,10 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /// @param onCompleteData_ The on complete data
     /// @dev only payload delivery can call this
     /// @dev callback in pd promise to be called after all contracts are deployed
-    function onRequestComplete(
-        uint40,
-        bytes calldata onCompleteData_
-    ) external override onlyWatcher {
+    function onDeployComplete(uint40, bytes calldata onCompleteData_) external onlyWatcher {
         if (onCompleteData_.length == 0) return;
-        (uint32 chainSlug, bool isDeploy) = abi.decode(onCompleteData_, (uint32, bool));
-        if (isDeploy) {
-            initializeOnChain(chainSlug);
-        }
+        uint32 chainSlug = abi.decode(onCompleteData_, (uint32));
+        initializeOnChain(chainSlug);
     }
 
     /// @notice Initializes the contract after deployment

@@ -419,13 +419,9 @@ contract RequestHandler is RequestHandlerStorage, Initializable, Ownable, Addres
         );
 
         if (r.onCompleteData.length > 0) {
-            try
-                IAppGateway(r.appGateway).onRequestComplete(requestCount_, r.onCompleteData)
-            {} catch {
-                emit RequestCompletedWithErrors(requestCount_);
-            }
+            (bool success, ) = r.appGateway.call(r.onCompleteData);
+            if (!success) emit RequestCompletedWithErrors(requestCount_);
         }
-
         emit RequestSettled(requestCount_, r.requestFeesDetails.winningBid.transmitter);
     }
 

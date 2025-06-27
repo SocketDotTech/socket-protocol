@@ -15,11 +15,6 @@ interface IAppGateway {
     /// @return sbType_ The switchboard type
     function getOverrideParams() external view returns (OverrideParams memory, bytes32);
 
-    /// @notice Handles the request complete event
-    /// @param requestCount_ The request count
-    /// @param onCompleteData_ The on complete data
-    function onRequestComplete(uint40 requestCount_, bytes calldata onCompleteData_) external;
-
     /// @notice Handles the revert event
     /// @param payloadId_ The payload id
     function handleRevert(bytes32 payloadId_) external;
