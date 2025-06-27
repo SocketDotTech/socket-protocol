@@ -14,6 +14,7 @@ import {AddressResolverUtil} from "../helpers/AddressResolverUtil.sol";
 import {NonceUsed, InvalidAmount, InsufficientCreditsAvailable, InsufficientBalance, InvalidChainSlug, NotRequestHandler} from "../../utils/common/Errors.sol";
 import {WRITE} from "../../utils/common/Constants.sol";
 import "../../utils/RescueFundsLib.sol";
+import "../base/AppGatewayBase.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
     // slots [0-49] reserved for gap
@@ -27,7 +28,7 @@ abstract contract FeesManagerStorage is IFeesManager {
 
     // slot 51
     /// @notice switchboard type
-    bytes32 public sbType;
+    bytes32 public deprecatedSbType;
 
     // slot 52
     /// @notice user credits => stores fees for user, app gateway, transmitters and watcher precompile
@@ -63,11 +64,17 @@ abstract contract FeesManagerStorage is IFeesManager {
     uint256[50] _gap_after;
 
     // slots [108-157] 50 slots reserved for address resolver util
+    // 9 slots for app gateway base
 }
 
 /// @title UserUtils
 /// @notice Contract for managing user utils
-abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressResolverUtil {
+abstract contract Credit is
+    FeesManagerStorage,
+    Initializable,
+    Ownable,
+    AppGatewayBase
+{
     /// @notice Emitted when fees deposited are updated
     /// @param chainSlug The chain identifier
     /// @param token The token address
@@ -276,11 +283,9 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         address consumeFrom_,
         uint256 maxFees_,
         bytes memory payload_
-    ) internal {
-        OverrideParams memory overrideParams;
-        overrideParams.callType = WRITE;
-        overrideParams.writeFinality = WriteFinality.LOW;
-        // todo: can add gas limit here
+    ) internal async {
+        _setMaxFees(maxFees_);
+        _setOverrides(consumeFrom_);
 
         QueueParams memory queueParams;
         queueParams.overrideParams = overrideParams;
@@ -290,9 +295,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
             payload: payload_
         });
         queueParams.switchboardType = sbType;
-
-        // queue and create request
-        watcher__().queueAndSubmit(queueParams, maxFees_, address(0), consumeFrom_, bytes(""));
+        watcher__().queue(queueParams, address(this));
     }
 
     function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (address) {
@@ -315,7 +318,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
 
     /// @notice hook to handle the revert while withdrawing credits
     /// @param payloadId_ The payload ID
-    function handleRevert(bytes32 payloadId_) external {
+    function handleRevert(bytes32 payloadId_) external override {
         if (watcher__().getPayloadParams(payloadId_).asyncPromise != msg.sender) return;
         emit WithdrawFailed(payloadId_);
     }

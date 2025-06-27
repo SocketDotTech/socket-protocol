@@ -48,12 +48,13 @@ contract FeesManager is Credit {
         address feesPool_,
         address owner_,
         bytes32 sbType_
-    ) public reinitializer(1) {
+    ) public reinitializer(2) {
         evmxSlug = evmxSlug_;
         sbType = sbType_;
         feesPool = IFeesPool(feesPool_);
-        _setAddressResolver(addressResolver_);
+
         _initializeOwner(owner_);
+        _initializeAppGateway(addressResolver_);
     }
 
     /////////////////////// FEES MANAGEMENT ///////////////////////
