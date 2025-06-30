@@ -76,7 +76,7 @@ contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil
     /// @notice Fallback function to process the contract calls to onChainAddress
     /// @dev It queues the calls in the middleware and deploys the promise contract
     // function callSolana(SolanaInstruction memory solanaInstruction, bytes32 switchboardSolana) external {
-    function callSolana(SolanaInstruction memory solanaInstruction) external {
+    function callSolana(bytes memory solanaPayload) external {
         if (address(addressResolver__) == address(0)) {
             revert AddressResolverNotSet();
         }
@@ -97,8 +97,6 @@ contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil
         // get the switchboard address from the watcher precompile config
         // address switchboard = watcherPrecompileConfig().switchboards(chainSlug, sbType);
 
-        bytes memory solanaPayload = abi.encode(solanaInstruction);
-
         // Queue the call in the middleware.
         QueueParams memory queueParams;
         queueParams.overrideParams = overrideParams;
@@ -109,25 +107,5 @@ contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil
         });
         queueParams.switchboardType = sbType;
         watcher__().queue(queueParams, msgSender);
-
-        // Queue the call in the middleware.
-        // deliveryHelper__().queue(
-        //     QueuePayloadParams({
-        //         chainSlug: chainSlug,
-        //         callType: isReadCall == Read.ON ? CallType.READ : CallType.WRITE,
-        //         isParallel: isParallelCall,
-        //         isPlug: IsPlug.NO,
-        //         writeFinality: writeFinality,
-        //         asyncPromise: latestAsyncPromise,
-        //         switchboard: switchboardSolana,
-        //         target: onChainAddress,
-        //         appGateway: msg.sender,
-        //         gasLimit: gasLimit,
-        //         value: value,
-        //         readAt: readAt,
-        //         payload: solanaPayload,
-        //         initCallData: bytes("")
-        //     })
-        // );
     }
 }

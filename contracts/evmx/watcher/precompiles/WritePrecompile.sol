@@ -10,6 +10,7 @@ import {InvalidIndex, MaxMsgValueLimitExceeded, InvalidPayloadSize} from "../../
 import "../../../utils/RescueFundsLib.sol";
 import "../WatcherBase.sol";
 import {toBytes32Format} from "../../../utils/common/Converters.sol";
+import "../BorshEncoder.sol";
 
 abstract contract WritePrecompileStorage is IPrecompile {
     // slots [0-49] reserved for gap
@@ -48,6 +49,8 @@ abstract contract WritePrecompileStorage is IPrecompile {
 /// @title WritePrecompile
 /// @notice Handles write precompile logic
 contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, WatcherBase {
+    // using BorshEncoder for borsh;
+
     /// @notice Emitted when fees are set
     event FeesSet(uint256 writeFees);
     event ChainMaxMsgValueLimitsUpdated(uint32 chainSlug, uint256 maxMsgValueLimit);
@@ -159,12 +162,13 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
     {
         (
             address appGateway,
-            Transaction memory transaction,
-            , // _writeFinality
+            Transaction memory transaction, // _writeFinality
+            ,
             uint256 gasLimit,
             uint256 value,
-            // bytes32 switchboard
-        ) = abi.decode(
+
+        ) = // bytes32 switchboard
+            abi.decode(
                 payloadParams.precompileData,
                 (address, Transaction, WriteFinality, uint256, uint256, bytes32)
             );
@@ -275,22 +279,6 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
         uint256 gasLimit_,
         uint256 value_
     ) internal view returns (DigestParams memory) {
-        // create digest
-        // DigestParams memory digestParams_ = DigestParams(
-        //     configurations__().sockets(transaction.chainSlug),
-        //     transmitter_,
-        //     payloadParams.payloadId,
-        //     deadline,
-        //     payloadParams.callType,
-        //     gasLimit,
-        //     value,
-        //     transaction.payload,
-        //     transaction.target,
-        //     toBytes32Format(appGateway),
-        //     prevBatchDigestHash,
-        //     bytes("")
-        // );
-
         return
             DigestParams(
                 configurations__().sockets(transaction_.chainSlug),
@@ -322,16 +310,15 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
             transaction_.payload,
             (SolanaInstruction)
         );
-        // TODO: this is a problem, function arguments must be packed in a way that is not later touched and that can be used on Solana side in raw Instruction call
-        // like a call data, so it should be Borsh encoded already here
-        bytes memory functionArgsPacked;
-        for (uint256 i = 0; i < instruction.data.functionArguments.length; i++) {
-            uint256 abiDecodedArg = abi.decode(instruction.data.functionArguments[i], (uint256));
-            // silent assumption that all arguments are uint64 to simplify the encoding
-            uint64 arg = uint64(abiDecodedArg);
-            bytes8 borshEncodedArg = encodeU64Borsh(arg);
-            functionArgsPacked = abi.encodePacked(functionArgsPacked, borshEncodedArg);
-        }
+        bytes memory functionArgsPacked = BorshEncoder.encodeFunctionArgs(instruction);
+
+        // for (uint256 i = 0; i < instruction.data.functionArguments.length; i++) {
+        //     uint256 abiDecodedArg = abi.decode(instruction.data.functionArguments[i], (uint256));
+        //     // silent assumption that all arguments are uint64 to simplify the encoding
+        //     uint64 arg = uint64(abiDecodedArg);
+        //     bytes8 borshEncodedArg = BorshEncoder.encodeU64(arg);
+        //     functionArgsPacked = abi.encodePacked(functionArgsPacked, borshEncodedArg);
+        // }
 
         bytes memory payloadPacked = abi.encodePacked(
             instruction.data.programId,
@@ -420,14 +407,14 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
         RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
     }
 
-    // Borsh helper functions
-    function encodeU64Borsh(uint64 v) public pure returns (bytes8) {
-        return bytes8(swapBytes8(v));
-    }
+    // // Borsh helper functions
+    // function encodeU64Borsh(uint64 v) public pure returns (bytes8) {
+    //     return bytes8(swapBytes8(v));
+    // }
 
-    function swapBytes8(uint64 v) internal pure returns (uint64) {
-        v = ((v & 0x00ff00ff00ff00ff) << 8) | ((v & 0xff00ff00ff00ff00) >> 8);
-        v = ((v & 0x0000ffff0000ffff) << 16) | ((v & 0xffff0000ffff0000) >> 16);
-        return (v << 32) | (v >> 32);
-    }
+    // function swapBytes8(uint64 v) internal pure returns (uint64) {
+    //     v = ((v & 0x00ff00ff00ff00ff) << 8) | ((v & 0xff00ff00ff00ff00) >> 8);
+    //     v = ((v & 0x0000ffff0000ffff) << 16) | ((v & 0xffff0000ffff0000) >> 16);
+    //     return (v << 32) | (v >> 32);
+    // }
 }

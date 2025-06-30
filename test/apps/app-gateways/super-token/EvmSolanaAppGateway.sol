@@ -88,7 +88,7 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         // SolanaInstruction memory solanaInstruction = buildSolanaInstruction(order);
 
         /// we are directly calling the ForwarderSolana
-        forwarderSolana.callSolana(solanaInstruction);
+        forwarderSolana.callSolana(abi.encode(solanaInstruction));
 
         emit Transferred(_getCurrentRequestCount());
     }
@@ -102,7 +102,7 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
 
     function mintSuperTokenSolana(SolanaInstruction memory solanaInstruction) external async {
         // we are directly calling the ForwarderSolana
-        forwarderSolana.callSolana(solanaInstruction);
+        forwarderSolana.callSolana(abi.encode(solanaInstruction));
 
         emit Transferred(_getCurrentRequestCount());
     }
@@ -111,9 +111,15 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         // ISuperToken(order.srcEvmToken).burn(order.userEvm, order.srcAmount);
 
         // we are directly calling the ForwarderSolana
-        forwarderSolana.callSolana(solanaInstruction);
+        
+        forwarderSolana.callSolana(abi.encode(solanaInstruction));
 
         emit Transferred(_getCurrentRequestCount());
+    }
+
+    function readAccount(bytes memory solanaReadPayload) external async {
+        _setOverrides(Read.ON);
+        forwarderSolana.callSolana(solanaReadPayload);
     }
 
     /*
