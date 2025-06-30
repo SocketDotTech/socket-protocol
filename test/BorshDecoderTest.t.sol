@@ -426,19 +426,19 @@ contract BorshDecoderTest is Test {
         assertEq(decodedParams.length, 5);
         
         // Check decoded values
-        uint256 decodedU8 = abi.decode(decodedParams[0], (uint256));
+        uint8 decodedU8 = abi.decode(decodedParams[0], (uint8));
         assertEq(decodedU8, 42);
         
-        uint256 decodedU16 = abi.decode(decodedParams[1], (uint256));
+        uint16 decodedU16 = abi.decode(decodedParams[1], (uint16));
         assertEq(decodedU16, 1234);
         
-        uint256 decodedU32 = abi.decode(decodedParams[2], (uint256));
+        uint32 decodedU32 = abi.decode(decodedParams[2], (uint32));
         assertEq(decodedU32, 0x12345678);
         
-        uint256 decodedU64 = abi.decode(decodedParams[3], (uint256));
+        uint64 decodedU64 = abi.decode(decodedParams[3], (uint64));
         assertEq(decodedU64, 0x123456789abcdef0);
         
-        uint256 decodedU128 = abi.decode(decodedParams[4], (uint256));
+        uint128 decodedU128 = abi.decode(decodedParams[4], (uint128));
         assertEq(decodedU128, 0x123456789abcdef0fedcba9876543210);
     }
 
@@ -461,7 +461,7 @@ contract BorshDecoderTest is Test {
         assertEq(decodedParams.length, 1);
         
         // Check decoded u8 vector
-        uint256[] memory decodedU8Vec = abi.decode(decodedParams[0], (uint256[]));
+        uint8[] memory decodedU8Vec = abi.decode(decodedParams[0], (uint8[]));
         assertEq(decodedU8Vec.length, 3);
         assertEq(decodedU8Vec[0], 1);
         assertEq(decodedU8Vec[1], 2);
@@ -509,7 +509,7 @@ contract BorshDecoderTest is Test {
         // console.logBytes(decodedParams[0]);
         
         // Check decoded u8 array
-        uint256[] memory decodedU8Array = abi.decode(decodedParams[0], (uint256[]));
+        uint8[] memory decodedU8Array = abi.decode(decodedParams[0], (uint8[]));
         assertEq(decodedU8Array.length, 3);
         assertEq(decodedU8Array[0], 1);
         assertEq(decodedU8Array[1], 2);
@@ -519,7 +519,7 @@ contract BorshDecoderTest is Test {
         // console.logBytes(decodedParams[1]);
         
         // Check decoded u16 array
-        uint256[] memory decodedU16Array = abi.decode(decodedParams[1], (uint256[]));
+        uint16[] memory decodedU16Array = abi.decode(decodedParams[1], (uint16[]));
         assertEq(decodedU16Array.length, 2);
         assertEq(decodedU16Array[0], 1000);
         assertEq(decodedU16Array[1], 2000);
@@ -568,23 +568,23 @@ contract BorshDecoderTest is Test {
         assertEq(decodedParams.length, 6);
         
         // Check decoded u8
-        uint256 decodedU8 = abi.decode(decodedParams[0], (uint256));
-        assertEq(decodedU8, uint256(u8Value));
+        uint8 decodedU8 = abi.decode(decodedParams[0], (uint8));
+        assertEq(decodedU8, u8Value);
         
         // Check decoded u32
-        uint256 decodedU32 = abi.decode(decodedParams[1], (uint256));
-        assertEq(decodedU32, uint256(u32Value));
+        uint32 decodedU32 = abi.decode(decodedParams[1], (uint32));
+        assertEq(decodedU32, u32Value);
         
         // Check decoded u64 (first)
-        uint256 decodedU64_1 = abi.decode(decodedParams[2], (uint256));
-        assertEq(decodedU64_1, uint256(u64Value1));
+        uint64 decodedU64_1 = abi.decode(decodedParams[2], (uint64));
+        assertEq(decodedU64_1, u64Value1);
         
         // Check decoded u64 (second)
-        uint256 decodedU64_2 = abi.decode(decodedParams[3], (uint256));
-        assertEq(decodedU64_2, uint256(u64Value2));
+        uint64 decodedU64_2 = abi.decode(decodedParams[3], (uint64));
+        assertEq(decodedU64_2, u64Value2);
         
         // Check decoded u8 array [u8; 4]
-        uint256[] memory decodedU8Array = abi.decode(decodedParams[4], (uint256[]));
+        uint8[] memory decodedU8Array = abi.decode(decodedParams[4], (uint8[]));
         assertEq(decodedU8Array.length, 4);
         assertEq(decodedU8Array[0], 10);
         assertEq(decodedU8Array[1], 20);
@@ -592,10 +592,10 @@ contract BorshDecoderTest is Test {
         assertEq(decodedU8Array[3], 40);
         
         // Check decoded u32 array [u32; 10]
-        uint256[] memory decodedU32Array = abi.decode(decodedParams[5], (uint256[]));
+        uint32[] memory decodedU32Array = abi.decode(decodedParams[5], (uint32[]));
         assertEq(decodedU32Array.length, 10);
         for (uint256 i = 0; i < 10; i++) {
-            assertEq(decodedU32Array[i], uint256(1000 + i * 100));
+            assertEq(decodedU32Array[i], uint32(1000 + i * 100));
         }
     }
 
@@ -637,8 +637,8 @@ contract BorshDecoderTest is Test {
         assertEq(decodedString, singleString);
         
         // Check decoded u32
-        uint256 decodedU32 = abi.decode(decodedParams[1], (uint256));
-        assertEq(decodedU32, uint256(numberValue));
+        uint32 decodedU32 = abi.decode(decodedParams[1], (uint32));
+        assertEq(decodedU32, numberValue);
         
         // Check decoded string vector
         string[] memory decodedStringVec = abi.decode(decodedParams[2], (string[]));

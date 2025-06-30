@@ -5,9 +5,9 @@ import "../../utils/common/Structs.sol";
 
 library BorshDecoder {
     // decodes the borsh schema into abi.encode(value) list of params
-    // all numeric u8/u16/u32/u64 borsh types are decoded and abi encoded as uint256
+    // all numeric u8/u16/u32/u64 borsh types are decoded and abi encoded
     // borsh "String" is decoded and abi encoded as string
-    // all array/Vec numeric borsh types are decoded and abi encoded as uint256[]
+    // all array/Vec numeric borsh types are decoded and abi encoded
     // array/Vec of String borsh type is decoded and encoded string[]
     // finally all abi encoded params are returned as bytes[] preserving the same order as in GenericSchema
     function decodeGenericSchema(
@@ -22,19 +22,19 @@ library BorshDecoder {
             
             if (keccak256(bytes(typeName)) == keccak256(bytes("u8"))) {
                 uint8 value = data.decodeU8();
-                decodedParams[i] = abi.encode(uint256(value));
+                decodedParams[i] = abi.encode(value);
             } else if (keccak256(bytes(typeName)) == keccak256(bytes("u16"))) {
                 uint16 value = data.decodeU16();
-                decodedParams[i] = abi.encode(uint256(value));
+                decodedParams[i] = abi.encode(value);
             } else if (keccak256(bytes(typeName)) == keccak256(bytes("u32"))) {
                 uint32 value = data.decodeU32();
-                decodedParams[i] = abi.encode(uint256(value));
+                decodedParams[i] = abi.encode(value);
             } else if (keccak256(bytes(typeName)) == keccak256(bytes("u64"))) {
                 uint64 value = data.decodeU64();
-                decodedParams[i] = abi.encode(uint256(value));
+                decodedParams[i] = abi.encode(value);
             } else if (keccak256(bytes(typeName)) == keccak256(bytes("u128"))) {
                 uint128 value = data.decodeU128();
-                decodedParams[i] = abi.encode(uint256(value));
+                decodedParams[i] = abi.encode(value);
             } else if (keccak256(bytes(typeName)) == keccak256(bytes("String"))) {
                 string memory value = data.decodeString();
                 decodedParams[i] = abi.encode(value);
