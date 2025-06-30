@@ -19,3 +19,8 @@ uint16 constant MAX_COPY_BYTES = 2048; // 2KB
 
 uint32 constant CHAIN_SLUG_SOLANA_MAINNET = 10000001;
 uint32 constant CHAIN_SLUG_SOLANA_DEVNET = 10000002;
+
+/**** Solana predefined account schema types ****/
+
+bytes32 constant TOKEN_ACCOUNT = keccak256("TokenAccount");
+bytes32 constant MINT_ACCOUNT = keccak256("MintAccount");

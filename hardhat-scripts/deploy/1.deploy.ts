@@ -269,7 +269,8 @@ const deployEVMxContracts = async () => {
           proxyFactory,
           deployUtils
         );
-        const forwarderSolanaAddress = deployUtils.addresses[Contracts.ForwarderSolana];
+        const forwarderSolanaAddress =
+          deployUtils.addresses[Contracts.ForwarderSolana];
         console.log("ForwarderSolana Proxy:", forwarderSolanaAddress);
       } catch (error) {
         console.log("Error deploying ForwarderSolana:", error);

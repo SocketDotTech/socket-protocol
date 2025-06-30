@@ -553,7 +553,6 @@
 | `completeOwnershipHandover` | `0xf04e283e` |
 | `contractFactoryPlugs` | `0x35426631` |
 | `digestHashes` | `0xd1a862bf` |
-| `encodeU64Borsh` | `0xacc1b559` |
 | `expiryTime` | `0x99bc0aea` |
 | `getDigest` | `0x91b6288b` |
 | `getPrecompileFees` | `0xb7a3d04c` |
