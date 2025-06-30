@@ -82,15 +82,18 @@ contract BorshDecoderTest is Test {
         assertEq(decoded, originalValue);
     }
 
-    // function testDecodeStringSpecialChars() public pure {
-    //     string memory originalValue = "Hello World! @#$%^&*()";
-    //     bytes memory encoded = BorshEncoder.encodeString(originalValue);
+    function testDecodeStringSpecialChars() public pure {
+        string memory originalValue = "0.1.0";
+        bytes memory encoded = BorshEncoder.encodeString(originalValue);
+
+        console.log("encoded 0.1.0");
+        console.logBytes(encoded);
         
-    //     BorshDecoder.Data memory data = BorshDecoder.from(encoded);
-    //     string memory decoded = data.decodeString();
+        BorshDecoder.Data memory data = BorshDecoder.from(encoded);
+        string memory decoded = data.decodeString();
         
-    //     assertEq(decoded, originalValue);
-    // }
+        assertEq(decoded, originalValue);
+    }
 
     /** Test Vector type decoding **/
 
@@ -653,10 +656,59 @@ contract BorshDecoderTest is Test {
         assertEq(decodedStringArray[1], "array2");
     }
 
+    /** Real-life Solana accounts decoding **/
+
+    function testDecodeSolanaSocketConfigAccount() public {
+        GenericSchema memory schema;
+        schema.valuesTypeNames = new string[](5);
+        schema.valuesTypeNames[0] = "[u8;8]"; // account discriminator
+        schema.valuesTypeNames[1] = "[u8;32]";
+        schema.valuesTypeNames[2] = "u32";
+        schema.valuesTypeNames[3] = "String";
+        schema.valuesTypeNames[4] = "u8";
+
+        bytes8 discriminator = 0x9b0caae01efacc82;
+        bytes32 owner = 0x0c1a5886fe1093df9fc438c296f9f7275b7718b6bc0e156d8d336c58f083996d;
+        uint32 chain_slug = 10000002;
+        string memory version = "0.1.0";
+        uint8 bump = 255;
+
+        bytes memory solanaEncodedData = hex"9b0caae01efacc820c1a5886fe1093df9fc438c296f9f7275b7718b6bc0e156d8d336c58f083996d8296980005000000302e312e30ff0000000000";
+
+        bytes[] memory decodedParams = BorshDecoder.decodeGenericSchema(schema, solanaEncodedData);
+
+        assertEq(decodedParams.length, 5);
+
+        console.log("decoded discriminator");
+        // console.logBytes(decodedParams[0]);
+        uint8[] memory decodedDiscriminator = abi.decode(decodedParams[0], (uint8[]));
+        bytes memory packedUint8Array = BorshEncoder.packUint8Array(decodedDiscriminator);
+        assertEq(packedUint8Array, abi.encodePacked(discriminator));
+
+        console.log("decoded owner");
+        uint8[] memory decodedOwner = abi.decode(decodedParams[1], (uint8[]));
+        packedUint8Array = BorshEncoder.packUint8Array(decodedOwner);
+        assertEq(packedUint8Array, abi.encodePacked(owner));
+
+        console.log("decoded chain_slug");
+        uint32 decodedChainSlug = abi.decode(decodedParams[2], (uint32));
+        assertEq(decodedChainSlug, chain_slug);
+
+        console.log("decoded version");
+        string memory decodedVersion = abi.decode(decodedParams[3], (string));
+        console.log("decodedVersion");
+        console.log(decodedVersion);
+        assertEq(decodedVersion, version);
+
+        console.log("decoded bump");
+        uint8 decodedBump = abi.decode(decodedParams[4], (uint8));
+        assertEq(decodedBump, bump);
+    }
+
     function testDecodeSuperTokenConfigGenericSchema() public pure {
         GenericSchema memory schema;
         schema.valuesTypeNames = new string[](5);
-        schema.valuesTypeNames[0] = "[u8;8]";
+        schema.valuesTypeNames[0] = "[u8;8]";   // account discriminator
         schema.valuesTypeNames[1] = "[u8;32]";
         schema.valuesTypeNames[2] = "[u8;32]";
         schema.valuesTypeNames[3] = "[u8;32]";
