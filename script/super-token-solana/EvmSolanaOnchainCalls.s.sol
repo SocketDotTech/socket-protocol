@@ -14,10 +14,7 @@ import {
     SolanaInstructionData, 
     SolanaInstructionDataDescription, 
     SolanaReadRequest, 
-    SolanaReadSchema, 
-    SolanaReadSchemaType, 
-    PredefinedSchema, 
-    GenericSchema
+    SolanaReadSchemaType
 } from "../../contracts/utils/common/Structs.sol";
 
 
@@ -246,14 +243,7 @@ contract EvmSolanaOnchainCalls is Script {
         SolanaReadRequest memory readRequest = SolanaReadRequest({
             schemaType: SolanaReadSchemaType.PREDEFINED,
             accountToRead: accountToRead,
-            schema: SolanaReadSchema({
-                predefinedSchema: PredefinedSchema({
-                    nameHash: schemaNameHash
-                }),
-                genericSchema: GenericSchema({
-                    valuesTypeNames: new string[](0)
-                })
-            })
+            predefinedSchemaNameHash: schemaNameHash
         });
         return readRequest;
     }
@@ -262,14 +252,7 @@ contract EvmSolanaOnchainCalls is Script {
         SolanaReadRequest memory readRequest = SolanaReadRequest({
             schemaType: SolanaReadSchemaType.GENERIC,
             accountToRead: accountToRead,
-            schema: SolanaReadSchema({
-                predefinedSchema: PredefinedSchema({
-                    nameHash: bytes32(0)
-                }),
-                genericSchema: GenericSchema({
-                    valuesTypeNames: valuesTypeNames
-                })
-            })
+            predefinedSchemaNameHash: bytes32(0)
         });
         return readRequest;
     }

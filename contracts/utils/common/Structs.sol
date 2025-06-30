@@ -244,19 +244,11 @@ enum SolanaReadSchemaType {
 struct SolanaReadRequest {
     bytes32 accountToRead;
     SolanaReadSchemaType schemaType;
-    SolanaReadSchema schema;
-}
-
-struct SolanaReadSchema {
-    PredefinedSchema predefinedSchema;
-    GenericSchema genericSchema;
-}
-
-struct PredefinedSchema {
     // keccak256("schema-name")
-    bytes32 nameHash;
+    bytes32 predefinedSchemaNameHash;
 }
 
+// this is only used after getting the data from Solana account
 struct GenericSchema {
     // list of types recognizable by BorshEncoder that we expect to read from Solana account (data model)
     string[] valuesTypeNames;
