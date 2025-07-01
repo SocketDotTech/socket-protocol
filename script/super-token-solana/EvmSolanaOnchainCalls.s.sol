@@ -14,7 +14,8 @@ import {
     SolanaInstructionData, 
     SolanaInstructionDataDescription, 
     SolanaReadRequest, 
-    SolanaReadSchemaType
+    SolanaReadSchemaType,
+    GenericSchema
 } from "../../contracts/utils/common/Structs.sol";
 
 
@@ -57,7 +58,9 @@ contract EvmSolanaOnchainCalls is Script {
         uint256 srcAmount = 1000000;
         // mintOnEvm(srcAmount, userEvmAddress, appGateway);
         // mintOnSolana(srcAmount, userEvmAddress, appGateway);
-        transferEvmToSolana(srcAmount, userEvmAddress, appGateway);
+        // transferEvmToSolana(srcAmount, userEvmAddress, appGateway);
+        // readSolanaSuperTokenConfigAccount(appGateway);
+        readSolanaTokenAccount(appGateway);
     }
 
     function transferEvmToSolana(
@@ -142,44 +145,36 @@ contract EvmSolanaOnchainCalls is Script {
         console.log("Read token account from Solana");
 
         // put here token account address to be read
-        bytes32 accountToRead = 0x0000000000000000000000000000000000000000000000000000000000000000;
+        // alice super token ata: LVuCmGaoHjAGu54dFppzujS1Ti61CBac57taeQbokUr
+        bytes32 accountToRead = 0x04feb6778939c89983aac734e237dc22f49d7b4418d378a516df15a255d084cb;
         bytes32 schemaNameHash = TOKEN_ACCOUNT;
 
         SolanaReadRequest memory readRequest = buildSolanaReadRequestPredefined(accountToRead, schemaNameHash);
 
-        appGateway.readAccount(abi.encode(readRequest));
+        appGateway.readTokenAccount(readRequest);
     }
 
     function readSolanaSuperTokenConfigAccount(EvmSolanaAppGateway appGateway) public {
         console.log("Read generic account from Solana");
 
-        // put here super-token config account address to be read (PDA taken from Solana)
-        bytes32 accountToRead = 0x0000000000000000000000000000000000000000000000000000000000000000;
-        /** Solana super-token config schema:
-            pub struct Config {
-                pub owner: [u8;32],
-                pub chain_slug: u32,
-                #[max_len(10)]
-                pub version: String,
-                pub bump: u8
-            }
-         */
+        // superTokenConfigPda : jox6eY2gcjaKneNv96TKpjN7f3Rjcpn9dN9ZLNt3Krs
+        bytes32 accountToRead = 0x0af77affb0a5db632e9bafb98525232515d440861c9942e447c20eefd8883d34;
+        
         // TODO:GW: All types recognizable by BorshEncoder must be placed in the constants to avoid hardcoding and confusion with lower/upper case
-        string[] memory valuesTypeNames = new string[](4);
-        valuesTypeNames[0] = "[u8;32]";
-        valuesTypeNames[1] = "u32";
-        valuesTypeNames[2] = "String";
-        valuesTypeNames[3] = "u8";
+        string[] memory valuesTypeNames = new string[](5);
+        valuesTypeNames[0] = "[u8;8]";   // account discriminator
+        valuesTypeNames[1] = "[u8;32]";  // owner
+        valuesTypeNames[2] = "[u8;32]";  // socket
+        valuesTypeNames[3] = "[u8;32]";  // mint
+        valuesTypeNames[4] = "u8";       // bump
 
-        SolanaReadRequest memory readRequest = buildSolanaReadRequestGeneric(accountToRead, valuesTypeNames);
-        // TODO:
-        // - what happens next how to I get my data back?
-        // - write borsh decoder (Solidity) for simple types and arrays - used in AppGateway to decode data
-        // - write borsh decoder (TS) for simple types and arrays - used in watcher to read that data ???
-        //    - maybe not, maybe watcher just gets the data (in generic case) and this data is decoded on AppGateway ?
-        //    - some decoding need on watcher for Token or Mint accounts which will be predefined 
+        GenericSchema memory genericSchema = GenericSchema({
+            valuesTypeNames: valuesTypeNames
+        });
 
-        appGateway.readAccount(abi.encode(readRequest));
+        SolanaReadRequest memory readRequest = buildSolanaReadRequestGeneric(accountToRead);
+
+        appGateway.readSuperTokenConfigAccount(readRequest, genericSchema);
     }
 
     /*************** builder functions ***************/
@@ -239,7 +234,7 @@ contract EvmSolanaOnchainCalls is Script {
             });
     }
 
-    function buildSolanaReadRequestPredefined(bytes32 accountToRead, bytes32 schemaNameHash) internal view returns (SolanaReadRequest memory) {
+    function buildSolanaReadRequestPredefined(bytes32 accountToRead, bytes32 schemaNameHash) internal pure returns (SolanaReadRequest memory) {
         SolanaReadRequest memory readRequest = SolanaReadRequest({
             schemaType: SolanaReadSchemaType.PREDEFINED,
             accountToRead: accountToRead,
@@ -248,7 +243,7 @@ contract EvmSolanaOnchainCalls is Script {
         return readRequest;
     }
 
-    function buildSolanaReadRequestGeneric(bytes32 accountToRead, string[] memory valuesTypeNames) internal view returns (SolanaReadRequest memory) {
+    function buildSolanaReadRequestGeneric(bytes32 accountToRead) internal pure returns (SolanaReadRequest memory) {
         SolanaReadRequest memory readRequest = SolanaReadRequest({
             schemaType: SolanaReadSchemaType.GENERIC,
             accountToRead: accountToRead,
