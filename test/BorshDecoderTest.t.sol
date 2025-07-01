@@ -2,8 +2,8 @@
 pragma solidity ^0.8.21;
 
 import "forge-std/Test.sol";
-import {BorshEncoder} from "../contracts/evmx/watcher/BorshEncoder.sol";
-import {BorshDecoder} from "../contracts/evmx/watcher/BorshDecoder.sol";
+import {BorshEncoder} from "../contracts/evmx/watcher/borsh-serde/BorshEncoder.sol";
+import {BorshDecoder} from "../contracts/evmx/watcher/borsh-serde/BorshDecoder.sol";
 import "../contracts/utils/common/Structs.sol";
 import "../contracts/utils/common/Constants.sol";
 import "forge-std/console.sol";

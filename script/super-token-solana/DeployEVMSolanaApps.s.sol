@@ -43,9 +43,6 @@ contract DeployEVMSolanaApps is Script {
             addressResolver
         );
 
-        // TODO: deploy super token on evm
-        // TODO: callSolana() on gateway
-
         console.log("Contracts deployed:");
         console.log("EvmSolanaAppGateway:", address(gateway));
         console.log("solanaProgramId:");
