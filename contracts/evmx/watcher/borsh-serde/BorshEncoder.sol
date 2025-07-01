@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Based on Aurora bridge repo: https://github.com/aurora-is-near/aurora-contracts-sdk/blob/main/aurora-solidity-sdk
 pragma solidity ^0.8.21;
 
-import "../../utils/common/Structs.sol";
+import "../../../utils/common/Structs.sol";
+import "./BorshUtils.sol";
 
 library BorshEncoder {
     function encodeFunctionArgs(
@@ -43,7 +45,7 @@ library BorshEncoder {
                 functionArgsPacked = abi.encodePacked(functionArgsPacked, borshEncodedArg);
             }
             // Handle array types with fixed length
-            else if (startsWith(typeName, "[u8;")) {
+            else if (BorshUtils.startsWith(typeName, "[u8;")) {
                 uint8[] memory abiDecodedArg = abi.decode(data, (uint8[]));
                 bytes memory borshEncodedArg = encodeUint8Array(abiDecodedArg);
                 functionArgsPacked = abi.encodePacked(functionArgsPacked, borshEncodedArg);
@@ -95,27 +97,27 @@ library BorshEncoder {
                 functionArgsPacked = abi.encodePacked(functionArgsPacked, borshEncodedArg);
             }
             // Handle array types with fixed length - no length prefix, just the bytes
-            else if (startsWith(typeName, "[u8;")) {
+            else if (BorshUtils.startsWith(typeName, "[u8;")) {
                 uint8[] memory abiDecodedArg = abi.decode(data, (uint8[]));
                 bytes memory borshEncodedArg = encodeUint8Array(abiDecodedArg);
                 functionArgsPacked = abi.encodePacked(functionArgsPacked, borshEncodedArg);
-            } else if (startsWith(typeName, "[u16;")) {
+            } else if (BorshUtils.startsWith(typeName, "[u16;")) {
                 uint16[] memory abiDecodedArg = abi.decode(data, (uint16[]));
                 bytes memory borshEncodedArg = encodeUint16Array(abiDecodedArg);
                 functionArgsPacked = abi.encodePacked(functionArgsPacked, borshEncodedArg);
-            } else if (startsWith(typeName, "[u32;")) {
+            } else if (BorshUtils.startsWith(typeName, "[u32;")) {
                 uint32[] memory abiDecodedArg = abi.decode(data, (uint32[]));
                 bytes memory borshEncodedArg = encodeUint32Array(abiDecodedArg);
                 functionArgsPacked = abi.encodePacked(functionArgsPacked, borshEncodedArg);
-            } else if (startsWith(typeName, "[u64;")) {
+            } else if (BorshUtils.startsWith(typeName, "[u64;")) {
                 uint64[] memory abiDecodedArg = abi.decode(data, (uint64[]));
                 bytes memory borshEncodedArg = encodeUint64Array(abiDecodedArg);
                 functionArgsPacked = abi.encodePacked(functionArgsPacked, borshEncodedArg);
-            } else if (startsWith(typeName, "[u128;")) {
+            } else if (BorshUtils.startsWith(typeName, "[u128;")) {
                 uint128[] memory abiDecodedArg = abi.decode(data, (uint128[]));
                 bytes memory borshEncodedArg = encodeUint128Array(abiDecodedArg);
                 functionArgsPacked = abi.encodePacked(functionArgsPacked, borshEncodedArg);
-            } else if (startsWith(typeName, "[String;")) {
+            } else if (BorshUtils.startsWith(typeName, "[String;")) {
                 string[] memory abiDecodedArg = abi.decode(data, (string[]));
                 bytes memory borshEncodedArg = encodeStringArray(abiDecodedArg);
                 functionArgsPacked = abi.encodePacked(functionArgsPacked, borshEncodedArg);
@@ -135,19 +137,19 @@ library BorshEncoder {
     }
 
     function encodeU16(uint16 v) internal pure returns (bytes2) {
-        return bytes2(swapBytes2(v));
+        return bytes2(BorshUtils.swapBytes2(v));
     }
 
     function encodeU32(uint32 v) internal pure returns (bytes4) {
-        return bytes4(swapBytes4(v));
+        return bytes4(BorshUtils.swapBytes4(v));
     }
 
     function encodeU64(uint64 v) internal pure returns (bytes8) {
-        return bytes8(swapBytes8(v));
+        return bytes8(BorshUtils.swapBytes8(v));
     }
 
     function encodeU128(uint128 v) internal pure returns (bytes16) {
-        return bytes16(swapBytes16(v));
+        return bytes16(BorshUtils.swapBytes16(v));
     }
 
     /// Encode bytes vector into borsh. Use this method to encode strings as well.
@@ -216,64 +218,6 @@ library BorshEncoder {
 
     function encodeStringArray(string[] memory arr) internal pure returns (bytes memory) {
         return packStringArray(arr);
-    }
-
-    /********* Helper byte-swap functions *********/
-
-    function swapBytes2(uint16 v) internal pure returns (uint16) {
-        return (v << 8) | (v >> 8);
-    }
-
-    function swapBytes4(uint32 v) internal pure returns (uint32) {
-        v = ((v & 0x00ff00ff) << 8) | ((v & 0xff00ff00) >> 8);
-        return (v << 16) | (v >> 16);
-    }
-
-    function swapBytes8(uint64 v) internal pure returns (uint64) {
-        v = ((v & 0x00ff00ff00ff00ff) << 8) | ((v & 0xff00ff00ff00ff00) >> 8);
-        v = ((v & 0x0000ffff0000ffff) << 16) | ((v & 0xffff0000ffff0000) >> 16);
-        return (v << 32) | (v >> 32);
-    }
-
-    function swapBytes16(uint128 v) internal pure returns (uint128) {
-        v =
-            ((v & 0x00ff00ff00ff00ff00ff00ff00ff00ff) << 8) |
-            ((v & 0xff00ff00ff00ff00ff00ff00ff00ff00) >> 8);
-        v =
-            ((v & 0x0000ffff0000ffff0000ffff0000ffff) << 16) |
-            ((v & 0xffff0000ffff0000ffff0000ffff0000) >> 16);
-        v =
-            ((v & 0x00000000ffffffff00000000ffffffff) << 32) |
-            ((v & 0xffffffff00000000ffffffff00000000) >> 32);
-        return (v << 64) | (v >> 64);
-    }
-
-    function swapBytes32(uint256 v) internal pure returns (uint256) {
-        v =
-            ((v & 0x00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff) << 8) |
-            ((v & 0xff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00) >> 8);
-        v =
-            ((v & 0x0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff) << 16) |
-            ((v & 0xffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000) >> 16);
-        v =
-            ((v & 0x00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff) << 32) |
-            ((v & 0xffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000) >> 32);
-        v =
-            ((v & 0x0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff) << 64) |
-            ((v & 0xffffffffffffffff0000000000000000ffffffffffffffff0000000000000000) >> 64);
-        return (v << 128) | (v >> 128);
-    }
-
-    function startsWith(string memory str, string memory prefix) internal pure returns (bool) {
-        bytes memory strBytes = bytes(str);
-        bytes memory prefixBytes = bytes(prefix);
-
-        if (prefixBytes.length > strBytes.length) return false;
-
-        for (uint256 i = 0; i < prefixBytes.length; i++) {
-            if (strBytes[i] != prefixBytes[i]) return false;
-        }
-        return true;
     }
 
     /********* Packing functions *********/

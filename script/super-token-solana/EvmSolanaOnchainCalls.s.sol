@@ -38,23 +38,6 @@ contract EvmSolanaOnchainCalls is Script {
         console.logBytes32(switchboardSolana);
         console.log("User address: ", userEvmAddress);
 
-        // console.log("Deploying SuperToken on Optimism Sepolia...");
-        // appGateway.deployEvmContract(11155420);
-
-        // appGateway.transfer(
-        //     abi.encode(
-        //         EvmSolanaAppGateway.TransferOrderEvmToSolana({
-        //             srcEvmToken: 0x4200000000000000000000000000000000000006,
-        //             dstSolanaToken: 0x66619ffe200970bf084fa4713da27d7dff551179adac93fc552787c7555f3482,
-        //             userEvm: 0x4200000000000000000000000000000000000005,
-        //             destUserTokenAddress: 0x44419ffe200970bf084fa4713da27d7dff551179adac93fc552787c7555f3482,
-        //             srcAmount: 1000000000000000000,
-        //             deadline: 1715702400
-        //         })
-        //     ),
-        //     switchboardSolana
-        // );
-
         uint256 srcAmount = 1000000;
         // mintOnEvm(srcAmount, userEvmAddress, appGateway);
         // mintOnSolana(srcAmount, userEvmAddress, appGateway);

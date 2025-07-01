@@ -10,7 +10,7 @@ import {InvalidIndex, MaxMsgValueLimitExceeded, InvalidPayloadSize} from "../../
 import "../../../utils/RescueFundsLib.sol";
 import "../WatcherBase.sol";
 import {toBytes32Format} from "../../../utils/common/Converters.sol";
-import "../BorshEncoder.sol";
+import "../borsh-serde/BorshEncoder.sol";
 
 abstract contract WritePrecompileStorage is IPrecompile {
     // slots [0-49] reserved for gap

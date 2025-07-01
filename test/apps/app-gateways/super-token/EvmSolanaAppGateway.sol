@@ -7,8 +7,8 @@ import "./ISuperToken.sol";
 import "./SuperToken.sol";
 import {SolanaInstruction, SolanaInstructionData, SolanaInstructionDataDescription} from "../../../../contracts/utils/common/Structs.sol";
 import {ForwarderSolana} from "../../../../contracts/evmx/helpers/ForwarderSolana.sol";
-import {BorshDecoder} from "../../../../contracts/evmx/watcher/BorshDecoder.sol";
-import {BorshEncoder} from "../../../../contracts/evmx/watcher/BorshEncoder.sol";
+import {BorshDecoder} from "../../../../contracts/evmx/watcher/borsh-serde/BorshDecoder.sol";
+import {BorshEncoder} from "../../../../contracts/evmx/watcher/borsh-serde/BorshEncoder.sol";
 
 contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
 
@@ -113,9 +113,7 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         TransferOrderEvmToSolana memory order = abi.decode(order_, (TransferOrderEvmToSolana));
         ISuperToken(order.srcEvmToken).burn(order.userEvm, order.srcAmount);
 
-        // SolanaInstruction memory solanaInstruction = buildSolanaInstruction(order);
-
-        /// we are directly calling the ForwarderSolana
+        // we are directly calling the ForwarderSolana
         forwarderSolana.callSolana(abi.encode(solanaInstruction), solanaInstruction.data.programId);
 
         emit Transferred(_getCurrentRequestCount());
@@ -135,11 +133,8 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         emit Transferred(_getCurrentRequestCount());
     }
 
+    // this is only for debugging purposes to mint tokens on Solana
     function transferForDebug(SolanaInstruction memory solanaInstruction) external async {
-        // ISuperToken(order.srcEvmToken).burn(order.userEvm, order.srcAmount);
-
-        // we are directly calling the ForwarderSolana
-        
         forwarderSolana.callSolana(abi.encode(solanaInstruction), solanaInstruction.data.programId);
 
         emit Transferred(_getCurrentRequestCount());
