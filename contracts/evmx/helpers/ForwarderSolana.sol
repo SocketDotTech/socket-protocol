@@ -76,7 +76,7 @@ contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil
     /// @notice Fallback function to process the contract calls to onChainAddress
     /// @dev It queues the calls in the middleware and deploys the promise contract
     // function callSolana(SolanaInstruction memory solanaInstruction, bytes32 switchboardSolana) external {
-    function callSolana(bytes memory solanaPayload) external {
+    function callSolana(bytes memory solanaPayload, bytes32 target) external {
         if (address(addressResolver__) == address(0)) {
             revert AddressResolverNotSet();
         }
@@ -102,7 +102,9 @@ contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil
         queueParams.overrideParams = overrideParams;
         queueParams.transaction = Transaction({
             chainSlug: chainSlug,
-            target: onChainAddress,
+            // target: onChainAddress, // for Solana reads it should be accountToRead
+            // TODO: Solana forwarder can be a singleton - does not need to store onChainAddress and can use target as param
+            target: target,
             payload: solanaPayload
         });
         queueParams.switchboardType = sbType;

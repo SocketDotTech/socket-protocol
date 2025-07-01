@@ -3,12 +3,21 @@ pragma solidity ^0.8.21;
 
 import "forge-std/Test.sol";
 import {BorshEncoder} from "../contracts/evmx/watcher/BorshEncoder.sol";
-import {BorshDecoder} from "../contracts/evmx/watcher/BorshDecdoer.sol";
+import {BorshDecoder} from "../contracts/evmx/watcher/BorshDecoder.sol";
 import "../contracts/utils/common/Structs.sol";
+import "../contracts/utils/common/Constants.sol";
 import "forge-std/console.sol";
 
 contract BorshDecoderTest is Test {
     using BorshDecoder for BorshDecoder.Data;
+
+
+    function testPredefinedSchemaHash() public pure {
+        console.log("TOKEN_ACCOUNT");
+        console.logBytes32(TOKEN_ACCOUNT);
+        console.log("MINT_ACCOUNT");
+        console.logBytes32(MINT_ACCOUNT);
+    }
 
     /** Test primitive type decoding **/
 
@@ -658,7 +667,7 @@ contract BorshDecoderTest is Test {
 
     /** Real-life Solana accounts decoding **/
 
-    function testDecodeSolanaSocketConfigAccount() public {
+    function testDecodeSolanaSocketConfigAccount() public pure {
         GenericSchema memory schema;
         schema.valuesTypeNames = new string[](5);
         schema.valuesTypeNames[0] = "[u8;8]"; // account discriminator

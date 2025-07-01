@@ -7,12 +7,10 @@ import "./ISuperToken.sol";
 import "./SuperToken.sol";
 import {SolanaInstruction, SolanaInstructionData, SolanaInstructionDataDescription} from "../../../../contracts/utils/common/Structs.sol";
 import {ForwarderSolana} from "../../../../contracts/evmx/helpers/ForwarderSolana.sol";
+import {BorshDecoder} from "../../../../contracts/evmx/watcher/BorshDecoder.sol";
+import {BorshEncoder} from "../../../../contracts/evmx/watcher/BorshEncoder.sol";
 
 contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
-    bytes32 public superTokenEvm = _createContractId("superTokenEvm");
-    // solana program address
-    bytes32 public solanaProgramId;
-    ForwarderSolana public forwarderSolana;
 
     event Transferred(uint40 requestCount);
 
@@ -24,6 +22,8 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         uint256 initialSupply_;
     }
 
+    /** Write input structs **/
+
     struct TransferOrderEvmToSolana {
         address srcEvmToken;
         bytes32 dstSolanaToken;
@@ -32,6 +32,34 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         uint256 srcAmount;
         uint256 deadline;
     }
+
+    /** Read output structs **/
+
+    struct SolanaTokenBalance {
+        uint64 amount;
+        uint64 decimals;
+    }
+
+    struct SuperTokenConfigAccount {
+        bytes8 accountDiscriminator;
+        bytes32 owner;
+        bytes32 socket;
+        bytes32 mint;
+        uint8 bump;
+    }
+
+    event SuperTokenConfigAccountRead(SuperTokenConfigAccount superTokenConfigAccount);
+    event TokenAccountRead(bytes32 tokenAccountAddress, uint64 amount, uint64 decimals);
+
+    /** Contract data **/
+
+    bytes32 public superTokenEvm = _createContractId("superTokenEvm");
+    // solana program address
+    bytes32 public solanaProgramId;
+    ForwarderSolana public forwarderSolana;
+
+    mapping(bytes32 => SolanaTokenBalance) solanaTokenBalances;
+    SuperTokenConfigAccount superTokenConfigAccount;
 
     constructor(
         address owner_,
@@ -88,7 +116,7 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         // SolanaInstruction memory solanaInstruction = buildSolanaInstruction(order);
 
         /// we are directly calling the ForwarderSolana
-        forwarderSolana.callSolana(abi.encode(solanaInstruction));
+        forwarderSolana.callSolana(abi.encode(solanaInstruction), solanaInstruction.data.programId);
 
         emit Transferred(_getCurrentRequestCount());
     }
@@ -102,7 +130,7 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
 
     function mintSuperTokenSolana(SolanaInstruction memory solanaInstruction) external async {
         // we are directly calling the ForwarderSolana
-        forwarderSolana.callSolana(abi.encode(solanaInstruction));
+        forwarderSolana.callSolana(abi.encode(solanaInstruction), solanaInstruction.data.programId);
 
         emit Transferred(_getCurrentRequestCount());
     }
@@ -112,14 +140,63 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
 
         // we are directly calling the ForwarderSolana
         
-        forwarderSolana.callSolana(abi.encode(solanaInstruction));
+        forwarderSolana.callSolana(abi.encode(solanaInstruction), solanaInstruction.data.programId);
 
         emit Transferred(_getCurrentRequestCount());
     }
 
-    function readAccount(bytes memory solanaReadPayload) external async {
+    function readSuperTokenConfigAccount(
+        SolanaReadRequest memory solanaReadRequest,
+        GenericSchema memory genericSchema
+    ) external async {
         _setOverrides(Read.ON);
-        forwarderSolana.callSolana(solanaReadPayload);
+        forwarderSolana.callSolana(abi.encode(solanaReadRequest), solanaReadRequest.accountToRead);
+        then(this.storeAndDecodeSuperTokenConfigAccount.selector, abi.encode(genericSchema));
+    }
+
+    function storeAndDecodeSuperTokenConfigAccount(bytes memory data, bytes memory returnData) external async {
+        GenericSchema memory genericSchema = abi.decode(data, (GenericSchema));
+        bytes[] memory parsedData = BorshDecoder.decodeGenericSchema(genericSchema, returnData);
+
+        uint8[] memory decodedDiscriminatorArray = abi.decode(parsedData[0], (uint8[]));
+        bytes8 decodedDiscriminator = bytes8(BorshEncoder.packUint8Array(decodedDiscriminatorArray));
+        uint8[] memory decodedOwnerArray = abi.decode(parsedData[1], (uint8[]));
+        bytes32 decodedOwner = bytes32(BorshEncoder.packUint8Array(decodedOwnerArray));
+        uint8[] memory decodedSocketArray = abi.decode(parsedData[2], (uint8[]));
+        bytes32 decodedSocket = bytes32(BorshEncoder.packUint8Array(decodedSocketArray));
+        uint8[] memory decodedMintArray = abi.decode(parsedData[3], (uint8[]));
+        bytes32 decodedMint = bytes32(BorshEncoder.packUint8Array(decodedMintArray));
+        uint8 decodedBump = abi.decode(parsedData[4], (uint8));
+
+        SuperTokenConfigAccount memory decodedSuperTokenConfigAccount = SuperTokenConfigAccount({
+            accountDiscriminator: decodedDiscriminator,
+            owner: decodedOwner,
+            socket: decodedSocket,
+            mint: decodedMint,
+            bump: decodedBump
+        });
+
+        superTokenConfigAccount = decodedSuperTokenConfigAccount;
+
+        emit SuperTokenConfigAccountRead(decodedSuperTokenConfigAccount);
+    }
+
+    function readTokenAccount(SolanaReadRequest memory solanaReadRequest) external async {
+        _setOverrides(Read.ON);
+
+        forwarderSolana.callSolana(abi.encode(solanaReadRequest), solanaReadRequest.accountToRead);
+        then(this.storeTokenAccountData.selector, abi.encode(solanaReadRequest.accountToRead));
+    }
+
+    function storeTokenAccountData(bytes memory data, bytes memory returnData) external async {
+        bytes32 tokenAccountAddress = abi.decode(data, (bytes32));
+        (uint64 amount, uint64 decimals) = abi.decode(returnData, (uint64, uint64));
+        solanaTokenBalances[tokenAccountAddress] = SolanaTokenBalance({
+            amount: amount,
+            decimals: decimals
+        });
+
+        emit TokenAccountRead(tokenAccountAddress, amount, decimals);
     }
 
     /*

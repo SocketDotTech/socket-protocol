@@ -23,7 +23,7 @@ contract DeployEVMSolanaApps is Script {
 
         // fill with correct values after deployment
         bytes32 solanaProgramId = vm.envBytes32("SOLANA_TARGET_PROGRAM");
-        address forwarderSolanaAddress = 0x95991009d86FE1bB06e5352169d6b94D10db09D1;
+        address forwarderSolanaAddress = 0xb0bC05F65EaEC98A837686D77AcC50240d1468F7;
 
         // Setting fee payment on Arbitrum Sepolia
         uint256 fees = 10 ether;
