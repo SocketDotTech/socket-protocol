@@ -45,7 +45,7 @@ interface IWatcher {
 
     function triggerFromChainSlug() external view returns (uint32);
 
-    function triggerFromPlug() external view returns (address);
+    function triggerFromPlug() external view returns (bytes32);
 
     function isAppGatewayCalled(bytes32 triggerId) external view returns (bool);
 
