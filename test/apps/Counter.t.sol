@@ -90,7 +90,7 @@ contract CounterTest is AppGatewayBaseSetup {
             counterGateway
         );
         address optCounter = fromBytes32Format(optCounterBytes32);
-        
+
         uint256 arbCounterBefore = Counter(arbCounter).counter();
         uint256 optCounterBefore = Counter(optCounter).counter();
 

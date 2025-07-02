@@ -137,7 +137,7 @@ contract ParallelCounterTest is AppGatewayBaseSetup {
             parallelCounterGateway
         );
         address arbCounter = fromBytes32Format(arbCounterBytes32);
-        
+
         (bytes32 optCounterBytes32, address optCounterForwarder) = getOnChainAndForwarderAddresses(
             optChainSlug,
             counterId1,

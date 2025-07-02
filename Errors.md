@@ -45,6 +45,7 @@
 | Error | Signature |
 |-------|-----------|
 | `InvalidSwitchboardTest(bytes32,bytes32)` | `0x702f36a1` |
+| `InvalidGatewayTest(bytes32,bytes32,bytes32)` | `0xc6ad0fcf` |
 
 ## evmx/watcher/RequestHandler.sol
 

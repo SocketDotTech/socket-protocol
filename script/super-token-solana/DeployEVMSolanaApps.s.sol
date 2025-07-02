@@ -23,7 +23,7 @@ contract DeployEVMSolanaApps is Script {
 
         // fill with correct values after deployment
         bytes32 solanaProgramId = vm.envBytes32("SOLANA_TARGET_PROGRAM");
-        address forwarderSolanaAddress = 0xe116CcF80015162584C77D1e9D1cbE1109443f91;
+        address forwarderSolanaAddress = 0xb0bC05F65EaEC98A837686D77AcC50240d1468F7;
 
         // Setting fee payment on Arbitrum Sepolia
         uint256 fees = 10 ether;
@@ -42,9 +42,6 @@ contract DeployEVMSolanaApps is Script {
             forwarderSolanaAddress,
             addressResolver
         );
-
-        // TODO: deploy super token on evm
-        // TODO: callSolana() on gateway
 
         console.log("Contracts deployed:");
         console.log("EvmSolanaAppGateway:", address(gateway));

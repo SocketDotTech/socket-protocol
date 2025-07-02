@@ -3,9 +3,21 @@ pragma solidity ^0.8.21;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {ETH_ADDRESS} from "../../contracts/utils/common/Constants.sol";
+import {
+    ETH_ADDRESS,
+    TOKEN_ACCOUNT,
+    MINT_ACCOUNT
+} from "../../contracts/utils/common/Constants.sol";
 import {EvmSolanaAppGateway} from "../../test/apps/app-gateways/super-token/EvmSolanaAppGateway.sol";
-import {SolanaInstruction, SolanaInstructionData, SolanaInstructionDataDescription} from "../../contracts/utils/common/Structs.sol";
+import {
+    SolanaInstruction,
+    SolanaInstructionData, 
+    SolanaInstructionDataDescription, 
+    SolanaReadRequest, 
+    SolanaReadSchemaType,
+    GenericSchema
+} from "../../contracts/utils/common/Structs.sol";
+
 
 // source .env && forge script script/counter/EvmSolanaOnchainCalls.s.sol --broadcast --skip-simulation --legacy --gas-price 0
 contract EvmSolanaOnchainCalls is Script {
@@ -26,44 +38,12 @@ contract EvmSolanaOnchainCalls is Script {
         console.logBytes32(switchboardSolana);
         console.log("User address: ", userEvmAddress);
 
-        // console.log("Deploying SuperToken on Optimism Sepolia...");
-        // appGateway.deployEvmContract(11155420);
-
-        // appGateway.transfer(
-        //     abi.encode(
-        //         EvmSolanaAppGateway.TransferOrderEvmToSolana({
-        //             srcEvmToken: 0x4200000000000000000000000000000000000006,
-        //             dstSolanaToken: 0x66619ffe200970bf084fa4713da27d7dff551179adac93fc552787c7555f3482,
-        //             userEvm: 0x4200000000000000000000000000000000000005,
-        //             destUserTokenAddress: 0x44419ffe200970bf084fa4713da27d7dff551179adac93fc552787c7555f3482,
-        //             srcAmount: 1000000000000000000,
-        //             deadline: 1715702400
-        //         })
-        //     ),
-        //     switchboardSolana
-        // );
-
         uint256 srcAmount = 1000000;
         // mintOnEvm(srcAmount, userEvmAddress, appGateway);
         // mintOnSolana(srcAmount, userEvmAddress, appGateway);
-        transferEvmToSolana(srcAmount, userEvmAddress, appGateway);
-
-        // This works:
-        // appGateway.transferForDebug(
-        //     buildSolanaInstruction(
-        //         EvmSolanaAppGateway.TransferOrderEvmToSolana({
-        //             srcEvmToken: 0x4200000000000000000000000000000000000006,
-        //             // mint on local-testnet: BdUzPsaAicEWinR7b14YLtvavwM8zYn8BaHKqGQ8by2q
-        //             dstSolanaToken: 0x9ded6d20f1f5b9c56cb90ef89fc52d355aaaa868c42738eff11f50d1f81f522a,
-        //             userEvm: 0x4200000000000000000000000000000000000005,
-        //             // alice super token ata: LVuCmGaoHjAGu54dFppzujS1Ti61CBac57taeQbokUr
-        //             destUserTokenAddress: 0x04feb6778939c89983aac734e237dc22f49d7b4418d378a516df15a255d084cb,
-        //             srcAmount: 1000000,
-        //             deadline: 1715702400
-        //         })
-        //     ),
-        //     switchboardSolana
-        // );
+        // transferEvmToSolana(srcAmount, userEvmAddress, appGateway);
+        // readSolanaSuperTokenConfigAccount(appGateway);
+        readSolanaTokenAccount(appGateway);
     }
 
     function transferEvmToSolana(
@@ -75,7 +55,7 @@ contract EvmSolanaOnchainCalls is Script {
 
         EvmSolanaAppGateway.TransferOrderEvmToSolana memory order = EvmSolanaAppGateway
             .TransferOrderEvmToSolana({
-                srcEvmToken: 0x817fe2ED9c6EE7507C30D1feea417d728546efA1, // Forwarder(!!) for Super-token contract on given chain
+                srcEvmToken: 0x2A159f24E2562E5874550BE4702CAC3eAe288411, // Forwarder(!!) for Super-token contract on given chain
                 // mint on local-testnet: BdUzPsaAicEWinR7b14YLtvavwM8zYn8BaHKqGQ8by2q
                 dstSolanaToken: 0x9ded6d20f1f5b9c56cb90ef89fc52d355aaaa868c42738eff11f50d1f81f522a,
                 userEvm: userEvmAddress,
@@ -101,7 +81,7 @@ contract EvmSolanaOnchainCalls is Script {
 
         bytes memory order = abi.encode(
             EvmSolanaAppGateway.TransferOrderEvmToSolana({
-                srcEvmToken: 0x817fe2ED9c6EE7507C30D1feea417d728546efA1, // Forwarder(!!) for Super-token contract on given chain
+                srcEvmToken: 0x2A159f24E2562E5874550BE4702CAC3eAe288411, // Forwarder(!!) for Super-token contract on given chain
                 dstSolanaToken: 0x9ded6d20f1f5b9c56cb90ef89fc52d355aaaa868c42738eff11f50d1f81f522a, // irrelevant for EVM minting
                 userEvm: userEvmAddress,
                 destUserTokenAddress: 0x04feb6778939c89983aac734e237dc22f49d7b4418d378a516df15a255d084cb, // irrelevant for EVM minting
@@ -143,6 +123,44 @@ contract EvmSolanaOnchainCalls is Script {
 
         appGateway.mintSuperTokenSolana(solanaInstruction);
     }
+
+    function readSolanaTokenAccount(EvmSolanaAppGateway appGateway) public {
+        console.log("Read token account from Solana");
+
+        // put here token account address to be read
+        // alice super token ata: LVuCmGaoHjAGu54dFppzujS1Ti61CBac57taeQbokUr
+        bytes32 accountToRead = 0x04feb6778939c89983aac734e237dc22f49d7b4418d378a516df15a255d084cb;
+        bytes32 schemaNameHash = TOKEN_ACCOUNT;
+
+        SolanaReadRequest memory readRequest = buildSolanaReadRequestPredefined(accountToRead, schemaNameHash);
+
+        appGateway.readTokenAccount(readRequest);
+    }
+
+    function readSolanaSuperTokenConfigAccount(EvmSolanaAppGateway appGateway) public {
+        console.log("Read generic account from Solana");
+
+        // superTokenConfigPda : jox6eY2gcjaKneNv96TKpjN7f3Rjcpn9dN9ZLNt3Krs
+        bytes32 accountToRead = 0x0af77affb0a5db632e9bafb98525232515d440861c9942e447c20eefd8883d34;
+        
+        // TODO:GW: All types recognizable by BorshEncoder must be placed in the constants to avoid hardcoding and confusion with lower/upper case
+        string[] memory valuesTypeNames = new string[](5);
+        valuesTypeNames[0] = "[u8;8]";   // account discriminator
+        valuesTypeNames[1] = "[u8;32]";  // owner
+        valuesTypeNames[2] = "[u8;32]";  // socket
+        valuesTypeNames[3] = "[u8;32]";  // mint
+        valuesTypeNames[4] = "u8";       // bump
+
+        GenericSchema memory genericSchema = GenericSchema({
+            valuesTypeNames: valuesTypeNames
+        });
+
+        SolanaReadRequest memory readRequest = buildSolanaReadRequestGeneric(accountToRead);
+
+        appGateway.readSuperTokenConfigAccount(readRequest, genericSchema);
+    }
+
+    /*************** builder functions ***************/
 
     function buildSolanaInstruction(
         EvmSolanaAppGateway.TransferOrderEvmToSolana memory order
@@ -199,6 +217,26 @@ contract EvmSolanaOnchainCalls is Script {
             });
     }
 
+    function buildSolanaReadRequestPredefined(bytes32 accountToRead, bytes32 schemaNameHash) internal pure returns (SolanaReadRequest memory) {
+        SolanaReadRequest memory readRequest = SolanaReadRequest({
+            schemaType: SolanaReadSchemaType.PREDEFINED,
+            accountToRead: accountToRead,
+            predefinedSchemaNameHash: schemaNameHash
+        });
+        return readRequest;
+    }
+
+    function buildSolanaReadRequestGeneric(bytes32 accountToRead) internal pure returns (SolanaReadRequest memory) {
+        SolanaReadRequest memory readRequest = SolanaReadRequest({
+            schemaType: SolanaReadSchemaType.GENERIC,
+            accountToRead: accountToRead,
+            predefinedSchemaNameHash: bytes32(0)
+        });
+        return readRequest;
+    }
+
+
+    /*************** experimental / testing ***************/
 
     function buildSolanaInstructionTest(
         EvmSolanaAppGateway.TransferOrderEvmToSolana memory order
@@ -230,11 +268,12 @@ contract EvmSolanaOnchainCalls is Script {
         });
         functionArguments[2] = abi.encode(complexTestStruct);
 
-
         string[] memory functionArgumentTypeNames = new string[](1);
         functionArgumentTypeNames[0] = "u64";
         functionArgumentTypeNames[1] = "[u64;100]";
-        functionArgumentTypeNames[2] = "{\"ComplexTestStruct\": {\"name\": \"string\",\"addr\": \"[u8;32]\",\"isActive\": \"boolean\",\"value\": \"u64\"}}";
+        functionArgumentTypeNames[
+            2
+        ] = '{"ComplexTestStruct": {"name": "string","addr": "[u8;32]","isActive": "boolean","value": "u64"}}';
 
         bytes1[] memory accountFlags = new bytes1[](5);
         // superTokenConfigPda is not writable
@@ -250,8 +289,6 @@ contract EvmSolanaOnchainCalls is Script {
 
         // mint instruction discriminator
         bytes8 instructionDiscriminator = 0x3339e12fb69289a6;
-
-        
 
         return
             SolanaInstruction({
@@ -275,5 +312,3 @@ contract EvmSolanaOnchainCalls is Script {
         uint256 value;
     }
 }
-
-

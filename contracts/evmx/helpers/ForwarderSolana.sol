@@ -30,7 +30,7 @@ contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil
     /// @param addressResolver_ address resolver contract
     function initialize(
         uint32 chainSlug_,
-        bytes32 onChainAddress_,
+        bytes32 onChainAddress_, // TODO:GW: after demo remove this param, we take target as param in callSolana()
         address addressResolver_
     ) public initializer {
         if (chainSlug_ == CHAIN_SLUG_SOLANA_MAINNET || chainSlug_ == CHAIN_SLUG_SOLANA_DEVNET) {
@@ -76,7 +76,7 @@ contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil
     /// @notice Fallback function to process the contract calls to onChainAddress
     /// @dev It queues the calls in the middleware and deploys the promise contract
     // function callSolana(SolanaInstruction memory solanaInstruction, bytes32 switchboardSolana) external {
-    function callSolana(SolanaInstruction memory solanaInstruction) external {
+    function callSolana(bytes memory solanaPayload, bytes32 target) external {
         if (address(addressResolver__) == address(0)) {
             revert AddressResolverNotSet();
         }
@@ -97,37 +97,17 @@ contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil
         // get the switchboard address from the watcher precompile config
         // address switchboard = watcherPrecompileConfig().switchboards(chainSlug, sbType);
 
-        bytes memory solanaPayload = abi.encode(solanaInstruction);
-
         // Queue the call in the middleware.
         QueueParams memory queueParams;
         queueParams.overrideParams = overrideParams;
         queueParams.transaction = Transaction({
             chainSlug: chainSlug,
-            target: onChainAddress,
+            // target: onChainAddress, // for Solana reads it should be accountToRead
+            // TODO: Solana forwarder can be a singleton - does not need to store onChainAddress and can use target as param
+            target: target,
             payload: solanaPayload
         });
         queueParams.switchboardType = sbType;
         watcher__().queue(queueParams, msgSender);
-
-        // Queue the call in the middleware.
-        // deliveryHelper__().queue(
-        //     QueuePayloadParams({
-        //         chainSlug: chainSlug,
-        //         callType: isReadCall == Read.ON ? CallType.READ : CallType.WRITE,
-        //         isParallel: isParallelCall,
-        //         isPlug: IsPlug.NO,
-        //         writeFinality: writeFinality,
-        //         asyncPromise: latestAsyncPromise,
-        //         switchboard: switchboardSolana,
-        //         target: onChainAddress,
-        //         appGateway: msg.sender,
-        //         gasLimit: gasLimit,
-        //         value: value,
-        //         readAt: readAt,
-        //         payload: solanaPayload,
-        //         initCallData: bytes("")
-        //     })
-        // );
     }
 }
