@@ -30,7 +30,7 @@ contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil
     /// @param addressResolver_ address resolver contract
     function initialize(
         uint32 chainSlug_,
-        bytes32 onChainAddress_,
+        bytes32 onChainAddress_, // TODO:GW: after demo remove this param, we take target as param in callSolana()
         address addressResolver_
     ) public initializer {
         if (chainSlug_ == CHAIN_SLUG_SOLANA_MAINNET || chainSlug_ == CHAIN_SLUG_SOLANA_DEVNET) {
