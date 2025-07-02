@@ -435,7 +435,7 @@ contract DeploySetup is SetupStore {
     function _createWatcherSignature(
         address contractAddress_,
         bytes memory data_
-    ) internal view returns (bytes memory) {
+    ) internal returns (bytes memory) {
         bytes32 digest = keccak256(
             abi.encode(address(watcher), evmxSlug, watcherNonce, contractAddress_, data_)
         );
@@ -832,7 +832,6 @@ contract WatcherSetup is AuctionSetup {
         PayloadParams memory payloadParams
     )
         internal
-        view
         returns (
             uint32 chainSlug,
             bytes32 switchboard,
@@ -986,7 +985,7 @@ contract AppGatewayBaseSetup is WatcherSetup {
     function checkRequestParams(
         uint40 requestCount,
         RequestParams memory expectedRequest
-    ) internal view {
+    ) internal {
         RequestParams memory actualRequest = watcher.getRequestParams(requestCount);
         // RequestParams checks
         assertEq(
@@ -1063,7 +1062,7 @@ contract AppGatewayBaseSetup is WatcherSetup {
         );
     }
 
-    function checkPayloadParams(PayloadParams[] memory expectedPayloads) internal view {
+    function checkPayloadParams(PayloadParams[] memory expectedPayloads) internal {
         for (uint i = 0; i < expectedPayloads.length; i++) {
             PayloadParams memory expectedPayload = expectedPayloads[i];
             PayloadParams memory actualPayload = watcher.getPayloadParams(
@@ -1121,5 +1120,12 @@ contract AppGatewayBaseSetup is WatcherSetup {
                 "Payload: precompileData mismatch"
             );
         }
+    }
+
+    function _encodeTriggerId(address socket_, uint32 chainSlug_) internal returns (bytes32) {
+        return
+            bytes32(
+                (uint256(chainSlug_) << 224) | (uint256(uint160(socket_)) << 64) | triggerCounter++
+            );
     }
 }

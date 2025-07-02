@@ -111,7 +111,7 @@ const deployEVMxContracts = async () => {
       );
       deployUtils.addresses[contractName] = proxyFactory.address;
 
-      const feePool = getFeePool(mode);
+      const feePool = getFeePool();
       if (feePool?.length == 0) {
         const feesPool = await getOrDeploy(
           Contracts.FeesPool,

@@ -20,7 +20,7 @@ abstract contract WatcherStorage is IWatcher, Initializable, Ownable {
     /// @notice The chain slug of the watcher precompile
     uint32 public evmxSlug;
     /// @notice stores temporary chainSlug of the trigger from a chain
-    uint32 public triggerFromChainSlug;
+    uint32 public override triggerFromChainSlug;
 
     // slot 51
     /// @notice Stores the trigger fees
@@ -49,7 +49,7 @@ abstract contract WatcherStorage is IWatcher, Initializable, Ownable {
     /// @notice Mapping to store if appGateway has been called with trigger from on-chain Inbox
     /// @dev Maps call ID to boolean indicating if the appGateway has been called
     /// @dev callId => bool
-    mapping(bytes32 => bool) public isAppGatewayCalled;
+    mapping(bytes32 => bool) public override isAppGatewayCalled;
 
     // slot 59
     /// @notice Maps nonce to whether it has been used
@@ -59,7 +59,7 @@ abstract contract WatcherStorage is IWatcher, Initializable, Ownable {
 
     // slot 60
     /// @notice stores temporary plug of the trigger from a chain
-    bytes32 public triggerFromPlug;
+    bytes32 public override triggerFromPlug;
 
     // slots [61-109]: gap for future storage variables
     uint256[49] _gap_after;
