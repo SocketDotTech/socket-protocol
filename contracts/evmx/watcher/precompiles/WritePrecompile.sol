@@ -44,7 +44,6 @@ abstract contract WritePrecompileStorage is IPrecompile {
 
     // 1 slot reserved for watcher base
 }
-
 /// @title WritePrecompile
 /// @notice Handles write precompile logic
 contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, WatcherBase {
@@ -60,9 +59,6 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
         uint256 deadline,
         PayloadParams payloadParams
     );
-
-    // TODO: remove after testing Solana
-    event DigestWithSourceParams(bytes32 digest, DigestParams digestParams);
 
     /// @notice Emitted when a proof is uploaded
     /// @param payloadId The unique identifier for the request
@@ -178,37 +174,25 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
             payloadParams.batchCount
         );
 
-        // Construct parameters for digest calculation
-        DigestParams memory digestParams_;
-        if (_isSolanaChainSlug(transaction.chainSlug)) {
-            digestParams_ = _createSolanaDigestParams(
-                payloadParams,
-                transaction,
-                appGateway,
-                transmitter_,
-                prevBatchDigestHash,
-                deadline,
-                gasLimit,
-                value
-            );
-        } else {
-            digestParams_ = _createEvmDigestParams(
-                payloadParams,
-                transaction,
-                appGateway,
-                transmitter_,
-                prevBatchDigestHash,
-                deadline,
-                gasLimit,
-                value
-            );
-        }
+        // create digest
+        DigestParams memory digestParams_ = DigestParams(
+            configurations__().sockets(transaction.chainSlug),
+            transmitter_,
+            payloadParams.payloadId,
+            deadline,
+            payloadParams.callType,
+            gasLimit,
+            value,
+            transaction.payload,
+            transaction.target,
+            toBytes32Format(appGateway),
+            prevBatchDigestHash,
+            bytes("")
+        );
 
         // Calculate and store digest from payload parameters
         bytes32 digest = getDigest(digestParams_);
         digestHashes[payloadParams.payloadId] = digest;
-
-        emit DigestWithSourceParams(digest, digestParams_);
 
         emit WriteProofRequested(
             transmitter_,
@@ -265,105 +249,6 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
         );
     }
 
-    function _createEvmDigestParams(
-        PayloadParams memory payloadParams_,
-        Transaction memory transaction_,
-        address appGateway_,
-        address transmitter_,
-        bytes32 prevBatchDigestHash_,
-        uint256 deadline_,
-        uint256 gasLimit_,
-        uint256 value_
-    ) internal view returns (DigestParams memory) {
-        // create digest
-        // DigestParams memory digestParams_ = DigestParams(
-        //     configurations__().sockets(transaction.chainSlug),
-        //     transmitter_,
-        //     payloadParams.payloadId,
-        //     deadline,
-        //     payloadParams.callType,
-        //     gasLimit,
-        //     value,
-        //     transaction.payload,
-        //     transaction.target,
-        //     toBytes32Format(appGateway),
-        //     prevBatchDigestHash,
-        //     bytes("")
-        // );
-
-        return
-            DigestParams(
-                configurations__().sockets(transaction_.chainSlug),
-                transmitter_,
-                payloadParams_.payloadId,
-                deadline_,
-                payloadParams_.callType,
-                gasLimit_,
-                value_,
-                transaction_.payload,
-                transaction_.target,
-                toBytes32Format(appGateway_),
-                prevBatchDigestHash_,
-                bytes("")
-            );
-    }
-
-    function _createSolanaDigestParams(
-        PayloadParams memory payloadParams_,
-        Transaction memory transaction_,
-        address appGateway_,
-        address transmitter_,
-        bytes32 prevBatchDigestHash_,
-        uint256 deadline_,
-        uint256 gasLimit_,
-        uint256 value_
-    ) internal view returns (DigestParams memory) {
-        SolanaInstruction memory instruction = abi.decode(
-            transaction_.payload,
-            (SolanaInstruction)
-        );
-        // TODO: this is a problem, function arguments must be packed in a way that is not later touched and that can be used on Solana side in raw Instruction call
-        // like a call data, so it should be Borsh encoded already here
-        bytes memory functionArgsPacked;
-        for (uint256 i = 0; i < instruction.data.functionArguments.length; i++) {
-            uint256 abiDecodedArg = abi.decode(instruction.data.functionArguments[i], (uint256));
-            // silent assumption that all arguments are uint64 to simplify the encoding
-            uint64 arg = uint64(abiDecodedArg);
-            bytes8 borshEncodedArg = encodeU64Borsh(arg);
-            functionArgsPacked = abi.encodePacked(functionArgsPacked, borshEncodedArg);
-        }
-
-        bytes memory payloadPacked = abi.encodePacked(
-            instruction.data.programId,
-            instruction.data.accounts,
-            instruction.data.instructionDiscriminator,
-            functionArgsPacked
-        );
-
-        // bytes32 of Solana Socket address : 9vFEQ5e3xf4eo17WttfqmXmnqN3gUicrhFGppmmNwyqV
-        bytes32 hardcodedSocket = 0x84815e8ca2f6dad7e12902c39a51bc72e13c48139b4fb10025d94e7abea2969c;
-        return
-            DigestParams(
-                // watcherPrecompileConfig__.sockets(params_.payloadHeader.getChainSlug()), // TODO: this does not work, for some reason it returns 0x000.... address
-                hardcodedSocket,
-                transmitter_,
-                payloadParams_.payloadId,
-                deadline_,
-                payloadParams_.callType,
-                gasLimit_,
-                value_,
-                payloadPacked,
-                transaction_.target,
-                toBytes32Format(appGateway_),
-                prevBatchDigestHash_,
-                bytes("")
-            );
-    }
-
-    function _isSolanaChainSlug(uint32 chainSlug_) internal pure returns (bool) {
-        return chainSlug_ == CHAIN_SLUG_SOLANA_MAINNET || chainSlug_ == CHAIN_SLUG_SOLANA_DEVNET;
-    }
-
     /// @notice Marks a write request with a proof on digest
     /// @param payloadId_ The unique identifier of the request
     /// @param proof_ The watcher's proof
@@ -418,16 +303,5 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
      */
     function rescueFunds(address token_, address rescueTo_, uint256 amount_) external onlyWatcher {
         RescueFundsLib._rescueFunds(token_, rescueTo_, amount_);
-    }
-
-    // Borsh helper functions
-    function encodeU64Borsh(uint64 v) public pure returns (bytes8) {
-        return bytes8(swapBytes8(v));
-    }
-
-    function swapBytes8(uint64 v) internal pure returns (uint64) {
-        v = ((v & 0x00ff00ff00ff00ff) << 8) | ((v & 0xff00ff00ff00ff00) >> 8);
-        v = ((v & 0x0000ffff0000ffff) << 16) | ((v & 0xffff0000ffff0000) >> 16);
-        return (v << 32) | (v >> 32);
     }
 }
