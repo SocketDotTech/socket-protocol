@@ -37,12 +37,6 @@ config();
 
 let EVMxOwner: string;
 
-// cT9tVQf8NAwHk849ctDqeLhbN2B6JJi3LfR6GfuN751 - super-token test program id
-export const mockForwarderSolanaOnChainAddress32Bytes = Buffer.from(
-  "0914e65e59622aeeefb7f007aef36df62d4c380895553b0643fcc4383c7c2448",
-  "hex"
-);
-
 const main = async () => {
   logConfig();
   await logBalances();
@@ -254,26 +248,6 @@ const deployEVMxContracts = async () => {
       );
       deployUtils.addresses[Contracts.SchedulePrecompile] =
         schedulePrecompile.address;
-
-      try {
-        console.log("AddressResolver address:", addressResolver.address);
-
-        deployUtils = await deployContractWithProxy(
-          Contracts.ForwarderSolana,
-          `contracts/evmx/helpers/ForwarderSolana.sol`,
-          [
-            ChainId.SOLANA_DEVNET,
-            mockForwarderSolanaOnChainAddress32Bytes,
-            addressResolver.address,
-          ],
-          proxyFactory,
-          deployUtils
-        );
-        const forwarderSolanaAddress = deployUtils.addresses[Contracts.ForwarderSolana];
-        console.log("ForwarderSolana Proxy:", forwarderSolanaAddress);
-      } catch (error) {
-        console.log("Error deploying ForwarderSolana:", error);
-      }
 
       deployUtils.addresses.startBlock =
         (deployUtils.addresses.startBlock

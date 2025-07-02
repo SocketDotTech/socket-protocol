@@ -14,7 +14,6 @@ import {
 } from "../utils";
 import { getWatcherSigner, sendWatcherMultiCallWithNonce } from "../utils/sign";
 import { isConfigSetOnEVMx, isConfigSetOnSocket } from "../utils";
-import { mockForwarderSolanaOnChainAddress32Bytes } from "./1.deploy";
 
 const plugs = [Contracts.ContractFactoryPlug, Contracts.FeesPlug];
 
@@ -150,38 +149,6 @@ export const updateConfigEVMx = async () => {
         }
       })
     );
-
-    //TODO:GW: This is a temporary workaround for th Solana POC
-    //---
-    const appGatewayAddress = process.env.APP_GATEWAY;
-    if (!appGatewayAddress) throw new Error("APP_GATEWAY is not set");
-    const solanaSwitchboard = process.env.SWITCHBOARD_SOLANA!.slice(2); // remove 0x prefix for Buffer from conversion
-    if (!solanaSwitchboard) throw new Error("SWITCHBOARD_SOLANA is not set");
-
-    const solanaSwitchboardBytes32 = Buffer.from(solanaSwitchboard, "hex");
-    const solanaAppGatewayId = ethers.utils.hexZeroPad(appGatewayAddress, 32);
-
-    console.log("SolanaAppGatewayId: ", solanaAppGatewayId);
-    console.log(
-      "SolanaSwitchboardBytes32: ",
-      solanaSwitchboardBytes32.toString("hex")
-    );
-
-    appConfigs.push({
-      plugConfig: {
-        appGatewayId: solanaAppGatewayId,
-        switchboard: "0x" + solanaSwitchboardBytes32.toString("hex"),
-      },
-      plug: "0x" + mockForwarderSolanaOnChainAddress32Bytes.toString("hex"),
-      chainSlug: ChainSlug.SOLANA_DEVNET,
-    });
-    // appConfigs.push({
-    //   plug: "0x" + mockForwarderSolanaOnChainAddress32Bytes.toString("hex"),
-    //   appGatewayId: solanaAppGatewayId,
-    //   switchboard: "0x" + solanaSwitchboardBytes32.toString("hex"),
-    //   chainSlug: ChainSlug.SOLANA_DEVNET,
-    // });
-    //---
 
     // Update configs if any changes needed
     if (appConfigs.length > 0) {

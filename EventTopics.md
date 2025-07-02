@@ -133,12 +133,6 @@
 | ----- | --------- | ----- |
 | `Initialized` | `(version: uint64)` | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
 
-## ForwarderSolana
-
-| Event | Arguments | Topic |
-| ----- | --------- | ----- |
-| `Initialized` | `(version: uint64)` | `0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2` |
-
 ## ProxyFactory
 
 | Event | Arguments | Topic |
