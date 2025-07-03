@@ -2,7 +2,7 @@ import { config } from "dotenv";
 import { Contract, utils, Wallet } from "ethers";
 import { formatEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { ChainAddressesObj, ChainId, ChainSlug, Contracts } from "../../src";
+import { ChainAddressesObj, ChainSlug, Contracts } from "../../src";
 import {
   AUCTION_END_DELAY_SECONDS,
   BID_TIMEOUT,

@@ -166,7 +166,7 @@ const config: HardhatUserConfig = {
       evmVersion: "paris",
       optimizer: {
         enabled: true,
-        runs: 200,
+        runs: 1,
         details: {
           yul: true,
           yulDetails: {
@@ -174,7 +174,7 @@ const config: HardhatUserConfig = {
           },
         },
       },
-      viaIR: true,
+      viaIR: false,
     },
   },
 };
