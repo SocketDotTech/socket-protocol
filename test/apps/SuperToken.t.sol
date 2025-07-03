@@ -151,7 +151,7 @@ contract SuperTokenTest is AppGatewayBaseSetup {
             IAppGateway(appContracts.superTokenApp)
         );
         address onChainOpt = fromBytes32Format(onChainOptBytes32);
-        
+
         uint256 arbBalanceBefore = SuperToken(onChainArb).balanceOf(owner);
         uint256 optBalanceBefore = SuperToken(onChainOpt).balanceOf(owner);
 
