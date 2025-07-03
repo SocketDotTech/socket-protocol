@@ -155,7 +155,7 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
     {
         (
             address appGateway,
-            Transaction memory transaction,–
+            Transaction memory transaction,
             ,
             uint256 gasLimit,
             uint256 value,
