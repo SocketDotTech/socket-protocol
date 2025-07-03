@@ -58,7 +58,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
 
     /// @notice Returns the on-chain address associated with this forwarder.
     /// @return The on-chain address.
-    function getOnChainAddress() external view override returns (bytes32) {
+    function getOnChainAddress() public view override returns (bytes32) {
         if (oldOnChainAddress != address(0)) {
             return toBytes32Format(oldOnChainAddress);
         }
@@ -103,7 +103,7 @@ contract Forwarder is ForwarderStorage, Initializable, AddressResolverUtil {
         queueParams.overrideParams = overrideParams;
         queueParams.transaction = Transaction({
             chainSlug: chainSlug,
-            target: onChainAddress,
+            target: getOnChainAddress(),
             payload: msg.data
         });
         queueParams.switchboardType = sbType;
