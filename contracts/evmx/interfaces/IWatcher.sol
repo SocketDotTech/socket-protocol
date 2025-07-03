@@ -89,6 +89,5 @@ interface IWatcher {
 
     function setIsValidPlug(bool isValid_, uint32 chainSlug_, bytes32 onchainAddress_) external;
 
-    // TODO:GW: what calls this ? - can it also be a Solana watcher key ?
     function isWatcher(address account_) external view returns (bool);
 }

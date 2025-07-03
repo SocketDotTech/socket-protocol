@@ -14,8 +14,6 @@ abstract contract ConfigurationsStorage is IConfigurations {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
-    error InvalidSwitchboardTest(bytes32 sb, bytes32 sbExpected);
-
     // slot 50
     /// @notice Maps network and plug to their configuration
     /// @dev chainSlug => plug => PlugConfig
@@ -46,8 +44,6 @@ abstract contract ConfigurationsStorage is IConfigurations {
 /// @notice Configuration contract for the Watcher Precompile system
 /// @dev Handles the mapping between networks, plugs, and app gateways for payload execution
 contract Configurations is ConfigurationsStorage, Initializable, Ownable, WatcherBase {
-    // TODO:GW: remove after testing Solana
-    event VerifyConnectionsSB(bytes32 switchboard, bytes32 switchboardExpected);
 
     /// @notice Emitted when a new plug is configured for an app gateway
     /// @param appGatewayId The id of the app gateway
@@ -163,13 +159,10 @@ contract Configurations is ConfigurationsStorage, Initializable, Ownable, Watche
         bytes32 target_,
         address appGateway_,
         bytes32 switchboardType_
-    // ) external {
     ) external view {
         (bytes32 appGatewayId, bytes32 switchboard) = getPlugConfigs(chainSlug_, target_);
         if (appGatewayId != toBytes32Format(appGateway_)) revert InvalidGateway();
-        // emit VerifyConnectionsSB(switchboard, switchboards[chainSlug_][switchboardType_]);
-        // if (switchboard != switchboards[chainSlug_][switchboardType_]) revert InvalidSwitchboard();
-        if (switchboard != switchboards[chainSlug_][switchboardType_]) revert InvalidSwitchboardTest(switchboard, switchboards[chainSlug_][switchboardType_]);
+        if (switchboard != switchboards[chainSlug_][switchboardType_]) revert InvalidSwitchboard();
     }
 
     /**

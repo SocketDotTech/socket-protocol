@@ -32,7 +32,7 @@ abstract contract FeesManagerStorage is IFeesManager {
 
     // slot 52
     /// @notice user credits => stores fees for user, app gateway, transmitters and watcher precompile
-    mapping(address => UserCredits) public userCredits; // TODO:GW: what is the "userAddress" ? is is just EVMx address ?
+    mapping(address => UserCredits) public userCredits;
 
     // slot 53
     /// @notice Mapping to track request credits details for each request count
@@ -42,18 +42,18 @@ abstract contract FeesManagerStorage is IFeesManager {
     // slot 54
     // user approved app gateways
     // userAddress => appGateway => isApproved
-    mapping(address => mapping(address => bool)) public isApproved; //TODO:GW: what is the "userAddress" ? is this an on-chain address ? if yes than it needs to be bytes32
+    mapping(address => mapping(address => bool)) public isApproved;
 
     // slot 55
     // token pool balances
     //  chainSlug => token address => amount
-    mapping(uint32 => mapping(address => uint256)) public tokenOnChainBalances; // TODO:GW: what is that ? // how does it map to multi-chain with Solana
+    mapping(uint32 => mapping(address => uint256)) public tokenOnChainBalances;
 
     // slot 56
     /// @notice Mapping to track nonce to whether it has been used
     /// @dev address => signatureNonce => isNonceUsed
     /// @dev used by watchers or other users in signatures
-    mapping(address => mapping(uint256 => bool)) public isNonceUsed; // TODO:GW: earlier it was just "uint256 => bool" now it has "address" why ? if it is a watcher address it is just for evm or should be bytes32 ?
+    mapping(address => mapping(uint256 => bool)) public isNonceUsed;
 
     // slot 57
     /// @notice Mapping to track fees plug for each chain slug

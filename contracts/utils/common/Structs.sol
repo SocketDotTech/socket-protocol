@@ -219,7 +219,6 @@ struct SolanaInstructionData {
     bytes32 programId;
     bytes32[] accounts;
     bytes8 instructionDiscriminator;
-    // TODO:GW: in one of functionArguments is an array it might need a special handling and encoding
     // for now we assume the all functionArguments are simple types (uint256, address, bool, etc.) not complex types (struct, array, etc.)
     bytes[] functionArguments;
 }
