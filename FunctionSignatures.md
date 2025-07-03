@@ -59,7 +59,7 @@
 | `chainSlug`                  | `0xb349ba65` |
 | `completeOwnershipHandover`  | `0xf04e283e` |
 | `connect`                    | `0xb3bde1aa` |
-| `disableSwitchboard`         | `0xe545b261` |
+| `disableSwitchboard`         | `0xc4d9a820` |
 | `enableSwitchboard`          | `0xf97a498a` |
 | `execute`                    | `0xafa8b480` |
 | `getPlugConfig`              | `0xf9778ee0` |
@@ -151,7 +151,7 @@
 | `requestOwnershipHandover`       | `0x25692962` |
 | `rescueFunds`                    | `0x6ccae054` |
 | `sbType`                         | `0x745de344` |
-| `setFeesPlug`                    | `0xeab75f36` |
+| `setFeesPlug`                    | `0xd6a9a8b7` |
 | `setFeesPool`                    | `0xd6684588` |
 | `tokenOnChainBalances`           | `0x3b27866d` |
 | `transferCredits`                | `0xf1686c89` |
@@ -224,8 +224,8 @@
 | `forwarderBeacon`               | `0x945709ae` |
 | `forwarderImplementation`       | `0xe38d60a1` |
 | `getAsyncPromiseAddress`        | `0x104f39b4` |
-| `getForwarderAddress`           | `0x48c0b3e0` |
-| `getOrDeployForwarderContract`  | `0x0aa178de` |
+| `getForwarderAddress`           | `0x9c038b01` |
+| `getOrDeployForwarderContract`  | `0xe9bf1edf` |
 | `initialize`                    | `0x485cc955` |
 | `owner`                         | `0x8da5cb5b` |
 | `ownershipHandoverExpiresAt`    | `0xfee81cf4` |
@@ -292,7 +292,7 @@
 | `feesManager__`     | `0x70568b58` |
 | `getChainSlug`      | `0x0b8c6568` |
 | `getOnChainAddress` | `0x9da48789` |
-| `initialize`        | `0x647c576c` |
+| `initialize`        | `0x148841cb` |
 | `onChainAddress`    | `0x8bd0b363` |
 | `rescueFunds`       | `0x6ccae054` |
 | `watcher__`         | `0x300bb063` |
@@ -361,22 +361,22 @@
 | ---------------------------- | ------------ |
 | `cancelOwnershipHandover`    | `0x54d1f13d` |
 | `completeOwnershipHandover`  | `0xf04e283e` |
-| `getPlugConfigs`             | `0x8a028c38` |
+| `getPlugConfigs`             | `0x25945c1a` |
 | `initialize`                 | `0x485cc955` |
-| `isValidPlug`                | `0xec8aef74` |
+| `isValidPlug`                | `0x00f9b9f4` |
 | `owner`                      | `0x8da5cb5b` |
 | `ownershipHandoverExpiresAt` | `0xfee81cf4` |
 | `renounceOwnership`          | `0x715018a6` |
 | `requestOwnershipHandover`   | `0x25692962` |
 | `rescueFunds`                | `0x6ccae054` |
-| `setAppGatewayConfigs`       | `0xd137fcbb` |
-| `setIsValidPlug`             | `0xf41332b0` |
-| `setSocket`                  | `0x075c40be` |
-| `setSwitchboard`             | `0x61706f1e` |
+| `setAppGatewayConfigs`       | `0xebfb22cd` |
+| `setIsValidPlug`             | `0x4842c37a` |
+| `setSocket`                  | `0x38d4de67` |
+| `setSwitchboard`             | `0x491eac1f` |
 | `sockets`                    | `0xb44a23ab` |
 | `switchboards`               | `0xaa539546` |
 | `transferOwnership`          | `0xf2fde38b` |
-| `verifyConnections`          | `0xa53b6fad` |
+| `verifyConnections`          | `0x36cb19fb` |
 | `watcher__`                  | `0x300bb063` |
 
 ## PromiseResolver
@@ -420,7 +420,7 @@
 | `rescueFunds`                  | `0x6ccae054` |
 | `setPrecompile`                | `0x122e0042` |
 | `setRequestPayloadCountLimit`  | `0x8526582b` |
-| `submitRequest`                | `0xbb299a2c` |
+| `submitRequest`                | `0xf91ba7cc` |
 | `transferOwnership`            | `0xf2fde38b` |
 | `updateRequestAndProcessBatch` | `0x46464471` |
 | `watcher__`                    | `0x300bb063` |
@@ -455,14 +455,14 @@
 | `ownershipHandoverExpiresAt` | `0xfee81cf4` |
 | `payloadQueue`               | `0x74f00ffb` |
 | `promiseResolver__`          | `0xdee152be` |
-| `queue`                      | `0xf03ca7f7` |
-| `queueAndSubmit`             | `0xf0fb9665` |
+| `queue`                      | `0x65967f1a` |
+| `queueAndSubmit`             | `0x9d4c9df7` |
 | `renounceOwnership`          | `0x715018a6` |
 | `requestHandler__`           | `0x55184561` |
 | `requestOwnershipHandover`   | `0x25692962` |
 | `rescueFunds`                | `0xa58c6fc5` |
 | `setCoreContracts`           | `0xefa891c4` |
-| `setIsValidPlug`             | `0x7fc82ff6` |
+| `setIsValidPlug`             | `0x06c0a40a` |
 | `setTriggerFees`             | `0xaeb30511` |
 | `submitRequest`              | `0x4890b5ef` |
 | `transferOwnership`          | `0xf2fde38b` |
@@ -506,7 +506,7 @@
 | `resolvePayload`               | `0xea92e825` |
 | `setExpiryTime`                | `0x30fc4cff` |
 | `setFees`                      | `0x3d18678e` |
-| `validateAndGetPrecompileData` | `0xab172aab` |
+| `validateAndGetPrecompileData` | `0x997f5bef` |
 | `watcher__`                    | `0x300bb063` |
 
 ## SchedulePrecompile
@@ -525,7 +525,7 @@
 | `setMaxScheduleDelayInSeconds` | `0x12953318` |
 | `setScheduleCallbackFees`      | `0xec8fd71e` |
 | `setScheduleFeesPerSecond`     | `0x28e59e57` |
-| `validateAndGetPrecompileData` | `0xab172aab` |
+| `validateAndGetPrecompileData` | `0x997f5bef` |
 | `watcher__`                    | `0x300bb063` |
 
 ## WritePrecompile
@@ -538,7 +538,7 @@
 | `contractFactoryPlugs`         | `0x35426631` |
 | `digestHashes`                 | `0xd1a862bf` |
 | `expiryTime`                   | `0x99bc0aea` |
-| `getDigest`                    | `0xdd4bf97b` |
+| `getDigest`                    | `0x91b6288b` |
 | `getPrecompileFees`            | `0xb7a3d04c` |
 | `getPrevBatchDigestHash`       | `0x372863a1` |
 | `handlePayload`                | `0x1d5e1d98` |
@@ -549,13 +549,13 @@
 | `requestOwnershipHandover`     | `0x25692962` |
 | `rescueFunds`                  | `0x6ccae054` |
 | `resolvePayload`               | `0xea92e825` |
-| `setContractFactoryPlugs`      | `0xc067b6dd` |
+| `setContractFactoryPlugs`      | `0x8b198f5c` |
 | `setExpiryTime`                | `0x30fc4cff` |
 | `setFees`                      | `0x3d18678e` |
 | `transferOwnership`            | `0xf2fde38b` |
 | `updateChainMaxMsgValueLimits` | `0x6a7aa6ac` |
 | `uploadProof`                  | `0x81b48fcf` |
-| `validateAndGetPrecompileData` | `0xab172aab` |
+| `validateAndGetPrecompileData` | `0x997f5bef` |
 | `watcherProofs`                | `0x3fa3166b` |
 | `watcher__`                    | `0x300bb063` |
 | `writeFees`                    | `0x5c664aeb` |

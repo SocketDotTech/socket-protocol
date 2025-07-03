@@ -45,7 +45,7 @@ interface IWatcher {
 
     function triggerFromChainSlug() external view returns (uint32);
 
-    function triggerFromPlug() external view returns (address);
+    function triggerFromPlug() external view returns (bytes32);
 
     function isAppGatewayCalled(bytes32 triggerId) external view returns (bool);
 
@@ -87,7 +87,7 @@ interface IWatcher {
 
     function increaseFees(uint40 requestCount_, uint256 newFees_) external;
 
-    function setIsValidPlug(bool isValid_, uint32 chainSlug_, address onchainAddress_) external;
+    function setIsValidPlug(bool isValid_, uint32 chainSlug_, bytes32 onchainAddress_) external;
 
     function isWatcher(address account_) external view returns (bool);
 }

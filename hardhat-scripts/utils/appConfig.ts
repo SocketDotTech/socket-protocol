@@ -1,4 +1,5 @@
 import { Contract } from "ethers";
+import { toBytes32Format } from "./address";
 
 export const isConfigSetOnSocket = async (
   plug: Contract,
@@ -21,7 +22,10 @@ export const isConfigSetOnEVMx = async (
   appGatewayId: string,
   switchboard: string
 ) => {
-  const plugConfigRegistered = await watcher.getPlugConfigs(chain, plug);
+  const plugConfigRegistered = await watcher.getPlugConfigs(
+    chain,
+    toBytes32Format(plug)
+  );
   return (
     plugConfigRegistered[0].toLowerCase() === appGatewayId?.toLowerCase() &&
     plugConfigRegistered[1].toLowerCase() === switchboard.toLowerCase()

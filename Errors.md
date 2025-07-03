@@ -32,6 +32,12 @@
 | `InvalidDepositAmount()`                            | `0xfe9ba5cd` |
 | `TokenNotWhitelisted(address)`                      | `0xea3bff2e` |
 
+## evmx/watcher/Configurations.sol
+
+| Error                                     | Signature    |
+| ----------------------------------------- | ------------ |
+| `InvalidSwitchboardTest(bytes32,bytes32)` | `0x702f36a1` |
+
 ## evmx/watcher/RequestHandler.sol
 
 | Error                   | Signature    |
@@ -80,6 +86,12 @@
 | Error               | Signature    |
 | ------------------- | ------------ |
 | `NoPermit(bytes32)` | `0x962f6333` |
+
+## utils/common/Converters.sol
+
+| Error                      | Signature    |
+| -------------------------- | ------------ |
+| `NotAnEvmAddress(bytes32)` | `0x33b960d0` |
 
 ## utils/common/Errors.sol
 

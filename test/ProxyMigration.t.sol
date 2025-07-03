@@ -169,7 +169,10 @@ contract MigrationTest is ProxyStorageAssertions {
         assertEq(newImplAddr, address(newImpl), "New implementation not set correctly");
 
         // Deploy a new forwarder and verify it uses the correct beacon
-        address newForwarder = asyncDeployer.getOrDeployForwarderContract(address(0x123), 1);
+        address newForwarder = asyncDeployer.getOrDeployForwarderContract(
+            toBytes32Format(address(0x123)),
+            1
+        );
         address beacon = getBeacon(newForwarder);
         assertEq(
             beacon,

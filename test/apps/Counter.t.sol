@@ -31,7 +31,7 @@ contract CounterTest is AppGatewayBaseSetup {
     function testCounterDeployment() external {
         deployCounterApp(arbChainSlug);
 
-        (address onChain, address forwarder) = getOnChainAndForwarderAddresses(
+        (bytes32 onChain, address forwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId,
             counterGateway
@@ -57,11 +57,12 @@ contract CounterTest is AppGatewayBaseSetup {
     function testCounterIncrement() external {
         deployCounterApp(arbChainSlug);
 
-        (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
+        (bytes32 arbCounterBytes32, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId,
             counterGateway
         );
+        address arbCounter = fromBytes32Format(arbCounterBytes32);
 
         uint256 arbCounterBefore = Counter(arbCounter).counter();
 
@@ -77,16 +78,18 @@ contract CounterTest is AppGatewayBaseSetup {
         deployCounterApp(arbChainSlug);
         deployCounterApp(optChainSlug);
 
-        (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
+        (bytes32 arbCounterBytes32, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId,
             counterGateway
         );
-        (address optCounter, address optCounterForwarder) = getOnChainAndForwarderAddresses(
+        address arbCounter = fromBytes32Format(arbCounterBytes32);
+        (bytes32 optCounterBytes32, address optCounterForwarder) = getOnChainAndForwarderAddresses(
             optChainSlug,
             counterId,
             counterGateway
         );
+        address optCounter = fromBytes32Format(optCounterBytes32);
 
         uint256 arbCounterBefore = Counter(arbCounter).counter();
         uint256 optCounterBefore = Counter(optCounter).counter();

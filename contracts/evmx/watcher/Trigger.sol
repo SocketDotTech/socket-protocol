@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 
 import {LibCall} from "solady/utils/LibCall.sol";
 import "./WatcherStorage.sol";
-import {decodeAppGatewayId} from "../../utils/common/IdUtils.sol";
+import {fromBytes32Format} from "../../utils/common/Converters.sol";
 
 /// @title Trigger
 /// @notice Contract that handles trigger validation and execution logic
@@ -29,7 +29,7 @@ abstract contract Trigger is WatcherStorage, AddressResolverUtil {
     function _callAppGateways(TriggerParams memory params_) internal {
         if (isAppGatewayCalled[params_.triggerId]) revert AppGatewayAlreadyCalled();
 
-        address appGateway = decodeAppGatewayId(params_.appGatewayId);
+        address appGateway = fromBytes32Format(params_.appGatewayId);
         if (!configurations__.isValidPlug(appGateway, params_.chainSlug, params_.plug))
             revert InvalidCallerTriggered();
 
@@ -52,6 +52,6 @@ abstract contract Trigger is WatcherStorage, AddressResolverUtil {
         }
 
         triggerFromChainSlug = 0;
-        triggerFromPlug = address(0);
+        triggerFromPlug = bytes32(0);
     }
 }

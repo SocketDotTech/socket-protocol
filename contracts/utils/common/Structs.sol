@@ -51,19 +51,30 @@ struct AppGatewayApprovals {
 
 //// STRUCTS ////
 struct AppGatewayConfig {
-    PlugConfig plugConfig;
-    address plug;
+    PlugConfigGeneric plugConfig;
+    bytes32 plug;
     uint32 chainSlug;
 }
 // Plug config:
-struct PlugConfig {
+// struct PlugConfig {
+//     bytes32 appGatewayId;
+//     address switchboard;
+// }
+struct PlugConfigGeneric {
+    bytes32 appGatewayId;
+    bytes32 switchboard;
+}
+
+// Plug config:
+struct PlugConfigEvm {
     bytes32 appGatewayId;
     address switchboard;
 }
+
 //trigger:
 struct TriggerParams {
     bytes32 triggerId;
-    address plug;
+    bytes32 plug;
     bytes32 appGatewayId;
     uint32 chainSlug;
     bytes overrides;
@@ -124,7 +135,7 @@ struct UserCredits {
 
 // digest:
 struct DigestParams {
-    address socket;
+    bytes32 socket;
     address transmitter;
     bytes32 payloadId;
     uint256 deadline;
@@ -132,7 +143,7 @@ struct DigestParams {
     uint256 gasLimit;
     uint256 value;
     bytes payload;
-    address target;
+    bytes32 target;
     bytes32 appGatewayId;
     bytes32 prevBatchDigestHash;
     bytes extraData;
@@ -149,10 +160,9 @@ struct OverrideParams {
     uint256 delayInSeconds;
 }
 
-// payload
 struct Transaction {
     uint32 chainSlug;
-    address target;
+    bytes32 target;
     bytes payload;
 }
 
@@ -198,4 +208,25 @@ struct RequestParams {
     address auctionManager;
     uint256 writeCount;
     bytes onCompleteData;
+}
+
+struct SolanaInstruction {
+    SolanaInstructionData data;
+    SolanaInstructionDataDescription description;
+}
+
+struct SolanaInstructionData {
+    bytes32 programId;
+    bytes32[] accounts;
+    bytes8 instructionDiscriminator;
+    // for now we assume the all functionArguments are simple types (uint256, address, bool, etc.) not complex types (struct, array, etc.)
+    bytes[] functionArguments;
+}
+
+struct SolanaInstructionDataDescription {
+    // flags for accounts, we only need isWritable for now
+    // 0 bit - isWritable (0|1)
+    bytes1[] accountFlags;
+    // names for function argument types used later in data decoding in watcher and transmitter
+    string[] functionArgumentTypeNames;
 }

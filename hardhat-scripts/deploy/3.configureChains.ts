@@ -15,6 +15,8 @@ import {
   getSocketSigner,
   getWatcherSigner,
   overrides,
+  toBytes32Format,
+  toBytes32FormatHexString,
   updateContractSettings,
 } from "../utils";
 
@@ -81,24 +83,36 @@ async function setOnchainContracts(
   const signer: Wallet = getWatcherSigner();
   const chainAddresses = addresses[chain] as ChainAddressesObj;
 
+  const switchboard = toBytes32FormatHexString(
+    chainAddresses[Contracts.FastSwitchboard]
+  );
+  const socket = toBytes32FormatHexString(chainAddresses[Contracts.Socket]);
+  const feesPlug = toBytes32FormatHexString(
+    chainAddresses[Contracts.FeesPlug]!
+  );
+  const contractFactory = toBytes32FormatHexString(
+    chainAddresses[Contracts.ContractFactoryPlug]
+  );
+
   await updateContractSettings(
     EVMX_CHAIN_ID,
     Contracts.Configurations,
     "switchboards",
     [chain, FAST_SWITCHBOARD_TYPE],
-    chainAddresses[Contracts.FastSwitchboard],
+    switchboard,
     "setSwitchboard",
-    [chain, FAST_SWITCHBOARD_TYPE, chainAddresses[Contracts.FastSwitchboard]],
+    [chain, FAST_SWITCHBOARD_TYPE, toBytes32Format(switchboard)],
     signer
   );
+
   await updateContractSettings(
     EVMX_CHAIN_ID,
     Contracts.Configurations,
     "sockets",
     [chain],
-    chainAddresses[Contracts.Socket],
+    socket,
     "setSocket",
-    [chain, chainAddresses[Contracts.Socket]],
+    [chain, socket],
     signer
   );
 
@@ -108,9 +122,9 @@ async function setOnchainContracts(
       Contracts.FeesManager,
       "feesPlugs",
       [chain],
-      chainAddresses[Contracts.FeesPlug],
+      feesPlug,
       "setFeesPlug",
-      [chain, chainAddresses[Contracts.FeesPlug]],
+      [chain, toBytes32Format(feesPlug)],
       signer
     );
 
@@ -119,9 +133,9 @@ async function setOnchainContracts(
     Contracts.WritePrecompile,
     "contractFactoryPlugs",
     [chain],
-    chainAddresses[Contracts.ContractFactoryPlug],
+    contractFactory,
     "setContractFactoryPlugs",
-    [chain, chainAddresses[Contracts.ContractFactoryPlug]],
+    [chain, toBytes32Format(contractFactory)],
     signer
   );
 }
