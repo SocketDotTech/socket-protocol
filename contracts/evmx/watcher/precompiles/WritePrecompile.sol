@@ -5,11 +5,11 @@ import "solady/utils/Initializable.sol";
 import "solady/auth/Ownable.sol";
 
 import "../../interfaces/IPrecompile.sol";
-import {WRITE, PAYLOAD_SIZE_LIMIT} from "../../../utils/common/Constants.sol";
+import {WRITE, PAYLOAD_SIZE_LIMIT, CHAIN_SLUG_SOLANA_MAINNET, CHAIN_SLUG_SOLANA_DEVNET} from "../../../utils/common/Constants.sol";
 import {InvalidIndex, MaxMsgValueLimitExceeded, InvalidPayloadSize} from "../../../utils/common/Errors.sol";
-import {encodeAppGatewayId} from "../../../utils/common/IdUtils.sol";
 import "../../../utils/RescueFundsLib.sol";
 import "../WatcherBase.sol";
+import {toBytes32Format} from "../../../utils/common/Converters.sol";
 
 abstract contract WritePrecompileStorage is IPrecompile {
     // slots [0-49] reserved for gap
@@ -37,21 +37,20 @@ abstract contract WritePrecompileStorage is IPrecompile {
     mapping(bytes32 => bytes32) public digestHashes;
 
     // slot 55
-    mapping(uint32 => address) public contractFactoryPlugs;
+    mapping(uint32 => bytes32) public contractFactoryPlugs;
 
     // slots [56-105] reserved for gap
     uint256[50] _gap_after;
 
     // 1 slot reserved for watcher base
 }
-
 /// @title WritePrecompile
 /// @notice Handles write precompile logic
 contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, WatcherBase {
     /// @notice Emitted when fees are set
     event FeesSet(uint256 writeFees);
     event ChainMaxMsgValueLimitsUpdated(uint32 chainSlug, uint256 maxMsgValueLimit);
-    event ContractFactoryPlugSet(uint32 chainSlug, address contractFactoryPlug);
+    event ContractFactoryPlugSet(uint32 chainSlug, bytes32 contractFactoryPlug);
     /// @notice Emitted when a proof upload request is made
     event WriteProofRequested(
         address transmitter,
@@ -107,7 +106,7 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
             revert InvalidPayloadSize();
         }
 
-        if (queueParams_.transaction.target == address(0)) {
+        if (queueParams_.transaction.target == bytes32(0)) {
             queueParams_.transaction.target = contractFactoryPlugs[
                 queueParams_.transaction.chainSlug
             ];
@@ -161,9 +160,10 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
             uint256 gasLimit,
             uint256 value,
 
-        ) = abi.decode(
+        ) =
+            abi.decode(
                 payloadParams.precompileData,
-                (address, Transaction, WriteFinality, uint256, uint256, address)
+                (address, Transaction, WriteFinality, uint256, uint256, bytes32)
             );
 
         precompileData = payloadParams.precompileData;
@@ -186,7 +186,7 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
             value,
             transaction.payload,
             transaction.target,
-            encodeAppGatewayId(appGateway),
+            toBytes32Format(appGateway),
             prevBatchDigestHash,
             bytes("")
         );
@@ -233,7 +233,7 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
     /// @dev This function creates a keccak256 hash of the payload parameters
     function getDigest(DigestParams memory params_) public pure returns (bytes32 digest) {
         digest = keccak256(
-            abi.encode(
+            abi.encodePacked(
                 params_.socket,
                 params_.transmitter,
                 params_.payloadId,
@@ -276,7 +276,7 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
 
     function setContractFactoryPlugs(
         uint32 chainSlug_,
-        address contractFactoryPlug_
+        bytes32 contractFactoryPlug_
     ) external onlyOwner {
         contractFactoryPlugs[chainSlug_] = contractFactoryPlug_;
         emit ContractFactoryPlugSet(chainSlug_, contractFactoryPlug_);

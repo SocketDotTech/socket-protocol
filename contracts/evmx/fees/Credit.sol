@@ -14,6 +14,7 @@ import {AddressResolverUtil} from "../helpers/AddressResolverUtil.sol";
 import {NonceUsed, InvalidAmount, InsufficientCreditsAvailable, InsufficientBalance, InvalidChainSlug, NotRequestHandler} from "../../utils/common/Errors.sol";
 import {WRITE} from "../../utils/common/Constants.sol";
 import "../../utils/RescueFundsLib.sol";
+import {toBytes32Format} from "../../utils/common/Converters.sol";
 
 abstract contract FeesManagerStorage is IFeesManager {
     // slots [0-49] reserved for gap
@@ -57,7 +58,7 @@ abstract contract FeesManagerStorage is IFeesManager {
     // slot 57
     /// @notice Mapping to track fees plug for each chain slug
     /// @dev chainSlug => fees plug address
-    mapping(uint32 => address) public feesPlugs;
+    mapping(uint32 => bytes32) public feesPlugs;
 
     // slots [58-107] reserved for gap
     uint256[50] _gap_after;
@@ -92,7 +93,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
     event CreditsTransferred(address indexed from, address indexed to, uint256 amount);
 
     /// @notice Emitted when fees plug is set
-    event FeesPlugSet(uint32 indexed chainSlug, address indexed feesPlug);
+    event FeesPlugSet(uint32 indexed chainSlug, bytes32 indexed feesPlug);
 
     /// @notice Emitted when fees pool is set
     event FeesPoolSet(address indexed feesPool);
@@ -100,7 +101,7 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
     /// @notice Emitted when withdraw fails
     event WithdrawFailed(bytes32 indexed payloadId);
 
-    function setFeesPlug(uint32 chainSlug_, address feesPlug_) external onlyOwner {
+    function setFeesPlug(uint32 chainSlug_, bytes32 feesPlug_) external onlyOwner {
         feesPlugs[chainSlug_] = feesPlug_;
         emit FeesPlugSet(chainSlug_, feesPlug_);
     }
@@ -295,8 +296,8 @@ abstract contract Credit is FeesManagerStorage, Initializable, Ownable, AddressR
         watcher__().queueAndSubmit(queueParams, maxFees_, address(0), consumeFrom_, bytes(""));
     }
 
-    function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (address) {
-        if (feesPlugs[chainSlug_] == address(0)) revert InvalidChainSlug();
+    function _getFeesPlugAddress(uint32 chainSlug_) internal view returns (bytes32) {
+        if (feesPlugs[chainSlug_] == bytes32(0)) revert InvalidChainSlug();
         return feesPlugs[chainSlug_];
     }
 

@@ -187,34 +187,34 @@ contract DeploySetup is SetupStore {
         AppGatewayConfig[] memory configs = new AppGatewayConfig[](4);
         configs[0] = AppGatewayConfig({
             chainSlug: arbChainSlug,
-            plug: address(arbConfig.feesPlug),
-            plugConfig: PlugConfig({
-                appGatewayId: encodeAppGatewayId(address(feesManager)),
-                switchboard: address(arbConfig.switchboard)
+            plug: toBytes32Format(address(arbConfig.feesPlug)),
+            plugConfig: PlugConfigGeneric({
+                appGatewayId: toBytes32Format(address(feesManager)),
+                switchboard: toBytes32Format(address(arbConfig.switchboard))
             })
         });
         configs[1] = AppGatewayConfig({
             chainSlug: optChainSlug,
-            plug: address(optConfig.feesPlug),
-            plugConfig: PlugConfig({
-                appGatewayId: encodeAppGatewayId(address(feesManager)),
-                switchboard: address(optConfig.switchboard)
+            plug: toBytes32Format(address(optConfig.feesPlug)),
+            plugConfig: PlugConfigGeneric({
+                appGatewayId: toBytes32Format(address(feesManager)),
+                switchboard: toBytes32Format(address(optConfig.switchboard))
             })
         });
         configs[2] = AppGatewayConfig({
             chainSlug: arbChainSlug,
-            plug: address(arbConfig.contractFactoryPlug),
-            plugConfig: PlugConfig({
-                appGatewayId: encodeAppGatewayId(address(writePrecompile)),
-                switchboard: address(arbConfig.switchboard)
+            plug: toBytes32Format(address(arbConfig.contractFactoryPlug)),
+            plugConfig: PlugConfigGeneric({
+                appGatewayId: toBytes32Format(address(writePrecompile)),
+                switchboard: toBytes32Format(address(arbConfig.switchboard))
             })
         });
         configs[3] = AppGatewayConfig({
             chainSlug: optChainSlug,
-            plug: address(optConfig.contractFactoryPlug),
-            plugConfig: PlugConfig({
-                appGatewayId: encodeAppGatewayId(address(writePrecompile)),
-                switchboard: address(optConfig.switchboard)
+            plug: toBytes32Format(address(optConfig.contractFactoryPlug)),
+            plugConfig: PlugConfigGeneric({
+                appGatewayId: toBytes32Format(address(writePrecompile)),
+                switchboard: toBytes32Format(address(optConfig.switchboard))
             })
         });
 
@@ -276,14 +276,14 @@ contract DeploySetup is SetupStore {
         feesPlug.grantRole(RESCUE_ROLE, address(socketOwner));
         feesPlug.whitelistToken(address(socketConfig.testUSDC));
         feesPlug.connectSocket(
-            encodeAppGatewayId(address(feesManager)),
+            toBytes32Format(address(feesManager)),
             address(socket),
             address(switchboard)
         );
 
         contractFactoryPlug.grantRole(RESCUE_ROLE, address(socketOwner));
         contractFactoryPlug.connectSocket(
-            encodeAppGatewayId(address(writePrecompile)),
+            toBytes32Format(address(writePrecompile)),
             address(socket),
             address(switchboard)
         );
@@ -291,16 +291,19 @@ contract DeploySetup is SetupStore {
         vm.stopPrank();
 
         vm.startPrank(watcherEOA);
-        configurations.setSocket(chainSlug_, address(socket));
-        configurations.setSwitchboard(chainSlug_, FAST, address(switchboard));
-        configurations.setSwitchboard(chainSlug_, CCTP, address(cctpSwitchboard));
+        configurations.setSocket(chainSlug_, toBytes32Format(address(socket)));
+        configurations.setSwitchboard(chainSlug_, FAST, toBytes32Format(address(switchboard)));
+        configurations.setSwitchboard(chainSlug_, CCTP, toBytes32Format(address(cctpSwitchboard)));
 
         // plugs
-        feesManager.setFeesPlug(chainSlug_, address(feesPlug));
+        feesManager.setFeesPlug(chainSlug_, toBytes32Format(address(feesPlug)));
 
         // precompiles
         writePrecompile.updateChainMaxMsgValueLimits(chainSlug_, maxMsgValueLimit);
-        writePrecompile.setContractFactoryPlugs(chainSlug_, address(contractFactoryPlug));
+        writePrecompile.setContractFactoryPlugs(
+            chainSlug_,
+            toBytes32Format(address(contractFactoryPlug))
+        );
 
         vm.stopPrank();
     }
@@ -465,7 +468,7 @@ contract DeploySetup is SetupStore {
     function _createWatcherSignature(
         address contractAddress_,
         bytes memory data_
-    ) internal view returns (bytes memory) {
+    ) internal returns (bytes memory) {
         bytes32 digest = keccak256(
             abi.encode(address(watcher), evmxSlug, watcherNonce, contractAddress_, data_)
         );
@@ -803,7 +806,8 @@ contract WatcherSetup is AuctionSetup {
         );
 
         bytes memory returnData;
-        (success, returnData) = transaction.target.call(transaction.payload);
+        address target = fromBytes32Format(transaction.target);
+        (success, returnData) = target.call(transaction.payload);
         promiseReturnData = PromiseReturnData({
             exceededMaxCopy: false,
             payloadId: payloadParams.payloadId,
@@ -818,7 +822,7 @@ contract WatcherSetup is AuctionSetup {
 
         (
             uint32 chainSlug,
-            address switchboard,
+            bytes32 switchboard,
             bytes32 digest,
             DigestParams memory digestParams
         ) = _validateAndGetDigest(payloadParams);
@@ -839,11 +843,12 @@ contract WatcherSetup is AuctionSetup {
     function _uploadProof(
         bytes32 payloadId,
         bytes32 digest,
-        address switchboard,
+        bytes32 switchboard,
         uint32 chainSlug
     ) internal returns (bytes memory proof) {
         proof = _createSignature(
-            keccak256(abi.encode(address(switchboard), chainSlug, digest)),
+            // create sigDigest which get signed by watcher
+            keccak256(abi.encodePacked(switchboard, chainSlug, digest)),
             watcherPrivateKey
         );
 
@@ -860,10 +865,9 @@ contract WatcherSetup is AuctionSetup {
         PayloadParams memory payloadParams
     )
         internal
-        view
         returns (
             uint32 chainSlug,
-            address switchboard,
+            bytes32 switchboard,
             bytes32 digest,
             DigestParams memory digestParams
         )
@@ -874,10 +878,10 @@ contract WatcherSetup is AuctionSetup {
             ,
             uint256 gasLimit,
             uint256 value,
-            address switchboard_
+            bytes32 switchboard_
         ) = abi.decode(
                 payloadParams.precompileData,
-                (address, Transaction, WriteFinality, uint256, uint256, address)
+                (address, Transaction, WriteFinality, uint256, uint256, bytes32)
             );
 
         chainSlug = transaction.chainSlug;
@@ -888,7 +892,7 @@ contract WatcherSetup is AuctionSetup {
             payloadParams.batchCount
         );
         digestParams = DigestParams(
-            address(getSocketConfig(transaction.chainSlug).socket),
+            toBytes32Format(address(getSocketConfig(transaction.chainSlug).socket)),
             transmitterEOA,
             payloadParams.payloadId,
             payloadParams.deadline,
@@ -897,7 +901,7 @@ contract WatcherSetup is AuctionSetup {
             value,
             transaction.payload,
             transaction.target,
-            encodeAppGatewayId(appGateway),
+            toBytes32Format(appGateway),
             prevBatchDigestHash,
             bytes("")
         );
@@ -908,12 +912,13 @@ contract WatcherSetup is AuctionSetup {
 
     function _executeWrite(
         uint32 chainSlug,
-        address switchboard,
+        bytes32 switchboard,
         bytes32 digest,
         DigestParams memory digestParams,
         PayloadParams memory payloadParams,
         bytes memory watcherProof
     ) internal returns (bool success, PromiseReturnData memory promiseReturnData) {
+        // this is a signature for the socket batcher (only used for EVM)
         bytes memory transmitterSig = _createSignature(
             keccak256(
                 abi.encode(address(getSocketConfig(chainSlug).socket), payloadParams.payloadId)
@@ -927,23 +932,23 @@ contract WatcherSetup is AuctionSetup {
             gasLimit: digestParams.gasLimit,
             value: digestParams.value,
             payload: digestParams.payload,
-            target: digestParams.target,
+            target: fromBytes32Format(digestParams.target),
             requestCount: payloadParams.requestCount,
             batchCount: payloadParams.batchCount,
             payloadCount: payloadParams.payloadCount,
             prevBatchDigestHash: digestParams.prevBatchDigestHash,
             extraData: digestParams.extraData
         });
-        if (switchboard == address(getSocketConfig(chainSlug).switchboard)) {
+        if (fromBytes32Format(switchboard) == address(getSocketConfig(chainSlug).switchboard)) {
             (success, returnData) = getSocketConfig(chainSlug).socketBatcher.attestAndExecute(
                 executeParams,
-                switchboard,
+                fromBytes32Format(switchboard),
                 digest,
                 watcherProof,
                 transmitterSig,
                 transmitterEOA
             );
-        } else if (switchboard == address(getSocketConfig(chainSlug).cctpSwitchboard)) {
+        } else if (fromBytes32Format(switchboard) == address(getSocketConfig(chainSlug).cctpSwitchboard)) {
             (success, returnData) = _executeWithCCTPBatcher(
                 chainSlug,
                 executeParams,
@@ -979,7 +984,7 @@ contract WatcherSetup is AuctionSetup {
                     refundAddress: transmitterEOA
                 }),
                 cctpBatchParams,
-                address(getSocketConfig(chainSlug).cctpSwitchboard)
+                fromBytes32Format(address(getSocketConfig(chainSlug).cctpSwitchboard))
             );
     }
 
@@ -1118,9 +1123,9 @@ contract WatcherSetup is AuctionSetup {
                 configs[configIndex] = AppGatewayConfig({
                     plug: plug,
                     chainSlug: chainSlug_,
-                    plugConfig: PlugConfig({
-                        appGatewayId: encodeAppGatewayId(address(appGateway_)),
-                        switchboard: switchboard
+                    plugConfig: PlugConfigGeneric({
+                        appGatewayId: toBytes32Format(address(appGateway_)),
+                        switchboard: toBytes32Format(address(switchboard))
                     })
                 });
                 configIndex++;
@@ -1141,10 +1146,10 @@ contract AppGatewayBaseSetup is WatcherSetup {
         uint32 chainSlug_,
         bytes32 contractId_,
         IAppGateway appGateway_
-    ) internal view returns (address, address) {
-        address app = appGateway_.getOnChainAddress(contractId_, chainSlug_);
+    ) internal view returns (bytes32, address) {
+        bytes32 onChainContract = appGateway_.getOnChainAddress(contractId_, chainSlug_);
         address forwarder = appGateway_.forwarderAddresses(contractId_, chainSlug_);
-        return (app, forwarder);
+        return (onChainContract, forwarder);
     }
 
     // todo: add checks for request params and payload params created to match what is expected
@@ -1152,7 +1157,7 @@ contract AppGatewayBaseSetup is WatcherSetup {
     function checkRequestParams(
         uint40 requestCount,
         RequestParams memory expectedRequest
-    ) internal view {
+    ) internal {
         RequestParams memory actualRequest = watcher.getRequestParams(requestCount);
         // RequestParams checks
         assertEq(
@@ -1229,7 +1234,7 @@ contract AppGatewayBaseSetup is WatcherSetup {
         );
     }
 
-    function checkPayloadParams(PayloadParams[] memory expectedPayloads) internal view {
+    function checkPayloadParams(PayloadParams[] memory expectedPayloads) internal {
         for (uint i = 0; i < expectedPayloads.length; i++) {
             PayloadParams memory expectedPayload = expectedPayloads[i];
             PayloadParams memory actualPayload = watcher.getPayloadParams(
@@ -1287,6 +1292,13 @@ contract AppGatewayBaseSetup is WatcherSetup {
                 "Payload: precompileData mismatch"
             );
         }
+    }
+
+    function _encodeTriggerId(address socket_, uint32 chainSlug_) internal returns (bytes32) {
+        return
+            bytes32(
+                (uint256(chainSlug_) << 224) | (uint256(uint160(socket_)) << 64) | triggerCounter++
+            );
     }
 }
 

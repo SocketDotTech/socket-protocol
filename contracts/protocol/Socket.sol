@@ -67,7 +67,7 @@ contract Socket is SocketUtils {
         // check if the call type is valid
         if (executeParams_.callType != WRITE) revert InvalidCallType();
 
-        PlugConfig memory plugConfig = _plugConfigs[executeParams_.target];
+        PlugConfigEvm memory plugConfig = _plugConfigs[executeParams_.target];
         // check if the plug is disconnected
         if (plugConfig.appGatewayId == bytes32(0)) revert PlugNotFound();
 
@@ -78,7 +78,7 @@ contract Socket is SocketUtils {
             executeParams_.requestCount,
             executeParams_.batchCount,
             executeParams_.payloadCount,
-            plugConfig.switchboard,
+            toBytes32Format(plugConfig.switchboard),
             chainSlug
         );
 
@@ -180,7 +180,7 @@ contract Socket is SocketUtils {
      * @notice To trigger to a connected remote chain. Should only be called by a plug.
      */
     function _triggerAppGateway(address plug_) internal returns (bytes32 triggerId) {
-        PlugConfig memory plugConfig = _plugConfigs[plug_];
+        PlugConfigEvm memory plugConfig = _plugConfigs[plug_];
 
         // if no sibling plug is found for the given chain slug, revert
         // sends the trigger to connected app gateway
@@ -191,8 +191,8 @@ contract Socket is SocketUtils {
         emit AppGatewayCallRequested(
             triggerId,
             plugConfig.appGatewayId,
-            plugConfig.switchboard,
-            plug_,
+            toBytes32Format(plugConfig.switchboard),
+            toBytes32Format(plug_),
             // gets the overrides from the plug
             IPlug(plug_).overrides(),
             msg.data

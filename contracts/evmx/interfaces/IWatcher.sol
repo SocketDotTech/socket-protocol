@@ -11,6 +11,14 @@ import "./IPromiseResolver.sol";
 /// @notice Interface for the Watcher Precompile system that handles payload verification and execution
 /// @dev Defines core functionality for payload processing and promise resolution
 interface IWatcher {
+    /// @notice Emitted when a new call is made to an app gateway
+    /// @param triggerId The unique identifier for the trigger
+    event CalledAppGateway(bytes32 triggerId);
+
+    /// @notice Emitted when a call to an app gateway fails
+    /// @param triggerId The unique identifier for the trigger
+    event AppGatewayCallFailed(bytes32 triggerId);
+
     function requestHandler__() external view returns (IRequestHandler);
 
     function configurations__() external view returns (IConfigurations);
@@ -34,6 +42,12 @@ interface IWatcher {
     /// @notice Returns the latest async promise deployed for a payload queued
     /// @return The latest async promise
     function latestAsyncPromise() external view returns (address);
+
+    function triggerFromChainSlug() external view returns (uint32);
+
+    function triggerFromPlug() external view returns (bytes32);
+
+    function isAppGatewayCalled(bytes32 triggerId) external view returns (bool);
 
     /// @notice Queues a payload for execution
     /// @param queueParams_ The parameters for the payload
@@ -73,7 +87,7 @@ interface IWatcher {
 
     function increaseFees(uint40 requestCount_, uint256 newFees_) external;
 
-    function setIsValidPlug(bool isValid_, uint32 chainSlug_, address onchainAddress_) external;
+    function setIsValidPlug(bool isValid_, uint32 chainSlug_, bytes32 onchainAddress_) external;
 
     function isWatcher(address account_) external view returns (bool);
 }

@@ -37,23 +37,25 @@ contract ParallelCounterTest is AppGatewayBaseSetup {
         chainSlugs[1] = optChainSlug;
         deployCounterApp(chainSlugs);
 
-        (address onChainArb1, address forwarderArb1) = getOnChainAndForwarderAddresses(
+        (bytes32 onChainArb1, address forwarderArb1) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId1,
             parallelCounterGateway
         );
-        (address onChainArb2, address forwarderArb2) = getOnChainAndForwarderAddresses(
+
+        (bytes32 onChainArb2, address forwarderArb2) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId2,
             parallelCounterGateway
         );
 
-        (address onChainOpt1, address forwarderOpt1) = getOnChainAndForwarderAddresses(
+        (bytes32 onChainOpt1, address forwarderOpt1) = getOnChainAndForwarderAddresses(
             optChainSlug,
             counterId1,
             parallelCounterGateway
         );
-        (address onChainOpt2, address forwarderOpt2) = getOnChainAndForwarderAddresses(
+
+        (bytes32 onChainOpt2, address forwarderOpt2) = getOnChainAndForwarderAddresses(
             optChainSlug,
             counterId2,
             parallelCounterGateway
@@ -106,11 +108,12 @@ contract ParallelCounterTest is AppGatewayBaseSetup {
         chainSlugs[0] = arbChainSlug;
         deployCounterApp(chainSlugs);
 
-        (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
+        (bytes32 arbCounterBytes32, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId1,
             parallelCounterGateway
         );
+        address arbCounter = fromBytes32Format(arbCounterBytes32);
 
         uint256 arbCounterBefore = Counter(arbCounter).counter();
 
@@ -128,16 +131,19 @@ contract ParallelCounterTest is AppGatewayBaseSetup {
         chainSlugs[1] = optChainSlug;
         deployCounterApp(chainSlugs);
 
-        (address arbCounter, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
+        (bytes32 arbCounterBytes32, address arbCounterForwarder) = getOnChainAndForwarderAddresses(
             arbChainSlug,
             counterId1,
             parallelCounterGateway
         );
-        (address optCounter, address optCounterForwarder) = getOnChainAndForwarderAddresses(
+        address arbCounter = fromBytes32Format(arbCounterBytes32);
+
+        (bytes32 optCounterBytes32, address optCounterForwarder) = getOnChainAndForwarderAddresses(
             optChainSlug,
             counterId1,
             parallelCounterGateway
         );
+        address optCounter = fromBytes32Format(optCounterBytes32);
 
         uint256 arbCounterBefore = Counter(arbCounter).counter();
         uint256 optCounterBefore = Counter(optCounter).counter();

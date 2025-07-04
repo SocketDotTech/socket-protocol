@@ -85,6 +85,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AppGatewayBase,
         maxReAuctionCount = maxReAuctionCount_;
         auctionEndDelaySeconds = auctionEndDelaySeconds_;
 
+        auctionManager = address(this);
         _initializeOwner(owner_);
         _initializeAppGateway(addressResolver_);
     }
@@ -169,7 +170,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AppGatewayBase,
 
     /// @notice Ends an auction
     /// @param requestCount_ The ID of the auction
-    function endAuction(uint40 requestCount_) external override onlyWatcher {
+    function endAuction(uint40 requestCount_) external override onlyPromises {
         if (
             auctionStatus[requestCount_] == AuctionStatus.CLOSED ||
             auctionStatus[requestCount_] == AuctionStatus.NOT_STARTED
@@ -207,9 +208,9 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AppGatewayBase,
     /// @dev Auction can be restarted only for `maxReAuctionCount` times.
     /// @dev It also unblocks the fees from last transmitter to be assigned to the new winner.
     /// @param requestCount_ The request id
-    function expireBid(uint40 requestCount_) external override onlyWatcher {
+    function expireBid(uint40 requestCount_) external override onlyPromises {
         if (reAuctionCount[requestCount_] >= maxReAuctionCount) revert MaxReAuctionCountReached();
-        RequestParams memory requestParams = _getRequestParams(requestCount_);
+        RequestParams memory requestParams = watcher__().getRequestParams(requestCount_);
 
         // if executed or cancelled, bid is not expired
         if (
@@ -234,18 +235,11 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AppGatewayBase,
         address consumeFrom_,
         bytes4 callbackSelector_,
         bytes memory callbackData_
-    ) internal {
-        OverrideParams memory overrideParams;
-        overrideParams.callType = SCHEDULE;
-        overrideParams.delayInSeconds = delayInSeconds_;
-
-        QueueParams memory queueParams;
-        queueParams.overrideParams = overrideParams;
-
-        // queue and create request
-        watcher__().queue(queueParams, address(this));
+    ) internal async {
+        _setMaxFees(maxFees_);
+        _setOverrides(consumeFrom_);
+        _setSchedule(delayInSeconds_);
         then(callbackSelector_, callbackData_);
-        watcher__().submitRequest(maxFees_, address(this), consumeFrom_, bytes(""));
     }
 
     /// @notice Returns the quoted transmitter fees for a request
@@ -253,7 +247,7 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AppGatewayBase,
     /// @param requestCount_ The request id
     /// @return The quoted transmitter fees
     function getMaxFees(uint40 requestCount_) internal view returns (uint256) {
-        RequestParams memory requestParams = _getRequestParams(requestCount_);
+        RequestParams memory requestParams = watcher__().getRequestParams(requestCount_);
         // check if the bid is for this auction manager
         if (requestParams.auctionManager != address(this)) revert InvalidBid();
         // get the total fees required for the watcher precompile ops
@@ -267,10 +261,6 @@ contract AuctionManager is AuctionManagerStorage, Initializable, AppGatewayBase,
     ) internal returns (uint256 watcherFees) {
         watcherFees = watcher__().getPrecompileFees(SCHEDULE, abi.encode(delayInSeconds_));
         feesManager__().transferCredits(from_, to_, watcherFees);
-    }
-
-    function _getRequestParams(uint40 requestCount_) internal view returns (RequestParams memory) {
-        return watcher__().getRequestParams(requestCount_);
     }
 
     /// @notice Recovers the signer of a message

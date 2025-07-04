@@ -1,4 +1,4 @@
-import { Wallet } from "ethers";
+import { ethers, Wallet } from "ethers";
 import { ChainAddressesObj, ChainSlug, Contracts } from "../../src";
 import { chains, EVMX_CHAIN_ID, mode } from "../config";
 import { AppGatewayConfig, DeploymentAddresses } from "../constants";
@@ -10,6 +10,7 @@ import {
   getInstance,
   getSocketSigner,
   overrides,
+  toBytes32FormatHexString,
 } from "../utils";
 import { getWatcherSigner, sendWatcherMultiCallWithNonce } from "../utils/sign";
 import { isConfigSetOnEVMx, isConfigSetOnSocket } from "../utils";
@@ -113,8 +114,11 @@ export const updateConfigEVMx = async () => {
 
         for (const plugContract of plugs) {
           const appGatewayId = getAppGatewayId(plugContract, addresses);
-          const switchboard = addr[Contracts.FastSwitchboard];
-          checkIfAddressExists(switchboard, "Switchboard");
+          const switchboardBytes32Hex = toBytes32FormatHexString(
+            addr[Contracts.FastSwitchboard]
+          );
+          const plugBytes32Hex = toBytes32FormatHexString(addr[plugContract]);
+          // checkIfAddressExists(switchboard, "Switchboard");
           checkIfAppGatewayIdExists(appGatewayId, "AppGatewayId");
 
           if (!addr[plugContract]) {
@@ -126,9 +130,9 @@ export const updateConfigEVMx = async () => {
             await isConfigSetOnEVMx(
               configurationsContract,
               chain,
-              addr[plugContract],
+              plugBytes32Hex,
               appGatewayId,
-              switchboard
+              switchboardBytes32Hex
             )
           ) {
             console.log(`Config already set on ${chain} for ${plugContract}`);
@@ -137,9 +141,9 @@ export const updateConfigEVMx = async () => {
           appConfigs.push({
             plugConfig: {
               appGatewayId: appGatewayId,
-              switchboard: switchboard,
+              switchboard: switchboardBytes32Hex,
             },
-            plug: addr[plugContract],
+            plug: plugBytes32Hex,
             chainSlug: chain,
           });
         }
