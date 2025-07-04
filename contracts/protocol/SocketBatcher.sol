@@ -66,7 +66,7 @@ contract SocketBatcher is ISocketBatcher, Ownable {
             execParams_.executeParams.requestCount,
             execParams_.executeParams.batchCount,
             execParams_.executeParams.payloadCount,
-            switchboard_,
+            bytes32(uint256(uint160(address(switchboard_)))),
             socket__.chainSlug()
         );
         ICCTPSwitchboard(switchboard_).attestVerifyAndProveExecutions(

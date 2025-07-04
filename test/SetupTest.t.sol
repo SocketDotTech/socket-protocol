@@ -984,7 +984,7 @@ contract WatcherSetup is AuctionSetup {
                     refundAddress: transmitterEOA
                 }),
                 cctpBatchParams,
-                fromBytes32Format(address(getSocketConfig(chainSlug).cctpSwitchboard))
+                address(getSocketConfig(chainSlug).cctpSwitchboard)
             );
     }
 
@@ -1106,8 +1106,8 @@ contract WatcherSetup is AuctionSetup {
         // deployed on a chain. for ex, vault on source, and supertoken on destination.
         uint256 validPlugCount = 0;
         for (uint i = 0; i < contractIds_.length; i++) {
-            address plug = appGateway_.getOnChainAddress(contractIds_[i], chainSlug_);
-            if (plug != address(0)) {
+            bytes32 plug = appGateway_.getOnChainAddress(contractIds_[i], chainSlug_);
+            if (plug != bytes32(0)) {
                 validPlugCount++;
             }
         }
@@ -1117,15 +1117,15 @@ contract WatcherSetup is AuctionSetup {
         uint256 configIndex = 0;
 
         for (uint i = 0; i < contractIds_.length; i++) {
-            address plug = appGateway_.getOnChainAddress(contractIds_[i], chainSlug_);
-            address switchboard = configurations.switchboards(chainSlug_, appGateway_.sbType());
-            if (plug != address(0)) {
+            bytes32 plug = appGateway_.getOnChainAddress(contractIds_[i], chainSlug_);
+            bytes32 switchboard = configurations.switchboards(chainSlug_, appGateway_.sbType());
+            if (plug != bytes32(0)) {
                 configs[configIndex] = AppGatewayConfig({
                     plug: plug,
                     chainSlug: chainSlug_,
                     plugConfig: PlugConfigGeneric({
                         appGatewayId: toBytes32Format(address(appGateway_)),
-                        switchboard: toBytes32Format(address(switchboard))
+                        switchboard: switchboard
                     })
                 });
                 configIndex++;
