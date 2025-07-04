@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.21;
 
-import {ExecuteParams, TransmissionParams} from "../../utils/common/Structs.sol";
+import {ExecuteParams, TransmissionParams, ExecutionStatus} from "../../utils/common/Structs.sol";
 
 /**
  * @title ISocket
@@ -76,4 +76,10 @@ interface ISocket {
     function getPlugConfig(
         address plugAddress_
     ) external view returns (bytes32 appGatewayId, address switchboard);
+
+    function payloadExecuted(bytes32 payloadId_) external view returns (ExecutionStatus);
+
+    function chainSlug() external view returns (uint32);
+
+    function payloadIdToDigest(bytes32 payloadId_) external view returns (bytes32);
 }

@@ -5,8 +5,10 @@ import "solady/auth/Ownable.sol";
 import "./interfaces/ISocket.sol";
 import "./interfaces/ISocketBatcher.sol";
 import "./interfaces/ISwitchboard.sol";
+import "./interfaces/ICCTPSwitchboard.sol";
 import "../utils/RescueFundsLib.sol";
-import {ExecuteParams, TransmissionParams} from "../utils/common/Structs.sol";
+import {ExecuteParams, TransmissionParams, CCTPBatchParams, CCTPExecutionParams} from "../utils/common/Structs.sol";
+import {createPayloadId} from "../utils/common/IdUtils.sol";
 
 /**
  * @title SocketBatcher
@@ -53,6 +55,37 @@ contract SocketBatcher is ISocketBatcher, Ownable {
                     refundAddress: refundAddress_
                 })
             );
+    }
+
+    function attestCCTPAndProveAndExecute(
+        CCTPExecutionParams calldata execParams_,
+        CCTPBatchParams calldata cctpParams_,
+        address switchboard_
+    ) external payable returns (bool, bytes memory) {
+        bytes32 payloadId = createPayloadId(
+            execParams_.executeParams.requestCount,
+            execParams_.executeParams.batchCount,
+            execParams_.executeParams.payloadCount,
+            bytes32(uint256(uint160(address(switchboard_)))),
+            socket__.chainSlug()
+        );
+        ICCTPSwitchboard(switchboard_).attestVerifyAndProveExecutions(
+            execParams_,
+            cctpParams_,
+            payloadId
+        );
+        (bool success, bytes memory returnData) = socket__.execute{value: msg.value}(
+            execParams_.executeParams,
+            TransmissionParams({
+                transmitterSignature: execParams_.transmitterSignature,
+                socketFees: 0,
+                extraData: execParams_.executeParams.extraData,
+                refundAddress: execParams_.refundAddress
+            })
+        );
+
+        ICCTPSwitchboard(switchboard_).syncOut(payloadId, cctpParams_.nextBatchRemoteChainSlugs);
+        return (success, returnData);
     }
 
     /**

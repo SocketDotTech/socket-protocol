@@ -74,6 +74,17 @@
 | `OnlyOffChain()`     | `0x9cbfe066` |
 | `SimulationFailed()` | `0x2fbab3ac` |
 
+## protocol/switchboard/CCTPSwitchboard.sol
+
+| Error                           | Signature    |
+| ------------------------------- | ------------ |
+| `RemoteExecutionNotFound()`     | `0xbd506972` |
+| `PrevBatchDigestHashMismatch()` | `0xc9864e9d` |
+| `NotAttested()`                 | `0x99efb890` |
+| `NotExecuted()`                 | `0xec84b1da` |
+| `InvalidSender()`               | `0xddb5de5e` |
+| `OnlyMessageTransmitter()`      | `0x935ac89c` |
+
 ## protocol/switchboard/FastSwitchboard.sol
 
 | Error               | Signature    |

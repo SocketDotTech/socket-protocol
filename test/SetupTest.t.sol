@@ -12,6 +12,7 @@ import "../contracts/evmx/interfaces/IForwarder.sol";
 
 import "../contracts/protocol/Socket.sol";
 import "../contracts/protocol/switchboard/FastSwitchboard.sol";
+import "../contracts/protocol/switchboard/CCTPSwitchboard.sol";
 import "../contracts/protocol/SocketBatcher.sol";
 import "../contracts/protocol/SocketFeeManager.sol";
 
@@ -32,6 +33,7 @@ import "../contracts/evmx/fees/FeesPool.sol";
 import "../contracts/evmx/plugs/FeesPlug.sol";
 import "../contracts/evmx/AuctionManager.sol";
 import "../contracts/evmx/mocks/TestUSDC.sol";
+import "./mock/CCTPMessageTransmitter.sol";
 
 import "solady/utils/ERC1967Factory.sol";
 
@@ -68,11 +70,15 @@ contract SetupStore is Test {
     uint256 public payloadIdCounter;
     uint256 public triggerCounter;
     uint256 public asyncPromiseCounter;
+    uint32 public optCCTPDomain = 2;
+    uint32 public arbCCTPDomain = 3;
     struct SocketContracts {
         uint32 chainSlug;
         Socket socket;
         SocketFeeManager socketFeeManager;
         FastSwitchboard switchboard;
+        CCTPSwitchboard cctpSwitchboard;
+        CCTPMessageTransmitter cctpMessageTransmitter;
         SocketBatcher socketBatcher;
         ContractFactoryPlug contractFactoryPlug;
         FeesPlug feesPlug;
@@ -121,6 +127,18 @@ contract DeploySetup is SetupStore {
         optConfig = _deploySocket(optChainSlug);
         _configureChain(optChainSlug);
 
+        vm.startPrank(socketOwner);
+        arbConfig.cctpSwitchboard.addRemoteEndpoint(
+            optChainSlug,
+            addressToBytes32(address(optConfig.cctpSwitchboard)),
+            optCCTPDomain
+        );
+        optConfig.cctpSwitchboard.addRemoteEndpoint(
+            arbChainSlug,
+            addressToBytes32(address(arbConfig.cctpSwitchboard)),
+            arbCCTPDomain
+        );
+        vm.stopPrank();
         // transfer eth to fees pool for native fee payouts
         vm.deal(address(feesPool), 100000 ether);
 
@@ -209,13 +227,23 @@ contract DeploySetup is SetupStore {
     function _deploySocket(uint32 chainSlug_) internal returns (SocketContracts memory) {
         // socket
         Socket socket = new Socket(chainSlug_, socketOwner, "test");
-
+        CCTPMessageTransmitter cctpMessageTransmitter = new CCTPMessageTransmitter(
+            chainSlug_,
+            address(0)
+        );
         return
             SocketContracts({
                 chainSlug: chainSlug_,
                 socket: socket,
                 socketFeeManager: new SocketFeeManager(socketOwner, socketFees),
                 switchboard: new FastSwitchboard(chainSlug_, socket, socketOwner),
+                cctpSwitchboard: new CCTPSwitchboard(
+                    chainSlug_,
+                    socket,
+                    socketOwner,
+                    address(cctpMessageTransmitter)
+                ),
+                cctpMessageTransmitter: cctpMessageTransmitter,
                 socketBatcher: new SocketBatcher(socketOwner, socket),
                 contractFactoryPlug: new ContractFactoryPlug(address(socket), socketOwner),
                 feesPlug: new FeesPlug(address(socket), socketOwner),
@@ -227,6 +255,7 @@ contract DeploySetup is SetupStore {
         SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
         Socket socket = socketConfig.socket;
         FastSwitchboard switchboard = socketConfig.switchboard;
+        CCTPSwitchboard cctpSwitchboard = socketConfig.cctpSwitchboard;
         FeesPlug feesPlug = socketConfig.feesPlug;
         ContractFactoryPlug contractFactoryPlug = socketConfig.contractFactoryPlug;
 
@@ -240,6 +269,9 @@ contract DeploySetup is SetupStore {
         switchboard.registerSwitchboard();
         switchboard.grantRole(WATCHER_ROLE, watcherEOA);
         switchboard.grantRole(RESCUE_ROLE, address(socketOwner));
+
+        cctpSwitchboard.registerSwitchboard();
+        cctpSwitchboard.grantRole(WATCHER_ROLE, watcherEOA);
 
         feesPlug.grantRole(RESCUE_ROLE, address(socketOwner));
         feesPlug.whitelistToken(address(socketConfig.testUSDC));
@@ -261,6 +293,7 @@ contract DeploySetup is SetupStore {
         vm.startPrank(watcherEOA);
         configurations.setSocket(chainSlug_, toBytes32Format(address(socket)));
         configurations.setSwitchboard(chainSlug_, FAST, toBytes32Format(address(switchboard)));
+        configurations.setSwitchboard(chainSlug_, CCTP, toBytes32Format(address(cctpSwitchboard)));
 
         // plugs
         feesManager.setFeesPlug(chainSlug_, toBytes32Format(address(feesPlug)));
@@ -893,32 +926,154 @@ contract WatcherSetup is AuctionSetup {
             transmitterPrivateKey
         );
         bytes memory returnData;
-        (success, returnData) = getSocketConfig(chainSlug).socketBatcher.attestAndExecute(
-            ExecuteParams({
-                callType: digestParams.callType,
-                deadline: digestParams.deadline,
-                gasLimit: digestParams.gasLimit,
-                value: digestParams.value,
-                payload: digestParams.payload,
-                target: fromBytes32Format(digestParams.target),
-                requestCount: payloadParams.requestCount,
-                batchCount: payloadParams.batchCount,
-                payloadCount: payloadParams.payloadCount,
-                prevBatchDigestHash: digestParams.prevBatchDigestHash,
-                extraData: digestParams.extraData
-            }),
-            fromBytes32Format(switchboard),
-            digest,
-            watcherProof,
-            transmitterSig,
-            transmitterEOA
-        );
-
+        ExecuteParams memory executeParams = ExecuteParams({
+            callType: digestParams.callType,
+            deadline: digestParams.deadline,
+            gasLimit: digestParams.gasLimit,
+            value: digestParams.value,
+            payload: digestParams.payload,
+            target: fromBytes32Format(digestParams.target),
+            requestCount: payloadParams.requestCount,
+            batchCount: payloadParams.batchCount,
+            payloadCount: payloadParams.payloadCount,
+            prevBatchDigestHash: digestParams.prevBatchDigestHash,
+            extraData: digestParams.extraData
+        });
+        if (fromBytes32Format(switchboard) == address(getSocketConfig(chainSlug).switchboard)) {
+            (success, returnData) = getSocketConfig(chainSlug).socketBatcher.attestAndExecute(
+                executeParams,
+                fromBytes32Format(switchboard),
+                digest,
+                watcherProof,
+                transmitterSig,
+                transmitterEOA
+            );
+        } else if (fromBytes32Format(switchboard) == address(getSocketConfig(chainSlug).cctpSwitchboard)) {
+            (success, returnData) = _executeWithCCTPBatcher(
+                chainSlug,
+                executeParams,
+                digest,
+                watcherProof,
+                transmitterSig,
+                payloadParams
+            );
+        }
         promiseReturnData = PromiseReturnData({
             exceededMaxCopy: false,
             payloadId: payloadParams.payloadId,
             returnData: returnData
         });
+    }
+    function _executeWithCCTPBatcher(
+        uint32 chainSlug,
+        ExecuteParams memory executeParams,
+        bytes32 digest,
+        bytes memory watcherProof,
+        bytes memory transmitterSig,
+        PayloadParams memory payloadParams
+    ) internal returns (bool success, bytes memory returnData) {
+        CCTPBatchParams memory cctpBatchParams = _prepareCCTPBatchData(chainSlug, payloadParams);
+
+        return
+            getSocketConfig(chainSlug).socketBatcher.attestCCTPAndProveAndExecute(
+                CCTPExecutionParams({
+                    executeParams: executeParams,
+                    digest: digest,
+                    proof: watcherProof,
+                    transmitterSignature: transmitterSig,
+                    refundAddress: transmitterEOA
+                }),
+                cctpBatchParams,
+                address(getSocketConfig(chainSlug).cctpSwitchboard)
+            );
+    }
+
+    function _prepareCCTPBatchData(
+        uint32 chainSlug,
+        PayloadParams memory payloadParams
+    ) internal view returns (CCTPBatchParams memory cctpBatchParams) {
+        uint40[] memory requestBatchIds = requestHandler.getRequestBatchIds(
+            payloadParams.requestCount
+        );
+        uint40 currentBatchCount = payloadParams.batchCount;
+
+        bytes32[] memory prevBatchPayloadIds = _getPrevBatchPayloadIds(
+            currentBatchCount,
+            requestBatchIds
+        );
+        bytes32[] memory nextBatchPayloadIds = _getNextBatchPayloadIds(
+            currentBatchCount,
+            requestBatchIds
+        );
+
+        uint32[] memory prevBatchRemoteChainSlugs = _getRemoteChainSlugs(prevBatchPayloadIds);
+        uint32[] memory nextBatchRemoteChainSlugs = _getRemoteChainSlugs(nextBatchPayloadIds);
+
+        bytes[] memory messages = _createCCTPMessages(
+            prevBatchPayloadIds,
+            prevBatchRemoteChainSlugs,
+            chainSlug
+        );
+
+        cctpBatchParams = CCTPBatchParams({
+            previousPayloadIds: prevBatchPayloadIds,
+            nextBatchRemoteChainSlugs: nextBatchRemoteChainSlugs,
+            messages: messages,
+            attestations: new bytes[](prevBatchPayloadIds.length) // using mock attestations for now
+        });
+    }
+
+    function _getPrevBatchPayloadIds(
+        uint40 currentBatchCount,
+        uint40[] memory requestBatchIds
+    ) internal view returns (bytes32[] memory) {
+        if (currentBatchCount == requestBatchIds[0]) {
+            return new bytes32[](0);
+        }
+        return requestHandler.getBatchPayloadIds(currentBatchCount - 1);
+    }
+
+    function _getNextBatchPayloadIds(
+        uint40 currentBatchCount,
+        uint40[] memory requestBatchIds
+    ) internal view returns (bytes32[] memory) {
+        if (currentBatchCount == requestBatchIds[requestBatchIds.length - 1]) {
+            return new bytes32[](0);
+        }
+        return requestHandler.getBatchPayloadIds(currentBatchCount + 1);
+    }
+
+    function _getRemoteChainSlugs(
+        bytes32[] memory payloadIds
+    ) internal view returns (uint32[] memory) {
+        uint32[] memory chainSlugs = new uint32[](payloadIds.length);
+        for (uint i = 0; i < payloadIds.length; i++) {
+            PayloadParams memory params = requestHandler.getPayload(payloadIds[i]);
+            (, Transaction memory transaction, , , , ) = abi.decode(
+                params.precompileData,
+                (address, Transaction, WriteFinality, uint256, uint256, address)
+            );
+            chainSlugs[i] = transaction.chainSlug;
+        }
+        return chainSlugs;
+    }
+
+    function _createCCTPMessages(
+        bytes32[] memory payloadIds,
+        uint32[] memory remoteChainSlugs,
+        uint32 chainSlug
+    ) internal view returns (bytes[] memory) {
+        bytes[] memory messages = new bytes[](payloadIds.length);
+        for (uint i = 0; i < payloadIds.length; i++) {
+            messages[i] = abi.encode(
+                remoteChainSlugs[i],
+                addressToBytes32(address(getSocketConfig(remoteChainSlugs[i]).cctpSwitchboard)),
+                chainSlug,
+                addressToBytes32(address(getSocketConfig(chainSlug).cctpSwitchboard)),
+                abi.encode(payloadIds[i], writePrecompile.digestHashes(payloadIds[i]))
+            );
+        }
+        return messages;
     }
 
     function _resolvePromise(PromiseReturnData[] memory promiseReturnData) internal {
@@ -947,28 +1102,45 @@ contract WatcherSetup is AuctionSetup {
         IAppGateway appGateway_,
         bytes32[] memory contractIds_
     ) internal {
-        AppGatewayConfig[] memory configs = new AppGatewayConfig[](contractIds_.length);
-
-        SocketContracts memory socketConfig = getSocketConfig(chainSlug_);
+        // Count valid plugs first. In some cases we might have contractIds such that oly a subset is
+        // deployed on a chain. for ex, vault on source, and supertoken on destination.
+        uint256 validPlugCount = 0;
         for (uint i = 0; i < contractIds_.length; i++) {
             bytes32 plug = appGateway_.getOnChainAddress(contractIds_[i], chainSlug_);
-
-            configs[i] = AppGatewayConfig({
-                plug: plug,
-                chainSlug: chainSlug_,
-                plugConfig: PlugConfigGeneric({
-                    appGatewayId: toBytes32Format(address(appGateway_)),
-                    switchboard: toBytes32Format(address(socketConfig.switchboard))
-                })
-            });
+            if (plug != bytes32(0)) {
+                validPlugCount++;
+            }
         }
-        watcherMultiCall(
-            address(configurations),
-            abi.encodeWithSelector(Configurations.setAppGatewayConfigs.selector, configs)
-        );
+
+        // Create array with exact size needed
+        AppGatewayConfig[] memory configs = new AppGatewayConfig[](validPlugCount);
+        uint256 configIndex = 0;
+
+        for (uint i = 0; i < contractIds_.length; i++) {
+            bytes32 plug = appGateway_.getOnChainAddress(contractIds_[i], chainSlug_);
+            bytes32 switchboard = configurations.switchboards(chainSlug_, appGateway_.sbType());
+            if (plug != bytes32(0)) {
+                configs[configIndex] = AppGatewayConfig({
+                    plug: plug,
+                    chainSlug: chainSlug_,
+                    plugConfig: PlugConfigGeneric({
+                        appGatewayId: toBytes32Format(address(appGateway_)),
+                        switchboard: switchboard
+                    })
+                });
+                configIndex++;
+            }
+        }
+
+        // Only call watcher if we have valid configs
+        if (validPlugCount > 0) {
+            watcherMultiCall(
+                address(configurations),
+                abi.encodeWithSelector(Configurations.setAppGatewayConfigs.selector, configs)
+            );
+        }
     }
 }
-
 contract AppGatewayBaseSetup is WatcherSetup {
     function getOnChainAndForwarderAddresses(
         uint32 chainSlug_,
@@ -1128,4 +1300,11 @@ contract AppGatewayBaseSetup is WatcherSetup {
                 (uint256(chainSlug_) << 224) | (uint256(uint160(socket_)) << 64) | triggerCounter++
             );
     }
+}
+
+function addressToBytes32(address addr_) pure returns (bytes32) {
+    return bytes32(uint256(uint160(addr_)));
+}
+function bytes32ToAddress(bytes32 addrBytes32_) pure returns (address) {
+    return address(uint160(uint256(addrBytes32_)));
 }

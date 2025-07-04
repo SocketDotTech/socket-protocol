@@ -210,6 +210,21 @@ struct RequestParams {
     bytes onCompleteData;
 }
 
+struct CCTPExecutionParams {
+    ExecuteParams executeParams;
+    bytes32 digest;
+    bytes proof;
+    bytes transmitterSignature;
+    address refundAddress;
+}
+
+struct CCTPBatchParams {
+    bytes32[] previousPayloadIds;
+    uint32[] nextBatchRemoteChainSlugs;
+    bytes[] messages;
+    bytes[] attestations;
+}
+
 struct SolanaInstruction {
     SolanaInstructionData data;
     SolanaInstructionDataDescription description;

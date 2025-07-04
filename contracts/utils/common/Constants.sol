@@ -13,6 +13,7 @@ bytes4 constant SCHEDULE = bytes4(keccak256("SCHEDULE"));
 
 bytes32 constant CALLBACK = keccak256("CALLBACK");
 bytes32 constant FAST = keccak256("FAST");
+bytes32 constant CCTP = keccak256("CCTP");
 
 uint256 constant PAYLOAD_SIZE_LIMIT = 24_500;
 uint16 constant MAX_COPY_BYTES = 2048; // 2KB

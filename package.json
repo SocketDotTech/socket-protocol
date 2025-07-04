@@ -20,7 +20,7 @@
     "compile": "forge build",
     "deploy": "bash setupInfraContracts.sh",
     "publish-core": "yarn build && yarn publish --patch --no-git-tag-version",
-    "trace": "bash trace.sh"
+    "trace": "source .env && bash trace.sh"
   },
   "pre-commit": [],
   "author": "",

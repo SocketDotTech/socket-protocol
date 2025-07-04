@@ -2,7 +2,12 @@ import { config } from "dotenv";
 import { Contract, utils, Wallet } from "ethers";
 import { formatEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { ChainAddressesObj, ChainSlug, Contracts } from "../../src";
+import {
+  ChainAddressesObj,
+  ChainSlug,
+  Contracts,
+  MESSAGE_TRANSMITTER,
+} from "../../src";
 import {
   AUCTION_END_DELAY_SECONDS,
   BID_TIMEOUT,
@@ -321,6 +326,21 @@ const deploySocketContracts = async () => {
           deployUtils
         );
         deployUtils.addresses[contractName] = sb.address;
+
+        contractName = Contracts.CCTPSwitchboard;
+        const cctpSwitchboard: Contract = await getOrDeploy(
+          contractName,
+          contractName,
+          `contracts/protocol/switchboard/${contractName}.sol`,
+          [
+            chain as ChainSlug,
+            socket.address,
+            socketOwner,
+            MESSAGE_TRANSMITTER[chain as ChainSlug],
+          ],
+          deployUtils
+        );
+        deployUtils.addresses[contractName] = cctpSwitchboard.address;
 
         if (getFeesPlugChains().includes(chain as ChainSlug)) {
           contractName = Contracts.FeesPlug;

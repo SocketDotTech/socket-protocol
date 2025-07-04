@@ -86,18 +86,19 @@
 
 ## SocketBatcher
 
-| Function                     | Signature    |
-| ---------------------------- | ------------ |
-| `attestAndExecute`           | `0x66c7748a` |
-| `cancelOwnershipHandover`    | `0x54d1f13d` |
-| `completeOwnershipHandover`  | `0xf04e283e` |
-| `owner`                      | `0x8da5cb5b` |
-| `ownershipHandoverExpiresAt` | `0xfee81cf4` |
-| `renounceOwnership`          | `0x715018a6` |
-| `requestOwnershipHandover`   | `0x25692962` |
-| `rescueFunds`                | `0x6ccae054` |
-| `socket__`                   | `0xc6a261d2` |
-| `transferOwnership`          | `0xf2fde38b` |
+| Function                       | Signature    |
+| ------------------------------ | ------------ |
+| `attestAndExecute`             | `0x66c7748a` |
+| `attestCCTPAndProveAndExecute` | `0x6c5fd05f` |
+| `cancelOwnershipHandover`      | `0x54d1f13d` |
+| `completeOwnershipHandover`    | `0xf04e283e` |
+| `owner`                        | `0x8da5cb5b` |
+| `ownershipHandoverExpiresAt`   | `0xfee81cf4` |
+| `renounceOwnership`            | `0x715018a6` |
+| `requestOwnershipHandover`     | `0x25692962` |
+| `rescueFunds`                  | `0x6ccae054` |
+| `socket__`                     | `0xc6a261d2` |
+| `transferOwnership`            | `0xf2fde38b` |
 
 ## SocketFeeManager
 
@@ -471,6 +472,41 @@
 | `triggerFromPlug`            | `0x3b847d12` |
 | `watcherMultiCall`           | `0x8021e82b` |
 | `watcher__`                  | `0x300bb063` |
+
+## CCTPSwitchboard
+
+| Function                         | Signature    |
+| -------------------------------- | ------------ |
+| `addRemoteEndpoint`              | `0x7d396da5` |
+| `allowPacket`                    | `0x21e9ec80` |
+| `allowPayload`                   | `0x31c23f66` |
+| `attest`                         | `0x63671b60` |
+| `attestVerifyAndProveExecutions` | `0x3e9e97e2` |
+| `cancelOwnershipHandover`        | `0x54d1f13d` |
+| `chainSlug`                      | `0xb349ba65` |
+| `chainSlugToRemoteEndpoint`      | `0xa4500424` |
+| `completeOwnershipHandover`      | `0xf04e283e` |
+| `domainToRemoteEndpoint`         | `0xc24964fe` |
+| `grantRole`                      | `0x2f2ff15d` |
+| `handleReceiveMessage`           | `0x96abeb70` |
+| `hasRole`                        | `0x91d14854` |
+| `isAttested`                     | `0xc13c2396` |
+| `isRemoteExecuted`               | `0x0cd97747` |
+| `isSyncedOut`                    | `0x5ae5dfd6` |
+| `messageTransmitter`             | `0x7b04c181` |
+| `owner`                          | `0x8da5cb5b` |
+| `ownershipHandoverExpiresAt`     | `0xfee81cf4` |
+| `proveRemoteExecutions`          | `0xc36f2ca2` |
+| `registerSwitchboard`            | `0x74f5b1fc` |
+| `remoteExecutedDigests`          | `0xecbf77d9` |
+| `renounceOwnership`              | `0x715018a6` |
+| `requestOwnershipHandover`       | `0x25692962` |
+| `rescueFunds`                    | `0x6ccae054` |
+| `revokeRole`                     | `0xd547741f` |
+| `socket__`                       | `0xc6a261d2` |
+| `syncOut`                        | `0x69a60ff0` |
+| `transferOwnership`              | `0xf2fde38b` |
+| `verifyAttestations`             | `0x6f30514c` |
 
 ## FastSwitchboard
 
