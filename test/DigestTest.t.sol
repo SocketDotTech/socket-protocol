@@ -20,6 +20,30 @@ contract DigestTest is Test {
         console.logBytes32(superTokenEvm);
     }
 
+    function testFunctionSelectorEncoding() public pure {
+        bytes4 selector = bytes4(keccak256("increase(uint256,uint32,uint8[],uint32[],string)"));
+        uint8[] memory array_one = new uint8[](3);
+        array_one[0] = 1;
+        array_one[1] = 2; 
+        array_one[2] = 3;
+        uint32[] memory array_two = new uint32[](3);
+        array_two[0] = 666;
+        array_two[1] = 777;
+        array_two[2] = 888;
+
+        bytes memory callData = abi.encodeWithSelector(
+            selector,
+            123456,
+            666,
+            array_one,
+            array_two,
+            "hello world"
+        );
+
+        console.log("Full calldata");
+        console.logBytes(callData);
+    }
+
     function testDigest() public pure {
         bytes32 expectedDigest = 0xc26b01718c6f97b51ad73743bb5b1ac2abb53966d15a2948f65db43b30cce1a1;
 

@@ -48,8 +48,12 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         uint8 bump;
     }
 
+    /** Events **/
+
     event SuperTokenConfigAccountRead(SuperTokenConfigAccount superTokenConfigAccount);
     event TokenAccountRead(bytes32 tokenAccountAddress, uint64 amount, uint64 decimals);
+    event TriggerIncrease(uint256 amountU64, uint32 amountU32, uint8[] vecU8, uint32[] vecU32, string myString, uint256 triggerCounter);
+    event MintReturnData(bytes data);
 
     /** Contract data **/
 
@@ -60,6 +64,8 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
 
     mapping(bytes32 => SolanaTokenBalance) solanaTokenBalances;
     SuperTokenConfigAccount superTokenConfigAccount;
+
+    uint256 triggerCounter;
 
     constructor(
         address owner_,
@@ -106,6 +112,12 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         return address(forwarderSolana.addressResolver__());
     }
 
+    // we have to do it like that as onchain contract is not deployed with AG
+    // more info in : AppGatewayBase.sol -> _setValidPlug() and getOnChainAddress()
+    function setIsValidPlugForSolana(bool isValid, uint32 chainSlug_, bytes32 plugAddress) public {
+        watcher__().setIsValidPlug(isValid, chainSlug_, plugAddress);
+    }
+
     function transfer(
         bytes memory order_,
         SolanaInstruction memory solanaInstruction
@@ -126,7 +138,18 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         emit Transferred(_getCurrentRequestCount());
     }
 
-    function mintSuperTokenSolana(SolanaInstruction memory solanaInstruction) external async {
+    function mintSuperTokenSolana(
+        SolanaInstruction memory solanaInstruction, 
+        GenericSchema memory returnDataSchema
+    ) external async {
+        // we are directly calling the ForwarderSolana
+        forwarderSolana.callSolana(abi.encode(solanaInstruction), solanaInstruction.data.programId);
+        then(this.storeAndDecodeMintReturnData.selector, abi.encode(returnDataSchema));
+
+        emit Transferred(_getCurrentRequestCount());
+    }
+    
+    function triggerTestSuperTokenSolana(SolanaInstruction memory solanaInstruction) external async {
         // we are directly calling the ForwarderSolana
         forwarderSolana.callSolana(abi.encode(solanaInstruction), solanaInstruction.data.programId);
 
@@ -176,6 +199,16 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         emit SuperTokenConfigAccountRead(decodedSuperTokenConfigAccount);
     }
 
+    function storeAndDecodeMintReturnData(bytes memory data, bytes memory returnData) external async {
+        GenericSchema memory genericSchema = abi.decode(data, (GenericSchema));
+        bytes[] memory parsedData = BorshDecoder.decodeGenericSchema(genericSchema, returnData);
+
+        uint8[] memory decodedReturnDataArray = abi.decode(parsedData[0], (uint8[]));
+        bytes memory decodedReturnData = BorshEncoder.packUint8Array(decodedReturnDataArray);
+
+        emit MintReturnData(decodedReturnData);        
+    }
+
     function readTokenAccount(SolanaReadRequest memory solanaReadRequest) external async {
         _setOverrides(Read.ON);
 
@@ -194,53 +227,8 @@ contract EvmSolanaAppGateway is AppGatewayBase, Ownable {
         emit TokenAccountRead(tokenAccountAddress, amount, decimals);
     }
 
-    /*
-    function buildSolanaInstruction(
-        TransferOrderEvmToSolana memory order
-    ) internal view returns (SolanaInstruction memory) {
-        // May be subject to change
-        bytes32[] memory accounts = new bytes32[](5);
-        // accounts 0 - destination user wallet
-        accounts[0] = order.destUserTokenAddress;
-        // accounts 1 - mint account
-        accounts[1] = order.dstSolanaToken;
-        // accounts 2 - user ata account for mint                   // TODO:GW: this is random value
-        accounts[2] = 0x66619ffe200970bf084fa4713da27d7dff551179adac93fc552787c7555f3482;
-        // accounts 4 - mint authority account (target program PDA) // TODO:GW: this is random value
-        accounts[4] = 0xfff2e2d5bdb632266e17b0cdce8b7e3f3a7f1d87c096719f234903b39f84d743;
-        // accounts 5,6 - system_program, token_program (those are static and will be added by the transmitter while making a call)
-
-        bytes[] memory functionArguments = new bytes[](1);
-        // TODO:GW: in watcher and transmitter we might need to convert this value if on Solana mint has different decimals, for now we assume that both are the same
-        functionArguments[0] = abi.encode(order.srcAmount);
-
-        bytes1[] memory accountFlags = new bytes1[](4);
-        accountFlags[0] = bytes1(0x00);
-        // mint must be is writable
-        accountFlags[1] = bytes1(0x01);
-        // dst token ata must be is writable
-        accountFlags[2] = bytes1(0x01);
-        accountFlags[3] = bytes1(0x00);
-
-        // TODO:GW: update when TargetDummy is ready
-        bytes8 instructionDiscriminator = bytes8(uint64(123));
-
-        string[] memory functionArgumentTypeNames = new string[](1);
-        functionArgumentTypeNames[0] = "u64";
-
-        return
-            SolanaInstruction({
-                data: SolanaInstructionData({
-                    programId: solanaProgramId,
-                    instructionDiscriminator: instructionDiscriminator,
-                    accounts: accounts,
-                    functionArguments: functionArguments
-                }),
-                description: SolanaInstructionDataDescription({
-                    accountFlags: accountFlags,
-                    functionArgumentTypeNames: functionArgumentTypeNames
-                })
-            });
+    function increase(uint256 amountU64, uint32 amountU32, uint8[] memory vecU8, uint32[] memory vecU32, string memory myString) public {
+        triggerCounter++;
+        emit TriggerIncrease(amountU64, amountU32, vecU8, vecU32, myString, triggerCounter);
     }
-    */
 }
