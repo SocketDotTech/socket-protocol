@@ -2,6 +2,8 @@
 pragma solidity ^0.8.21;
 
 import "./SocketUtils.sol";
+
+import "./interfaces/ISwitchboard.sol";
 import {WRITE} from "../utils/common/Constants.sol";
 import {createPayloadId} from "../utils/common/IdUtils.sol";
 
@@ -186,15 +188,25 @@ contract Socket is SocketUtils {
         // sends the trigger to connected app gateway
         if (plugConfig.appGatewayId == bytes32(0)) revert PlugNotFound();
 
+        // Get overrides from plug
+        bytes memory plugOverrides = IPlug(msg.sender).overrides();
+
         // creates a unique ID for the message
         triggerId = _encodeTriggerId();
+        // Call processTrigger on switchboard
+        ISwitchboard(plugConfig.switchboard).processTrigger{value: msg.value}(
+            triggerId,
+            msg.sender,
+            msg.data,
+            plugOverrides
+        );
+
         emit AppGatewayCallRequested(
             triggerId,
             plugConfig.appGatewayId,
             toBytes32Format(plugConfig.switchboard),
             toBytes32Format(plug_),
-            // gets the overrides from the plug
-            IPlug(plug_).overrides(),
+            plugOverrides,
             msg.data
         );
     }

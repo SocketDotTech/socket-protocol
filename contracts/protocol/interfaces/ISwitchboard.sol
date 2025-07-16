@@ -14,4 +14,18 @@ interface ISwitchboard {
      * @return A boolean indicating whether the payloads is allowed to go through the switchboard or not.
      */
     function allowPayload(bytes32 digest_, bytes32 payloadId_) external view returns (bool);
+
+    /**
+     * @notice Processes a trigger and creates payload
+     * @param triggerId_ Trigger ID from socket
+     * @param plug_ Source plug address
+     * @param payload_ Payload data
+     * @param overrides_ Overrides for the trigger
+     */
+    function processTrigger(
+        bytes32 triggerId_,
+        address plug_,
+        bytes calldata payload_,
+        bytes calldata overrides_
+    ) external payable;
 }
