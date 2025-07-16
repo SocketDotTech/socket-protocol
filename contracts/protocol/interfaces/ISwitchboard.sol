@@ -23,8 +23,8 @@ interface ISwitchboard {
      * @param overrides_ Overrides for the trigger
      */
     function processTrigger(
-        bytes32 triggerId_,
         address plug_,
+        bytes32 triggerId_,
         bytes calldata payload_,
         bytes calldata overrides_
     ) external payable;

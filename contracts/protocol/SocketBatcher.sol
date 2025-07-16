@@ -10,6 +10,10 @@ import "../utils/RescueFundsLib.sol";
 import {ExecuteParams, TransmissionParams, CCTPBatchParams, CCTPExecutionParams} from "../utils/common/Structs.sol";
 import {createPayloadId} from "../utils/common/IdUtils.sol";
 
+interface IFastSwitchboard is ISwitchboard {
+    function attest(bytes32 digest_, bytes calldata proof_) external;
+}
+
 /**
  * @title SocketBatcher
  * @notice The SocketBatcher contract is responsible for batching payloads and transmitting them to the destination chain
@@ -44,7 +48,7 @@ contract SocketBatcher is ISocketBatcher, Ownable {
         bytes calldata transmitterSignature_,
         address refundAddress_
     ) external payable returns (bool, bytes memory) {
-        ISwitchboard(switchboard_).attest(digest_, proof_);
+        IFastSwitchboard(switchboard_).attest(digest_, proof_);
         return
             socket__.execute{value: msg.value}(
                 executeParams_,

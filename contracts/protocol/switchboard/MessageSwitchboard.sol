@@ -106,19 +106,17 @@ contract MessageSwitchboard is SwitchboardBase {
 
     /**
      * @dev Function to process trigger and create payload
-     * @param socketCounter_ Socket counter
      * @param plug_ Source plug address
      * @param triggerId_ Trigger ID from socket
      * @param payload_ Payload data
      * @param overrides_ Override parameters including dstChainSlug and gasLimit
      */
     function processTrigger(
-        uint40 socketCounter_,
         address plug_,
         bytes32 triggerId_,
         bytes calldata payload_,
         bytes calldata overrides_
-    ) external returns (bytes32 payloadId, bytes32 digest) {
+    ) external payable override {
         (uint32 dstChainSlug, uint256 gasLimit, uint256 value) = abi.decode(
             overrides_,
             (uint32, uint256, uint256)
@@ -132,9 +130,10 @@ contract MessageSwitchboard is SwitchboardBase {
             revert SiblingNotFound();
         }
 
-        payloadId = createPayloadId(
+        uint64 socketCounter = uint64(uint256(triggerId_));
+        bytes32 payloadId = createPayloadId(
             0,
-            socketCounter_,
+            uint40(socketCounter),
             payloadCounter++,
             dstSwitchboard,
             dstChainSlug
@@ -142,7 +141,7 @@ contract MessageSwitchboard is SwitchboardBase {
 
         // Create digest with new structure
         bytes memory extraData = abi.encodePacked(chainSlug, toBytes32Format(plug_));
-        digest = _createDigest(
+        bytes32 digest = _createDigest(
             dstSocket,
             address(0),
             payloadId,

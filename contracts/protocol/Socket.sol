@@ -195,8 +195,8 @@ contract Socket is SocketUtils {
         triggerId = _encodeTriggerId();
         // Call processTrigger on switchboard
         ISwitchboard(plugConfig.switchboard).processTrigger{value: msg.value}(
-            triggerId,
             msg.sender,
+            triggerId,
             msg.data,
             plugOverrides
         );
