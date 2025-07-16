@@ -162,12 +162,12 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
     {
         (
             address appGateway,
-            Transaction memory transaction, // _writeFinality
+            Transaction memory transaction,
             ,
             uint256 gasLimit,
             uint256 value,
 
-        ) = // bytes32 switchboard
+        ) =
             abi.decode(
                 payloadParams.precompileData,
                 (address, Transaction, WriteFinality, uint256, uint256, bytes32)
