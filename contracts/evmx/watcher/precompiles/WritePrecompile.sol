@@ -45,7 +45,6 @@ abstract contract WritePrecompileStorage is IPrecompile {
 
     // 1 slot reserved for watcher base
 }
-
 /// @title WritePrecompile
 /// @notice Handles write precompile logic
 contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, WatcherBase {

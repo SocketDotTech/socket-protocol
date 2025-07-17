@@ -21,7 +21,11 @@ export const requestHandlerEvents = [
   Events.RequestSubmitted,
   Events.FeesIncreased,
   Events.RequestCancelled,
+  Events.RequestSettled,
+  Events.RequestCompletedWithErrors,
 ];
+
+export const configurationsEvents = [Events.PlugAdded];
 
 export const writePrecompileEvents = [
   Events.WriteProofRequested,

@@ -92,11 +92,4 @@ contract TriggerTest is AppGatewayBaseSetup {
         // Check counter was incremented
         assertEq(gateway.counterVal(), incrementValue, "Gateway counter should be incremented");
     }
-
-    function _encodeTriggerId(address socket_, uint256 chainSlug_) internal returns (bytes32) {
-        return
-            bytes32(
-                (uint256(chainSlug_) << 224) | (uint256(uint160(socket_)) << 64) | triggerCounter++
-            );
-    }
 }

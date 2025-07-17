@@ -103,7 +103,6 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
 
     /// @notice Adds a token to the whitelist
     /// @param token_ The token address to whitelist
-    // TODO:GW: what is that toknen used for ? is it EVM specific ?
     function whitelistToken(address token_) external onlyOwner {
         if (token_.code.length == 0) revert InvalidTokenAddress();
         whitelistedTokens[token_] = true;
@@ -117,7 +116,6 @@ contract FeesPlug is IFeesPlug, PlugBase, AccessControl {
         emit TokenRemovedFromWhitelist(token_);
     }
 
-    // TODO:GW: what is calling this function ? - is it only EVM specific ?
     function connectSocket(
         bytes32 appGatewayId_,
         address socket_,
