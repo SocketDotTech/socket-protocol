@@ -184,15 +184,12 @@ contract Socket is SocketUtils {
         PlugConfigEvm memory plugConfig = _plugConfigs[plug_];
 
         // if no sibling plug is found for the given chain slug, revert
-        // sends the trigger to connected app gateway
         if (plugConfig.appGatewayId == bytes32(0)) revert PlugNotFound();
 
-        // Get overrides from plug
         bytes memory plugOverrides = IPlug(msg.sender).overrides();
-
-        // creates a unique ID for the message
         triggerId = _encodeTriggerId();
-        // Call processTrigger on switchboard
+
+        // todo: need gas limit?
         ISwitchboard(plugConfig.switchboard).processTrigger{value: msg.value}(
             msg.sender,
             triggerId,

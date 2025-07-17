@@ -28,6 +28,9 @@ contract MessageSwitchboard is SwitchboardBase {
     // payload counter for generating unique payload IDs
     uint40 public payloadCounter;
 
+    // switchboard fees mapping: chainSlug => fee amount
+    mapping(uint32 => uint256) public switchboardFees;
+
     // Constant appGatewayId used on all chains
     bytes32 constant APP_GATEWAY_ID =
         0xdeadbeefcafebabe1234567890abcdef1234567890abcdef1234567890abcdef;
@@ -40,6 +43,8 @@ contract MessageSwitchboard is SwitchboardBase {
     error SiblingNotFound();
     // Error emitted when invalid target verification
     error InvalidTargetVerification();
+    // Error emitted when value is not equal to msg.value
+    error InvalidValue();
 
     // Event emitted when watcher attests a payload
     event Attested(bytes32 payloadId_, address watcher);
@@ -56,6 +61,8 @@ contract MessageSwitchboard is SwitchboardBase {
 
     // Event emitted when sibling config is set
     event SiblingConfigSet(uint32 chainSlug, bytes32 socket, bytes32 switchboard);
+    // Event emitted when switchboard fees are set
+    event SwitchboardFeesSet(uint32 chainSlug, uint256 feeAmount);
 
     /**
      * @dev Constructor function for the MessageSwitchboard contract
@@ -122,46 +129,73 @@ contract MessageSwitchboard is SwitchboardBase {
             (uint32, uint256, uint256)
         );
 
-        bytes32 dstSocket = siblingSockets[dstChainSlug];
-        bytes32 dstSwitchboard = siblingSwitchboards[dstChainSlug];
-        bytes32 dstPlug = siblingPlugs[dstChainSlug][plug_];
+        if (value != msg.value) revert InvalidValue();
+        _validateSibling(dstChainSlug, plug_);
+
+        (bytes32 digest, bytes32 payloadId) = _createDigestAndPayloadId(
+            dstChainSlug,
+            plug_,
+            gasLimit,
+            value,
+            triggerId_,
+            payload_
+        );
+
+        emit TriggerProcessed(
+            payloadId,
+            digest,
+            siblingPlugs[dstChainSlug][plug_],
+            dstChainSlug,
+            payload_
+        );
+    }
+
+    function _validateSibling(uint32 dstChainSlug_, address plug_) internal view {
+        bytes32 dstSocket = siblingSockets[dstChainSlug_];
+        bytes32 dstSwitchboard = siblingSwitchboards[dstChainSlug_];
+        bytes32 dstPlug = siblingPlugs[dstChainSlug_][plug_];
 
         if (dstSocket == bytes32(0) || dstSwitchboard == bytes32(0) || dstPlug == bytes32(0)) {
             revert SiblingNotFound();
         }
+    }
 
-        uint64 socketCounter = uint64(uint256(triggerId_));
-        bytes32 payloadId = createPayloadId(
-            0,
-            uint40(socketCounter),
+    function _createDigestAndPayloadId(
+        uint32 dstChainSlug_,
+        address plug_,
+        uint256 gasLimit_,
+        uint256 value_,
+        bytes32 triggerId_,
+        bytes calldata payload_
+    ) internal returns (bytes32 digest, bytes32 payloadId) {
+        payloadId = createPayloadId(
+            chainSlug,
+            uint40(uint64(uint256(triggerId_))),
             payloadCounter++,
-            dstSwitchboard,
-            dstChainSlug
+            siblingSwitchboards[dstChainSlug_],
+            dstChainSlug_
         );
 
-        // Create digest with new structure
-        bytes memory extraData = abi.encodePacked(chainSlug, toBytes32Format(plug_));
-        bytes32 digest = _createDigest(
-            dstSocket,
-            address(0),
-            payloadId,
-            block.timestamp + 3600,
-            WRITE,
-            gasLimit,
-            value,
-            dstPlug,
-            APP_GATEWAY_ID,
-            triggerId_,
-            payload_,
-            extraData
-        );
-
-        emit TriggerProcessed(payloadId, digest, dstPlug, dstChainSlug, payload_);
+        DigestParams memory digestParams = DigestParams({
+            socket: siblingSockets[dstChainSlug_],
+            transmitter: address(0),
+            payloadId: payloadId,
+            deadline: block.timestamp + 3600,
+            callType: WRITE,
+            gasLimit: gasLimit_,
+            value: value_,
+            payload: payload_,
+            target: siblingPlugs[dstChainSlug_][plug_],
+            appGatewayId: APP_GATEWAY_ID,
+            prevBatchDigestHash: triggerId_,
+            extraData: abi.encodePacked(chainSlug, toBytes32Format(plug_))
+        });
+        digest = _createDigest(digestParams);
     }
 
     /**
      * @dev Function to attest a payload with enhanced verification
-     * @param digest_ Full unhashed digest parameters
+     * @param digest_ Full un-hashed digest parameters
      * @param proof_ proof from watcher
      * @notice Enhanced attestation that verifies target with srcChainSlug and srcPlug
      */
@@ -181,7 +215,8 @@ contract MessageSwitchboard is SwitchboardBase {
         );
         if (!_hasRole(WATCHER_ROLE, watcher)) revert WatcherNotFound();
 
-        isAttested[digest_.payloadId] = true;
+        bytes32 digest = _createDigest(digest_);
+        isAttested[digest] = true;
         emit Attested(digest_.payloadId, watcher);
     }
 
@@ -198,37 +233,43 @@ contract MessageSwitchboard is SwitchboardBase {
     }
 
     /**
+     * @dev Function to set switchboard fees for a specific chain (admin only)
+     * @param chainSlug_ Chain slug for which to set the fee
+     * @param feeAmount_ Fee amount in wei
+     */
+    function setSwitchboardFees(uint32 chainSlug_, uint256 feeAmount_) external onlyOwner {
+        switchboardFees[chainSlug_] = feeAmount_;
+        emit SwitchboardFeesSet(chainSlug_, feeAmount_);
+    }
+
+    /**
+     * @dev Function to get switchboard fees for a specific chain
+     * @param chainSlug_ Chain slug for which to get the fee
+     * @return feeAmount Fee amount in wei
+     */
+    function getSwitchboardFees(uint32 chainSlug_) external view returns (uint256 feeAmount) {
+        return switchboardFees[chainSlug_];
+    }
+
+    /**
      * @dev Internal function to create digest from parameters
      */
-    function _createDigest(
-        bytes32 socket_,
-        address transmitter_,
-        bytes32 payloadId_,
-        uint256 deadline_,
-        bytes4 callType_,
-        uint256 gasLimit_,
-        uint256 value_,
-        bytes32 target_,
-        bytes32 appGatewayId_,
-        bytes32 prevDigestHash_,
-        bytes calldata payload_,
-        bytes memory extraData_
-    ) internal pure returns (bytes32) {
+    function _createDigest(DigestParams memory digest_) internal pure returns (bytes32) {
         return
             keccak256(
                 abi.encodePacked(
-                    socket_,
-                    transmitter_,
-                    payloadId_,
-                    deadline_,
-                    callType_,
-                    gasLimit_,
-                    value_,
-                    payload_,
-                    target_,
-                    appGatewayId_,
-                    prevDigestHash_,
-                    extraData_
+                    digest_.socket,
+                    digest_.transmitter,
+                    digest_.payloadId,
+                    digest_.deadline,
+                    digest_.callType,
+                    digest_.gasLimit,
+                    digest_.value,
+                    digest_.payload,
+                    digest_.target,
+                    digest_.appGatewayId,
+                    digest_.prevBatchDigestHash,
+                    digest_.extraData
                 )
             );
     }
