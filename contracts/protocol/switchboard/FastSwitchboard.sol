@@ -70,7 +70,5 @@ contract FastSwitchboard is SwitchboardBase {
         bytes32 triggerId_,
         bytes calldata payload_,
         bytes calldata overrides_
-    ) external payable {
-        revert("Not implemented");
-    }
+    ) external payable {}
 }
