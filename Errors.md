@@ -16,6 +16,13 @@
 | `PromiseRevertFailed()`    | `0x0175b9de` |
 | `NotLatestPromise()`       | `0x39ca95d3` |
 
+## evmx/helpers/ForwarderSolana.sol
+
+| Error | Signature |
+|-------|-----------|
+| `InvalidSolanaChainSlug()` | `0xe37803ab` |
+| `AddressResolverNotSet()` | `0x6d55276d` |
+
 ## evmx/plugs/ContractFactoryPlug.sol
 
 | Error                            | Signature    |
@@ -32,11 +39,6 @@
 | `InvalidDepositAmount()`                            | `0xfe9ba5cd` |
 | `TokenNotWhitelisted(address)`                      | `0xea3bff2e` |
 
-## evmx/watcher/Configurations.sol
-
-| Error                                     | Signature    |
-| ----------------------------------------- | ------------ |
-| `InvalidSwitchboardTest(bytes32,bytes32)` | `0x702f36a1` |
 
 ## evmx/watcher/RequestHandler.sol
 

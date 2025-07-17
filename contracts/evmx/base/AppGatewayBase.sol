@@ -159,6 +159,7 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /// @param contractId_ The contract ID
     /// @param chainSlug_ The chain slug
     /// @return onChainAddress The on-chain address
+    // TODO:GW: this does not work for Solana, as setAddress() is not called - cos forwarder and solana contract are not deployed with AG
     function getOnChainAddress(
         bytes32 contractId_,
         uint32 chainSlug_
@@ -216,6 +217,8 @@ abstract contract AppGatewayBase is AddressResolverUtil, IAppGateway {
     /// @param contractId_ The bytes32 identifier of the contract to be validated
     /// @param isValid Boolean flag indicating whether the contract is authorized (true) or not (false)
     /// @dev This function retrieves the onchain address using the contractId_ and chainSlug, then calls the watcher precompile to update the plug's validity status
+    // TODO:GW: this does not work for Solana, as setAddress() is not called - cos forwarder and solana contract are not deployed with AG
+    // there is no contractId for solana
     function _setValidPlug(bool isValid, uint32 chainSlug_, bytes32 contractId_) internal {
         bytes32 onchainAddress = getOnChainAddress(contractId_, chainSlug_);
         watcher__().setIsValidPlug(isValid, chainSlug_, onchainAddress);

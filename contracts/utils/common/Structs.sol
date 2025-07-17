@@ -210,6 +210,10 @@ struct RequestParams {
     bytes onCompleteData;
 }
 
+/********* Solana payloads *********/
+
+/** Solana write payload - SolanaInstruction **/
+
 struct SolanaInstruction {
     SolanaInstructionData data;
     SolanaInstructionDataDescription description;
@@ -219,7 +223,6 @@ struct SolanaInstructionData {
     bytes32 programId;
     bytes32[] accounts;
     bytes8 instructionDiscriminator;
-    // for now we assume the all functionArguments are simple types (uint256, address, bool, etc.) not complex types (struct, array, etc.)
     bytes[] functionArguments;
 }
 
@@ -229,4 +232,24 @@ struct SolanaInstructionDataDescription {
     bytes1[] accountFlags;
     // names for function argument types used later in data decoding in watcher and transmitter
     string[] functionArgumentTypeNames;
+}
+
+/** Solana read payload - SolanaReadInstruction **/
+
+enum SolanaReadSchemaType {
+    PREDEFINED,
+    GENERIC
+}
+
+struct SolanaReadRequest {
+    bytes32 accountToRead;
+    SolanaReadSchemaType schemaType;
+    // keccak256("schema-name")
+    bytes32 predefinedSchemaNameHash;
+}
+
+// this is only used after getting the data from Solana account
+struct GenericSchema {
+    // list of types recognizable by BorshEncoder that we expect to read from Solana account (data model)
+    string[] valuesTypeNames;
 }

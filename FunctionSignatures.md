@@ -297,6 +297,22 @@
 | `rescueFunds`       | `0x6ccae054` |
 | `watcher__`         | `0x300bb063` |
 
+## ForwarderSolana
+
+| Function | Signature |
+| -------- | --------- |
+| `addressResolver__` | `0x6a750469` |
+| `asyncDeployer__` | `0x2a39e801` |
+| `callSolana` | `0x4ef7957b` |
+| `chainSlug` | `0xb349ba65` |
+| `deployForwarder__` | `0xd4e3b034` |
+| `feesManager__` | `0x70568b58` |
+| `getChainSlug` | `0x0b8c6568` |
+| `getOnChainAddress` | `0x9da48789` |
+| `initialize` | `0x148841cb` |
+| `onChainAddress` | `0x8bd0b363` |
+| `watcher__` | `0x300bb063` |
+
 ## ProxyFactory
 
 | Function                      | Signature    |

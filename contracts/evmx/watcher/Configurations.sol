@@ -44,6 +44,9 @@ abstract contract ConfigurationsStorage is IConfigurations {
 /// @notice Configuration contract for the Watcher Precompile system
 /// @dev Handles the mapping between networks, plugs, and app gateways for payload execution
 contract Configurations is ConfigurationsStorage, Initializable, Ownable, WatcherBase {
+    // TODO:GW: remove after testing Solana
+    event VerifyConnectionsSB(bytes32 switchboard, bytes32 switchboardExpected);
+
     /// @notice Emitted when a new plug is configured for an app gateway
     /// @param appGatewayId The id of the app gateway
     /// @param chainSlug The identifier of the destination network
