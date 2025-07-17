@@ -39,18 +39,6 @@
 | `InvalidDepositAmount()`                            | `0xfe9ba5cd` |
 | `TokenNotWhitelisted(address)`                      | `0xea3bff2e` |
 
-## evmx/watcher/Configurations.sol
-
-| Error                                     | Signature    |
-| ----------------------------------------- | ------------ |
-| `InvalidSwitchboardTest(bytes32,bytes32)` | `0x702f36a1` |
-
-## evmx/watcher/Configurations.sol
-
-| Error | Signature |
-|-------|-----------|
-| `InvalidSwitchboardTest(bytes32,bytes32)` | `0x702f36a1` |
-| `InvalidGatewayTest(bytes32,bytes32,bytes32)` | `0xc6ad0fcf` |
 
 ## evmx/watcher/RequestHandler.sol
 

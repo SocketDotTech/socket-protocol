@@ -14,9 +14,6 @@ abstract contract ConfigurationsStorage is IConfigurations {
     // slots [0-49] reserved for gap
     uint256[50] _gap_before;
 
-    error InvalidSwitchboardTest(bytes32 sb, bytes32 sbExpected);
-    error InvalidGatewayTest(bytes32 appGatewayId, bytes32 appGatewayIdExpected, bytes32 switchboard);
-
     // slot 50
     /// @notice Maps network and plug to their configuration
     /// @dev chainSlug => plug => PlugConfig
@@ -166,12 +163,8 @@ contract Configurations is ConfigurationsStorage, Initializable, Ownable, Watche
         bytes32 switchboardType_
     ) external view {
         (bytes32 appGatewayId, bytes32 switchboard) = getPlugConfigs(chainSlug_, target_);
-        // if (appGatewayId != toBytes32Format(appGateway_)) revert InvalidGateway();
-        if (appGatewayId != toBytes32Format(appGateway_)) revert InvalidGatewayTest(appGatewayId, toBytes32Format(appGateway_), switchboard);
-        // emit VerifyConnectionsSB(switchboard, switchboards[chainSlug_][switchboardType_]);
-        // if (switchboard != switchboards[chainSlug_][switchboardType_]) revert InvalidSwitchboard();
-        if (switchboard != switchboards[chainSlug_][switchboardType_])
-            revert InvalidSwitchboardTest(switchboard, switchboards[chainSlug_][switchboardType_]);
+        if (appGatewayId != toBytes32Format(appGateway_)) revert InvalidGateway();
+        if (switchboard != switchboards[chainSlug_][switchboardType_]) revert InvalidSwitchboard();
     }
 
     /**

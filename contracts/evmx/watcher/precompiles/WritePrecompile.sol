@@ -63,9 +63,6 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
         PayloadParams payloadParams
     );
 
-    // TODO: remove after testing Solana
-    event DigestWithSourceParams(bytes32 digest, DigestParams digestParams);
-
     /// @notice Emitted when a proof is uploaded
     /// @param payloadId The unique identifier for the request
     /// @param proof The proof from the watcher
@@ -211,8 +208,6 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
         bytes32 digest = getDigest(digestParams_);
         digestHashes[payloadParams.payloadId] = digest;
 
-        emit DigestWithSourceParams(digest, digestParams_);
-
         emit WriteProofRequested(
             transmitter_,
             digest,
@@ -310,14 +305,6 @@ contract WritePrecompile is WritePrecompileStorage, Initializable, Ownable, Watc
             (SolanaInstruction)
         );
         bytes memory functionArgsPacked = BorshEncoder.encodeFunctionArgs(instruction);
-
-        // for (uint256 i = 0; i < instruction.data.functionArguments.length; i++) {
-        //     uint256 abiDecodedArg = abi.decode(instruction.data.functionArguments[i], (uint256));
-        //     // silent assumption that all arguments are uint64 to simplify the encoding
-        //     uint64 arg = uint64(abiDecodedArg);
-        //     bytes8 borshEncodedArg = BorshEncoder.encodeU64(arg);
-        //     functionArgsPacked = abi.encodePacked(functionArgsPacked, borshEncodedArg);
-        // }
 
         bytes memory payloadPacked = abi.encodePacked(
             instruction.data.programId,

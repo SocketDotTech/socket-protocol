@@ -42,25 +42,6 @@ contract ForwarderSolana is ForwarderStorage, Initializable, AddressResolverUtil
         _setAddressResolver(addressResolver_);
     }
 
-    /// @notice Stores the callback address and data to be executed once the promise is resolved.
-    /// @dev This function should not be called before the fallback function.
-    /// @dev It resets the latest async promise address
-    /// @param selector_ The function selector for callback
-    /// @param data_ The data to be passed to callback
-    /// @return promise_ The address of the new promise
-    // TODO:GW: uncommenting this is making the deployment fail silently
-    // function then(bytes4 selector_, bytes memory data_) external returns (address promise_) {
-    //     if (latestAsyncPromise == address(0)) revert NoAsyncPromiseFound();
-    //     if (latestPromiseCaller != msg.sender) revert PromiseCallerMismatch();
-    //     if (latestRequestCount != watcherPrecompile__().nextRequestCount())
-    //         revert RequestCountMismatch();
-
-    //     address latestAsyncPromise_ = latestAsyncPromise;
-    //     latestAsyncPromise = address(0);
-
-    //     promise_ = IPromise(latestAsyncPromise_).then(selector_, data_);
-    // }
-
     /// @notice Returns the on-chain address associated with this forwarder.
     /// @return The on-chain address.
     function getOnChainAddress() external view returns (bytes32) {
