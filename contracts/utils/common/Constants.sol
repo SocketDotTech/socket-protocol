@@ -20,3 +20,6 @@ uint16 constant MAX_COPY_BYTES = 2048; // 2KB
 
 uint32 constant CHAIN_SLUG_SOLANA_MAINNET = 10000001;
 uint32 constant CHAIN_SLUG_SOLANA_DEVNET = 10000002;
+
+// Constant appGatewayId used on all chains
+bytes32 constant APP_GATEWAY_ID = 0xdeadbeefcafebabe1234567890abcdef1234567890abcdef1234567890abcdef;

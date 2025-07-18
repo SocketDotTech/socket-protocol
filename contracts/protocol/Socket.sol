@@ -2,6 +2,7 @@
 pragma solidity ^0.8.21;
 
 import "./SocketUtils.sol";
+
 import {WRITE} from "../utils/common/Constants.sol";
 import {createPayloadId} from "../utils/common/IdUtils.sol";
 
@@ -183,27 +184,38 @@ contract Socket is SocketUtils {
         PlugConfigEvm memory plugConfig = _plugConfigs[plug_];
 
         // if no sibling plug is found for the given chain slug, revert
-        // sends the trigger to connected app gateway
         if (plugConfig.appGatewayId == bytes32(0)) revert PlugNotFound();
 
-        // creates a unique ID for the message
+        bytes memory plugOverrides = IPlug(msg.sender).overrides();
         triggerId = _encodeTriggerId();
+
+        // todo: need gas limit?
+        ISwitchboard(plugConfig.switchboard).processTrigger{value: msg.value}(
+            msg.sender,
+            triggerId,
+            msg.data,
+            plugOverrides
+        );
+
         emit AppGatewayCallRequested(
             triggerId,
             plugConfig.appGatewayId,
             toBytes32Format(plugConfig.switchboard),
             toBytes32Format(plug_),
-            // gets the overrides from the plug
-            IPlug(plug_).overrides(),
+            plugOverrides,
             msg.data
         );
     }
 
     /// @notice Fallback function that forwards all calls to Socket's callAppGateway
     /// @dev The calldata is passed as-is to the gateways
-    /// @dev if ETH sent with the call, it will revert
-    fallback(bytes calldata) external returns (bytes memory) {
+    fallback(bytes calldata) external payable returns (bytes memory) {
         // return the trigger id
         return abi.encode(_triggerAppGateway(msg.sender));
+    }
+
+    /// @notice Receive function that forwards all calls to Socket's callAppGateway
+    receive() external payable {
+        // todo: handle receive
     }
 }

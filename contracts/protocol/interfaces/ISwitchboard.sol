@@ -16,9 +16,16 @@ interface ISwitchboard {
     function allowPayload(bytes32 digest_, bytes32 payloadId_) external view returns (bool);
 
     /**
-     * @notice Attests a payload
-     * @param digest_ The digest of the payload
-     * @param proof_ The proof of the payload
+     * @notice Processes a trigger and creates payload
+     * @param triggerId_ Trigger ID from socket
+     * @param plug_ Source plug address
+     * @param payload_ Payload data
+     * @param overrides_ Overrides for the trigger
      */
-    function attest(bytes32 digest_, bytes calldata proof_) external;
+    function processTrigger(
+        address plug_,
+        bytes32 triggerId_,
+        bytes calldata payload_,
+        bytes calldata overrides_
+    ) external payable;
 }

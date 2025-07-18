@@ -15,8 +15,8 @@ function createPayloadId(
     bytes32 switchboard_,
     uint32 chainSlug_
 ) pure returns (bytes32) {
-    return
-        keccak256(
-            abi.encodePacked(requestCount_, batchCount_, payloadCount_, chainSlug_, switchboard_)
-        );
+    uint256 payloadCounter = (uint256(requestCount_) << 40) |
+        (uint256(batchCount_) << 24) |
+        uint256(payloadCount_);
+    return keccak256(abi.encodePacked(payloadCounter, chainSlug_, switchboard_));
 }

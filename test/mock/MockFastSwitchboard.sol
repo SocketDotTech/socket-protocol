@@ -32,4 +32,11 @@ contract MockFastSwitchboard is ISwitchboard {
     function registerSwitchboard() external {
         socket__.registerSwitchboard();
     }
+
+    function processTrigger(
+        address plug_,
+        bytes32 triggerId_,
+        bytes calldata payload_,
+        bytes calldata overrides_
+    ) external payable override {}
 }

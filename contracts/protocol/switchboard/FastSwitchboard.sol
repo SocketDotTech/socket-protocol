@@ -64,4 +64,11 @@ contract FastSwitchboard is SwitchboardBase {
     function registerSwitchboard() external onlyOwner {
         socket__.registerSwitchboard();
     }
+
+    function processTrigger(
+        address plug_,
+        bytes32 triggerId_,
+        bytes calldata payload_,
+        bytes calldata overrides_
+    ) external payable {}
 }
