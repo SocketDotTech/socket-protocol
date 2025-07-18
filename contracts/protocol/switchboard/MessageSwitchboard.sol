@@ -6,7 +6,7 @@ import {WATCHER_ROLE} from "../../utils/common/AccessRoles.sol";
 import {toBytes32Format} from "../../utils/common/Converters.sol";
 import {createPayloadId} from "../../utils/common/IdUtils.sol";
 import {DigestParams} from "../../utils/common/Structs.sol";
-import {WRITE} from "../../utils/common/Constants.sol";
+import {WRITE, APP_GATEWAY_ID} from "../../utils/common/Constants.sol";
 
 /**
  * @title MessageSwitchboard contract
@@ -30,10 +30,6 @@ contract MessageSwitchboard is SwitchboardBase {
 
     // switchboard fees mapping: chainSlug => fee amount
     mapping(uint32 => uint256) public switchboardFees;
-
-    // Constant appGatewayId used on all chains
-    bytes32 constant APP_GATEWAY_ID =
-        0xdeadbeefcafebabe1234567890abcdef1234567890abcdef1234567890abcdef;
 
     // Error emitted when a payload is already attested by watcher.
     error AlreadyAttested();
@@ -188,7 +184,7 @@ contract MessageSwitchboard is SwitchboardBase {
             target: siblingPlugs[dstChainSlug_][plug_],
             appGatewayId: APP_GATEWAY_ID,
             prevBatchDigestHash: triggerId_,
-            extraData: abi.encodePacked(chainSlug, toBytes32Format(plug_))
+            extraData: abi.encode(chainSlug, toBytes32Format(plug_))
         });
         digest = _createDigest(digestParams);
     }
@@ -200,10 +196,9 @@ contract MessageSwitchboard is SwitchboardBase {
      * @notice Enhanced attestation that verifies target with srcChainSlug and srcPlug
      */
     function attest(DigestParams calldata digest_, bytes calldata proof_) public {
-        if (isAttested[digest_.payloadId]) revert AlreadyAttested();
         (uint32 srcChainSlug, bytes32 srcPlug) = abi.decode(digest_.extraData, (uint32, bytes32));
 
-        if (siblingPlugs[srcChainSlug][address(uint160(uint256(srcPlug)))] != digest_.target) {
+        if (siblingPlugs[srcChainSlug][address(uint160(uint256(digest_.target)))] != srcPlug) {
             revert InvalidTargetVerification();
         }
 
@@ -216,7 +211,10 @@ contract MessageSwitchboard is SwitchboardBase {
         if (!_hasRole(WATCHER_ROLE, watcher)) revert WatcherNotFound();
 
         bytes32 digest = _createDigest(digest_);
+
+        if (isAttested[digest_.payloadId]) revert AlreadyAttested();
         isAttested[digest] = true;
+
         emit Attested(digest_.payloadId, watcher);
     }
 

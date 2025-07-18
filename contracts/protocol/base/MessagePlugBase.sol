@@ -3,6 +3,7 @@ pragma solidity ^0.8.21;
 
 import {PlugBase} from "./PlugBase.sol";
 import {ISwitchboard} from "../interfaces/ISwitchboard.sol";
+import {APP_GATEWAY_ID} from "../../utils/common/Constants.sol";
 
 interface IMessageSwitchboard is ISwitchboard {
     function registerSibling(uint32 chainSlug_, bytes32 siblingPlug_) external;
@@ -13,7 +14,14 @@ interface IMessageSwitchboard is ISwitchboard {
 /// @dev This contract contains helpers for socket connection, disconnection, and overrides
 /// Uses constant appGatewayId (0xaaaaa) for all chains
 abstract contract MessagePlugBase is PlugBase {
+    address public switchboard;
     error NotSupported();
+
+    constructor(address socket_, address switchboard_) {
+        _setSocket(socket_);
+        switchboard = switchboard_;
+        socket__.connect(APP_GATEWAY_ID, switchboard);
+    }
 
     /// @notice Initializes the socket with the new protocol
     function initSocket(bytes32, address, address) external override socketInitializer {
@@ -25,7 +33,6 @@ abstract contract MessagePlugBase is PlugBase {
     /// @param siblingPlug_ Address of the sibling plug on the destination chain
     function registerSibling(uint32 chainSlug_, bytes32 siblingPlug_) public {
         // Call the switchboard to register the sibling
-        (, address switchboardAddress) = socket__.getPlugConfig(address(this));
-        IMessageSwitchboard(switchboardAddress).registerSibling(chainSlug_, siblingPlug_);
+        IMessageSwitchboard(switchboard).registerSibling(chainSlug_, siblingPlug_);
     }
 }
